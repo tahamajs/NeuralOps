@@ -126,7 +126,7 @@ These modules reproduce original Softmax attention with near-zero discrepancy ri
 
 
 
-### Category 2: Good Pass (0.5 <= Max Diff < 1.0) (17 Modules)
+### Category 2: Good Pass (0.5 <= Max Diff < 1.0) (15 Modules)
 
 These modules introduce low-rank or structural approximations while maintaining strong alignment:
 
@@ -151,7 +151,8 @@ These modules introduce low-rank or structural approximations while maintaining 
 | `svd_llm_v2_attention` | `0.2827` | `0.0192` | `0.8767` | **PASS** |
 
 > [!NOTE]
-> `full_attention` diff = 0.9674 on DistilBERT occurs because DistilBERT uses separate Q/K/V projections without bias, and `FullAttention` instantiates fresh parameters without copying pretrained weights. On GPT-2 (fused Conv1D) diff = 0.0000.
+> - `full_attention` diff = 0.9674 on DistilBERT occurs because DistilBERT uses separate Q/K/V projections without bias, and `FullAttention` instantiates fresh parameters without copying pretrained weights. On GPT-2 (fused Conv1D) diff = 0.0000.
+> - `soa_module` and `soa_fused_module` are registered aliases of `soa_attn` (all point to `SOAAttention` in `Codes/framework/attentions/soa_attn.py`). Consolidating these aliases into canonical `soa_attn` in Category 1 updates Category 2 from 17 to 15 modules.
 
 
 
@@ -225,8 +226,6 @@ These modules replace standard softmax with linear kernels, state-space models, 
 | `sdrm` | `1.0322` | `0.1092` | `1.2951` | **PASS** |
 | `sdrm_compressor` | `1.2369` | `0.1309` | `0.8671` | **PASS** |
 | `simple_ssm` | `0.7478` | `0.0224` | `5.2243` | **PASS** |
-| `soa_fused_module` | `0.6269` | `0.0454` | `1.9909` | **PASS** |
-| `soa_module` | `0.4523` | `0.0236` | `1.4970` | **PASS** |
 | `span_expanded_attention` | `0.0202` | `0.0061` | `1.0565` | **PASS** |
 | `spectra_v2` | `0.0906` | `0.0086` | `1.1179` | **PASS** |
 | `spectra_v2_attention` | `0.0379` | `0.0119` | `2.5527` | **PASS** |
