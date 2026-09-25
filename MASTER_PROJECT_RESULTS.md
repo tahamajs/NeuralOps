@@ -183,6 +183,51 @@ In our systematic GPU rank sweep on an NVIDIA GeForce RTX 4070 (`RANK_SWEEP_MAST
 
 ---
 
+### 3.4 Category 5A Batch 2 Multi-Model Empirical Evaluation
+
+Systematic evaluation of 23 additional registered SVD and tensor decomposition engines evaluated concurrently across DistilBERT (SST-2, $r \in \{128, 256\}$) and RoBERTa-base (SST-2, $r=256$) with 4 parallel worker processes on an NVIDIA RTX 4070:
+
+| Module | Rank | DistilBERT Acc | RoBERTa Acc | Compression | Recon Error | Overall Status |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| `aasvd` | 128 | 86.47% | — | 1.20× | 0.8162 | **PASS** |
+| `aasvd` | 256 | 86.47% | 83.37% | 1.21× | 0.8210 | **PASS** |
+| `adaptive_ranks` | 128 | 88.53% | — | 1.16× | 0.7561 | **PASS** |
+| `adaptive_ranks` | 256 | 89.91% | 92.55% | 1.08× | 0.4923 | **PASS** |
+| `admm_compressor` | 128 | 90.02% | — | 1.00× | 0.1564 | **PASS** |
+| `admm_compressor` | 256 | 90.02% | 93.12% | 1.00× | 0.1663 | **PASS** |
+| `come` | 128 | 85.89% | — | 1.22× | — | **PASS** |
+| `come` | 256 | 85.89% | 72.59% | 1.56× | — | **PASS** |
+| `cur_compressor` | 128 | 90.60% | — | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `cur_compressor` | 256 | 90.60% | 93.46% | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `direct_svd` | 128 | 90.71% | — | 1.02× | 0.3576 | **PASS** |
+| `direct_svd` | 256 | 90.71% | 92.89% | 1.00× | 0.2436 | **PASS** |
+| `erc_svd` | 128 | 90.48% | — | 1.04× | 0.3576 | **PASS** |
+| `erc_svd` | 256 | 90.25% | 52.06% | 1.04× / 1.08× | 0.3011 | **PASS (Distil) / FAIL (RoB)** |
+| `frandi_compressor` | 128 | 90.83% | — | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `frandi_compressor` | 256 | 90.48% | 89.79% | 1.08× / 1.07× | — | **PASS** |
+| `grecodec_compressor` | 128 | 90.60% | — | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `grecodec_compressor` | 256 | 90.60% | 91.97% | 1.04× | — | **PASS** |
+| `hybrid_svd_layer` | 128 | 88.53% | — | 1.04× | 0.3332 | **PASS** |
+| `hybrid_svd_layer` | 256 | 88.53% | 92.55% | 1.04× | 0.3391 | **PASS** |
+| `kronecker_compressor` | 128 | 90.71% | — | 1.04× | — | **PASS** |
+| `kronecker_compressor` | 256 | 90.71% | 91.74% | 1.04× | — | **PASS** |
+| `mlorq_compressor` | 128 | 90.60% | — | 1.00× | 0.0290 | **PASS** |
+| `mlorq_compressor` | 256 | 90.60% | 94.38% | 1.00× | 0.0402 | **PASS** |
+| `modegpt_compressor` | 128 | 90.71% | — | 1.00× | 0.6460 | **PASS_NO_COMPRESSION** |
+| `modegpt_compressor` | 256 | 90.25% | 91.74% | 1.00× | 0.4525 | **PASS** |
+| `oats_compressor` | 128 | 91.06% | — | 1.00× | 0.4116 | **PASS** |
+| `oats_compressor` | 256 | 91.06% | 93.81% | 1.00× | 0.2050 | **PASS** |
+| `rpca_compressor` | 128 | 90.25% | — | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `rpca_compressor` | 256 | 89.22% | 92.09% | 1.04× | 0.3829 | **PASS** |
+| `saes_svd_v2` | 128 | 90.71% | — | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `saes_svd_v2` | 256 | 89.56% | 91.63% | 1.04× | 0.3820 | **PASS** |
+| `salr` | 128 | 90.60% | — | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `salr` | 256 | 90.60% | 94.15% | 1.00× | — | **PASS** |
+| `uniql_compressor` | 128 | 90.71% | — | 1.00× | — | **PASS** |
+| `uniql_compressor` | 256 | 90.48% | 91.97% | 1.00× | — | **PASS** |
+
+---
+
 ### Key Findings from Multi-Rank Sweeps:
 
 1. **DistilBERT (Monotonic Scaling):**
