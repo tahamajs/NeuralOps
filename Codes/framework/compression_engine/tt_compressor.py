@@ -2,18 +2,38 @@
 Tensor Train Compressor: replaces eligible nn.Linear and Conv1D layers with TTLinearLayer.
 Registered in COMPRESSOR_REGISTRY as "tt".
 
-NOTE (DEPRECATED):
-    Tensor-Train compression on 2D linear matrices is deprecated in this repository
-    and removed from the active benchmark queue (run_all_benchmarks_queue.py).
-    Due to mode scrambling and flattened singular value decay compared to 2D SVD, TT
-    requires very high ranks to achieve low error, yielding negligible parameter savings
-    and no FLOPs reduction. See Docs/content/compressions/tt.md.
+⚠️  DEPRECATED — DO NOT USE IN PRODUCTION ⚠️
+
+This module is formally deprecated and excluded from all active pipelines.
+
+Empirical failures:
+  - RoBERTa-base SST-2: 50.92% accuracy (random chance, baseline 94.50%)
+  - GPT-2 WikiText-2: PPL 2,156 (baseline 41.35)
+  - DistilBERT SST-2: ~58% (baseline 90.71%)
+
+Root cause:
+  TT reshapes 2D matrices into 4D/6D tensors (e.g., 768×768 → 24×32×24×32),
+  arbitrarily entangling unrelated dimensions. Pretrained transformer weights
+  do not exhibit the steep singular value decay that TT requires, and in GPT-2
+  the fused Q/K/V projections are catastrophically mixed under contraction.
+
+References:
+  - Docs/content/compressions/tt.md (theoretical analysis)
+  - MASTER_PROJECT_RESULTS.md, Section 12 (empirical results)
 """
 
 from __future__ import annotations
 
 import logging
+import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
+
+warnings.warn(
+    "TTCompressor is deprecated due to mode-scrambling and severe empirical degradation "
+    "(50.92% on RoBERTa-base, PPL 2,156 on GPT-2). See MASTER_PROJECT_RESULTS.md Section 12.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 import math
 import numpy as np
@@ -248,9 +268,6 @@ class TTLinearLayer(nn.Module):
             # Generic N-core path
             out = self._contract_tt_generic(x_flat)
 
-        if hasattr(self, 'shift') and self.shift is not None and self.shift.abs() > 1e-8:
-            out = out + x_flat.sum(dim=-1, keepdim=True) * self.shift
-
         if self.bias is not None:
             out = out + self.bias.to(device=out.device, dtype=out.dtype)
 
@@ -259,7 +276,7 @@ class TTLinearLayer(nn.Module):
             out = out + lora_delta
 
         if hasattr(self, 'output_scale') and self.output_scale is not None:
-            out = out 
+            out = out * self.output_scale
 
         return out.view(*orig_shape[:-1], self.out_features)
 
@@ -675,6 +692,20 @@ class TTCompressor(BaseCompressor):
                     p.requires_grad = False
                 continue
 
+            # Strict parameter reduction check
+            orig_layer_params = in_f * out_f + (out_f if getattr(module, "bias", None) is not None else 0)
+            tt_layer_params = tt_layer.count_parameters()
+            if tt_layer_params >= orig_layer_params:
+                logger.warning(
+                    "TTCompressor: %s produces no parameter reduction (%d >= %d). Keeping original.",
+                    name, tt_layer_params, orig_layer_params
+                )
+                if self.fallback_to_original:
+                    fallback_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    continue
+
             if hasattr(module, "base_layer"):
                 module.base_layer = tt_layer
                 if hasattr(module, "lora_A") and module.lora_A is not None:
@@ -737,6 +768,7 @@ class TTCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("tt_factory")
 @COMPRESSOR_REGISTRY.register("tt_compressor_factory")
 @COMPRESSOR_REGISTRY.register("tt_linear_factory")
+@COMPRESSOR_REGISTRY.register("tt_deprecated")
 def tt_compressor_factory(
     model: nn.Module,
     comp_config: Optional[Any] = None,
