@@ -830,3 +830,28 @@ Systematic evaluation of linear attention, recurrent state-space, and low-rank k
 | `rpca_compressor` | AG News | 70.30% | 0.7259 | 1.00× | — | **PASS_NO_COMPRESSION** |
 | `saes_svd_v2` | AG News | 70.07% | 0.7226 | 1.00× | — | **PASS_NO_COMPRESSION** |
 | `salr` | AG News | 70.18% | 0.7257 | 1.00× | — | **PASS_NO_COMPRESSION** |
+
+---
+
+## 12. Deprecated & Failed Modules
+
+The following modules were evaluated but produced results that make them unsuitable for deployment or inclusion in main comparison tables. They are documented here as negative results for scientific transparency.
+
+| Module | Architecture | Metric | Baseline | Status | Root Cause | Reference |
+| :--- | :--- | :---: | :---: | :--- | :--- | :--- |
+| `tt_compressor` | RoBERTa-base | 50.92% | 94.50% | FAIL_BELOW_CHANCE | TT mode-scrambling destroys 2D weight structure | `Docs/content/compressions/tt.md` |
+| `tt_compressor` | GPT-2 | PPL 2,156 | PPL 41.35 | FAIL_PPL_DIVERGED | Fused Q/K/V mixing under TT contraction | — |
+| `tt_compressor` | DistilBERT | 58% | 90.71% | FAIL_BELOW_CHANCE | Flattened singular value decay | — |
+| `lillama_compressor` | DistilBERT / RoBERTa | 0.00% | >90% | FAIL_ARCH_MISMATCH | Requires LLaMA-style SwiGLU + RMSNorm | — |
+| `mamba_svd_flash` | RoBERTa (Windows) | TIMEOUT | — | NOT_SUPPORTED_ON_WINDOWS | Needs Linux CUDA selective-scan kernels | `audit/SEQLEN_DEBUG.md` |
+| `erc_svd` (r=256) | RoBERTa-base | 52.06% | 94.50% | FAIL_BELOW_CHANCE | Residual noise amplified by pre-LayerNorm | — |
+
+### Scientific Insight
+The TT compressor represents an **architectural mismatch**: Tensor-Train decomposition works well for natural tensor data (images, videos) but fails on transformer weight matrices because:
+1. Transformer weights lack natural multi-dimensional grid structure.
+2. Reshaping $768 \times 768$ into $(24, 32, 24, 32)$ arbitrarily entangles unrelated dimensions.
+3. Pretrained weights do not exhibit the rapid singular value decay that TT requires.
+4. In GPT-2, fused Q/K/V projections are catastrophically mixed under TT contraction.
+
+This is documented as a **negative result**, not a failure of implementation.
+
