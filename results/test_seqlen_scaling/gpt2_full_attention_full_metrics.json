@@ -1,0 +1,52 @@
+{
+    "model": "gpt2_full_attention",
+    "performance": {
+        "accuracy_pct": 0.0,
+        "f1_score": 0.0,
+        "f1_macro": null,
+        "precision": null,
+        "recall": null,
+        "val_loss": 3.721979489231453,
+        "perplexity": 41.346157,
+        "status": "EXTREME_EXPANSION",
+        "elapsed_s": 154.69
+    },
+    "efficiency": {
+        "total_params_before": 124439808,
+        "total_params_after": 153967872,
+        "trainable_recovery_params": 0,
+        "compression_rate": 1.0,
+        "compression_ratio_pct": 0.0,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 0,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 12,
+        "lora_params": 1179648,
+        "avg_reconstruction_error": null,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {}
+    },
+    "hardware": {
+        "peak_vram_mb": 929.74072265625,
+        "tokens_per_sec": 1632.2671965296947
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 863.85,
+        "L_256_vram_mb": 894.18,
+        "L_512_vram_mb": 950.77,
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+    },
+    "seed": 42,
+    "git_sha": "0ced9281b",
+    "git_dirty": true,
+    "torch_version": "2.6.0+cu124",
+    "transformers_version": "5.5.0",
+    "cuda_version": "12.4",
+    "timestamp": "2026-09-24T19:02:11.047621+00:00"
+}

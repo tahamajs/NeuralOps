@@ -1,0 +1,12 @@
+[
+  {
+    "module": "full_attention",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "EXTREME_EXPANSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "base_before=124439808 base_after=152788224 delta=+22.8%",
+    "timestamp": "2026-09-24T22:32:11.381062"
+  }
+]

@@ -1,0 +1,5 @@
+seq_len,throughput_tok_sec,latency_ms_per_token,peak_vram_mb,status
+128,4548.4,0.2199,268.56,PASS
+256,9274.8,0.1078,285.52,PASS
+512,18770.3,0.0533,320.36,PASS
+1024,37477.2,0.0267,387.9,PASS
