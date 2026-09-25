@@ -1,0 +1,13 @@
+# Modules excluded from active pipelines and main result tables.
+# Reason: confirmed negative results or architectural mismatches.
+
+tt
+tt_linear
+tt_compressor
+tt_linear_compressor
+tt_factory
+tt_compressor_factory
+tt_linear_factory
+
+lillama_compressor
+mamba_svd_flash

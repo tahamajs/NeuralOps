@@ -35,6 +35,19 @@ global_lock = threading.Lock()
 global_completed_counter = [0]
 active_workers_counter = [0]
 
+DEPRECATED_FILE = BASE_DIR / "audit" / "deprecated_modules.txt"
+if DEPRECATED_FILE.exists():
+    DEPRECATED_MODULES = set(
+        line.strip() for line in DEPRECATED_FILE.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.startswith("#")
+    )
+else:
+    DEPRECATED_MODULES = {
+        "tt", "tt_linear", "tt_compressor", "tt_linear_compressor",
+        "tt_factory", "tt_compressor_factory", "tt_linear_factory",
+        "lillama_compressor", "mamba_svd_flash"
+    }
+
 def log(msg: str):
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     line = f"[{ts}] {msg}"
@@ -394,9 +407,11 @@ def main():
             if i < len(tl):
                 combined_tasks.append(tl[i])
 
-    # Filter out already completed tasks up front so workers immediately jump to remaining ones
+    # Filter out already completed or deprecated tasks up front so workers immediately jump to remaining ones
     pending_tasks = []
     for t in combined_tasks:
+        if t.get("module") in DEPRECATED_MODULES:
+            continue
         sp = Path(t["summary_file"])
         if sp.exists() and sp.stat().st_size > 50:
             try:
