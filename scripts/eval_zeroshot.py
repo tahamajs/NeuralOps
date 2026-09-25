@@ -193,11 +193,14 @@ def main():
     
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    for task_clean, res in results.items():
+        with open(out_dir / f"{task_clean}.json", "w", encoding="utf-8") as f:
+            json.dump(res, f, indent=2)
     out_file = out_dir / f"{args.module}_zeroshot.json"
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
     
-    print(f"\nResults saved to {out_file}")
+    print(f"\nResults saved to {out_dir}")
 
 
 if __name__ == "__main__":
