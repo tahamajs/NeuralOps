@@ -642,6 +642,7 @@ Evaluation of compression engines across diverse NLU benchmarks (DistilBERT base
 | `direct_svd` | MNLI | 82.00% | 0.8198 | 1.00× | 84,735 | 0.5883 | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/direct_svd/summary.csv` |
 | `saes_svd_v2` | MNLI | 81.90% | 0.8181 | 1.00× | 50,294 | — | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/saes_svd_v2/summary.csv` |
 | `salr` | MNLI | 81.90% | 0.8181 | 1.00× | 135,855 | — | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/salr/summary.csv` |
+| `cure` | MNLI | 82.00% | 0.8198 | 1.00× | 21,522 | — | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/cure/summary.csv` |
 | `rpca_compressor` | MNLI | 81.90% | 0.8180 | 1.00× | 15,166 | — | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/rpca_compressor/summary.csv` |
 | `mlorq_compressor` | MNLI | 81.80% | 0.8171 | 1.00× | 62,928 | 0.0281 | **PASS** | `results/mnli_deep_sweep/mlorq_compressor/summary.csv` |
 | `oats_compressor` | MNLI | 81.70% | 0.8159 | 1.00× | 58,879 | 0.3975 | **PASS** | `results/mnli_deep_sweep/oats_compressor/summary.csv` |
@@ -685,6 +686,12 @@ Verification across independent random seeds (Seeds 42, 123, 456) evaluating sta
 | `a3_compressor` | DistilBERT | 456 | **90.25%** | 0.9069 | 1.03× | 0.3493 | `results/multiseed_rigor_distilbert/a3_compressor/seed_456/summary.csv` |
 | `a3_compressor` | RoBERTa | 123 | **93.12%** | 0.9323 | 1.02× | 0.3449 | `results/multiseed_rigor_roberta/a3_compressor/seed_123/summary.csv` |
 | `a3_compressor` | RoBERTa | 456 | **93.00%** | 0.9312 | 1.02× | 0.3449 | `results/multiseed_rigor_roberta/a3_compressor/seed_456/summary.csv` |
+| `kronecker_compressor` | DistilBERT | 123 | **90.71%** | 0.9109 | **1.04×** | — | `results/multiseed_rigor_distilbert/kronecker_compressor/seed_123/summary.csv` |
+| `kronecker_compressor` | RoBERTa | 123 | **91.74%** | 0.9196 | **1.04×** | — | `results/multiseed_rigor_roberta/kronecker_compressor/seed_123/summary.csv` |
+| `rpca_compressor` | DistilBERT | 123 | 90.83% | 0.9117 | 1.00× | — | `results/multiseed_rigor_distilbert/rpca_compressor/seed_123/summary.csv` |
+| `rpca_compressor` | DistilBERT | 456 | 90.71% | 0.9099 | 1.00× | — | `results/multiseed_rigor_distilbert/rpca_compressor/seed_456/summary.csv` |
+| `rpca_compressor` | RoBERTa | 123 | 94.04% | 0.9417 | 1.00× | — | `results/multiseed_rigor_roberta/rpca_compressor/seed_123/summary.csv` |
+| `rpca_compressor` | RoBERTa | 456 | **94.27%** | 0.9442 | 1.00× | — | `results/multiseed_rigor_roberta/rpca_compressor/seed_456/summary.csv` |
 | `direct_svd` | DistilBERT | 123 | 90.60% | 0.9099 | 1.00× | 0.5882 | `results/multiseed_rigor_distilbert/direct_svd/seed_123/summary.csv` |
 | `direct_svd` | DistilBERT | 456 | 90.60% | 0.9099 | 1.00× | 0.5882 | `results/multiseed_rigor_distilbert/direct_svd/seed_456/summary.csv` |
 | `direct_svd` | RoBERTa | 123 | 93.12% | 0.9342 | 1.00× | 0.6008 | `results/multiseed_rigor_roberta/direct_svd/seed_123/summary.csv` |
