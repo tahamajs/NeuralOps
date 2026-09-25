@@ -74,9 +74,11 @@ def _is_conv1d(module: nn.Module) -> bool:
 
 @COMPRESSOR_REGISTRY.register("lillama_class")
 @COMPRESSOR_REGISTRY.register("lillama_compressor_class")
-class LiLLaMACompressor(BaseCompressor):
-    # LL-FIX-01: this is a compressor, not attention.
+@COMPRESSOR_REGISTRY.register("lillama_distiller_class")
+class LiLLaMADistiller(BaseCompressor):
+    # LL-FIX-01: this is a local distillation / weight-rewriter, not standard factorized attention.
     is_custom_attention: bool = False
+    category: str = "weight_rewriting"
 
     def __init__(
         self,
@@ -304,11 +306,15 @@ class LiLLaMACompressor(BaseCompressor):
                 h.remove()
 
         aggregated: Dict[str, Tuple[torch.Tensor, torch.Tensor]] = {}
+        MAX_ACTIVATION_SAMPLES = 512
         for name, data in activations.items():
             if data["in"] and data["out"]:
                 try:
                     cat_in = torch.cat(data["in"], dim=0)
                     cat_out = torch.cat(data["out"], dim=0)
+                    if cat_in.size(0) > MAX_ACTIVATION_SAMPLES:
+                        cat_in = cat_in[:MAX_ACTIVATION_SAMPLES]
+                        cat_out = cat_out[:MAX_ACTIVATION_SAMPLES]
                     aggregated[name] = (cat_in, cat_out)
                 except Exception as e:
                     logger.debug("Activation concat failed for %s: %s", name, e)
@@ -644,7 +650,10 @@ def lillama_factory(
     return compressed_model
 
 
+LiLLaMACompressor = LiLLaMADistiller
+
 __all__ = [
+    "LiLLaMADistiller",
     "LiLLaMACompressor",
     "lillama_factory",
 ]
