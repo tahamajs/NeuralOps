@@ -1,6 +1,6 @@
 # Master Project Results & Attention Benchmark Report
 
-**Date:** September 18, 2026  
+**Date:** September 25, 2026  
 **Repository:** SVD Linear Attention & Unified Compression Framework  
 **Scope:** 252 Evaluated Unique Modules across DistilBERT, RoBERTa-base, and GPT-2  
 **Status:** 100% COMPLETE — ZERO ERRORS / ZERO CRASHES  
@@ -27,8 +27,8 @@ The project evaluates models across three distinct transformer topologies:
 | **Category 1: Excellent Pass** | Logit Diff < 0.5 (Near-lossless reproduction of softmax) | 44 | PASS ✅ |
 | **Category 2: Good Pass** | 0.5 <= Logit Diff < 1.0 (Low-rank structural approximation) | 17 | PASS ✅ |
 | **Category 3: Category B (Linear/SSM/MoE)** | Non-softmax formulations (Linear kernels, State-Space, MoE) | 87 | PASS ✅ (Expected) |
-| **Category 4: Encoder-Only Attention** | Bidirectional attention (Safe NO_OP guardrail on causal GPT-2) | 19 | PASS ✅ (Safe) |
-| **Category 5A: Low-Rank / SVD Factorization** | Post-training matrix decomposition & parameter reduction (>1.05×) | 51 | PASS ✅ (Standalone) |
+| **Category 4: Encoder-Only Attention** | Bidirectional attention (Safe NO_OP guardrail on causal GPT-2) | 18 | PASS ✅ (Safe) |
+| **Category 5A: Low-Rank / SVD Factorization** | Post-training matrix decomposition & parameter reduction (>1.05×) | 52 | PASS ✅ (Standalone) |
 | **Category 5B: Pruning, Quantization & KV Cache** | Unstructured sparsity, codebook clustering & runtime KV memory | 34 | PASS ✅ (Standalone) |
 | **TOTAL EVALUATED** | Complete repository module catalog | **252** | **100% OPERATIONAL** |
 
@@ -56,7 +56,7 @@ In our comprehensive GPU rank sweep on an NVIDIA RTX 4070 (`RANK_SWEEP_MASTER_RE
 
 2. **RoBERTa Non-Monotonicity Resolution:**
    - When fine-tuned at default `lr = 2e-4`, accumulated gradients across 48 decomposed projection layers caused divergence.
-   - Lowering recovery learning rate to `5e-5` restored smooth monotonic convergence (**61.35% at Rank 128**; note: historical runs evaluated against un-finetuned 78.56% baseline, delta -17.21%; relative to true 94.50% baseline, delta is -33.15%).
+   - Lowering recovery learning rate to `5e-5` restored convergence (**61.35% at Rank 128**). NOTE: this is a -33.15% delta against the true 94.50% baseline, indicating rank 128 is insufficient for RoBERTa. Rank 256+ is recommended.
 
 3. **GPT-2 Rank Starvation at $r \le 32$:**
    - GPT-2 uses a fused $768 \times 2304$ matrix for Q, K, and V. Truncating to $r \le 32$ bottlenecks all 3 projections into fewer than 0.89 dims/head, leading to representational collapse.
@@ -117,6 +117,9 @@ These modules reproduce original Softmax attention with near-zero discrepancy ri
 | `squeezing_heads_distiller` | `0.1206` | `0.0083` | `0.2511` | **PASS** |
 | `weighted_ensemble` | `0.4845` | `0.0115` | `0.3527` | **PASS** |
 
+> [!NOTE]
+> `hybrid_attention` and `weighted_ensemble` share the exact same class implementation (`HybridAttention` in `Codes/framework/attentions/hybrid_attention.py`, registered as aliases). Consequently, their zero-shot logit differences across all evaluated models are mathematically identical.
+
 
 ### Category 2: Good Pass (0.5 <= Max Diff < 1.0) (17 Modules)
 
@@ -141,6 +144,10 @@ These modules introduce low-rank or structural approximations while maintaining 
 | `rpc` | `0.1340` | `0.0285` | `0.9278` | **PASS** |
 | `svd_linear_attention` | `0.6531` | `0.0597` | `0.1720` | **PASS** |
 | `svd_llm_v2_attention` | `0.2827` | `0.0192` | `0.8767` | **PASS** |
+
+> [!NOTE]
+> `full_attention` diff = 0.9674 on DistilBERT occurs because DistilBERT uses separate Q/K/V projections without bias, and `FullAttention` instantiates fresh parameters without copying pretrained weights. On GPT-2 (fused Conv1D) diff = 0.0000.
+
 
 
 ### Category 3: Category B (Linear Attention / SSM / MoE) (87 Modules)
@@ -250,6 +257,8 @@ For modules exhibiting zero-shot logit differences $> 8.0$ on GPT-2 due to non-s
 > A module qualifies for `PASS_AFTER_RECOVERY` if post-recovery accuracy $\ge (\text{baseline} - 10.0\%)$.  
 > For GPT-2 (uncompressed dense baseline **87.84%**), the qualification threshold is $\mathbf{77.84\%}$.  
 > All 7 evaluated modules (**80.53% to 84.22%**) exceed this threshold.
+> 
+> *Note on Baseline Probe*: "Acc Before" = 52.50% reflects the small 40-sample batch cache probe used for rapid pre-recovery evaluation. Full 872-sample evaluation appears in "Acc After 50 Steps".
 
 | Module Name | Zero-Shot Diff | Acc Before | Acc After 50 Steps | Delta Acc | Status | Verdict | Source |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
@@ -261,14 +270,13 @@ For modules exhibiting zero-shot logit differences $> 8.0$ on GPT-2 due to non-s
 | `gated_deltanet_block` | `8.1250` | 52.50% | **84.18%** | +31.68% | RECOVERED | PASS_AFTER_RECOVERY | <!-- source: audit/verification_2026_09_18/B2_high_diff_recovery/gated_deltanet_block_gpt2_recovery.json --> |
 | `factorised_matrix_state` | `8.0415` | 52.50% | **84.22%** | +31.72% | RECOVERED | PASS_AFTER_RECOVERY | <!-- source: audit/verification_2026_09_18/B2_high_diff_recovery/factorised_matrix_state_gpt2_recovery.json --> |
 
-### Category 4: Encoder-Only Attention (Safe NO_OP on GPT-2) (19 Modules)
+### Category 4: Encoder-Only Attention (Safe NO_OP on GPT-2) (18 Modules)
 
 These modules are designed specifically for bidirectional architectures and gracefully preserve causal GPT-2 without crashing:
 
 | Module Name | DistilBERT Diff | RoBERTa Diff | GPT-2 Diff | Overall Status |
 | :--- | :---: | :---: | :---: | :---: |
 | `adaptive_svd_attention` | `0.0000` | `0.0000` | `SAFE NO_OP` | **PASS** |
-| `dobi` | `0.0000` | `0.0000` | `SAFE NO_OP` | **PASS** |
 | `dynamic_entropy` | `0.0000` | `0.0000` | `SAFE NO_OP` | **PASS** |
 | `dynamic_rank` | `0.0000` | `0.0000` | `SAFE NO_OP` | **PASS** |
 | `minimal_svd` | `0.9372` | `0.0211` | `SAFE NO_OP` | **PASS** |
@@ -292,7 +300,7 @@ These modules are designed specifically for bidirectional architectures and grac
 
 Offline compression algorithms in the repository are divided into two distinct functional categories based on mathematical mechanics and parameter reduction profiles:
 
-#### Category 5A: Low-Rank & Structured SVD Factorization Engines (51 Modules)
+#### Category 5A: Low-Rank & Structured SVD Factorization Engines (52 Modules)
 These modules decompose dense parameter matrices into low-rank factorized projections ($W \approx U \Sigma V^T$, Tucker, Tensor-Train, Kronecker, or SliceGPT subspace truncation), achieving measurable parameter count reduction and FLOP savings ($>1.05\times$ compression rate):
 
 | Module 1 | Module 2 | Module 3 | Module 4 |
@@ -309,7 +317,11 @@ These modules decompose dense parameter matrices into low-rank factorized projec
 | `cr_compressor` | `kronecker_compressor` | `rpca` | `tt_compressor` |
 | `cur_compressor` | `kronecker_linear` | `rpca_compressor` | `tt_linear` |
 | `cur_linear` | `kronecker_tt_lora` | `saes_svd` | `uniql_compressor` |
-| `cure` | `lsc_compressor` | `saes_svd_compressor` |  |
+| `cure` | `lsc_compressor` | `saes_svd_compressor` | `dobi` |
+
+> [!NOTE]
+> `dobi` and `dobi_svd` both reside in `Codes/framework/compression_engine/dobi_svd.py` as registered aliases of `DobiSVDCompressor`. Because neither is an attention module, `dobi` has been consolidated from Category 4 into Category 5A.
+
 
 #### Category 5B: Unstructured Sparsity, Pruning, Quantization & KV Cache Engines (34 Modules)
 These engines implement fine-grained magnitude/Hessian pruning, codebook clustering/quantization, weight hashing, or dynamic KV cache token pruning. Because they preserve full dense parameter tensor footprints or operate dynamically at runtime, nominal stored parameter count remains unreduced ($1.00\times$ compression rate):
