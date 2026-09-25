@@ -1,2 +1,2 @@
 module_name,status,accuracy_pct,perplexity,ppl_status,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
-admm_compressor,CRASH,0.0,,,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,KeyError: 'text',,2026-09-25T14:07:48.103824
+admm_compressor,PASS,70.41,0.0,,0.729,0.7016,0.7083,0.7027,0.5908,12.06,331.86,175444.0,66955010,66955010,1538,1.0,0.0,0.0,24,0,0.1564,,0,0,,legacy_bert,2026-09-25T14:22:36.076449
