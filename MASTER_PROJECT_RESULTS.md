@@ -238,17 +238,42 @@ Systematic evaluation of 23 additional registered SVD and tensor decomposition e
 
 Evaluation of unstructured sparsity, gradient-based magnitude/ADMM pruning, codebook vector quantization, and dynamic KV cache management engines across DistilBERT (SST-2, batch size 64) and RoBERTa-base (SST-2, batch size 64) with 4 parallel worker processes on an NVIDIA RTX 4070 Laptop GPU (8GB VRAM):
 
-| Module | DistilBERT Acc | RoBERTa Acc | Recon Error | Speed (tok/s) | Peak VRAM | Status |
+| Module | DistilBERT Acc | RoBERTa Acc | Recon Error | Speed (tok/s) | Compression | Status |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| `astro_quantizer` | 90.60% | **94.04%** | 0.0227 / 0.0235 | 201,544 / 58,391 | 457 MB | **PASS** |
-| `coopq_quantizer` | 90.48% | **93.23%** | — | 83,146 / 53,268 | 565 MB | **PASS_NO_COMPRESSION** |
-| `armor_pruner` | 90.02% | **92.89%** | 0.3749 / 0.3851 | 46,343 / 30,196 | 589 MB | **PASS** |
-| `cachenotes_compressor` | **90.83%** | **92.55%** | 0.2403 / 0.2424 | 158,108 / 120,999 | 457 MB | **PASS** |
-| `bonsai_pruner` | 90.48% | **92.55%** | 0.6483 / 0.5909 | 100,958 / 93,411 | 457 MB | **PASS_NO_COMPRESSION** |
-| `delta_kv` | **90.94%** | [QUEUED] | — | 99,573 | 446 MB | **PASS** |
-| `enlighten_compressor` | **90.83%** | [QUEUED] | 0.2754 | 101,900 | 457 MB | **PASS** |
-| `ast_pruner` | **90.71%** | 90.02% | 0.5813 / 0.3531 | 61,084 / 127,728 | 457 MB | **PASS** |
-| `admm_pruner` | 90.14% | 89.91% | 0.3590 / 0.3531 | 45,916 / 58,490 | 571 MB | **PASS** |
+| `flat_llm` | 90.60% | **94.27%** | 0.4977 / 0.4626 | 51,819 / 126,894 | 1.00× | **PASS** |
+| `kmeans_quantize` | 90.25% | **94.27%** | — | 96,431 / 121,206 | **1.21× – 1.27×** | **PASS** |
+| `roast_hashed_linear` | 90.83% | **94.15%** | 0.9998 / 0.9980 | 101,830 / 120,400 | 1.00× | **PASS** |
+| `astro_quantizer` | 90.60% | **94.04%** | 0.0227 / 0.0235 | 201,544 / 58,391 | 1.00× | **PASS** |
+| `liftr` | 90.60% | **94.04%** | — | 69,162 / 122,703 | 1.00× | **PASS** |
+| `mamba_shedder` | 90.60% | **94.04%** | — | 62,221 / 123,452 | 1.00× | **PASS** |
+| `proxsparse` | 90.71% | **94.04%** | 0.6694 / 0.6297 | 102,032 / 54,227 | 1.00× | **PASS** |
+| `proxsparse_pruner` | 90.71% | **94.04%** | 0.6694 / 0.6297 | 64,071 / 121,979 | 1.00× | **PASS** |
+| `replaceme_compressor` | 90.71% | **94.04%** | — | 192,064 / 53,596 | 1.00× | **PASS** |
+| `faq_quantizer` | 90.60% | **93.92%** | **0.0085 / 0.0097** | 53,068 / 23,976 | 0.98× – 0.99× | **PASS** |
+| `entropy_budget_allocation` | 90.60% | **93.46%** | 0.7611 / 0.7764 | 116,528 / 72,313 | 1.00× | **PASS** |
+| `flap` | 90.60% | **93.46%** | 0.4533 / 0.4641 | 98,952 / 39,354 | 1.00× | **PASS** |
+| `hashed_linear` | 90.60% | **93.46%** | — | 232,830 / 39,115 | 1.00× | **PASS** |
+| `hashed_net_compressor` | 90.60% | **93.46%** | — | 62,727 / 129,806 | 1.00× | **PASS** |
+| `hybridkv` | 90.60% | **93.46%** | — | 104,085 / 129,922 | 1.00× | **PASS** |
+| `hybridkv_compressor` | 90.60% | **93.46%** | — | 102,012 / 33,023 | 1.00× | **PASS** |
+| `kvtc` | 90.60% | **93.46%** | 0.3483 / 0.3483 | 68,632 / 130,710 | 1.00× | **PASS** |
+| `kvtc_compressor` | 90.60% | **93.46%** | 0.3483 / 0.3483 | 101,112 / 54,184 | 1.00× | **PASS** |
+| `coopq_quantizer` | 90.48% | **93.23%** | — | 83,146 / 53,268 | 1.00× | **PASS_NO_COMPRESSION** |
+| `huffman_coder` | 90.60% | **93.12%** | — | 102,454 / 33,139 | 1.00× | **PASS** |
+| `armor_pruner` | 90.02% | **92.89%** | 0.3749 / 0.3851 | 46,343 / 30,196 | 0.97× | **PASS** |
+| `enlighten_compressor` | 90.83% | **92.78%** | 0.2754 / 0.2764 | 101,900 / 124,999 | 1.00× | **PASS** |
+| `cachenotes_compressor` | **90.83%** | **92.55%** | 0.2403 / 0.2424 | 158,108 / 120,999 | 1.00× | **PASS** |
+| `bonsai_pruner` | 90.48% | **92.55%** | 0.6483 / 0.5909 | 100,958 / 93,411 | 1.00× | **PASS_NO_COMPRESSION** |
+| `soka` | 90.71% | **92.43%** | — | 84,231 / 105,059 | 1.025× | **PASS** |
+| `soka_compressor` | 90.71% | **92.43%** | — | 80,885 / 36,501 | 1.025× | **PASS** |
+| `sparsegpt` | 90.37% | **92.32%** | — | 105,306 / 54,814 | 1.00× | **PASS** |
+| `slim_compressor` | **91.28%** | **91.74%** | 0.4246 / 0.4275 | 102,262 / 84,662 | 1.00× | **PASS** |
+| `zerokv_neo` | 90.14% | 90.83% | 0.1059 / 0.1555 | 100,395 / 53,702 | 1.00× | **PASS** |
+| `zerokv_neo_compressor` | 90.14% | 90.83% | 0.1059 / 0.1555 | 61,849 / 54,000 | 1.00× | **PASS** |
+| `delta_kv` | **90.94%** | 90.48% | — | 99,573 / 54,586 | 1.00× | **PASS** |
+| `ast_pruner` | **90.71%** | 90.02% | 0.5813 / 0.3531 | 61,084 / 127,728 | 1.00× | **PASS** |
+| `admm_pruner` | 90.14% | 89.91% | 0.3590 / 0.3531 | 45,916 / 58,490 | 1.00× | **PASS** |
+| `lillama_compressor` | 0.00% | 0.00% | — | — | 1.00× | **FAIL_ARCH_MISMATCH** (LLaMA-only) |
 
 ---
 
