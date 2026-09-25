@@ -1,4 +1,22 @@
+"""Projection Factorized SVD Linear Attention.
+
+Fixes (2026-09-26):
+- FIX-1: `inject_projection_factorized_attn` now discovers the source attention
+  across all architecture variants (GPT-2 `layer.attn`, RoBERTa/BERT
+  `layer.attention.self`, T5 `layer.self_attn`, generic `layer.attention`).
+- FIX-2: Pre-discovered `src_attn` is passed explicitly as `old_attn` to the
+  delegated `inject_svd_linear_attention`, so the delegate never has to guess.
+- FIX-3: Fallback replacement ensures the new module is placed in the correct
+  attribute (including `layer.attn` for GPT-2) even if the delegate only
+  writes to `layer.attention` / `layer.self`.
+- FIX-4: Idempotency guard prevents double-injection.
+- FIX-5: Explicit error logging when no source attention can be found.
+"""
+
 from typing import Any, Optional
+import logging
+
+import torch
 import torch.nn as nn
 
 from framework.core.registry import ATTENTION_REGISTRY
@@ -7,6 +25,9 @@ from framework.attentions.svd_linear_attention import (
     SVDLinearAttention,
     inject_svd_linear_attention,
 )
+
+logger = logging.getLogger(__name__)
+
 
 @ATTENTION_REGISTRY.register("projection_factorized_attn")
 class ProjectionFactorizedAttention(SVDLinearAttention):
@@ -33,7 +54,7 @@ def inject_projection_factorized_attn(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
+    # ---- Whole-model traversal ----
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -68,15 +89,93 @@ def inject_projection_factorized_attn(
                 num_injected += 1
         return target if num_injected > 0 else None
 
+    # ---- Single-layer injection ----
     layer = target
 
-    return inject_svd_linear_attention(
-        model=model,
-        layer=layer,
-        model_config=model_config,
-        old_attn=old_attn,
-        **kwargs,
-    )
+    # ============================================================
+    # FIX-1: Discover source attention across all architecture variants
+    # ============================================================
+    src_attn = old_attn
+    src_attr_name: Optional[str] = None      # which attribute held the source ("attn", "attention", ...)
+    src_is_nested: bool = False              # True for RoBERTa/BERT (layer.attention.self)
+
+    if src_attn is None:
+        for attr in ("attn", "attention", "self_attn", "self"):
+            candidate = getattr(layer, attr, None)
+            if candidate is None:
+                continue
+
+            # FIX-4: idempotency guard
+            if isinstance(candidate, SVDLinearAttention) or "SVDLinear" in candidate.__class__.__name__:
+                logger.debug(
+                    "inject_projection_factorized_attn: %s.%s is already SVDLinearAttention, skipping",
+                    type(layer).__name__, attr,
+                )
+                return None
+
+            # RoBERTa/BERT nested: layer.attention.self has .query
+            if hasattr(candidate, "self") and hasattr(candidate.self, "query"):
+                src_attn = candidate.self
+                src_attr_name = attr
+                src_is_nested = True
+            else:
+                src_attn = candidate
+                src_attr_name = attr
+                src_is_nested = False
+            break
+
+    if src_attn is None:
+        # FIX-5: explicit error logging
+        logger.warning(
+            "inject_projection_factorized_attn: no source attention found on %s "
+            "(checked: attn, attention, self_attn, self)",
+            type(layer).__name__,
+        )
+        return None
+
+    # ============================================================
+    # Delegate to underlying injector with explicit old_attn
+    # (so it never has to guess the source attribute)
+    # ============================================================
+    try:
+        result = inject_svd_linear_attention(
+            model=model,
+            layer=layer,
+            model_config=model_config,
+            old_attn=src_attn,
+            **kwargs,
+        )
+    except Exception as e:
+        logger.error("inject_svd_linear_attention delegate failed: %s", e)
+        return None
+
+    if result is None:
+        return None
+
+    # ============================================================
+    # FIX-3: Fallback replacement for GPT-2 and other missed architectures
+    #   The delegate may have replaced the correct attribute on DistilBERT /
+    #   RoBERTa, but on GPT-2 it typically only checks `layer.attention` and
+    #   `layer.self`, leaving `layer.attn` unchanged. We verify and patch.
+    # ============================================================
+    if src_attr_name is not None and result is not layer:
+        if src_is_nested:
+            parent = getattr(layer, src_attr_name, None)
+            if parent is not None and getattr(parent, "self", None) is src_attn:
+                parent.self = result
+                logger.debug(
+                    "inject_projection_factorized_attn: forced replacement of %s.%s.self",
+                    type(layer).__name__, src_attr_name,
+                )
+        else:
+            if getattr(layer, src_attr_name, None) is src_attn:
+                setattr(layer, src_attr_name, result)
+                logger.debug(
+                    "inject_projection_factorized_attn: forced replacement of %s.%s",
+                    type(layer).__name__, src_attr_name,
+                )
+
+    return result
 
 
 inject_projection_factorized_attention = inject_projection_factorized_attn

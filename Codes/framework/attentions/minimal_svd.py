@@ -458,28 +458,21 @@ class MinimalSVDAttention(BaseAttention):
             V = repeat_kv(V, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(D)
-        # Memory-efficient: use SDPA to avoid OOM on large seqs; fallback to explicit if needed
 
         try:
-
             _qs = Q.half() if Q.dtype == torch.float32 else Q
-
             _ks = K.half() if K.dtype == torch.float32 else K
-
             _vs = V.half() if V.dtype == torch.float32 else V
 
             _is_causal = getattr(self, 'is_decoder', False) and not is_cross and N > 1 if 'is_cross' in dir() else getattr(self, 'is_decoder', False) and N > 1
 
             _sdpa_out = torch.nn.functional.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=_is_causal, dropout_p=self.dropout.p if self.training else 0.0)
-
             _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-
             _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
             return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
 
         except Exception:
-
             pass
 
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
@@ -536,6 +529,17 @@ class MinimalSVDAttention(BaseAttention):
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
 
 
+# ============================================================================
+# FIXED (2026-09-26): inject_minimal_svd now handles GPT-2's `attn` attribute
+#
+# Bug: Previously, the injection only checked `layer.attention` and `layer.self`.
+# GPT-2 stores its attention module under `layer.attn`, so src_attn was None,
+# copy_weights was never called, and the layer was never replaced. This caused
+# PASS_NO_COMPRESSION with zero injected layers.
+#
+# Fix: Added "attn" and "self_attn" to the attribute lookup list, and added
+# explicit branches for `layer.attn` in the replacement logic.
+# ============================================================================
 @ATTENTION_REGISTRY.register("minimal_svd_inject")
 @ATTENTION_REGISTRY.register("inject_minimal_svd")
 def inject_minimal_svd(
@@ -556,7 +560,7 @@ def inject_minimal_svd(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
+    # ---- Whole-model traversal ----
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -591,12 +595,12 @@ def inject_minimal_svd(
                 num_injected += 1
         return target if num_injected > 0 else None
 
+    # ---- Single-layer injection ----
     layer = target
 
     if model_config is None:
         model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
 
-    r"""Injection hook for MinimalSVDAttention into transformer layer."""
     energy = getattr(comp_config, "svd_energy", 0.95) if comp_config else 0.95
     dropout = getattr(comp_config, "dropout", 0.1) if comp_config else 0.1
     new_attn = MinimalSVDAttention(
@@ -604,27 +608,78 @@ def inject_minimal_svd(
         energy=energy,
         dropout=dropout,
     )
-    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
-    if src_attn is not None:
-        try:
-            new_attn.copy_weights(src_attn)
-        except Exception as e:
-            logger.error(f"copy_weights failed for minimal_svd: {e}")
-            return None
-        p = next(src_attn.parameters(), None)
-        if p is not None:
-            new_attn.to(device=p.device, dtype=p.dtype)
 
-    if hasattr(layer, "attention"):
-        if hasattr(layer.attention, "self"):
+    # ============================================================
+    # FIX 1: Find source attention across all architecture variants
+    # ============================================================
+    src_attn = old_attn
+    if src_attn is None:
+        # Order matters: prefer the most specific attribute first
+        for attr in ("attn", "attention", "self", "self_attn"):
+            candidate = getattr(layer, attr, None)
+            if candidate is None:
+                continue
+            # Skip if already a MinimalSVDAttention (idempotent guard)
+            if isinstance(candidate, MinimalSVDAttention):
+                logger.debug(
+                    "inject_minimal_svd: %s.%s is already MinimalSVDAttention, skipping",
+                    type(layer).__name__, attr,
+                )
+                return None
+            # RoBERTa/BERT nested: layer.attention.self has .query
+            if hasattr(candidate, "self") and hasattr(candidate.self, "query"):
+                src_attn = candidate.self
+            else:
+                src_attn = candidate
+            break
+
+    if src_attn is None:
+        logger.warning(
+            "inject_minimal_svd: no source attention found on layer %s "
+            "(checked: attn, attention, self, self_attn)",
+            type(layer).__name__,
+        )
+        return None
+
+    try:
+        new_attn.copy_weights(src_attn)
+    except Exception as e:
+        logger.error("copy_weights failed for minimal_svd: %s", e)
+        return None
+
+    p = next(src_attn.parameters(), None)
+    if p is not None:
+        new_attn.to(device=p.device, dtype=p.dtype)
+
+    # ============================================================
+    # FIX 2: Replace attention across all architecture variants
+    # ============================================================
+    replaced = False
+    if hasattr(layer, "attn"):
+        # GPT-2, GPT-Neo, GPT-J
+        layer.attn = new_attn
+        new_attn.is_nested_encoder = False
+        replaced = True
+    elif hasattr(layer, "attention"):
+        if hasattr(layer.attention, "self") and hasattr(layer.attention.self, "query"):
+            # RoBERTa / BERT nested encoder
             layer.attention.self = new_attn
             new_attn.is_nested_encoder = True
         else:
             layer.attention = new_attn
             new_attn.is_nested_encoder = False
+        replaced = True
     elif hasattr(layer, "self"):
         layer.self = new_attn
         new_attn.is_nested_encoder = True
-    else:
-        new_attn.is_nested_encoder = False
+        replaced = True
+
+    if not replaced:
+        logger.error(
+            "inject_minimal_svd: could not find a writable attention attribute "
+            "on layer %s",
+            type(layer).__name__,
+        )
+        return None
+
     return new_attn
