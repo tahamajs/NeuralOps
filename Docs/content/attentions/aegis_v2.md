@@ -568,6 +568,7 @@ print(f"[PASS] aegis_v2 forward logits shape:", outputs.logits.shape)
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 32.58 ms | 1842.9 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 31.81 ms | 1852.8 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 32.47 ms | 1852.8 MB |
+| **roberta-sst2** | sst2 | `PASS` | 93.46% | **63.99%** | -29.47% | 0.6549 | 1.03x | 0 | [svd-linear-attention-roberta-sst2-aegis-v2](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-sst2-aegis-v2) | 2026-09-25 |
 
 ## Empirical Benchmark Results
 
