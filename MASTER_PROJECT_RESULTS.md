@@ -308,7 +308,9 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 | `erc_svd` | DistilBERT | 90.60% (0.5882) | 89.56% (0.3576) | 90.48% (0.3295) | 90.60% (0.5882) | 1.04× | **PASS** |
 | `erc_svd` | RoBERTa | 93.46% (0.6387) | 92.09% (0.4206) | 52.06% (0.3011) | 93.46% (0.6387) | 1.05× $\to$ 1.08× | **PASS (r=64, 128, 384)** |
 | `frandi` | DistilBERT | 90.83% | 90.71% | 90.37% | 84.86% | 1.00× $\to$ 1.19× | **Monotonic Scaling PASS** |
-| `frandi` | RoBERTa | 93.81% | [QUEUED] | [QUEUED] | [QUEUED] | 1.00× | **PASS (r=64)** |
+| `frandi` | RoBERTa | 93.81% | 93.92% | 89.79% | 50.69% | 1.00× $\to$ 1.21× | **PASS (r=64, 128, 256)** |
+| `frandi_compressor` | DistilBERT | 90.83% | [RUNNING] | [RUNNING] | [QUEUED] | 1.00× | **PASS (r=64)** |
+| `frandi_compressor` | RoBERTa | 93.81% | [RUNNING] | [QUEUED] | [QUEUED] | 1.00× | **PASS (r=64)** |
 
 ---
 
@@ -650,6 +652,7 @@ Evaluation of compression engines across diverse NLU benchmarks (DistilBERT base
 | `cure` | MNLI | 82.00% | 0.8198 | 1.00× | 21,522 | — | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/cure/summary.csv` |
 | `rpca_compressor` | MNLI | 81.90% | 0.8180 | 1.00× | 15,166 | — | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/rpca_compressor/summary.csv` |
 | `mlorq_compressor` | MNLI | 81.80% | 0.8171 | 1.00× | 62,928 | 0.0281 | **PASS** | `results/mnli_deep_sweep/mlorq_compressor/summary.csv` |
+| `admm_compressor` | MNLI | 81.80% | 0.8177 | 1.00× | 38,719 | 0.1563 | **PASS** | `results/mnli_deep_sweep/admm_compressor/summary.csv` |
 | `oats_compressor` | MNLI | 81.70% | 0.8159 | 1.00× | 58,879 | 0.3975 | **PASS** | `results/mnli_deep_sweep/oats_compressor/summary.csv` |
 
 ---
@@ -670,6 +673,9 @@ End-to-end classification accuracy and token throughput across input sequence le
 | `performer` | 256 | 78.90% | 0.7767 | 25,932 | 960.8 MB | **PASS** | `results/seqlen_48h/performer/seq_256/summary.csv` |
 | `performer` | 512 | 78.90% | 0.7767 | 45,812 | 970.8 MB | **PASS** | `results/seqlen_48h/performer/seq_512/summary.csv` |
 | `simple_ssm` | 128 | 50.92% | 0.6748 | 611 | 3,985.1 MB | **PASS** | `results/seqlen_48h/simple_ssm/seq_128/summary.csv` |
+| `hgrn2_layer` | 128 | **70.53%** | 0.7498 | 14,456 | 1,484.0 MB | **PASS** | `results/seqlen_48h/hgrn2_layer/seq_128/summary.csv` |
+| `hgrn2_layer` | 256 | **73.97%** | 0.7541 | 2,291 | 1,847.1 MB | **PASS** | `results/seqlen_48h/hgrn2_layer/seq_256/summary.csv` |
+| `hgrn2_layer` | 512 | 60.32% | 0.5728 | 3,927 | 1,466.1 MB | **PASS** | `results/seqlen_48h/hgrn2_layer/seq_512/summary.csv` |
 
 ---
 
@@ -710,5 +716,8 @@ Verification across independent random seeds (Seeds 42, 123, 456) evaluating sta
 | `saes_svd_v2` | DistilBERT | 456 | 90.71% | 0.9093 | 1.00× | — | `results/multiseed_rigor_distilbert/saes_svd_v2/seed_456/summary.csv` |
 | `saes_svd_v2` | RoBERTa | 123 | 93.81% | 0.9397 | 1.00× | — | `results/multiseed_rigor_roberta/saes_svd_v2/seed_123/summary.csv` |
 | `saes_svd_v2` | RoBERTa | 456 | **94.15%** | 0.9426 | 1.00× | — | `results/multiseed_rigor_roberta/saes_svd_v2/seed_456/summary.csv` |
+| `salr` | DistilBERT | 123 | **90.83%** | 0.9117 | 1.00× | — | `results/multiseed_rigor_distilbert/salr/seed_123/summary.csv` |
+| `salr` | DistilBERT | 456 | 90.71% | 0.9099 | 1.00× | — | `results/multiseed_rigor_distilbert/salr/seed_456/summary.csv` |
+| `salr` | RoBERTa | 123 | **93.92%** | 0.9407 | 1.00× | — | `results/multiseed_rigor_roberta/salr/seed_123/summary.csv` |
 
 
