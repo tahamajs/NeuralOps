@@ -659,10 +659,16 @@ class AdaSVDCompressor(BaseCompressor):
             W = raw_w.float()
 
         max_param_r = max(1, min(in_f, out_f, int(0.75 * (in_f * out_f) / (in_f + out_f))))
-        r_floor = max(self.min_rank, int(0.15 * min(in_f, out_f)))
-        if "c_attn" in name.lower() or (in_f >= 768 and out_f >= 2000):
-            r_floor = max(r_floor, 288)
-            max_param_r = min(max_param_r, 432)
+        if self.rank is not None:
+            r_floor = max(1, min(self.min_rank, rank))
+            if "c_attn" in name.lower() or (in_f >= 768 and out_f >= 2000):
+                r_floor = max(r_floor, min(288, rank))
+                max_param_r = min(max_param_r, 432)
+        else:
+            r_floor = max(self.min_rank, int(0.15 * min(in_f, out_f)))
+            if "c_attn" in name.lower() or (in_f >= 768 and out_f >= 2000):
+                r_floor = max(r_floor, 288)
+                max_param_r = min(max_param_r, 432)
 
         r = max(r_floor, min(rank, max_param_r))
         if r > max_param_r:
@@ -827,15 +833,18 @@ class AdaSVDCompressor(BaseCompressor):
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
 
             max_param_r = max(1, min(in_f, out_f, int(0.75 * (in_f * out_f) / (in_f + out_f))))
-            r_floor = max(self.min_rank, int(0.15 * min(in_f, out_f)))
-            if "c_attn" in name.lower() or (in_f >= 768 and out_f >= 2000):
-                r_floor = max(r_floor, 288)
-                max_param_r = min(max_param_r, 432)
-
             if self.rank is not None:
+                r_floor = max(1, min(self.min_rank, self.rank))
                 frac = layer_importances.get(name, 1.0) / (total_importance / max(1, len(target_layers)))
                 allocated_rank = int(round(self.rank * frac))
+                if "c_attn" in name.lower() or (in_f >= 768 and out_f >= 2000):
+                    r_floor = max(r_floor, min(288, self.rank))
+                    max_param_r = min(max_param_r, 432)
             else:
+                r_floor = max(self.min_rank, int(0.15 * min(in_f, out_f)))
+                if "c_attn" in name.lower() or (in_f >= 768 and out_f >= 2000):
+                    r_floor = max(r_floor, 288)
+                    max_param_r = min(max_param_r, 432)
                 frac = layer_importances.get(name, 1.0) / max(total_importance, 1e-8)
                 allocated_rank = int(round(min(in_f, out_f) * self.target_param_ratio * frac * len(target_layers)))
 
