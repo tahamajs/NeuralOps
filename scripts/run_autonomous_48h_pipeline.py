@@ -35,8 +35,30 @@ def log(msg: str):
     try:
         with open(MASTER_LOG, "a", encoding="utf-8") as f:
             f.write(line + "\n")
-    except Exception:
-        pass
+def auto_commit_and_push(msg: str):
+    try:
+        subprocess.run(["git", "add", "results", "MASTER_PROJECT_RESULTS.md"], cwd=str(BASE_DIR), check=False)
+        commit_res = subprocess.run(
+            ["git", "commit", "-m", f"auto(48h-pipeline): {msg}"],
+            cwd=str(BASE_DIR),
+            capture_output=True,
+            text=True
+        )
+        if "nothing to commit" not in commit_res.stdout.lower() and "clean" not in commit_res.stdout.lower():
+            log(f"[AUTO-COMMIT] {msg}")
+            push_res = subprocess.run(
+                ["git", "push", "origin", "main"],
+                cwd=str(BASE_DIR),
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            if push_res.returncode == 0:
+                log(f"[AUTO-PUSH] Synced with origin/main")
+            else:
+                log(f"[AUTO-PUSH NOTE] Push output: {push_res.stderr.strip()[:100]}")
+    except Exception as e:
+        log(f"[AUTO-COMMIT EXCEPTION] {e}")
 
 def get_vram_used():
     try:
@@ -145,7 +167,10 @@ def execute_stage(stage_name, task_list, workers=4):
                 log(f"[ERROR] Stage task {t['name']} failed with exception: {e}")
                 failed += 1
             log(f"[{stage_name} Progress]: Done: {completed} | Failed: {failed} | Total: {len(task_list)}")
+            if completed % 10 == 0:
+                auto_commit_and_push(f"{stage_name} batch checkpoint ({completed}/{len(task_list)} tasks)")
     log(f"[STAGE COMPLETE] {stage_name} Finished: {completed} completed, {failed} failed.\n")
+    auto_commit_and_push(f"{stage_name} completed ({completed} passed, {failed} failed)")
 
 def build_all_tasks():
     stages = {}
