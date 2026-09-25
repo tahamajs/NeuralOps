@@ -307,6 +307,8 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 | `direct_svd` | RoBERTa | 93.46% | 93.46% | 93.46% | 93.46% | 1.00× | **Invariance PASS** |
 | `erc_svd` | DistilBERT | 90.60% (0.5882) | 89.56% (0.3576) | 90.48% (0.3295) | 90.60% (0.5882) | 1.04× | **PASS** |
 | `erc_svd` | RoBERTa | 93.46% (0.6387) | 92.09% (0.4206) | 52.06% (0.3011) | 93.46% (0.6387) | 1.05× $\to$ 1.08× | **PASS (r=64, 128, 384)** |
+| `frandi` | DistilBERT | 90.83% | 90.71% | 90.37% | 84.86% | 1.00× $\to$ 1.19× | **Monotonic Scaling PASS** |
+| `frandi` | RoBERTa | 93.81% | [QUEUED] | [QUEUED] | [QUEUED] | 1.00× | **PASS (r=64)** |
 
 ---
 
@@ -694,6 +696,7 @@ Verification across independent random seeds (Seeds 42, 123, 456) evaluating sta
 | `kronecker_compressor` | RoBERTa | 123 | **91.74%** | 0.9196 | **1.04×** | — | `results/multiseed_rigor_roberta/kronecker_compressor/seed_123/summary.csv` |
 | `kronecker_compressor` | RoBERTa | 456 | **91.74%** | 0.9196 | **1.04×** | — | `results/multiseed_rigor_roberta/kronecker_compressor/seed_456/summary.csv` |
 | `mlorq_compressor` | DistilBERT | 123 | **90.83%** | 0.9109 | 1.00× | 0.0290 | `results/multiseed_rigor_distilbert/mlorq_compressor/seed_123/summary.csv` |
+| `mlorq_compressor` | DistilBERT | 456 | **90.83%** | 0.9109 | 1.00× | 0.0290 | `results/multiseed_rigor_distilbert/mlorq_compressor/seed_456/summary.csv` |
 | `mlorq_compressor` | RoBERTa | 123 | **94.50%** | 0.9463 | 1.00× | 0.0402 | `results/multiseed_rigor_roberta/mlorq_compressor/seed_123/summary.csv` |
 | `rpca_compressor` | DistilBERT | 123 | 90.83% | 0.9117 | 1.00× | — | `results/multiseed_rigor_distilbert/rpca_compressor/seed_123/summary.csv` |
 | `rpca_compressor` | DistilBERT | 456 | 90.71% | 0.9099 | 1.00× | — | `results/multiseed_rigor_distilbert/rpca_compressor/seed_456/summary.csv` |
