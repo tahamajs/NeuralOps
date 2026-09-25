@@ -109,6 +109,8 @@ FIELDS = [
     "perplexity",
     "ppl_status",
     "long_context_accuracy",
+    "calibration_time_s",
+    "recovery_time_s",
     "error",
     "path",
     "timestamp",
@@ -370,7 +372,7 @@ def modules() -> List[str]:
 def fields(name: str) -> Tuple[str, Optional[str]]:
     if name in {"sst2", "cola"}:
         return ("sentence", None)
-    if name in {"ag_news", "agnews", "imdb"} or "wikitext" in name.lower():
+    if name in {"ag_news", "agnews", "imdb"} or "wikitext" in name.lower() or name == "c4":
         return ("text", None)
     if name == "mrpc":
         return ("sentence1", "sentence2")
@@ -400,7 +402,7 @@ def encode(tokenizer, batch, dataset_name, seq_len, device):
     )
     is_cuda = device.type == "cuda"
     
-    if "wikitext" in dataset_name.lower():
+    if "wikitext" in dataset_name.lower() or dataset_name == "c4":
         if is_cuda:
             x = {k: v.pin_memory().to(device, non_blocking=True) for k, v in x.items()}
         else:
@@ -592,6 +594,7 @@ def compute_compression_metrics(
         "lora_params": lora_params,
         "avg_reconstruction_error": avg_reconstruction_error,
         "weighted_reconstruction_error": weighted_reconstruction_error,  # ← این خط
+        "calibration_time_s": comp_stats.get("calibration_time_s", 0.0),
 
         "per_layer_reconstruction_errors": layer_errors,
         "per_layer_ranks": layer_ranks,
@@ -859,7 +862,7 @@ def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=
 def evaluate_comprehensive(
     model, tokenizer, ds, name, seq_len, batch_size, device, fp16=True, precomputed_batches=None
 ):
-    if "wikitext" in name.lower():
+    if "wikitext" in name.lower() or name == "c4":
         return evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=fp16)
     
     model.eval()
@@ -2047,6 +2050,8 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
         had_nan = False
         rec_steps = 0
         trainable_recovery_params = 0
+        measured_calib_time = 0.0
+        recovery_time_s = 0.0
 
         if name not in ("full", "dense"):
             if hasattr(model, "config") and model.config is not None:
@@ -2634,7 +2639,9 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
                         module_rank, name, getattr(args, "lora_rank", None),
                     )
 
+            t_compress_start = time.monotonic()
             model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
+            measured_calib_time = round(time.monotonic() - t_compress_start, 2)
             model = model.to(device)
             injected = True
             path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
@@ -2712,6 +2719,7 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
                 LOG.info("=" * 70)
 
             had_nan = False
+            recovery_time_s = 0.0
             recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}
             should_recover = (
                 args.recovery_steps > 0
@@ -2772,6 +2780,7 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
                     trainable_ids = {id(p) for p in trainable}
                     for p in model.parameters():
                         p.requires_grad = (id(p) in trainable_ids)
+                    t_recovery_start = time.monotonic()
                     if getattr(args, "kl_distill", False):
                         LOG.info("Running recovery with KL Distillation (alpha=%.2f, temp=%.1f)", args.kl_alpha, args.kl_temperature)
                         finetune_with_kd(
@@ -2788,6 +2797,7 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
                             weight_decay=args.weight_decay, timeout=effective_timeout,
                             span_lambda=float(getattr(args, "span_lambda", 0.0) or 0.0),
                         )
+                    recovery_time_s = round(time.monotonic() - t_recovery_start, 2)
 
         total_params_after = sum(p.numel() for p in model.parameters())
 
@@ -2985,6 +2995,9 @@ def run_single_module_main(args) -> dict:
     try:
         if "wikitext" in args.dataset.lower():
             ds = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1")
+        elif args.dataset == "c4":
+            c4_val = load_dataset("allenai/c4", "en", split="validation[:2000]")
+            ds = {"train": c4_val, "validation": c4_val}
         elif args.dataset_dir and Path(args.dataset_dir).exists():
             ds = load_from_disk(args.dataset_dir)
         elif args.dataset in {"ag_news", "agnews"}:
@@ -3029,9 +3042,9 @@ def run_single_module_main(args) -> dict:
         from transformers import AutoModelForCausalLM, AutoConfig
         
         cfg = AutoConfig.from_pretrained(args.model)
-        if "wikitext" in args.dataset.lower():
+        if "wikitext" in args.dataset.lower() or args.dataset == "c4":
             if cfg.model_type in ("distilbert", "bert", "roberta", "albert", "deberta", "deberta-v2", "electra"):
-                LOG.warning("Skipping model %s on wikitext because it lacks an LM head.", args.model)
+                LOG.warning("Skipping model %s on wikitext/c4 because it lacks an LM head.", args.model)
                 out = Path(args.output_dir)
                 out.mkdir(parents=True, exist_ok=True)
                 csv_name = f"summary_{args.output_suffix}.csv" if getattr(args, "output_suffix", None) else "summary.csv"
@@ -3252,7 +3265,7 @@ def run_single_module_main(args) -> dict:
         state = torch.load(checkpoint, map_location="cpu", weights_only=False)
         _safe_load_state(base, state)
     else:
-        if args.finetune_steps > 0 and "wikitext" not in args.dataset.lower():
+        if args.finetune_steps > 0 and "wikitext" not in args.dataset.lower() and args.dataset != "c4":
             if args.finetune_mode == "lora":
                 LOG.info("Fine-tuning LoRA adapters for %d steps before module injection (lr=%.1e)", args.finetune_steps, args.learning_rate)
                 finetune_lora(base, tokenizer, train, args.dataset, args.finetune_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=args.learning_rate)
@@ -3317,7 +3330,7 @@ def run_single_module_main(args) -> dict:
     eval_batches = []
     train_batches = []
     
-    if "wikitext" not in args.dataset.lower():
+    if "wikitext" not in args.dataset.lower() and args.dataset != "c4":
         if _eval_cache and _eval_cache.exists() and _train_cache and _train_cache.exists():
             LOG.info("Loading pre-cached batches from %s (skipping tokenization)", _cached_dir)
             eval_batches = [(d, t.to(device)) for d, t in [
@@ -3367,7 +3380,7 @@ def run_single_module_main(args) -> dict:
 
     base.to(device)
     base_benchmark_ppl = None
-    if "wikitext" in args.dataset.lower():
+    if "wikitext" in args.dataset.lower() or args.dataset == "c4":
         base_eval = evaluate_perplexity(base, tokenizer, val, eval_seq_len, args.batch_size, device, fp16=args.precision == "fp16")
         base_benchmark_ppl = base_eval.get("perplexity")
         base_benchmark_acc = 0.0
@@ -3395,7 +3408,7 @@ def run_single_module_main(args) -> dict:
     # Any module with accuracy <= pass_threshold is statistically indistinguishable from
     # random chance or majority-class guess, and is classified as SKIP_<FAMILY>_INCOMPATIBLE_ACCURACY_PLATEAU.
     # -------------------------------------------------------------------------
-    if "wikitext" in args.dataset.lower():
+    if "wikitext" in args.dataset.lower() or args.dataset == "c4":
         total_val_samples = 1000
         majority_count = 500
         majority_baseline_ratio = 0.5
@@ -3707,7 +3720,7 @@ def run_single_module_main(args) -> dict:
         # STEP 0: Honest Three-Way Status Classification
         # -------------------------------------------------------------------------
         if not status.startswith("SKIP_") and not status.startswith("FAIL"):
-            if "wikitext" in args.dataset.lower():
+            if "wikitext" in args.dataset.lower() or args.dataset == "c4":
                 ppl_val = perf_metrics.get("perplexity", 0.0)
                 try:
                     ppl_num = float(ppl_val)
@@ -3782,7 +3795,7 @@ def run_single_module_main(args) -> dict:
                 pass
 
         ppl_val_raw = perf_metrics.get("perplexity", "")
-        if "wikitext" in args.dataset.lower():
+        if "wikitext" in args.dataset.lower() or args.dataset == "c4":
             try:
                 ppl_float = float(ppl_val_raw)
                 if not math.isfinite(ppl_float):
@@ -3811,6 +3824,8 @@ def run_single_module_main(args) -> dict:
             "perplexity": ppl_val_raw,
             "elapsed_s": round(time.monotonic() - t, 2),
             "eval_time_s": perf_metrics.get("eval_time_s", round(time.monotonic() - t, 2)),
+            "calibration_time_s": comp_metrics.get("calibration_time_s") if comp_metrics.get("calibration_time_s", 0.0) > 0.0 else measured_calib_time,
+            "recovery_time_s": recovery_time_s,
             "latency_ms": perf_metrics.get("latency_ms", 0.0),
             "peak_vram_mb": perf_metrics.get("peak_vram_mb", 0.0),
             "tokens_per_sec": perf_metrics.get("tokens_per_sec") if perf_metrics.get("tokens_per_sec") is not None else perf_metrics.get("throughput", 0.0),
@@ -3844,7 +3859,7 @@ def run_single_module_main(args) -> dict:
         LOG.info("[%d/%d] %s -> %s %.2f%% (F1: %s, Peak VRAM: %s MB)",
                  n, len(names), name, status, acc, f1_disp, vram_disp)
 
-        if "wikitext" in args.dataset.lower():
+        if "wikitext" in args.dataset.lower() or args.dataset == "c4":
             is_successful_run = status in ("PASS", "PASS_LOW_PPL") and (name == "full" or comp_metrics.get("num_compressed_layers", 0) > 0 or comp_metrics.get("num_injected_attention_layers", 0) > 0)
         else:
             is_successful_run = (status == "PASS") and (acc >= pass_threshold_pct)
