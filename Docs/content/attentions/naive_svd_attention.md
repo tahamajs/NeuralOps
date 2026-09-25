@@ -147,6 +147,7 @@ inject_attention(model, module_name="naive_svd_inject", rank=64)
 | Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
 | DistilBERT | SST-2 | PASS | 91.06% | 51.30% | 1.45 ms | 480 MB |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **86.58%** | -4.02% | 0.8681 | 1.16x | 6 | [svd-linear-attention-distilbert-sst2-naive-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-naive-svd) | 2026-09-26 |
 
 ## 8. Attention Maps & Activations
 Demonstrates severe attention drift and entropy collapse without activation-aware calibration.
