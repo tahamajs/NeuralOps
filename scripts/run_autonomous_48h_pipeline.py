@@ -130,7 +130,7 @@ def run_single_task(task):
         try:
             with open(summary_path, "r", encoding="utf-8") as f:
                 content = f.read()
-            if "CRASH_NO_OUTPUT" not in content and ("PASS" in content or "FAIL" in content):
+            if "CRASH_NO_OUTPUT" not in content and len(content.strip().split("\n")) >= 2:
                 log(f"[SKIP] {task['name']} already completed ({summary_path})")
                 return True
         except Exception:
@@ -400,7 +400,8 @@ def main():
             try:
                 with open(sp, "r", encoding="utf-8") as f:
                     c = f.read()
-                if "CRASH_NO_OUTPUT" not in c and ("PASS" in c or "FAIL" in c):
+                # Recognize all non-empty evaluated statuses (PASS, FAIL, MODERATE_EXPANSION, etc.)
+                if "CRASH_NO_OUTPUT" not in c and len(c.strip().split("\n")) >= 2:
                     continue
             except Exception:
                 pass
