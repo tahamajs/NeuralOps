@@ -156,10 +156,11 @@ These modules introduce low-rank or structural approximations while maintaining 
 
 
 
-### Category 3: Category B (Linear Attention / SSM / MoE) (87 Modules)
+### Category 3: Category B (Linear Attention / SSM / MoE) (86 Modules)
 
 > [!NOTE]
-> **Category 3 Evaluation Criteria**: "PASS" in Category 3 indicates that the module runs without crashing and produces a bounded logit difference ($< 20.0$). It reflects operational stability and mathematical consistency, NOT accuracy above chance. For downstream classification recovery and accuracy deltas, see Section 4.5 (*Category B High-Diff Recovery Verification*).
+> - **Category 3 Evaluation Criteria**: "PASS" in Category 3 indicates that the module runs without crashing and produces a bounded logit difference ($< 20.0$). It reflects operational stability and mathematical consistency, NOT accuracy above chance. For downstream classification recovery and accuracy deltas, see Section 4.5 (*Category B High-Diff Recovery Verification*).
+> - **Galerkin Consolidation**: `galerkin_attention` is a registered alias of `galerkin` (both point to `GalerkinAttention` in `Codes/framework/attentions/galerkin_attention.py`). Consolidating `galerkin_attention` into canonical `galerkin` updates Category 3 from 87 to 86 modules.
 
 These modules replace standard softmax with linear kernels, state-space models, or mixture-of-experts. Their high zero-shot diff is expected due to differing mathematical formulations before recovery fine-tuning:
 
@@ -178,7 +179,6 @@ These modules replace standard softmax with linear kernels, state-space models, 
 | `factorised_matrix_state` | `0.3553` | `0.0269` | `7.8173` | **PASS** |
 | `fused_svd_kernel` | `0.0836` | `0.0156` | `1.7079` | **PASS** |
 | `galerkin` | `2.1033` | `0.0477` | `0.2462` | **PASS** |
-| `galerkin_attention` | `2.2823` | `0.0906` | `0.4529` | **PASS** |
 | `galerkin_inject` | `1.6738` | `0.0401` | `0.3481` | **PASS** |
 | `gated_delta_net` | `0.8997` | `0.0146` | `1.5838` | **PASS** |
 | `gated_deltanet_block` | `0.7416` | `0.0060` | `8.7928` | **PASS** |
