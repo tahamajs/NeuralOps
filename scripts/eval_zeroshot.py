@@ -1,15 +1,15 @@
 """
 Zero-shot reasoning evaluation using LM-Evaluation-Harness protocol.
-High-throughput GPU-bound engine:
-1. Batches across samples (BATCH_SIZE=32-64 continuations per forward pass).
-2. Pre-tokenizes entire dataset upfront (eliminates CPU tokenization bottleneck).
-3. Length-sorted batching to minimize padding waste.
-4. Max sequence length 1024 with OOM fallback (halves batch on OOM).
-5. Standard Winogrande prefix/continuation split matching LM-Eval protocol.
-6. FP32 model with selective torch.amp.autocast(fp16) for numerical stability.
-7. Explicit VRAM cleanup per task.
+High-throughput, memory-lean engine:
+1. Lazy per-task dataset loading & pre-tokenization with immediate gc/empty_cache.
+2. max_length=512 to cut memory buffers by 2x.
+3. Default batch_size=16 for low VRAM and host RAM footprint.
+4. Length-sorted batching across samples.
+5. Standard Winogrande prefix/continuation split.
+6. FP32 model with selective torch.amp.autocast(fp16) on CUDA.
 """
 import argparse
+import gc
 import json
 import time
 import torch
@@ -97,8 +97,10 @@ def _forward_with_oom_fallback(model, input_ids, attention_mask, device):
             return torch.cat([logits_1, logits_2], dim=0)
 
 
-def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=32):
+def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=16):
     cfg = TASKS[task_name]
+    
+    # 1. Lazy load dataset per task
     try:
         if task_name in PARQUET_URLS:
             ds = load_dataset("parquet", data_files=PARQUET_URLS[task_name], split="train")
@@ -116,7 +118,7 @@ def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=32):
     orig_pad_side = tokenizer.padding_side
     tokenizer.padding_side = "right"
 
-    # Step 1: Collect all sample context-continuation pairs and metadata
+    # 2. Extract only needed samples (up to num_samples)
     all_pairs = []       # list of (ctx_str, cont_str)
     all_meta = []        # list of (sample_idx, choice_idx)
     labels = []
@@ -129,7 +131,7 @@ def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=32):
 
         if task_name == "winogrande":
             choices = [ex["option1"], ex["option2"]]
-            label = int(ex["answer"]) - 1  # 1-indexed -> 0-indexed
+            label = int(ex["answer"]) - 1
             if "_" in context:
                 pre, post = context.split("_", 1)
             else:
@@ -166,12 +168,19 @@ def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=32):
             all_pairs.append(pair)
             all_meta.append((i, ci))
 
-    # Step 2: Pre-tokenize all prompts and contexts at once
+    # Free dataset object immediately
+    del ds
+    gc.collect()
+
+    # 3. Pre-tokenize with max_length=512 (cuts buffer RAM/VRAM by 2x)
     all_prompts = [ctx + cont for ctx, cont in all_pairs]
     all_contexts = [ctx for ctx, _ in all_pairs]
 
-    enc_prompts = tokenizer(all_prompts, padding=False, truncation=True, max_length=1024)
-    enc_contexts = tokenizer(all_contexts, padding=False, truncation=True, max_length=1024)
+    enc_prompts = tokenizer(all_prompts, padding=False, truncation=True, max_length=512)
+    enc_contexts = tokenizer(all_contexts, padding=False, truncation=True, max_length=512)
+
+    del all_prompts, all_contexts, all_pairs
+    gc.collect()
 
     items = []
     for pair_idx, (p_ids, c_ids) in enumerate(zip(enc_prompts["input_ids"], enc_contexts["input_ids"])):
@@ -184,10 +193,13 @@ def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=32):
             "seq_len": len(p_ids)
         })
 
-    # Step 3: Sort by length to minimize batch padding waste
+    del enc_prompts, enc_contexts
+    gc.collect()
+
+    # 4. Sort by length to minimize padding waste
     items.sort(key=lambda x: x["seq_len"])
 
-    # Step 4: Batch scoring across samples
+    # 5. Batched scoring with batch_size=16
     pad_token_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
     all_scores = {}
     t0 = time.time()
@@ -221,13 +233,13 @@ def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=32):
                 score = c_log_probs.gather(1, c_ids.unsqueeze(-1)).sum().item()
             all_scores[it["meta"]] = score
 
-        if (b_idx + 1) % 15 == 0 or (b_idx + 1) == n_batches:
+        if (b_idx + 1) % 25 == 0 or (b_idx + 1) == n_batches:
             elapsed = time.time() - t0
             eta = (elapsed / (b_idx + 1)) * (n_batches - (b_idx + 1))
             pct = ((b_idx + 1) / n_batches) * 100
             print(f"  {task_name}: batch {b_idx + 1}/{n_batches} ({pct:.0f}%, elapsed {elapsed:.1f}s, ETA {eta:.1f}s)")
 
-    # Step 5: Evaluate predictions
+    # 6. Evaluate accuracy
     correct = 0
     total = len(labels)
     for sample_idx in range(total):
@@ -239,8 +251,9 @@ def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=32):
 
     tokenizer.padding_side = orig_pad_side
 
-    # Free memory
-    del enc_prompts, enc_contexts, items, all_scores, all_pairs
+    # 7. Strict memory cleanup per task
+    del items, all_scores, all_meta, labels, num_choices_per_sample
+    gc.collect()
     if device.type == "cuda":
         torch.cuda.empty_cache()
 
@@ -254,7 +267,7 @@ def main():
     ap.add_argument("--model", default="models/gpt2")
     ap.add_argument("--tasks", default="piqa,arc_easy,arc_challenge,hellaswag,winogrande")
     ap.add_argument("--num_samples", type=int, default=500)
-    ap.add_argument("--batch_size", type=int, default=32)
+    ap.add_argument("--batch_size", type=int, default=16)
     ap.add_argument("--output_dir", required=True)
     args = ap.parse_args()
 
@@ -270,7 +283,6 @@ def main():
         model, _ = apply_module_to_model(model, args.module, "compressor", 
                                           rank=256, device=torch.device(device))
 
-    # Keep in FP32, autocast per forward pass for stability & maximum speed
     model = model.to(device).float()
     model.eval()
 
