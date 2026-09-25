@@ -450,7 +450,7 @@ print('Output logits shape:', outputs.logits.shape)
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.94%** | -0.12% | 0.9127 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-nystrom](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-nystrom) | 2026-09-19 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.71%** | +0.11% | 0.9107 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-nystrom](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-nystrom) | 2026-09-25 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.80%** | +0.00% | 0.8177 | 1.00x | 0 | [svd-linear-attention-distilbert-mnli-full-nystrom](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-nystrom) | 2026-09-19 |
 
 
