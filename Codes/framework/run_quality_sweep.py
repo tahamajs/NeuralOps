@@ -2996,7 +2996,11 @@ def run_single_module_main(args) -> dict:
         if "wikitext" in args.dataset.lower():
             ds = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1")
         elif args.dataset == "c4":
-            c4_val = load_dataset("allenai/c4", "en", split="validation[:2000]")
+            c4_val = load_dataset(
+                "allenai/c4",
+                data_files={"validation": "en/c4-validation.00000-of-00008.json.gz"},
+                split="validation[:2000]",
+            )
             ds = {"train": c4_val, "validation": c4_val}
         elif args.dataset_dir and Path(args.dataset_dir).exists():
             ds = load_from_disk(args.dataset_dir)
