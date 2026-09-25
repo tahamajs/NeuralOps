@@ -136,15 +136,15 @@ def run_single_task(task):
         except Exception:
             pass
 
-    # Dynamic VRAM governor: strictly keep VRAM between 4000 MB and 5500 MB (never full VRAM)
+    # Dynamic VRAM governor: allow up to 4 concurrent tasks, capping VRAM at 4800 MB (never full VRAM)
     while True:
         tele = get_vram_and_util()
         with global_lock:
             cur_active = active_workers_counter[0]
-        # Allow new task only if VRAM < 4400 MB AND fewer than 3 tasks currently executing
-        if tele["used_mb"] < 4400 and cur_active < 3:
+        # Allow new task only if VRAM < 4800 MB AND fewer than 4 tasks currently executing
+        if tele["used_mb"] < 4800 and cur_active < 4:
             break
-        time.sleep(2)
+        time.sleep(1)
 
     with global_lock:
         active_workers_counter[0] += 1
@@ -161,7 +161,7 @@ def run_single_task(task):
         "--model_family", task["model_family"],
         "--dataset", task["dataset"],
         "--batch_size", str(task.get("batch_size", 64)),
-        "--max_vram_fraction", "0.50",
+        "--max_vram_fraction", "0.45",
         "--recovery_steps", str(task.get("recovery_steps", 50)),
         "--learning_rate", str(task.get("lr", "2e-4")),
         "--seed", str(task.get("seed", 42)),
@@ -179,6 +179,7 @@ def run_single_task(task):
     env["PYTHONPATH"] = f"Codes;{env.get('PYTHONPATH', '')}" if os.name == "nt" else f"Codes:{env.get('PYTHONPATH', '')}"
     env["TORCH_ALLOW_TF32_CUBLAS_OVERRIDE"] = "1"
     env["CUDA_LAUNCH_BLOCKING"] = "0"
+    env["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
     t0 = time.time()
     try:
@@ -211,8 +212,19 @@ def run_single_task(task):
         with global_lock:
             active_workers_counter[0] -= 1
 
+def run_task_worker(task, total_pending, task_idx):
+    """Executes a single task in the shared worker pool, updating global accounting."""
+    res = run_single_task(task)
+    with global_lock:
+        global_completed_counter[0] += 1
+        cur_global = global_completed_counter[0]
+        if cur_global % 10 == 0:
+            auto_commit_and_push(f"Global 4-Worker Dynamic Checkpoint ({cur_global} tasks completed)")
+    log(f"[Dynamic Worker Progress]: Task {task_idx+1}/{total_pending} finished | Global Tasks Recorded: {cur_global}")
+    return res
+
 def run_stream_worker(stream_name, task_list):
-    """Executes a dedicated stream of tasks sequentially, contributing to the 6 concurrent streams."""
+    """Legacy stream worker kept for modular compatibility."""
     log(f"############################################################")
     log(f"### [LAUNCH STREAM] {stream_name}: {len(task_list)} Tasks Queued")
     log(f"############################################################")
@@ -254,7 +266,7 @@ def build_all_streams():
 
     streams = {}
 
-    # STREAM 1: Stage 2A — Category 5A SVD Multi-Rank Sweeps on DistilBERT (Batch 96)
+    # STREAM 1: Stage 2A — Category 5A SVD Multi-Rank Sweeps on DistilBERT (Batch 128)
     s1_tasks = []
     for m in cat5a_all:
         for r in [64, 128, 256, 384]:
@@ -262,12 +274,12 @@ def build_all_streams():
             s1_tasks.append({
                 "name": f"Stream 1 (Cat 5A r={r}) | DISTILBERT | {m}",
                 "module": m, "model": "models/distilbert_sst2", "model_family": "bert",
-                "dataset": "sst2", "rank": r, "batch_size": 96, "lr": "2e-4",
+                "dataset": "sst2", "rank": r, "batch_size": 128, "lr": "2e-4",
                 "out_dir": out, "summary_file": f"{out}/summary.csv",
             })
     streams["STREAM_1_DISTILBERT_SVD"] = s1_tasks
 
-    # STREAM 2: Stage 2B — Category 5A SVD Multi-Rank Sweeps on RoBERTa-base (Batch 64)
+    # STREAM 2: Stage 2B — Category 5A SVD Multi-Rank Sweeps on RoBERTa-base (Batch 96)
     s2_tasks = []
     for m in cat5a_all:
         for r in [64, 128, 256, 384]:
@@ -275,7 +287,7 @@ def build_all_streams():
             s2_tasks.append({
                 "name": f"Stream 2 (Cat 5A r={r}) | ROBERTA | {m}",
                 "module": m, "model": "models/roberta_sst2", "model_family": "roberta",
-                "dataset": "sst2", "rank": r, "batch_size": 64, "lr": "5e-5",
+                "dataset": "sst2", "rank": r, "batch_size": 96, "lr": "5e-5",
                 "out_dir": out, "summary_file": f"{out}/summary.csv",
             })
     streams["STREAM_2_ROBERTA_SVD"] = s2_tasks
@@ -360,8 +372,8 @@ def build_all_streams():
 
 def main():
     log("============================================================")
-    log("Starting Multi-Stream 48-Hour High-Performance GPU Pipeline")
-    log("Running 6 Stages CONCURRENTLY in Parallel Streams (Workers=6)")
+    log("Starting Multi-Worker Dynamic High-Performance GPU Pipeline")
+    log("Running 4 Parallel Workers across all remaining tasks (Batch=96-128)")
     log(f"Base Directory: {BASE_DIR}")
     log("============================================================")
 
@@ -371,28 +383,56 @@ def main():
     log("[SYSTEM] 5-minute GPU telemetry monitor initialized.")
 
     all_streams = build_all_streams()
-    total_tasks = sum(len(tasks) for tasks in all_streams.values())
-    log(f"Constructed 6 Parallel Streams with {total_tasks} total benchmark tasks.")
+
+    # Interleave tasks across streams so workers alternate between DistilBERT, RoBERTa, etc.
+    stream_task_lists = list(all_streams.values())
+    combined_tasks = []
+    max_len = max(len(tl) for tl in stream_task_lists)
+    for i in range(max_len):
+        for tl in stream_task_lists:
+            if i < len(tl):
+                combined_tasks.append(tl[i])
+
+    # Filter out already completed tasks up front so workers immediately jump to remaining ones
+    pending_tasks = []
+    for t in combined_tasks:
+        sp = Path(t["summary_file"])
+        if sp.exists() and sp.stat().st_size > 50:
+            try:
+                with open(sp, "r", encoding="utf-8") as f:
+                    c = f.read()
+                if "CRASH_NO_OUTPUT" not in c and ("PASS" in c or "FAIL" in c):
+                    continue
+            except Exception:
+                pass
+        pending_tasks.append(t)
+
+    total_tasks = len(combined_tasks)
+    total_pending = len(pending_tasks)
+    log(f"Total Framework Tasks: {total_tasks} | Already Done: {total_tasks - total_pending} | Remaining Pending: {total_pending}")
+
+    if total_pending == 0:
+        log("ALL TASKS ACROSS ALL STREAMS ARE COMPLETE!")
+        return
 
     t_global_start = time.time()
 
-    # Launch all 6 streams CONCURRENTLY using 6 worker threads
-    with ThreadPoolExecutor(max_workers=6) as executor:
+    # Launch 4 concurrent workers pulling from the shared pool of remaining tasks
+    with ThreadPoolExecutor(max_workers=4) as executor:
         future_map = {
-            executor.submit(run_stream_worker, s_name, tasks): s_name
-            for s_name, tasks in all_streams.items()
+            executor.submit(run_task_worker, task, total_pending, idx): task["name"]
+            for idx, task in enumerate(pending_tasks)
         }
         for future in as_completed(future_map):
-            s_name = future_map[future]
+            t_name = future_map[future]
             try:
-                comp, fail = future.result()
-                log(f"[STREAM DONE] Stream {s_name} concluded: {comp} passed, {fail} failed.")
+                res = future.result()
             except Exception as e:
-                log(f"[STREAM EXCEPTION] Stream {s_name} encountered error: {e}")
+                log(f"[TASK EXCEPTION] {t_name}: {e}")
 
     total_time_h = (time.time() - t_global_start) / 3600.0
     log("============================================================")
-    log(f"ALL 6 PARALLEL PIPELINE STREAMS COMPLETED IN {total_time_h:.2f} HOURS!")
+    log(f"ALL {total_tasks} PIPELINE TASKS COMPLETED IN {total_time_h:.2f} HOURS!")
     log("============================================================")
 
 if __name__ == "__main__":
