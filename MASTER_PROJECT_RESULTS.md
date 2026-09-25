@@ -326,11 +326,17 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 | `mgie_svd` | DistilBERT | 90.71% (0.7611) | 90.71% (0.6192) | 89.56% (0.4025) | 90.60% (0.2403) | 1.00× $\to$ 1.04× | **Monotonic Error Decay PASS** |
 | `mgie_svd` | RoBERTa | 94.04% (0.7764) | 94.04% (0.6324) | 92.20% (0.4108) | 92.78% (0.2424) | 1.00× $\to$ 1.04× | **Monotonic Error Decay PASS** |
 | `mlorq_compressor` | DistilBERT | 90.60% (0.0290) | 90.60% (0.0290) | 90.60% (0.0290) | 90.60% (0.0290) | 1.00× | **Invariance PASS** |
+| `mlorq_compressor` | RoBERTa | 94.38% (0.0402) | 94.38% (0.0402) | 94.38% (0.0402) | 94.38% (0.0402) | 1.00× | **Invariance PASS** |
 | `modegpt` | DistilBERT | 90.71% (0.7767) | 90.71% (0.6460) | 90.48% (0.4438) | 90.83% (0.2883) | 1.00× | **Monotonic Error Decay PASS** |
+| `modegpt` | RoBERTa | 94.04% (0.7904) | 94.04% (0.6580) | 91.74% (0.4525) | 92.43% (0.2919) | 1.00× | **Monotonic Error Decay PASS** |
 | `modegpt_compressor` | DistilBERT | 90.71% (0.7767) | 90.71% (0.6460) | 90.48% (0.4438) | 90.83% (0.2883) | 1.00× | **Monotonic Error Decay PASS** |
+| `modegpt_compressor` | RoBERTa | 94.04% (0.7904) | 94.04% (0.6580) | 91.74% (0.4525) | 92.43% (0.2919) | 1.00× | **Monotonic Error Decay PASS** |
 | `nmf_compressor` | DistilBERT | 90.71% | 90.71% | 90.71% | 90.48% | 1.00× | **PASS** |
 | `oats` | DistilBERT | 90.60% (0.4116) | 90.60% (0.4116) | 90.60% (0.4116) | 90.60% (0.4116) | 1.00× | **Invariance PASS** |
 | `oats_compressor` | DistilBERT | 90.60% (0.4116) | 90.60% (0.4116) | 90.60% (0.4116) | 90.60% (0.4116) | 1.00× | **Invariance PASS** |
+| `rotational_slicegpt_int4` | DistilBERT | 90.48% (0.5111) | 90.48% (0.5111) | 90.48% (0.5111) | 90.48% (0.5111) | 1.00× | **Invariance PASS** |
+| `rpca` | DistilBERT | 90.71% | 90.71% | 90.94% (0.3764) | 90.48% (0.2453) | 1.00× $\to$ 1.04× | **Monotonic Error Decay PASS** |
+| `rpca_compressor` | DistilBERT | 90.71% | 90.71% | 90.94% (0.3764) | 90.48% (0.2453) | 1.00× $\to$ 1.04× | **Monotonic Error Decay PASS** |
 
 ---
 
