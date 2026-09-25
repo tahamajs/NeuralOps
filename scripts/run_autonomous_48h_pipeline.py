@@ -136,12 +136,15 @@ def run_single_task(task):
         except Exception:
             pass
 
-    # Dynamic VRAM governor: strictly cap VRAM between 4000 MB and 5600 MB (prevent full VRAM saturation)
+    # Dynamic VRAM governor: strictly keep VRAM between 4000 MB and 5500 MB (never full VRAM)
     while True:
         tele = get_vram_and_util()
-        if tele["used_mb"] < 4900:
+        with global_lock:
+            cur_active = active_workers_counter[0]
+        # Allow new task only if VRAM < 4400 MB AND fewer than 3 tasks currently executing
+        if tele["used_mb"] < 4400 and cur_active < 3:
             break
-        time.sleep(3)
+        time.sleep(2)
 
     with global_lock:
         active_workers_counter[0] += 1
@@ -158,7 +161,7 @@ def run_single_task(task):
         "--model_family", task["model_family"],
         "--dataset", task["dataset"],
         "--batch_size", str(task.get("batch_size", 64)),
-        "--max_vram_fraction", "0.75",
+        "--max_vram_fraction", "0.50",
         "--recovery_steps", str(task.get("recovery_steps", 50)),
         "--learning_rate", str(task.get("lr", "2e-4")),
         "--seed", str(task.get("seed", 42)),
