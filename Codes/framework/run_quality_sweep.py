@@ -360,6 +360,15 @@ def fields(name: str) -> Tuple[str, Optional[str]]:
 
 def encode(tokenizer, batch, dataset_name, seq_len, device):
     a, b = fields(dataset_name)
+    if a not in batch:
+        if "sentence" in batch:
+            a = "sentence"
+        elif "text" in batch:
+            a = "text"
+        elif "content" in batch:
+            a = "content"
+    if b is not None and b not in batch:
+        b = None
     texts = batch[a] if b is None else list(zip(batch[a], batch[b]))
     x = tokenizer(
         texts,
