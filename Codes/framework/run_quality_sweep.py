@@ -1362,9 +1362,9 @@ def _auto_parallel_and_batch(
     if explicit_batch and requested_batch is not None:
         batch = requested_batch
     else:
-        if free_gb >= 6.0:
+        if free_gb >= 5.0:
             batch = 32
-        elif free_gb >= 4.0:
+        elif free_gb >= 3.0:
             batch = 16
         else:
             batch = 8
@@ -1372,14 +1372,16 @@ def _auto_parallel_and_batch(
     if explicit_parallel and requested_parallel is not None:
         parallel = requested_parallel
     else:
-        per_worker_gb = 2.0 if batch >= 16 else 1.2
-        n = int(free_gb // per_worker_gb)
-        if free_gb >= 6.0:
+        if free_gb >= 5.0:
             parallel = 2
-        elif free_gb >= 4.0:
+        elif free_gb >= 3.0:
             parallel = 2
         else:
             parallel = 1
+
+    if free_gb < 3.0 and torch.cuda.is_available():
+        logger.info("Free VRAM < 3.0 GB (%.2f GB) — sleeping 10s for VRAM to settle...", free_gb)
+        time.sleep(10)
 
     return parallel, batch
 
@@ -1485,6 +1487,13 @@ def parse_args(argv=None):
     ap.add_argument("--group_size", type=int, default=3)
     ap.add_argument("--defer_export", action="store_true", default=False)
     ap.add_argument("--max_error", type=float, default=0.40)
+    ap.add_argument(
+        "--strict_rank",
+        type=lambda x: str(x).lower() in ("true", "1", "yes"),
+        default=False,
+        help="If True, the compressor uses exactly the requested rank "
+             "without escalating it to fit the error threshold.",
+    )
     ap.add_argument("--a3_max_error", type=float, default=None)
     ap.add_argument(
         "--a3_target_attention_only",
@@ -1893,7 +1902,7 @@ def parse_args(argv=None):
     )
 
     # Pre-parse to check if a config file is provided
-    pre_args, _ = ap.parse_known_args()
+    pre_args, _ = ap.parse_known_args(raw_argv)
     if pre_args.config and Path(pre_args.config).exists():
         import yaml
 
@@ -1905,9 +1914,10 @@ def parse_args(argv=None):
             if hasattr(pre_args, k):
                 ap.set_defaults(**{k: v})
 
-    args, unknown_args = ap.parse_known_args()
+    args, unknown_args = ap.parse_known_args(raw_argv)
     args.unknown_args = unknown_args
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+    extended_args = {}
     if unknown_args:
         LOG.info("Parsed %d module-specific extended arguments: %s", len(unknown_args), unknown_args)
         i = 0
@@ -1927,12 +1937,20 @@ def parse_args(argv=None):
                         except ValueError:
                             parsed_val = val
                     setattr(args, key, parsed_val)
+                    extended_args[key] = parsed_val
                     i += 2
                 else:
                     setattr(args, key, True)
+                    extended_args[key] = True
                     i += 1
             else:
                 i += 1
+
+    # Remove --strict_rank from extended args if argparse already handled it
+    for key in list(extended_args.keys()):
+        if key == "strict_rank":
+            del extended_args[key]
+    args.extended_args = extended_args
 
     torch.manual_seed(args.seed)
     # Fix 9: respect OMP_NUM_THREADS
@@ -2035,15 +2053,17 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
                         "lora_rank", "lora_alpha", "sparsity", "use_fisher",
                         "recalibrate_ln", "n_calib",
                         # TPA-specific
-                        "tpa_rank",
+                        "tpa_rank", "strict_rank",
                     ):
                         setattr(model.config, attr_name, attr_val)
 
+                    # Also strip module prefix for standard configs (e.g. nmf_max_error -> max_error)
+                    if attr_name.startswith(name + "_"):
+                        stripped = attr_name[len(name) + 1:]
+                        setattr(model.config, stripped, attr_val)
 
-                        # Also strip module prefix for standard configs (e.g. nmf_max_error -> max_error)
-                        if attr_name.startswith(name + "_"):
-                            stripped = attr_name[len(name) + 1:]
-                            setattr(model.config, stripped, attr_val)
+                if getattr(args, "strict_rank", None) is not None:
+                    setattr(model.config, "strict_rank", args.strict_rank)
                 if getattr(args, "lora_rank", None) is not None:
                     setattr(model.config, "lora_rank", args.lora_rank)
                 if getattr(args, "asvd_dynamic_rank", None) is not None:
@@ -4148,6 +4168,8 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
         cmd.extend(["--kvtc_target_attention_only", str(args.kvtc_target_attention_only)])
     if getattr(args, "kvtc_fallback_to_original", None) is not None:
         cmd.extend(["--kvtc_fallback_to_original", str(args.kvtc_fallback_to_original)])
+    if getattr(args, "strict_rank", False):
+        cmd.extend(["--strict_rank", "True"])
     if getattr(args, "group_size", None) is not None:
         cmd.extend(["--group_size", str(args.group_size)])
     if getattr(args, "max_vram_fraction", None) is not None:
@@ -4157,7 +4179,7 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
     if getattr(args, "unknown_args", None):
         cmd.extend(args.unknown_args)
         
-    log_path = Path(f"logs/isolated/{module_name}.log")
+    log_path = Path(f"logs/isolated/{module_name}_r{args.rank}_{args.model_family}.log")
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
     print(f"[ISOLATED] Launching {module_name} (timeout={timeout_s}s) -> {log_path}")

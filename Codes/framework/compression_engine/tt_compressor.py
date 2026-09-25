@@ -299,6 +299,7 @@ class TTLinearLayer(nn.Module):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         fallback_to_none: bool = False,
+        strict_rank: bool = False,
     ) -> Optional["TTLinearLayer"]:
         """
         Decompose a pretrained nn.Linear, Conv1D, or LoRALinear layer into TT-cores using TT-SVD.
@@ -452,6 +453,10 @@ class TTLinearLayer(nn.Module):
                         return None  # signal caller to keep original
                     break
 
+                if strict_rank:
+                    # Strict rank requested: no rank escalation allowed
+                    break
+
                 # Step up rank for retry
                 step = max(4, (max_rank_for_compression - cur_tt_rank) // max(1, max_retries - attempt))
                 cur_tt_rank = min(cur_tt_rank + step, max_rank_for_compression)
@@ -544,6 +549,7 @@ class TTCompressor(BaseCompressor):
         target_attention_only: bool = False,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
+        strict_rank: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="tt", **kwargs)
@@ -556,6 +562,7 @@ class TTCompressor(BaseCompressor):
             target_attention_only = _cfg_get(comp_cfg, "target_attention_only", target_attention_only)
             lora_r = _cfg_get(comp_cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(comp_cfg, "lora_alpha", lora_alpha)
+            strict_rank = _cfg_get(comp_cfg, "strict_rank", strict_rank)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
@@ -571,6 +578,8 @@ class TTCompressor(BaseCompressor):
             lora_r = int(kwargs["lora_r"])
         if "lora_alpha" in kwargs and kwargs["lora_alpha"] is not None:
             lora_alpha = float(kwargs["lora_alpha"])
+        if "strict_rank" in kwargs and kwargs["strict_rank"] is not None:
+            strict_rank = bool(kwargs["strict_rank"])
 
         self.tt_rank = max(1, int(rank or tt_rank or 16))
         self.cfg = comp_cfg
@@ -581,6 +590,7 @@ class TTCompressor(BaseCompressor):
         self.target_attention_only = target_attention_only
         self.lora_r = lora_r
         self.lora_alpha = lora_alpha
+        self.strict_rank = bool(strict_rank)
         self.compressed_layers: List[Dict[str, Any]] = []
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
@@ -652,6 +662,7 @@ class TTCompressor(BaseCompressor):
                     fallback_to_none=self.fallback_to_original,
                     lora_r=self.lora_r,
                     lora_alpha=self.lora_alpha,
+                    strict_rank=self.strict_rank,
                 )
             except Exception as e:
                 logger.warning("TT-SVD decomposition failed for %s: %s. Keeping original module.", name, e)

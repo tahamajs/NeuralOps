@@ -596,7 +596,7 @@ def apply_module_to_model(
             cfg = getattr(model, "config", None)
             c_kwargs = {}
             if cfg is not None:
-                for k in ("rank_ratio", "max_error", "lora_rank", "target_attention_only", "use_jg_svd", "use_cholesky_jg", "energy_threshold", "group_size"):
+                for k in ("rank_ratio", "max_error", "lora_rank", "target_attention_only", "use_jg_svd", "use_cholesky_jg", "energy_threshold", "group_size", "strict_rank"):
                     if hasattr(cfg, k):
                         c_kwargs[k] = getattr(cfg, k)
             try:

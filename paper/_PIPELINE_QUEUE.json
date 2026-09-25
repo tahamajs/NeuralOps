@@ -331,13 +331,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_tt_linear_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tt_linear_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tt_linear_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_cachenotes",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cachenotes --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cachenotes",
@@ -684,13 +677,6 @@
       "id": "p3_gpt2_asvd_fn",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules asvd_fn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_asvd_fn",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_lillama_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lillama_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lillama_compressor",
       "status": "pending",
       "retries": 0
     },
@@ -1577,13 +1563,6 @@
       "retries": 0
     },
     {
-      "id": "p4_rob_tt_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tt_compressor --parallel 1 --batch_size 4 --output_suffix roberta_tt_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p4_rob_nha_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules nha_inject --parallel 1 --batch_size 4 --output_suffix roberta_nha_inject",
@@ -1762,13 +1741,6 @@
       "id": "p4_rob_astro_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules astro_factory --parallel 1 --batch_size 4 --output_suffix roberta_astro_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p4_rob_tt_linear",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tt_linear --parallel 1 --batch_size 4 --output_suffix roberta_tt_linear",
       "status": "pending",
       "retries": 0
     },
@@ -3047,13 +3019,6 @@
       "retries": 0
     },
     {
-      "id": "p4_rob_tt_compressor_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tt_compressor_factory --parallel 1 --batch_size 4 --output_suffix roberta_tt_compressor_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p4_rob_rpc_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules rpc_inject --parallel 1 --batch_size 4 --output_suffix roberta_rpc_inject",
@@ -3936,13 +3901,6 @@
       "retries": 0
     },
     {
-      "id": "p4_rob_tt_linear_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tt_linear_compressor --parallel 1 --batch_size 4 --output_suffix roberta_tt_linear_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p4_rob_adaptive_sparse_attention_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules adaptive_sparse_attention_inject --parallel 1 --batch_size 4 --output_suffix roberta_adaptive_sparse_attention_inject",
@@ -4030,13 +3988,6 @@
       "id": "p4_rob_flat_llm",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules flat_llm --parallel 1 --batch_size 4 --output_suffix roberta_flat_llm",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p4_rob_tt_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tt_factory --parallel 1 --batch_size 4 --output_suffix roberta_tt_factory",
       "status": "pending",
       "retries": 0
     },
@@ -4818,13 +4769,6 @@
       "retries": 0
     },
     {
-      "id": "p4_rob_tt",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tt --parallel 1 --batch_size 4 --output_suffix roberta_tt",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p4_rob_inject_gated_linear",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules inject_gated_linear --parallel 1 --batch_size 4 --output_suffix roberta_inject_gated_linear",
@@ -5084,13 +5028,6 @@
       "retries": 0
     },
     {
-      "id": "p4_rob_tt_linear_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tt_linear_factory --parallel 1 --batch_size 4 --output_suffix roberta_tt_linear_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p4_rob_selective_mamba",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules selective_mamba --parallel 1 --batch_size 4 --output_suffix roberta_selective_mamba",
@@ -5185,13 +5122,6 @@
       "id": "p4_rob_salr_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules salr_factory --parallel 1 --batch_size 4 --output_suffix roberta_salr_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p4_rob_mamba_svd_flash",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules mamba_svd_flash --parallel 1 --batch_size 4 --output_suffix roberta_mamba_svd_flash",
       "status": "pending",
       "retries": 0
     },
@@ -5931,13 +5861,6 @@
       "retries": 0
     },
     {
-      "id": "p4_rob_inject_mamba_svd_flash",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules inject_mamba_svd_flash --parallel 1 --batch_size 4 --output_suffix roberta_inject_mamba_svd_flash",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p4_rob_minimal_svd_v2_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules minimal_svd_v2_inject --parallel 1 --batch_size 4 --output_suffix roberta_minimal_svd_v2_inject",
@@ -6004,13 +5927,6 @@
       "id": "p4_rob_svd_mamba_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_mamba_inject --parallel 1 --batch_size 4 --output_suffix roberta_svd_mamba_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p4_rob_lillama_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules lillama_compressor --parallel 1 --batch_size 4 --output_suffix roberta_lillama_compressor",
       "status": "pending",
       "retries": 0
     },
