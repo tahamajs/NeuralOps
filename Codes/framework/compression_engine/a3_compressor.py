@@ -661,7 +661,7 @@ class A3Compressor(BaseCompressor):
 
         # Compute SVD on GPU if available for speedup, with graceful CPU fallback
         try:
-            use_cpu_svd = (in_f * out_f > 1_000_000) or not torch.cuda.is_available()
+            use_cpu_svd = not torch.cuda.is_available() or (in_f * out_f > 32_000_000)
             if use_cpu_svd:
                 W_cpu = W_w.detach().cpu().float()
                 U, S, Vt = torch.linalg.svd(W_cpu, full_matrices=False)
@@ -669,7 +669,8 @@ class A3Compressor(BaseCompressor):
                 S = S.to(device=W.device, dtype=W.dtype)
                 Vt = Vt.to(device=W.device, dtype=W.dtype)
             else:
-                U, S, Vt = torch.linalg.svd(W_w.float(), full_matrices=False)
+                W_dev = W_w.to(device=W.device, dtype=torch.float32)
+                U, S, Vt = torch.linalg.svd(W_dev, full_matrices=False)
                 U = U.to(device=W.device, dtype=W.dtype)
                 S = S.to(device=W.device, dtype=W.dtype)
                 Vt = Vt.to(device=W.device, dtype=W.dtype)
@@ -681,9 +682,6 @@ class A3Compressor(BaseCompressor):
             U = U_cpu.to(device=W.device, dtype=W.dtype)
             S = S_cpu.to(device=W.device, dtype=W.dtype)
             Vt = Vt_cpu.to(device=W.device, dtype=W.dtype)
-
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
 
         norm_orig = torch.linalg.norm(W).item()
 

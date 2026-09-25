@@ -213,10 +213,6 @@ class SwiftSVDCompressor(BaseCompressor):
         except Exception as e:
             logger.warning("SwiftSVD SVD failed for %s: %s", name, e)
             return None, 1.0, 0
-
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-
         norm_orig = torch.linalg.norm(W).item() + 1e-8
         cur_r = target_r
         best_factors: Optional[Tuple[torch.Tensor, torch.Tensor]] = None

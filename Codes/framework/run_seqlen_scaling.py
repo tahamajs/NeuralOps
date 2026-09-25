@@ -132,6 +132,14 @@ def benchmark_forward_scaling(model, batch_size: int, seq_len: int, warmup: int 
 def main():
     args = parse_args()
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    if torch.cuda.is_available():
+        torch.backends.cudnn.benchmark = True
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+        try:
+            torch.set_float32_matmul_precision("high")
+        except Exception:
+            pass
 
     print("=" * 80)
     print("SEQUENCE-LENGTH SCALING BENCHMARK SUITE")

@@ -188,9 +188,6 @@ class UniQLCompressor(BaseCompressor):
                         p.requires_grad = False
                     continue
 
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-
             cur_r = max(1, min(self.rank, max_r))
             cur_bits = self.bits
             best_w_rec = None

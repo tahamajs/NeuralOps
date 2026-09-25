@@ -386,10 +386,6 @@ class TTLinearLayer(nn.Module):
                             torch.cuda.empty_cache()
                         U, S, Vt = torch.linalg.svd(curr_matrix.cpu().float(), full_matrices=False)
                         U, S, Vt = U.to(orig_device), S.to(orig_device), Vt.to(orig_device)
-
-                    if torch.cuda.is_available():
-                        torch.cuda.empty_cache()
-
                     r_right = min(cur_tt_rank, len(S), layer.cores[i].shape[-1])
                     U_trunc = U[:, :r_right]
                     S_trunc = S[:r_right]
