@@ -97,7 +97,7 @@ def _forward_with_oom_fallback(model, input_ids, attention_mask, device):
             return torch.cat([logits_1, logits_2], dim=0)
 
 
-def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=16):
+def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=32):
     cfg = TASKS[task_name]
     
     # 1. Lazy load dataset per task
@@ -269,7 +269,7 @@ def main():
     ap.add_argument("--model", default="models/gpt2")
     ap.add_argument("--tasks", default="piqa,arc_easy,arc_challenge,hellaswag,winogrande")
     ap.add_argument("--num_samples", type=int, default=500)
-    ap.add_argument("--batch_size", type=int, default=16)
+    ap.add_argument("--batch_size", type=int, default=32)
     ap.add_argument("--output_dir", required=True)
     args = ap.parse_args()
 
