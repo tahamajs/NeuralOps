@@ -1,0 +1,12 @@
+[
+  {
+    "module": "hgrn2_layer",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 73.97,
+    "error": "base_before=66955010 base_after=70503170 delta=+5.30%",
+    "timestamp": "2026-09-25T14:28:26.115754"
+  }
+]
