@@ -146,8 +146,10 @@ def compute_perplexity_with_metrics(model, tokenizer, test_dataset, seq_len=1024
         total_text_tokens = min(total_text_tokens, max_eval_tokens)
 
     if device == "cuda" and torch.cuda.is_available():
+        torch.backends.cudnn.benchmark = True
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
         torch.cuda.reset_peak_memory_stats()
-        torch.cuda.empty_cache()
 
     t_start = time.time()
     nlls = []
@@ -158,7 +160,7 @@ def compute_perplexity_with_metrics(model, tokenizer, test_dataset, seq_len=1024
         for begin_loc in range(0, total_text_tokens, stride):
             end_loc = min(begin_loc + seq_len, total_text_tokens)
             trg_len = end_loc - prev_end_loc
-            input_ids = encodings.input_ids[:, begin_loc:end_loc].to(device)
+            input_ids = encodings.input_ids[:, begin_loc:end_loc].to(device, non_blocking=True)
             target_ids = input_ids.clone()
             target_ids[:, :-trg_len] = -100
 

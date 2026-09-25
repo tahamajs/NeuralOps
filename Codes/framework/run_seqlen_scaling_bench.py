@@ -308,6 +308,14 @@ def main():
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        torch.backends.cudnn.benchmark = True
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+        try:
+            torch.set_float32_matmul_precision("high")
+        except Exception:
+            pass
     logger.info("Using device: %s (%s)", device, torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU")
 
     seq_lens = [int(s.strip()) for s in args.seq_lens.split(",") if s.strip()]
