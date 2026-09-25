@@ -2,7 +2,7 @@
 
 **Date:** September 25, 2026  
 **Repository:** SVD Linear Attention & Unified Compression Framework  
-**Scope:** 250 Evaluated Unique Modules across DistilBERT, RoBERTa-base, and GPT-2 (consolidated from 252 alias keys)  
+**Scope:** 249 Evaluated Unique Modules across DistilBERT, RoBERTa-base, and GPT-2 (consolidated from 252 alias keys)  
 **Status:** 100% COMPLETE — ZERO ERRORS / ZERO CRASHES  
 
 ---
@@ -28,12 +28,14 @@ The project evaluates models across three distinct transformer topologies:
 | **Category 2: Good Pass** | 0.5 <= Logit Diff < 1.0 (Low-rank structural approximation) | 17 | PASS ✅ |
 | **Category 3: Category B (Linear/SSM/MoE)** | Non-softmax formulations (Linear kernels, State-Space, MoE) | 87 | PASS ✅ (Expected) |
 | **Category 4: Encoder-Only Attention** | Bidirectional attention (Safe NO_OP guardrail on causal GPT-2) | 18 | PASS ✅ (Safe) |
-| **Category 5A: Low-Rank / SVD Factorization** | Post-training matrix decomposition & parameter reduction (>1.05×) | 52 | PASS ✅ (Standalone) |
+| **Category 5A: Low-Rank / SVD Factorization** | Post-training matrix decomposition & parameter reduction (>1.05×) | 51 | PASS ✅ (Standalone) |
 | **Category 5B: Pruning, Quantization & KV Cache** | Unstructured sparsity, codebook clustering & runtime KV memory | 34 | PASS ✅ (Standalone) |
-| **TOTAL EVALUATED** | Complete repository module catalog | **250** | **100% OPERATIONAL** |
+| **TOTAL EVALUATED** | Complete repository module catalog | **249** | **100% OPERATIONAL** |
 
 > [!NOTE]
-> **Registry Alias Consolidation (252 → 250 Unique Modules)**: The repository module registry includes legacy alias keys. In Category 1, `weighted_ensemble` and `smart_weighted_ensemble` were registered aliases pointing to the identical underlying class (`HybridAttention` in `Codes/framework/attentions/hybrid_attention.py`). Consolidating these two redundant aliases into their canonical entry `hybrid_attention` updates Category 1 from 44 to 42 modules and the total unique evaluated catalog from 252 to 250.
+> **Registry Alias Consolidation (252 → 249 Unique Modules)**: The repository module registry includes legacy alias keys.
+> 1. In Category 1, `weighted_ensemble` and `smart_weighted_ensemble` were registered aliases pointing to the identical underlying class (`HybridAttention` in `Codes/framework/attentions/hybrid_attention.py`). Consolidating these two redundant aliases into canonical `hybrid_attention` reduced Category 1 from 44 to 42 modules (252 → 250).
+> 2. In Category 5A, `dobi` was a redundant registered alias of `dobi_svd` (both pointing to the identical factory function `dobi_factory` in `Codes/framework/compression_engine/dobi_svd.py`). Consolidating `dobi` into `dobi_svd` updates Category 5A from 52 to 51 modules and total unique evaluated catalog from 250 to 249.
 
 
 ---
@@ -303,7 +305,7 @@ These modules are designed specifically for bidirectional architectures and grac
 
 Offline compression algorithms in the repository are divided into two distinct functional categories based on mathematical mechanics and parameter reduction profiles:
 
-#### Category 5A: Low-Rank & Structured SVD Factorization Engines (52 Modules)
+#### Category 5A: Low-Rank & Structured SVD Factorization Engines (51 Modules)
 These modules decompose dense parameter matrices into low-rank factorized projections ($W \approx U \Sigma V^T$, Tucker, Tensor-Train, Kronecker, or SliceGPT subspace truncation), achieving measurable parameter count reduction and FLOP savings ($>1.05\times$ compression rate):
 
 | Module 1 | Module 2 | Module 3 | Module 4 |
@@ -320,10 +322,10 @@ These modules decompose dense parameter matrices into low-rank factorized projec
 | `cr_compressor` | `kronecker_compressor` | `rpca` | `tt_compressor` |
 | `cur_compressor` | `kronecker_linear` | `rpca_compressor` | `tt_linear` |
 | `cur_linear` | `kronecker_tt_lora` | `saes_svd` | `uniql_compressor` |
-| `cure` | `lsc_compressor` | `saes_svd_compressor` | `dobi` |
+| `cure` | `lsc_compressor` | `saes_svd_compressor` | — |
 
 > [!NOTE]
-> `dobi` and `dobi_svd` both reside in `Codes/framework/compression_engine/dobi_svd.py` as registered aliases of `DobiSVDCompressor`. Because neither is an attention module, `dobi` has been consolidated from Category 4 into Category 5A.
+> `dobi` and `dobi_svd` both reside in `Codes/framework/compression_engine/dobi_svd.py` as registered aliases of `DobiSVDCompressor` (pointing to the identical factory function `dobi_factory`). `dobi` has been consolidated into `dobi_svd`, updating Category 5A from 52 to 51 modules.
 
 
 #### Category 5B: Unstructured Sparsity, Pruning, Quantization & KV Cache Engines (34 Modules)
