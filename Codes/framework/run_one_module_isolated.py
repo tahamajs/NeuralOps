@@ -17,6 +17,15 @@ for p in [str(CODES), str(ROOT), str(ROOT / "Codes")]:
         sys.path.insert(0, p)
 
 def main():
+    import torch
+    if torch.cuda.is_available():
+        torch.backends.cudnn.benchmark = True
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+        try:
+            torch.set_float32_matmul_precision("high")
+        except Exception:
+            pass
     from framework.run_quality_sweep import parse_args, run_single_module_main
 
     parser_custom = argparse.ArgumentParser(add_help=False)
