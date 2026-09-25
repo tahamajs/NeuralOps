@@ -314,7 +314,13 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 | `grecodec` | DistilBERT | 90.60% | 90.60% | 90.60% | 90.60% | 1.00× | **Invariance PASS** |
 | `grecodec` | RoBERTa | 93.46% | 93.46% | 93.46% | 92.43% | 1.00× | **PASS** |
 | `grecodec_compressor` | DistilBERT | 90.60% | 90.60% | 90.60% | 90.60% | 1.00× | **Invariance PASS** |
+| `grecodec_compressor` | RoBERTa | 93.46% | 93.46% | 91.40% | 92.43% | 1.00× $\to$ 1.04× | **PASS** |
 | `hybrid_svd_layer` | DistilBERT | 89.91% (0.3332) | 89.91% (0.3332) | 89.91% (0.3332) | 89.91% (0.3332) | 1.04× | **Invariance PASS** |
+| `hybrid_svd_layer` | RoBERTa | 92.55% (0.3391) | 92.55% (0.3391) | 92.55% (0.3391) | 92.55% (0.3391) | 1.04× | **Invariance PASS** |
+| `kronecker_compressor` | DistilBERT | 90.71% | 90.71% | 90.71% | 90.25% | **1.04×** | **PASS** |
+| `kronecker_compressor` | RoBERTa | 91.63% | 91.63% | 91.63% | [RUNNING] | **1.04×** | **PASS (r=64, 128, 256)** |
+| `kronecker_tt_lora` | DistilBERT | 90.71% | 90.71% | 90.71% | 90.71% | 0.97× | **Invariance PASS** |
+| `lsc_compressor` | DistilBERT | 90.60% | 90.60% | 90.60% | 90.60% | 1.00× | **Invariance PASS** |
 
 ---
 
