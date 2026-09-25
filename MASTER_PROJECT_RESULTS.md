@@ -234,6 +234,24 @@ Systematic evaluation of 23 additional registered SVD and tensor decomposition e
 
 ---
 
+### 3.5 Category 5B Pruning, Quantization & KV Cache Empirical Evaluation
+
+Evaluation of unstructured sparsity, gradient-based magnitude/ADMM pruning, codebook vector quantization, and dynamic KV cache management engines across DistilBERT (SST-2, batch size 64) and RoBERTa-base (SST-2, batch size 64) with 4 parallel worker processes on an NVIDIA RTX 4070 Laptop GPU (8GB VRAM):
+
+| Module | DistilBERT Acc | RoBERTa Acc | Recon Error | Speed (tok/s) | Peak VRAM | Status |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| `astro_quantizer` | 90.60% | **94.04%** | 0.0227 / 0.0235 | 201,544 / 58,391 | 457 MB | **PASS** |
+| `coopq_quantizer` | 90.48% | **93.23%** | — | 83,146 / 53,268 | 565 MB | **PASS_NO_COMPRESSION** |
+| `armor_pruner` | 90.02% | **92.89%** | 0.3749 / 0.3851 | 46,343 / 30,196 | 589 MB | **PASS** |
+| `cachenotes_compressor` | **90.83%** | **92.55%** | 0.2403 / 0.2424 | 158,108 / 120,999 | 457 MB | **PASS** |
+| `bonsai_pruner` | 90.48% | **92.55%** | 0.6483 / 0.5909 | 100,958 / 93,411 | 457 MB | **PASS_NO_COMPRESSION** |
+| `delta_kv` | **90.94%** | [QUEUED] | — | 99,573 | 446 MB | **PASS** |
+| `enlighten_compressor` | **90.83%** | [QUEUED] | 0.2754 | 101,900 | 457 MB | **PASS** |
+| `ast_pruner` | **90.71%** | 90.02% | 0.5813 / 0.3531 | 61,084 / 127,728 | 457 MB | **PASS** |
+| `admm_pruner` | 90.14% | 89.91% | 0.3590 / 0.3531 | 45,916 / 58,490 | 571 MB | **PASS** |
+
+---
+
 ### Key Findings from Multi-Rank Sweeps:
 
 1. **DistilBERT (Monotonic Scaling):**
