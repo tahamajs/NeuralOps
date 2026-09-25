@@ -355,8 +355,12 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 | `slicegpt_compressor` | RoBERTa | 94.27% (0.4908) | 94.27% (0.4908) | 94.27% (0.4908) | 94.27% (0.4908) | 1.00× | **Invariance PASS** |
 | `slicegpt_pca` | DistilBERT | 90.71% (0.5465) | 90.71% (0.5465) | 90.71% (0.5465) | 90.71% (0.5465) | 1.00× | **Invariance PASS** |
 | `subspace_projection` | DistilBERT | 90.60% | 90.60% | 90.94% | 90.83% | 1.00× $\to$ 1.04× | **PASS** |
+| `subspace_projection` | RoBERTa | 93.92% | 93.92% | 91.74% | 92.43% | 1.00× $\to$ 1.04× | **PASS** |
 | `svd_linear` | DistilBERT | 86.35% | 88.30% | 90.83% | 90.60% | 1.20× $\to$ 1.00× | **Strict Monotonic Pareto PASS** |
+| `svd_linear` | RoBERTa | 81.54% | 87.73% | 91.86% | 92.32% | 1.19× $\to$ 1.01× | **Strict Monotonic Pareto PASS** |
 | `swift_svd_act` | DistilBERT | 90.71% | 90.71% | 89.56% (0.3759) | 90.60% (0.2414) | 1.00× $\to$ 1.04× | **PASS** |
+| `swift_svd_act` | RoBERTa | 93.92% | 93.92% | 91.74% (0.3820) | 92.66% (0.2436) | 1.00× $\to$ 1.04× | **PASS** |
+| `tt_compressor` | RoBERTa | 50.92% | 50.92% | 50.92% | 50.92% | 1.02× $\to$ 1.04× | **FAIL_BELOW_CHANCE** |
 
 ---
 
