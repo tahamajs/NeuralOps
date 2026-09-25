@@ -1,0 +1,12 @@
+[
+  {
+    "module": "aasvd",
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "dataset": "sst2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn",
+    "timestamp": "2026-09-25T20:41:25.390962"
+  }
+]
