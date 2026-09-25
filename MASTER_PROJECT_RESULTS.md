@@ -72,7 +72,7 @@ In our comprehensive GPU rank sweep on an NVIDIA RTX 4070 (`RANK_SWEEP_MASTER_RE
 
 ## 4. Complete Per-Module Empirical Results
 
-### Category 1: Excellent Pass (Max Diff < 0.5) (42 Modules)
+### Category 1: Excellent Pass (Max Diff < 0.5) (41 Modules)
 
 These modules reproduce original Softmax attention with near-zero discrepancy right out of the box:
 
@@ -100,7 +100,6 @@ These modules reproduce original Softmax attention with near-zero discrepancy ri
 | `flash_attention3_fp8` | `0.0400` | `0.0054` | `0.3572` | **PASS** |
 | `fusion_attn` | `0.1137` | `0.0066` | `0.3081` | **PASS** |
 | `gqa` | `0.0465` | `0.0053` | `0.2786` | **PASS** |
-| `gqa_attention` | `0.1197` | `0.0119` | `0.2591` | **PASS** |
 | `granite_hybrid` | `0.2119` | `0.0186` | `0.1282` | **PASS** |
 | `hybrid_attention` | `0.4845` | `0.0115` | `0.3527` | **PASS** |
 | `infini_attention` | `0.1370` | `0.0047` | `9.54e-07` | **PASS** |
@@ -122,7 +121,8 @@ These modules reproduce original Softmax attention with near-zero discrepancy ri
 | `squeezing_heads_distiller` | `0.1206` | `0.0083` | `0.2511` | **PASS** |
 
 > [!NOTE]
-> `hybrid_attention` represents the canonical implementation of per-head dynamic gated softmax + linear attention (`HybridAttention` in `Codes/framework/attentions/hybrid_attention.py`). The legacy aliases `weighted_ensemble` and `smart_weighted_ensemble` point to this same class object (`ATTENTION_REGISTRY.get('hybrid_attention') is ATTENTION_REGISTRY.get('weighted_ensemble') is ATTENTION_REGISTRY.get('smart_weighted_ensemble') == True`) and have been consolidated into this single canonical entry.
+> - `hybrid_attention` represents the canonical implementation of per-head dynamic gated softmax + linear attention (`HybridAttention` in `Codes/framework/attentions/hybrid_attention.py`). The legacy aliases `weighted_ensemble` and `smart_weighted_ensemble` point to this same class object (`ATTENTION_REGISTRY.get('hybrid_attention') is ATTENTION_REGISTRY.get('weighted_ensemble') is ATTENTION_REGISTRY.get('smart_weighted_ensemble') == True`) and have been consolidated into this single canonical entry.
+> - `gqa_attention` is a registered alias of `gqa` (both point to `GroupedQueryAttention` in `Codes/framework/attentions/gqa_attention.py`). Consolidating `gqa_attention` into `gqa` updates Category 1 from 42 to 41 modules.
 
 
 
