@@ -52,7 +52,10 @@ else:
 def log(msg: str):
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     line = f"[{ts}] {msg}"
-    print(line, flush=True)
+    try:
+        print(line, flush=True)
+    except UnicodeEncodeError:
+        print(line.encode("ascii", errors="replace").decode("ascii"), flush=True)
     try:
         with open(MASTER_LOG, "a", encoding="utf-8") as f:
             f.write(line + "\n")
@@ -130,12 +133,12 @@ def vram_governor_loop():
                 new_limit = min(6, cur_limit + 1)
                 if new_limit > cur_limit:
                     max_allowed_workers[0] = new_limit
-                    log(f"[VRAM GOVERNOR] VRAM below 50% ({vram_pct:.1f}%) → increasing max workers to {new_limit}")
+                    log(f"[VRAM GOVERNOR] VRAM below 50% ({vram_pct:.1f}%) -> increasing max workers to {new_limit}")
             elif vram_pct > 90.0:
                 new_limit = max(2, cur_limit - 1)
                 if new_limit < cur_limit:
                     max_allowed_workers[0] = new_limit
-                    log(f"[VRAM GOVERNOR] VRAM above 90% ({vram_pct:.1f}%) → decreasing max workers to {new_limit}")
+                    log(f"[VRAM GOVERNOR] VRAM above 90% ({vram_pct:.1f}%) -> decreasing max workers to {new_limit}")
 
             cur_limit = max_allowed_workers[0]
 
@@ -144,7 +147,10 @@ def vram_governor_loop():
             f"VRAM: {used}/{total} MB ({vram_pct:.1f}%) | GPU Util: {util}% | "
             f"Temp: {temp}C | Power: {pwr:.1f}W"
         )
-        print(t_line, flush=True)
+        try:
+            print(t_line, flush=True)
+        except UnicodeEncodeError:
+            print(t_line.encode("ascii", errors="replace").decode("ascii"), flush=True)
         try:
             with open(TELEMETRY_LOG, "a", encoding="utf-8") as f:
                 f.write(t_line + "\n")
