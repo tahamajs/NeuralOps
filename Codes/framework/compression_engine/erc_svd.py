@@ -94,6 +94,20 @@ class ERCCompressor(BaseCompressor):
         self.max_retries = max(0, int(max_retries))
         self.target_modules = target_modules
 
+        # Pre-LayerNorm encoder detection (e.g., RoBERTa): pre-LN amplifies residual truncation noise.
+        # Enforce stricter maximum error threshold (0.15) to prevent below-chance catastrophic collapse.
+        model_name_or_cls = (
+            getattr(getattr(model, "config", None), "_name_or_path", "")
+            or model.__class__.__name__
+        ).lower()
+        self.is_pre_layernorm_encoder = "roberta" in model_name_or_cls
+        if self.is_pre_layernorm_encoder and self.max_error > 0.15:
+            logger.info(
+                "ERC-SVD: Detected pre-LayerNorm encoder (%s). Capping max_error from %.2f to 0.15.",
+                model_name_or_cls, self.max_error,
+            )
+            self.max_error = min(self.max_error, 0.15)
+
         self.compressed_layers: List[str] = []
         self.fallback_layers: List[str] = []
         self.skipped_layers: List[str] = []
