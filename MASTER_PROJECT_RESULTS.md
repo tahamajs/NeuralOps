@@ -342,6 +342,7 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 | `rpca` | DistilBERT | 90.71% | 90.71% | 90.94% (0.3764) | 90.48% (0.2453) | 1.00× $\to$ 1.04× | **Monotonic Error Decay PASS** |
 | `rpca` | RoBERTa | 94.04% | 94.04% | 92.09% (0.3829) | 92.66% (0.2466) | 1.00× $\to$ 1.04× | **Monotonic Error Decay PASS** |
 | `rpca_compressor` | DistilBERT | 90.71% | 90.71% | 90.94% (0.3764) | 90.48% (0.2453) | 1.00× $\to$ 1.04× | **Monotonic Error Decay PASS** |
+| `rpca_compressor` | RoBERTa | 94.04% | 94.04% | 92.09% (0.3829) | 92.66% (0.2466) | 1.00× $\to$ 1.04× | **Monotonic Error Decay PASS** |
 | `saes_svd` | DistilBERT | 90.60% | 90.60% | 89.45% (0.3759) | 90.60% (0.2414) | 1.00× $\to$ 1.04× | **PASS** |
 | `saes_svd_v2` | DistilBERT | 90.60% | 90.60% | 89.45% (0.3759) | 90.60% (0.2414) | 1.00× $\to$ 1.04× | **PASS** |
 | `salr` | DistilBERT | 90.71% | 90.71% | 90.71% | 90.71% | 1.00× | **Invariance PASS** |
@@ -349,6 +350,8 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 | `slicegpt_compressor` | DistilBERT | 90.60% (0.4778) | 90.60% (0.4778) | 90.60% (0.4778) | 90.60% (0.4778) | 1.00× | **Invariance PASS** |
 | `slicegpt_pca` | DistilBERT | 90.71% (0.5465) | 90.71% (0.5465) | 90.71% (0.5465) | 90.71% (0.5465) | 1.00× | **Invariance PASS** |
 | `subspace_projection` | DistilBERT | 90.60% | 90.60% | 90.94% | 90.83% | 1.00× $\to$ 1.04× | **PASS** |
+| `svd_linear` | DistilBERT | 86.35% | 88.30% | 90.83% | 90.60% | 1.20× $\to$ 1.00× | **Strict Monotonic Pareto PASS** |
+| `swift_svd_act` | DistilBERT | 90.71% | 90.71% | 89.56% (0.3759) | 90.60% (0.2414) | 1.00× $\to$ 1.04× | **PASS** |
 
 ---
 
