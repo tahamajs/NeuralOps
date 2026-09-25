@@ -117,11 +117,32 @@ FIELDS = [
 # ============================================================================
 # Module-level deprecation & blocklist
 # ============================================================================
-DEPRECATED_MODULES = {
+DEPRECATED_MODULES: Dict[str, str] = {
     "gated_delta_net": "bad_alloc during backprop on 6-layer encoders; chunked scan demands >15GB RAM",
     "gated_deltanet_block": "same as gated_delta_net",
     "hgrn2_gated_deltanet": "same as gated_delta_net",
+    "tt": "TT decomposition is unsuitable for 2D transformer weight matrices. See Docs/content/compressions/tt.md",
+    "tt_linear": "TT decomposition is unsuitable for 2D transformer weight matrices. See Docs/content/compressions/tt.md",
+    "tt_compressor": "TT decomposition is unsuitable for 2D transformer weight matrices. See Docs/content/compressions/tt.md",
+    "tt_linear_compressor": "TT decomposition is unsuitable for 2D transformer weight matrices. See Docs/content/compressions/tt.md",
+    "tt_factory": "TT decomposition is unsuitable for 2D transformer weight matrices. See Docs/content/compressions/tt.md",
+    "tt_compressor_factory": "TT decomposition is unsuitable for 2D transformer weight matrices. See Docs/content/compressions/tt.md",
+    "tt_linear_factory": "TT decomposition is unsuitable for 2D transformer weight matrices. See Docs/content/compressions/tt.md",
+    "lillama_compressor": "Requires LLaMA-style SwiGLU + RMSNorm; not standard transformer compressor",
+    "mamba_svd_flash": "Requires Linux CUDA selective-scan kernels; not supported on Windows",
 }
+
+# Also attempt loading from audit/deprecated_modules.txt if present
+_dep_file = ROOT / "audit" / "deprecated_modules.txt"
+if _dep_file.exists():
+    try:
+        for _line in _dep_file.read_text(encoding="utf-8").splitlines():
+            _line = _line.strip()
+            if _line and not _line.startswith("#") and _line not in DEPRECATED_MODULES:
+                DEPRECATED_MODULES[_line] = "Excluded via audit/deprecated_modules.txt"
+    except Exception as _e:
+        LOG.debug("Could not read audit/deprecated_modules.txt: %s", _e)
+
 
 # ============================================================================
 # Unified SLOW_MODULE_TIMEOUT_OVERRIDES (Fix 12)
@@ -2859,6 +2880,23 @@ def run_single_module_main(args) -> dict:
     from framework.core.registry import ATTENTION_REGISTRY
     name = args.modules[0] if isinstance(args.modules, list) else args.modules
     typ = "baseline" if name in ("full", "dense") else ("attention" if name in ATTENTION_REGISTRY else "compressor")
+
+    if name in DEPRECATED_MODULES:
+        reason = DEPRECATED_MODULES[name]
+        LOG.warning(
+            "Skipping deprecated module '%s'. Reason: %s",
+            name,
+            reason,
+        )
+        return {
+            "module_name": name,
+            "status": "SKIP_DEPRECATED",
+            "accuracy_pct": 0.0,
+            "elapsed_s": 0.0,
+            "error": f"DEPRECATED: {reason}",
+            "path": "deprecated",
+            "timestamp": datetime.now().isoformat(),
+        }
 
     if torch.cuda.is_available():
         torch.backends.cudnn.benchmark = True
