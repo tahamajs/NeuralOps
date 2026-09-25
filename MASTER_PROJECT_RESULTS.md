@@ -284,7 +284,13 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 | Module | Model | Rank 64 | Rank 128 | Rank 256 | Rank 384 | Compression | Monotonicity Status |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | `adaptive_ranks` | DistilBERT | 87.84% (0.7744) | 88.53% (0.7561) | 89.91% (0.4973) | **90.48%** (0.4367) | 1.17× $\to$ 1.06× | **Strict Monotonic PASS** |
-| `adaptive_ranks` | RoBERTa | 84.98% (0.7944) | 81.88% (0.7841) | **92.55%** (0.4923) | [QUEUED] | 1.19× $\to$ 1.08× | **High-Rank Recovery PASS** |
+| `adaptive_ranks` | RoBERTa | 84.98% (0.7944) | 81.88% (0.7841) | **92.55%** (0.4923) | **93.00%** (0.4333) | 1.19× $\to$ 1.06× | **High-Rank Recovery PASS** |
+| `adasvd_compressor` | DistilBERT | 87.96% (0.3560) | 88.19% (0.1995) | 86.70% (0.0591) | **90.48%** (0.0394) | 1.21× $\to$ 1.06× | **Monotonic Error Decay PASS** |
+| `adasvd_compressor` | RoBERTa | 83.37% (0.3276) | 85.09% (0.1849) | 91.28% (0.0534) | **92.32%** (0.0319) | 1.23× $\to$ 1.06× | **Strict Monotonic Pareto PASS** |
+| `admm_compressor` | DistilBERT | 90.02% (0.1564) | 90.02% (0.1564) | 90.02% (0.1564) | 90.02% (0.1564) | 1.00× | **Invariance PASS** |
+| `admm_compressor` | RoBERTa | 93.12% (0.1663) | 93.12% (0.1663) | 93.12% (0.1663) | 93.12% (0.1663) | 1.00× | **Invariance PASS** |
+| `come` | DistilBERT | 85.89% | 85.89% | [QUEUED] | [QUEUED] | 1.22× | **PASS (r=64, 128)** |
+| `come` | RoBERTa | 72.59% | [QUEUED] | [QUEUED] | [QUEUED] | 1.56× | **PASS (r=64)** |
 | `a3_compressor` | DistilBERT | 90.25% (0.3493) | 90.25% (0.3493) | 90.25% (0.3493) | 90.25% (0.3493) | 1.03× | **Invariance PASS** |
 | `a3_compressor` | RoBERTa | 93.23% (0.3449) | 93.23% (0.3449) | 93.23% (0.3449) | 93.23% (0.3449) | 1.02× | **Invariance PASS** |
 | `aa_svd_compressor` | DistilBERT | 87.73% (0.8162) | 87.73% (0.8162) | 87.73% (0.8162) | 87.73% (0.8162) | 1.20× | **PASS** |
@@ -293,8 +299,6 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 | `aasvd` | RoBERTa | 84.17% (0.8210) | 84.17% (0.8210) | 84.17% (0.8210) | 84.17% (0.8210) | 1.21× | **PASS** |
 | `adaptive_compressor` | DistilBERT | 88.65% | 88.65% | 88.65% | 88.65% | 1.04× | **PASS** |
 | `adaptive_compressor` | RoBERTa | 92.32% | 92.32% | 92.32% | 92.32% | 1.05× | **PASS** |
-| `adasvd_compressor` | DistilBERT | 87.96% (0.3560) | [IN PROGRESS] | [QUEUED] | [QUEUED] | 1.21× | **PASS (r=64)** |
-| `adasvd_compressor` | RoBERTa | [IN PROGRESS] | [IN PROGRESS] | [QUEUED] | [QUEUED] | — | **Running** |
 
 ---
 
