@@ -1,0 +1,160 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-26 00:22:27,005 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-09-26 00:22:27,005 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-26 00:22:27,005 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=8 (explicit_parallel=True, explicit_batch=True)
+2026-09-26 00:22:27,030 [INFO] QwenQualitySweep: Running 1 attention modules in-memory sequentially
+2026-09-26 00:22:27,030 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0%
+2026-09-26 00:22:27,923 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-09-26 00:22:28,036 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md "HTTP/1.1 200 OK"
+2026-09-26 00:22:28,256 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-26 00:22:28,904 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-26 00:22:29,251 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-09-26 00:22:29,470 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-09-26 00:22:30,676 [INFO] httpx: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-09-26 00:22:30,904 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-26 00:22:31,125 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 00:22:31,352 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-09-26 00:22:31,575 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-26 00:22:32,180 [INFO] QwenQualitySweep: Configured dataset 'wikitext2' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3781.11it/s]
+2026-09-26 00:22:32,934 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-26 00:22:32,934 [INFO] QwenQualitySweep: detected model family=gpt2 adapter={'family': 'gpt', 'raw_family': 'gpt2', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-26 00:22:32,935 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 00:22:32,935 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-26 00:22:32,935 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-26 00:22:32,935 [INFO] QwenQualitySweep:   family:            gpt2
+2026-09-26 00:22:32,935 [INFO] QwenQualitySweep:   dataset:           wikitext2
+2026-09-26 00:22:32,935 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-26 00:22:32,936 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-26 00:22:32,936 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-26 00:22:32,936 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-26 00:22:32,936 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 00:22:33,128 [INFO] QwenQualitySweep: Prepared 0 eval batches and 0 train batches directly on GPU.
+Token indices sequence length is longer than the specified maximum sequence length for this model (249749 > 1024). Running this sequence through the model will result in indexing errors
+`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+2026-09-26 00:22:56,174 [INFO] QwenQualitySweep: Baseline model benchmark perplexity on validation set: 41.344989 (loss=3.7220)
+2026-09-26 00:22:56,359 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 00:22:56,359 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-26 00:22:56,359 [INFO] QwenQualitySweep:   Validation Majority Count: 500 / 1000
+2026-09-26 00:22:56,359 [INFO] QwenQualitySweep:   True Majority Baseline:    50.00%
+2026-09-26 00:22:56,359 [INFO] QwenQualitySweep:   Standard Error (SE):       1.581%
+2026-09-26 00:22:56,359 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.74%
+2026-09-26 00:22:56,359 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  54.74%
+2026-09-26 00:22:56,360 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.00% (500/1000), SE=1.581%, 3*SE=4.740%
+2026-09-26 00:22:56,360 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 00:22:56,360 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-26 00:22:56,597 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: asvd (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-26 00:22:57,542 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (23.12%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:22:57,652 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (25.15%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:22:57,824 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (23.12%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:22:57,927 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (25.15%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:22:58,406 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (24.50%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:22:58,634 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (24.50%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:22:59,060 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (20.86%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:22:59,117 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (25.93%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:22:59,171 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.96%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:22:59,289 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (20.86%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:22:59,343 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (25.93%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:22:59,394 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.96%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:22:59,706 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (25.02%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:22:59,765 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (26.04%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:22:59,818 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (24.05%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:22:59,872 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (23.13%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:22:59,935 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (25.02%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:22:59,991 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (26.04%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:00,042 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (24.05%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:00,094 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (23.13%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:00,411 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.84%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:00,469 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (25.00%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:00,518 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (24.41%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:00,572 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.92%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:00,636 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.84%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:00,689 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (25.00%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:00,738 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (24.41%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:00,788 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.92%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:01,094 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.82%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:01,149 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.05%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:01,200 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (23.30%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:01,250 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (24.92%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:01,310 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.82%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:01,365 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.05%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:01,414 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (23.30%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:01,468 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (24.92%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:01,759 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.71%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:01,811 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (24.12%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:01,869 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (22.64%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:01,920 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.78%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:01,979 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.71%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:02,031 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (24.12%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:02,079 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (22.64%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:02,127 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.78%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:02,424 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.04%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:02,477 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (20.18%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:02,527 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (27.12%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:02,577 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (23.80%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:02,638 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.04%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:02,690 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (20.18%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:02,737 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (27.12%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:02,786 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (23.80%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:03,072 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (22.05%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:03,125 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (24.29%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:03,174 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (28.00%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:03,225 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (22.69%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:03,284 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (22.05%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:03,336 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (24.29%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:03,385 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (28.00%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:03,433 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (22.69%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:03,723 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (22.70%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:03,774 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (23.76%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:03,824 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (27.79%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:03,876 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (27.38%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:03,934 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (22.70%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:03,991 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (23.76%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:04,040 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (27.79%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:04,088 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (27.38%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:04,376 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.50%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:04,430 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.30%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:04,480 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (24.82%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:04,529 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (32.13%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:04,587 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.50%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:04,639 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.30%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:04,692 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (24.82%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:04,741 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (32.13%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:05,029 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (22.03%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:05,080 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.53%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:05,131 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (27.34%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:05,181 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (25.97%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:05,241 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (22.03%) for projection 'q' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:05,291 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (21.53%) for projection 'k' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:05,339 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (27.34%) for projection 'v' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:05,391 [WARNING] framework.attentions.asvd_attention: Relative Frobenius reconstruction error (25.97%) for projection 'o' exceeds 20% threshold. Proceeding with best-effort rank 383.
+2026-09-26 00:23:05,393 [INFO] framework.core.attention_utils: Successfully injected 'asvd' into 12 transformer blocks.
+2026-09-26 00:23:05,416 [INFO] QwenQualitySweep: module=asvd path=adapted_gpt2
+2026-09-26 00:23:05,417 [INFO] QwenQualitySweep: module=asvd injection summary: 0 SVDLinear layers active
+2026-09-26 00:23:05,418 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for asvd (lr=2.0e-04)
+2026-09-26 00:23:05,671 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179648 trainable parameters across 96 tensors.
+2026-09-26 00:23:05,672 [INFO] framework.utils.compat: Discovered 96 trainable tensors (1179648 params)
+2026-09-26 00:23:05,676 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179648 trainable parameters across 96 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-26 00:23:06,058 [INFO] QwenQualitySweep: Step 1/50 took 0.38s (loss=8.7775, bs=8, micro=8)
+2026-09-26 00:23:07,108 [INFO] QwenQualitySweep: Step 5/50 took 0.26s (loss=8.5184, bs=8, micro=8)
+2026-09-26 00:23:08,402 [INFO] QwenQualitySweep: Step 10/50 took 0.27s (loss=9.4206, bs=8, micro=8)
+2026-09-26 00:23:09,715 [INFO] QwenQualitySweep: Step 15/50 took 0.26s (loss=6.5001, bs=8, micro=8)
+2026-09-26 00:23:11,011 [INFO] QwenQualitySweep: Step 20/50 took 0.25s (loss=5.0067, bs=8, micro=8)
+2026-09-26 00:23:12,317 [INFO] QwenQualitySweep: Step 25/50 took 0.26s (loss=6.6418, bs=8, micro=8)
+2026-09-26 00:23:13,616 [INFO] QwenQualitySweep: Step 30/50 took 0.25s (loss=4.4355, bs=8, micro=8)
+2026-09-26 00:23:14,922 [INFO] QwenQualitySweep: Step 35/50 took 0.28s (loss=2.8801, bs=8, micro=8)
+2026-09-26 00:23:16,308 [INFO] QwenQualitySweep: Step 40/50 took 0.26s (loss=2.2936, bs=8, micro=8)
+2026-09-26 00:23:17,656 [INFO] QwenQualitySweep: Step 45/50 took 0.27s (loss=0.9930, bs=8, micro=8)
+2026-09-26 00:23:18,952 [INFO] QwenQualitySweep: Step 50/50 took 0.27s (loss=0.6650, bs=8, micro=8)
+2026-09-26 00:24:15,250 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\gpt2_baselines_wt2\asvd\rank_384\gpt2_asvd_full_metrics.json
+2026-09-26 00:24:15,802 [INFO] QwenQualitySweep: [1/1] asvd -> PASS_LOW_PPL 0.00% (F1: 0.0, Peak VRAM: 2486.412109375 MB)
+2026-09-26 00:24:15,839 [INFO] HFGitExporter: [Automation] Run gpt2 / asvd (acc=0.00%, status=PASS_LOW_PPL) is NOT successful (threshold=54.74%). Skipping HF upload.
+2026-09-26 00:24:15,841 [INFO] QwenQualitySweep: [1/1] asvd Timing: eval_time=79.24s
+2026-09-26 00:24:15,842 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-26 00:24:16,257 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 00:24:16,257 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on wikitext2)
+2026-09-26 00:24:16,277 [INFO] QwenQualitySweep: 
+Module       Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+  asvd PASS_LOW_PPL    0.00%    +0.00% 0.0000                 12            1.00x 2486.4 MB              55.35              0.00
+2026-09-26 00:24:16,277 [INFO] QwenQualitySweep: ================================================================================
