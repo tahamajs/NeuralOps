@@ -1,0 +1,12 @@
+[
+  {
+    "module": "minimal_svd",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.344989,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-26T00:30:05.367041"
+  }
+]

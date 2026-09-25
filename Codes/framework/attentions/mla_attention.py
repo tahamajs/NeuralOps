@@ -2,6 +2,16 @@
 
 Paper: https://arxiv.org/abs/2405.04434
 Hardened for multi-architecture production deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.
+
+Fixes (2026-09-26):
+- FIX-1: `inject_mla` now discovers the source attention across all architecture
+  variants (GPT-2 `layer.attn`, RoBERTa/BERT `layer.attention.self`, T5
+  `layer.self_attn`, generic `layer.attention`).
+- FIX-2: Replacement handles `layer.attn` (GPT-2) explicitly.
+- FIX-3: Idempotency guard prevents double-injection.
+- FIX-4: Explicit error logging when no source attention is found.
+- FIX-5: Return value is the injected `MLAAttention` module (not the target
+  layer), so the caller's `num_injected` counter increments correctly.
 """
 
 import logging
@@ -504,6 +514,18 @@ class MLAAttention(BaseAttention):
         return out, (attn_probs if output_attentions else None)
 
 
+# ============================================================================
+# FIXED (2026-09-26): inject_mla now handles GPT-2 `layer.attn`
+#
+# Bug: Previously, the injection only checked `layer.attention` and `layer.self`.
+# GPT-2 stores its attention under `layer.attn`, so src_attn was None, and the
+# replacement either created a new `.attention` attribute (which GPT-2 never
+# reads) or did nothing. Result: num_injected_attention_layers == 0.
+#
+# Fix: Added "attn" and "self_attn" to the lookup list, added explicit branch
+# for `layer.attn`, added idempotency guard, and returned the injected module
+# (not the target) so the caller's counter increments correctly.
+# ============================================================================
 @ATTENTION_REGISTRY.register("mla_inject")
 def inject_mla(
     model: Optional[nn.Module] = None,
@@ -523,7 +545,7 @@ def inject_mla(
     if cfg is None:
         cfg = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
 
-    # 1. Whole model traversal support
+    # ---- 1. Whole-model traversal ----
     if target is not None and (
         hasattr(target, "transformer")
         or hasattr(target, "distilbert")
@@ -547,9 +569,10 @@ def inject_mla(
             layer_list = target.encoder.layer
 
         if layer_list is not None:
+            num_injected = 0
             tot = len(layer_list)
             for idx, lyr in enumerate(layer_list):
-                inject_mla(
+                res = inject_mla(
                     layer=lyr,
                     model_config=cfg,
                     comp_config=comp_config,
@@ -557,34 +580,87 @@ def inject_mla(
                     total_layers=tot,
                     **kwargs,
                 )
-            return target
+                if res is not None:
+                    num_injected += 1
+            return target if num_injected > 0 else None
 
-    # 2. Layer injection
-    src_attn = old_attn if old_attn is not None else getattr(target, "attention", getattr(target, "self", None))
-    if src_attn is not None:
-        if isinstance(src_attn, MLAAttention) or "MLA" in src_attn.__class__.__name__:
-            return None
+    # ---- 2. Single-layer injection ----
+    # FIX-1: Discover source attention across all architecture variants
+    src_attn = old_attn
+    if src_attn is None:
+        for attr in ("attn", "attention", "self_attn", "self"):
+            candidate = getattr(target, attr, None)
+            if candidate is None:
+                continue
+            # Idempotency guard (FIX-3)
+            if isinstance(candidate, MLAAttention) or "MLA" in candidate.__class__.__name__:
+                logger.debug(
+                    "inject_mla: %s.%s is already MLAAttention, skipping",
+                    type(target).__name__, attr,
+                )
+                return None
+            # RoBERTa/BERT nested: layer.attention.self has .query
+            if hasattr(candidate, "self") and hasattr(candidate.self, "query"):
+                src_attn = candidate.self
+            else:
+                src_attn = candidate
+            break
+
+    if src_attn is None:
+        # FIX-4: explicit error logging
+        logger.warning(
+            "inject_mla: no source attention found on layer %s "
+            "(checked: attn, attention, self_attn, self)",
+            type(target).__name__,
+        )
+        return None
 
     rank = getattr(comp_config, "mla_rank", 128) if comp_config is not None else 128
-    new_attn = MLAAttention(cfg, rank=rank)
-    if src_attn is not None:
-        try:
-            new_attn.copy_weights(src_attn)
-        except Exception as e:
-            logger.warning(f"copy_weights failed: {e}")
-        p = next(src_attn.parameters(), None)
-        if p is not None:
-            new_attn.to(device=p.device, dtype=p.dtype)
-    if hasattr(target, "attention"):
-        if hasattr(target.attention, "self"):
+    try:
+        new_attn = MLAAttention(cfg, rank=rank)
+        new_attn.copy_weights(src_attn)
+    except Exception as e:
+        logger.error("inject_mla construction/copy failed: %s", e)
+        return None
+
+    p = next(src_attn.parameters(), None)
+    if p is not None:
+        new_attn.to(device=p.device, dtype=p.dtype)
+
+    # FIX-2: Replace attention across all architecture variants
+    replaced = False
+    if hasattr(target, "attn"):
+        # GPT-2, GPT-Neo, GPT-J
+        target.attn = new_attn
+        new_attn.is_nested_encoder = False
+        replaced = True
+    elif hasattr(target, "attention"):
+        if hasattr(target.attention, "self") and hasattr(target.attention.self, "query"):
             new_attn.is_nested_encoder = True
             target.attention.self = new_attn
         else:
+            new_attn.is_nested_encoder = False
             target.attention = new_attn
+        replaced = True
+    elif hasattr(target, "self_attn"):
+        new_attn.is_nested_encoder = False
+        target.self_attn = new_attn
+        replaced = True
     elif hasattr(target, "self"):
         new_attn.is_nested_encoder = True
         target.self = new_attn
-    return target if target is not None else new_attn
+        replaced = True
+
+    if not replaced:
+        logger.error(
+            "inject_mla: no writable attention attribute on layer %s",
+            type(target).__name__,
+        )
+        return None
+
+    # FIX-5: return the injected module (not the target) so the caller's
+    # `num_injected` counter correctly reflects success.
+    return new_attn
 
 
 # Aliases

@@ -1,9 +1,23 @@
 r"""
 SVD Linear Decay Gated Attention Alias.
 Maps to `framework.attentions.svd_linear_attention.SVDLinearAttention`.
+
+Fixes (2026-09-26):
+- FIX-1: `inject_svd_linear_decay` now discovers the source attention across
+  all architecture variants (GPT-2 `layer.attn`, RoBERTa/BERT
+  `layer.attention.self`, T5 `layer.self_attn`, generic `layer.attention`).
+- FIX-2: Pre-discovered `src_attn` is passed explicitly as `old_attn` to the
+  delegated `inject_svd_linear_attention`, so the delegate never has to guess.
+- FIX-3: Fallback replacement ensures the new module is placed in the correct
+  attribute (including `layer.attn` for GPT-2) even if the delegate only
+  writes to `layer.attention` / `layer.self`.
+- FIX-4: Idempotency guard prevents double-injection.
+- FIX-5: Explicit error logging when no source attention can be found.
 """
 
 from typing import Any, Optional
+import logging
+
 import torch
 import torch.nn as nn
 
@@ -14,11 +28,15 @@ from framework.attentions.svd_linear_attention import (
     inject_svd_linear_attention,
 )
 
+logger = logging.getLogger(__name__)
+
+
 @ATTENTION_REGISTRY.register("svd_linear_decay")
 @ATTENTION_REGISTRY.register("decay_gated_linear_attention")
 class DecayGatedLinearAttention(SVDLinearAttention):
     r"""Decay Gated SVD Linear Attention."""
     is_custom_attention: bool = True
+
     def __init__(self, *args, **kwargs):
         kwargs["use_decay_gating"] = True
         super().__init__(*args, **kwargs)
@@ -42,7 +60,7 @@ def inject_svd_linear_decay(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
+    # ---- Whole-model traversal ----
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -77,16 +95,91 @@ def inject_svd_linear_decay(
                 num_injected += 1
         return target if num_injected > 0 else None
 
+    # ---- Single-layer injection ----
     layer = target
 
+    # ============================================================
+    # FIX-1: Discover source attention across all architecture variants
+    # ============================================================
+    src_attn = old_attn
+    src_attr_name: Optional[str] = None
+    src_is_nested: bool = False
+
+    if src_attn is None:
+        for attr in ("attn", "attention", "self_attn", "self"):
+            candidate = getattr(layer, attr, None)
+            if candidate is None:
+                continue
+
+            # FIX-4: idempotency guard
+            if isinstance(candidate, SVDLinearAttention) or "SVDLinear" in candidate.__class__.__name__:
+                logger.debug(
+                    "inject_svd_linear_decay: %s.%s is already SVDLinearAttention, skipping",
+                    type(layer).__name__, attr,
+                )
+                return None
+
+            # RoBERTa/BERT nested: layer.attention.self has .query
+            if hasattr(candidate, "self") and hasattr(candidate.self, "query"):
+                src_attn = candidate.self
+                src_attr_name = attr
+                src_is_nested = True
+            else:
+                src_attn = candidate
+                src_attr_name = attr
+                src_is_nested = False
+            break
+
+    if src_attn is None:
+        # FIX-5: explicit error logging
+        logger.warning(
+            "inject_svd_linear_decay: no source attention found on %s "
+            "(checked: attn, attention, self_attn, self)",
+            type(layer).__name__,
+        )
+        return None
+
+    # ============================================================
+    # Delegate to underlying injector with explicit old_attn
+    # (so it never has to guess the source attribute)
+    # ============================================================
     kwargs["use_decay_gating"] = True
-    return inject_svd_linear_attention(
-        model=model,
-        layer=layer,
-        model_config=model_config,
-        old_attn=old_attn,
-        **kwargs,
-    )
+    try:
+        result = inject_svd_linear_attention(
+            model=model,
+            layer=layer,
+            model_config=model_config,
+            old_attn=src_attn,
+            **kwargs,
+        )
+    except Exception as e:
+        logger.error("inject_svd_linear_attention delegate failed: %s", e)
+        return None
+
+    if result is None:
+        return None
+
+    # ============================================================
+    # FIX-3: Fallback replacement for GPT-2 and other missed architectures
+    # ============================================================
+    if src_attr_name is not None and result is not layer:
+        if src_is_nested:
+            parent = getattr(layer, src_attr_name, None)
+            if parent is not None and getattr(parent, "self", None) is src_attn:
+                parent.self = result
+                logger.debug(
+                    "inject_svd_linear_decay: forced replacement of %s.%s.self",
+                    type(layer).__name__, src_attr_name,
+                )
+        else:
+            if getattr(layer, src_attr_name, None) is src_attn:
+                setattr(layer, src_attr_name, result)
+                logger.debug(
+                    "inject_svd_linear_decay: forced replacement of %s.%s",
+                    type(layer).__name__, src_attr_name,
+                )
+
+    return result
 
 
 inject_svd_linear_decay_attention = inject_svd_linear_decay

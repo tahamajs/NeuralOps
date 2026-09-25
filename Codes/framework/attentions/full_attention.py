@@ -3,10 +3,21 @@ Standard Multi-Head Scaled Dot-Product Attention (Vaswani et al., 2017).
 
 Computes pairwise token interactions across multiple representation subspaces with frozen base weights,
 trainable LoRA residual adapters, multi-architecture weight transfer, GQA, RoPE, and causal decoding.
+
+Fixes (2026-09-26):
+- FIX-1: `inject_full_attention` now discovers the source attention across
+  GPT-2 (layer.attn), RoBERTa/BERT (layer.attention.self), T5 (layer.self_attn)
+  and generic (layer.attention) architectures.
+- FIX-2: Replacement now handles `layer.attn` (GPT-2) explicitly instead of
+  silently writing a new `.attention` attribute that is never read.
+- FIX-3: Removed duplicate `if model_config is None:` initialization block.
+- FIX-4: Added idempotency guard to avoid double-injection.
+- FIX-5: Added explicit error logging when no source attention can be found.
 """
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -19,6 +30,8 @@ from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.utils.model_family import ModelAdapter
+
+logger = logging.getLogger(__name__)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -316,12 +329,12 @@ class FullAttention(BaseAttention):
             if w is not None:
                 norm = torch.linalg.norm(w.float())
                 if norm < 1e-4:
-                    logger.warning(f"FullAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})")
+                    logger.warning("FullAttention extracted weight for %s has near-zero Frobenius norm (%.6f)", proj_key, norm.item())
 
         if extracted["o"][0] is not None:
             norm_o = torch.linalg.norm(extracted["o"][0].float())
             if norm_o < 1e-4:
-                logger.warning(f"FullAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})")
+                logger.warning("FullAttention extracted weight for output projection has near-zero Frobenius norm (%.6f)", norm_o.item())
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
@@ -438,6 +451,19 @@ class FullAttention(BaseAttention):
         return output, (attn if output_attentions else None)
 
 
+# ============================================================================
+# FIXED (2026-09-26): inject_full_attention now handles all architecture variants
+#
+# Bug: Previously, the injection only checked `layer.attention.self` and
+# `layer.attention`. GPT-2 stores its attention under `layer.attn`, so the
+# injection silently added a new `.attention` attribute that was never read
+# by the model's forward pass. Result: num_injected_attention_layers == 0.
+#
+# Fix: Discover source attention across all common attribute names
+# ("attn", "attention", "self_attn", "self"), and replace in the correct
+# branch for each architecture. Added idempotency guard and explicit error
+# logging for unknown architectures.
+# ============================================================================
 @ATTENTION_REGISTRY.register("full_attention_inject")
 def inject_full_attention(
     layer: Any = None,
@@ -457,7 +483,7 @@ def inject_full_attention(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
+    # ---- Whole-model traversal ----
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -492,23 +518,78 @@ def inject_full_attention(
                 num_injected += 1
         return target if num_injected > 0 else None
 
+    # ---- Single-layer injection ----
     layer = target
 
+    # FIX-3: single initialization (removed duplicate)
     if model_config is None:
         model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
 
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+    # ---- FIX-1: Discover source attention across all architecture variants ----
+    src_attn = old_attn
+    if src_attn is None:
+        for attr in ("attn", "attention", "self_attn", "self"):
+            candidate = getattr(layer, attr, None)
+            if candidate is None:
+                continue
+            # FIX-4: idempotency guard
+            if isinstance(candidate, FullAttention):
+                logger.debug(
+                    "inject_full_attention: %s.%s is already FullAttention, skipping",
+                    type(layer).__name__, attr,
+                )
+                return None
+            # RoBERTa/BERT nested: layer.attention.self has .query
+            if hasattr(candidate, "self") and hasattr(candidate.self, "query"):
+                src_attn = candidate.self
+            else:
+                src_attn = candidate
+            break
 
+    if src_attn is None:
+        # FIX-5: explicit error logging
+        logger.warning(
+            "inject_full_attention: no source attention found on layer %s "
+            "(checked: attn, attention, self_attn, self)",
+            type(layer).__name__,
+        )
+        return None
+
+    # ---- Build FullAttention with copied weights ----
     try:
         new_attn = FullAttention(
             config=model_config,
-            pretrained_attn=old_attn,
+            pretrained_attn=src_attn,
         )
-        if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
+    except Exception as e:
+        logger.error("FullAttention construction failed: %s", e)
+        return None
+
+    # ---- FIX-2: Replace attention across all architecture variants ----
+    replaced = False
+    if hasattr(layer, "attn"):
+        # GPT-2, GPT-Neo, GPT-J
+        layer.attn = new_attn
+        replaced = True
+    elif hasattr(layer, "attention"):
+        if hasattr(layer.attention, "self") and hasattr(layer.attention.self, "query"):
+            # RoBERTa / BERT nested encoder
             layer.attention.self = new_attn
         else:
             layer.attention = new_attn
-        return new_attn
-    except Exception:
+        replaced = True
+    elif hasattr(layer, "self_attn"):
+        layer.self_attn = new_attn
+        replaced = True
+    elif hasattr(layer, "self"):
+        layer.self = new_attn
+        replaced = True
+
+    if not replaced:
+        logger.error(
+            "inject_full_attention: no writable attention attribute on layer %s",
+            type(layer).__name__,
+        )
         return None
+
+    return new_attn

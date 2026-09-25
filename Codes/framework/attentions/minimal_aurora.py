@@ -213,7 +213,13 @@ class MinimalAURORAAttention(BaseAttention):
         super().__init__(cfg, actual_rank)
         self.num_heads: int = getattr(cfg, "num_attention_heads", getattr(cfg, "num_heads", kwargs.get("num_attention_heads", 4)))
         self.hidden_size: int = getattr(cfg, "hidden_size", kwargs.get("hidden_size", 768))
-        self.head_dim: int = self.hidden_size // self.num_heads if self.num_heads > 0 else 64
+        # FIX: prefer explicit head_dim from config/kwargs when available
+        cfg_head_dim = getattr(cfg, "head_dim", None) if cfg else None
+        self.head_dim: int = int(
+            cfg_head_dim
+            or kwargs.get("head_dim")
+            or (self.hidden_size // self.num_heads if self.num_heads > 0 else 64)
+        )
         self.all_head_size: int = self.num_heads * self.head_dim
 
         cfg_kv = getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", None)) if cfg else None
@@ -456,28 +462,21 @@ class MinimalAURORAAttention(BaseAttention):
             V = repeat_kv(V, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(D)
-        # Memory-efficient: use SDPA to avoid OOM on large seqs; fallback to explicit if needed
 
         try:
-
             _qs = Q.half() if Q.dtype == torch.float32 else Q
-
             _ks = K.half() if K.dtype == torch.float32 else K
-
             _vs = V.half() if V.dtype == torch.float32 else V
 
             _is_causal = getattr(self, 'is_decoder', False) and not is_cross and N > 1 if 'is_cross' in dir() else getattr(self, 'is_decoder', False) and N > 1
 
             _sdpa_out = torch.nn.functional.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=_is_causal, dropout_p=self.dropout.p if self.training else 0.0)
-
             _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-
             _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
             return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
 
         except Exception:
-
             pass
 
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
@@ -524,9 +523,9 @@ class MinimalAURORAAttention(BaseAttention):
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
-            output = context 
+            output = context
         else:
-            output = self.out_proj(context) 
+            output = self.out_proj(context)
 
         return output, (attn_weights if output_attentions else None)
 
@@ -534,6 +533,18 @@ class MinimalAURORAAttention(BaseAttention):
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
 
 
+# ============================================================================
+# FIXED (2026-09-26): inject_minimal_aurora now handles GPT-2 `layer.attn`
+#
+# Bug: Previously, the injection only checked `layer.attention` and `layer.self`.
+# GPT-2 stores its attention under `layer.attn`, so src_attn was None, weights
+# were never copied, and the layer was never replaced. Result:
+# PASS_NO_COMPRESSION with zero injected attention layers.
+#
+# Fix: Added `attn` and `self_attn` to the lookup list, added explicit branch
+# for `layer.attn`, added idempotency guard, and added explicit error logging
+# for unknown architectures.
+# ============================================================================
 @ATTENTION_REGISTRY.register("minimal_aurora_inject")
 @ATTENTION_REGISTRY.register("inject_minimal_aurora")
 def inject_minimal_aurora(
@@ -554,7 +565,7 @@ def inject_minimal_aurora(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
+    # ---- Whole-model traversal ----
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -589,37 +600,90 @@ def inject_minimal_aurora(
                 num_injected += 1
         return target if num_injected > 0 else None
 
+    # ---- Single-layer injection ----
     layer = target
 
     if model_config is None:
         model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
 
-    r"""Injection hook for MinimalAURORAAttention into transformer layer."""
     energy = getattr(comp_config, "svd_energy", 0.95) if comp_config else 0.95
     dropout = getattr(comp_config, "dropout", 0.1) if comp_config else 0.1
-    new_attn = MinimalAURORAAttention(
-        model_config=model_config,
-        energy=energy,
-        dropout=dropout,
-    )
-    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
-    if src_attn is not None:
-        try:
-            new_attn.copy_weights(src_attn)
-        except Exception as e:
-            logger.error(f"copy_weights failed for minimal_aurora: {e}")
-            return None
-        p = next(src_attn.parameters(), None)
-        if p is not None:
-            new_attn.to(device=p.device, dtype=p.dtype)
 
-    if hasattr(layer, "attention"):
-        if hasattr(layer.attention, "self"):
+    # ---- FIX 1: Discover source attention across all architecture variants ----
+    src_attn = old_attn
+    if src_attn is None:
+        for attr in ("attn", "attention", "self_attn", "self"):
+            candidate = getattr(layer, attr, None)
+            if candidate is None:
+                continue
+            # Idempotency guard
+            if isinstance(candidate, MinimalAURORAAttention):
+                logger.debug(
+                    "inject_minimal_aurora: %s.%s is already MinimalAURORAAttention, skipping",
+                    type(layer).__name__, attr,
+                )
+                return None
+            # RoBERTa/BERT nested: layer.attention.self has .query
+            if hasattr(candidate, "self") and hasattr(candidate.self, "query"):
+                src_attn = candidate.self
+            else:
+                src_attn = candidate
+            break
+
+    if src_attn is None:
+        logger.warning(
+            "inject_minimal_aurora: no source attention found on layer %s "
+            "(checked: attn, attention, self_attn, self)",
+            type(layer).__name__,
+        )
+        return None
+
+    # ---- Build MinimalAURORAAttention ----
+    try:
+        new_attn = MinimalAURORAAttention(
+            model_config=model_config,
+            energy=energy,
+            dropout=dropout,
+        )
+        new_attn.copy_weights(src_attn)
+    except Exception as e:
+        logger.error("inject_minimal_aurora construction/copy failed: %s", e)
+        return None
+
+    p = next(src_attn.parameters(), None)
+    if p is not None:
+        new_attn.to(device=p.device, dtype=p.dtype)
+
+    # ---- FIX 2: Replace attention across all architecture variants ----
+    replaced = False
+    if hasattr(layer, "attn"):
+        # GPT-2, GPT-Neo, GPT-J
+        layer.attn = new_attn
+        new_attn.is_nested_encoder = False
+        replaced = True
+    elif hasattr(layer, "attention"):
+        if hasattr(layer.attention, "self") and hasattr(layer.attention.self, "query"):
+            # RoBERTa / BERT nested encoder
             layer.attention.self = new_attn
             new_attn.is_nested_encoder = True
         else:
             layer.attention = new_attn
+            new_attn.is_nested_encoder = False
+        replaced = True
+    elif hasattr(layer, "self_attn"):
+        layer.self_attn = new_attn
+        new_attn.is_nested_encoder = False
+        replaced = True
     elif hasattr(layer, "self"):
         layer.self = new_attn
         new_attn.is_nested_encoder = True
+        replaced = True
+
+    if not replaced:
+        logger.error(
+            "inject_minimal_aurora: no writable attention attribute on layer %s",
+            type(layer).__name__,
+        )
+        return None
+
     return new_attn
