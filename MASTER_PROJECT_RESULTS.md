@@ -24,10 +24,10 @@ The project evaluates models across three distinct transformer topologies:
 
 | Category | Description | Count | Compliance Status |
 | :--- | :--- | :---: | :---: |
-| **Category 1: Excellent Pass** | Logit Diff < 0.5 (Near-lossless reproduction of softmax) | 43 | PASS ✅ |
+| **Category 1: Excellent Pass** | Logit Diff < 0.5 (Near-lossless reproduction of softmax) | 44 | PASS ✅ |
 | **Category 2: Good Pass** | 0.5 <= Logit Diff < 1.0 (Low-rank structural approximation) | 17 | PASS ✅ |
 | **Category 3: Category B (Linear/SSM/MoE)** | Non-softmax formulations (Linear kernels, State-Space, MoE) | 87 | PASS ✅ (Expected) |
-| **Category 4: Encoder-Only Attention** | Bidirectional attention (Safe NO_OP guardrail on causal GPT-2) | 20 | PASS ✅ (Safe) |
+| **Category 4: Encoder-Only Attention** | Bidirectional attention (Safe NO_OP guardrail on causal GPT-2) | 19 | PASS ✅ (Safe) |
 | **Category 5A: Low-Rank / SVD Factorization** | Post-training matrix decomposition & parameter reduction (>1.05×) | 51 | PASS ✅ (Standalone) |
 | **Category 5B: Pruning, Quantization & KV Cache** | Unstructured sparsity, codebook clustering & runtime KV memory | 34 | PASS ✅ (Standalone) |
 | **TOTAL EVALUATED** | Complete repository module catalog | **252** | **100% OPERATIONAL** |
@@ -66,7 +66,7 @@ In our comprehensive GPU rank sweep on an NVIDIA RTX 4070 (`RANK_SWEEP_MASTER_RE
 
 ## 4. Complete Per-Module Empirical Results
 
-### Category 1: Excellent Pass (Max Diff < 0.5) (43 Modules)
+### Category 1: Excellent Pass (Max Diff < 0.5) (44 Modules)
 
 These modules reproduce original Softmax attention with near-zero discrepancy right out of the box:
 
@@ -96,6 +96,7 @@ These modules reproduce original Softmax attention with near-zero discrepancy ri
 | `gqa` | `0.0465` | `0.0053` | `0.2786` | **PASS** |
 | `gqa_attention` | `0.1197` | `0.0119` | `0.2591` | **PASS** |
 | `granite_hybrid` | `0.2119` | `0.0186` | `0.1282` | **PASS** |
+| `hybrid_attention` | `0.4845` | `0.0115` | `0.3527` | **PASS** |
 | `infini_attention` | `0.1370` | `0.0047` | `9.54e-07` | **PASS** |
 | `linformer_attention` | `0.1465` | `0.0023` | `0.3534` | **PASS** |
 | `lola_attention` | `0.0248` | `0.0021` | `1.67e-06` | **PASS** |
@@ -244,6 +245,12 @@ These modules replace standard softmax with linear kernels, state-space models, 
 #### Category B High-Diff Recovery Verification on GPT-2 (50 Recovery Steps, lr=5e-5)
 For modules exhibiting zero-shot logit differences $> 8.0$ on GPT-2 due to non-softmax formulation differences, 50-step recovery fine-tuning was evaluated:
 
+> [!NOTE]
+> **PASS_AFTER_RECOVERY Qualification Threshold**:  
+> A module qualifies for `PASS_AFTER_RECOVERY` if post-recovery accuracy $\ge (\text{baseline} - 10.0\%)$.  
+> For GPT-2 (uncompressed dense baseline **87.84%**), the qualification threshold is $\mathbf{77.84\%}$.  
+> All 7 evaluated modules (**80.53% to 84.22%**) exceed this threshold.
+
 | Module Name | Zero-Shot Diff | Acc Before | Acc After 50 Steps | Delta Acc | Status | Verdict | Source |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
 | `phantom` | `16.2531` | 49.08% | **80.53%** | +31.45% | RECOVERED | PASS_AFTER_RECOVERY | <!-- source: audit/verification_2026_09_18/B2_high_diff_recovery/phantom_gpt2_recovery.json --> |
@@ -254,7 +261,7 @@ For modules exhibiting zero-shot logit differences $> 8.0$ on GPT-2 due to non-s
 | `gated_deltanet_block` | `8.1250` | 52.50% | **84.18%** | +31.68% | RECOVERED | PASS_AFTER_RECOVERY | <!-- source: audit/verification_2026_09_18/B2_high_diff_recovery/gated_deltanet_block_gpt2_recovery.json --> |
 | `factorised_matrix_state` | `8.0415` | 52.50% | **84.22%** | +31.72% | RECOVERED | PASS_AFTER_RECOVERY | <!-- source: audit/verification_2026_09_18/B2_high_diff_recovery/factorised_matrix_state_gpt2_recovery.json --> |
 
-### Category 4: Encoder-Only Attention (Safe NO_OP on GPT-2) (20 Modules)
+### Category 4: Encoder-Only Attention (Safe NO_OP on GPT-2) (19 Modules)
 
 These modules are designed specifically for bidirectional architectures and gracefully preserve causal GPT-2 without crashing:
 
@@ -262,7 +269,6 @@ These modules are designed specifically for bidirectional architectures and grac
 | :--- | :---: | :---: | :---: | :---: |
 | `adaptive_svd_attention` | `0.0000` | `0.0000` | `SAFE NO_OP` | **PASS** |
 | `dobi` | `0.0000` | `0.0000` | `SAFE NO_OP` | **PASS** |
-| `dobi_svd` | `0.0000` | `0.0000` | `SAFE NO_OP` | **PASS** |
 | `dynamic_entropy` | `0.0000` | `0.0000` | `SAFE NO_OP` | **PASS** |
 | `dynamic_rank` | `0.0000` | `0.0000` | `SAFE NO_OP` | **PASS** |
 | `minimal_svd` | `0.9372` | `0.0211` | `SAFE NO_OP` | **PASS** |
