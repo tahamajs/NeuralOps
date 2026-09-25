@@ -136,12 +136,12 @@ def run_single_task(task):
         except Exception:
             pass
 
-    # Dynamic VRAM governor: wait if GPU VRAM usage > 5800 MB (leaving >= 2.2 GB headroom)
+    # Dynamic VRAM governor: strictly cap VRAM between 4000 MB and 5600 MB (prevent full VRAM saturation)
     while True:
         tele = get_vram_and_util()
-        if tele["used_mb"] < 5800:
+        if tele["used_mb"] < 4900:
             break
-        time.sleep(2)
+        time.sleep(3)
 
     with global_lock:
         active_workers_counter[0] += 1
@@ -251,7 +251,7 @@ def build_all_streams():
 
     streams = {}
 
-    # STREAM 1: Stage 2A — Category 5A SVD Multi-Rank Sweeps on DistilBERT (Batch 128)
+    # STREAM 1: Stage 2A — Category 5A SVD Multi-Rank Sweeps on DistilBERT (Batch 96)
     s1_tasks = []
     for m in cat5a_all:
         for r in [64, 128, 256, 384]:
@@ -259,7 +259,7 @@ def build_all_streams():
             s1_tasks.append({
                 "name": f"Stream 1 (Cat 5A r={r}) | DISTILBERT | {m}",
                 "module": m, "model": "models/distilbert_sst2", "model_family": "bert",
-                "dataset": "sst2", "rank": r, "batch_size": 128, "lr": "2e-4",
+                "dataset": "sst2", "rank": r, "batch_size": 96, "lr": "2e-4",
                 "out_dir": out, "summary_file": f"{out}/summary.csv",
             })
     streams["STREAM_1_DISTILBERT_SVD"] = s1_tasks
@@ -298,7 +298,7 @@ def build_all_streams():
             })
     streams["STREAM_3_ATTENTIONS"] = s3_tasks
 
-    # STREAM 4: Stage 4 — Cross-Domain Transfer Sweeps: MNLI & AG News (Batch 96)
+    # STREAM 4: Stage 4 — Cross-Domain Transfer Sweeps: MNLI & AG News (Batch 64)
     transfer_mods = [
         "adasvd_compressor", "a3_compressor", "saes_svd_v2", "direct_svd", "rpca_compressor",
         "kronecker_compressor", "mlorq_compressor", "salr", "oats_compressor", "cure", "admm_compressor"
@@ -309,14 +309,14 @@ def build_all_streams():
         s4_tasks.append({
             "name": f"Stream 4 (MNLI) | {m}",
             "module": m, "model": "models/distilbert_mnli_full", "model_family": "bert",
-            "dataset": "mnli", "batch_size": 96, "lr": "2e-4", "out_dir": out_mnli,
+            "dataset": "mnli", "batch_size": 64, "lr": "2e-4", "out_dir": out_mnli,
             "summary_file": f"{out_mnli}/summary.csv",
         })
         out_ag = str(BASE_DIR / "results" / "agnews_deep_sweep" / m)
         s4_tasks.append({
             "name": f"Stream 4 (AGNews) | {m}",
             "module": m, "model": "models/distilbert_agnews_full", "model_family": "bert",
-            "dataset": "agnews", "batch_size": 96, "lr": "2e-4", "out_dir": out_ag,
+            "dataset": "agnews", "batch_size": 64, "lr": "2e-4", "out_dir": out_ag,
             "summary_file": f"{out_ag}/summary.csv",
         })
     streams["STREAM_4_TRANSFER"] = s4_tasks
