@@ -1,2 +1,2 @@
 module_name,status,accuracy_pct,perplexity,ppl_status,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
-oats_compressor,CRASH,0.0,,,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,KeyError: 'text',,2026-09-25T14:06:25.487207
+oats_compressor,PASS,70.76,0.0,,0.7255,0.7063,0.7092,0.7066,0.585,20.83,344.86,172572.67,66955010,66955010,1538,1.0,0.0,0.0,10,14,0.3903,,0,0,,legacy_bert,2026-09-25T14:21:19.304466
