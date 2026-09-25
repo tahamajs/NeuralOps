@@ -142,12 +142,10 @@ def run_single_task(task):
             tele = get_vram_and_util()
             cur_active = active_workers_counter[0]
             # 90% of 8GB is ~7372MB. We cap at 7000MB to be safe.
-            if tele["used_mb"] < 7000 and cur_active < 6:
+            if tele["used_mb"] < 7000 and cur_active < 5:
                 active_workers_counter[0] += 1
-                # Sleep INSIDE the lock to physically stagger launches by 8 seconds
-                # so nvidia-smi has time to register the PyTorch memory allocation
-                # before the next thread is permitted to evaluate tele["used_mb"].
-                time.sleep(8)
+                # Sleep INSIDE the lock to physically stagger launches
+                time.sleep(1)
                 break
         time.sleep(3)
 
@@ -420,7 +418,7 @@ def main():
     t_global_start = time.time()
 
     # Launch 8 concurrent workers pulling from the shared pool of remaining tasks
-    with ThreadPoolExecutor(max_workers=6) as executor:
+    with ThreadPoolExecutor(max_workers=5) as executor:
         future_map = {
             executor.submit(run_task_worker, task, total_pending, idx): task["name"]
             for idx, task in enumerate(pending_tasks)
