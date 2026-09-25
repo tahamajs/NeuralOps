@@ -2,7 +2,7 @@
 
 **Date:** September 25, 2026  
 **Repository:** SVD Linear Attention & Unified Compression Framework  
-**Scope:** 249 Evaluated Unique Modules across DistilBERT, RoBERTa-base, and GPT-2 (consolidated from 252 alias keys)  
+**Scope:** 245 Evaluated Unique Modules across DistilBERT, RoBERTa-base, and GPT-2 (consolidated from 252 registered alias keys)  
 **Status:** 100% COMPLETE — ZERO ERRORS / ZERO CRASHES  
 
 ---
