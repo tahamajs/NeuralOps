@@ -190,8 +190,8 @@ In our systematic GPU rank sweep on an NVIDIA GeForce RTX 4070 (`RANK_SWEEP_MAST
 
 Systematic evaluation of 23 additional registered SVD and tensor decomposition engines evaluated concurrently across DistilBERT (SST-2, $r \in \{128, 256\}$) and RoBERTa-base (SST-2, $r=256$) with 4 parallel worker processes on an NVIDIA RTX 4070:
 
-| Module | Rank | DistilBERT Acc | RoBERTa Acc | Compression | Recon Error | Overall Status |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| Module | Rank | DistilBERT Acc | RoBERTa Acc | Compression | Recon Error | Rank Sensitivity | Overall Status |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | `aasvd` | 128 | 86.47% | — | 1.20× | 0.8162 | **PASS** |
 | `aasvd` | 256 | 86.47% | 83.37% | 1.21× | 0.8210 | **PASS** |
 | `adaptive_ranks` | 128 | 88.53% | — | 1.16× | 0.7561 | **PASS** |
