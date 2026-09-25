@@ -318,9 +318,13 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 | `hybrid_svd_layer` | DistilBERT | 89.91% (0.3332) | 89.91% (0.3332) | 89.91% (0.3332) | 89.91% (0.3332) | 1.04× | **Invariance PASS** |
 | `hybrid_svd_layer` | RoBERTa | 92.55% (0.3391) | 92.55% (0.3391) | 92.55% (0.3391) | 92.55% (0.3391) | 1.04× | **Invariance PASS** |
 | `kronecker_compressor` | DistilBERT | 90.71% | 90.71% | 90.71% | 90.25% | **1.04×** | **PASS** |
-| `kronecker_compressor` | RoBERTa | 91.63% | 91.63% | 91.63% | [RUNNING] | **1.04×** | **PASS (r=64, 128, 256)** |
+| `kronecker_compressor` | RoBERTa | 91.63% | 91.63% | 91.63% | **91.86%** | **1.04×** | **PASS** |
 | `kronecker_tt_lora` | DistilBERT | 90.71% | 90.71% | 90.71% | 90.71% | 0.97× | **Invariance PASS** |
+| `kronecker_tt_lora` | RoBERTa | 93.92% | 93.92% | 93.92% | [RUNNING] | 0.97× | **Invariance PASS (r=64, 128, 256)** |
 | `lsc_compressor` | DistilBERT | 90.60% | 90.60% | 90.60% | 90.60% | 1.00× | **Invariance PASS** |
+| `mgie_svd` | DistilBERT | 90.71% (0.7611) | 90.71% (0.6192) | 89.56% (0.4025) | 90.60% (0.2403) | 1.00× $\to$ 1.04× | **Monotonic Error Decay PASS** |
+| `mlorq_compressor` | DistilBERT | 90.60% (0.0290) | 90.60% (0.0290) | 90.60% (0.0290) | 90.60% (0.0290) | 1.00× | **Invariance PASS** |
+| `modegpt` | DistilBERT | 90.71% (0.7767) | 90.71% (0.6460) | 90.48% (0.4438) | 90.83% (0.2883) | 1.00× | **Monotonic Error Decay PASS** |
 
 ---
 
