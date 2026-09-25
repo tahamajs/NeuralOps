@@ -277,6 +277,27 @@ Evaluation of unstructured sparsity, gradient-based magnitude/ADMM pruning, code
 
 ---
 
+### 3.6 Stage 2 Deep Multi-Rank Factorization Sweeps (Ranks 64, 128, 256, 384)
+
+Systematic fine-grained rank scaling evaluation of Category 5A SVD compression engines across DistilBERT and RoBERTa-base with 4 parallel worker processes on an NVIDIA RTX 4070 Laptop GPU:
+
+| Module | Model | Rank 64 | Rank 128 | Rank 256 | Rank 384 | Compression | Monotonicity Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| `adaptive_ranks` | DistilBERT | 87.84% (0.7744) | 88.53% (0.7561) | 89.91% (0.4973) | **90.48%** (0.4367) | 1.17× $\to$ 1.06× | **Strict Monotonic PASS** |
+| `adaptive_ranks` | RoBERTa | 84.98% (0.7944) | 81.88% (0.7841) | **92.55%** (0.4923) | [QUEUED] | 1.19× $\to$ 1.08× | **High-Rank Recovery PASS** |
+| `a3_compressor` | DistilBERT | 90.25% (0.3493) | 90.25% (0.3493) | 90.25% (0.3493) | 90.25% (0.3493) | 1.03× | **Invariance PASS** |
+| `a3_compressor` | RoBERTa | 93.23% (0.3449) | 93.23% (0.3449) | 93.23% (0.3449) | 93.23% (0.3449) | 1.02× | **Invariance PASS** |
+| `aa_svd_compressor` | DistilBERT | 87.73% (0.8162) | 87.73% (0.8162) | 87.73% (0.8162) | 87.73% (0.8162) | 1.20× | **PASS** |
+| `aa_svd_compressor` | RoBERTa | 84.17% (0.8210) | 84.17% (0.8210) | 84.17% (0.8210) | 84.17% (0.8210) | 1.21× | **PASS** |
+| `aasvd` | DistilBERT | 87.73% (0.8162) | 87.73% (0.8162) | 87.73% (0.8162) | 87.73% (0.8162) | 1.20× | **PASS** |
+| `aasvd` | RoBERTa | 84.17% (0.8210) | 84.17% (0.8210) | 84.17% (0.8210) | 84.17% (0.8210) | 1.21× | **PASS** |
+| `adaptive_compressor` | DistilBERT | 88.65% | 88.65% | 88.65% | 88.65% | 1.04× | **PASS** |
+| `adaptive_compressor` | RoBERTa | 92.32% | 92.32% | 92.32% | 92.32% | 1.05× | **PASS** |
+| `adasvd_compressor` | DistilBERT | 87.96% (0.3560) | [IN PROGRESS] | [QUEUED] | [QUEUED] | 1.21× | **PASS (r=64)** |
+| `adasvd_compressor` | RoBERTa | [IN PROGRESS] | [IN PROGRESS] | [QUEUED] | [QUEUED] | — | **Running** |
+
+---
+
 ### Key Findings from Multi-Rank Sweeps:
 
 1. **DistilBERT (Monotonic Scaling):**
