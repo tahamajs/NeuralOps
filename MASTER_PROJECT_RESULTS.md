@@ -24,18 +24,21 @@ The project evaluates models across three distinct transformer topologies:
 
 | Category | Description | Count | Compliance Status |
 | :--- | :--- | :---: | :---: |
-| **Category 1: Excellent Pass** | Logit Diff < 0.5 (Near-lossless reproduction of softmax) | 42 | PASS ✅ |
-| **Category 2: Good Pass** | 0.5 <= Logit Diff < 1.0 (Low-rank structural approximation) | 17 | PASS ✅ |
-| **Category 3: Category B (Linear/SSM/MoE)** | Non-softmax formulations (Linear kernels, State-Space, MoE) | 87 | PASS ✅ (Expected) |
+| **Category 1: Excellent Pass** | Logit Diff < 0.5 (Near-lossless reproduction of softmax) | 41 | PASS ✅ |
+| **Category 2: Good Pass** | 0.5 <= Logit Diff < 1.0 (Low-rank structural approximation) | 15 | PASS ✅ |
+| **Category 3: Category B (Linear/SSM/MoE)** | Non-softmax formulations (Linear kernels, State-Space, MoE) | 86 | PASS ✅ (Expected) |
 | **Category 4: Encoder-Only Attention** | Bidirectional attention (Safe NO_OP guardrail on causal GPT-2) | 18 | PASS ✅ (Safe) |
 | **Category 5A: Low-Rank / SVD Factorization** | Post-training matrix decomposition & parameter reduction (>1.05×) | 51 | PASS ✅ (Standalone) |
 | **Category 5B: Pruning, Quantization & KV Cache** | Unstructured sparsity, codebook clustering & runtime KV memory | 34 | PASS ✅ (Standalone) |
-| **TOTAL EVALUATED** | Complete repository module catalog | **249** | **100% OPERATIONAL** |
+| **TOTAL EVALUATED** | Complete repository module catalog | **245** | **100% OPERATIONAL** |
 
 > [!NOTE]
-> **Registry Alias Consolidation (252 → 249 Unique Modules)**: The repository module registry includes legacy alias keys.
-> 1. In Category 1, `weighted_ensemble` and `smart_weighted_ensemble` were registered aliases pointing to the identical underlying class (`HybridAttention` in `Codes/framework/attentions/hybrid_attention.py`). Consolidating these two redundant aliases into canonical `hybrid_attention` reduced Category 1 from 44 to 42 modules (252 → 250).
-> 2. In Category 5A, `dobi` was a redundant registered alias of `dobi_svd` (both pointing to the identical factory function `dobi_factory` in `Codes/framework/compression_engine/dobi_svd.py`). Consolidating `dobi` into `dobi_svd` updates Category 5A from 52 to 51 modules and total unique evaluated catalog from 250 to 249.
+> **Registry Alias Consolidation (252 → 245 Unique Modules)**: The repository module registry includes legacy alias keys that have been consolidated to avoid duplicate counting:
+> 1. In Category 1, `weighted_ensemble` and `smart_weighted_ensemble` were registered aliases of `hybrid_attention` (44 → 42), and `gqa_attention` was an alias of `gqa` (42 → 41).
+> 2. In Category 2, `soa_module` and `soa_fused_module` were registered aliases of `soa_attn` in Category 1, consolidating Category 2 from 17 to 15 modules.
+> 3. In Category 3, `galerkin_attention` was a registered alias of `galerkin`, consolidating Category 3 from 87 to 86 modules.
+> 4. In Category 5A, `dobi` was a redundant registered alias of `dobi_svd` (both pointing to `dobi_factory` in `Codes/framework/compression_engine/dobi_svd.py`), consolidating Category 5A from 52 to 51 modules.
+> 5. Total unique catalog reduction: 252 - 2 (hybrid) - 1 (dobi) - 1 (gqa) - 2 (soa) - 1 (galerkin) = **245 unique evaluated modules**.
 
 
 ---
