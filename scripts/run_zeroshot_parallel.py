@@ -35,10 +35,10 @@ def run_module(module: str, args) -> dict:
     log_file = out_dir / "run.log"
 
     env = os.environ.copy()
-    # Allow offline datasets cache loading
-    env["HF_HUB_OFFLINE"] = "1"
-    env["TRANSFORMERS_OFFLINE"] = "1"
-    env["HF_DATASETS_OFFLINE"] = "1"
+    # Do not set HF_HUB_OFFLINE=1 because parquet datasets are accessed via resolve URLs
+    env.pop("HF_HUB_OFFLINE", None)
+    env.pop("TRANSFORMERS_OFFLINE", None)
+    env.pop("HF_DATASETS_OFFLINE", None)
 
     cmd = [
         sys.executable, "scripts/eval_zeroshot.py",
