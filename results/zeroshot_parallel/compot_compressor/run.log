@@ -1,0 +1,113 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+[START] RAM: 0.70/16.79 GB, VRAM: 0.00/8.59 GB
+Loading models/gpt2 on cuda...
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 2491.64it/s]
+2026-09-26 05:23:13,513 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.7846 on transformer.h.0.attn.c_attn exceeded threshold 0.2000.
+2026-09-26 05:23:13,518 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.0.attn.c_attn (fallback to original).
+2026-09-26 05:23:21,465 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.7902 on transformer.h.0.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 05:23:21,465 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.0.attn.c_proj (fallback to original).
+2026-09-26 05:23:29,301 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.7818 on transformer.h.0.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 05:23:29,301 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.0.mlp.c_fc (fallback to original).
+2026-09-26 05:23:40,412 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9509 on transformer.h.0.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 05:23:40,413 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.0.mlp.c_proj (fallback to original).
+2026-09-26 05:23:47,015 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8154 on transformer.h.1.attn.c_attn exceeded threshold 0.2000.
+2026-09-26 05:23:47,015 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.1.attn.c_attn (fallback to original).
+2026-09-26 05:23:49,789 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8243 on transformer.h.1.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 05:23:49,789 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.1.attn.c_proj (fallback to original).
+2026-09-26 05:23:59,800 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8059 on transformer.h.1.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 05:23:59,800 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.1.mlp.c_fc (fallback to original).
+2026-09-26 05:24:09,710 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9618 on transformer.h.1.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 05:24:09,710 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.1.mlp.c_proj (fallback to original).
+2026-09-26 05:24:14,674 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8396 on transformer.h.2.attn.c_attn exceeded threshold 0.2000.
+2026-09-26 05:24:14,674 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.2.attn.c_attn (fallback to original).
+2026-09-26 05:24:21,785 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8414 on transformer.h.2.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 05:24:21,785 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.2.attn.c_proj (fallback to original).
+2026-09-26 05:24:28,752 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8239 on transformer.h.2.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 05:24:28,753 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.2.mlp.c_fc (fallback to original).
+2026-09-26 05:24:40,206 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9499 on transformer.h.2.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 05:24:40,207 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.2.mlp.c_proj (fallback to original).
+2026-09-26 05:24:45,829 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8352 on transformer.h.3.attn.c_attn exceeded threshold 0.2000.
+2026-09-26 05:24:45,830 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.3.attn.c_attn (fallback to original).
+2026-09-26 05:24:50,713 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8543 on transformer.h.3.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 05:24:50,713 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.3.attn.c_proj (fallback to original).
+2026-09-26 05:24:58,465 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8359 on transformer.h.3.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 05:24:58,466 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.3.mlp.c_fc (fallback to original).
+2026-09-26 05:25:06,926 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9436 on transformer.h.3.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 05:25:06,926 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.3.mlp.c_proj (fallback to original).
+2026-09-26 05:25:11,851 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8368 on transformer.h.4.attn.c_attn exceeded threshold 0.2000.
+2026-09-26 05:25:11,852 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.4.attn.c_attn (fallback to original).
+2026-09-26 05:25:18,473 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8547 on transformer.h.4.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 05:25:18,473 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.4.attn.c_proj (fallback to original).
+2026-09-26 05:25:25,113 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8389 on transformer.h.4.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 05:25:25,113 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.4.mlp.c_fc (fallback to original).
+2026-09-26 05:25:36,115 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9589 on transformer.h.4.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 05:25:36,116 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.4.mlp.c_proj (fallback to original).
+2026-09-26 05:25:41,799 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8345 on transformer.h.5.attn.c_attn exceeded threshold 0.2000.
+2026-09-26 05:25:41,800 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.5.attn.c_attn (fallback to original).
+2026-09-26 05:25:45,498 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8401 on transformer.h.5.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 05:25:45,499 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.5.attn.c_proj (fallback to original).
+2026-09-26 05:25:53,715 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8371 on transformer.h.5.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 05:25:53,715 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.5.mlp.c_fc (fallback to original).
+2026-09-26 05:26:02,696 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9636 on transformer.h.5.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 05:26:02,696 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.5.mlp.c_proj (fallback to original).
+2026-09-26 05:26:07,369 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8526 on transformer.h.6.attn.c_attn exceeded threshold 0.2000.
+2026-09-26 05:26:07,369 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.6.attn.c_attn (fallback to original).
+2026-09-26 05:26:14,251 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8476 on transformer.h.6.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 05:26:14,251 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.6.attn.c_proj (fallback to original).
+2026-09-26 05:26:20,522 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8350 on transformer.h.6.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 05:26:20,523 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.6.mlp.c_fc (fallback to original).
+2026-09-26 05:26:30,203 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9639 on transformer.h.6.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 05:26:30,203 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.6.mlp.c_proj (fallback to original).
+2026-09-26 05:26:36,964 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8387 on transformer.h.7.attn.c_attn exceeded threshold 0.2000.
+2026-09-26 05:26:36,965 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.7.attn.c_attn (fallback to original).
+2026-09-26 05:26:39,255 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8351 on transformer.h.7.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 05:26:39,255 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.7.attn.c_proj (fallback to original).
+2026-09-26 05:26:46,664 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8229 on transformer.h.7.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 05:26:46,665 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.7.mlp.c_fc (fallback to original).
+2026-09-26 05:26:56,674 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9639 on transformer.h.7.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 05:26:56,674 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.7.mlp.c_proj (fallback to original).
+2026-09-26 05:27:01,044 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8299 on transformer.h.8.attn.c_attn exceeded threshold 0.2000.
+2026-09-26 05:27:01,045 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.8.attn.c_attn (fallback to original).
+2026-09-26 05:27:06,358 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8355 on transformer.h.8.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 05:27:06,358 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.8.attn.c_proj (fallback to original).
+2026-09-26 05:27:13,005 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8163 on transformer.h.8.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 05:27:13,006 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.8.mlp.c_fc (fallback to original).
+2026-09-26 05:27:20,909 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9646 on transformer.h.8.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 05:27:20,909 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.8.mlp.c_proj (fallback to original).
+2026-09-26 05:27:27,662 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8081 on transformer.h.9.attn.c_attn exceeded threshold 0.2000.
+2026-09-26 05:27:27,662 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.9.attn.c_attn (fallback to original).
+2026-09-26 05:27:31,006 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8218 on transformer.h.9.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 05:27:31,007 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.9.attn.c_proj (fallback to original).
+2026-09-26 05:27:36,088 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8106 on transformer.h.9.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 05:27:36,088 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.9.mlp.c_fc (fallback to original).
+2026-09-26 05:27:45,446 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9643 on transformer.h.9.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 05:27:45,446 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.9.mlp.c_proj (fallback to original).
+2026-09-26 05:27:48,045 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.7948 on transformer.h.10.attn.c_attn exceeded threshold 0.2000.
+2026-09-26 05:27:48,046 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.10.attn.c_attn (fallback to original).
+2026-09-26 05:27:51,076 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8277 on transformer.h.10.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 05:27:51,076 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.10.attn.c_proj (fallback to original).
+2026-09-26 05:27:55,912 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8052 on transformer.h.10.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 05:27:55,912 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.10.mlp.c_fc (fallback to original).
+2026-09-26 05:28:01,972 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9628 on transformer.h.10.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 05:28:01,973 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.10.mlp.c_proj (fallback to original).
+2026-09-26 05:28:04,701 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.7923 on transformer.h.11.attn.c_attn exceeded threshold 0.2000.
+2026-09-26 05:28:04,701 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.11.attn.c_attn (fallback to original).
+2026-09-26 05:28:08,277 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.7597 on transformer.h.11.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 05:28:08,277 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.11.attn.c_proj (fallback to original).
+2026-09-26 05:28:14,006 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8054 on transformer.h.11.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 05:28:14,007 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.11.mlp.c_fc (fallback to original).
+2026-09-26 05:28:20,610 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9590 on transformer.h.11.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 05:28:20,610 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for transformer.h.11.mlp.c_proj (fallback to original).
+2026-09-26 05:28:20,612 [INFO] framework.compression_engine.compot_compressor: COMPOT compression complete: 0 compressed, 48 fallback. Avg error: 0.0000.
+2026-09-26 05:28:22,165 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 05:28:22,649 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 05:28:22,903 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/tree/refs%2Fconvert%2Fparquet/plain_text%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 05:28:45,372 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 05:28:45,877 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 05:28:46,139 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Easy%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 05:29:15,963 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 05:29:16,451 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Challenge%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 05:30:09,427 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 05:30:09,902 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Rowan/hellaswag/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 05:30:10,158 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Rowan/hellaswag/tree/refs%2Fconvert%2Fparquet/default%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"

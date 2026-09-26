@@ -1,0 +1,89 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+[START] RAM: 0.70/16.79 GB, VRAM: 0.00/8.59 GB
+Loading models/gpt2 on cuda...
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3984.75it/s]
+2026-09-26 05:20:59,392 [INFO] framework.compression_engine.cachenotes_compressor: CPT generator not yet trained. Running initial task-aware training pass...
+2026-09-26 05:24:11,247 [INFO] framework.compression_engine.cachenotes_compressor: CPT generator trained successfully over 60 steps with avg loss 0.3216
+2026-09-26 05:24:27,126 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4434 on transformer.h.0.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 05:24:27,126 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.0.mlp.c_fc (fallback to original).
+2026-09-26 05:24:29,626 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4541 on transformer.h.0.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 05:24:29,626 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.0.mlp.c_proj (fallback to original).
+2026-09-26 05:24:45,632 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4587 on transformer.h.1.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 05:24:45,633 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.1.mlp.c_fc (fallback to original).
+2026-09-26 05:24:48,435 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4832 on transformer.h.1.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 05:24:48,435 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.1.mlp.c_proj (fallback to original).
+2026-09-26 05:24:51,827 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.3647 on transformer.h.2.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 05:24:51,827 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.2.attn.c_attn (fallback to original).
+2026-09-26 05:25:04,372 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4480 on transformer.h.2.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 05:25:04,374 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.2.mlp.c_fc (fallback to original).
+2026-09-26 05:25:06,925 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4497 on transformer.h.2.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 05:25:06,926 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.2.mlp.c_proj (fallback to original).
+2026-09-26 05:25:09,843 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4027 on transformer.h.3.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 05:25:09,843 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.3.attn.c_attn (fallback to original).
+2026-09-26 05:25:23,179 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4466 on transformer.h.3.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 05:25:23,179 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.3.mlp.c_fc (fallback to original).
+2026-09-26 05:25:25,886 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4315 on transformer.h.3.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 05:25:25,887 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.3.mlp.c_proj (fallback to original).
+2026-09-26 05:25:28,703 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.3846 on transformer.h.4.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 05:25:28,703 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.4.attn.c_attn (fallback to original).
+2026-09-26 05:25:42,059 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4368 on transformer.h.4.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 05:25:42,060 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.4.mlp.c_fc (fallback to original).
+2026-09-26 05:25:44,896 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4394 on transformer.h.4.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 05:25:44,896 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.4.mlp.c_proj (fallback to original).
+2026-09-26 05:25:47,936 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.3574 on transformer.h.5.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 05:25:47,936 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.5.attn.c_attn (fallback to original).
+2026-09-26 05:26:00,060 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4364 on transformer.h.5.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 05:26:00,060 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.5.mlp.c_fc (fallback to original).
+2026-09-26 05:26:02,639 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4449 on transformer.h.5.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 05:26:02,639 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.5.mlp.c_proj (fallback to original).
+2026-09-26 05:26:05,734 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.3821 on transformer.h.6.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 05:26:05,735 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.6.attn.c_attn (fallback to original).
+2026-09-26 05:26:18,915 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4387 on transformer.h.6.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 05:26:18,915 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.6.mlp.c_fc (fallback to original).
+2026-09-26 05:26:21,390 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4494 on transformer.h.6.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 05:26:21,391 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.6.mlp.c_proj (fallback to original).
+2026-09-26 05:26:24,406 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.3909 on transformer.h.7.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 05:26:24,408 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.7.attn.c_attn (fallback to original).
+2026-09-26 05:26:37,569 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4420 on transformer.h.7.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 05:26:37,569 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.7.mlp.c_fc (fallback to original).
+2026-09-26 05:26:40,353 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4553 on transformer.h.7.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 05:26:40,354 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.7.mlp.c_proj (fallback to original).
+2026-09-26 05:26:43,320 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4304 on transformer.h.8.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 05:26:43,321 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.8.attn.c_attn (fallback to original).
+2026-09-26 05:26:55,855 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4498 on transformer.h.8.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 05:26:55,855 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.8.mlp.c_fc (fallback to original).
+2026-09-26 05:26:58,463 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4489 on transformer.h.8.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 05:26:58,463 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.8.mlp.c_proj (fallback to original).
+2026-09-26 05:27:01,442 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4508 on transformer.h.9.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 05:27:01,442 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.9.attn.c_attn (fallback to original).
+2026-09-26 05:27:13,707 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4466 on transformer.h.9.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 05:27:13,707 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.9.mlp.c_fc (fallback to original).
+2026-09-26 05:27:16,185 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4521 on transformer.h.9.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 05:27:16,186 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.9.mlp.c_proj (fallback to original).
+2026-09-26 05:27:18,910 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4226 on transformer.h.10.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 05:27:18,911 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.10.attn.c_attn (fallback to original).
+2026-09-26 05:27:30,566 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4445 on transformer.h.10.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 05:27:30,567 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.10.mlp.c_fc (fallback to original).
+2026-09-26 05:27:33,050 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4633 on transformer.h.10.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 05:27:33,051 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.10.mlp.c_proj (fallback to original).
+2026-09-26 05:27:35,425 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4077 on transformer.h.11.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 05:27:35,425 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.11.attn.c_attn (fallback to original).
+2026-09-26 05:27:46,208 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4380 on transformer.h.11.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 05:27:46,208 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.11.mlp.c_fc (fallback to original).
+2026-09-26 05:27:48,862 [WARNING] framework.compression_engine.cachenotes_compressor: CacheNotes reconstruction error 0.4677 on transformer.h.11.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 05:27:48,863 [INFO] framework.compression_engine.cachenotes_compressor: Skipping CacheNotes compression for transformer.h.11.mlp.c_proj (fallback to original).
+2026-09-26 05:27:51,202 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 05:27:51,691 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 05:27:51,997 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/tree/refs%2Fconvert%2Fparquet/plain_text%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 05:28:15,010 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 05:28:15,501 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 05:28:15,763 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Easy%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 05:28:53,391 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 05:28:53,893 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Challenge%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 05:29:32,649 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 05:29:33,131 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Rowan/hellaswag/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 05:29:33,399 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Rowan/hellaswag/tree/refs%2Fconvert%2Fparquet/default%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 05:30:18,192 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 05:30:18,721 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/winogrande/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 05:30:19,000 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/winogrande/tree/refs%2Fconvert%2Fparquet/winogrande_xl%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
