@@ -258,5 +258,15 @@
     "accuracy_pct": 89.91,
     "error": "base_before=66955010 base_after=70523912 delta=+5.33%",
     "timestamp": "2026-09-27T03:25:32.434795"
+  },
+  {
+    "module": "flap",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T03:26:25.831299"
   }
 ]
