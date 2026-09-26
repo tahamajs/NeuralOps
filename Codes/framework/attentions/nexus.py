@@ -934,6 +934,8 @@ class NEXUSAttention(BaseAttention):
 
 @ATTENTION_REGISTRY.register("inject_nexus")
 @ATTENTION_REGISTRY.register("nexus_inject")
+@ATTENTION_REGISTRY.register("inject_nexus_attention")
+@ATTENTION_REGISTRY.register("nexus_attention_inject")
 def inject_nexus(
     model: Optional[nn.Module] = None,
     layer: Optional[nn.Module] = None,
