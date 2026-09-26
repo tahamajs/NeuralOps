@@ -1,0 +1,15 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+[START] RAM: 0.70/16.79 GB, VRAM: 0.00/8.59 GB
+Loading models/gpt2 on cuda...
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 4545.04it/s]
+2026-09-26 17:52:57,672 [INFO] framework.core.attention_utils: Successfully injected 'hla_attention' into 12 transformer blocks.
+2026-09-26 17:52:59,782 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 17:53:00,306 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 17:53:00,798 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/tree/refs%2Fconvert%2Fparquet/plain_text%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 17:53:29,975 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 17:53:30,791 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 17:53:31,092 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Easy%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 17:57:40,640 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 17:57:41,132 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Challenge%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
