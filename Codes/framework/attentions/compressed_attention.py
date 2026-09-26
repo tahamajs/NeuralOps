@@ -1,4 +1,4 @@
-r"""
+"""
 Compressed Multi-Head Attention via Truncated Singular Value Decomposition (SVD).
 
 Provides rank-constrained and singular-energy-thresholded low-rank approximations of standard

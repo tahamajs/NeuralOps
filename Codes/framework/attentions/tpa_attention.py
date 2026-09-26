@@ -1,4 +1,4 @@
-r"""
+"""
 TPAttention: Tensor Product Attention with Factorised Q-K Projections.
 
 Tensor-Product factorization of Q and K:
@@ -6,34 +6,6 @@ Tensor-Product factorization of Q and K:
     W_q[h*hd + a*r + b, k] ≈ A[h, a, k] · B[h, b, k]
     W_k[h*hd + a*r + b, k] ≈ C[h, a, k] · D[h, b, k]
 
-Fixes (v2):
-  TPA-FIX-01  Fast CP init (marginalization + ALS).
-  TPA-FIX-02  r*r == head_dim required for tensor-product path.
-  TPA-FIX-03  Recursion guard in injector.
-  TPA-FIX-04  RoPE dtype cast.
-  TPA-FIX-05  Removed per-forward `del Q, K, v`.
-  TPA-FIX-06  Fallback orthogonal init if CP yields NaN.
-  TPA-FIX-07  **CP reconstruction error validated.** If relative error
-              exceeds `max_cp_error`, falls back to SVD-based factorization
-              of W_q (q_proj1 = U√S, q_proj2 = Vt) which has the same
-              parameter count and much better fidelity.
-  TPA-FIX-08  **Identity-select qk_proj replaced with proper projection.**
-              When r*r != head_dim, `qk_proj` is initialized from a truncated
-              SVD of W_q instead of a destructive identity.
-  TPA-FIX-09  **Causality with custom_mask is preserved.** We always
-              construct the causal mask first, then OR with the supplied mask.
-  TPA-FIX-10  **Removed output shape padding hack.** The output projection
-              is designed to match hidden_size exactly.
-  TPA-FIX-11  **LoRA on tensor-product projections disabled by default.**
-              LoRA is applied to a separate low-rank residual instead, which
-              has well-defined semantics.
-  TPA-FIX-12  **Proper scaling.** Score scale uses the effective head_dim
-              (= rank*rank for tensor-product path, head_dim otherwise).
-  TPA-FIX-13  **GQA-safe repeat_kv after factorization.**
-  TPA-FIX-14  **Gradient checkpointing only when explicitly requested
-              and model.training is True.**
-  TPA-FIX-15  **SVD fallback path for W_q/W_k when CP is inapplicable
-              (r*r != head_dim) instead of identity projection.**
 """
 
 from __future__ import annotations

@@ -3,32 +3,6 @@
 Vectorized Mixture-of-Experts block with load-balancing regularization, SVD low-rank
 expert factorization, and multi-head attention weight transfer.
 
-Bug-fix map (v2):
-  RP-FIX-01  aux_loss registered as buffer.
-  RP-FIX-02  MoE always executed.
-  RP-FIX-03  SDPA receives attention_mask as additive bias.
-  RP-FIX-04  KV-cache implemented (tuple + DynamicCache).
-  RP-FIX-05  RoPE past_len offset for cache.
-  RP-FIX-06  top_k > 1 density corrected.
-  RP-FIX-07  SVDLinear only exposes low-rank factors.
-  RP-FIX-08  Head mask broadcast fixed.
-  RP-FIX-09  output_attentions forces manual path.
-  RP-FIX-10  hidden_size fallback removed.
-  RP-FIX-11  is_decoder detection via helper.
-  RP-FIX-12  Pre-LN / Post-LN compatibility flag.
-  RP-FIX-13  injector recursion guard.
-  RP-FIX-14  forward return shape consistent.
-  RP-FIX-15  attention_mask dtype handling robust.
-  RP-FIX-16  **Nested encoder: out_lin set to Identity, forward skips projection.**
-  RP-FIX-17  **Pre-LN corrected: attention and MoE operate on normalized inputs.**
-  RP-FIX-18  **SDPA disabled when past_len > 0 and is_decoder (falls back to manual).**
-  RP-FIX-19  **RoPE past_len uses layer_idx for DynamicCache.**
-  RP-FIX-20  **_prepare_valid_mask handles 3D masks.**
-  RP-FIX-21  **REAPMoEAttention accepts comp_config.**
-  RP-FIX-22  **is_nested_encoder initialized to False.**
-  RP-FIX-23  **num_kv_heads clamped to num_heads.**
-  RP-FIX-24  **Cross-attention raises NotImplementedError.**
-  RP-FIX-25  **inject_reap_moe propagates n_experts and top_k from comp_config.**
 """
 
 from __future__ import annotations

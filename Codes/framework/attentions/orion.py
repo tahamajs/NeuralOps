@@ -4,18 +4,6 @@ Hybrid multi-head attention architecture integrating zero-shot SVD low-rank fact
 projections, head-wise bifurcated linear kernel vs. temperature-softmax full attention,
 and random Fourier features.
 
-Bug-fix map:
-  OR-FIX-01  softpick replaced with temperature_softmax (ReLU-based version was
-             always-zero for max(x) <= 0).
-  OR-FIX-02  _full_softpick_attention rewritten: removed NameError on `hidden_states`,
-             `is_cross`, `self.all_head_size`; no double out_proj; returns tensor.
-  OR-FIX-03  _kernel_linear_attention accepts token_valid and masks K/V.
-  OR-FIX-04  forward passes token_valid to both branches; no post-hoc query masking.
-  OR-FIX-05  torch.cuda.amp → torch.amp for forward compatibility.
-  OR-FIX-06  RoPE cos/sin dtype cast.
-  OR-FIX-07  inject_orion: recursion guard.
-  OR-FIX-08  head_mask handling unified.
-
 Supports:
 - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
 - Trainable LoRA adapters with frozen base weights

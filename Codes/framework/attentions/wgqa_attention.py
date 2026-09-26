@@ -1,4 +1,4 @@
-r"""
+"""
 Weighted Grouped-Query Attention (WGQA).
 
 Hardened for production use across diverse transformer architectures:

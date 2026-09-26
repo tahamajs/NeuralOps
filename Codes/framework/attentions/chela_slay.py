@@ -1,30 +1,6 @@
-r"""
+"""
 CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel — Production-Hardened (v2).
 
-Fixes (v2):
-  CS-FIX-01  **Denominator stabilization.** `denom` may be negative with
-             cos/sin features. We now use `denom.abs().clamp_min(eps)` AND
-             additionally add a small positive bias to enforce a positive
-             partition function (standard for RFF linear attention).
-  CS-FIX-02  **Yat projection is never rebuilt in forward.** If the shape
-             mismatches, the model raises an informative error instead of
-             silently replacing the parameter (which would corrupt state_dict).
-  CS-FIX-03  Removed debug `print()` from copy_weights.
-  CS-FIX-04  **Yat feature scale fixed to `sqrt(2 / F)`** so that
-             E[phi(x)·phi(y)] ≈ exp(-||x-y||²/2σ²) holds with unit-variance
-             features. Previous `F^(-1/4)` under-scaled the kernel by F^(1/4).
-  CS-FIX-05  Docstring aligned with implementation: spherical normalization
-             is `x / ||x|| · log1p(||x||)` (magnitude-preserving).
-  CS-FIX-06  Spherical normalize uses `softplus`-based magnitude to keep
-             gradients finite near zero.
-  CS-FIX-07  GQA + causal + `L != kv_len` handled: falls back to dense-only
-             when shapes don't align, avoiding an unindexed cumsum.
-  CS-FIX-08  head_mask applied to both streams (linear stream uses the mean
-             over heads).
-  CS-FIX-09  rotary_emb is called correctly with `(x, seq_len=...)`.
-  CS-FIX-10  DummyConfig uses `num_heads` for `n_heads`.
-  CS-FIX-11  `is_custom_attention = True` explicitly at class body (unchanged).
-  CS-FIX-12  `lora_gate.bias.data.fill_()` under `torch.no_grad()`.
 """
 
 from __future__ import annotations

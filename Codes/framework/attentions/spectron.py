@@ -1,4 +1,4 @@
-r"""
+"""
 SpectronAttention: Importance-Aware Low-Rank + Sparse Attention.
 
 Dynamically allocates non-uniform low-rank capacities across attention projection matrices under a global parameter

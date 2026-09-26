@@ -2,23 +2,6 @@
 
 Registered as 'moba', 'moba_attention', 'moba_inject'.
 
-Fixes (v2):
-  MB-FIX-01  **`output_scale` applied to final output** (was dead code).
-  MB-FIX-02  **`copy_weights` bias handling fixed.** When extracting from
-             nested encoders (`s.query.bias`), we now pass `.data` tensors,
-             not the module.
-  MB-FIX-03  **`rank` defaults to 32 if None** to avoid `BaseAttention(None)`.
-  MB-FIX-04  **`config` None-safe everywhere.**
-  MB-FIX-05  **`valid_b_exp` reshaped correctly** for broadcasting over H.
-  MB-FIX-06  **`is_nested_encoder` determined after all extraction.**
-  MB-FIX-07  **All property aliases added** (`q_lin`, `k_lin`, `v_lin`,
-             `out_lin`, `o_proj`, `dense`, `c_proj`).
-  MB-FIX-08  **CLS/block-0 preservation logic corrected** for both
-             bidirectional and causal modes.
-  MB-FIX-09  **`head_mask` shape normalized to (B, H, 1, 1)** in dense path.
-  MB-FIX-10  **Removed duplicate `model_config` assignment** in injector.
-  MB-FIX-11  **Storage accounting added.**
-  MB-FIX-12  **Explicit dtype-safe LoRA scaling.**
 """
 
 import logging

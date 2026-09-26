@@ -1,42 +1,6 @@
-r"""
+"""
 Model Attention Replacement and Dynamic Graph Surgery Utilities — v2.
 
-Bug-fix map (2026 revision):
-  RE-01   Registry keys 'replace'/'replace_class' kept distinct.
-  RE-02   _replace_distilbert_attention wraps injector in try/except.
-  RE-03   Dynamic config via SimpleNamespace (not type()).
-  RE-04   build_attention via inspect.signature (no blind TypeError).
-  RE-05   inspect.signature for arg detection (not getfullargspec).
-  RE-06   layer.attention.self access guarded.
-  RE-07   ReplaceAttention supports optional low-rank factorization.
-  RE-08   is_nested_encoder consistently set in injector.
-  RE-09   _get_valid_mask robust for 4D masks.
-  RE-10   SDPA receives attention_mask.
-  RE-11   Every except logs at debug level.
-  RE-12   out_lin / o_proj / dense aliases added.
-  RE-13   num_heads=0 guarded.
-  RE-14   Weight copy shape-checked.
-  RE-15   Qwen / LLaMA architectures supported.
-  RE-16   Shared _replace_layers helper.
-  RE-17   Registry lookup validates callability.
-  RE-18   _cfg_get defined at module scope.
-  RE-19   _FactorizedLinear exposes .bias property + setter.
-  RE-20   _replace_layers filters attention_params to safe keys.
-  RE-21   SDPA causal disabled when additive mask is present.
-  RE-22   copy_weights supports GQA when hidden_size != all_head_size.
-  RE-23   **build_attention handles function-type registry entries.**
-  RE-24   **_build_attention_from_registry never passes old_attn
-           positionally, preventing config/old_attn mixups.**
-  RE-25   **head_mask 3D now masks entire heads (B, H, 1, 1),
-           not positions.**
-  RE-26   **_copy_into for _FactorizedLinear correctly zero-pads
-           when effective rank < requested rank.**
-  RE-27   **copy_weights casts only the affected projection dtype,
-           not the entire module.**
-  RE-28   **_first_copy_done uses a class-level flag to avoid
-           deepcopy duplication issues.**
-  RE-29   **inject_replace no longer double-attaches; relies on
-           _replace_layers to attach.**
 """
 
 import logging

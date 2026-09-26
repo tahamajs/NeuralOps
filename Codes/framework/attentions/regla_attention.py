@@ -1,32 +1,5 @@
 """Refined Gated Linear Attention (ReGLA) – Production-Hardened (v2).
 
-Fixes (v2):
-  RE-01  RoPE past_len offset for KV-cache.
-  RE-02  RoPE dtype-safe.
-  RE-03  Conv1d device/dtype correct.
-  RE-04  Single is_decoder detection.
-  RE-05  LoRALinear accepts device/dtype.
-  RE-06  conv_scale used as raw scale (no sigmoid collapse).
-  RE-07  chunk_size configurable.
-  RE-08  head_mask shape unified (B, H, 1, 1).
-  RE-09  No silent pad/truncate on conv branch.
-  RE-10  is_nested_encoder determined once in copy_weights.
-  RE-11  Recursion guard in injector.
-  RE-12  Registry keys separated (class vs injector).
-  RE-13  head_mask applied on both attention and conv branches.
-  RE-14  valid_mask applied consistently.
-  RE-15  output shape checked.
-  RE-16  No dangling self.config.
-  RE-17  Missing weights raise RuntimeError.
-  RE-18  **inject_regla passes the OUTER attention container to
-          ReGLAAttention for nested models, so copy_weights can
-          correctly extract output projection.**
-  RE-19  **inject_regla propagates kernel_size, chunk_size, rank
-          from comp_config to ReGLAAttention.**
-  RE-20  **inject_regla sets out_proj = Identity when attaching
-          new_attn into a nested encoder, matching copy_weights.**
-  RE-21  **loc.shape[-1] check compares against self.dim (hidden size)
-          and provides a clearer error message.**
 """
 
 import logging

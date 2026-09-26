@@ -4,22 +4,6 @@ Delegates to `inject_svd_linear_attention` with a pre-discovered source
 attention and robust attribute-level replacement for all supported
 architectures (GPT-2, RoBERTa/BERT, DistilBERT, T5, generic).
 
-Fixes (v2):
-  FIX-1  Discovers source attention across all architecture variants.
-  FIX-2  Pre-discovered `src_attn` is passed explicitly as `old_attn`.
-  FIX-3  Fallback replacement ensures new module is placed in the correct
-         attribute (including `layer.attn` for GPT-2).
-  FIX-4  Idempotency guard prevents double-injection.
-  FIX-5  Explicit error logging when no source attention can be found.
-  FIX-6  **`comp_config` is now forwarded to the delegate.**
-  FIX-7  **Removed broken `locals()` check; uses a clean filter of kwargs.**
-  FIX-8  **Strips conflicting keys (layer, model, old_attn, layer_idx,
-         total_layers) from kwargs before delegating.**
-  FIX-9  **Return value is type-checked; only nn.Module instances that
-         differ from the source and the model are attached.**
-  FIX-10 **Idempotency guard skips the current attribute and continues
-         scanning other candidates.**
-  FIX-11 **`total_layers` (int) is propagated to the delegate.**
 """
 
 from __future__ import annotations

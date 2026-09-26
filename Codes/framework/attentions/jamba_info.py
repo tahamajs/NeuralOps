@@ -2,21 +2,6 @@
 
 Differential attention with concept-bottlenecked SSM branch.
 
-Bug-fix map (2026 revision):
-  JI-01  RoPE cos/sin cast to q/k dtype.
-  JI-02  W_q2/W_k2 initialized from pretrained (not random).
-  JI-03  super().__init__ with try/except for signature robustness.
-  JI-04  RoPE past_len offset for KV-cache decoding.
-  JI-05  injector recursion guard (_depth).
-  JI-06  SimpleSSM guarded against signature mismatch.
-  JI-07  attention_mask dim=4 handling robust (no naive clamp).
-  JI-08  ssm forward called with consistent signature (try/except fallback).
-  JI-09  Forward sanity check after weight transfer.
-  JI-10  decoder detection via helper (no duplication).
-  JI-11  Robust head_dim detection (q_proj/query/q_lin/W_q1).
-  JI-12  is_decoder respected in inject.
-  JI-13  is_nested_encoder set during copy_weights.
-  JI-14  alpha_raw documented (12% SSM initial).
 """
 
 from __future__ import annotations
