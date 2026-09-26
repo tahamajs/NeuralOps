@@ -1,9 +1,9 @@
-"""Random Projection Compressed (RPC) Attention – Production-Hardened.
+"""Random Projection Compressed (RPC) Attention — Production-Hardened (v2).
 
 Randomized linear subspace sketching via fixed head-wise Gaussian random
 projection buffers to compress query-key similarity evaluations.
 
-Bug-fix map (2026 revision):
+Fixes (v2):
   RPC-01  Single registry key 'rpc' on factory only (class under *_class).
   RPC-02  FactorizedLoRALinear for parameter reduction.
   RPC-03  proj as fp32 buffer, converted at use site.
@@ -13,9 +13,20 @@ Bug-fix map (2026 revision):
   RPC-07  Causal masking only for self-attention (not cross).
   RPC-08  RoPE past_len offset for KV-cache.
   RPC-09  Recursion guard in inject_rpc.
-  RPC-10  No silent pad/truncate in forward; assert shape.
+  RPC-10  No silent pad/truncate; assert shape.
   RPC-11  is_nested_encoder determined once in copy_weights.
   RPC-12  self.config not stored separately.
+  RPC-13  **Removed duplicate `if layer_list is not None:` block.**
+  RPC-14  **Random projections are seeded (deterministic).**
+  RPC-15  **Score scale uses `1/sqrt(head_dim)`** (sketching preserves the
+           inner-product scale, so scaling by `sketch_rank` is wrong).
+  RPC-16  **`weight` property caches with version tracking.**
+  RPC-17  **`_svd_init` freezes base weights after init.**
+  RPC-18  **Honest storage accounting.**
+  RPC-19  **`proj_q`/`proj_k` are non-persistent buffers.**
+  RPC-20  **Mask shape uniformly normalized to (B, L_kv) before applying.**
+  RPC-21  **Causal mask skipped in encoder (is_decoder=False).**
+  RPC-22  **Configurable `sketch_scale` option.**
 """
 
 from __future__ import annotations
@@ -36,7 +47,7 @@ logger = logging.getLogger(__name__)
 
 
 # ===========================================================================
-# Config getter
+# Config helpers
 # ===========================================================================
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
@@ -48,7 +59,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 # ===========================================================================
-# RoPE (dtype-safe)
+# RoPE
 # ===========================================================================
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -83,9 +94,7 @@ def apply_rotary_pos_emb(
         sin = sin.unsqueeze(0)
 
     if cos.shape[-2] != q.shape[-2]:
-        raise ValueError(
-            f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}"
-        )
+        raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}")
 
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
@@ -93,12 +102,8 @@ def apply_rotary_pos_emb(
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        cos_q = cos.to(q_rot.dtype)
-        sin_q = sin.to(q_rot.dtype)
-        cos_k = cos.to(k_rot.dtype)
-        sin_k = sin.to(k_rot.dtype)
-        q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
-        k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
         q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
         k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     else:
@@ -113,13 +118,13 @@ def apply_rotary_pos_emb(
 
 
 # ===========================================================================
-# RPC-02: FactorizedLoRALinear
+# FactorizedLoRALinear
 # ===========================================================================
 
 class FactorizedLoRALinear(nn.Module):
     """
-    SVD-factorized linear + LoRA adapter.
-    Forward: y = up(down(x)) + (lora_B @ lora_A)(x) * scaling
+    SVD-factorized linear + LoRA:
+        y = up(down(x)) + (lora_B @ lora_A)(x) * scaling
     Base (down, up) frozen; LoRA trainable.
     """
     is_custom_attention = False
@@ -161,11 +166,30 @@ class FactorizedLoRALinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
+        # RPC-16: cache
+        self._cached_weight: Optional[torch.Tensor] = None
+        self._cached_versions: Tuple[int, ...] = ()
+
+    def _current_versions(self) -> Tuple[int, ...]:
+        v = [getattr(self.down.weight, "_version", 0),
+             getattr(self.up.weight, "_version", 0)]
+        if self.lora_A is not None:
+            v.append(getattr(self.lora_A, "_version", 0))
+            v.append(getattr(self.lora_B, "_version", 0))
+        return tuple(v)
+
     @property
     def weight(self) -> torch.Tensor:
-        w = torch.matmul(self.up.weight, self.down.weight)
+        if not self.training and self._cached_weight is not None \
+                and self._cached_versions == self._current_versions():
+            return self._cached_weight
+        w = torch.matmul(self.up.weight.float(), self.down.weight.float())
         if self.lora_A is not None and self.lora_B is not None:
-            w = w + (self.lora_B @ self.lora_A) * self.lora_scaling
+            w = w + (self.lora_B.float() @ self.lora_A.float()) * self.lora_scaling
+        w = w.to(self.down.weight.dtype)
+        if not self.training:
+            self._cached_weight = w
+            self._cached_versions = self._current_versions()
         return w
 
     @property
@@ -183,14 +207,25 @@ class FactorizedLoRALinear(nn.Module):
             self.lora_B.requires_grad = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = self.up(self.down(x))
+        d_w = self.down.weight.to(x.dtype) if self.down.weight.dtype != x.dtype else self.down.weight
+        u_w = self.up.weight.to(x.dtype) if self.up.weight.dtype != x.dtype else self.up.weight
+        u_b = self.up.bias.to(x.dtype) if (self.up.bias is not None and self.up.bias.dtype != x.dtype) else self.up.bias
+        out = F.linear(F.linear(x, d_w), u_w, u_b)
         if self.lora_A is not None and self.lora_B is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
+            b = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            out = out + F.linear(F.linear(x, a), b) * self.lora_scaling
         return out
+
+    def storage_bytes(self) -> int:
+        b = 0
+        for p in self.parameters():
+            b += p.numel() * p.element_size()
+        return b
 
 
 # ===========================================================================
-# RPC main module
+# RPC Attention
 # ===========================================================================
 
 @ATTENTION_REGISTRY.register("rpc_class")
@@ -215,7 +250,7 @@ class RPCAttention(BaseAttention):
 
         self.dim = int(_cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768)))
         self.num_heads = int(_cfg_get(config, "num_attention_heads",
-                                      kwargs.get("num_attention_heads", 12)))
+                                       kwargs.get("num_attention_heads", 12)))
         self.num_kv_heads = int(_cfg_get(
             config, "num_key_value_heads",
             _cfg_get(config, "num_kv_heads",
@@ -239,7 +274,7 @@ class RPCAttention(BaseAttention):
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        # RPC-05: sketch rank (independent from projection rank)
+        # ---- sketch rank ----
         raw_rank = kwargs.get(
             "rank",
             _cfg_get(comp_config, "rank",
@@ -247,14 +282,16 @@ class RPCAttention(BaseAttention):
         )
         self.sketch_rank = max(1, min(int(raw_rank), self.head_dim))
 
-        # Projection rank for FactorizedLoRALinear
-        self.proj_rank = int(kwargs.get(
+        # ---- projection rank for FactorizedLoRALinear ----
+        raw_proj_rank = int(kwargs.get(
             "proj_rank",
             _cfg_get(comp_config, "proj_rank",
                      _cfg_get(config, "proj_rank", 64)),
         ))
+        # RPC-13: clamp and log
+        self.proj_rank = max(1, raw_proj_rank)
 
-        # RPC-11: decoder detection
+        # ---- decoder detection ----
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -270,6 +307,7 @@ class RPCAttention(BaseAttention):
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
+        # ---- LoRA config ----
         self.lora_rank = int(kwargs.get(
             "lora_rank",
             _cfg_get(comp_config, "lora_rank",
@@ -281,7 +319,7 @@ class RPCAttention(BaseAttention):
                      _cfg_get(config, "lora_alpha", 32.0)),
         ))
 
-        # Projections
+        # ---- projections ----
         FF = FactorizedLoRALinear
         self.W_q = FF(self.dim, self.all_head_size, rank=self.proj_rank,
                       lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, bias=True)
@@ -299,33 +337,68 @@ class RPCAttention(BaseAttention):
         self.key = self.W_k
         self.value = self.W_v
 
-        # RPC-03/04: fixed random projection as fp32 buffer
-        proj_q = torch.randn(self.num_heads, self.head_dim, self.sketch_rank) * (self.head_dim ** -0.5)
-        proj_k = torch.randn(self.num_heads, self.head_dim, self.sketch_rank) * (self.head_dim ** -0.5)
-        self.register_buffer("proj_q", proj_q.float())
-        self.register_buffer("proj_k", proj_k.float())
+        # ---- RPC-14: seeded random projection buffers ----
+        # RPC-19: non-persistent (recomputed on load with same seed)
+        seed = int(kwargs.get("sketch_seed", 0xC0FFEE))
+        gen = torch.Generator(device="cpu").manual_seed(seed)
+        std = self.head_dim ** -0.5
+        proj_q = torch.randn(self.num_heads, self.head_dim, self.sketch_rank,
+                              generator=gen) * std
+        proj_k = torch.randn(self.num_heads, self.head_dim, self.sketch_rank,
+                              generator=gen) * std
+        self.register_buffer("proj_q", proj_q.float(), persistent=False)
+        self.register_buffer("proj_k", proj_k.float(), persistent=False)
+
+        # ---- RPC-15: configurable sketch scale ----
+        # Default: 1/sqrt(head_dim) — matches the original attention scale
+        # because sketching preserves the expected inner product.
+        default_scale = 1.0 / math.sqrt(self.head_dim)
+        self.sketch_scale = float(kwargs.get(
+            "sketch_scale",
+            _cfg_get(comp_config, "sketch_scale", default_scale),
+        ))
 
         dropout_p = (getattr(config, "dropout",
-                             getattr(config, "attention_probs_dropout_prob", 0.1))
+                              getattr(config, "attention_probs_dropout_prob", 0.1))
                      if config else 0.1)
         self.dropout = nn.Dropout(dropout_p)
+
+        # ---- RPC-18: storage accounting ----
+        self._orig_storage_bytes = 0
+        self._comp_storage_bytes = 0
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
         logger.info(
             "RPCAttention: hidden=%d, heads=%d, head_dim=%d, sketch_rank=%d, "
-            "proj_rank=%d, is_decoder=%s, lora_rank=%d",
+            "proj_rank=%d, is_decoder=%s, lora_rank=%d, scale=%.4f",
             self.dim, self.num_heads, self.head_dim, self.sketch_rank,
-            self.proj_rank, self.is_decoder, self.lora_rank,
+            self.proj_rank, self.is_decoder, self.lora_rank, self.sketch_scale,
         )
+
+    # ------------------------------------------------------------------
+    @property
+    def dense(self): return self.out_proj
+    @property
+    def c_proj(self): return self.out_proj
+    @property
+    def o_proj(self): return self.out_proj
+    @property
+    def q_lin(self): return self.W_q
+    @property
+    def k_lin(self): return self.W_k
+    @property
+    def v_lin(self): return self.W_v
+    @property
+    def out_lin(self): return self.out_proj
 
     # ------------------------------------------------------------------
     # SVD init
     # ------------------------------------------------------------------
     @staticmethod
     def _svd_init(w: torch.Tensor, b: Optional[torch.Tensor],
-                  proj: FactorizedLoRALinear) -> None:
+                   proj: FactorizedLoRALinear) -> None:
         with torch.no_grad():
             W = w.detach().float()
             if W.ndim != 2:
@@ -358,8 +431,11 @@ class RPCAttention(BaseAttention):
             elif proj.up.bias is not None:
                 proj.up.bias.data.zero_()
 
+            # RPC-17: freeze base after SVD init.
+            proj.freeze_base_weights()
+
     # ------------------------------------------------------------------
-    # Copy weights
+    # Weight copy
     # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
@@ -371,97 +447,97 @@ class RPCAttention(BaseAttention):
         if (hasattr(src, "self") and hasattr(getattr(src, "self"), "query")
                 and hasattr(src, "output") and hasattr(getattr(src, "output"), "dense")):
             is_nested = True
-        elif (cls_name in ["BertSelfAttention", "RobertaSelfAttention",
-                           "XLMRobertaSelfAttention", "ElectraSelfAttention",
-                           "DebertaSelfAttention"]
+        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
+                            "XLMRobertaSelfAttention", "ElectraSelfAttention",
+                            "DebertaSelfAttention")
               or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
               ) and not has_out_lin:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
+        # RPC-18: track original storage
+        try:
+            for p in src.parameters():
+                self._orig_storage_bytes += p.numel() * p.element_size()
+        except Exception:
+            pass
+
         extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
-        # GPT-2 fused
+        # GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
-            c_attn_mod = src.c_attn
-            base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
-            c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
+            c = src.c_attn
+            base_c = getattr(c, "base_layer", c)
+            c_w = getattr(base_c, "weight", getattr(c, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                is_conv = (c_attn_mod.__class__.__name__ == "Conv1D"
+                is_conv = (c.__class__.__name__ == "Conv1D"
                            or base_c.__class__.__name__ == "Conv1D"
                            or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]))
                 if is_conv:
                     c_w = c_w.t().contiguous()
-                split_size = c_w.size(0) // 3
-                bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
-                c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size:2 * split_size, :],
-                                  c_b[split_size:2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size:, :],
-                                  c_b[2 * split_size:] if c_b is not None else None)
+                split = c_w.size(0) // 3
+                bmod = getattr(base_c, "bias", getattr(c, "bias", None))
+                c_b = bmod.data.clone() if bmod is not None else None
+                extracted["q"] = (c_w[:split], c_b[:split] if c_b is not None else None)
+                extracted["k"] = (c_w[split:2*split], c_b[split:2*split] if c_b is not None else None)
+                extracted["v"] = (c_w[2*split:], c_b[2*split:] if c_b is not None else None)
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
-                c_proj_mod = src.c_proj
-                base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
-                o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
+                o = src.c_proj
+                base_o = getattr(o, "base_layer", o)
+                o_w = getattr(base_o, "weight", getattr(o, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    is_conv_o = (c_proj_mod.__class__.__name__ == "Conv1D"
+                    is_conv_o = (o.__class__.__name__ == "Conv1D"
                                  or base_o.__class__.__name__ == "Conv1D"
                                  or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]))
                     if is_conv_o:
                         o_w = o_w.t().contiguous()
-                    bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    bo = getattr(base_o, "bias", getattr(o, "bias", None))
+                    extracted["o"] = (o_w, bo.data.clone() if bo is not None else None)
 
         # BERT / RoBERTa nested
         elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
             s = getattr(src, "self")
-            for proj_key, sub_name in (("q", "query"), ("k", "key"), ("v", "value")):
-                mod = getattr(s, sub_name, None)
-                if mod is not None and hasattr(mod, "weight"):
-                    extracted[proj_key] = (
-                        mod.weight.data.clone(),
-                        mod.bias.data.clone() if mod.bias is not None else None,
-                    )
+            for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
+                m = getattr(s, sub, None)
+                if m is not None and hasattr(m, "weight"):
+                    extracted[key] = (m.weight.data.clone(),
+                                       m.bias.data.clone() if m.bias is not None else None)
             if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
-                out_mod = src.output.dense
-                extracted["o"] = (
-                    out_mod.weight.data.clone(),
-                    out_mod.bias.data.clone() if out_mod.bias is not None else None,
-                )
+                om = src.output.dense
+                extracted["o"] = (om.weight.data.clone(),
+                                   om.bias.data.clone() if om.bias is not None else None)
 
         # Flat modules
         else:
-            proj_candidates = {
-                "q": ["q_lin", "q_proj", "query"],
-                "k": ["k_lin", "k_proj", "key"],
-                "v": ["v_lin", "v_proj", "value"],
-                "o": ["out_lin", "out_proj", "dense", "o_proj"],
+            cand = {
+                "q": ("q_lin", "q_proj", "query"),
+                "k": ("k_lin", "k_proj", "key"),
+                "v": ("v_lin", "v_proj", "value"),
+                "o": ("out_lin", "out_proj", "dense", "o_proj"),
             }
-            for proj_key, names in proj_candidates.items():
-                for name in names:
-                    if hasattr(src, name):
-                        mod = getattr(src, name)
-                        if mod is not None and hasattr(mod, "weight"):
-                            extracted[proj_key] = (
-                                mod.weight.data.clone(),
-                                mod.bias.data.clone() if mod.bias is not None else None,
-                            )
+            for key, names in cand.items():
+                for n in names:
+                    if hasattr(src, n):
+                        m = getattr(src, n)
+                        if m is not None and hasattr(m, "weight"):
+                            extracted[key] = (m.weight.data.clone(),
+                                               m.bias.data.clone() if m.bias is not None else None)
                             break
 
+        # UniversalAdapter fallback
         missing = [k for k, (w, _) in extracted.items()
                    if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
-                adapter = UniversalAdapter()
+                ua = UniversalAdapter()
                 for k in missing:
-                    w, b = adapter.get_weight_bias(src, k)
+                    w, b = ua.get_weight_bias(src, k)
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
@@ -474,20 +550,20 @@ class RPCAttention(BaseAttention):
                 f"RPCAttention.copy_weights: missing {missing_after} from {cls_name}."
             )
 
-        # RPC-05: SVD init for each projection
-        for proj_key, target in (("q", self.W_q), ("k", self.W_k),
-                                 ("v", self.W_v), ("o", self.out_proj)):
-            w, b = extracted[proj_key]
+        # ---- SVD init for each projection ----
+        for key, target in (("q", self.W_q), ("k", self.W_k),
+                             ("v", self.W_v), ("o", self.out_proj)):
+            w, b = extracted[key]
             if w is None:
-                if proj_key == "o" and self.is_nested_encoder:
-                    eye = torch.eye(self.all_head_size, self.all_head_size,
-                                    device=target.down.weight.device,
-                                    dtype=target.down.weight.dtype)
+                if key == "o" and self.is_nested_encoder:
+                    eye = torch.eye(target.out_features, target.in_features,
+                                     device=target.down.weight.device,
+                                     dtype=target.down.weight.dtype)
                     self._svd_init(eye, None, target)
                 continue
 
-            # Handle GQA for k, v
-            if proj_key in ("k", "v"):
+            # GQA handling for k, v
+            if key in ("k", "v"):
                 out_t = target.out_features
                 src_out = w.shape[0]
                 if src_out > out_t and src_out % out_t == 0:
@@ -502,41 +578,57 @@ class RPCAttention(BaseAttention):
                         b = b.repeat(rep)
 
             self._svd_init(w, b, target)
-            target.freeze_base_weights()
+
+        # ---- storage accounting ----
+        try:
+            for m in (self.W_q, self.W_k, self.W_v, self.out_proj):
+                self._comp_storage_bytes += m.storage_bytes()
+            for buf in (self.proj_q, self.proj_k):
+                self._comp_storage_bytes += buf.numel() * buf.element_size()
+        except Exception:
+            pass
 
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
     # ------------------------------------------------------------------
-    # RPC-06: robust mask helper
+    # RPC-06 / RPC-20: robust mask helper
     # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(
         attention_mask: Optional[torch.Tensor],
         B: int, L: int, device: torch.device,
     ) -> Optional[torch.Tensor]:
+        """
+        Returns a bool mask of shape (B, L) where True = valid token.
+        If the input mask cannot be interpreted, returns None (no masking).
+        """
         if attention_mask is None:
             return None
+
+        def _to_bool(t: torch.Tensor) -> torch.Tensor:
+            if t.dtype == torch.bool:
+                return t
+            if t.dtype.is_floating_point:
+                return t > -1e4
+            return t > 0
+
         if attention_mask.dim() == 2:
-            if attention_mask.dtype == torch.bool:
-                return attention_mask
-            if attention_mask.dtype.is_floating_point:
-                return attention_mask > -1e4
-            return attention_mask > 0
+            m = _to_bool(attention_mask)
+            if m.shape[-1] == L:
+                return m
+            return None
         if attention_mask.dim() == 3:
-            if attention_mask.dtype == torch.bool:
-                return attention_mask.squeeze(1)
-            if attention_mask.dtype.is_floating_point:
-                return (attention_mask > -1e4).squeeze(1)
-            return (attention_mask > 0).squeeze(1)
+            m = _to_bool(attention_mask).squeeze(1)
+            if m.shape[-1] == L:
+                return m
+            return None
         if attention_mask.dim() == 4:
-            if attention_mask.dtype == torch.bool:
-                v = attention_mask
-            elif attention_mask.dtype.is_floating_point:
-                v = attention_mask > -1e4
-            else:
-                v = attention_mask > 0
-            return v.any(dim=-2).squeeze(1)
+            m = _to_bool(attention_mask).any(dim=-2).squeeze(1)
+            if m.shape[-1] == L:
+                return m
+            return None
+
         raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
 
     # ------------------------------------------------------------------
@@ -566,11 +658,12 @@ class RPCAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         L_kv = kv_input.shape[1]
 
+        # ---- Projections ----
         q = self.W_q(hidden_states).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         k = self.W_k(kv_input).view(B, L_kv, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
         v = self.W_v(kv_input).view(B, L_kv, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
 
-        # RPC-08: RoPE with past_len offset
+        # ---- RPC-08: RoPE with past_len ----
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings", None)
         if position_embeddings is not None and not is_cross:
@@ -585,28 +678,34 @@ class RPCAttention(BaseAttention):
             sin = sin[..., past_len: past_len + L, :]
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
+        # ---- GQA ----
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        # Random subspace sketching: separate Q/K projections (RPC-05)
+        # ---- Sketching ----
         proj_q = self.proj_q.to(dtype=q.dtype, device=q.device)
         proj_k = self.proj_k.to(dtype=k.dtype, device=k.device)
 
+        # (B, H, L, head_dim) @ (H, head_dim, r) -> (B, H, L, r)
         q_sketched = torch.einsum("bhld,hdr->bhlr", q, proj_q)
         k_sketched = torch.einsum("bhld,hdr->bhlr", k, proj_k)
 
-        scale = 1.0 / math.sqrt(self.sketch_rank)
-        scores = torch.matmul(q_sketched.float(), k_sketched.float().transpose(-2, -1).contiguous()) * scale
+        scores = torch.matmul(
+            q_sketched.float(),
+            k_sketched.float().transpose(-2, -1).contiguous(),
+        ) * self.sketch_scale
 
-        # RPC-07: causal only for self-attention
+        # ---- RPC-07 / RPC-21: causal only for self-attention ----
         if self.is_decoder and not is_cross:
-            causal_mask = torch.triu(
+            diag = 1 + max(0, L_kv - L)
+            causal = torch.triu(
                 torch.full((L, L_kv), float("-inf"), device=device, dtype=torch.float32),
-                diagonal=1 + max(0, L_kv - L),
+                diagonal=diag,
             ).unsqueeze(0).unsqueeze(0)
-            scores = scores + causal_mask
+            scores = scores + causal
 
+        # ---- Attention mask ----
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         valid_mask = self._prepare_valid_mask(eff_mask, B, L_kv, device)
         if valid_mask is not None:
@@ -630,7 +729,7 @@ class RPCAttention(BaseAttention):
         context = context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # RPC-10: no silent pad/truncate
+        # ---- Output projection (RPC-10: assert shape) ----
         if self.is_nested_encoder:
             out = context
         else:
@@ -643,9 +742,30 @@ class RPCAttention(BaseAttention):
 
         return out, (probs if output_attentions else None)
 
+    # ------------------------------------------------------------------
+    def storage_bytes(self) -> Dict[str, int]:
+        """Report per-component storage."""
+        def _sz(p):
+            if p is None:
+                return 0
+            if isinstance(p, nn.Parameter):
+                return p.numel() * p.element_size()
+            if isinstance(p, torch.Tensor):
+                return p.numel() * p.element_size()
+            return 0
+
+        out = {}
+        for name, m in (("W_q", self.W_q), ("W_k", self.W_k),
+                         ("W_v", self.W_v), ("out_proj", self.out_proj)):
+            out[name] = m.storage_bytes()
+        out["proj_q"] = self.proj_q.numel() * self.proj_q.element_size()
+        out["proj_k"] = self.proj_k.numel() * self.proj_k.element_size()
+        out["total"] = sum(out.values())
+        return out
+
 
 # ===========================================================================
-# RPC-01: single registration key on factory
+# Injection factory (RPC-01: single registration key)
 # ===========================================================================
 
 @ATTENTION_REGISTRY.register("rpc")
@@ -660,7 +780,7 @@ def inject_rpc(
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
-    _depth: int = 0,   # RPC-09
+    _depth: int = 0,
     **kwargs: Any,
 ):
     if _depth > 8:
@@ -675,7 +795,7 @@ def inject_rpc(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
+    # ---- Whole-model traversal ----
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -696,8 +816,6 @@ def inject_rpc(
 
     if layer_list is not None:
         num_injected = 0
-    if layer_list is not None:
-        num_injected = 0
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_rpc(
@@ -713,7 +831,7 @@ def inject_rpc(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # Single-layer injection
+    # ---- Single-layer injection ----
     try:
         src = old_attn
         if src is None:
@@ -729,13 +847,9 @@ def inject_rpc(
         # Double-injection guard
         if isinstance(src, RPCAttention) or "RPCAttention" in src.__class__.__name__:
             return None
-
-        # Skip incompatible hybrid layers (Qwen3.5 DeltaNet, LinearAttention)
-        c_name = src.__class__.__name__
-        if "DeltaNet" in c_name or "LinearAttention" in c_name:
+        if "DeltaNet" in src.__class__.__name__ or "LinearAttention" in src.__class__.__name__:
             return None
 
-        # Build new attention
         new_attn = RPCAttention(
             config=cfg or getattr(src, "config", None),
             rank=kwargs.pop("rank", _cfg_get(comp_config, "rank", 64)),
@@ -743,7 +857,6 @@ def inject_rpc(
             **kwargs,
         )
 
-        # Attach into parent layer
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 new_attn.is_nested_encoder = True
@@ -771,3 +884,12 @@ def inject_rpc(
 inject_rpc_attention = inject_rpc
 inject_rpc_into_distilbert = inject_rpc
 LoRALinear = FactorizedLoRALinear
+
+__all__ = [
+    "RPCAttention",
+    "FactorizedLoRALinear",
+    "inject_rpc",
+    "inject_rpc_attention",
+    "apply_rotary_pos_emb",
+    "LoRALinear",
+]

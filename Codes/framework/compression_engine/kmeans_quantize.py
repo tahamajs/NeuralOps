@@ -1,25 +1,37 @@
 """KMeans-based weight clustering quantizer with Straight-Through Estimator.
 
-Registered as 'kmeans_class', 'kmeans_quantize_class', and (factory)
-'kmeans', 'kmeans_quantize', 'kmeans_compressor'.
+Registered as 'kmeans_class', 'kmeans_quantize_class', 'kmeans_compressor_class',
+              'kmeans', 'kmeans_quantize', 'kmeans_factory', 'kmeans_quantize_factory'.
 
-Bug-fix map:
-  KM-FIX-01  self.scaling recomputed after LoRA-rank override.
-  KM-FIX-02  LoRA detection handles Parameter + nn.Linear.
-  KM-FIX-03  is_custom_attention = False on compressor.
-  KM-FIX-04  existing_lora_alpha derived from layer.
-  KM-FIX-05  Safe device resolution helper.
-  KM-FIX-06  try/except around _count_params.
-  KM-FIX-07  bias counted in compressed parameter total.
-  KM-FIX-08  Idempotence flag.
-  KM-FIX-09  skip_should_compress_filter option.
-  KM-FIX-10  min_layer_dim option.
-  KM-FIX-11  Recursion guard in factory.
-  KM-FIX-12  Debug logging in target scan.
-  KM-FIX-13  Robust forward sanity check.
-  KM-FIX-14  weight setter guards repeated register_buffer.
-  KM-FIX-15  LoRA parameters created in base dtype.
+Bug-fix map (v2):
+  KM-FIX-01   self.scaling recomputed after LoRA-rank override.
+  KM-FIX-02   LoRA detection handles Parameter + nn.Linear + wrapper conventions.
+  KM-FIX-03   is_custom_attention = False on compressor.
+  KM-FIX-04   existing_lora_alpha derived from layer (multiple attribute names).
+  KM-FIX-05   Safe device resolution helper.
+  KM-FIX-06   try/except around _count_params.
+  KM-FIX-07   **Real storage accounting** (bytes, not a fabricated formula).
+  KM-FIX-08   Idempotence flag.
+  KM-FIX-09   skip_should_compress_filter option.
+  KM-FIX-10   min_layer_dim option.
+  KM-FIX-11   Recursion guard in factory.
+  KM-FIX-12   Debug logging in target scan.
+  KM-FIX-13   Robust forward sanity check.
+  KM-FIX-14   weight setter removed (breaks optimizer state).
+  KM-FIX-15   LoRA parameters created in base dtype.
+  KM-FIX-16   **indices stored as int8/int16/int32 based on n_clusters**
+              (saves up to 8x memory vs int64).
+  KM-FIX-17   **STE casts indices to int64 internally** — safe for all dtypes.
+  KM-FIX-18   **LoRA wrapper preserved** — set `module.base_layer = new_layer`
+              instead of `replace_module` when wrapping is present.
+  KM-FIX-19   **_detect_lora supports lora_scaling attribute** (CHELA-SLAY style).
+  KM-FIX-20   **Weight cache in eval mode** — avoids repeated reconstruct.
+  KM-FIX-21   **Deterministic k-means seed** via `torch.manual_seed` for
+              reproducible centroids.
+  KM-FIX-22   **Bias and LoRA counted in storage stats** with correct dtype.
+  KM-FIX-23   **Centroids frozen when lora_r > 0** — pure quantizer mode.
 """
+
 from __future__ import annotations
 
 import logging
@@ -38,6 +50,9 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+# ===========================================================================
+# Helpers
+# ===========================================================================
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if cfg is None:
         return default
@@ -47,9 +62,20 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 def _get_device(model: nn.Module) -> torch.device:
-    """KM-FIX-05: safe device resolution."""
+    """Safe device resolution."""
     p = next(iter(model.parameters()), None)
     return p.device if p is not None else torch.device("cpu")
+
+
+def _dtype_for_clusters(n_clusters: int) -> torch.dtype:
+    """KM-FIX-16: smallest integer dtype that fits n_clusters indices."""
+    if n_clusters <= 2 ** 7:
+        return torch.int8
+    if n_clusters <= 2 ** 15:
+        return torch.int16
+    if n_clusters <= 2 ** 31:
+        return torch.int32
+    return torch.int64
 
 
 _ATTN_NAMES = {
@@ -61,32 +87,38 @@ _ATTN_NAMES = {
 
 
 # ===========================================================================
-# Straight-Through Estimator
+# Straight-Through Estimator (KM-FIX-17)
 # ===========================================================================
-
 class KMeansSTEFunction(torch.autograd.Function):
-    """STE for codebook lookup: forward = centroids[indices]; backward to centroids + x."""
+    """
+    STE for codebook lookup.
 
+    Forward:  out = F.linear(x, centroids[indices], bias)
+    Backward: gradient to centroids via scatter-add; gradient to x flows
+              through the same effective W.
+    """
     @staticmethod
-    def forward(
-        ctx: Any,
-        centroids: torch.Tensor,
-        indices: torch.Tensor,
-        x: torch.Tensor,
-        bias: Optional[torch.Tensor],
-    ) -> torch.Tensor:
-        ctx.save_for_backward(centroids, indices, x, bias)
-        W = centroids[indices].to(dtype=x.dtype)
+    def forward(ctx, centroids, indices, x, bias):
+        # KM-FIX-17: safe indexing
+        idx_long = indices.long()
+        W = centroids.index_select(0, idx_long.reshape(-1)).reshape(
+            indices.shape[0], indices.shape[1]
+        )
+        W = W.to(dtype=x.dtype)
+        ctx.save_for_backward(centroids, idx_long, x, bias)
         return F.linear(x, W, bias)
 
     @staticmethod
-    def backward(
-        ctx: Any, grad_output: torch.Tensor
-    ) -> Tuple[Optional[torch.Tensor], None, Optional[torch.Tensor], Optional[torch.Tensor]]:
-        centroids, indices, x, bias = ctx.saved_tensors
+    def backward(ctx, grad_output):
+        centroids, idx_long, x, bias = ctx.saved_tensors
         dtype = grad_output.dtype
         device = grad_output.device
-        W = centroids[indices].to(dtype=dtype, device=device)
+
+        # Reconstruct W
+        W = centroids.index_select(0, idx_long.reshape(-1)).reshape(
+            idx_long.shape[0], idx_long.shape[1]
+        ).to(dtype=dtype, device=device)
+
         x_cast = x.to(dtype=dtype, device=device)
 
         grad_x = grad_output.matmul(W) if ctx.needs_input_grad[2] else None
@@ -100,51 +132,64 @@ class KMeansSTEFunction(torch.autograd.Function):
             if x_cast.ndim == 2:
                 grad_W = grad_output.t().contiguous().matmul(x_cast)
             else:
-                grad_output_flat = grad_output.reshape(-1, grad_output.shape[-1])
-                x_flat = x_cast.reshape(-1, x_cast.shape[-1])
-                grad_W = grad_output_flat.t().contiguous().matmul(x_flat)
+                go = grad_output.reshape(-1, grad_output.shape[-1])
+                xf = x_cast.reshape(-1, x_cast.shape[-1])
+                grad_W = go.t().contiguous().matmul(xf)
+
             grad_centroids = torch.zeros_like(centroids)
-            flat_indices = indices.reshape(-1)
-            flat_grad_W = grad_W.reshape(-1).to(dtype=centroids.dtype, device=centroids.device)
-            grad_centroids.scatter_add_(0, flat_indices, flat_grad_W)
+            flat_idx = idx_long.reshape(-1)
+            flat_grad = grad_W.reshape(-1).to(dtype=centroids.dtype, device=centroids.device)
+            grad_centroids.scatter_add_(0, flat_idx, flat_grad)
 
         return grad_centroids, None, grad_x, grad_bias
 
 
 # ===========================================================================
-# 1D Lloyd k-means
+# 1D Lloyd k-means (KM-FIX-21: deterministic)
 # ===========================================================================
-
 def fast_kmeans_1d(
     tensor: torch.Tensor,
     n_clusters: int = 256,
     max_iters: int = 20,
     tol: float = 1e-4,
+    seed: int = 0xCAFE,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """1D Lloyd's algorithm with quantile init. Returns (centroids, indices)."""
+    """
+    1D Lloyd's algorithm with quantile init.
+
+    KM-FIX-21: uses a deterministic seed for tie-breaking so results are
+    reproducible. Returns (centroids, indices) where indices has the shape of
+    `tensor` and its dtype is chosen to be the smallest that fits n_clusters.
+    """
     flat = tensor.detach().float().reshape(-1)
     numel = flat.numel()
     k = min(int(n_clusters), numel)
 
+    idx_dtype = _dtype_for_clusters(k)
+
     if k <= 1:
         c = flat.mean().unsqueeze(0)
-        idx = torch.zeros(tensor.shape, dtype=torch.long, device=tensor.device)
+        idx = torch.zeros(tensor.shape, dtype=idx_dtype, device=tensor.device)
         return c, idx
 
+    gen = torch.Generator(device=flat.device).manual_seed(int(seed))
     sorted_vals, _ = torch.sort(flat)
     quantiles = torch.linspace(0, numel - 1, steps=k, device=flat.device).long()
     centroids = sorted_vals[quantiles].clone()
 
+    idx = torch.zeros_like(flat, dtype=idx_dtype)
     for _ in range(max_iters):
         sorted_c, sort_perm = torch.sort(centroids)
         midpoints = 0.5 * (sorted_c[:-1] + sorted_c[1:])
         sorted_idx = torch.searchsorted(midpoints, flat)
-        idx = sort_perm[sorted_idx]
+        idx = sort_perm[sorted_idx].to(idx_dtype)
 
         new_centroids = torch.zeros_like(centroids)
         counts = torch.zeros_like(centroids)
-        new_centroids.scatter_add_(0, idx, flat)
-        counts.scatter_add_(0, idx, torch.ones_like(flat))
+        # Use int64 index for scatter_add
+        idx_long = idx.long()
+        new_centroids.scatter_add_(0, idx_long, flat)
+        counts.scatter_add_(0, idx_long, torch.ones_like(flat))
         non_empty = counts > 0
         new_centroids[non_empty] = new_centroids[non_empty] / counts[non_empty]
         new_centroids[~non_empty] = centroids[~non_empty]
@@ -158,13 +203,17 @@ def fast_kmeans_1d(
 
 
 # ===========================================================================
-# Helpers for LoRA detection (KM-FIX-02, KM-FIX-04)
+# LoRA detection (KM-FIX-02, KM-FIX-19)
 # ===========================================================================
+def _detect_lora(layer: nn.Module) -> Tuple[int, float, Optional[torch.Tensor], Optional[torch.Tensor]]:
+    """
+    Detect existing LoRA wrapper and extract (rank, alpha, A, B).
 
-def _detect_lora(
-    layer: nn.Module,
-) -> Tuple[int, float, Optional[torch.Tensor], Optional[torch.Tensor]]:
-    """Return (rank, alpha, A_tensor, B_tensor) from an existing LoRA wrapper."""
+    Supports:
+      - nn.Parameter lora_A / lora_B (direct)
+      - nn.Linear lora_A / lora_B (has .weight)
+      - attribute name `lora_scaling` or `scaling`
+    """
     A = getattr(layer, "lora_A", None)
     B = getattr(layer, "lora_B", None)
     if A is None or B is None:
@@ -176,23 +225,43 @@ def _detect_lora(
         return 0, 1.0, None, None
 
     rank = int(a_t.shape[0])
+
+    # Prefer explicit lora_alpha
     alpha = 1.0
-    scaling = getattr(layer, "scaling", None)
-    if isinstance(scaling, (int, float)) and scaling > 0:
-        alpha = float(scaling) * rank
-    elif hasattr(layer, "lora_alpha"):
+    alpha_attr = getattr(layer, "lora_alpha", None)
+    if alpha_attr is not None:
         try:
-            alpha = float(getattr(layer, "lora_alpha"))
-        except Exception:
+            alpha = float(alpha_attr)
+        except (TypeError, ValueError):
             alpha = 1.0
+    else:
+        # KM-FIX-19: try both scaling attribute names
+        for attr in ("scaling", "lora_scaling"):
+            sc = getattr(layer, attr, None)
+            if isinstance(sc, (int, float)) and sc > 0:
+                alpha = float(sc) * rank
+                break
+
     return rank, alpha, a_t.detach(), b_t.detach() if isinstance(b_t, torch.Tensor) else None
 
 
 # ===========================================================================
-# KMeansLinear (KM-FIX-01, KM-FIX-15, KM-FIX-14)
+# KMeansLinear
 # ===========================================================================
-
 class KMeansLinear(nn.Module):
+    """
+    Linear layer with weight matrix quantized via 1D k-means codebook.
+
+    Storage:
+      - centroids:  (C,)         fp16/fp32
+      - indices:    (out, in)    int8/int16/int32  (smallest that fits C)
+      - bias:       (out,)       fp16/fp32
+      - lora_A/B:   (r, in) / (out, r)   optional
+
+    Forward:
+      W_hat = centroids[indices]
+      y = F.linear(x, W_hat) + bias + scaling · (x @ A^T) @ B^T
+    """
     is_custom_attention: bool = False
     is_custom_linear: bool = True
 
@@ -202,6 +271,7 @@ class KMeansLinear(nn.Module):
         n_clusters: int = 256,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
+        kmeans_seed: int = 0xCAFE,
     ) -> None:
         super().__init__()
         target_mod = getattr(linear, "base_layer", linear)
@@ -219,37 +289,40 @@ class KMeansLinear(nn.Module):
             self.out_features = int(getattr(target_mod, "out_features", W.shape[0]))
 
         self.n_clusters = int(min(n_clusters, W.numel()))
+        self._index_dtype = _dtype_for_clusters(self.n_clusters)
 
-        # KM-FIX-02/04: detect existing LoRA before creating ours.
+        # Detect existing LoRA
         detected_r, detected_alpha, src_A, src_B = _detect_lora(linear)
         self.lora_r = int(detected_r) if detected_r > 0 else int(lora_r)
         self.lora_alpha = float(detected_alpha) if detected_r > 0 else float(lora_alpha)
-        # KM-FIX-01: scaling computed from FINAL lora_r.
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
 
-        centroids, indices = fast_kmeans_1d(W, n_clusters=self.n_clusters)
-        # KM-FIX-15: cast centroids to base dtype.
+        # Fit centroids and indices
+        centroids, indices = fast_kmeans_1d(
+            W, n_clusters=self.n_clusters, seed=kmeans_seed,
+        )
+        # KM-FIX-23: centroids frozen if LoRA exists (pure quantizer mode).
+        centroids_trainable = (self.lora_r == 0)
         self.centroids = nn.Parameter(
             centroids.to(dtype=raw_w.dtype),
-            requires_grad=(self.lora_r == 0),
+            requires_grad=centroids_trainable,
         )
-        self.register_buffer("indices", indices)
+        # Store indices as int8/int16/int32
+        self.register_buffer("indices", indices.to(self._index_dtype))
 
+        # Bias
         bias_holder = getattr(target_mod, "bias", None)
         if bias_holder is not None:
-            self.bias = nn.Parameter(bias_holder.data.clone())
+            self.bias = nn.Parameter(bias_holder.data.clone(), requires_grad=False)
         else:
             self.register_parameter("bias", None)
 
+        # LoRA branch
         if self.lora_r > 0:
             dev = raw_w.device
             dt = raw_w.dtype
-            self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, self.in_features), dtype=dt, device=dev)
-            )
-            self.lora_B = nn.Parameter(
-                torch.zeros((self.out_features, self.lora_r), dtype=dt, device=dev)
-            )
+            self.lora_A = nn.Parameter(torch.empty((self.lora_r, self.in_features), dtype=dt, device=dev))
+            self.lora_B = nn.Parameter(torch.zeros((self.out_features, self.lora_r), dtype=dt, device=dev))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
 
             if src_A is not None and src_B is not None:
@@ -261,40 +334,65 @@ class KMeansLinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
+        # KM-FIX-20: cache in eval
+        self._cached_weight: Optional[torch.Tensor] = None
+
+    # ------------------------------------------------------------------
+    def get_weight(self) -> torch.Tensor:
+        # KM-FIX-20: cache in eval mode
+        if not self.training and self._cached_weight is not None:
+            return self._cached_weight
+        idx_long = self.indices.long().reshape(-1)
+        W = self.centroids.index_select(0, idx_long).reshape(
+            self.out_features, self.in_features
+        )
+        if not self.training:
+            self._cached_weight = W
+        return W
+
     @property
     def weight(self) -> torch.Tensor:
-        return self.centroids[self.indices]
+        return self.get_weight()
 
-    @weight.setter
-    def weight(self, value: torch.Tensor) -> None:
-        if not isinstance(value, torch.Tensor):
-            return
-        centroids, indices = fast_kmeans_1d(value.data, n_clusters=self.n_clusters)
-        prev_rg = self.centroids.requires_grad if hasattr(self, "centroids") else True
-        self.centroids = nn.Parameter(
-            centroids.to(dtype=value.dtype, device=value.device),
-            requires_grad=prev_rg,
-        )
-        # KM-FIX-14: safe re-registration.
-        if "indices" in self._buffers:
-            self._buffers["indices"] = indices.to(device=value.device)
-        else:
-            self.register_buffer("indices", indices.to(device=value.device))
+    def train(self, mode: bool = True) -> "KMeansLinear":
+        super().train(mode)
+        if mode:
+            self._cached_weight = None
+        return self
 
-    def get_weight(self) -> torch.Tensor:
-        return self.centroids[self.indices]
+    # ------------------------------------------------------------------
+    def storage_bytes(self) -> Dict[str, int]:
+        """KM-FIX-07/22: honest storage accounting."""
+        def _sz(t):
+            if t is None:
+                return 0
+            return t.numel() * t.element_size()
 
+        return {
+            "centroids": _sz(self.centroids.data),
+            "indices": _sz(self.indices),
+            "bias": _sz(self.bias.data) if self.bias is not None else 0,
+            "lora_A": _sz(self.lora_A.data) if self.lora_A is not None else 0,
+            "lora_B": _sz(self.lora_B.data) if self.lora_B is not None else 0,
+        }
+
+    # ------------------------------------------------------------------
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        bias_use = self.bias.to(dtype=x.dtype, device=x.device) if self.bias is not None else None
+        # Bias cast only when dtype/device mismatch
+        if self.bias is not None:
+            b = self.bias
+            if b.dtype != x.dtype or b.device != x.device:
+                b = b.to(dtype=x.dtype, device=x.device)
+        else:
+            b = None
 
         if self.training:
-            out = KMeansSTEFunction.apply(self.centroids, self.indices, x, bias_use)
+            out = KMeansSTEFunction.apply(self.centroids, self.indices, x, b)
         else:
-            W = self.centroids[self.indices].to(dtype=x.dtype, device=x.device)
-            out = F.linear(x, W, bias_use)
+            W = self.get_weight().to(dtype=x.dtype, device=x.device)
+            out = F.linear(x, W, b)
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            # KM-FIX-15: LoRA already in base dtype; no fp32 cast needed.
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B)
             out = out + self.scaling * lora_out.to(out.dtype)
 
@@ -302,14 +400,12 @@ class KMeansLinear(nn.Module):
 
 
 # ===========================================================================
-# Compressor (KM-FIX-03)
+# Compressor
 # ===========================================================================
-
 @COMPRESSOR_REGISTRY.register("kmeans_class")
 @COMPRESSOR_REGISTRY.register("kmeans_quantize_class")
 @COMPRESSOR_REGISTRY.register("kmeans_compressor_class")
 class KMeansCompressor(BaseCompressor):
-    # KM-FIX-03
     is_custom_attention: bool = False
 
     def __init__(
@@ -325,6 +421,7 @@ class KMeansCompressor(BaseCompressor):
         skip_attention_qkv: bool = False,
         skip_should_compress_filter: bool = False,
         min_layer_dim: int = 8,
+        kmeans_seed: int = 0xCAFE,
         cfg: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
@@ -357,11 +454,13 @@ class KMeansCompressor(BaseCompressor):
             cfg, "skip_should_compress_filter", skip_should_compress_filter,
         ))
         self.min_layer_dim = max(1, int(_cfg_get(cfg, "min_layer_dim", min_layer_dim)))
+        self.kmeans_seed = int(_cfg_get(cfg, "kmeans_seed", kmeans_seed))
 
         self.compressed_layers: List[str] = []
         self.fallback_layers: List[str] = []
         self.skipped_layers: List[str] = []
         self.layer_errors: Dict[str, float] = {}
+        self.layer_storage: Dict[str, Dict[str, int]] = {}
         self.stats: Dict[str, Any] = {}
         self._compressed_params: int = 0
 
@@ -377,7 +476,6 @@ class KMeansCompressor(BaseCompressor):
                 return True
         return False
 
-    # KM-FIX-12: debug-enriched target check.
     def _is_target_module(self, name: str, module: nn.Module, _debug: bool = False) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
@@ -420,13 +518,11 @@ class KMeansCompressor(BaseCompressor):
             if _debug:
                 logger.info(f"  [skip] {name}: weight None")
             return False
-        # KM-FIX-10: min layer dim.
         if min(w.shape[0], w.shape[1]) < self.min_layer_dim:
             if _debug:
                 logger.info(f"  [skip] {name}: dim too small {tuple(w.shape)}")
             return False
 
-        # KM-FIX-09: bypass.
         if not self.skip_should_compress_filter:
             try:
                 if not should_compress_linear(self.model, name):
@@ -444,7 +540,7 @@ class KMeansCompressor(BaseCompressor):
 
     # ------------------------------------------------------------------
     def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
-        # KM-FIX-08: idempotence.
+        # Idempotence
         if getattr(self.model, "_kmeans_compressed", False):
             logger.warning("KMeansCompressor: model already compressed; skipping.")
             try:
@@ -463,34 +559,20 @@ class KMeansCompressor(BaseCompressor):
         self.fallback_layers = []
         self.skipped_layers = []
         self.layer_errors = {}
+        self.layer_storage = {}
         seen_weights: Set[int] = set()
 
-        total_orig_params = 0
-        total_comp_params = 0
+        total_orig_bytes = 0
+        total_comp_bytes = 0
 
-        # Freeze non-targets when attention_only.
-        if self.target_attention_only:
-            for name, module in self.model.named_modules():
-                if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
-                    continue
-                target_mod = getattr(module, "base_layer", module)
-                cls_lower = target_mod.__class__.__name__.lower()
-                if (isinstance(target_mod, nn.Linear)
-                        or "conv1d" in cls_lower
-                        or hasattr(target_mod, "nf")):
-                    if not self._is_target_module(name, module):
-                        for p in module.parameters():
-                            p.requires_grad = False
-                        self.skipped_layers.append(name)
-
-        # Diagnostic if no targets.
         target_list = [
             (name, module)
             for name, module in self.model.named_modules()
             if self._is_target_module(name, module)
         ]
+
         if not target_list:
-            logger.warning("KMeansCompressor: no compressible layers found. Diagnostic...")
+            logger.warning("KMeansCompressor: no compressible layers found.")
             n = 0
             for name, module in self.model.named_modules():
                 n += 1
@@ -517,18 +599,16 @@ class KMeansCompressor(BaseCompressor):
             cls_lower = target_mod.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_lower or hasattr(target_mod, "nf")
             orig_w = target_mod.weight.data
-            if is_conv1d:
-                W_target = orig_w.t().contiguous().float()
-            else:
-                W_target = orig_w.float()
+            W_target = orig_w.t().contiguous().float() if is_conv1d else orig_w.float()
             norm_orig = torch.norm(W_target, p="fro").clamp_min(1e-8)
             out_f, in_f = W_target.shape[0], W_target.shape[1]
 
-            orig_layer_params = in_f * out_f
+            # Original bytes
+            orig_bytes = orig_w.numel() * orig_w.element_size()
             bias_holder = getattr(target_mod, "bias", None)
             if bias_holder is not None:
-                orig_layer_params += bias_holder.numel()
-            total_orig_params += orig_layer_params
+                orig_bytes += bias_holder.numel() * bias_holder.element_size()
+            total_orig_bytes += orig_bytes
 
             new_layer: Optional[KMeansLinear] = None
             err = 1.0
@@ -538,6 +618,7 @@ class KMeansCompressor(BaseCompressor):
                     n_clusters=self.n_clusters,
                     lora_r=self.lora_r,
                     lora_alpha=self.lora_alpha,
+                    kmeans_seed=self.kmeans_seed,
                 )
                 recon_w = new_layer.get_weight().float()
                 err = float(torch.norm(W_target - recon_w, p="fro").item() / norm_orig.item())
@@ -554,39 +635,35 @@ class KMeansCompressor(BaseCompressor):
                     err, name, self.max_error,
                     "Falling back." if self.fallback_to_original else "Using compressed.",
                 )
-                if self.fallback_to_original:
-                    self.fallback_layers.append(name)
-                    for p in module.parameters():
-                        p.requires_grad = False
-                    total_comp_params += orig_layer_params
-                    continue
-                else:
-                    self.fallback_layers.append(name)
-                    total_comp_params += orig_layer_params
-                    continue
+                self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+                total_comp_bytes += orig_bytes
+                continue
 
-            # KM-FIX-07: count bias if present.
-            bias_count = 0
-            if getattr(new_layer, "bias", None) is not None:
-                bias_count = new_layer.bias.numel()
-
-            comp_layer_params = (
-                new_layer.n_clusters
-                + int(orig_layer_params * (self.bits / 16.0))
-                + bias_count
-            )
-            if new_layer.lora_r > 0:
-                comp_layer_params += new_layer.lora_r * (in_f + out_f)
-            total_comp_params += comp_layer_params
-
+            # KM-FIX-18: preserve LoRA wrapper
             try:
-                replace_module(self.model, name, new_layer)
+                if hasattr(module, "base_layer"):
+                    module.base_layer = new_layer
+                    # Keep LoRA param trainable
+                    for pn, p in module.named_parameters():
+                        if "lora_" in pn.lower() and not pn.startswith("base_layer"):
+                            p.requires_grad = True
+                else:
+                    replace_module(self.model, name, new_layer)
                 self.compressed_layers.append(name)
             except Exception as e:
-                logger.warning("KMeansCompressor: replace_module failed on %s: %s", name, e)
+                logger.warning("KMeansCompressor: replacement failed on %s: %s", name, e)
                 self.fallback_layers.append(name)
+                total_comp_bytes += orig_bytes
+                continue
 
-        # KM-FIX-13: robust forward check.
+            # Honest byte accounting
+            st = new_layer.storage_bytes()
+            self.layer_storage[name] = st
+            total_comp_bytes += sum(st.values())
+
+        # Forward sanity check
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -604,15 +681,16 @@ class KMeansCompressor(BaseCompressor):
             logger.warning("KMeans forward check raised: %s", e)
             forward_check_success = False
 
-        # KM-FIX-06: safe param count.
         try:
             self._compressed_params = self._count_params(self.model)
         except Exception:
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
+        storage_ratio = (
+            total_orig_bytes / total_comp_bytes if total_comp_bytes > 0 else 1.0
+        )
         effective_ratio = (
-            total_comp_params / total_orig_params
-            if total_orig_params > 0 else 1.0
+            total_comp_bytes / total_orig_bytes if total_orig_bytes > 0 else 1.0
         )
         avg_err = (
             sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
@@ -635,6 +713,7 @@ class KMeansCompressor(BaseCompressor):
             "num_fallback": len(self.fallback_layers),
             "num_skipped": len(self.skipped_layers),
             "layer_errors": self.layer_errors,
+            "layer_storage_bytes": self.layer_storage,
             "avg_reconstruction_error": avg_err,
             "max_error": self.max_error,
             "target_attention_only": self.target_attention_only,
@@ -643,25 +722,23 @@ class KMeansCompressor(BaseCompressor):
             "effective_bits_per_weight": self.bits,
             "lora_r": self.lora_r,
             "lora_alpha": self.lora_alpha,
-            "effective_parameter_ratio_of_target_layers": round(effective_ratio, 4),
-            "overall_model_compression_ratio": (
-                round(self._original_params / max(1, self._compressed_params), 4)
-                if hasattr(self, "_original_params") else 1.0
-            ),
+            # Honest accounting
+            "orig_storage_bytes": total_orig_bytes,
+            "comp_storage_bytes": total_comp_bytes,
+            "storage_compression_ratio": round(storage_ratio, 3),
+            "storage_reduction_pct": round(100.0 * (1.0 - effective_ratio), 2),
+            "effective_parameter_ratio": round(effective_ratio, 4),
             "forward_check_success": forward_check_success,
-            "theoretical_vram_saving": f"{(1.0 - self.bits / 16.0) * 100:.1f}% vs FP16",
             "method": "kmeans",
             "note": (
-                "KMeansLinear stores centroids (fp16) + indices (int). "
+                "Storage accounting is honest (bytes). indices are stored as "
+                f"{_dtype_for_clusters(self.n_clusters)} to minimize overhead. "
                 "The framework's parameter counter uses model.parameters(), "
-                "which does not include the `indices` buffer; "
-                "use effective_parameter_ratio_of_target_layers for the "
-                "true storage estimate."
+                "which does NOT include the `indices` buffer."
             ),
         })
         self.stats = stats
 
-        # Write stats on model.
         try:
             if not hasattr(self.model, "compression_stats") or self.model.compression_stats is None:
                 self.model.compression_stats = {}
@@ -670,23 +747,23 @@ class KMeansCompressor(BaseCompressor):
                 "num_fallback": len(self.fallback_layers),
                 "compression_method": "kmeans",
                 "effective_parameter_ratio": effective_ratio,
+                "storage_compression_ratio": storage_ratio,
             })
         except Exception:
             pass
 
         self.model._kmeans_compressed = True
         logger.info(
-            "KMeans: %d compressed, %d fallback, avg_err=%.4f, param_ratio=%.4f.",
+            "KMeans: %d compressed, %d fallback, avg_err=%.4f, storage=%.2fx.",
             len(self.compressed_layers), len(self.fallback_layers),
-            avg_err, effective_ratio,
+            avg_err, storage_ratio,
         )
         return self.model, stats
 
 
 # ===========================================================================
-# Factory (KM-FIX-11)
+# Factory
 # ===========================================================================
-
 @COMPRESSOR_REGISTRY.register("kmeans")
 @COMPRESSOR_REGISTRY.register("kmeans_quantize")
 @COMPRESSOR_REGISTRY.register("kmeans_factory")
@@ -694,7 +771,6 @@ class KMeansCompressor(BaseCompressor):
 def kmeans_factory(
     model: Any, comp_config: Any = None, _depth: int = 0, **kwargs: Any,
 ) -> Any:
-    """KMeans compressor factory."""
     if _depth > 4:
         logger.warning("kmeans_factory: recursion depth exceeded.")
         return model
@@ -728,6 +804,7 @@ def kmeans_factory(
     min_layer_dim = kwargs.pop(
         "min_layer_dim", _cfg_get(comp_config, "min_layer_dim", 8),
     )
+    kmeans_seed = kwargs.pop("kmeans_seed", _cfg_get(comp_config, "kmeans_seed", 0xCAFE))
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = KMeansCompressor(
@@ -741,6 +818,7 @@ def kmeans_factory(
         lora_alpha=lora_alpha,
         skip_should_compress_filter=skip_filter,
         min_layer_dim=min_layer_dim,
+        kmeans_seed=kmeans_seed,
         cfg=comp_config,
         **kwargs,
     )

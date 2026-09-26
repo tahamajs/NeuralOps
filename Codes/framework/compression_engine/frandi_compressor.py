@@ -1,16 +1,28 @@
 """
-FRanDI: Feature-Regression Aligned Singular Value Decomposition Compressor.
-Registered in COMPRESSOR_REGISTRY as 'frandi' and 'frandi_compressor'.
+FRanDI: Feature-Regression Aligned SVD Compressor — Production-Hardened (v2).
 
-Bug-fix map:
-  FR-FIX-01  LoRA dtype matches base dtype (no fp32/fp16 mixing).
-  FR-FIX-02  orthogonal_ init happens in fp32 then cast (safe for bf16).
-  FR-FIX-03  lora_A / lora_B allocated in base dtype, not forced fp32.
-  FR-FIX-04  covariance collection bounded by num_calibration_batches.
+Registered as 'frandi' and 'frandi_compressor'.
+
+Bug-fix map (v2):
+  FR-FIX-01  LoRA dtype matches base dtype.
+  FR-FIX-02  orthogonal_ init in fp32 then cast.
+  FR-FIX-03  lora_A/lora_B allocated in base dtype.
+  FR-FIX-04  Covariance collection bounded by num_calibration_batches.
   FR-FIX-05  Cholesky regularization avoids materializing eye(in_f).
-  FR-FIX-06  solve_triangular runs in fp32 for numerical stability.
+  FR-FIX-06  solve_triangular in fp32.
   FR-FIX-07  forward sanity check includes attention_mask.
   FR-FIX-08  max_error default relaxed to 0.5.
+  FR-FIX-09  **Removed `is_custom_attention = True` from FRanDILinear.**
+  FR-FIX-10  **Whitening triangular solve fixed:**
+             solve L^T @ A^T = A_tilde^T for A^T,
+             which gives A = A_tilde @ L^{-1} (correct FRanDI math).
+  FR-FIX-11  **_select_rank respects rank cap when energy_threshold set.**
+  FR-FIX-12  **target_layers=[] treated as None.**
+  FR-FIX-13  **min-rank threshold scales with requested rank.**
+  FR-FIX-14  **Covariance accumulated in fp32 with bounded memory.**
+  FR-FIX-15  **Weight cache with version tracking.**
+  FR-FIX-16  **merge() method for PEFT/HF compatibility.**
+  FR-FIX-17  **GQA asymmetric guard is always active.**
 """
 
 from __future__ import annotations
@@ -41,25 +53,27 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 _ATTN_NAMES = {
     "q_proj", "k_proj", "v_proj", "o_proj",
     "c_attn", "c_proj", "query", "key", "value",
-    "q_lin", "k_lin", "v_lin", "out_lin", "out_proj", "o_proj", "dense",
+    "q_lin", "k_lin", "v_lin", "out_lin", "out_proj", "dense",
 }
 
 
 # ===========================================================================
 # FRanDILinear
 # ===========================================================================
-
 class FRanDILinear(nn.Module):
-    is_custom_attention: bool = True
     """
-    Feature-Regression Aligned Factorized Linear Layer with optional LoRA adapter.
-    W ≈ B @ A
-    - A in R^{rank x in_features}: input feature-aligned basis
-    - B in R^{out_features x rank}: output expansion matrix
+    Feature-Regression Aligned Factorized Linear Layer with optional LoRA.
 
-    Forward pass:
-    y = (x @ A^T) @ B^T + bias + (x @ lora_A^T @ lora_B^T) * (alpha / r)
+    W ≈ B @ A
+      - A (rank, in_features): input feature-aligned basis
+      - B (out_features, rank): output expansion matrix
+
+    Forward:
+      y = (x @ A^T) @ B^T + bias
+          + (alpha/r) * (x @ lora_A^T @ lora_B^T)
     """
+    # FR-FIX-09: NOT an attention module.
+    is_custom_attention: bool = False
 
     def __init__(
         self,
@@ -80,26 +94,30 @@ class FRanDILinear(nn.Module):
         self.lora_alpha = float(lora_alpha)
         self.scaling = (lora_alpha / lora_r) if lora_r > 0 else 1.0
 
-        # FR-FIX-01/02: init A orthogonally in fp32, then cast to target dtype.
-        requires_grad = not (self.lora_r > 0)
+        requires_grad_base = not (self.lora_r > 0)
+
+        # FR-FIX-02: init in fp32 for numerical stability, cast to dtype.
         A_init = torch.empty(self.rank, in_features, dtype=torch.float32, device=device)
         nn.init.orthogonal_(A_init)
-        self.A = nn.Parameter(A_init.to(dtype=dtype), requires_grad=requires_grad)
+        self.A = nn.Parameter(A_init.to(dtype=dtype), requires_grad=requires_grad_base)
+
         self.B = nn.Parameter(
             torch.empty(out_features, self.rank, dtype=dtype, device=device),
-            requires_grad=requires_grad,
+            requires_grad=requires_grad_base,
         )
-        nn.init.xavier_uniform_(self.B)
+        nn.init.xavier_uniform_(self.B.float())
+        with torch.no_grad():
+            self.B.data = self.B.data.to(dtype=dtype) if dtype is not None else self.B.data
 
         if bias:
             self.bias = nn.Parameter(
                 torch.zeros(out_features, dtype=dtype, device=device),
-                requires_grad=requires_grad,
+                requires_grad=requires_grad_base,
             )
         else:
             self.register_parameter("bias", None)
 
-        # FR-FIX-03: LoRA in the same dtype as the base.
+        # FR-FIX-03: LoRA in the same dtype as base.
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
                 torch.empty((self.lora_r, in_features), dtype=dtype, device=device)
@@ -107,51 +125,104 @@ class FRanDILinear(nn.Module):
             self.lora_B = nn.Parameter(
                 torch.zeros((out_features, self.lora_r), dtype=dtype, device=device)
             )
-            # Init in fp32 for numerical stability, then cast back.
             with torch.no_grad():
-                tmp_A = self.lora_A.data.float()
-                nn.init.kaiming_uniform_(tmp_A, a=math.sqrt(5))
-                self.lora_A.data.copy_(tmp_A.to(dtype))
+                tmp = self.lora_A.data.float()
+                nn.init.kaiming_uniform_(tmp, a=math.sqrt(5))
+                self.lora_A.data.copy_(tmp.to(dtype=dtype) if dtype is not None else tmp)
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
+        # FR-FIX-15: weight cache
+        self._cached_weight: Optional[torch.Tensor] = None
+        self._cached_version: int = -1
+
+    # ---- cache management ----
+    def _current_version(self) -> int:
+        v = 0
+        for p in (self.A, self.B):
+            v += getattr(p, "_version", 0)
+        if self.lora_A is not None:
+            v += getattr(self.lora_A, "_version", 0)
+        if self.lora_B is not None:
+            v += getattr(self.lora_B, "_version", 0)
+        return v
+
     @property
     def weight(self) -> torch.Tensor:
-        return torch.matmul(self.B, self.A)
+        # FR-FIX-15: cache in eval mode.
+        if not self.training and self._cached_weight is not None \
+                and self._cached_version == self._current_version():
+            return self._cached_weight
+        W = torch.matmul(self.B.float(), self.A.float()).to(self.A.dtype)
+        if not self.training:
+            self._cached_weight = W
+            self._cached_version = self._current_version()
+        return W
+
+    def get_weight(self) -> torch.Tensor:
+        return self.weight
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
 
-        x_a = F.linear(x_flat, self.A)
-        out = F.linear(x_a, self.B, self.bias)
+        x_a = F.linear(x_flat, self.A)               # (N, rank)
+        out = F.linear(x_a, self.B, self.bias)       # (N, out)
 
-        # FR-FIX-01: no forced fp32 cast. LoRA dtype matches base.
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x_flat, self.lora_A), self.lora_B)
             out = out + self.scaling * lora_out
 
         return out.view(*orig_shape[:-1], self.out_features)
 
-    def get_weight(self) -> torch.Tensor:
-        return torch.matmul(self.B, self.A)
+    # FR-FIX-16: merge() for PEFT/HF compatibility
+    @torch.no_grad()
+    def merge(self) -> None:
+        """Fold LoRA delta into base factors (approximate, additive)."""
+        if self.lora_r <= 0 or self.lora_A is None or self.lora_B is None:
+            return
+        # Merge into B: B_new = B + (alpha/r) * (lora_B @ lora_A) @ pinv(A)
+        # Simpler: absorb into B by solving B_new A = B A + delta_BA
+        # We use a least-squares approach via pseudoinverse.
+        A_f = self.A.float()
+        delta = self.scaling * torch.matmul(self.lora_B.float(), self.lora_A.float())
+        # Solve for B_new such that B_new @ A = B @ A + delta:
+        # B_new = B + delta @ A^+
+        A_pinv = torch.linalg.pinv(A_f)
+        B_new = self.B.float() + delta @ A_pinv
+        self.B.data.copy_(B_new.to(self.B.dtype))
+        # Reset LoRA to zero
+        self.lora_A.data.zero_()
+        self.lora_B.data.zero_()
+        self._cached_weight = None
+
+    def merge_and_unload(self) -> "FRanDILinear":
+        self.merge()
+        return self
+
+    def unmerge(self) -> None:
+        # Not implemented (would require tracking original B).
+        raise NotImplementedError("FRanDILinear.unmerge is not supported.")
 
     # ------------------------------------------------------------------
     @staticmethod
     def _select_rank(
-        S: torch.Tensor, rank: int = 8, energy_threshold: Optional[float] = None
+        S: torch.Tensor,
+        rank: int = 8,
+        energy_threshold: Optional[float] = None,
     ) -> int:
+        # FR-FIX-11: cap at `rank` even when energy threshold is used.
+        max_rank = min(int(rank), len(S))
         if energy_threshold is None:
-            return min(rank, len(S))
+            return max(1, max_rank)
         total_energy = (S ** 2).sum().clamp_min(1e-12)
         cum_energy = (S ** 2).cumsum(dim=0) / total_energy
         idx = torch.where(cum_energy >= energy_threshold)[0]
         if len(idx) > 0:
-            return idx[0].item() + 1
-        return len(S)
+            return max(1, min(int(idx[0].item()) + 1, max_rank))
+        return max(1, max_rank)
 
-    # ------------------------------------------------------------------
     @classmethod
     def from_linear(
         cls,
@@ -175,44 +246,57 @@ class FRanDILinear(nn.Module):
             out_f, in_f = raw_w.shape
             W_float = raw_w.float()
 
-        bias = (target_mod.bias.data
-                if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None
-                else None)
+        bias = (
+            target_mod.bias.data
+            if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None
+            else None
+        )
 
         existing_lora_A = getattr(linear, "lora_A", None)
         existing_lora_B = getattr(linear, "lora_B", None)
 
-        # FR-FIX-05/06: whitening with safe regularization and fp32 triangular solve.
+        B_data: Optional[torch.Tensor] = None
+        A_data: Optional[torch.Tensor] = None
+        r: int = 1
+
+        # ---- Whitening path ----
         if cov_matrix is not None and cov_matrix.shape == (in_f, in_f):
             try:
                 cov_f = cov_matrix.float()
                 trace_val = torch.diagonal(cov_f).sum().item()
-                reg = 1e-4 * trace_val / max(in_f, 1)
-                cov_reg = cov_f + reg * torch.eye(
-                    in_f, device=cov_f.device, dtype=torch.float32
-                )
-                L = torch.linalg.cholesky(cov_reg)
-                W_tilde = torch.matmul(W_float, L)
+                reg = max(1e-6, 1e-4 * trace_val / max(in_f, 1))
+
+                # FR-FIX-05: add regularization without materializing eye.
+                cov_reg = cov_f.clone()
+                idx = torch.arange(in_f, device=cov_reg.device)
+                cov_reg[idx, idx] += reg
+
+                L = torch.linalg.cholesky(cov_reg)     # (in, in) lower triangular
+                W_tilde = torch.matmul(W_float, L)     # (out, in)
+
                 U, S, Vt = torch.linalg.svd(W_tilde, full_matrices=False)
                 r = cls._select_rank(S, rank=rank, energy_threshold=energy_threshold)
                 r = max(1, min(r, out_f, in_f))
+
                 sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-                B_data = U[:, :r] * sqrt_S.unsqueeze(0)
-                A_tilde = sqrt_S.unsqueeze(1) * Vt[:r, :]
-                # Solve L @ A = A_tilde^T in fp32.
+                B_data = U[:, :r] * sqrt_S.unsqueeze(0)             # (out, r)
+                A_tilde = sqrt_S.unsqueeze(1) * Vt[:r, :]           # (r, in)
+
+                # FR-FIX-10: solve for A such that A @ L = A_tilde.
+                # Transposed: L^T @ A^T = A_tilde^T. L^T is upper triangular.
                 A_solved = torch.linalg.solve_triangular(
-                    L, A_tilde.t().contiguous(), upper=False
+                    L.t().contiguous(),
+                    A_tilde.t().contiguous(),
+                    upper=True,
                 )
-                A_data = A_solved.t().contiguous()
+                A_data = A_solved.t().contiguous()                   # (r, in)
             except Exception as e:
-                logger.debug("FRanDI whitening failed: %s; fallback to standard SVD", e)
-                U, S, Vt = torch.linalg.svd(W_float, full_matrices=False)
-                r = cls._select_rank(S, rank=rank, energy_threshold=energy_threshold)
-                r = max(1, min(r, out_f, in_f))
-                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-                B_data = U[:, :r] * sqrt_S.unsqueeze(0)
-                A_data = sqrt_S.unsqueeze(1) * Vt[:r, :]
-        else:
+                logger.debug("FRanDI whitening failed: %s; falling back to plain SVD", e)
+                B_data = None
+                A_data = None
+
+        # ---- Plain SVD path ----
+        if B_data is None or A_data is None:
             U, S, Vt = torch.linalg.svd(W_float, full_matrices=False)
             r = cls._select_rank(S, rank=rank, energy_threshold=energy_threshold)
             r = max(1, min(r, out_f, in_f))
@@ -220,7 +304,8 @@ class FRanDILinear(nn.Module):
             B_data = U[:, :r] * sqrt_S.unsqueeze(0)
             A_data = sqrt_S.unsqueeze(1) * Vt[:r, :]
 
-        effective_lora_r = lora_r
+        # Determine effective LoRA rank
+        effective_lora_r = int(lora_r)
         if existing_lora_A is not None and hasattr(existing_lora_A, "weight"):
             try:
                 effective_lora_r = int(existing_lora_A.weight.shape[0])
@@ -238,24 +323,30 @@ class FRanDILinear(nn.Module):
             device=raw_w.device,
         )
 
-        frandi_layer.A.data.copy_(A_data[:r, :].to(dtype=raw_w.dtype, device=raw_w.device))
-        frandi_layer.B.data.copy_(B_data[:, :r].to(dtype=raw_w.dtype, device=raw_w.device))
+        with torch.no_grad():
+            frandi_layer.A.data.copy_(A_data[:r, :].to(dtype=raw_w.dtype, device=raw_w.device))
+            frandi_layer.B.data.copy_(B_data[:, :r].to(dtype=raw_w.dtype, device=raw_w.device))
 
-        if bias is not None and frandi_layer.bias is not None:
-            frandi_layer.bias.data.copy_(bias.to(dtype=raw_w.dtype, device=raw_w.device))
+            if bias is not None and frandi_layer.bias is not None:
+                frandi_layer.bias.data.copy_(bias.to(dtype=raw_w.dtype, device=raw_w.device))
 
-        if (existing_lora_A is not None and existing_lora_B is not None
-                and frandi_layer.lora_A is not None):
-            w_A = getattr(existing_lora_A, "weight", existing_lora_A)
-            w_B = getattr(existing_lora_B, "weight", existing_lora_B)
-            if hasattr(w_A, "data") and hasattr(w_B, "data"):
-                try:
-                    frandi_layer.lora_A.data.copy_(w_A.data)
-                    frandi_layer.lora_B.data.copy_(w_B.data)
-                    frandi_layer.lora_A.requires_grad = True
-                    frandi_layer.lora_B.requires_grad = True
-                except Exception as e:
-                    logger.debug("FRanDI LoRA copy failed: %s", e)
+            if (
+                existing_lora_A is not None
+                and existing_lora_B is not None
+                and frandi_layer.lora_A is not None
+            ):
+                w_A = getattr(existing_lora_A, "weight", existing_lora_A)
+                w_B = getattr(existing_lora_B, "weight", existing_lora_B)
+                if hasattr(w_A, "data") and hasattr(w_B, "data"):
+                    try:
+                        if w_A.shape == frandi_layer.lora_A.shape:
+                            frandi_layer.lora_A.data.copy_(w_A.data)
+                        if w_B.shape == frandi_layer.lora_B.shape:
+                            frandi_layer.lora_B.data.copy_(w_B.data)
+                        frandi_layer.lora_A.requires_grad = True
+                        frandi_layer.lora_B.requires_grad = True
+                    except Exception as e:
+                        logger.debug("FRanDI LoRA copy failed: %s", e)
 
         return frandi_layer
 
@@ -263,12 +354,12 @@ class FRanDILinear(nn.Module):
 # ===========================================================================
 # Compressor
 # ===========================================================================
-
 @COMPRESSOR_REGISTRY.register("frandi_compressor_class")
 class FRanDICompressor(BaseCompressor):
     """
     FRanDI (Feature-Regression aligned SVD) Compressor.
     """
+    is_custom_attention: bool = False
 
     def __init__(
         self,
@@ -278,13 +369,13 @@ class FRanDICompressor(BaseCompressor):
         calibration_loader: Optional[Any] = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        max_error: float = 0.5,                 # FR-FIX-08: relaxed default
+        max_error: float = 0.5,
         target_attention_only: bool = False,
         fallback_to_original: bool = True,
         skip_attention_qkv: bool = False,
         cfg: Optional[Any] = None,
         target_layers: Optional[List[str]] = None,
-        num_calibration_batches: int = 16,       # FR-FIX-04
+        num_calibration_batches: int = 16,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="frandi", **kwargs)
@@ -310,7 +401,13 @@ class FRanDICompressor(BaseCompressor):
                      _cfg_get(cfg, "fallback_to_original", fallback_to_original))
         )
         self.skip_attention_qkv = bool(_cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv))
-        self.target_layers = target_layers or _cfg_get(cfg, "target_layers", None)
+
+        # FR-FIX-12: treat empty list as None.
+        tl = target_layers or _cfg_get(cfg, "target_layers", None)
+        if tl is not None and len(tl) == 0:
+            tl = None
+        self.target_layers = tl
+
         self.num_calibration_batches = max(1, int(
             _cfg_get(cfg, "num_calibration_batches", num_calibration_batches)
         ))
@@ -323,17 +420,19 @@ class FRanDICompressor(BaseCompressor):
 
     # ------------------------------------------------------------------
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
-        if not self.skip_attention_qkv:
-            return False
+        # FR-FIX-17: GQA guard always active.
         cfg = getattr(self.model, "config", None)
+        if cfg is None:
+            return False
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
-            name_lower = name.lower()
-            if any(p in name_lower for p in
-                   ["q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"]):
-                return True
-        return False
+        if num_heads is None or num_kv_heads is None:
+            return False
+        if num_kv_heads >= num_heads:
+            return False
+        name_lower = name.lower()
+        return any(p in name_lower for p in
+                   ("q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"))
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_lower = name.lower()
@@ -356,14 +455,19 @@ class FRanDICompressor(BaseCompressor):
         is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
         if not (is_linear or is_conv1d) or isinstance(target_mod, FRanDILinear):
             return False
-        if not should_compress_linear(self.model, name):
-            return False
+
+        try:
+            if not should_compress_linear(self.model, name):
+                return False
+        except Exception:
+            pass
+
         if self.target_layers is not None:
             return any(t in name for t in self.target_layers)
         return True
 
     # ------------------------------------------------------------------
-    # FR-FIX-04: bounded calibration loop
+    # FR-FIX-04: bounded calibration loop, FR-FIX-14: fp32 accumulation
     # ------------------------------------------------------------------
     def _collect_covariances(self) -> Dict[str, torch.Tensor]:
         if self.calibration_loader is None or not hasattr(self.model, "named_modules"):
@@ -373,22 +477,29 @@ class FRanDICompressor(BaseCompressor):
         counts: Dict[str, int] = {}
         hooks = []
 
-        def make_hook(name: str):
+        def make_hook(layer_name: str):
             def hook(module, inputs, output):
                 if len(inputs) > 0 and isinstance(inputs[0], torch.Tensor):
                     x = inputs[0].detach().float()
                     target_mod = getattr(module, "base_layer", module)
                     cls_name = target_mod.__class__.__name__.lower()
                     is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-                    in_f = target_mod.weight.shape[0] if is_conv1d else target_mod.weight.shape[1]
+                    in_f = (
+                        target_mod.weight.shape[0]
+                        if is_conv1d
+                        else target_mod.weight.shape[1]
+                    )
+                    if x.shape[-1] != in_f:
+                        return
                     x_flat = x.reshape(-1, in_f)
-                    cov = torch.matmul(x_flat.t().contiguous(), x_flat)
-                    if name not in covariances:
-                        covariances[name] = cov
-                        counts[name] = x_flat.size(0)
+                    # FR-FIX-14: accumulate in fp32
+                    cov = torch.matmul(x_flat.t().contiguous(), x_flat).float()
+                    if layer_name not in covariances:
+                        covariances[layer_name] = cov
+                        counts[layer_name] = x_flat.size(0)
                     else:
-                        covariances[name] += cov
-                        counts[name] += x_flat.size(0)
+                        covariances[layer_name] = covariances[layer_name] + cov
+                        counts[layer_name] += x_flat.size(0)
             return hook
 
         for name, module in self.model.named_modules():
@@ -403,21 +514,26 @@ class FRanDICompressor(BaseCompressor):
                 for batch in self.calibration_loader:
                     if n_seen >= self.num_calibration_batches:
                         break
-                    if isinstance(batch, dict):
-                        batch = {k: v.to(device) for k, v in batch.items()
+                    try:
+                        if isinstance(batch, dict):
+                            b = {k: v.to(device) for k, v in batch.items()
                                  if isinstance(v, torch.Tensor)}
-                        _ = self.model(**batch)
-                    elif isinstance(batch, (list, tuple)):
-                        _ = self.model(batch[0].to(device))
-                    elif isinstance(batch, torch.Tensor):
-                        _ = self.model(batch.to(device))
-                    n_seen += 1
+                            _ = self.model(**b)
+                        elif isinstance(batch, (list, tuple)):
+                            _ = self.model(batch[0].to(device))
+                        elif isinstance(batch, torch.Tensor):
+                            _ = self.model(batch.to(device))
+                        n_seen += 1
+                    except Exception as e:
+                        logger.debug("FRanDI calibration batch failed: %s", e)
         finally:
             for h in hooks:
                 h.remove()
 
+        # Average
         for name in list(covariances.keys()):
             covariances[name] = covariances[name] / max(1, counts[name])
+            covariances[name] = covariances[name].cpu()
 
         return covariances
 
@@ -442,18 +558,8 @@ class FRanDICompressor(BaseCompressor):
         total_orig_params = 0
         total_comp_params = 0
 
-        if self.target_attention_only:
-            for name, module in self.model.named_modules():
-                if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
-                    continue
-                target_mod = getattr(module, "base_layer", module)
-                cls_name = target_mod.__class__.__name__.lower()
-                is_linear = isinstance(target_mod, nn.Linear)
-                is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-                if (is_linear or is_conv1d) and not self._is_target_module(name, module):
-                    for p in module.parameters():
-                        p.requires_grad = False
-                    self.skipped_layers.append(name)
+        # FR-FIX-13: threshold scales with requested rank.
+        min_rank_threshold = max(4, self.rank // 2)
 
         for name, module in list(self.model.named_modules()):
             if not self._is_target_module(name, module):
@@ -478,8 +584,9 @@ class FRanDICompressor(BaseCompressor):
             total_orig_params += orig_params
 
             max_rank = min(in_f, out_f)
-            bound_r = (in_f * out_f) // (in_f + out_f)
-            if max_rank < 16 or bound_r < 4:
+            bound_r = (in_f * out_f) // max(1, in_f + out_f)
+            # FR-FIX-13
+            if max_rank < min_rank_threshold or bound_r < max(1, self.rank // 4):
                 self.fallback_layers.append(name)
                 for p in module.parameters():
                     p.requires_grad = False
@@ -509,7 +616,12 @@ class FRanDICompressor(BaseCompressor):
                         total_comp_params += orig_params
                         continue
 
-                replace_module(self.model, name, frandi_layer)
+                # Preserve wrapper if present (e.g. LoRALinear)
+                if hasattr(module, "base_layer"):
+                    module.base_layer = frandi_layer
+                else:
+                    replace_module(self.model, name, frandi_layer)
+
                 self.compressed_layers.append(name)
                 actual_rank = int(getattr(frandi_layer, "rank", self.rank))
                 comp_params = actual_rank * (in_f + out_f)
@@ -523,7 +635,7 @@ class FRanDICompressor(BaseCompressor):
                     p.requires_grad = False
                 total_comp_params += orig_params
 
-        # FR-FIX-07: forward sanity check with attention_mask.
+        # FR-FIX-07: forward sanity check
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -543,16 +655,16 @@ class FRanDICompressor(BaseCompressor):
                             None,
                         )
                         in_dim = getattr(first_linear, "in_features", 8)
-                        dummy_float = torch.randn(
-                            1, 8, in_dim, device=dev,
-                            dtype=first_p.dtype if first_p is not None else torch.float32,
-                        )
+                        dt = first_p.dtype if first_p is not None else torch.float32
+                        dummy_float = torch.randn(1, 8, in_dim, device=dev, dtype=dt)
                         self.model(dummy_float)
         except Exception as e:
             logger.debug("FRanDI forward sanity check failed: %s", e)
             forward_check_success = False
 
-        effective_ratio = (total_comp_params / total_orig_params) if total_orig_params > 0 else 1.0
+        effective_ratio = (
+            total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
+        )
 
         try:
             self._compressed_params = self._count_params(self.model)
@@ -564,7 +676,10 @@ class FRanDICompressor(BaseCompressor):
         except Exception:
             stats = {}
 
-        avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
+        avg_err = (
+            sum(self.layer_errors.values()) / len(self.layer_errors)
+            if self.layer_errors else 0.0
+        )
         stats.update({
             "compressed_layers": self.compressed_layers,
             "compressed_layer_count": len(self.compressed_layers),
@@ -592,7 +707,6 @@ class FRanDICompressor(BaseCompressor):
 # ===========================================================================
 # Factory
 # ===========================================================================
-
 @COMPRESSOR_REGISTRY.register("frandi")
 @COMPRESSOR_REGISTRY.register("frandi_compressor")
 @COMPRESSOR_REGISTRY.register("frandi_factory")
@@ -604,15 +718,20 @@ def frandi_factory(
     **kwargs: Any,
 ) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
     """Factory function for FRanDI compressor."""
-    effective_rank = rank or _cfg_get(comp_config, "frandi_rank",
-                                      _cfg_get(comp_config, "rank", 8))
-    energy = _cfg_get(comp_config, "frandi_energy_threshold",
-                      _cfg_get(comp_config, "energy_threshold", None))
+    effective_rank = rank or _cfg_get(
+        comp_config, "frandi_rank", _cfg_get(comp_config, "rank", 8)
+    )
+    energy = _cfg_get(
+        comp_config, "frandi_energy_threshold",
+        _cfg_get(comp_config, "energy_threshold", None)
+    )
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
-    max_error = kwargs.pop("max_error",
-                _cfg_get(comp_config, "frandi_max_error",
-                _cfg_get(comp_config, "max_error", 0.5)))
+    max_error = kwargs.pop(
+        "max_error",
+        _cfg_get(comp_config, "frandi_max_error",
+                 _cfg_get(comp_config, "max_error", 0.5)),
+    )
     target_attention_only = kwargs.pop(
         "target_attention_only",
         _cfg_get(comp_config, "frandi_target_attention_only",
