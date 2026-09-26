@@ -41,6 +41,7 @@ def run_module(module: str, args) -> dict:
         "--model", args.model,
         "--tasks", ",".join(TASKS),
         "--num_samples", str(args.num_samples),
+        "--batch_size", str(args.batch_size),
         "--output_dir", str(out_dir),
     ]
 
@@ -60,7 +61,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="models/gpt2")
     ap.add_argument("--num_samples", type=int, default=500)
-    ap.add_argument("--parallel", type=int, default=6)
+    ap.add_argument("--batch_size", type=int, default=8)
+    ap.add_argument("--parallel", type=int, default=4)
     ap.add_argument("--modules_file", default="audit/zeroshot_modules.txt")
     ap.add_argument("--output_base", default="results/zeroshot_parallel")
     ap.add_argument("--resume", action="store_true", default=True)
@@ -99,6 +101,32 @@ def main():
             except Exception as e:
                 failed += 1
                 print(f"[ERROR] {module} | {e}")
+
+            # Step 8 / Step 5 hooks: auto-aggregation every 10 modules
+            if completed % 10 == 0:
+                subprocess.run(
+                    [sys.executable, "scripts/aggregate_zeroshot_details.py"],
+                    cwd="D:/SVD_Project", check=False
+                )
+                print(f"[AUTO-AGG] audit/ updated after {completed} modules")
+
+            # Git commit every 25 modules
+            if completed % 25 == 0:
+                subprocess.run(["git", "add", "results/zeroshot_parallel/", "audit/zeroshot_*.csv", "audit/zeroshot_*.parquet", "audit/zeroshot_*.json"], cwd="D:/SVD_Project")
+                subprocess.run(["git", "commit", "-m", f"feat(zeroshot): {completed} modules evaluated"], cwd="D:/SVD_Project")
+                subprocess.run(["git", "push", "origin", "main"], cwd="D:/SVD_Project")
+                print(f"[GIT] Committed {completed} modules")
+
+            # Hugging Face upload every 50 modules
+            if completed % 50 == 0:
+                subprocess.run([
+                    "huggingface-cli", "upload",
+                    "Hooshaai/svd-linear-attention-results",
+                    "D:/SVD_Project/results/zeroshot_parallel",
+                    "zeroshot_parallel",
+                    "--repo-type", "dataset",
+                ], check=False)
+                print(f"[HF] Uploaded at {completed} modules")
 
     total = time.time() - t_start
     print()
