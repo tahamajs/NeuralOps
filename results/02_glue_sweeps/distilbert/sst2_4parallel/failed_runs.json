@@ -268,5 +268,35 @@
     "accuracy_pct": 90.6,
     "error": "note: zero compressed layers, zero injected layers, model unchanged",
     "timestamp": "2026-09-27T03:26:25.831299"
+  },
+  {
+    "module": "flat_llm",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.37,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T03:27:05.615287"
+  },
+  {
+    "module": "fms",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 76.38,
+    "error": "base_before=66955010 base_after=67544906 delta=+0.88%",
+    "timestamp": "2026-09-27T03:27:25.297903"
+  },
+  {
+    "module": "frandi",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.83,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T03:27:33.156107"
   }
 ]
