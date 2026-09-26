@@ -1,20 +1,19 @@
 """
-Faithful Mamba Block Implementation.
+Faithful Mamba Block Implementation with SVD-based Weight Distillation.
 
-Based on Gu & Dao, "Mamba: Linear-Time Sequence Modeling with Selective State Spaces" (arXiv:2312.00752).
-
-Key properties:
-- Full state dimension (B, d_inner, N) with N=16
-- Input-dependent Δ, B, C (true selectivity via x_proj)
-- Depthwise conv1d for local mixing (kernel size 4)
-- Structured A parameterization: A = -exp(A_log)
-- Clean SiLU gating branch
-- Proper chunked selective scan kernel
+Based on Gu & Dao, "Mamba: Linear-Time Sequence Modeling" (arXiv:2312.00752).
+Features:
+- Full state dimension (B, d_inner, N)
+- Input-dependent selectivity (Δ, B, C) via x_proj
+- Identity-initialized depthwise conv1d to prevent initial context blurring
+- SVD distillation mapping W_q -> C and W_k -> B
+- Safe injection and architecture detection (GPT-2, LLaMA, Qwen, etc.)
 """
 
 from __future__ import annotations
+import logging
 import math
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -24,16 +23,13 @@ from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.selective_scan import selective_scan
 
+logger = logging.getLogger(__name__)
+
 
 @ATTENTION_REGISTRY.register("mamba")
 @ATTENTION_REGISTRY.register("mamba_attention")
 @ATTENTION_REGISTRY.register("mamba_block")
 class MambaBlock(nn.Module):
-    """
-    Faithful Mamba block with full state dimension, input-dependent parameters,
-    depthwise 1D conv, and chunked selective scan.
-    """
-
     is_custom_attention: bool = True
     supports_causal: bool = True
     supports_bidirectional: bool = True
@@ -75,7 +71,6 @@ class MambaBlock(nn.Module):
         self.dt_rank: int = int(dt_rank or math.ceil(self.d_model / 16))
         self.bidirectional: bool = bool(bidirectional)
 
-        # Decoder / Causal detection
         if is_decoder_override is not None:
             self.is_decoder = bool(is_decoder_override)
         else:
@@ -88,10 +83,9 @@ class MambaBlock(nn.Module):
                 bool(getattr(config, "is_decoder", False)) if config else False
             ) or any(model_type.startswith(p) for p in _dec_prefixes)
 
-        # ---- Input projection ----
+        # ---- Projections & Parameters ----
         self.in_proj = nn.Linear(self.d_model, 2 * self.d_inner, bias=bias)
-
-        # ---- Depthwise conv (local mixing) ----
+        
         self.conv1d = nn.Conv1d(
             in_channels=self.d_inner,
             out_channels=self.d_inner,
@@ -101,54 +95,128 @@ class MambaBlock(nn.Module):
             bias=conv_bias,
         )
 
-        # ---- Selective parameter projections ----
-        # x_proj maps from d_inner to (dt_rank + 2 * d_state)
-        self.x_proj = nn.Linear(
-            self.d_inner, self.dt_rank + 2 * self.d_state, bias=False
-        )
-        # dt_proj maps from dt_rank to d_inner
+        self.x_proj = nn.Linear(self.d_inner, self.dt_rank + 2 * self.d_state, bias=False)
         self.dt_proj = nn.Linear(self.dt_rank, self.d_inner, bias=True)
 
-        # ---- A parameter (Mamba paper Eq. 11) ----
-        # S4D real initialization: A_n = -(n + 1)
-        A = torch.arange(1, self.d_state + 1, dtype=torch.float32).repeat(
-            self.d_inner, 1
-        )
+        A = torch.arange(1, self.d_state + 1, dtype=torch.float32).repeat(self.d_inner, 1)
         self.A_log = nn.Parameter(torch.log(A))
-
-        # ---- D (skip connection) ----
         self.D = nn.Parameter(torch.ones(self.d_inner))
-
-        # ---- Output projection ----
         self.out_proj = nn.Linear(self.d_inner, self.d_model, bias=bias)
 
-        # ---- dt_proj bias initialization (Mamba paper) ----
+        # ---- Default Initializations ----
         dt_min, dt_max = 0.001, 0.1
         dt_init = torch.exp(
-            torch.rand(self.d_inner) * (math.log(dt_max) - math.log(dt_min))
-            + math.log(dt_min)
+            torch.rand(self.d_inner) * (math.log(dt_max) - math.log(dt_min)) + math.log(dt_min)
         )
         dt_init_inv = dt_init + torch.log(-torch.expm1(-dt_init))
         with torch.no_grad():
             self.dt_proj.bias.copy_(dt_init_inv)
             bound = 1.0 / math.sqrt(self.dt_rank)
             nn.init.uniform_(self.dt_proj.weight, -bound, bound)
-
-        # ---- Conv1d initialization ----
-        with torch.no_grad():
             nn.init.kaiming_uniform_(self.conv1d.weight, a=math.sqrt(5))
 
-        # ---- Bidirectional mode ----
+        # ---- Bidirectional Mode ----
         if self.bidirectional:
             self.A_log_bwd = nn.Parameter(torch.log(A.clone() + 0.01 * torch.randn_like(A).abs()))
             self.dt_proj_bwd = nn.Linear(self.dt_rank, self.d_inner, bias=True)
             with torch.no_grad():
                 self.dt_proj_bwd.bias.copy_(dt_init_inv)
                 nn.init.uniform_(self.dt_proj_bwd.weight, -bound, bound)
-            self.x_proj_bwd = nn.Linear(
-                self.d_inner, self.dt_rank + 2 * self.d_state, bias=False
-            )
+            self.x_proj_bwd = nn.Linear(self.d_inner, self.dt_rank + 2 * self.d_state, bias=False)
             self.D_bwd = nn.Parameter(torch.ones(self.d_inner))
+
+    def copy_weights(self, src: nn.Module) -> None:
+        """
+        استخراج وزن‌های Attention و تقریب آن‌ها با SVD جهت نگاشت به پارامترهای S6 در Mamba.
+        """
+        extracted: Dict[str, Optional[torch.Tensor]] = {"q": None, "k": None, "v": None, "o": None}
+
+        # ۱. تلاش برای استخراج وزن‌ها (پشتیبانی از مدل‌های فلت، تو در تو و GPT-2)
+        try:
+            from framework.core.adapters import UniversalAdapter
+            for proj in ["q", "k", "v", "o"]:
+                w, _ = UniversalAdapter.get_weight_bias(src, proj)
+                extracted[proj] = w
+        except Exception:
+            pass
+
+        if hasattr(src, "c_attn") and src.c_attn is not None and extracted["q"] is None:
+            w = getattr(getattr(src.c_attn, "base_layer", src.c_attn), "weight").data
+            if w.dim() == 2 and w.shape[1] == 3 * self.d_model:
+                w = w.t().contiguous()
+            split = w.size(0) // 3
+            extracted["q"] = w[:split, :]
+            extracted["k"] = w[split:2 * split, :]
+            extracted["v"] = w[2 * split:, :]
+        if hasattr(src, "c_proj") and src.c_proj is not None and extracted["o"] is None:
+            w_o = getattr(getattr(src.c_proj, "base_layer", src.c_proj), "weight").data
+            if w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1]:
+                w_o = w_o.t().contiguous()
+            extracted["o"] = w_o
+
+        named_map = {
+            "q": ["q_proj", "q_lin", "query"],
+            "k": ["k_proj", "k_lin", "key"],
+            "v": ["v_proj", "v_lin", "value"],
+            "o": ["o_proj", "out_proj", "out_lin", "dense"],
+        }
+        for proj, names in named_map.items():
+            if extracted[proj] is None:
+                for name in names:
+                    if hasattr(src, name):
+                        mod = getattr(src, name)
+                        if mod is not None and hasattr(mod, "weight"):
+                            extracted[proj] = mod.weight.data
+                            break
+
+        # ۲. نگاشت و تزریق وزن‌ها به بلوک مامبا
+        target_dtype = self.in_proj.weight.dtype
+        with torch.no_grad():
+            w_v = extracted["v"]
+            if w_v is not None:
+                w_v_float = w_v.float()
+                d_v_out = min(w_v_float.shape[0], self.d_inner)
+                d_v_in = min(w_v_float.shape[1], self.d_model)
+                self.in_proj.weight.data.zero_()
+                # مسیر اصلی (x_ssm) حاوی اطلاعات W_v
+                self.in_proj.weight.data[:d_v_out, :d_v_in] = w_v_float[:d_v_out, :d_v_in].to(target_dtype)
+                # مسیر گیت (z) با ضریب نرمالیزه باز می‌ماند
+                self.in_proj.weight.data[self.d_inner:self.d_inner+d_v_out, :d_v_in] = (w_v_float[:d_v_out, :d_v_in] * 0.5).to(target_dtype)
+
+            # تقریب SVD روی W_k و W_q برای جاسازی در بردار وضعیت B و C
+            w_k = extracted["k"]
+            if w_k is not None:
+                _, _, Vh_k = torch.linalg.svd(w_k.float(), full_matrices=False)
+                b_weight = Vh_k[:self.d_state, :min(Vh_k.shape[1], self.d_inner)]
+                b_start = self.dt_rank
+                b_end = self.dt_rank + self.d_state
+                self.x_proj.weight.data.zero_()
+                self.x_proj.weight.data[b_start:b_end, :b_weight.shape[1]] = b_weight.to(target_dtype)
+
+            w_q = extracted["q"]
+            if w_q is not None:
+                _, _, Vh_q = torch.linalg.svd(w_q.float(), full_matrices=False)
+                c_weight = Vh_q[:self.d_state, :min(Vh_q.shape[1], self.d_inner)]
+                c_start = self.dt_rank + self.d_state
+                c_end = c_start + self.d_state
+                self.x_proj.weight.data[c_start:c_end, :c_weight.shape[1]] = c_weight.to(target_dtype)
+
+            # مقداردهی خنثی (Identity) به لایه کانوولوشن برای جلوگیری از تخریب کانتکست اولیه
+            self.conv1d.weight.data.zero_()
+            self.conv1d.weight.data[:, 0, -1] = 1.0  
+            if self.conv1d.bias is not None:
+                self.conv1d.bias.data.zero_()
+
+            # کپی مستقیم لایه خروجی
+            w_o = extracted["o"]
+            if w_o is not None:
+                w_o_float = w_o.float()
+                d_o_out = min(w_o_float.shape[0], self.d_model)
+                d_o_in = min(w_o_float.shape[1], self.d_inner)
+                self.out_proj.weight.data.zero_()
+                self.out_proj.weight.data[:d_o_out, :d_o_in] = w_o_float[:d_o_out, :d_o_in].to(target_dtype)
+                if self.out_proj.bias is not None:
+                    self.out_proj.bias.data.zero_()
 
     def forward(
         self,
@@ -162,33 +230,25 @@ class MambaBlock(nn.Module):
 
         B, L, _ = hidden_states.shape
 
-        # ---- Input projection ----
-        xz = self.in_proj(hidden_states)               # (B, L, 2 * d_inner)
-        x_ssm, z = xz.chunk(2, dim=-1)                 # both (B, L, d_inner)
+        xz = self.in_proj(hidden_states)
+        x_ssm, z = xz.chunk(2, dim=-1)
 
-        # ---- Depthwise conv (transpose for Conv1d) ----
         x_conv = self.conv1d(
-            x_ssm.transpose(1, 2)                      # (B, d_inner, L + pad)
-        )[..., :L].transpose(1, 2)                     # (B, L, d_inner)
+            x_ssm.transpose(1, 2)
+        )[..., :L].transpose(1, 2)
 
-        # ---- SiLU activation ----
         x_ssm = F.silu(x_conv)
 
-        # ---- Selective parameters (input-dependent) ----
-        x_dbl = self.x_proj(x_ssm)                     # (B, L, dt_rank + 2N)
-        dt, B_ssm, C_ssm = x_dbl.split(
-            [self.dt_rank, self.d_state, self.d_state], dim=-1
-        )
-        dt = self.dt_proj(dt)                          # (B, L, d_inner)
+        x_dbl = self.x_proj(x_ssm)
+        dt, B_ssm, C_ssm = x_dbl.split([self.dt_rank, self.d_state, self.d_state], dim=-1)
+        dt = self.dt_proj(dt)
 
-        # ---- Compute A ----
-        A = -torch.exp(self.A_log)                     # (d_inner, N)
+        A = -torch.exp(self.A_log)
 
-        # ---- Selective scan ----
-        u_t = x_ssm.transpose(1, 2)                    # (B, d_inner, L)
-        dt_t = dt.transpose(1, 2)                      # (B, d_inner, L)
-        B_t = B_ssm.transpose(1, 2)                    # (B, N, L)
-        C_t = C_ssm.transpose(1, 2)                    # (B, N, L)
+        u_t = x_ssm.transpose(1, 2)
+        dt_t = dt.transpose(1, 2)
+        B_t = B_ssm.transpose(1, 2)
+        C_t = C_ssm.transpose(1, 2)
 
         y = selective_scan(
             u=u_t,
@@ -198,17 +258,14 @@ class MambaBlock(nn.Module):
             C=C_t,
             D=self.D,
             delta_softplus=True,
-        )                                              # (B, d_inner, L)
-        y = y.transpose(1, 2)                          # (B, L, d_inner)
+        )
+        y = y.transpose(1, 2)
 
-        # ---- Bidirectional mode ----
         if self.bidirectional and not self.is_decoder:
             u_rev = torch.flip(x_ssm, dims=[1]).transpose(1, 2)
             x_rev = torch.flip(x_ssm, dims=[1])
             x_dbl_rev = self.x_proj_bwd(x_rev)
-            dt_b, B_b, C_b = x_dbl_rev.split(
-                [self.dt_rank, self.d_state, self.d_state], dim=-1
-            )
+            dt_b, B_b, C_b = x_dbl_rev.split([self.dt_rank, self.d_state, self.d_state], dim=-1)
             dt_b = self.dt_proj_bwd(dt_b).transpose(1, 2)
             B_b = B_b.transpose(1, 2)
             C_b = C_b.transpose(1, 2)
@@ -227,13 +284,9 @@ class MambaBlock(nn.Module):
             y_b = torch.flip(y_b, dims=[1])
             y = 0.5 * (y + y_b)
 
-        # ---- Gating ----
         y = y * F.silu(z)
-
-        # ---- Output projection ----
         out = self.out_proj(y)
 
-        # ---- Mask handling ----
         if attention_mask is not None and attention_mask.dim() == 2:
             out = out * attention_mask.unsqueeze(-1).to(out.dtype)
 
@@ -256,7 +309,6 @@ def inject_mamba(
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> Optional[Union[nn.Module, Any]]:
-    r"""Safe injection hook to wire Mamba into transformer layers with weight copying."""
     target = layer if layer is not None else model
     if target is None:
         return None
@@ -265,7 +317,6 @@ def inject_mamba(
     if cfg is None and hasattr(target, "config"):
         cfg = target.config
 
-    # 1. Whole model traversal support
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -298,7 +349,6 @@ def inject_mamba(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # 2. Single layer injection
     src_attn = old_attn
     if src_attn is None and target is not None:
         if hasattr(target, "attention"):
@@ -361,6 +411,4 @@ def inject_mamba(
 
     return new_module
 
-
 __all__ = ["MambaBlock", "Mamba", "inject_mamba"]
-
