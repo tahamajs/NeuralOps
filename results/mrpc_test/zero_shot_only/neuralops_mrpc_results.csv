@@ -1,3 +1,0 @@
-module,dataset,status,zero_shot_acc,zero_shot_f1,post_recovery_acc,post_recovery_f1,delta_acc,quality_gate,trainable_params,initial_loss,final_loss,loss_change
-fusion_attn,mrpc,PASS,80.88,0.85,80.88,0.85,0.0,PASS,0,0.0,0.0,0.0
-flash_attention3,mrpc,PASS,80.88,0.85,80.88,0.85,0.0,PASS,0,0.0,0.0,0.0

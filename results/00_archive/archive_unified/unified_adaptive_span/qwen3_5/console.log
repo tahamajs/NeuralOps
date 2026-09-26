@@ -1,0 +1,106 @@
+2026-09-14 02:47:22,650 [INFO] QwenQualitySweep: Parsed 2 module-specific extended arguments: ['--max_span', '64']
+The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
+
+Loading weights:   0%|          | 0/320 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 320/320 [00:00<00:00, 3355.64it/s]
+[1mQwen3_5ForSequenceClassification LOAD REPORT[0m from: models\Qwen3.5-0.8B
+Key                                                | Status     | 
+---------------------------------------------------+------------+-
+model.visual.blocks.{0...11}.attn.proj.weight      | UNEXPECTED | 
+model.visual.blocks.{0...11}.mlp.linear_fc1.bias   | UNEXPECTED | 
+model.visual.blocks.{0...11}.attn.proj.bias        | UNEXPECTED | 
+model.visual.blocks.{0...11}.mlp.linear_fc2.weight | UNEXPECTED | 
+model.visual.blocks.{0...11}.norm1.weight          | UNEXPECTED | 
+model.visual.blocks.{0...11}.norm2.bias            | UNEXPECTED | 
+model.visual.blocks.{0...11}.norm2.weight          | UNEXPECTED | 
+model.visual.blocks.{0...11}.attn.qkv.weight       | UNEXPECTED | 
+model.visual.blocks.{0...11}.norm1.bias            | UNEXPECTED | 
+model.visual.pos_embed.weight                      | UNEXPECTED | 
+model.visual.blocks.{0...11}.attn.qkv.bias         | UNEXPECTED | 
+model.visual.patch_embed.proj.bias                 | UNEXPECTED | 
+model.visual.blocks.{0...11}.mlp.linear_fc2.bias   | UNEXPECTED | 
+model.visual.blocks.{0...11}.mlp.linear_fc1.weight | UNEXPECTED | 
+model.visual.merger.linear_fc1.weight              | UNEXPECTED | 
+model.visual.merger.norm.weight                    | UNEXPECTED | 
+model.visual.merger.linear_fc1.bias                | UNEXPECTED | 
+model.visual.merger.linear_fc2.weight              | UNEXPECTED | 
+model.visual.patch_embed.proj.weight               | UNEXPECTED | 
+model.visual.merger.norm.bias                      | UNEXPECTED | 
+model.visual.merger.linear_fc2.bias                | UNEXPECTED | 
+score.weight                                       | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-14 02:47:27,548 [INFO] QwenQualitySweep: model=models\Qwen3.5-0.8B qwen_compat=True hidden=1024 heads=8 head_dim=256 layers=24
+2026-09-14 02:47:27,548 [INFO] QwenQualitySweep: detected model family=qwen3_5 adapter={'family': 'qwen3_5', 'hidden_size': 1024, 'num_heads': 8, 'num_key_value_heads': 2, 'q_proj_out': 2048, 'kv_proj_out': 512, 'kv_repeat': 4, 'head_dim': 256, 'num_hidden_layers': 24, 'causal': True, 'mask_rank': 4, 'position_embedding': 'rotary', 'supports_gqa': True, 'supports_delta_net': True, 'supports_moe': True}
+2026-09-14 02:47:27,548 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 02:47:27,548 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-14 02:47:27,548 [INFO] QwenQualitySweep:   model:             models\Qwen3.5-0.8B
+2026-09-14 02:47:27,549 [INFO] QwenQualitySweep:   family:            qwen3_5
+2026-09-14 02:47:27,549 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-14 02:47:27,549 [INFO] QwenQualitySweep:   batch_size:        4
+2026-09-14 02:47:27,549 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-14 02:47:27,549 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-14 02:47:27,549 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-14 02:47:27,550 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 02:47:27,553 [INFO] QwenQualitySweep: Enabled gradient checkpointing for qwen3_5 backbone
+2026-09-14 02:47:27,721 [INFO] QwenQualitySweep: Injected 186 LoRALinear layers into qwen3_5 backbone
+2026-09-14 02:47:27,721 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection
+`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+2026-09-14 02:49:30,984 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.6802
+2026-09-14 02:51:24,087 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.4013
+2026-09-14 02:53:21,549 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=1.1000
+2026-09-14 02:55:20,643 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.4673
+2026-09-14 02:57:16,539 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.6020
+2026-09-14 02:59:12,295 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.5308
+2026-09-14 03:01:08,793 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.4838
+2026-09-14 03:03:04,851 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.2636
+2026-09-14 03:03:04,894 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_adaptive_span\qwen3_5\finetuned_model.pt
+2026-09-14 03:03:05,723 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-14 03:03:06,902 [INFO] QwenQualitySweep: Prepared 218 eval batches and 50 train batches directly on GPU.
+2026-09-14 03:06:12,330 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 77.52%
+2026-09-14 03:06:12,383 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 03:06:12,384 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-14 03:06:12,384 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-14 03:06:12,384 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-14 03:06:12,384 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-14 03:06:12,384 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-14 03:06:12,384 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-14 03:06:12,384 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 03:06:12,385 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-14 03:09:22,902 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_adaptive_span\qwen3_5\Qwen3.5-0.8B_full_full_metrics.json
+2026-09-14 03:09:23,051 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_adaptive_span\qwen3_5\checkpoints\full\weights.pt (module_params=0, lora_params=373)
+2026-09-14 03:09:26,209 [INFO] QwenQualitySweep: [1/2] full -> PASS 77.52% (F1: 0.761, Peak VRAM: 1653.34 MB)
+2026-09-14 03:09:26,210 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_adaptive_span\qwen3_5\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-14 03:09:26,584 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: adaptive_span (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-14 03:09:30,890 [INFO] framework.core.attention_utils: Successfully injected 'adaptive_span' into 6 transformer blocks.
+2026-09-14 03:09:30,910 [INFO] QwenQualitySweep: module=adaptive_span path=adapted_qwen3_5
+2026-09-14 03:09:30,912 [INFO] QwenQualitySweep: module=adaptive_span injection summary: 0 SVDLinear layers active
+2026-09-14 03:09:30,913 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for adaptive_span (lr=2.0e-04)
+2026-09-14 03:09:32,342 [INFO] framework.utils.compat: Recovery fine-tuning selected 98706480 trainable parameters across 402 tensors.
+2026-09-14 03:09:32,342 [WARNING] framework.utils.compat: Total trainable parameters (98706480) exceeds 2,000,000 threshold for recovery. Pruning heavy base weights to prevent OOM.
+2026-09-14 03:09:32,366 [INFO] framework.utils.compat: Reduced recovery parameters to 4727856 trainable parameters across 288 tensors.
+2026-09-14 03:09:32,392 [INFO] QwenQualitySweep: LoRA fine-tuning: 4727856 trainable parameters across 288 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-14 03:09:40,156 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=1.7479 (bs=4, micro_bs=4)
+2026-09-14 03:09:58,674 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.3182 (bs=4, micro_bs=4)
+2026-09-14 03:10:22,259 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.9101 (bs=4, micro_bs=4)
+2026-09-14 03:10:45,567 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=1.5794 (bs=4, micro_bs=4)
+2026-09-14 03:11:08,836 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=1.3668 (bs=4, micro_bs=4)
+2026-09-14 03:11:32,356 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=3.8375 (bs=4, micro_bs=4)
+2026-09-14 03:11:55,866 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=2.5832 (bs=4, micro_bs=4)
+2026-09-14 03:12:19,396 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.2270 (bs=4, micro_bs=4)
+2026-09-14 03:12:42,827 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=1.5692 (bs=4, micro_bs=4)
+2026-09-14 03:13:06,128 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.4790 (bs=4, micro_bs=4)
+2026-09-14 03:13:29,444 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=2.3704 (bs=4, micro_bs=4)
+2026-09-14 03:16:56,565 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_adaptive_span\qwen3_5\Qwen3.5-0.8B_adaptive_span_full_metrics.json
+2026-09-14 03:16:56,745 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_adaptive_span\qwen3_5\checkpoints\adaptive_span\weights.pt (module_params=0, lora_params=373)
+2026-09-14 03:16:59,581 [INFO] QwenQualitySweep: [2/2] adaptive_span -> PASS_LOW 53.10% (F1: 0.2326, Peak VRAM: 1651.46 MB)
+2026-09-14 03:16:59,582 [INFO] QwenQualitySweep: [Quality Guard] Module 'adaptive_span' did not pass quality criteria (status=PASS_LOW, acc=53.10%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-14 03:17:00,049 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 03:17:00,050 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (Qwen3.5-0.8B on sst2)
+2026-09-14 03:17:00,065 [INFO] QwenQualitySweep: 
+       Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+         full     PASS   77.52% 0.00% (base) 0.7610                  0            1.00x 1653.3 MB             170.04            195.00
+adaptive_span PASS_LOW   53.10%      -24.42% 0.2326                  0            1.02x 1651.5 MB             190.26            218.19
+2026-09-14 03:17:00,065 [INFO] QwenQualitySweep: ================================================================================

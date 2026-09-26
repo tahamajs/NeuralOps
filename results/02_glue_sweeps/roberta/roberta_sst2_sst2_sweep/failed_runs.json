@@ -1,0 +1,22 @@
+[
+  {
+    "module": "swift_svd_act",
+    "model": "models/roberta_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 94.38,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T20:58:34.103264"
+  },
+  {
+    "module": "replace",
+    "model": "models/roberta_sst2",
+    "dataset": "sst2",
+    "status": "PASS_LOW",
+    "perplexity": "",
+    "accuracy_pct": 50.92,
+    "error": "note: evaluated accuracy (50.92%) below chance threshold (56.00%)",
+    "timestamp": "2026-09-24T20:58:51.694110"
+  }
+]

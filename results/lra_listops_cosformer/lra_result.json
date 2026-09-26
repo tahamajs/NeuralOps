@@ -1,6 +1,0 @@
-{
-  "task": "listops",
-  "module": "cosformer",
-  "best_accuracy": 11.4,
-  "epochs": 40
-}

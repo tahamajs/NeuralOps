@@ -1,0 +1,45 @@
+{
+    "model": "roberta-base_rpca",
+    "performance": {
+        "accuracy_pct": 72.02,
+        "f1_score": 0.7724,
+        "f1_macro": 0.7046,
+        "precision": 0.7681,
+        "recall": 0.7162,
+        "val_loss": 0.5687,
+        "status": "PASS",
+        "elapsed_s": 26.19
+    },
+    "efficiency": {
+        "total_params_before": 124647170,
+        "total_params_after": 124647170,
+        "trainable_recovery_params": 592130,
+        "compression_rate": 1.0,
+        "compression_ratio_pct": 0.0,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 0,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 0,
+        "lora_params": 0,
+        "avg_reconstruction_error": 0.0,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {}
+    },
+    "hardware": {
+        "peak_vram_mb": 301.72,
+        "tokens_per_sec": 92321.44
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 281.22,
+        "L_256_vram_mb": 283.59,
+        "L_512_vram_mb": 289.6,
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+    },
+    "timestamp": "2026-09-11T08:05:02.293952"
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "module": "tt_compressor",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 2170.400972,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (2170.40) exceeded threshold 100.0",
+    "timestamp": "2026-09-25T08:49:01.894827"
+  }
+]

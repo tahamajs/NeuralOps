@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,UnifiedRoPE Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+distilbert,0,90.48%,87.96%,-2.52%,0.8811,PASS,0,0.99x,341.5 MB,16.2
+roberta,0,75.11%,64.33%,-10.78%,0.7236,PASS,0,0.94x,390.0 MB,23.1
+gpt2,0,60.78%,57.45%,-3.33%,0.6536,PASS,0,0.99x,592.7 MB,23.3

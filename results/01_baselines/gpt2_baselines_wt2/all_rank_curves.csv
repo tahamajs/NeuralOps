@@ -1,0 +1,4 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+384,direct_svd,PASS_LOW_PPL,0.0,0.0,4.176533553801634,2336.205078125,1.0247,2.41,36,0,101.6,124439808,121441536
+384,svd_llm_compressor,PASS_LOW_PPL,0.0,0.0,4.100021091358906,4764.58984375,1.0472,4.5,12,12,151.2,124439808,118836480
+384,asvd,PASS_LOW_PPL,0.0,0.0,4.4924401967464735,2486.412109375,1.0,0.0,12,0,126.8,124439808,125073809

@@ -1,4 +1,0 @@
-Model,Exit Code,Baseline Acc,ToMoE Compressor Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,1,90.48%,69.50%,-20.98%,0.7569,PASS,0,1.00x,427.0 MB,0.1
-roberta,1,75.11%,50.92%,-24.19%,0.6748,PASS_LOW,0,1.00x,571.8 MB,0.1
-gpt2,1,60.78%,54.24%,-6.54%,0.6780,PASS_LOW,0,1.00x,874.6 MB,0.1

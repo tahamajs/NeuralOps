@@ -1,0 +1,45 @@
+{
+    "model": "distilbert_sst2_enlighten",
+    "performance": {
+        "accuracy_pct": 90.48,
+        "f1_score": 0.9081,
+        "f1_macro": 0.9047,
+        "precision": 0.9055,
+        "recall": 0.9045,
+        "val_loss": 0.3474,
+        "status": "PASS",
+        "elapsed_s": 5.96
+    },
+    "efficiency": {
+        "total_params_before": 66955010,
+        "total_params_after": 66955010,
+        "trainable_recovery_params": 1538,
+        "compression_rate": 1.0,
+        "compression_ratio_pct": 0.0,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 0,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 0,
+        "lora_params": 0,
+        "avg_reconstruction_error": null,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {}
+    },
+    "hardware": {
+        "peak_vram_mb": 174.83,
+        "tokens_per_sec": 55340.71
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 156.26,
+        "L_256_vram_mb": 158.95,
+        "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+    },
+    "timestamp": "2026-09-23T02:47:34.002528+00:00"
+}

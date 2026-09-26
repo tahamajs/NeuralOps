@@ -1,0 +1,58 @@
+{
+    "model": "gpt2_expert_choice_moe",
+    "performance": {
+        "accuracy_pct": 99.72,
+        "f1_score": 0.0,
+        "f1_macro": 0.4993,
+        "precision": 0.5,
+        "recall": 0.4986,
+        "val_loss": 0.0161,
+        "status": "MODERATE_EXPANSION",
+        "elapsed_s": 84.69
+    },
+    "efficiency": {
+        "total_params_before": 124441344,
+        "total_params_after": 132758796,
+        "trainable_recovery_params": 1179648,
+        "compression_rate": 1.0,
+        "compression_ratio_pct": 0.0,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 0,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 12,
+        "lora_params": 1179648,
+        "avg_reconstruction_error": null,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {
+            "transformer.h.0.attn": 64,
+            "transformer.h.1.attn": 64,
+            "transformer.h.2.attn": 64,
+            "transformer.h.3.attn": 64,
+            "transformer.h.4.attn": 64,
+            "transformer.h.5.attn": 64,
+            "transformer.h.6.attn": 64,
+            "transformer.h.7.attn": 64,
+            "transformer.h.8.attn": 64,
+            "transformer.h.9.attn": 64,
+            "transformer.h.10.attn": 64,
+            "transformer.h.11.attn": 64
+        }
+    },
+    "hardware": {
+        "peak_vram_mb": 671.19,
+        "tokens_per_sec": 4645.56
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 655.01,
+        "L_256_vram_mb": 659.01,
+        "L_512_vram_mb": 672.77,
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+    },
+    "timestamp": "2026-09-23T19:17:41.028292+00:00"
+}

@@ -1,0 +1,27 @@
+{
+  "piqa": {
+    "task": "piqa",
+    "accuracy": 53.2,
+    "num_samples": 500
+  },
+  "arc_easy": {
+    "task": "arc_easy",
+    "accuracy": 29.8,
+    "num_samples": 500
+  },
+  "arc_challenge": {
+    "task": "arc_challenge",
+    "accuracy": 19.6,
+    "num_samples": 500
+  },
+  "hellaswag": {
+    "task": "hellaswag",
+    "accuracy": 27.8,
+    "num_samples": 500
+  },
+  "winogrande": {
+    "task": "winogrande",
+    "accuracy": 50.6,
+    "num_samples": 500
+  }
+}

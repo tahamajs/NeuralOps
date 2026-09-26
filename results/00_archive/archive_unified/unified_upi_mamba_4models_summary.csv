@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,UPI Mamba Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+distilbert,0,90.94%,50.92%,-40.02%,0.6748,PASS_LOW,0,0.94x,581.4 MB,43.7
+roberta,0,75.46%,50.92%,-24.54%,0.6748,PASS_LOW,0,0.89x,923.2 MB,541.6
+gpt2,0,57.91%,51.03%,-6.88%,0.6728,PASS_LOW,0,0.94x,816.1 MB,54.6

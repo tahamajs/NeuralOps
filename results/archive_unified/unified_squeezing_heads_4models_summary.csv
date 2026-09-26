@@ -1,4 +1,0 @@
-Model,Exit Code,Baseline Acc,SQUEEZING_HEADS Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,0,90.48%,90.37%,-0.11%,0.9075,PASS,0,0.99x,332.5 MB,18.8
-roberta,0,75.11%,51.49%,-23.62%,0.6754,PASS_LOW,0,0.94x,379.9 MB,27.4
-gpt2,0,60.78%,51.61%,-9.17%,0.6774,PASS_LOW,0,0.99x,568.7 MB,25.5

@@ -1,0 +1,23 @@
+[
+  {
+    "Model": "distilbert",
+    "Exit Code": 0,
+    "Baseline Acc": "N/A",
+    "AASVD Acc": "88.42%",
+    "Delta Acc": "N/A",
+    "F1": "0.8889",
+    "Precision": "0.8853",
+    "Recall": "0.8837",
+    "Val Loss": "0.4048",
+    "Status": "PASS",
+    "Compressed Layers": "16",
+    "Fallback Layers": "8",
+    "Avg Error": "0.8352",
+    "Comp Rate": "1.13x",
+    "FLOPs Red": "83.3%",
+    "Peak VRAM": "317.8 MB",
+    "Inference Time": "8.7s",
+    "Latency / sample": "N/A",
+    "Throughput (tok/s)": "44102.0"
+  }
+]

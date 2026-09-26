@@ -1,0 +1,12 @@
+[
+  {
+    "module": "simple_ssm",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 50.92,
+    "error": "base_before=66955010 base_after=75406082 delta=+12.62%",
+    "timestamp": "2026-09-25T13:38:05.185347"
+  }
+]

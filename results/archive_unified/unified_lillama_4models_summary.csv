@@ -1,4 +1,0 @@
-Model,Exit Code,Baseline Acc,LiLLaMA Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,0,90.48%,87.50%,-2.98%,0.8868,PASS,0,1.00x,337.6 MB,19.4
-roberta,0,75.00%,85.44%,+10.44%,0.8603,PASS,0,1.00x,583.5 MB,32.3
-gpt2,0,60.78%,56.88%,-3.90%,0.6835,PASS,0,1.00x,634.9 MB,23.4

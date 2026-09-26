@@ -1,0 +1,552 @@
+[
+  {
+    "module": "hybridkv_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.338249,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T06:04:51.699053"
+  },
+  {
+    "module": "fwsvd",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T06:43:12.060501"
+  },
+  {
+    "module": "dynamic_entropy_svd_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T06:44:10.470540"
+  },
+  {
+    "module": "coopq",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 77.084586,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T06:47:06.254463"
+  },
+  {
+    "module": "bonsai_pruner_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 83.660199,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T06:50:24.276401"
+  },
+  {
+    "module": "drone_compressor",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T06:51:18.686885"
+  },
+  {
+    "module": "pca_quant_compressor",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T06:54:14.676153"
+  },
+  {
+    "module": "token_compressed",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": 3999.192404,
+    "accuracy_pct": 0.0,
+    "error": "base_before=124439808 base_after=125031180 delta=+0.48%",
+    "timestamp": "2026-09-24T06:55:22.459496"
+  },
+  {
+    "module": "dobi_svd_compressor",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T20:18:37.292344"
+  },
+  {
+    "module": "nmf_compressor",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T20:19:25.781165"
+  },
+  {
+    "module": "flat_llm_compressor",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 284.319227,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (284.32) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T20:19:29.833056"
+  },
+  {
+    "module": "kronecker_tt_lora_class",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": 54.945977,
+    "accuracy_pct": 0.0,
+    "error": "base_before=124439808 base_after=130136064 delta=+4.58%",
+    "timestamp": "2026-09-24T20:23:55.133124"
+  },
+  {
+    "module": "slim_compressor",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T20:27:05.374321"
+  },
+  {
+    "module": "adaptive_compressor",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 174.321058,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (174.32) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T20:27:23.121065"
+  },
+  {
+    "module": "tt_compressor_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 2182.472257,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (2182.47) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T20:27:32.043621"
+  },
+  {
+    "module": "fused_svd_kernel",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 1372.656949,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (1372.66) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T20:32:56.982975"
+  },
+  {
+    "module": "adaptive_svd_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 174.321058,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (174.32) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T20:35:05.812772"
+  },
+  {
+    "module": "dynamic_entropy_svd_class",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T20:35:28.291266"
+  },
+  {
+    "module": "hybrid_svd_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 626.482296,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (626.48) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T20:37:11.130862"
+  },
+  {
+    "module": "huffman_coder",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T20:40:05.773405"
+  },
+  {
+    "module": "grecodec_compressor_class",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T20:42:22.809209"
+  },
+  {
+    "module": "salr_compressor_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T20:44:14.619715"
+  },
+  {
+    "module": "replaceme_compressor_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T20:47:15.992393"
+  },
+  {
+    "module": "svd_sequence",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 3408.973465,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (3408.97) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T20:48:08.528647"
+  },
+  {
+    "module": "naive_svd",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 842.140399,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (842.14) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T20:51:04.673730"
+  },
+  {
+    "module": "cur_moe",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T20:55:00.216549"
+  },
+  {
+    "module": "uniql_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.341548,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T20:55:53.661538"
+  },
+  {
+    "module": "cur_moe_class",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T21:05:00.907564"
+  },
+  {
+    "module": "frandi_compressor",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T21:05:21.299429"
+  },
+  {
+    "module": "frandi_compressor_class",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 265.377977,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (265.38) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T21:06:29.911961"
+  },
+  {
+    "module": "zerokv",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 995.771836,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T21:06:41.051979"
+  },
+  {
+    "module": "compot_compressor_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T21:12:56.423752"
+  },
+  {
+    "module": "ressvd",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 349.328979,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (349.33) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T21:18:41.215264"
+  },
+  {
+    "module": "cur_moe_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T21:22:10.057379"
+  },
+  {
+    "module": "rotational_slicegpt_int4_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T21:24:47.359561"
+  },
+  {
+    "module": "swift_svd",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T21:29:45.805045"
+  },
+  {
+    "module": "swift_svd_act",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T21:34:45.001356"
+  },
+  {
+    "module": "asvd",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 116.306487,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (116.31) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T21:36:05.600323"
+  },
+  {
+    "module": "hashed_net_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T21:38:37.440706"
+  },
+  {
+    "module": "mlorq_compressor",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "ImportError: cannot import name 'LOG' from 'framework.utils.logger' (D:\\SVD_PROJECT\\Codes\\framework\\utils\\logger.py)",
+    "timestamp": "2026-09-24T21:39:50.185285"
+  },
+  {
+    "module": "svd_proj_attn",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 984.570343,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (984.57) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T21:44:26.749240"
+  },
+  {
+    "module": "enlighten_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 162.685301,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (162.69) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T21:46:43.886568"
+  },
+  {
+    "module": "compressed_mha",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 214.847996,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (214.85) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T21:47:02.451994"
+  },
+  {
+    "module": "dynamic_entropy_compressor",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T21:47:46.126553"
+  },
+  {
+    "module": "delta_kv_class",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 1066.725343,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (1066.73) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T21:56:04.648355"
+  },
+  {
+    "module": "adasvd_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 471.291564,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (471.29) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T21:56:11.137176"
+  },
+  {
+    "module": "kronecker_tt_lora_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": 54.96395,
+    "accuracy_pct": 0.0,
+    "error": "base_before=124439808 base_after=130136064 delta=+4.58%",
+    "timestamp": "2026-09-24T21:56:50.474427"
+  },
+  {
+    "module": "dynamic_entropy_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T22:02:37.944436"
+  },
+  {
+    "module": "flap_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.439109,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T22:03:59.190084"
+  },
+  {
+    "module": "tt_linear_compressor",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 2182.472257,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (2182.47) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T22:05:23.853351"
+  },
+  {
+    "module": "adaptive_compressor_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 174.321058,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (174.32) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T22:05:40.121440"
+  },
+  {
+    "module": "dobi_svd",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T22:11:40.762963"
+  },
+  {
+    "module": "tt_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 2182.472257,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (2182.47) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T22:15:56.330885"
+  },
+  {
+    "module": "coopq_quantizer",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 77.084586,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T22:18:39.977342"
+  },
+  {
+    "module": "frandi_compressor_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T22:22:48.198053"
+  }
+]

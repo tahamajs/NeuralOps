@@ -1,3 +1,0 @@
-module_name,status,perplexity,baseline_ppl,delta_ppl,compression_rate,compression_ratio_pct,peak_vram_mb,latency_ms_per_token,throughput_tok_per_sec,elapsed_s,total_params_before,total_params_after,error,timestamp
-full,PASS,21.71,21.71,0.0,1.0,0.0,916.17,0.105,9546.0,10.48,124439808,124439808,,2026-09-21T08:16:59
-svd_llm,PASS,21.71,21.71,0.0,1.0,0.0,917.55,0.124,8039.9,12.44,124439808,124439808,,2026-09-21T08:17:22

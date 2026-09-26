@@ -1,0 +1,6 @@
+{
+  "dataset": "sst2",
+  "max_length": 512,
+  "num_eval_batches": 28,
+  "num_train_batches": 50
+}

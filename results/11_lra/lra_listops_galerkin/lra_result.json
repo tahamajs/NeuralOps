@@ -1,0 +1,6 @@
+{
+  "task": "listops",
+  "module": "galerkin",
+  "best_accuracy": 9.4,
+  "epochs": 10
+}

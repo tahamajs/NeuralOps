@@ -1,4 +1,0 @@
-Model,Exit Code,Baseline Acc,HybridKV Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,0,90.48%,90.94%,+0.46%,0.9123,PASS,0,1.00x,337.6 MB,14.1
-roberta,0,75.11%,77.18%,+2.07%,0.8077,PASS,0,1.00x,361.6 MB,19.2
-gpt2,0,60.78%,62.04%,+1.26%,0.6783,PASS,0,1.00x,634.9 MB,18.6

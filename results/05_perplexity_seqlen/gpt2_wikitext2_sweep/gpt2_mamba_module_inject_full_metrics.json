@@ -1,0 +1,45 @@
+{
+    "model": "gpt2_mamba_module_inject",
+    "performance": {
+        "accuracy_pct": 100.0,
+        "f1_score": 0.0,
+        "f1_macro": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "val_loss": 0.0,
+        "status": "MODERATE_EXPANSION",
+        "elapsed_s": 818.2
+    },
+    "efficiency": {
+        "total_params_before": 124441344,
+        "total_params_after": 141343488,
+        "trainable_recovery_params": 1536,
+        "compression_rate": 1.0,
+        "compression_ratio_pct": 0.0,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 0,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 12,
+        "lora_params": 0,
+        "avg_reconstruction_error": null,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {}
+    },
+    "hardware": {
+        "peak_vram_mb": 2014.16,
+        "tokens_per_sec": 427.2
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 1003.16,
+        "L_256_vram_mb": 1034.45,
+        "L_512_vram_mb": 1095.02,
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+    },
+    "timestamp": "2026-09-23T19:26:45.774185+00:00"
+}

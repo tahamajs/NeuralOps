@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,ViG Attention Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+distilbert,0,90.94%,88.30%,-2.64%,0.8854,PASS,0,0.99x,348.8 MB,21.0
+roberta,0,75.46%,61.24%,-14.22%,0.7188,PASS,0,0.94x,679.9 MB,29.1
+gpt2,0,57.91%,61.35%,+3.44%,0.7185,PASS,0,0.99x,573.9 MB,31.0

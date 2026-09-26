@@ -1,4 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-128,come,PASS,74.08,0.7575,0.6069,380.26,1.5644,36.08,0,0,83.8,124647170,79676936
-384,come,PASS,74.08,0.7575,0.6069,380.26,1.5644,36.08,0,0,84.3,124647170,79676936
-256,come,PASS,74.08,0.7575,0.6069,380.26,1.5644,36.08,0,0,84.3,124647170,79676936

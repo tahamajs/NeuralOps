@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,Mamba Shedder Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+distilbert,0,90.48%,87.50%,-2.98%,0.8868,PASS,0,1.00x,337.6 MB,15.9
+roberta,0,75.11%,85.44%,+10.33%,0.8542,PASS,0,1.00x,361.5 MB,19.9
+gpt2,0,60.78%,56.88%,-3.90%,0.6835,PASS,0,1.00x,634.9 MB,19.8

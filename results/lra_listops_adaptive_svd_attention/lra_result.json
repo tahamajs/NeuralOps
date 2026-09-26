@@ -1,8 +1,0 @@
-{
-  "task": "listops",
-  "module": "adaptive_svd_attention",
-  "best_accuracy": 10.2,
-  "epochs": 20,
-  "seq_len": 2048,
-  "batch_size": 1
-}

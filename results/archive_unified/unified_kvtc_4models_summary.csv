@@ -1,4 +1,0 @@
-Model,Exit Code,Baseline Acc,KVTC Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,1,90.71%,90.14%,-0.57%,0.9025,PASS,20,1.00x,217.2 MB,0.1
-roberta,1,78.56%,50.92%,-27.64%,0.6748,PASS_LOW,45,1.00x,457.9 MB,0.1
-gpt2,1,79.36%,0.00%,-79.36%,0.7978,FAIL,0,1.00x,793.2 MB,0.1

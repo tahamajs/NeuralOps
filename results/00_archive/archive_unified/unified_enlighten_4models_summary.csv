@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,ENLighten Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+distilbert,0,90.71%,89.22%,-1.49%,0.8937,PASS,36,1.00x,301.2 MB,29.2
+roberta,0,78.56%,51.03%,-27.53%,0.6748,PASS_LOW,72,1.00x,520.7 MB,41.2
+gpt2,0,79.36%,61.12%,-18.24%,0.3936,PASS,48,1.00x,628.3 MB,40.0

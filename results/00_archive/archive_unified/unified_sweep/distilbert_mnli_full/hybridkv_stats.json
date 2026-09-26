@@ -1,0 +1,129 @@
+{
+  "compressor_name": "hybridkv",
+  "original_parameters": 66955779,
+  "compressed_parameters": 66955779,
+  "saved_parameters": 0,
+  "compression_ratio": 1.0,
+  "reduction_percentage": 0.0,
+  "budget": 0.3,
+  "static_ratio": 0.7,
+  "max_cache_len": 128,
+  "num_sinks": 4,
+  "recent_window": 32,
+  "total_attention_heads": 216,
+  "static_heads_count": 144,
+  "dynamic_heads_count": 72,
+  "head_classifications": {
+    "distilbert.transformer.layer.0.attention.q_lin": {
+      "head_type": "static",
+      "num_heads": 12,
+      "static_heads": 8,
+      "dynamic_heads": 4
+    },
+    "distilbert.transformer.layer.0.attention.k_lin": {
+      "head_type": "static",
+      "num_heads": 12,
+      "static_heads": 8,
+      "dynamic_heads": 4
+    },
+    "distilbert.transformer.layer.0.attention.v_lin": {
+      "head_type": "static",
+      "num_heads": 12,
+      "static_heads": 8,
+      "dynamic_heads": 4
+    },
+    "distilbert.transformer.layer.1.attention.q_lin": {
+      "head_type": "static",
+      "num_heads": 12,
+      "static_heads": 8,
+      "dynamic_heads": 4
+    },
+    "distilbert.transformer.layer.1.attention.k_lin": {
+      "head_type": "static",
+      "num_heads": 12,
+      "static_heads": 8,
+      "dynamic_heads": 4
+    },
+    "distilbert.transformer.layer.1.attention.v_lin": {
+      "head_type": "static",
+      "num_heads": 12,
+      "static_heads": 8,
+      "dynamic_heads": 4
+    },
+    "distilbert.transformer.layer.2.attention.q_lin": {
+      "head_type": "static",
+      "num_heads": 12,
+      "static_heads": 8,
+      "dynamic_heads": 4
+    },
+    "distilbert.transformer.layer.2.attention.k_lin": {
+      "head_type": "static",
+      "num_heads": 12,
+      "static_heads": 8,
+      "dynamic_heads": 4
+    },
+    "distilbert.transformer.layer.2.attention.v_lin": {
+      "head_type": "static",
+      "num_heads": 12,
+      "static_heads": 8,
+      "dynamic_heads": 4
+    },
+    "distilbert.transformer.layer.3.attention.q_lin": {
+      "head_type": "static",
+      "num_heads": 12,
+      "static_heads": 8,
+      "dynamic_heads": 4
+    },
+    "distilbert.transformer.layer.3.attention.k_lin": {
+      "head_type": "static",
+      "num_heads": 12,
+      "static_heads": 8,
+      "dynamic_heads": 4
+    },
+    "distilbert.transformer.layer.3.attention.v_lin": {
+      "head_type": "static",
+      "num_heads": 12,
+      "static_heads": 8,
+      "dynamic_heads": 4
+    },
+    "distilbert.transformer.layer.4.attention.q_lin": {
+      "head_type": "static",
+      "num_heads": 12,
+      "static_heads": 8,
+      "dynamic_heads": 4
+    },
+    "distilbert.transformer.layer.4.attention.k_lin": {
+      "head_type": "static",
+      "num_heads": 12,
+      "static_heads": 8,
+      "dynamic_heads": 4
+    },
+    "distilbert.transformer.layer.4.attention.v_lin": {
+      "head_type": "static",
+      "num_heads": 12,
+      "static_heads": 8,
+      "dynamic_heads": 4
+    },
+    "distilbert.transformer.layer.5.attention.q_lin": {
+      "head_type": "static",
+      "num_heads": 12,
+      "static_heads": 8,
+      "dynamic_heads": 4
+    },
+    "distilbert.transformer.layer.5.attention.k_lin": {
+      "head_type": "static",
+      "num_heads": 12,
+      "static_heads": 8,
+      "dynamic_heads": 4
+    },
+    "distilbert.transformer.layer.5.attention.v_lin": {
+      "head_type": "static",
+      "num_heads": 12,
+      "static_heads": 8,
+      "dynamic_heads": 4
+    }
+  },
+  "attached_caches": 18,
+  "kv_cache_budget_saving": "70.0% Footprint Reduction",
+  "forward_check_success": true
+}

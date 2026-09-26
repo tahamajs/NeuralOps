@@ -1,0 +1,2 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+384,slicegpt,PASS_NO_COMPRESSION,0.0,0.0,3.7219512404984787,1401.06396484375,1.0,0.0,0,0,129.7,124439808,124439808

@@ -1,0 +1,12 @@
+[
+  {
+    "module": "infini_attention",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "RuntimeError: Failed to execute forward pass on InfiniAttention",
+    "timestamp": "2026-09-25T15:51:16.059951"
+  }
+]

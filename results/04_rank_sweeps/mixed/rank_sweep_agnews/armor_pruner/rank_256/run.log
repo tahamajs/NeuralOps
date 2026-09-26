@@ -1,0 +1,24 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-26 05:48:52,518 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-09-26 05:48:52,518 [INFO] QwenQualitySweep: GPU VRAM: 1.99 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 4444, in <module>
+    main()
+    ~~~~^^
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 4263, in main
+    args = parse_args()
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 1998, in parse_args
+    auto_p, auto_b = _auto_parallel_and_batch(
+                     ~~~~~~~~~~~~~~~~~~~~~~~~^
+        requested_parallel=args.parallel,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        explicit_batch=has_explicit_batch,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 1390, in _auto_parallel_and_batch
+    logger.info("Free VRAM < 3.0 GB (%.2f GB) — sleeping 10s for VRAM to settle...", free_gb)
+    ^^^^^^
+NameError: name 'logger' is not defined

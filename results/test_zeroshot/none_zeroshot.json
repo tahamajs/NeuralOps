@@ -1,7 +1,0 @@
-{
-  "piqa": {
-    "task": "piqa",
-    "accuracy": 60.0,
-    "num_samples": 5
-  }
-}

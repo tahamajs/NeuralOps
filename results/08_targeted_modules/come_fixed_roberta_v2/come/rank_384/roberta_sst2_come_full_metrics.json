@@ -1,0 +1,52 @@
+{
+    "model": "roberta_sst2_come",
+    "performance": {
+        "accuracy_pct": 93.35,
+        "f1_score": 0.9354,
+        "f1_macro": 0.9334,
+        "precision": 0.9338,
+        "recall": 0.9333,
+        "val_loss": 0.2396,
+        "perplexity": null,
+        "status": "PASS",
+        "elapsed_s": 29.24
+    },
+    "efficiency": {
+        "total_params_before": 124647170,
+        "total_params_after": 120140547,
+        "trainable_recovery_params": 2433025,
+        "compression_rate": 1.0375,
+        "compression_ratio_pct": 3.62,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 1,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 0,
+        "lora_params": 2433024,
+        "avg_reconstruction_error": null,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {}
+    },
+    "hardware": {
+        "peak_vram_mb": 869.51,
+        "tokens_per_sec": 17923.51
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 807.66,
+        "L_256_vram_mb": 810.35,
+        "L_512_vram_mb": 818.97,
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+    },
+    "seed": 42,
+    "git_sha": "0f34d164e",
+    "git_dirty": true,
+    "torch_version": "2.6.0+cu124",
+    "transformers_version": "5.5.0",
+    "cuda_version": "12.4",
+    "timestamp": "2026-09-25T19:32:03.292225+00:00"
+}

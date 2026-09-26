@@ -1,6 +1,0 @@
-module,dataset,status,zero_shot_acc,zero_shot_f1,post_recovery_acc,post_recovery_f1,delta_acc,quality_gate,trainable_params,initial_loss,final_loss,loss_change
-svd_llm_v2_attention,mrpc,FAIL,68.38,0.8122,68.38,0.8122,0.0,FAIL (<75%),2951426,0.5428019165992737,0.6979068517684937,-0.1551
-adaptive_svd_attention,mrpc,FAIL,68.38,0.8122,68.38,0.8122,0.0,FAIL (<75%),1771778,0.703539252281189,0.7513619661331177,-0.0478
-svd_linear_attention,mrpc,FAIL,68.38,0.8122,68.38,0.8122,0.0,FAIL (<75%),2951426,0.6640923619270325,0.7654824256896973,-0.1014
-res_svd,mrpc,FAIL,68.38,0.8122,68.38,0.8122,0.0,FAIL (<75%),887042,0.632878303527832,0.3818357288837433,0.251
-spectron,mrpc,FAIL,68.38,0.8122,65.2,0.7815,-3.18,FAIL (<75%),2951426,0.9572581052780151,0.4995761513710022,0.4577

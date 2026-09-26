@@ -1,0 +1,17 @@
+{
+  "module_name": "adaptive_svd",
+  "status": "FAIL",
+  "perplexity": -1.0,
+  "baseline_ppl": 25.88,
+  "delta_ppl": 999.0,
+  "compression_rate": 1.0,
+  "compression_ratio_pct": 0.0,
+  "peak_vram_mb": 0.0,
+  "latency_ms_per_token": 0.0,
+  "throughput_tok_per_sec": 0.0,
+  "elapsed_s": 3.97,
+  "total_params_before": 124439808,
+  "total_params_after": 124439808,
+  "error": "expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",
+  "timestamp": "2026-09-23T09:03:09"
+}

@@ -1,0 +1,71 @@
+2026-09-15 14:11:51,835 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 148/148 [00:00<00:00, 3512.74it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-15 14:11:53,244 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-15 14:11:53,244 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 14:11:53,244 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 14:11:53,245 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 14:11:53,245 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-15 14:11:53,245 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-15 14:11:53,245 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 14:11:53,246 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 14:11:53,246 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-15 14:11:53,246 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 14:11:53,246 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 14:11:53,246 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 14:11:53,596 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-15 14:11:54,214 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 14:11:54,951 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-15 14:11:59,908 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 79.36%
+2026-09-15 14:11:59,961 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 14:11:59,962 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 14:11:59,962 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 14:11:59,962 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 14:11:59,962 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 14:11:59,962 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 14:11:59,962 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 14:11:59,962 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 14:11:59,976 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 14:12:06,131 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_adasplash\gpt2\gpt2_full_full_metrics.json
+2026-09-15 14:12:06,139 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_adasplash\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
+2026-09-15 14:12:06,829 [INFO] QwenQualitySweep: [1/2] full -> PASS 79.36% (F1: 0.7978, Peak VRAM: 793.19 MB)
+2026-09-15 14:12:06,830 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_adasplash\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 14:12:07,067 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: adasplash (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 14:12:08,913 [INFO] framework.core.attention_utils: Successfully injected 'adasplash' into 12 transformer blocks.
+2026-09-15 14:12:08,929 [INFO] QwenQualitySweep: module=adasplash path=adapted_gpt
+2026-09-15 14:12:08,931 [INFO] QwenQualitySweep: module=adasplash injection summary: 0 SVDLinear layers active
+2026-09-15 14:12:08,931 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for adasplash (lr=2.0e-04)
+2026-09-15 14:12:09,130 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179648 trainable parameters across 96 tensors.
+2026-09-15 14:12:09,131 [INFO] framework.utils.compat: Discovered 96 trainable tensors (1179648 params)
+2026-09-15 14:12:09,136 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179648 trainable parameters across 96 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 14:12:10,419 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.5026 (bs=8, micro_bs=8)
+2026-09-15 14:12:13,784 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.5865 (bs=8, micro_bs=8)
+2026-09-15 14:12:18,155 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.7676 (bs=8, micro_bs=8)
+2026-09-15 14:12:22,619 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.6024 (bs=8, micro_bs=8)
+2026-09-15 14:12:26,753 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.5160 (bs=8, micro_bs=8)
+2026-09-15 14:12:30,992 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.6710 (bs=8, micro_bs=8)
+2026-09-15 14:12:35,525 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.4789 (bs=8, micro_bs=8)
+2026-09-15 14:12:39,770 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.5882 (bs=8, micro_bs=8)
+2026-09-15 14:12:43,988 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.3283 (bs=8, micro_bs=8)
+2026-09-15 14:12:48,364 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.2667 (bs=8, micro_bs=8)
+2026-09-15 14:12:52,439 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.8130 (bs=8, micro_bs=8)
+2026-09-15 14:13:39,721 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_adasplash\gpt2\gpt2_adasplash_full_metrics.json
+2026-09-15 14:13:39,854 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_adasplash\gpt2\checkpoints\adasplash\weights.pt (module_params=0, lora_params=337)
+2026-09-15 14:13:40,751 [INFO] QwenQualitySweep: [2/2] adasplash -> PASS_NO_COMPRESSION 67.20% (F1: 0.7255, Peak VRAM: 581.78 MB)
+2026-09-15 14:13:40,751 [WARNING] QwenQualitySweep: Module 'adasplash' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-15 14:13:40,751 [INFO] QwenQualitySweep: [Quality Guard] Module 'adasplash' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=67.20%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 14:13:41,039 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 14:13:41,039 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-15 14:13:41,047 [INFO] QwenQualitySweep: 
+                    Module              Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+adasplash (efficient-attn) PASS_NO_COMPRESSION   67.20%      -12.16% 0.7255                  0            1.00x  581.8 MB              46.03             52.79
+                      full                PASS   79.36% 0.00% (base) 0.7978                  0            1.00x  793.2 MB               4.90              5.62
+2026-09-15 14:13:41,047 [INFO] QwenQualitySweep: ================================================================================

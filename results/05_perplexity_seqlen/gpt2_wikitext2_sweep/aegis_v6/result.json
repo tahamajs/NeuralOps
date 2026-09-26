@@ -1,0 +1,17 @@
+{
+  "module_name": "aegis_v6",
+  "status": "PASS_DEGRADED",
+  "perplexity": 1871.08,
+  "baseline_ppl": 25.88,
+  "delta_ppl": 1845.2,
+  "compression_rate": 1.1152,
+  "compression_ratio_pct": 10.33,
+  "peak_vram_mb": 813.03,
+  "latency_ms_per_token": 0.211,
+  "throughput_tok_per_sec": 4734.4,
+  "elapsed_s": 21.12,
+  "total_params_before": 124439808,
+  "total_params_after": 111586716,
+  "error": "",
+  "timestamp": "2026-09-23T09:00:48"
+}

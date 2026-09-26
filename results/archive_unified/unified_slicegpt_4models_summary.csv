@@ -1,4 +1,0 @@
-Model,Exit Code,Baseline Acc,SliceGPT Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,1,90.48%,80.62%,-9.86%,0.8312,PASS,0,1.00x,339.7 MB,0.1
-roberta,1,75.11%,50.92%,-24.19%,0.6748,PASS_LOW,0,1.00x,366.8 MB,0.1
-gpt2,1,60.78%,59.06%,-1.72%,0.6270,PASS,0,1.00x,637.2 MB,0.1

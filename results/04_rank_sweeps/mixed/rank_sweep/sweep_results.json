@@ -1,0 +1,53 @@
+[
+  {
+    "module": "svd",
+    "model": "distilbert",
+    "requested_rank": 8,
+    "actual_rank": "8",
+    "status": "PASS_LOW",
+    "accuracy_pct": 49.31,
+    "f1_score": 0.0134,
+    "num_compressed_layers": "6",
+    "num_fallback_layers": "0",
+    "total_params_before": "66955010",
+    "total_params_after": "67544834",
+    "param_ratio": 1.0088,
+    "avg_reconstruction_error": "",
+    "elapsed_s": 53.25,
+    "error": "note: evaluated accuracy (49.31%) below chance threshold (56.00%)"
+  },
+  {
+    "module": "svd",
+    "model": "distilbert",
+    "requested_rank": 16,
+    "actual_rank": "16",
+    "status": "PASS_LOW",
+    "accuracy_pct": 49.31,
+    "f1_score": 0.0134,
+    "num_compressed_layers": "6",
+    "num_fallback_layers": "0",
+    "total_params_before": "66955010",
+    "total_params_after": "67544834",
+    "param_ratio": 1.0088,
+    "avg_reconstruction_error": "",
+    "elapsed_s": 71.65,
+    "error": "note: evaluated accuracy (49.31%) below chance threshold (56.00%)"
+  },
+  {
+    "module": "svd",
+    "model": "distilbert",
+    "requested_rank": 32,
+    "actual_rank": "32",
+    "status": "PASS_LOW",
+    "accuracy_pct": 49.31,
+    "f1_score": 0.0178,
+    "num_compressed_layers": "6",
+    "num_fallback_layers": "0",
+    "total_params_before": "66955010",
+    "total_params_after": "67544834",
+    "param_ratio": 1.0088,
+    "avg_reconstruction_error": "",
+    "elapsed_s": 91.17,
+    "error": "note: evaluated accuracy (49.31%) below chance threshold (56.00%)"
+  }
+]

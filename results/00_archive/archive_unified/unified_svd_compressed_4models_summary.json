@@ -1,0 +1,15 @@
+[
+  {
+    "Model": "distilbert",
+    "Exit Code": 0,
+    "Baseline Acc": "90.71%",
+    "SVD_COMPRESSED Acc": "87.39%",
+    "Delta Acc": "-3.32%",
+    "F1": "0.8825",
+    "Status": "PASS",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.15x",
+    "Peak VRAM": "284.0 MB",
+    "Time (s)": "463.9"
+  }
+]
