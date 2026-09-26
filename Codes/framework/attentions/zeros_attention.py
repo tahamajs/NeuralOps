@@ -1,4 +1,4 @@
-r"""
+"""
 Zero-Mean Linear Attention (ZeroS Attention).
 
 Removes the mean from key representations and applies normalized linear attention with ReLU-based non-negative

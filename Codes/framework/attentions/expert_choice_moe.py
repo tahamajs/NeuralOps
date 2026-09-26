@@ -1,4 +1,4 @@
-r"""Expert Choice Mixture of Experts (MoE) Attention Block.
+"""Expert Choice Mixture of Experts (MoE) Attention Block.
 
 In Expert Choice routing (Zhou et al., 2022), experts select their top-k tokens
 rather than tokens selecting top-k experts. This provides guaranteed perfect load balancing

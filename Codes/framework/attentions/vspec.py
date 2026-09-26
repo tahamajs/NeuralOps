@@ -1,4 +1,4 @@
-r"""
+"""
 VSpec++ Attention: Variational Spectral Token-Adaptive Attention.
 Hardened for production use across diverse transformer architectures:
 - DistilBERT (Flat MHA)

@@ -2,17 +2,6 @@
 ADMM Compressor: Alternating Direction Method of Multipliers for Joint Pruning and Quantization.
 Registered in COMPRESSOR_REGISTRY as 'admm' and 'admm_compressor'.
 
-Bug-fix map:
-  AC-FIX-01  effective_storage_comp_rate accounts for both quantization and sparsity.
-  AC-FIX-02  per-channel quantization (robust to outliers).
-  AC-FIX-03  no_grad wrappers around ADMM state operations.
-  AC-FIX-04  best-iterate tracked on W (not only Z).
-  AC-FIX-05  LoRA always kept trainable (recovery branch).
-  AC-FIX-06  mask excludes non-finite entries.
-  AC-FIX-07  norm guard for near-zero weights.
-  AC-FIX-08  factory returns stats optionally, safe.
-  AC-FIX-09  weight mutation under torch.no_grad().
-  AC-FIX-10  adaptive quantization scale for skewed distributions.
 """
 
 from __future__ import annotations

@@ -2,20 +2,6 @@
 
 Differential attention with rotary embeddings coupled with a State Space Model branch.
 
-Bug-fix map:
-  HX-FIX-01  alpha init to +1.0 (attention-dominant).
-  HX-FIX-02  RoPE only applied when the model expects it (not on BERT-style encoders).
-  HX-FIX-03  causal mask offset-aware for KV-cache.
-  HX-FIX-04  KV-cache implemented (tuple + DynamicCache).
-  HX-FIX-05  mamba operates on pre-projected hidden_states (not raw).
-  HX-FIX-06  W_q2 / W_k2 initialized as noisy copies of W_q1 / W_k1.
-  HX-FIX-07  lambda for differential attention is learnable.
-  HX-FIX-08  head_mask broadcasting corrected (B, H, 1, 1).
-  HX-FIX-09  injector recursion guard.
-  HX-FIX-10  injector double-injection guard.
-  HX-FIX-11  forward returns consistent tuple.
-  HX-FIX-12  attention_mask handling via _prepare_valid_mask.
-  HX-FIX-13  warmup for HeadRoPE buffer (avoid stale cache).
 """
 
 from __future__ import annotations

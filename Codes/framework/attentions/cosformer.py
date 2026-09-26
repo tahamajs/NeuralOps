@@ -1,4 +1,4 @@
-r"""Cosformer: Rethinking Softmax in Attention with Linear Complexity.
+"""Cosformer: Rethinking Softmax in Attention with Linear Complexity.
 
 Implements non-negative kernel feature mapping with cosine/sine positional reweighting,
 cumulative sum causal linear attention for decoders, and associative accumulation for encoders.
@@ -19,25 +19,6 @@ Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA a
 - Even head_dim validation for RoPE
 - Transparent rank-agnostic behavior (Cosformer does not use rank)
 
-Debugged v2 — 18 fixes applied:
-1. Documented rank-agnostic behavior in docstring
-2. Removed unused tau buffer
-3. Thread-safe injection depth using threading.local()
-4. Preserved head_dim resolution with even-dim validation
-5. is_nested_encoder no longer overridden in inject_cosformer
-6. Simplified _get_cos_sin_weights scaling using seq_len
-7. RoPE strictly requires tuple format (pos_emb)
-8. V masked in last chunk of causal multi-chunk path
-9. max_seq_len default retained (documented)
-10. Single-chunk logic verified correct
-11. Even head_dim required (raises ValueError on odd)
-12. Consistent hidden_size default (768) in inject_cosformer
-13. pretrained_attn popped from kwargs to avoid conflicts
-14. Removed dead string expression in inject_cosformer
-15. Extended _is_single_layer blacklist with encoder_layers/decoder_layers/h
-16. Cleaned kwargs before recursive calls
-17. Added input dimension assertions
-18. Fixed misleading comment about tau
 """
 
 from __future__ import annotations

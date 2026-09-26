@@ -12,10 +12,13 @@ Supports:
 - Nested encoder bypass
 - Frobenius norm verification (>= 1e-4)
 - Safe injection returning None on failure
+- **Streaming KV Cache with Sliding Window + Sink Tokens** (StreamingLLM-style)
+- **RoPE position offset for incremental decoding**
 """
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -27,6 +30,8 @@ from framework.core.attention_mask import apply_attention_mask, get_token_valid_
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -51,6 +56,13 @@ def apply_rotary_pos_emb(
     elif cos.dim() == 3:
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
+
+    # Align the time dimension of cos/sin with q
+    if cos.shape[-2] != q.shape[-2]:
+        # If they don't match, truncate or broadcast depending on size
+        if cos.shape[-2] >= q.shape[-2]:
+            cos = cos[..., : q.shape[-2], :]
+            sin = sin[..., : q.shape[-2], :]
 
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
@@ -143,11 +155,13 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register("span_expanded_attention")
 class SpanExpandedAttention(BaseAttention):
     is_custom_attention: bool = True
+
     def __init__(
         self,
         config: Any,
         rank: Optional[int] = None,
         expansion_span: int = 1024,
+        num_sink_tokens: int = 4,
         use_lora: bool = True,
         lora_rank: int = 8,
         pretrained_attn: Optional[nn.Module] = None,
@@ -172,7 +186,13 @@ class SpanExpandedAttention(BaseAttention):
         )
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
-        self.expansion_span: int = expansion_span
+
+        # ---- Span expansion configuration ----
+        self.expansion_span: int = int(expansion_span) if expansion_span else 1024
+        # Number of leading "sink" tokens to always preserve in the cache.
+        # StreamingLLM (Xiao et al. 2024) shows the first few tokens act as
+        # attention sinks and must be kept for long-context stability.
+        self.num_sink_tokens: int = max(0, min(int(num_sink_tokens), self.expansion_span))
 
         is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
         if kwargs.get("is_causal", False):
@@ -181,8 +201,14 @@ class SpanExpandedAttention(BaseAttention):
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
 
-        self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank))) if config else lora_rank
-        self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if config else 32.0
+        self.lora_rank = getattr(
+            config, "lora_rank",
+            getattr(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank)),
+        ) if config else lora_rank
+        self.lora_alpha = getattr(
+            config, "lora_alpha",
+            getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
+        ) if config else 32.0
         self.freeze_base = (self.lora_rank > 0)
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
@@ -198,13 +224,9 @@ class SpanExpandedAttention(BaseAttention):
         self.value = self.v_proj
 
         dropout_p = getattr(
-            config,
-            "dropout",
-            getattr(
-                config,
-                "hidden_dropout_prob",
-                getattr(config, "attention_probs_dropout_prob", 0.1),
-            ),
+            config, "dropout",
+            getattr(config, "hidden_dropout_prob",
+                    getattr(config, "attention_probs_dropout_prob", 0.1)),
         ) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
@@ -212,6 +234,9 @@ class SpanExpandedAttention(BaseAttention):
         if source_attn is not None:
             self.copy_weights(source_attn)
 
+    # ------------------------------------------------------------------
+    # Weight copying (unchanged, production-hardened)
+    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -234,13 +259,10 @@ class SpanExpandedAttention(BaseAttention):
         self.is_nested_encoder = bool(is_nested)
 
         extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
-            "q": (None, None),
-            "k": (None, None),
-            "v": (None, None),
-            "o": (None, None),
+            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
-        # 1. GPT-2 fused
+        # 1. GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -278,7 +300,7 @@ class SpanExpandedAttention(BaseAttention):
                 out_mod = src.output.dense
                 extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
 
-        # 3. Flat modules
+        # 3. Flat modules (GPT-2 alt, Qwen, LLaMA, DistilBERT)
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -312,12 +334,7 @@ class SpanExpandedAttention(BaseAttention):
                 f"SpanExpandedAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
             )
 
-        target_map = {
-            "q": self.q_proj,
-            "k": self.k_proj,
-            "v": self.v_proj,
-            "o": self.out_proj,
-        }
+        target_map = {"q": self.q_proj, "k": self.k_proj, "v": self.v_proj, "o": self.out_proj}
 
         with torch.no_grad():
             for proj_key, target_mod in target_map.items():
@@ -329,7 +346,7 @@ class SpanExpandedAttention(BaseAttention):
                             nn.init.zeros_(target_mod.bias)
                         continue
                     else:
-                        logger.warning("Attention module copy_weights warning. Proceeding with initialized weights.")
+                        logger.warning("SpanExpandedAttention copy_weights: missing %s, using initialized weights", proj_key)
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
@@ -359,12 +376,65 @@ class SpanExpandedAttention(BaseAttention):
 
                 fnorm = torch.linalg.norm(target_mod.weight.float()).item()
                 if fnorm < 1e-4:
-                    logger.warning("Attention module copy_weights warning. Proceeding with initialized weights.")
+                    logger.warning("SpanExpandedAttention copy_weights: %s has near-zero norm (%.2e)", proj_key, fnorm)
 
         if self.freeze_base:
             for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
                 mod.freeze_base_weights()
 
+    # ------------------------------------------------------------------
+    # Cache management helpers
+    # ------------------------------------------------------------------
+    def _get_past_kv(self, past_key_value: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor], int]:
+        """Extract (past_k, past_v, past_len) from various cache formats."""
+        if past_key_value is None:
+            return None, None, 0
+
+        if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
+            past_k, past_v = past_key_value[0], past_key_value[1]
+            return past_k, past_v, past_k.shape[-2]
+
+        if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
+            past_k = past_key_value.key_cache[0]
+            past_v = past_key_value.value_cache[0] if hasattr(past_key_value, "value_cache") else None
+            return past_k, past_v, past_k.shape[-2]
+
+        return None, None, 0
+
+    def _truncate_cache_with_sinks(
+        self, k: torch.Tensor, v: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Apply sliding-window truncation while preserving the first N sink tokens.
+
+        StreamingLLM (Xiao et al., 2024): the first few tokens accumulate a
+        disproportionate amount of attention and act as "attention sinks".
+        Dropping them causes severe perplexity degradation in long contexts.
+        We therefore always preserve the first `num_sink_tokens` entries.
+        """
+        span = self.expansion_span
+        if span <= 0 or k.shape[-2] <= span:
+            return k, v
+
+        sink = self.num_sink_tokens
+        if sink <= 0:
+            # Pure rolling cache, no sinks preserved
+            return k[..., -span:, :], v[..., -span:, :]
+
+        if span <= sink:
+            # Pathological config: keep only sinks, drop the rest
+            return k[..., :span, :], v[..., :span, :]
+
+        # Keep first `sink` tokens + most recent `span - sink` tokens
+        sink_k = k[..., :sink, :]
+        sink_v = v[..., :sink, :]
+        recent_k = k[..., -(span - sink):, :]
+        recent_v = v[..., -(span - sink):, :]
+        return torch.cat([sink_k, recent_k], dim=-2), torch.cat([sink_v, recent_v], dim=-2)
+
+    # ------------------------------------------------------------------
+    # Forward
+    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -379,52 +449,95 @@ class SpanExpandedAttention(BaseAttention):
         position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor, torch.Tensor]]]:
         B, L, D = hidden_states.shape
         H, Dh = self.num_heads, self.head_dim
 
+        # ---- QKV projections ----
         q = self.q_proj(hidden_states).view(B, L, H, Dh).permute(0, 2, 1, 3)
         k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).permute(0, 2, 1, 3)
         v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).permute(0, 2, 1, 3)
 
-        # Apply RoPE if provided
+        # ---- Extract past cache ----
+        past_k, past_v, past_len = self._get_past_kv(past_key_value)
+
+        # ---- RoPE with past_len offset ----
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings", None)
         if position_embeddings is not None:
             cos, sin = position_embeddings
-            q, k = apply_rotary_pos_emb(q, k, cos, sin)
+            cos_curr = cos[..., past_len : past_len + L, :] if cos.shape[-2] >= past_len + L else cos
+            sin_curr = sin[..., past_len : past_len + L, :] if sin.shape[-2] >= past_len + L else sin
+            q, k = apply_rotary_pos_emb(q, k, cos_curr, sin_curr)
 
-        # Repeat KV for GQA
+        # ---- GQA repeat (before cache concat, so cache stays compact) ----
+        # Note: If using GQA, we store the compact KV in cache and expand on use.
+        # Here we expand first, which is simpler but uses more cache memory.
         if self.num_heads != self.num_kv_heads:
             repeats = self.num_heads // self.num_kv_heads
+            # Re-expand past cache if it was stored compact
+            if past_k is not None and past_k.shape[1] != self.num_heads:
+                past_k = repeat_kv(past_k, repeats)
+                past_v = repeat_kv(past_v, repeats)
             k = repeat_kv(k, repeats)
             v = repeat_kv(v, repeats)
 
+        # ---- Concatenate with past cache ----
+        if past_k is not None:
+            k = torch.cat([past_k, k], dim=-2)
+            v = torch.cat([past_v, v], dim=-2)
+
+        # ---- Sliding-window truncation with sink preservation ----
+        k, v = self._truncate_cache_with_sinks(k, v)
+
+        # ---- Present cache for next step ----
+        # Store compact (un-repeated) KV if GQA is used to save memory:
+        if self.num_heads != self.num_kv_heads and k.shape[1] == self.num_heads:
+            repeats = self.num_heads // self.num_kv_heads
+            # Take every `repeats`-th head to recover compact form
+            # (repeat_kv duplicates contiguously, so index 0, repeats, 2*repeats, ...)
+            compact_k = k[:, ::repeats, :, :].contiguous()
+            compact_v = v[:, ::repeats, :, :].contiguous()
+            present_key_value = (compact_k, compact_v)
+        else:
+            present_key_value = (k, v)
+
         scale = Dh ** -0.5
+
+        # ---- Fast path: PyTorch SDPA ----
         if attention_mask is None and head_mask is None and not output_attentions:
             try:
                 _qs = q.half() if q.dtype == torch.float32 else q
                 _ks = k.half() if k.dtype == torch.float32 else k
                 _vs = v.half() if v.dtype == torch.float32 else v
-                _is_causal = getattr(self, 'is_decoder', False) and L > 1
+                # is_causal only meaningful when processing > 1 token at once.
+                # When past cache is present and we process 1 token, no causal mask needed.
+                _is_causal = bool(self.is_decoder) and L > 1 and past_len == 0
                 _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
-                    _qs, _ks, _vs, is_causal=_is_causal, dropout_p=self.dropout.p if self.training else 0.0
+                    _qs, _ks, _vs, is_causal=_is_causal,
+                    dropout_p=self.dropout.p if self.training else 0.0,
                 )
                 _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
                 _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
-                return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
+                out = self.out_proj(_sdpa_out) if not self.is_nested_encoder else _sdpa_out
+                return out, None, present_key_value
             except Exception:
-                pass
+                pass  # fall through to manual path
 
+        # ---- Manual path ----
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
-        # Causal masking
+        # Causal masking: query i (position past_len + i) attends to keys 0..(past_len + i)
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
-        if is_causal:
-            causal_mask = torch.triu(torch.full((L, L), -1e4, device=scores.device), diagonal=1)
+        if is_causal and L > 1:
+            kv_len = k.shape[-2]
+            causal_mask = torch.triu(
+                torch.full((L, kv_len), -1e4, device=scores.device),
+                diagonal=1 + past_len,
+            )
             scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
-        # Attention mask
+        # External attention mask (padding etc.)
         if attention_mask is not None:
             scores = apply_attention_mask(scores, attention_mask)
 
@@ -432,7 +545,7 @@ class SpanExpandedAttention(BaseAttention):
         attn = torch.nan_to_num(attn, nan=0.0)
         attn = self.dropout(attn)
 
-        # head_mask handling
+        # Head mask
         if head_mask is not None:
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 attn = attn * head_mask.view(1, self.num_heads, 1, 1).to(attn.dtype)
@@ -444,12 +557,15 @@ class SpanExpandedAttention(BaseAttention):
         context = torch.matmul(attn, v).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
 
         if self.is_nested_encoder:
-            return context, (attn if output_attentions else None)
+            return context, (attn if output_attentions else None), present_key_value
 
         out = self.out_proj(context)
-        return out, (attn if output_attentions else None)
+        return out, (attn if output_attentions else None), present_key_value
 
 
+# ----------------------------------------------------------------------
+# Injection helper (unchanged)
+# ----------------------------------------------------------------------
 def inject_span_expanded(
     layer: Any = None,
     model: Any = None,
@@ -495,7 +611,7 @@ def inject_span_expanded(
             res = inject_span_expanded(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                comp_config=comp_config,
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
@@ -506,7 +622,6 @@ def inject_span_expanded(
 
     layer = target
 
-    """Safely replace attention in model or layer with SpanExpandedAttention."""
     try:
         if layer is not None:
             config = model_config or getattr(layer, "config", None)

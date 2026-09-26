@@ -1,11 +1,11 @@
 # 🧬 NeuralOps: SVD Linear Attention & Model Compression Framework
 
 [![NeurIPS/ICLR Reproducibility](https://img.shields.io/badge/Reproducibility-NeurIPS%2FICLR%202026-brightgreen.svg)](./)
-[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
-[![PyTorch 2.5.0](https://img.shields.io/badge/pytorch-2.5.0-ee4c2c.svg)](https://pytorch.org/)
+[![Python 3.12 / 3.13](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue.svg)](https://www.python.org/downloads/)
+[![PyTorch 2.5.0+](https://img.shields.io/badge/pytorch-2.5.0%2B-ee4c2c.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Attention Mechanisms](https://img.shields.io/badge/Attentions-236%20Registered-6366f1.svg)](./Codes/framework/attentions/)
-[![Compression Engines](https://img.shields.io/badge/Compressors-107%20Registered-ec4899.svg)](./Codes/framework/compression_engine/)
+[![Attention Mechanisms](https://img.shields.io/badge/Attentions-116%20Implemented-6366f1.svg)](./Codes/framework/attentions/)
+[![Compression Engines](https://img.shields.io/badge/Compressors-77%20Implemented-ec4899.svg)](./Codes/framework/compression_engine/)
 [![Verified Tracks](https://img.shields.io/badge/Tracks-5%20Verified%20(100%25)-10b981.svg)](./Codes/framework/)
 [![CI Status](https://github.com/tahamajs/SVD_linear_Attention/actions/workflows/ci.yml/badge.svg)](https://github.com/tahamajs/SVD_linear_Attention/actions)
 
@@ -14,193 +14,207 @@
 ---
 
 ## 📑 Table of Contents
-1. [Project Overview & Purpose](#-project-overview--purpose)
-2. [Hardware Requirements](#-hardware-requirements)
-3. [Environment & Installation](#-environment--installation)
-4. [Docker Container Execution](#-docker-container-execution)
-5. [Commands to Reproduce Benchmarks](#-commands-to-reproduce-benchmarks)
-   - [Phase 1: Efficiency & Micro-Benchmarking Sweep](#phase-1-efficiency--micro-benchmarking-sweep)
-   - [Phase 2: Multi-Seed Quality Sweep (Pretrained Fine-Tuning)](#phase-2-multi-seed-quality-sweep-pretrained-fine-tuning)
-6. [Interactive Live Monitor & Telemetry Dashboard](#-interactive-live-monitor--telemetry-dashboard)
-7. [Output Files & Directory Hierarchy](#-output-files--directory-hierarchy)
-8. [Automated Publication Artifact Generation](#-automated-publication-artifact-generation)
+1. [Project Overview & Core Philosophy](#-project-overview--core-philosophy)
+2. [Taxonomy: The 5 Research Tracks](#-taxonomy-the-5-research-tracks)
+3. [Understanding Injection vs. Compression](#-understanding-injection-vs-compression)
+4. [Hardware Requirements & Profiles](#-hardware-requirements--profiles)
+5. [Environment & Installation](#-environment--installation)
+6. [Commands to Reproduce Benchmarks](#-commands-to-reproduce-benchmarks)
+   - [A. Zero-Shot 5-Task Reasoning Suite](#a-zero-shot-5-task-reasoning-suite-gpt-2)
+   - [B. Rank Sweeps & SVD Scaling](#b-rank-sweeps--svd-scaling-distilbert--roberta)
+   - [C. Language Modeling & Perplexity (C4 / WikiText-2)](#c-language-modeling--perplexity-c4--wikitext-2)
+   - [D. Multi-Seed Pretrained Fine-Tuning Sweep](#d-multi-seed-pretrained-fine-tuning-sweep)
+7. [Comprehensive Results Directory Architecture](#-comprehensive-results-directory-architecture)
+8. [Automated Artifacts & Dashboard Telemetry](#-automated-artifacts--dashboard-telemetry)
+9. [Citation & License](#-citation--license)
 
 ---
 
-## 🔬 Project Overview & Purpose
+## 🔬 Project Overview & Core Philosophy
 
-Modern long-context transformers suffer from $O(N^2)$ quadratic computational and memory bottlenecks in self-attention layers. NeuralOps provides:
-- **Universal Zero-Shot Module Injection**: Seamlessly swap standard multi-head self-attention with any of **236 Attention Mechanisms** or **107 Compression Engines** across HuggingFace transformer backbones (`distilbert`, `bert`, `roberta`, `t5`, `gpt2`, `llama`) with automatic weight projection cloning via SVD factorization.
-- **5-Track Systematic Taxonomy**:
-  1. *Track 1 (SVD & Low-Rank Factorization)*: Exact SVD, Minimal-SVD, Dynamic Rank SVD, SVD-Linear.
-  2. *Track 2 (Spectral & State-Space Models)*: Mamba, SVD-Mamba, Samba M3, Griffin SSD, Gated DeltaNet, AEGIS v1–v6.
-  3. *Track 3 (Mixture-of-Experts & Hybrids)*: BAM-UMoE, Samba, Jamba, Hymba, NEXUS, LEKA v1–v3.
-  4. *Track 4 (Kernel Approximations & Quantization)*: FAVOR+ Performer, Cosformer, Nyström, FlashAttention-3, ASTRO, FAQ.
-  5. *Track 5 (Structural Pruning & Sparsity)*: Linformer, SliceGPT, SparseGPT, 2:4 Semi-Structured Sparsity.
-- **Statistical Rigor**: 3-seed paired Student's t-tests, Bonferroni multi-hypothesis corrections, 95% bootstrap confidence intervals, and logit cosine similarity fidelity metrics against uncompressed baselines.
+Standard Multi-Head Attention (MHA) incurs quadratic computational $O(N^2)$ and memory complexity with respect to sequence length $N$. NeuralOps systematically solves, audits, and evaluates subquadratic alternatives through:
+
+- **Universal Zero-Shot Module Injection**: Dynamically replace transformer attention blocks across diverse families (`distilbert`, `bert`, `roberta`, `t5`, `gpt2`, `qwen2.5`) with exact projection weight slicing and geometry preservation (RoPE, GQA, and fused $QKV$ handling).
+- **In-Place Weight Compression Engines**: Evaluate singular value decomposition (SVD), structural pruning, low-rank quantization, and KV-cache compression without requiring structural attention class replacement.
+- **Academic Rigor & Reproducibility**: 5-seed paired Student's t-tests, Bonferroni corrections, per-sample prediction caching, and exact Pareto frontier mapping between parameter count, latency, and reasoning capability.
 
 ---
 
-## 💻 Hardware Requirements
+## 🏛 Taxonomy: The 5 Research Tracks
 
-All benchmark runs in the NeuralOps paper were evaluated on consumer and workstation hardware under strict thermal and power limits:
+All modules implemented in `Codes/framework/attentions/` and `Codes/framework/compression_engine/` map directly into 5 primary research tracks:
 
-- **GPU**: NVIDIA GeForce RTX 4070 (8 GB GDDR6X VRAM) or equivalent modern Ampere/Ada Lovelace GPU (RTX 3080/4080, A10, A5000).
-- **CUDA & Drivers**: CUDA Version 12.1 – 12.7, NVIDIA Display Driver $\ge$ 560.00.
-- **Host CPU & RAM**: x86_64 CPU (8+ physical cores recommended), $\ge$ 16 GB System Memory.
-- **Storage**: Minimum 20 GB free disk space for cached HuggingFace datasets (`sst2`, `mrpc`, `cola`, `stsb`) and model checkpoints.
+```
+Codes/framework/
+├── attentions/               # 116 subquadratic, linear, and hybrid attention modules
+│   ├── adaptive_span_attention.py, cosformer.py, flash_attention3.py,
+│   ├── galerkin_attention.py, performer_attention.py, linformer_attention.py ...
+└── compression_engine/       # 77 SVD factorizers, quantizers, and structural pruners
+    ├── armor_pruner.py, ast_pruner.py, astro_quantizer.py, dobi_svd.py,
+    ├── delta_kv.py, enlighten_compressor.py, faq_quantizer.py, mlorq_compressor.py ...
+```
+
+| Track | Focus | Key Module Implementations |
+| :--- | :--- | :--- |
+| **Track 1: SVD & Low-Rank Factorization** | Matrix decomposition, truncated SVD, dynamic energy truncation, symmetric low-rank projections | `asvd_attention`, `dobi_svd`, `aa_svd_compressor`, `dynamic_rank`, `erc_svd`, `saes_svd_v2`, `swift_svd_act` |
+| **Track 2: Spectral & State-Space Models (SSMs)** | Recurrent formulations, selective state spaces, gated linear recurrence, linear decay | `mamba_block`, `griffin_ssd`, `gated_delta_net`, `gated_linear_attention`, `decay_linear_attention`, `aegis_v1`–`v6` |
+| **Track 3: Mixture-of-Experts & Hybrids** | Sparse routing, token clustering, block-wise transformer approximations, hybrid layers | `bam_umoe`, `expert_choice_moe`, `block_transformer_hiba`, `cluster_attention`, `cur_moe_compressor` |
+| **Track 4: Kernel Approximations & Quantization** | Positive Random Features (FAVOR+), kernel mapping, FP8/INT4 weight quantization | `performer_attention`, `cosformer`, `nystrom_attention`, `flash_attention3_fp8`, `astro_quantizer`, `coopq_quantizer`, `faq_quantizer` |
+| **Track 5: Structural Pruning & KV-Cache Reduction** | Head pruning, ADMM channel sparsity, delta KV compression, dimension reduction | `armor_pruner`, `ast_pruner`, `admm_compressor`, `bonsai_pruner`, `flap`, `delta_kv`, `cachenotes_compressor`, `slicegpt` |
+
+---
+
+## 🔍 Understanding Injection vs. Compression
+
+In benchmark reports and summary CSVs, you will observe the metric `num_injected_attention_layers`:
+
+1. **Pure Compressors, SVD Factorizers, & Pruners (`num_injected_attention_layers = 0`)**:
+   - **Status**: `PASS` / `PASS_NO_COMPRESSION`
+   - **Mechanism**: Modules such as `armor_pruner`, `dobi_svd`, `enlighten_compressor`, and `faq_quantizer` operate directly on `nn.Linear` projection matrices ($W_q, W_k, W_v, W_o$) or MLP blocks.
+   - **Reason for 0**: The original transformer class (e.g. `GPT2Attention`) is kept intact; only its weight tensors are compressed. This is **expected and correct**, yielding retention accuracies of **42.0% – 42.6%** on zero-shot reasoning.
+2. **Attention Architecture Replacements (`num_injected_attention_layers = 12`)**:
+   - **Status**: `PASS`
+   - **Mechanism**: Modules such as `adaptive_span_attention`, `asvd_attention`, or `compressed_mha_attention` completely replace the underlying PyTorch attention block with a custom forward computation class via `UniversalAttentionWrapper`.
+
+---
+
+## 💻 Hardware Requirements & Profiles
+
+NeuralOps benchmarks are designed for execution across standard workstation and GPU compute profiles:
+
+- **GPU**: NVIDIA RTX 4070 (8 GB VRAM) / RTX 3080/4080 / A10 / A5000 / A100.
+- **CUDA Environment**: CUDA Version 12.1 – 12.7, PyTorch $\ge$ 2.5.0.
+- **Host CPU & RAM**: x86_64 or Apple Silicon (M-series), $\ge$ 16 GB Physical RAM.
+- **Process Memory Safety Watchdog**: Built-in memory monitors auto-throttle batch sizes and parallel worker counts if free RAM drops below 1.0 GB or VRAM exceeds 7.5 GB.
 
 ---
 
 ## 🚀 Environment & Installation
 
-### Option A: Local Python Environment (Recommended)
-
-1. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/tahamajs/SVD_linear_Attention.git
-   cd SVD_linear_Attention
-   ```
-
-2. **Create Python 3.12 Virtual Environment**:
-   ```bash
-   python3.12 -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
-
-3. **Install Dependencies**:
-   ```bash
-   pip install --upgrade pip setuptools wheel
-   # Install PyTorch with CUDA 12.1 / 12.4 support:
-   pip install torch==2.5.0 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-   # Install pinned requirements:
-   pip install -r requirements.txt
-   ```
-
----
-
-## 🐳 Docker Container Execution
-
-For guaranteed containerized reproducibility across Linux workstations:
-
 ```bash
-# 1. Build the Docker Image
-docker build -t neuralops:2026 .
+# 1. Clone the repository
+git clone https://github.com/tahamajs/SVD_linear_Attention.git
+cd SVD_linear_Attention
 
-# 2. Run Smoke Test inside Container
-docker run --gpus all --rm neuralops:2026
+# 2. Set up virtual environment
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# 3. Interactive Shell inside Container with Volume Mount
-docker run --gpus all -it -v $(pwd)/results:/workspace/results neuralops:2026 bash
+# 3. Install PyTorch with CUDA acceleration
+pip install --upgrade pip setuptools wheel
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+
+# 4. Install framework dependencies
+pip install -r requirements.txt
 ```
 
 ---
 
 ## ⚡ Commands to Reproduce Benchmarks
 
-### Phase 1: Efficiency & Micro-Benchmarking Sweep
-Measures forward latency, backward latency, peak VRAM allocation, and arithmetic throughput across sequence lengths for every registered module, then selects the top-K for the quality phase:
+### A. Zero-Shot 5-Task Reasoning Suite (GPT-2)
+Evaluates modules without fine-tuning across 5 reasoning benchmarks (`PIQA`, `ARC-Easy`, `ARC-Challenge`, `HellaSwag`, `WinoGrande`) with 500 samples per task:
 
 ```bash
-python Codes/framework/benchmarks/two_phase_benchmark.py \
-  --phase 1 \
-  --precision fp16
+# Run multi-worker parallel evaluator (e.g. 4-5 workers on 8 GB GPU):
+python scripts/run_zeroshot_parallel.py \
+  --parallel 4 \
+  --num_samples 500 \
+  --batch_size 8 \
+  --model models/gpt2
+
+# Aggregate all individual task predictions into master CSVs & Parquet:
+python scripts/aggregate_zeroshot_details.py
 ```
 
-Phase 2 of the same orchestrator (`--phase 2` or `--phase all`, with `--models`, `--datasets`, `--seeds`, `--max_steps`) fine-tunes the top-selected modules and writes the quality tables below.
+### B. Rank Sweeps & SVD Scaling (DistilBERT / RoBERTa)
+Profiles accuracy retention across low-rank bottlenecks ($r \in \{64, 128, 256, 384\}$):
 
-### Phase 2: Multi-Seed Quality Sweep (Pretrained Fine-Tuning)
-Fine-tunes base transformer backbones (`distilbert-base-uncased` or `bert-base-uncased`) with injected modules across 3 random seeds (`42, 123, 777`) with AdamW and linear learning rate warmup:
+```bash
+python Codes/framework/run_rank_sweeper.py \
+  --modules armor_pruner,cluster_attention,dobi_svd,dynamic_rank \
+  --ranks 64,128,256,384 \
+  --model models/base_checkpoints/distilbert_mnli \
+  --model_family bert \
+  --dataset mnli \
+  --output_base results/rank_sweep_mnli \
+  --batch_size 16
+```
+
+### C. Language Modeling & Perplexity (C4 / WikiText-2)
+Computes causal autoregressive token cross-entropy loss and perplexity on long-form web text:
 
 ```bash
 python Codes/framework/run_quality_sweep.py \
-  --modules full,svd_linear_attention,minimal_svd,mamba,performer_attention,linformer_attention,aegis_v6,leka_v3,griffin_ssd,samba_m3 \
+  --modules full,asvd_attention,cosformer,performer_attention \
+  --model models/gpt2 \
+  --model_family gpt2 \
+  --dataset c4 \
+  --rank 256 \
+  --batch_size 8 \
+  --output_dir results/c4_baselines
+```
+
+### D. Multi-Seed Pretrained Fine-Tuning Sweep
+Runs statistical multi-seed fine-tuning recovery across classification benchmarks:
+
+```bash
+python Codes/framework/run_multiseed.py \
+  --modules svd_linear_attention,armor_pruner,cluster_attention \
   --models distilbert \
-  --datasets sst2,mrpc \
-  --seeds 42,123,777 \
-  --epochs 5 \
-  --lr 2e-5 \
-  --weight_decay 0.01 \
-  --batch_size 16 \
-  --seq_len 128 \
-  --pretrained \
-  --gradient_checkpointing \
-  --output_dir results/run_quality_pretrained
+  --dataset sst2 \
+  --seeds 42,123,456,789,999 \
+  --output_dir results/multiseed_rigor_distilbert
 ```
-
-*Expected outputs*: Baseline `full` validation accuracy $\ge$ 88.0% on SST-2; factorized architectures achieve 82%–90% retention with up to 1.8× memory reduction.
 
 ---
 
-## 📊 Interactive Live Monitor & Telemetry Dashboard
+## 📂 Comprehensive Results Directory Architecture
 
-Launch the NeuralOps real-time monitoring studio to track hardware metrics, training loss trajectories, and live comparative tables:
+The `results/` hierarchy contains 268 experimental suites structured cleanly as follows:
 
-```bash
-python Codes/framework/live_monitor.py --port 8080 --host 0.0.0.0
 ```
-Navigate to `http://localhost:8080` in your web browser:
-- **Telemetry Stream**: Real-time GPU core %, memory allocation, temperature, and board power draw via `nvidia-smi`.
-- **Comparative Analytics Lab**: Real-time multi-seed averages (Accuracy, F1, Logit Cosine Fidelity, Latency, VRAM).
-- **Run Comparator (Diff Engine)**: Side-by-side run comparisons across hyperparameters and architectures.
+results/
+├── README.md                                  # Complete structural taxonomy of all runs
+├── benchmark_summary_v2.csv                   # Master multi-model, multi-dataset benchmark summary
+├── master_aggregated_results.csv              # Master verified accuracy, parameter, and ratio table
+├── SEQLEN_SCALING_MASTER.csv                  # Sequence-length scaling latency & memory matrix
+│
+├── zeroshot_parallel/                         # 183-Module Zero-Shot Reasoning Suite (GPT-2)
+│   ├── <module_name>/
+│   │   ├── <task>.json                        # Task summary metrics (e.g. piqa.json, hellaswag.json)
+│   │   ├── <task>_detailed.json               # Full sample-level predictions & answers
+│   │   ├── <module>_zeroshot.json             # Combined 5-benchmark macro performance
+│   │   ├── run_metadata.json                  # Environment, GPU model, Git SHA, and versions
+│   │   └── run.log                            # Raw execution trace
+│
+├── rank_sweep_mnli/ & rank_sweep_agnews/      # Rank sweeps (ranks 64 to 384)
+├── c4_baselines/ & gpt2_c4_ppl/               # Autoregressive perplexity evaluations on C4
+├── multiseed/ & multiseed_rigor_*/            # 5-seed statistical verification runs
+├── distilbert_* & roberta_*                   # Bidirectional encoder GLUE classification runs
+└── Unified/                                   # Full multi-model evaluation archive (237 subdirectories)
+```
 
 ---
 
-## 📂 Output Files & Directory Hierarchy
+## 📊 Automated Artifacts & Dashboard Telemetry
 
-Benchmark executions generate standardized tabular and structured artifacts:
-
-```
-results/run_quality_pretrained/
-├── summary.csv                 # 18-column primary evaluation table
-├── detailed_results.json       # Full per-step loss, gradient norms, and seed records
-├── config.json                 # Exact run hyperparameters and environment flags
-├── plots/                      # Publication figures (PDF & 300 DPI PNG)
-│   ├── accuracy_vs_latency.pdf
-│   ├── pareto_frontier.pdf
-│   └── vram_scaling.pdf
-└── raw_logs/                   # Per-combination execution logs
-```
-
-### `summary.csv` Schema
-| Column | Description |
-| :--- | :--- |
-| `run_id` | Unique ISO-timestamped benchmark identifier |
-| `module_name` | Architecture name (e.g. `svd_linear_attention`, `minimal_svd`) |
-| `model_family` | Transformer backbone (`DISTILBERT`, `BERT`, `ROBERTA`) |
-| `dataset` | GLUE evaluation benchmark task (`SST2`, `MRPC`, `COLA`, `STSB`) |
-| `status` | Execution status (`PASS`, `FAIL`, `TIMEOUT`) |
-| `mean_accuracy`| Multi-seed average validation accuracy (%) |
-| `std_accuracy` | Sample standard deviation across seeds |
-| `ci_lower`, `ci_upper` | 95% Confidence Interval bounds |
-| `p_value` | Paired two-tailed Student's t-test p-value vs baseline |
-| `f1_score` | Macro/Binary F1 score |
-| `fidelity_score` | Logit cosine similarity against uncompressed baseline |
-| `fwd_ms`, `bwd_ms` | CUDA event-timed latency (ms) |
-| `peak_vram_mb` | Peak allocated GPU memory (MB) |
-| `throughput_tokens_sec` | Effective training throughput (tokens/second) |
+- **Live Evaluation Monitor**: Open [zeroshot_live_monitor.md](file:///Users/tahamajs/.gemini/antigravity-cli/brain/154e5c28-a619-4387-be97-a33f27392ecf/zeroshot_live_monitor.md) for live 20-minute inspection cycles, ranked Pareto tables, and comparative analysis.
+- **Web Analytics Studio**:
+  ```bash
+  python Codes/framework/live_monitor.py --port 8080 --host 0.0.0.0
+  ```
+- **Automated Publication LaTeX Generation**:
+  ```bash
+  python Codes/framework/analysis/generate_sweep_publication_artifacts.py \
+    --results_dir results/zeroshot_parallel/
+  ```
 
 ---
 
-## 📄 Automated Publication Artifact Generation
+## ⚖️ Citation & License
 
-Generate publication-ready LaTeX tables, figures, and a comprehensive markdown report directly from any benchmark output folder:
-
-```bash
-python Codes/framework/analysis/generate_sweep_publication_artifacts.py \
-  --results_dir results/run_quality_pretrained/
-```
-
-This compiles (into the same results directory):
-- `paper_tables.tex`: Booktabs LaTeX markup for academic submissions.
-- `comprehensive_report.md`: Detailed markdown audit report.
-- PNG figures (accuracy/compression distributions and Pareto views) rendered with matplotlib.
-
----
-
-## ⚖️ License & Citation
-
-Distributed under the MIT License. See `LICENSE` for more information. If you use NeuralOps in academic research, please cite our manuscript:
+Distributed under the MIT License. See [LICENSE](file:///Users/tahamajs/Documents/uni/Project/LICENSE) for full details. If you use NeuralOps in academic research, please cite:
 
 ```bibtex
 @inproceedings{neuralops2026,

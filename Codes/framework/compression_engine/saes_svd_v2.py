@@ -12,13 +12,6 @@ Mathematical Formulation:
    $$A_{t+1} = A_t + E_t B_t^\\top (B_t B_t^\\top + \\epsilon I)^{-1}$$
    $$B_{t+1} = B_t + (A_{t+1}^\\top A_{t+1} + \\epsilon I)^{-1} A_{t+1}^\\top E_t$$
 
-Production Hardening:
-- Fix 1: Default fallback_to_original changed to True for safety.
-- Fix 2: Always log warning when reconstruction error exceeds max_error regardless of fallback.
-- Fix 3: Reliable Conv1D detection using class name or nf attribute without shape heuristics.
-- Fix 4: Include per-layer rank, error, and detailed specs in returned stats.
-- Fix 5: Ensure bias is copied correctly for both Linear and Conv1D.
-- Fix 6: Unified critical-layer protection delegated solely to should_compress_linear.
 """
 
 from __future__ import annotations

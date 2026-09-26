@@ -1,4 +1,4 @@
-r"""
+"""
 AEGIS-Attention V5 (Corrected): Adaptive Enhanced Global-Local Integrated Sparse Attention.
 
 Architecture:
@@ -9,26 +9,6 @@ Architecture:
   * SDPA fast path: used for very short sequences (N_kv <= local_window) where the
     split-head mechanism provides no benefit.
 
-Bug-fix map (see accompanying report):
-  V5-FIX-01  head_mask broadcasting in SDPA path corrected.
-  V5-FIX-02  local_window_attention: past_len offset for KV-cache decoding.
-  V5-FIX-03  Causal kernel linear attention: chunked cumsum (no 5D tensor).
-  V5-FIX-04  inject_aegis_v5: recursion guard.
-  V5-FIX-05  is_decoder detection via helper (no locals() hack).
-  V5-FIX-06  output_attentions honored in split-head path.
-  V5-FIX-07  Split-head path now also used for decoders (with causal handling).
-  V5-FIX-08  softpick renamed to temperature_softmax; docstring corrected.
-  V5-FIX-09  local_window semantics documented (window = full width; radius = window//2).
-  V5-FIX-10  Adaptive gate logic clarified (blend local heads with global mean).
-  V5-FIX-11  gate_bias forced >= 2.0 removed.
-  V5-FIX-12  LoRA init consistent between tensor and int constructor paths.
-  V5-FIX-13  from_distilbert_pretrained: safe fallback for missing out_lin/dense.
-  V5-FIX-14  rff_proj: registered as buffer by default (opt-in trainable).
-  V5-FIX-15  Dead from_distilbert_pretrained path exercised only when requested.
-  V5-FIX-16  Unused Union import removed.
-  V5-FIX-17  decompose_from_weight: padding documented.
-  V5-FIX-18  Mask handling centralized in _prepare_valid_mask.
-  V5-FIX-19  head_mask applied after gate in split-head path.
 """
 
 import logging

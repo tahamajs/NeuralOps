@@ -1,4 +1,4 @@
-r"""
+"""
 LoRA Parameter-Efficient Fine-Tuning Attention Module.
 
 Replaces standard query, key, value, and output linear projections with frozen pretrained base weights

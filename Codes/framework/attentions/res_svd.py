@@ -3,21 +3,6 @@
 W = U_base V_base^T + alpha * B A
 where B A is initialized from the top-k residual singular directions of W - W_base.
 
-Bug-fix map (2026 revision):
-  RES-01  Removed broken SDPA try/except with undefined vars.
-  RES-02  copy_weights uses load_linear_weights (shape-aware), not state_dict strict.
-  RES-03  temp_linear constructed on same device/dtype as target.
-  RES-04  Raise on missing mandatory weights (no silent random init).
-  RES-05  RoPE dtype-safe + past_len offset.
-  RES-06  Robust attention-mask helper (_prepare_valid_mask).
-  RES-07  Unified head_mask (view → (B, H, 1, 1)).
-  RES-08  Recursion guard in inject_res_svd.
-  RES-09  is_nested_encoder consistently set.
-  RES-10  Guard bias before zero_().
-  RES-11  sample_x on correct device.
-  RES-12  No dangling self.config.
-  RES-13  Cross-attention flag: raises clear NotImplementedError.
-  RES-14  rank always passed to super().__init__.
 """
 
 from __future__ import annotations

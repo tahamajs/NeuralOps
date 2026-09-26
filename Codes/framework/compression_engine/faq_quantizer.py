@@ -2,22 +2,6 @@
 FAQ (Feature-Activation-Aware Quantization): adjusts quantization scales using
 activation statistics. Registered as 'faq'.
 
-Bug-fix map:
-  FQ-FIX-01  LoRA dtype matches base weight dtype.
-  FQ-FIX-02  weight / bias mutation under torch.no_grad().
-  FQ-FIX-03  act_scale registered as non-persistent buffer.
-  FQ-FIX-04  forward sanity check includes attention_mask + correct log message.
-  FQ-FIX-05  effective_compression_rate reflects actual quantized layers.
-  FQ-FIX-06  multiple calibration batches supported.
-  FQ-FIX-07  bias quantization consistent with weight (use_ste flags).
-  FQ-FIX-08  LoRA scaling respected (alpha / r).
-  FQ-FIX-09  fallback path skips LoRA mutation correctly.
-  FQ-FIX-10  _compressed_params initialized in __init__.
-  FQ-FIX-11  from_linear act_scale optional and shape-safe.
-  FQ-FIX-12  covariance uses per-feature E[x^2] (diagonal), not full covariance.
-  FQ-FIX-13  DataLoader support in calibration normalization.
-  FQ-FIX-14  double-injection guard via _injected flag.
-  FQ-FIX-15  calibration normalization helper added.
 """
 
 from __future__ import annotations

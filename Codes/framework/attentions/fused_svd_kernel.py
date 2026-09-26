@@ -1,4 +1,4 @@
-r"""
+"""
 Fused SVD-Linear Layer with SRAM-Resident RMSNorm & Dual-Projection.
 
 RESEARCH FIX: Eliminates GPU High-Bandwidth Memory (HBM) roundtrip latency by fusing:

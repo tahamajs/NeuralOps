@@ -16,7 +16,13 @@ os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True,max_split_size
 
 # Switch to project directory if on Windows GPU server
 if os.path.exists(r"PROJECT_ROOT"):
+    HERE = Path(__file__).resolve().parent
+PROJECT_ROOT = HERE.parent.parent
+if os.path.exists(r"PROJECT_ROOT"):
     os.chdir(r"PROJECT_ROOT")
+else:
+    os.chdir(PROJECT_ROOT)
+RESULTS_DIR = Path("results").resolve()
 
 models = [
     {
