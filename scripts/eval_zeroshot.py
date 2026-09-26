@@ -523,7 +523,10 @@ def main():
         json.dump(full_report, f, indent=2)
 
     try:
-        from scripts.save_metadata import save_run_metadata
+        try:
+            from scripts.save_metadata import save_run_metadata
+        except ImportError:
+            from save_metadata import save_run_metadata
         save_run_metadata(
             output_dir=args.output_dir,
             module=args.module,
