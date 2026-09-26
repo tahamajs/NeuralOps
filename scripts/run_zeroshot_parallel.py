@@ -5,6 +5,7 @@ Runs `parallel_workers` modules simultaneously on single GPU.
 Idempotent: skips modules with existing complete output.
 """
 import argparse
+import csv
 import os
 import subprocess
 import sys
@@ -16,12 +17,16 @@ from pathlib import Path
 TASKS = ["piqa", "arc_easy", "arc_challenge", "hellaswag", "winogrande"]
 
 
-def is_complete(module: str, base_dir: Path) -> bool:
-    """Check if all 5 tasks have output for this module."""
-    mdir = base_dir / module
-    if not mdir.exists():
+def is_complete(module_dir: Path) -> bool:
+    """Check if all 5 task JSONs + detailed exist."""
+    if not module_dir.exists():
         return False
-    return all((mdir / f"{t}.json").exists() for t in TASKS)
+    for t in TASKS:
+        if not (module_dir / f"{t}.json").exists():
+            return False
+        if not (module_dir / f"{t}_detailed.json").exists():
+            return False
+    return True
 
 
 def run_module(module: str, args) -> dict:
@@ -30,10 +35,10 @@ def run_module(module: str, args) -> dict:
     log_file = out_dir / "run.log"
 
     env = os.environ.copy()
-    # Allow online access for parquet downloads if not cached
-    env.pop("HF_HUB_OFFLINE", None)
-    env.pop("TRANSFORMERS_OFFLINE", None)
-    env.pop("HF_DATASETS_OFFLINE", None)
+    # Allow offline datasets cache loading
+    env["HF_HUB_OFFLINE"] = "1"
+    env["TRANSFORMERS_OFFLINE"] = "1"
+    env["HF_DATASETS_OFFLINE"] = "1"
 
     cmd = [
         sys.executable, "scripts/eval_zeroshot.py",
@@ -74,9 +79,12 @@ def main():
         if line.strip() and not line.startswith("#")
     ]
 
-    if args.resume:
-        base = Path(args.output_base)
-        modules = [m for m in modules if not is_complete(m, base)]
+    base_dir = Path(args.output_base)
+    before = len(modules)
+    modules = [m for m in modules if not is_complete(base_dir / m)]
+    skipped = before - len(modules)
+    if skipped > 0:
+        print(f"[RESUME] Skipped {skipped} completed modules. {len(modules)} remaining.")
 
     print(f"[INIT] {len(modules)} modules to evaluate")
     print(f"[INIT] parallel = {args.parallel}")
@@ -86,6 +94,7 @@ def main():
     t_start = time.time()
     completed = 0
     failed = 0
+    failures = []
 
     with ThreadPoolExecutor(max_workers=args.parallel) as ex:
         futures = {ex.submit(run_module, m, args): m for m in modules}
@@ -94,31 +103,53 @@ def main():
             try:
                 r = fut.result()
                 completed += 1
-                status = "OK" if r["returncode"] == 0 else f"FAIL({r['returncode']})"
-                if r["returncode"] != 0:
+                status = "OK" if r.get("returncode") == 0 else f"FAIL({r['returncode']})"
+                if r.get("returncode") != 0:
                     failed += 1
-                print(f"[{completed}/{len(modules)}] {module} | {status} | {r['elapsed_s']:.1f}s")
+                    failures.append({
+                        "module": module,
+                        "returncode": r.get("returncode"),
+                        "elapsed_s": r.get("elapsed_s"),
+                        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                    })
+                print(f"[{completed}/{len(modules)}] {module} | {status} | {r.get('elapsed_s', 0):.1f}s")
             except Exception as e:
                 failed += 1
-                print(f"[ERROR] {module} | {e}")
+                failures.append({
+                    "module": module,
+                    "error": f"{type(e).__name__}: {str(e)[:200]}",
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                })
+                print(f"[ERROR] {module} | {type(e).__name__}: {e}")
 
-            # Step 8 / Step 5 hooks: auto-aggregation every 10 modules
+            # Write failures incrementally
+            if failures:
+                failures_log = Path("audit/zeroshot_failures.csv")
+                failures_log.parent.mkdir(parents=True, exist_ok=True)
+                with open(failures_log, "w", newline="", encoding="utf-8") as f:
+                    w = csv.DictWriter(f, fieldnames=["module", "returncode", "error", "elapsed_s", "timestamp"])
+                    w.writeheader()
+                    for fail in failures:
+                        w.writerow({k: fail.get(k, "") for k in w.fieldnames})
+
+            # Auto-aggregate every 10 modules
             if completed % 10 == 0:
+                print(f"[AGG] Updating audit/ at {completed} modules...")
                 subprocess.run(
                     [sys.executable, "scripts/aggregate_zeroshot_details.py"],
                     cwd="D:/SVD_Project", check=False
                 )
-                print(f"[AUTO-AGG] audit/ updated after {completed} modules")
 
             # Git commit every 25 modules
             if completed % 25 == 0:
-                subprocess.run(["git", "add", "results/zeroshot_parallel/", "audit/zeroshot_*.csv", "audit/zeroshot_*.parquet", "audit/zeroshot_*.json"], cwd="D:/SVD_Project")
-                subprocess.run(["git", "commit", "-m", f"feat(zeroshot): {completed} modules evaluated"], cwd="D:/SVD_Project")
-                subprocess.run(["git", "push", "origin", "main"], cwd="D:/SVD_Project")
-                print(f"[GIT] Committed {completed} modules")
+                print(f"[GIT] Committing at {completed} modules...")
+                subprocess.run(["git", "add", "results/zeroshot_parallel/", "audit/zeroshot_*.csv", "audit/zeroshot_*.parquet", "audit/zeroshot_*.json"], cwd="D:/SVD_Project", check=False)
+                subprocess.run(["git", "commit", "-m", f"feat(zeroshot): {completed} modules evaluated [auto]"], cwd="D:/SVD_Project", check=False)
+                subprocess.run(["git", "push", "origin", "main"], cwd="D:/SVD_Project", check=False)
 
             # Hugging Face upload every 50 modules
             if completed % 50 == 0:
+                print(f"[HF] Uploading at {completed} modules...")
                 subprocess.run([
                     "huggingface-cli", "upload",
                     "Hooshaai/svd-linear-attention-results",
@@ -126,7 +157,6 @@ def main():
                     "zeroshot_parallel",
                     "--repo-type", "dataset",
                 ], check=False)
-                print(f"[HF] Uploaded at {completed} modules")
 
     total = time.time() - t_start
     print()
