@@ -8,7 +8,13 @@ os.environ["HF_HUB_DISABLE_XET"] = "1"
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
 
 if os.path.exists(r"PROJECT_ROOT"):
+    HERE = Path(__file__).resolve().parent
+PROJECT_ROOT = HERE.parent.parent
+if os.path.exists(r"PROJECT_ROOT"):
     os.chdir(r"PROJECT_ROOT")
+else:
+    os.chdir(PROJECT_ROOT)
+RESULTS_DIR = Path("results").resolve()
 
 MODULE = "gated_linear_attention"
 DESCRIPTION = "Gated Linear Attention (GatedLinearAttention)"
