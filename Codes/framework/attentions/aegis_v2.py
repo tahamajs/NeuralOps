@@ -1,4 +1,4 @@
-r"""
+"""
 Aegis-Attention V2 (Corrected).
 
 Hybrid low-rank factorized attention with:
@@ -7,17 +7,6 @@ Hybrid low-rank factorized attention with:
   * Global ELU+1 linear kernel attention with adaptive soft-pruning gate
   * Data-dependent multi-head fusion gate
 
-Bug-fix map:
-  V2-FIX-01  decoder detection via helper (no locals()).
-  V2-FIX-02  head_mask broadcasting corrected (B,H,1,1).
-  V2-FIX-03  local window: past_len offset for KV-cache decoding.
-  V2-FIX-04  injector recursion guard (_depth).
-  V2-FIX-05  unified mask handling (_prepare_valid_mask).
-  V2-FIX-06  prune gate broadcasts over GQA correctly.
-  V2-FIX-07  from_distilbert_pretrained safe fallback.
-  V2-FIX-08  decoder path uses causal masked local + causal global.
-  V2-FIX-09  removed final clamp(min=-1e4, max=1e4).
-  V2-FIX-10  alias rank == svd_rank for framework FLOPs detection.
 """
 
 import logging

@@ -17,30 +17,6 @@ Mathematical Formulation (CORRECTED):
   5. 2:4 structured mask on ORIGINAL weights:
        W_pruned = Π_{2:4}(W, S)
 
-Bug-fix map (2026):
-  AST-FIX-01  Removed flawed back-rotation. Previous code did:
-                W_final = (Π_2:4(W @ Q, S_rotated)) @ Q^T
-              which produces a DENSE matrix, destroying the 2:4 sparsity.
-              We now compute saliency in the rotated basis, project it back,
-              and apply the mask to the ORIGINAL weights.
-  AST-FIX-02  Fallback no longer freezes existing LoRA adapters.
-  AST-FIX-03  Removed dead `if name == "":` branch.
-  AST-FIX-04  LoRA transfer from wrapped modules is type-safe
-              (handles both nn.Parameter and nn.Linear conventions).
-  AST-FIX-05  Weight mutation is wrapped in torch.no_grad().
-  AST-FIX-06  Calibration runs in model.eval() with torch.enable_grad()
-              so dropout does not corrupt the Jacobian estimate.
-  AST-FIX-07  Fisher is always averaged over batches (even for n=1).
-  AST-FIX-08  Eigenvalue regularization is scaled by trace (not absolute).
-  AST-FIX-09  Covariance is explicitly symmetrized before eigh.
-  AST-FIX-10  NaN/Inf guards on Fisher and saliency.
-  AST-FIX-11  Reduced memory: covariance is discarded after Q is computed.
-  AST-FIX-12  ASTPrunedLoRALinear exposes merge() and merge_and_unload()
-              for framework compatibility.
-  AST-FIX-13  Forward sanity check passes attention_mask when available.
-  AST-FIX-14  Renamed the "Fisher" loss to "output-norm Jacobian proxy"
-              (documented; the math is a heuristic, not a true Fisher).
-  AST-FIX-15  Skipped-layer counts are logged.
 """
 
 from __future__ import annotations

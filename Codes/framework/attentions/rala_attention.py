@@ -2,17 +2,6 @@
 
 Augments linear attention kernel maps with low-rank static head interaction matrices.
 
-Bug-fix map (2026):
-  RALA-FIX-01  Renamed U, V, alpha → lora_U, lora_V, lora_rank_alpha so that
-               framework's get_recovery_params recognizes them as trainable.
-               Previously they were frozen at init, making the augmented branch
-               a no-op and capping accuracy at ~78%.
-  RALA-FIX-02  RoPE cos/sin dtype cast to match q/k dtype (fp16/fp32 mixing).
-  RALA-FIX-03  Recursion guard in inject_rala (`_depth`).
-  RALA-FIX-04  Removed dead scale_factor = 1.0.
-  RALA-FIX-05  Causal loop optimized (avoid per-step einsum for z; use indexed
-               gather for S updates).
-  RALA-FIX-06  NaNs from denom division are now clamped before normalization.
 """
 
 from __future__ import annotations

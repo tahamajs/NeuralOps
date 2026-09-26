@@ -14,13 +14,6 @@ Mathematical Formulation:
 5. Final Reconstructed Weight:
    $$W_{slim} = W_{sp} + L_r$$
 
-Production Hardening:
-- Fix 1: Default fallback_to_original changed to True for safety.
-- Fix 2: Reliable Conv1D detection by class name and nf attribute without shape heuristics.
-- Fix 3: Always log warning when reconstruction error exceeds max_error regardless of fallback.
-- Fix 4: Unified critical-layer protection delegated solely to should_compress_linear.
-- Fix 5: Biases are explicitly kept at full precision (only weights are quantized/pruned).
-- Fix 6: Store max_error and fallback_to_original in returned stats.
 """
 
 from __future__ import annotations

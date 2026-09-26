@@ -1,4 +1,4 @@
-r"""Galerkin Attention: Petrov-Galerkin Projection Attention (Corrected v3).
+"""Galerkin Attention: Petrov-Galerkin Projection Attention (Corrected v3).
 
 Rollback notes:
   The previous "linear attention with sequence-space normalization" attempt
@@ -7,15 +7,6 @@ Rollback notes:
   original softmax-in-basis-space formulation, which is mathematically
   valid and numerically stable.
 
-Bug-fix map (v3):
-  GAL-FIX-01  Reverted to softmax in basis space (previous linear-attention
-              formulation produced NaN in training).
-  GAL-FIX-02  Removed dead `is_cross` reference in decoder path.
-  GAL-FIX-03  SDPA fast path now respects output_attentions and head_mask.
-  GAL-FIX-04  Causal mask uses explicit N/N_k formula (no locals()).
-  GAL-FIX-05  RoPE cos/sin dtype cast.
-  GAL-FIX-06  Recursion guard in injector.
-  GAL-FIX-07  Basis matrix is cached per (N, r) to avoid recomputation.
 """
 
 from __future__ import annotations

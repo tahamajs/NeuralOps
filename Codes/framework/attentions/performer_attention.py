@@ -12,22 +12,6 @@ Supports:
 - Frobenius norm verification (>= 1e-4)
 - Safe injection returning None on failure
 
-Fixes applied (v2):
-- FIX 1: Removed per-token max_proj subtraction (bias in FAVOR+ kernel)
-- FIX 2: out_proj LoRA disabled for nested encoders (was dead code)
-- FIX 3: Q_feat now masked in bidirectional branch
-- FIX 4: Robust is_nested_encoder with explicit override
-- FIX 5: output_attentions raises NotImplementedError instead of silent None
-- FIX 6: Removed redundant +eps in _feature_map
-- FIX 7: Cleaner num_features / lora_rank config resolution
-- FIX 8: Validates num_heads % num_kv_heads == 0
-- FIX 9: head_mask supports dim==3
-- FIX 10: Dropout prefers attention_probs_dropout_prob
-- FIX 11: Removed unnecessary .contiguous() calls
-- FIX 12: Removed dead clamp(max=10.0)
-- FIX 13: copy_weights returns bool (type hint fixed)
-- FIX 14: num_features validated to be >= 1
-- FIX 15: Thread-local recursion guard
 """
 
 from __future__ import annotations

@@ -36,7 +36,13 @@ logger = logging.getLogger("AdaptiveRanksOrchestrator")
 
 # Set working directory to project root
 if os.path.exists(r"PROJECT_ROOT"):
+    HERE = Path(__file__).resolve().parent
+PROJECT_ROOT = HERE.parent.parent
+if os.path.exists(r"PROJECT_ROOT"):
     os.chdir(r"PROJECT_ROOT")
+else:
+    os.chdir(PROJECT_ROOT)
+RESULTS_DIR = Path("results").resolve()
 project_root = Path.cwd()
 
 # Ensure Codes is in sys.path

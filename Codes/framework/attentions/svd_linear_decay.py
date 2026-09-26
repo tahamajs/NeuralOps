@@ -1,18 +1,7 @@
-r"""
+"""
 SVD Linear Decay Gated Attention Alias.
 Maps to `framework.attentions.svd_linear_attention.SVDLinearAttention`.
 
-Fixes (2026-09-26):
-- FIX-1: `inject_svd_linear_decay` now discovers the source attention across
-  all architecture variants (GPT-2 `layer.attn`, RoBERTa/BERT
-  `layer.attention.self`, T5 `layer.self_attn`, generic `layer.attention`).
-- FIX-2: Pre-discovered `src_attn` is passed explicitly as `old_attn` to the
-  delegated `inject_svd_linear_attention`, so the delegate never has to guess.
-- FIX-3: Fallback replacement ensures the new module is placed in the correct
-  attribute (including `layer.attn` for GPT-2) even if the delegate only
-  writes to `layer.attention` / `layer.self`.
-- FIX-4: Idempotency guard prevents double-injection.
-- FIX-5: Explicit error logging when no source attention can be found.
 """
 
 from typing import Any, Optional

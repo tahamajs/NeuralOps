@@ -14,22 +14,6 @@ Mathematical Formulation:
              = h + alpha * (B @ A) h
    Initialized with B = 0 so bridge is identity at init.
 
-Bug fixes over previous version (2026-09-25):
-- CoMeBridge now ACTUALLY uses bridge_rank for low-rank factorization
-  (previously a full hidden x hidden Linear was used and bridge_rank was ignored).
-- Added 'rank' parameter: when set, it maps to bridge_rank and sparsity if those
-  are not explicitly overridden. Fixes the issue where ranks 128/256/384 all
-  produced identical accuracies.
-- Reduced default sparsity from 0.30 to 0.10 (removes 1 layer on 12-layer
-  encoders instead of 4) to prevent catastrophic 20% accuracy drop.
-- Improved bridge init: A ~ kaiming_uniform, B = 0 (identity at init, gradient
-  flows to A and alpha from the first step).
-- Fixed compression_stats propagation: stats are written to both
-  self.model.compression_stats and self.stats, and the key names match what
-  run_quality_sweep.py expects (num_compressed / num_fallback /
-  num_compressed_layers / num_fallback_layers).
-- Preserved all original functionality: layer shedding, SVD fallback,
-  post-shedding LoRA insertion, LayerNorm recalibration, forward sanity check.
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-r"""
+"""
 SliceGPT PCA Compressor: Principal Component Analysis based Dimensionality Slicing.
 Registered in COMPRESSOR_REGISTRY as 'slicegpt_pca' and 'slicegpt_pca_factory'.
 
@@ -24,16 +24,6 @@ weight with an SVDLinear low-rank factorization:
 
 Parameter count drops from d_out * d_in to (d_out + d_in) * keep.
 
-Production Hardening:
-- Fix 1: Streaming empirical covariance (H21) to avoid memory spikes.
-- Fix 2: Tied-weight protection via visited_modules set.
-- Fix 3: GQA-aware attention projection skipping.
-- Fix 4: Orthogonality validation (QR fallback on non-orthogonal eigh).
-- Fix 5: Proper hook-removal error message (was "copy_weights failed").
-- Fix 6 (2026-09-25): REAL COMPRESSION — replace dense weight with SVDLinear.
-- Fix 7 (2026-09-25): Added is_noop flag and noop_reason to stats.
-- Fix 8 (2026-09-25): Skip SVDLinear replacement when it would not reduce params.
-- Fix 9 (2026-09-25): Preserve existing LoRA adapters during replacement.
 """
 
 from __future__ import annotations

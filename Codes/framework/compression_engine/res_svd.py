@@ -27,17 +27,7 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    """Helper to safely retrieve a configuration value from dict, object, or None."""
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
-
-
 class ResSVDLinear(nn.Module):
-    is_custom_attention: bool = True
     """
     Spectral Residual LoRA (Res-SVD) Linear Layer.
 
@@ -167,40 +157,34 @@ class ResSVDLinear(nn.Module):
     @classmethod
     def from_linear(
         cls,
-        linear: nn.Module,
+        linear: nn.Linear,
         base_rank: int = 32,
         residual_rank: int = 8,
         scaling: float = 1.0,
         factorize_base: bool = True,
         freeze_base: bool = True,
-    ) -> "ResSVDLinear":
+    ) -> ResSVDLinear:
         """
-        Construct ResSVDLinear by decomposing a pretrained nn.Linear, Conv1D, or LoRALinear base_layer weight:
+        Construct ResSVDLinear by decomposing a pretrained nn.Linear weight:
         1. Base factors U_r, V_r from the dominant top-r singular components.
         2. Residual adapter factors A, B directly initialized from the residual tail (r+1 to r+k).
-        Preserves existing LoRA adapters if source is a LoRALinear wrapper.
+
+        Args:
+            linear: Source dense linear layer.
+            base_rank: Rank r for the frozen base matrix.
+            residual_rank: Rank k for the trainable residual adapter.
+            scaling: Multiplier alpha / k for adapter output.
+            factorize_base: Whether to store base weights as factorized U, V matrices.
+            freeze_base: Whether to freeze base factors (requires_grad=False).
+
+        Returns:
+            ResSVDLinear: Spectral residual LoRA module.
         """
-        base_mod = getattr(linear, "base_layer", linear)
-        raw_w = base_mod.weight.data
-        cls_name = base_mod.__class__.__name__
-        is_conv1d = "conv1d" in cls_name.lower() or (
-            raw_w.ndim == 2
-            and hasattr(base_mod, "in_features")
-            and base_mod.in_features == raw_w.shape[0]
-            and raw_w.shape[0] < raw_w.shape[1]
-        )
-
-        if is_conv1d:
-            W = raw_w.t().contiguous().float()
-            out_f, in_f = W.shape
-        else:
-            W = raw_w.float()
-            out_f, in_f = W.shape
-
+        in_f = linear.in_features
+        out_f = linear.out_features
         max_rank = min(in_f, out_f)
-        param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1) if (factorize_base and in_f * out_f > 16) else max_rank
 
-        r = max(1, min(base_rank, max_rank, param_cap))
+        r = max(1, min(base_rank, max_rank))
         rem = max(0, max_rank - r)
         k = max(0, min(residual_rank, rem))
 
@@ -211,12 +195,14 @@ class ResSVDLinear(nn.Module):
             residual_rank=k,
             scaling=scaling,
             factorize_base=factorize_base,
-            bias=getattr(base_mod, "bias", None) is not None,
-            dtype=base_mod.weight.dtype,
-            device=base_mod.weight.device,
+            bias=linear.bias is not None,
+            dtype=linear.weight.dtype,
+            device=linear.weight.device,
         )
 
-        # SVD decomposition of source base weight
+        W = linear.weight.data.float()  # (out_f, in_f)
+
+        # SVD decomposition of source weight
         U, S, Vh = torch.linalg.svd(W, full_matrices=False)
 
         # 1. Base Truncation (Dominant Top-r Singular Components)
@@ -224,30 +210,19 @@ class ResSVDLinear(nn.Module):
         V_base = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]  # (r, in_f)
 
         if factorize_base:
-            new_layer.base_U.data.copy_(U_base.to(dtype=base_mod.weight.dtype))
-            new_layer.base_V.data.copy_(V_base.to(dtype=base_mod.weight.dtype))
+            new_layer.base_U.data.copy_(U_base.to(dtype=linear.weight.dtype))
+            new_layer.base_V.data.copy_(V_base.to(dtype=linear.weight.dtype))
             new_layer.base_U.requires_grad = not freeze_base
             new_layer.base_V.requires_grad = not freeze_base
         else:
             W_base = (U[:, :r] * S[:r].unsqueeze(0)) @ Vh[:r, :]
-            new_layer.base_weight.data.copy_(W_base.to(dtype=base_mod.weight.dtype))
+            new_layer.base_weight.data.copy_(W_base.to(dtype=linear.weight.dtype))
             new_layer.base_weight.requires_grad = not freeze_base
 
-        # 2. Residual Tail Initialization or source LoRA copying
-        has_src_lora = hasattr(linear, "lora_A") and hasattr(linear, "lora_B") and linear.lora_A is not None and linear.lora_B is not None
-        if has_src_lora and k > 0:
-            src_A = getattr(linear.lora_A, "weight", linear.lora_A)
-            src_B = getattr(linear.lora_B, "weight", linear.lora_B)
-            if src_A.shape == new_layer.lora_A.shape and src_B.shape == new_layer.lora_B.shape:
-                new_layer.lora_A.data.copy_(src_A.data)
-                new_layer.lora_B.data.copy_(src_B.data)
-                new_layer.lora_A.requires_grad = True
-                new_layer.lora_B.requires_grad = True
-                has_src_lora = True
-            else:
-                has_src_lora = False
-
-        if not has_src_lora and k > 0:
+        # 2. Residual Tail Initialization (Singular directions r to r+k)
+        # RESEARCH FIX: Analytical spectral initialization of LoRA adapter weights (A, B) directly
+        # from the residual tail E = W - U_r V_r minimizes initial reconstruction loss to zero-shot optimality.
+        if k > 0:
             S_tail = S[r : r + k]
             U_tail = U[:, r : r + k]
             Vh_tail = Vh[r : r + k, :]
@@ -260,14 +235,14 @@ class ResSVDLinear(nn.Module):
             lora_A_init = sqrt_S.unsqueeze(1) * Vh_tail  # (k, in_f)
             lora_B_init = U_tail * sqrt_S.unsqueeze(0)  # (out_f, k)
 
-            new_layer.lora_A.data.copy_(lora_A_init.to(dtype=base_mod.weight.dtype))
-            new_layer.lora_B.data.copy_(lora_B_init.to(dtype=base_mod.weight.dtype))
+            new_layer.lora_A.data.copy_(lora_A_init.to(dtype=linear.weight.dtype))
+            new_layer.lora_B.data.copy_(lora_B_init.to(dtype=linear.weight.dtype))
             new_layer.lora_A.requires_grad = True
             new_layer.lora_B.requires_grad = True
 
         # Copy bias if present
-        if base_mod.bias is not None:
-            new_layer.bias.data.copy_(base_mod.bias.data)
+        if linear.bias is not None:
+            new_layer.bias.data.copy_(linear.bias.data)
 
         return new_layer
 
@@ -361,22 +336,16 @@ class ResSVDCompressor(BaseCompressor):
         factorize_base: bool = True,
         freeze_base: bool = True,
         target_modules: Optional[List[str]] = None,
-        max_error: float = 0.35,
-        fallback_to_original: bool = False,
-        target_attention_only: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="res_svd", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
-
-        base_rank = _cfg_get(cfg, "base_rank", _cfg_get(cfg, "rank", base_rank))
-        residual_rank = _cfg_get(cfg, "residual_rank", residual_rank)
-        scaling = _cfg_get(cfg, "scaling", _cfg_get(cfg, "lora_alpha", scaling))
-        factorize_base = _cfg_get(cfg, "factorize_base", factorize_base)
-        freeze_base = _cfg_get(cfg, "freeze_base", freeze_base)
-        max_error = _cfg_get(cfg, "max_error", max_error)
-        fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
-        target_attention_only = bool(target_attention_only or _cfg_get(cfg, "target_attention_only", False))
+        if cfg is not None:
+            base_rank = getattr(cfg, "base_rank", getattr(cfg, "rank", base_rank))
+            residual_rank = getattr(cfg, "residual_rank", residual_rank)
+            scaling = getattr(cfg, "scaling", getattr(cfg, "lora_alpha", scaling))
+            factorize_base = getattr(cfg, "factorize_base", factorize_base)
+            freeze_base = getattr(cfg, "freeze_base", freeze_base)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             base_rank = kwargs["rank"]
@@ -387,26 +356,11 @@ class ResSVDCompressor(BaseCompressor):
         self.factorize_base = factorize_base
         self.freeze_base = freeze_base
         self.target_modules = target_modules
-        self.target_attention_only = target_attention_only
-        self.max_error = float(max_error)
-        self.fallback_to_original = bool(fallback_to_original)
-        self.replaced_layers: List[Dict[str, Any]] = []
+        self.replaced_layers: List[str] = []
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        """Check whether module is an eligible nn.Linear, Conv1D, or LoRALinear layer matching filter."""
-        name_l = name.lower()
-        if any(k in name_l for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
-            return False
-
-        if self.target_attention_only:
-            attn_keywords = ["attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value", "dense"]
-            if not any(k in name_l for k in attn_keywords):
-                return False
-
-        base_mod = getattr(module, "base_layer", module)
-        cls_name = base_mod.__class__.__name__
-        is_linear_like = isinstance(base_mod, nn.Linear) or "conv1d" in cls_name.lower()
-        if not is_linear_like:
+        """Check whether module is an eligible nn.Linear layer matching filter."""
+        if not isinstance(module, nn.Linear):
             return False
         if isinstance(module, ResSVDLinear):
             return False
@@ -418,10 +372,12 @@ class ResSVDCompressor(BaseCompressor):
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """
-        Compress target linear layers into ResSVDLinear modules with Frobenius validation.
+        Compress target linear layers into ResSVDLinear modules.
+
+        Returns:
+            Tuple[nn.Module, Dict[str, Any]]: Compressed model and compression statistics.
         """
         self.replaced_layers = []
-        fallback_layers = []
 
         # Find target linear layers
         target_layers = [
@@ -432,25 +388,9 @@ class ResSVDCompressor(BaseCompressor):
 
         if not target_layers:
             logger.warning("No compressible linear layers found in model.")
-            stats = self.get_compression_stats()
-            stats.update({
-                "target_attention_only": self.target_attention_only,
-                "forward_check_success": True,
-            })
-            return self.model, stats
+            return self.model, self.get_compression_stats()
 
         for name, old_linear in target_layers:
-            base_mod = getattr(old_linear, "base_layer", old_linear)
-            raw_w = base_mod.weight.data
-            cls_name = base_mod.__class__.__name__
-            is_conv1d = "conv1d" in cls_name.lower() or (
-                raw_w.ndim == 2
-                and hasattr(base_mod, "in_features")
-                and base_mod.in_features == raw_w.shape[0]
-                and raw_w.shape[0] < raw_w.shape[1]
-            )
-            W_orig = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
-
             res_layer = ResSVDLinear.from_linear(
                 linear=old_linear,
                 base_rank=self.base_rank,
@@ -459,42 +399,8 @@ class ResSVDCompressor(BaseCompressor):
                 factorize_base=self.factorize_base,
                 freeze_base=self.freeze_base,
             )
-
-            err = res_layer.get_residual_error_norm(W_orig)
-            if self.fallback_to_original and err > self.max_error:
-                fallback_layers.append(name)
-                for p in old_linear.parameters():
-                    p.requires_grad = False
-                continue
-
-            if hasattr(old_linear, "base_layer"):
-                old_linear.base_layer = res_layer
-                if hasattr(old_linear, "lora_A") and old_linear.lora_A is not None:
-                    for p in (old_linear.lora_A.parameters() if hasattr(old_linear.lora_A, "parameters") else [old_linear.lora_A]):
-                        p.requires_grad = True
-                if hasattr(old_linear, "lora_B") and old_linear.lora_B is not None:
-                    for p in (old_linear.lora_B.parameters() if hasattr(old_linear.lora_B, "parameters") else [old_linear.lora_B]):
-                        p.requires_grad = True
-            else:
-                replace_module(self.model, name, res_layer)
-
-            self.replaced_layers.append({
-                "name": name,
-                "relative_error": float(err),
-                "base_rank": res_layer.base_rank,
-                "residual_rank": res_layer.residual_rank,
-            })
-
-        # Forward sanity check
-        forward_check_success = True
-        try:
-            device = next(self.model.parameters()).device
-            with torch.no_grad():
-                dummy_input = torch.randint(0, 100, (1, 8), device=device)
-                self.model(dummy_input)
-        except Exception as ex_sanity:
-            logger.warning("ResSVD post-compression forward sanity check warning: %s", ex_sanity)
-            forward_check_success = False
+            replace_module(self.model, name, res_layer)
+            self.replaced_layers.append(name)
 
         # Calculate statistics
         total_params = self._count_params(self.model)
@@ -512,9 +418,6 @@ class ResSVDCompressor(BaseCompressor):
         stats["base_rank"] = self.base_rank
         stats["residual_rank"] = self.residual_rank
         stats["replaced_layers"] = self.replaced_layers
-        stats["fallback_layers"] = fallback_layers
-        stats["target_attention_only"] = self.target_attention_only
-        stats["forward_check_success"] = forward_check_success
 
         return self.model, stats
 
@@ -539,46 +442,26 @@ class SpectralResidualLoRARegistered(SpectralResidualLoRA):
     pass
 
 
-def res_svd_factory(
-    model: Any,
-    comp_config: Any = None,
-    return_stats: bool = False,
-    return_tuple: bool = False,
-    **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+def res_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Res-SVD factory function."""
     compressor = ResSVDCompressor(model, comp_config=comp_config, **kwargs)
-    compressed_model, stats = compressor.compress()
-    if return_stats or return_tuple or kwargs.pop("return_both", False):
-        return compressed_model, stats
+    compressed_model, _ = compressor.compress()
     return compressed_model
 
 
-def spectral_residual_lora_factory(
-    model: Any,
-    comp_config: Any = None,
-    return_stats: bool = False,
-    return_tuple: bool = False,
-    **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+def spectral_residual_lora_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Spectral Residual LoRA factory function."""
     compressor = SpectralResidualLoRA(model, comp_config=comp_config, **kwargs)
-    compressed_model, stats = compressor.compress()
-    if return_stats or return_tuple or kwargs.pop("return_both", False):
-        return compressed_model, stats
+    compressed_model, _ = compressor.compress()
     return compressed_model
 
 
 res_svd_compressor_factory = res_svd_factory
-SpectralResidualLoRACompressor = SpectralResidualLoRA
-SVDLinear = ResSVDLinear
 
 __all__ = [
     "ResSVDLinear",
-    "SVDLinear",
     "ResSVDCompressor",
     "SpectralResidualLoRA",
-    "SpectralResidualLoRACompressor",
     "res_svd_factory",
     "spectral_residual_lora_factory",
     "res_svd_compressor_factory",

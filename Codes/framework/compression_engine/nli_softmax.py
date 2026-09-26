@@ -2,24 +2,6 @@
 NLI Softmax approximation – a fast, quantisation-friendly softmax.
 Uses standard forward softmax, simplified sigmoid-based backward.
 
-Bug-fix map:
-  NLI-FIX-01  Registry collision resolved: attention uses 'nli_softmax_attention',
-              compressor uses 'nli_softmax_compressor' + aliases that do not
-              collide with the attention registry.
-  NLI-FIX-02  is_custom_attention = True on attention, False on compressor.
-  NLI-FIX-03  replaced_layers set to a copy (no aliasing).
-  NLI-FIX-04  out_proj not created when is_nested_encoder=True (saves params).
-  NLI-FIX-05  Explicit 2-tuple return.
-  NLI-FIX-06  Recursion guard in inject_nli_softmax.
-  NLI-FIX-07  No torch.tensor default args.
-  NLI-FIX-08  try/except around _count_params.
-  NLI-FIX-09  Forward check reverts on failure (best-effort warning).
-  NLI-FIX-10  Debug logging in target scan.
-  NLI-FIX-11  super().__init__() guarded for varying signatures.
-  NLI-FIX-12  _should_skip checks already-compressed types.
-  NLI-FIX-13  skip_should_compress_filter option.
-  NLI-FIX-14  Explicit note about architecture coverage.
-  NLI-FIX-15  Backward docstring mentions dim grad = None.
 """
 
 import logging

@@ -22,18 +22,6 @@ weight with an SVDLinear low-rank factorization:
 The resulting parameter count is (d_out + d_in) * keep instead of
 d_out * d_in, producing real compression when keep < d_out * d_in / (d_out + d_in).
 
-Production Hardening:
-- Fix 1: Default fallback_to_original = True.
-- Fix 2: Reliable Conv1D detection via class name and nf attribute.
-- Fix 3: Always log warning when reconstruction error exceeds max_error.
-- Fix 4: Unified critical-layer protection via should_compress_linear.
-- Fix 5: Store max_error and fallback_to_original in returned stats.
-- Fix 6 (2026-09-25): Removed dead code after return statement.
-- Fix 7 (2026-09-25): Added explicit is_noop flag when keep >= d_in.
-- Fix 8 (2026-09-25): REAL COMPRESSION — replace dense weight with SVDLinear
-                     factorization that actually reduces stored parameters.
-- Fix 9 (2026-09-25): Skip SVDLinear replacement when keep >= min(d_out, d_in)
-                     to avoid parameter inflation on small layers.
 """
 
 from __future__ import annotations

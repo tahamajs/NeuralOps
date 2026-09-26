@@ -1,4 +1,4 @@
-r"""
+"""
 Adaptive SVD Attention with Residual Adapters and Dynamic Energy Thresholding.
 
 This module provides low-rank factorized linear projections for Multi-Head Attention,

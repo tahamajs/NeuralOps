@@ -3,16 +3,6 @@ ToMoE: converts dense linear and Conv1D layers (e.g. FFN and attention projectio
 into a Mixture of Experts using weight clustering.
 Registered as 'tomoe' and 'tomoe_compressor'.
 
-Production-hardened with:
-- Fix 1: Reconstruction error validation with configurable max_error (default 0.20) and safe fallback.
-- Fix 2: Support for Conv1D (GPT-2) with weight transposition and fused/GQA projections (Qwen/LLaMA).
-- Fix 3: Fully vectorized forward pass using torch.gather and scatter_add_ / index_add_ without Python token loops;
-         numerically stable in FP16/BF16/FP32 with FP32 router gating.
-- Fix 4: Robust FP32 KMeans clustering with deterministic equal-division fallback preventing empty clusters;
-         guarantees original weight preservation without random weight replacement.
-- Fix 5: Comprehensive per-layer statistics (converted/skipped layers, params before/after, compression ratio, errors).
-- Fix 6: Protection of critical layers (classifier, score, lm_head, pooler, embeddings).
-- Fix 7: Optional trainable LoRA adapters (lora_A, lora_B) on experts and router, or router-only training when frozen.
 """
 
 from __future__ import annotations

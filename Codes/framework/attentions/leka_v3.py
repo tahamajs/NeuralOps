@@ -10,25 +10,6 @@ Supports:
 - Frobenius norm verification (>= 1e-4)
 - Safe injection returning None on failure
 
-Bug-fix map (2026 revision):
-  LV3-01  RoPE cos/sin cast to q/k dtype.
-  LV3-02  super().__init__ with try/except.
-  LV3-03  Recursion guard in injector.
-  LV3-04  past_key_value support (RoPE offset).
-  LV3-05  W_corr applied via einsum (per-head matmul).
-  LV3-06  softpick matches reference (arXiv:2504.20966).
-  LV3-07  FactorizedLoRALinear replaces LoRALinear.
-  LV3-08  softpick used consistently (local + landmark).
-  LV3-09  gate init documented; semantically favors landmarks with explicit comment.
-  LV3-10  Removed unused proj2 buffer.
-  LV3-11  landmark_scorer under no_grad.
-  LV3-12  anchor_boost applied BEFORE masking.
-  LV3-13  adaptive landmarks capped at min(N, num_landmarks * 2).
-  LV3-14  GQA resize in copy_weights.
-  LV3-15  centralized decoder detection helper.
-  LV3-16  forward sanity check after weight transfer.
-  LV3-17  robust head_dim detection (q_proj/query/q_lin).
-  LV3-18  removed unused imports.
 """
 
 from __future__ import annotations

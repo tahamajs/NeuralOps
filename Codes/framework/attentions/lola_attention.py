@@ -1,15 +1,9 @@
-r"""
+"""
 LoLA: Low-Rank Linear Attention with Sparse Caching.
 
 Combines factorized low-rank projections with selective multi-system cached retrieval,
 trainable LoRA residual adapters, frozen SVD base weights, GQA, RoPE, and causal decoding.
 
-Bug-fix map:
-  LL-FIX-01  Cache enabled only for streaming decoders with past_key_value.
-             For encoders (bidirectional), cache is now disabled to prevent
-             cross-batch contamination and unbounded VRAM growth (~70% reduction).
-  LL-FIX-02  past_key_value / use_cache gating consistent with HF contract.
-  LL-FIX-03  Explicit cache.reset() when cache is not used.
 """
 
 from __future__ import annotations

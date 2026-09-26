@@ -6,22 +6,6 @@ Decomposes weight updates as:
 
 where (A1 ⊗ A2) is a Kronecker product and TT is a 3-core Tensor-Train.
 
-Bug-fix map:
-  KTL-FIX-01  KroneckerTTLoRALayer.is_custom_attention = False (it's a linear).
-  KTL-FIX-02  Real forward sanity check after compression.
-  KTL-FIX-03  Cache delta_w per forward pass (single evaluation).
-  KTL-FIX-04  KroneckerTTLoRACompressor registered under *_class.
-  KTL-FIX-05  try/except around _count_params.
-  KTL-FIX-06  _resize_cores validates shape consistency.
-  KTL-FIX-07  Explicit note: total parameter count may increase.
-  KTL-FIX-08  Idempotence flag on the model.
-  KTL-FIX-09  Debug logging for target-module scan.
-  KTL-FIX-10  Orthogonal init directly on target device.
-  KTL-FIX-11  Conv1D bias and shape handling robust.
-  KTL-FIX-12  skip_should_compress_filter option.
-  KTL-FIX-13  Explicit stats showing base vs. adapter parameter accounting.
-  KTL-FIX-14  Clear ValueError with actual values.
-  KTL-FIX-15  weight property accounts for base_layer.bias in a compatible way.
 """
 
 import logging

@@ -3,22 +3,6 @@ Kronecker Product Compressor: replaces nn.Linear and Conv1D layers with Kronecke
 Registered as 'kronecker_class', 'kronecker_compressor_class', and (factory)
 'kronecker', 'kronecker_compressor', 'kronecker_factory'.
 
-Bug-fix map:
-  KC-FIX-01  is_custom_attention = False on compressor.
-  KC-FIX-02  Removed `kronecker_linear` alias (conflicts with class name).
-  KC-FIX-03  try/except around _count_params.
-  KC-FIX-04  Safe device resolution.
-  KC-FIX-05  avg_err computed only over compressed layers.
-  KC-FIX-06  Fallback parameter accounting uses orig_layer_params (no double-count).
-  KC-FIX-07  layer_ranks[name] = None for fallback; only set for accepted layers.
-  KC-FIX-08  Robust forward sanity check.
-  KC-FIX-09  Idempotence flag on the model.
-  KC-FIX-10  skip_should_compress_filter option.
-  KC-FIX-11  min_layer_dim option.
-  KC-FIX-12  Debug logging for no-target diagnostic.
-  KC-FIX-13  Empty target_layers explicitly means "no targets".
-  KC-FIX-14  should_compress_linear wrapped in try/except.
-  KC-FIX-15  layer_modes[name] only set when layer is accepted.
 """
 
 from __future__ import annotations
