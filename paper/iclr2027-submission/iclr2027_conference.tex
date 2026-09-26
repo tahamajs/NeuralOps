@@ -81,6 +81,8 @@ Sparse attention restricts token interaction to local sliding windows or hardwar
 \section{Problem Formulation and Non-Expansion Guarantee}
 \label{sec:formulation}
 
+This section formalizes the mathematical setting of our study. We define the standard multi-head self-attention (MHSA) layer, establish the parameter-counting conventions used throughout all experiments, and introduce the \textit{Non-Expansion Invariant} --- the central constraint that determines whether a given attention mechanism qualifies as a genuine compression algorithm for edge deployment. Throughout, we use DistilBERT-base as the reference architecture with hidden dimension $d=768$, $h=12$ attention heads, and total parameter count $|\theta(M_0)| = 66{,}955{,}779$.
+
 \subsection{Standard Multi-Head Attention}
 Let $X \in \mathbb{R}^{L \times d}$ denote the input sequence of length $L$ and hidden dimension $d$. In DistilBERT-base, $d=768$, partitioned across $h=12$ heads with head dimension $d_k = d/h = 64$. Multi-head self-attention projects $X$ into Query, Key, Value, and Output spaces via parameter matrices $W_q, W_k, W_v, W_o \in \mathbb{R}^{d \times d}$:
 \begin{equation}
@@ -111,6 +113,8 @@ When factoring four attention projections ($Q, K, V, O$) alongside intermediate 
 
 \section{Experimental Methodology}
 \label{sec:setup}
+
+We design a rigorous, fully automated evaluation pipeline that addresses the three deficiencies identified in Section~\ref{sec:intro}: task diversity, parameter transparency, and controlled architectural injection. All 271 candidate modules are evaluated identically --- no module-specific tuning of hyperparameters, no cherry-picked benchmarks, and no suppression of parameter expansion signals. The pipeline is reproducible on both GPU servers and Apple Silicon without code modification (see Appendix~\ref{app:reproducibility} for exact commands).
 
 \subsection{Backbone and Fine-Tuning Checkpoints}
 We use DistilBERT-base-uncased \citep{sanh2019distilbert} as our standardized evaluation backbone (6 transformer encoder layers, hidden dimension $d=768$, $h=12$ attention heads, intermediate dimension $d_{ff}=3072$, totaling 66.9M parameters). To establish rigorous uncompressed reference checkpoints, we fine-tune DistilBERT-base on three downstream benchmarks spanning different task granularities:
@@ -161,6 +165,8 @@ Hardware Environment & NVIDIA RTX 4070 & NVIDIA RTX 4070 & NVIDIA RTX 4070 \\
 
 \section{Empirical Results}
 \label{sec:results}
+
+We present results for all 271 evaluated modules, organized by parameter profile. Of the 271 entries, 120 achieve PASS status (satisfying the non-expansion constraint and exceeding random chance), 80 are classified as REJECTED\_EXPANSION, 43 are architectural aliases without standalone module classes, and the remaining 28 are failures or timeouts. Among the 120 PASS modules, 45 achieve genuine parameter compression (compression rate $> 1.05\times$) and 75 are parameter-neutral ($\approx 1.00\times$). Across all benchmarks, we identify two dominant performance regimes: \textit{rank-truncation} methods (SVD-based) that excel on binary SST-2 but degrade on multi-class MNLI, and \textit{vector quantization} methods that preserve full geometric span and maintain near-baseline accuracy under high compression. These two regimes are analyzed in detail in Section~\ref{sec:deep_analysis}.
 
 \subsection{Real Attention Compression Comparison}
 We first evaluate mechanisms that yield genuine parameter reduction ($\text{compression\_rate} > 1.05$). Table~\ref{tab:main_compression} presents the top 15 compression methods evaluated across SST-2, MNLI, and AG News.
@@ -297,6 +303,8 @@ Table~\ref{tab:multiseed} reports mean $\pm$ standard deviation over 3 random se
 \section{Deep Analysis: Why Linear Attention Approximations Fail on Reasoning Tasks}
 \label{sec:deep_analysis}
 
+The empirical gap between SST-2 and MNLI performance --- conspicuous across all rank-truncation methods --- is not accidental. In this section we derive its mathematical root cause and explain precisely why it does not affect vector quantization. The core claim is that low-rank factorization of attention weight matrices introduces a \textit{rank bottleneck} on the bilinear matching operator that cross-sentence entailment depends on, while codebook quantization preserves the full coordinate span of the weight space. We support this claim with the per-layer reconstruction error data (Appendix~\ref{app:recon_error}), which shows that \texttt{kmeans} achieves an $11.7\times$ lower Frobenius reconstruction error than \texttt{a3} ($0.0322$ vs.\ $0.3769$), directly corresponding to its $+9.2$-point advantage on MNLI.
+
 \subsection{The Rank-Truncation Bottleneck}
 Under rank-truncation methods (e.g., SVD, AASVD, AdaSVD), an attention weight matrix $W \in \mathbb{R}^{d \times d}$ is approximated by a rank-$r$ factorization:
 \begin{equation}
@@ -341,7 +349,9 @@ Because each weight element is mapped to a high-dimensional centroid rather than
 \end{enumerate}
 
 \subsection{Role of Moderate Parameter Expansion}
-We note that moderate-expansion methods ($\le 20\%$), such as 2-expert routing or localized sparse windowing, retain near-baseline reasoning capacity by dynamically allocating capacity. However, when edge deployment strictly requires $|\theta(M')| \le |\theta(M_0)|$, discrete codebooks provide the only mathematically sound approach to achieve high compression without degrading relational representation rank.
+Moderate-expansion methods ($\Delta_\theta \le 20\%$) occupy an interesting intermediate regime. Architectures such as \texttt{inject\_aegis\_v6} ($+25\%$ parameters) and \texttt{jamba\_info} ($+37.5\%$ parameters) achieve MNLI scores of 79.2\% and 62.1\% respectively, demonstrating that parameter expansion alone does not guarantee reasoning retention --- the architectural mechanism matters as much as the budget. By contrast, carefully designed 2-expert mixture routing and localized sparse windowing (e.g., \texttt{linformer} with auxiliary projection heads) retain near-baseline SST-2 performance (90.25\%) precisely because their extra capacity is allocated to token interaction, not arbitrary weight inflation.
+
+From an edge deployment standpoint, moderate expansion violates the non-expansion invariant by definition, removing these methods from consideration for memory-constrained scenarios. Our data show that the only architectures achieving both high MNLI accuracy ($\ge 81\%$) and genuine parameter compression ($> 1.05\times$) are those based on discrete codebooks (\texttt{kmeans}: 81.40\% at $2.73\times$). This establishes vector quantization as the uniquely viable approach at the intersection of high compression and multi-class reasoning retention. Any moderate-expansion method that reports competitive MNLI numbers implicitly benefits from its larger parameter budget, and its apparent accuracy advantage over compressed methods is \textit{not} a fair comparison under the non-expansion constraint.
 
 \section{Limitations and Negative Results}
 \label{sec:limitations}
@@ -367,6 +377,8 @@ Checkpoints: \url{https://huggingface.co/Hooshaai/distilbert-sst2}, \url{https:/
 \appendix
 \section{Complete Methodological Details}
 \label{app:methodology}
+
+This appendix provides additional details on the experimental design to enable full reproducibility. Section~\ref{app:methodology} covers the fine-tuning hyperparameters for the three base checkpoints. All sweep configurations (batch size, LoRA rank, learning rate, optimizer) are identical for all 271 module evaluations. Hardware configurations are described in Section~\ref{sec:setup}; code and pretrained checkpoints are available at the URLs listed in the main paper.
 
 \subsection{Hyperparameters for Baseline Checkpoints}
 Table~\ref{tab:hyperparams} specifies the fine-tuning hyperparameters used to obtain the base checkpoints on Hugging Face.
