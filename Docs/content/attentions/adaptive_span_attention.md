@@ -231,7 +231,7 @@ Emerging frontiers in dynamic receptive field gating explore multi-scale archite
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **54.40%** | +3.40% | 0.4714 | 1.00x | 6 | N/A | 2026-09-18 |
 | **roberta-base** | ag_news | `PASS` | 74.50% | **80.40%** | +5.90% | 0.7884 | 1.00x | 12 | N/A | 2026-09-18 |
 | **gpt2** | ag_news | `PASS` | 79.70% | **82.00%** | +2.30% | 0.8134 | 1.00x | 12 | N/A | 2026-09-18 |
-| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **91.06%** | +0.00% | 0.9137 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-adaptive-span](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-adaptive-span) | 2026-09-19 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.60%** | +0.00% | 0.9099 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-adaptive-span](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-adaptive-span) | 2026-09-27 |
 
 
 The empirical evaluation of `adaptive_span_attention` systematically assesses task accuracy recovery across diverse foundation architectures, analyzes the architectural dynamics of causal sequence aggregation, profiles hardware scaling boundaries, and probes the converged hierarchical receptive fields.
