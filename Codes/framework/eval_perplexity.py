@@ -48,9 +48,6 @@ def compute_perplexity(model, tokenizer, dataset_name="wikitext-2-raw-v1",
             prev_end_loc = end_loc
 
             del outputs, input_ids, target_ids
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-
             if end_loc == encodings.input_ids.size(1):
                 break
 
