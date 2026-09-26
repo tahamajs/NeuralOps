@@ -10,31 +10,6 @@ Mathematical Formulation:
   4. Low-Rank Projection:        B = Q^T M = U S V^T
      W_osp = (Q U_r S_r V_r^T) L^{-1}
 
-Bug-fix map (v2):
-  OSP-FIX-01  is_custom_attention = False on compressor (it is not attention).
-  OSP-FIX-02  **Preserve LoRA wrapper**: if the target module has a
-              `base_layer`, we set `module.base_layer = new_layer` instead
-              of replacing the entire wrapper. This keeps any external LoRA
-              adapters alive and consistent with the parent module's API.
-  OSP-FIX-03  **Accurate parameter accounting**: count only the BASE
-              parameters (not LoRA) for the `total_orig_params` baseline,
-              and count the actual `new_layer.parameters()` for the
-              compressed side.
-  OSP-FIX-04  **Simplified, correct rank calculation**:
-              rank = clamp(int(min(d_out, d_in) * rank_ratio), min_rank, max_rank).
-  OSP-FIX-05  **Forward sanity check** no longer calls `dummy.float()`
-              (which would corrupt int64 input_ids). Tries `input_ids=` first,
-              then positional.
-  OSP-FIX-06  **Deduplicated hooks**: register at most one hook per unique
-              base weight id, to avoid double-counting covariance for
-              shared/tied weights.
-  OSP-FIX-07  **Skip already-compressed modules** (`OptimalSubspaceLoRALinear`).
-  OSP-FIX-08  **Fallback layer accounting** now adds the original layer's
-              parameter count only once.
-  OSP-FIX-09  Omega is always on the same device as M.
-  OSP-FIX-10  Empty-rank guard (r = 0) treated as a fallback.
-  OSP-FIX-11  Output projection dtype preserved (uses original raw_w.dtype).
-  OSP-FIX-12  Removed dead `power_iters` on already-converged subspace.
 """
 
 from __future__ import annotations

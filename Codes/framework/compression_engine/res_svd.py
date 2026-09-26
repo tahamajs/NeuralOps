@@ -3,32 +3,6 @@
 W = U_base V_base^T + alpha * B A
 where B A is initialized from the top-k residual singular directions of W - W_base.
 
-Bug-fix map (v2):
-  RES-01  Removed broken SDPA try/except with undefined vars.
-  RES-02  copy_weights uses shape-aware init.
-  RES-03  temp_linear constructed on same device/dtype as target.
-  RES-04  Raise on missing mandatory weights.
-  RES-05  RoPE dtype-safe + past_len offset.
-  RES-06  Robust attention-mask helper.
-  RES-07  Unified head_mask.
-  RES-08  Recursion guard in inject_res_svd.
-  RES-09  is_nested_encoder consistently set.
-  RES-10  Guard bias before zero_().
-  RES-11  sample_x on correct device.
-  RES-12  No dangling self.config.
-  RES-13  Cross-attention raises NotImplementedError.
-  RES-14  rank always passed to super().
-  RES-15  **KV-cache concat implemented for past_key_value (tuple + DynamicCache).**
-  RES-16  **4D attention_mask is added directly to scores (preserves causal
-           structure) instead of being reduced to a valid-token mask.**
-  RES-17  **Safe base_U/weight device/dtype resolution with fallback.**
-  RES-18  **Causal mask extended to N × (N + past_len) when cache is present.**
-  RES-19  **Missing aliases added (o_proj, dense, c_proj, out_lin).**
-  RES-20  **load_state_dict(strict=False) with explicit missing/unexpected
-           key logging.**
-  RES-21  **ResSVDLinear.from_linear guarded with try/except.**
-  RES-22  **target_layer_idx used to filter which layers to inject.**
-  RES-23  **RoPE slicing checks availability before slicing.**
 """
 
 from __future__ import annotations

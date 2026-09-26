@@ -2,17 +2,6 @@
 Bonsai: Iterative Magnitude and Taylor Pruning (IMP) with Gradient Descent Recovery
 & [CLS] Routing Protection. Registered in COMPRESSOR_REGISTRY as 'bonsai' and 'bonsai_pruner'.
 
-Bug-fix map:
-  BN-FIX-01  target_attention_only and protect_cls are independent filters.
-  BN-FIX-02  mask registered as non-persistent buffer.
-  BN-FIX-03  mask dtype follows base weight dtype.
-  BN-FIX-04  explicit clone for iterative W updates.
-  BN-FIX-05  recovery_steps capped for safety.
-  BN-FIX-06  step_size clamped to a small maximum.
-  BN-FIX-07  LoRA parameter transfer uses data copy, not reference.
-  BN-FIX-08  weight mutation under torch.no_grad().
-  BN-FIX-09  forward sanity check includes attention_mask.
-  BN-FIX-10  adaptive_sparsity applied per layer with a floor/ceiling.
 """
 
 from __future__ import annotations

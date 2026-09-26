@@ -8,22 +8,6 @@ Formulation:
   C_YX ≈ U_r Σ_r V_r^T               (truncated SVD)
   W_distill = U_r Σ_r V_r^T          (distilled weight)
 
-Bug-fix map:
-  LL-FIX-01  is_custom_attention = False.
-  LL-FIX-02  Registry collision resolved (class vs factory).
-  LL-FIX-03  Safe device resolution.
-  LL-FIX-04  r always bound; never rely on locals().
-  LL-FIX-05  Recursion guard in factory.
-  LL-FIX-06  Debug logging for no-target diagnostic.
-  LL-FIX-07  Forward sanity check.
-  LL-FIX-08  Idempotence flag on model.
-  LL-FIX-09  skip_should_compress_filter option.
-  LL-FIX-10  min_layer_dim option.
-  LL-FIX-11  Tokenizer resolution from config.
-  LL-FIX-12  Explicit note about parameter storage.
-  LL-FIX-13  compression_stats written to model.
-  LL-FIX-14  Depth-bounded traversal.
-  LL-FIX-15  compressed_layers initialized in __init__.
 """
 
 from __future__ import annotations

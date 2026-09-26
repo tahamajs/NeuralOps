@@ -12,33 +12,6 @@ Algorithm:
   4. LayerNorm recalibration.
   5. Fallback to dense if error exceeds threshold.
 
-Fixes (v2):
-  A3-FIX-01  **Removed `is_custom_attention = True`** from A3Compressor
-             (compressors are not attention modules).
-  A3-FIX-02  **Hooks only on target linear layers**, not on all nn.Linear.
-             Non-target layers (lm_head, classifier, pooler) are excluded.
-  A3-FIX-03  **Deprecated `use_fisher` alias kept** but internal variable
-             name is now `use_energy_weighting`.
-  A3-FIX-04  **STRS candidates are now built dynamically** from a geometric
-             grid between `r_floor` and `r_ceiling`.
-  A3-FIX-05  **Removed `__iter__/__getitem__` from `A3FactorizedLinear`** —
-             they broke `nn.Module` semantics. Callers now use the explicit
-             return tuple from `compress_linear`.
-  A3-FIX-06  **`_last_r_ceiling` moved to `self._last_r_ceiling` still, but
-             always initialized in `__init__`.**
-  A3-FIX-07  **Padding filter uses an attention-mask-aware path** when a
-             mask is present; otherwise uses `(x != 0).any(dim=-1)` which
-             is more robust than `sum(abs) > 1e-5`.
-  A3-FIX-08  **Covariance is accumulated as fp32 but optionally downcast
-             to fp16 for memory. `cov_dtype` argument.**
-  A3-FIX-09  **Storage accounting via `orig_storage_bytes` and
-             `comp_storage_bytes`.**
-  A3-FIX-10  **`_compressed_params` explicitly initialized to 0.**
-  A3-FIX-11  **STRS always respects `S.shape[0]`.**
-  A3-FIX-12  **Cholesky fallback logs a warning.**
-  A3-FIX-13  **`freeze_base_weights` is idempotent.**
-  A3-FIX-14  **`reset_parameters` handles non-square V/U orthogonality
-             correctly** (uses `torch.linalg.qr` when needed).
 """
 
 from __future__ import annotations

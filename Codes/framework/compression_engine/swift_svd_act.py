@@ -16,26 +16,6 @@ Algorithm:
        B = sqrt(S_m) · Vt_m @ V_act^T
   5. Replace the dense layer with SVDLinear (or fall back to plain SVD).
 
-Fixes (v2):
-  SW-FIX-01  Rank respects param_cap strictly (dense break-even minus 1).
-  SW-FIX-02  **_normalize_calibration_batches heuristic fixed.** A single
-             batch of (input_ids, attention_mask) is no longer split into two
-             batches.
-  SW-FIX-03  LoRA rank detection robust across r / lora_r / lora_A shapes.
-  SW-FIX-04  Online cross-covariance accumulation (no CPU memory blow-up).
-  SW-FIX-05  Forward sanity check simplified.
-  SW-FIX-06  Hooks always cleaned up via try/finally.
-  SW-FIX-07  cross_cov computed in float64 for numerical stability.
-  SW-FIX-08  weight-sharing detection robust.
-  SW-FIX-09  **Removed `is_custom_attention = True`.**
-  SW-FIX-10  **Honest byte accounting.**
-  SW-FIX-11  **GQA asymmetric guard always active.**
-  SW-FIX-12  **target_modules=[] treated as None.**
-  SW-FIX-13  **Rank selection logic clarified.**
-  SW-FIX-14  **Fallback path preserves original module untouched.**
-  SW-FIX-15  **Forward check handles models without config.vocab_size.**
-  SW-FIX-16  **fp64 cross-covariance accumulation is optional (fp32 default
-             for large models).**
 """
 
 from __future__ import annotations

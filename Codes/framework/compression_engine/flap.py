@@ -6,14 +6,6 @@ Production hardened for multi-architecture compatibility
 (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with reconstruction validation,
 Conv1D support, and safe fallback.
 
-Bug-fix map:
-  FL-FIX-01  structured_24 reports actual sparsity (not hard-coded 0.5).
-  FL-FIX-02  weight copy under torch.no_grad().
-  FL-FIX-03  effective_parameter_ratio uses actual mask sparsity.
-  FL-FIX-04  multiple calibration batches supported.
-  FL-FIX-05  activation variance accumulates across batches (mean of per-batch variance).
-  FL-FIX-06  forward sanity check includes attention_mask.
-  FL-FIX-07  factory validated kwargs and safe defaults.
 """
 
 from __future__ import annotations

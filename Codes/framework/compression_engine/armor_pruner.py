@@ -1,24 +1,6 @@
 """
 ARMOR: Adaptive Resilient Matrix Orthogonal Rank Pruning (2:4 Sparse Core + Low-Rank Correction).
 Registered in COMPRESSOR_REGISTRY as 'armor_pruner', 'armor', and 'armor_compressor'.
-
-Bug-fix map (updated):
-  AR-FIX-01  LoRA scaling: alpha is set to actual_rank so scaling = 1.0.
-             SVD residual is reproduced exactly; no silent 1/rank attenuation.
-  AR-FIX-02  sparse_mask is non-persistent (regenerable).
-  AR-FIX-03  forward cast dtype-safe for scaling.
-  AR-FIX-04  apply_24_structured_mask mask handling robust (bool or float).
-  AR-FIX-05  Conv1D detection uses class-name rather than nf-only.
-  AR-FIX-06  finite-check via torch.isfinite().all() for speed.
-  AR-FIX-07  seen_weights applied to the actual weight tensor.
-  AR-FIX-08  recalibrate_layernorms guarded by presence of calibration data.
-  AR-FIX-09  weight property dtype-consistent (compute in fp32, cast to base).
-  AR-FIX-10  factory validates rank <= min(in, out).
-  AR-FIX-11  sparse_weight stores RAW weight (mask applied once in forward).
-  AR-FIX-12  activation collection is memory-efficient (per-channel mean).
-  AR-FIX-13  GQA asymmetric check is always active, not gated by skip_attention_qkv.
-  AR-FIX-14  stats distinguish storage vs effective compression.
-  AR-FIX-15  projection O skip is opt-in via skip_attention_output flag.
 """
 
 from __future__ import annotations

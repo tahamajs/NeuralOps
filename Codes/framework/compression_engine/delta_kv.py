@@ -8,21 +8,6 @@ Mathematical formulation:
   R = sparse(|W - L|; 1 - sparsity)     (top-k residual magnitudes)
   W_compressed = L + R
 
-Bug-fix map:
-  DKV-FIX-01  is_custom_attention = False on compressor.
-  DKV-FIX-02  Class registered under *_class; factory under 'delta_kv'.
-  DKV-FIX-03  Fixed min(W.shape) → min(W.shape[0], W.shape[1]).
-  DKV-FIX-04  DeltaKVStore imported and used (KV-cache mode) or removed.
-  DKV-FIX-05  Explicit note: weight-only rewrite (no param reduction).
-  DKV-FIX-06  skip_should_compress_filter option.
-  DKV-FIX-07  Debug logging for target-module scan.
-  DKV-FIX-08  Robust forward sanity check.
-  DKV-FIX-09  Idempotence flag on the model.
-  DKV-FIX-10  requires_grad handled at target module level.
-  DKV-FIX-11  min_layer_dim option.
-  DKV-FIX-12  Parameter accounting reflects actual storage (dense weight).
-  DKV-FIX-13  DeltaKVStore topk dtype alignment.
-  DKV-FIX-14  compression_stats written to model.
 """
 
 from __future__ import annotations

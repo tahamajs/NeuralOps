@@ -14,25 +14,6 @@ Mathematical formulation:
 Registered: 'rotational_slicegpt_int4', 'rotational_slicegpt',
             'rotational_slicegpt_int4_factory', 'rotational_slicegpt_factory'.
 
-Bug-fix map:
-  RS-FIX-01  AstroQuantizer now returns (int8 indices, fp32 centroids) so the
-             stored representation is genuinely 4-bit (indices) + small
-             centroid table, not fp32 values that merely LOOK quantized.
-  RS-FIX-02  RotationalSliceGPTINT4Linear stores indices (int8) and centroids
-             (fp32, 16 values), reconstructing W_quant on-the-fly. Actual
-             memory now shrinks by ~4x on the quantized tensor.
-  RS-FIX-03  Default r_ratio lowered to 0.4 so parameter count actually
-             decreases; a warning is emitted if r_ratio ≥ 0.5.
-  RS-FIX-04  is_custom_attention = False. This is a compressor, not attention.
-  RS-FIX-05  Q is derived from a deterministic seed so compress() is
-             reproducible across runs.
-  RS-FIX-06  P_r is built via vectorized scatter rather than a Python loop.
-  RS-FIX-07  Layer activation collection only keeps per-channel mean, not full
-             tensors, avoiding OOM on large models.
-  RS-FIX-08  Q and P_r are combined into a single (D_in, r) buffer.
-  RS-FIX-09  Honest storage accounting: reports actual int8 bytes vs original.
-  RS-FIX-10  Vectorized block quantization for the sliced weight, avoiding the
-             O(r · D_out · C) per-column loop.
 """
 
 from __future__ import annotations

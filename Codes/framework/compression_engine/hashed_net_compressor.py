@@ -23,22 +23,6 @@ This implementation is correct but should be treated as a research baseline,
 not a production compressor. For real compression, use SVD (UniQL), MLA, or
 structured pruning (ARMOR, FLAT-LLM).
 
-Bug-fix map (v2):
-  HN-FIX-01  is_custom_attention = False.
-  HN-FIX-02  get_weight() caches result and invalidates on parameter version.
-  HN-FIX-03  Hash function uses splitmix-style mixing with int64-safe ops.
-  HN-FIX-04  Removed .abs() from bucket index (unbiased distribution).
-  HN-FIX-05  hash_idx and sign_val are non-persistent (recomputed on load).
-  HN-FIX-06  hash_idx stored as int32, sign as int8 (memory-honest).
-  HN-FIX-07  energy_scale removed (it INCREASES error; the least-squares
-             optimum is already produced by scatter mean).
-  HN-FIX-08  Honest byte accounting: counts buffers + table + LoRA.
-  HN-FIX-09  target_attention_only pre-pass removed.
-  HN-FIX-10  compression_ratio semantics documented and bounded.
-  HN-FIX-11  Fallback preserves the original module untouched.
-  HN-FIX-12  Empty bucket init deterministic (based on layer seed).
-  HN-FIX-13  LoRA params counted in storage accounting.
-  HN-FIX-14  from_linear dtype/device safe.
 """
 
 from __future__ import annotations

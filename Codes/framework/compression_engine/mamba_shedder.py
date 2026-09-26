@@ -18,32 +18,6 @@ dense parameter counter will still read 1.0 for `compression_rate` because
 the module signature is preserved; the true storage savings are reported in
 `storage_compression_ratio` and `storage_reduction_pct`.
 
-Bug-fix map (v2):
-  MS-FIX-01  is_custom_attention = False (compressor, not attention).
-  MS-FIX-02  Removed misleading kwargs.pop() calls.
-  MS-FIX-03  Shape mismatch → warning + skip.
-  MS-FIX-04  Multiple calibration batches supported.
-  MS-FIX-05  Skip LoRA / SVDLinear / already-pruned.
-  MS-FIX-06  Safe parameter-based device resolution.
-  MS-FIX-07  random module import at top, seeded locally.
-  MS-FIX-08  Debug logging for no-target.
-  MS-FIX-09  tokenizer falls back to model.config.tokenizer.
-  MS-FIX-10  Fast mean via sum/len.
-  MS-FIX-11  skip_should_compress_filter option.
-  MS-FIX-12  Explicit note in stats.
-  MS-FIX-13  Idempotence flag on model.
-  MS-FIX-14  No cross-attn assumption.
-  MS-FIX-15  **Real storage reduction:** Pruned layers are replaced with
-             `MambaShedderPrunedLinear` which stores only the kept rows.
-  MS-FIX-16  **`_is_target_module` cached** (single pass).
-  MS-FIX-17  **Forward sanity check** no longer calls `dummy.float()`.
-  MS-FIX-18  **LoRA wrapper preserved** — `module.base_layer` replaced.
-  MS-FIX-19  **Honest storage accounting** (bytes, not param counts).
-  MS-FIX-20  **Layer shedding bias check** — refuse to shed the last
-             layer if the module is output-dependent.
-  MS-FIX-21  **`_mamba_shed_done` respected** but user can force re-shed
-             by resetting the flag externally.
-  MS-FIX-22  **Delete dead `max_len` comparison.**
 """
 
 from __future__ import annotations
