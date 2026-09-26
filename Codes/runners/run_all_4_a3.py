@@ -1,3 +1,4 @@
+from pathlib import Path
 import subprocess
 import os
 import sys
@@ -5,13 +6,19 @@ import time
 import json
 import pandas as pd
 
-os.chdir(r"PROJECT_ROOT")
+HERE = Path(__file__).resolve().parent
+PROJECT_ROOT = HERE.parent.parent
+if os.path.exists(r"PROJECT_ROOT"):
+    os.chdir(r"PROJECT_ROOT")
+else:
+    os.chdir(PROJECT_ROOT)
+RESULTS_DIR = Path("results").resolve()
 
 models = [
     {
         "name": "DistilBERT",
         "cmd": (
-            r'"sys.executable" -u Codes\framework\run_quality_sweep.py '
+            f'"{sys.executable}" -u Codes\framework\run_quality_sweep.py '
             r"--model models\distilbert_sst2 "
             r"--model_family bert "
             r"--dataset sst2 "
@@ -24,12 +31,12 @@ models = [
             r"--precision fp16 "
             r"--fresh"
         ),
-        "summary": r"D:\SVD_Project\results\unified_a3\distilbert\summary.csv",
+        "summary": r"results\unified_a3\distilbert\summary.csv",
     },
     {
         "name": "RoBERTa",
         "cmd": (
-            r'"sys.executable" -u Codes\framework\run_quality_sweep.py '
+            f'"{sys.executable}" -u Codes\framework\run_quality_sweep.py '
             r"--model models\roberta_sst2 "
             r"--model_family roberta "
             r"--dataset sst2 "
@@ -43,12 +50,12 @@ models = [
             r"--parent_checkpoint results\roberta_sst2_lora_baseline\finetuned_model.pt "
             r"--fresh"
         ),
-        "summary": r"D:\SVD_Project\results\unified_a3\roberta\summary.csv",
+        "summary": r"results\unified_a3\roberta\summary.csv",
     },
     {
         "name": "GPT-2",
         "cmd": (
-            r'"sys.executable" -u Codes\framework\run_quality_sweep.py '
+            f'"{sys.executable}" -u Codes\framework\run_quality_sweep.py '
             r"--model models\gpt2_sst2 "
             r"--model_family gpt "
             r"--dataset sst2 "
@@ -62,7 +69,7 @@ models = [
             r"--parent_checkpoint results\gpt2_sst2_lora_baseline\finetuned_model.pt "
             r"--fresh"
         ),
-        "summary": r"D:\SVD_Project\results\unified_a3\gpt2\summary.csv",
+        "summary": r"results\unified_a3\gpt2\summary.csv",
     },
 ]
 
@@ -114,8 +121,8 @@ res_df = pd.DataFrame(results_summary)
 print(res_df.to_markdown(index=False) if hasattr(res_df, "to_markdown") else res_df.to_string(index=False), flush=True)
 
 # Save consolidated results to JSON and CSV
-out_csv = r"D:\SVD_Project\results\unified_a3_4models_summary.csv"
-out_json = r"D:\SVD_Project\results\unified_a3_4models_summary.json"
+out_csv = r"results\unified_a3_4models_summary.csv"
+out_json = r"results\unified_a3_4models_summary.json"
 res_df.to_csv(out_csv, index=False)
 with open(out_json, "w") as f:
     json.dump(results_summary, f, indent=2)
