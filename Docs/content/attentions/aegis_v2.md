@@ -574,7 +574,7 @@ print(f"[PASS] aegis_v2 forward logits shape:", outputs.logits.shape)
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.25%** | -0.35% | 0.9061 | 1.09x | 0 | [svd-linear-attention-distilbert-sst2-aegis-v2](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-v2) | 2026-09-25 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **89.56%** | -1.04% | 0.8992 | 1.09x | 0 | [svd-linear-attention-distilbert-sst2-aegis-v2](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-v2) | 2026-09-27 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.50% | **64.10%** | -17.40% | 0.6398 | 1.09x | 0 | [svd-linear-attention-distilbert-mnli-full-aegis-v2](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-aegis-v2) | 2026-09-23 |
 | **distilbert-base-uncased-finetuned-sst-2-english** | sst2 | `PASS` | 90.60% | **89.79%** | -0.81% | 0.9014 | 1.09x | 0 | [svd-linear-attention-distilbert-base-uncased-finetuned-sst-2-english-aegis-v2](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-base-uncased-finetuned-sst-2-english-aegis-v2) | 2026-09-23 |
 | **distilbert-base-uncased** | sst2 | `PASS` | 54.59% | **72.02%** | +17.43% | 0.7672 | 1.09x | 0 | [svd-linear-attention-distilbert-base-uncased-aegis-v2](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-base-uncased-aegis-v2) | 2026-09-24 |
