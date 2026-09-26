@@ -3,18 +3,6 @@ ADMM Pruner: Alternating Direction Method of Multipliers for Structured & Semi-S
 with Layer-Wise Reconstruction Distillation, STE, and Dynamic Rho.
 Registered in COMPRESSOR_REGISTRY as 'admm_pruner' and 'admm_pruner_distill'.
 
-Bug-fix map:
-  AD-FIX-01  apply_24_structured_mask handles bool/float mask.
-  AD-FIX-02  bounded, scheduled distill step (no runaway lr).
-  AD-FIX-03  no_grad wrappers around ADMM state updates.
-  AD-FIX-04  best_mask cloned for safe storage.
-  AD-FIX-05  ADMMMaskedLinear covers Conv1D and LoRA base layers.
-  AD-FIX-06  ADMMSTEPrune dtype-consistent.
-  AD-FIX-07  mask registered as non-persistent buffer.
-  AD-FIX-08  X_calib cast to W0 dtype.
-  AD-FIX-09  calibration hook respects remaining budget.
-  AD-FIX-10  backward returns grad_output directly (no clone).
-  AD-FIX-11  saliency uses |W + U| (proper ADMM projection).
 """
 
 from __future__ import annotations

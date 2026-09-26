@@ -1,0 +1,41 @@
+[
+  {
+    "Model": "distilbert",
+    "Exit Code": 0,
+    "Baseline Acc": "90.71%",
+    "GreCoDeC Acc": "90.71%",
+    "Delta Acc": "+0.00%",
+    "F1": "0.9099",
+    "Status": "PASS_NO_COMPRESSION",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "174.8 MB",
+    "Time (s)": "397.3"
+  },
+  {
+    "Model": "roberta",
+    "Exit Code": 0,
+    "Baseline Acc": "94.38%",
+    "GreCoDeC Acc": "94.38%",
+    "Delta Acc": "+0.00%",
+    "F1": "0.9445",
+    "Status": "PASS_NO_COMPRESSION",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "292.7 MB",
+    "Time (s)": "285.4"
+  },
+  {
+    "Model": "gpt2",
+    "Exit Code": 15,
+    "Baseline Acc": "N/A",
+    "GreCoDeC Acc": "89.33%",
+    "Delta Acc": "N/A",
+    "F1": "0.8942",
+    "Status": "PASS_NO_COMPRESSION",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "382.1 MB",
+    "Time (s)": "333.0"
+  }
+]

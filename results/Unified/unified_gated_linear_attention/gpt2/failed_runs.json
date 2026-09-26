@@ -1,0 +1,12 @@
+[
+  {
+    "module": "gated_linear_attention",
+    "model": "models\\gpt2_sst2",
+    "dataset": "sst2",
+    "status": "SKIP_GPT_TIMEOUT",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "Module pipeline exceeded hard 180s timeout",
+    "timestamp": "2026-09-24T18:46:48.546698"
+  }
+]

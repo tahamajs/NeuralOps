@@ -1,4 +1,4 @@
-r"""Decay Linear Attention (DecayLinearAttention).
+"""Decay Linear Attention (DecayLinearAttention).
 
 Multi-head bidirectional & causal linear recurrent attention with data-dependent exponential decay gating,
 ELU+1 feature maps, denominator normalization, and pretrained weight transfer.

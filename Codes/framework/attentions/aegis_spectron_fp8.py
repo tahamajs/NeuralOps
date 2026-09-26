@@ -1,4 +1,4 @@
-r"""
+"""
 Aegis-Spectron-FP8 Hybrid Attention (Final Corrected).
 
 Three-branch attention with spectral entropy routing:
@@ -6,24 +6,6 @@ Three-branch attention with spectral entropy routing:
   2. Global low-rank ELU+1 linear attention (O(N*r*D))
   3. Linear state recurrence (O(N*D), chunked, numerically stable)
 
-Bug-fix map (all 17 fixes):
-  SP-FIX-01  FP8 STE: quantize in eval, straight-through gradient in train.
-  SP-FIX-02  token_valid propagated to global and linear branches.
-  SP-FIX-03  head_mask and past_key_value implemented (KV cache + offset).
-  SP-FIX-04  Chunked causal cumsum in _global_branch (no 5D tensor).
-  SP-FIX-05  Numerically stable chunked linear recurrence (state-based).
-  SP-FIX-06  Removed dead linear_A parameter.
-  SP-FIX-07  Decoder detection via helper function.
-  SP-FIX-08  Config class simplified (no dataclass + custom __init__ mix).
-  SP-FIX-09  RoPE uses past_len offset for KV-cache decoding.
-  SP-FIX-10  Single causal mask per branch.
-  SP-FIX-11  output_attentions honored (returns local attn).
-  SP-FIX-12  Router init corrected (zero weight + bias-only start).
-  SP-FIX-13  bidir_gate per-head, not per-feature.
-  SP-FIX-14  FP8 clamp respects format max value.
-  SP-FIX-15  Separate Q/K low-rank projections (svd_U_q, svd_U_k).
-  SP-FIX-16  Padding masked from routing entropy.
-  SP-FIX-17  _global_branch shapes: operate on (B, N, rank), reshape at the end.
 """
 
 import logging

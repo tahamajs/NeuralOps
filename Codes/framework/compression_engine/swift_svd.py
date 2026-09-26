@@ -2,15 +2,6 @@
 Swift-SVD: fast closed-form truncated SVD with symmetric square-root singular value distribution.
 Registered as 'swift_svd'.
 
-Bug-fix map:
-  SV-FIX-01  redundant exception classes in SVD try/except collapsed.
-  SV-FIX-02  _compressed_params initialized in __init__.
-  SV-FIX-03  raw_shape reporting correct for both Linear and Conv1D.
-  SV-FIX-04  LoRA transfer via data-shape check (not attribute-name guessing).
-  SV-FIX-05  get_compression_stats + _count_params guarded.
-  SV-FIX-06  cross-device handling for CPU-only SVD fallback.
-  SV-FIX-07  weight-sharing detection across wrappers.
-  SV-FIX-08  max_retries=0 handled without division by zero.
 """
 
 from __future__ import annotations

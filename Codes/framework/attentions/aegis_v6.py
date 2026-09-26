@@ -1,12 +1,6 @@
-r"""
+"""
 AEGIS-Attention V6 (Final-Final Corrected).
 
-Fixes applied in this revision:
-  FIX-C3  _causal_linear_attention: corrected unsqueeze (-2 not -3) for V outer product.
-  FIX-C4  _causal_linear_attention: handles N != N_k (decode with cache) correctly.
-  FIX-S1  _sliding_window_attention: absolute positions (past_len offset) for band.
-  FIX-S2  _sliding_window_attention: causal band also uses absolute positions.
-  FIX-M3  _prepare_valid_mask: causal offset by past_len (already fixed, kept).
 """
 
 import logging

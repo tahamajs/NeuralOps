@@ -1,0 +1,191 @@
+2026-09-24 15:58:12,123 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 15:58:12,123 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+2026-09-24 15:58:12,146 [INFO] QwenQualitySweep: Running 2 attention modules in-memory sequentially
+2026-09-24 15:58:12,556 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 201/201 [00:00<00:00, 2217.41it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta_sst2
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-09-24 15:58:13,860 [INFO] QwenQualitySweep: model=models\roberta_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 15:58:13,860 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 15:58:13,860 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 15:58:13,860 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 15:58:13,861 [INFO] QwenQualitySweep:   model:             models\roberta_sst2
+2026-09-24 15:58:13,861 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-24 15:58:13,861 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-24 15:58:13,861 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-24 15:58:13,861 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 15:58:13,861 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 15:58:13,862 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 15:58:13,862 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 15:58:13,862 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\unified_asvd\roberta\finetuned_model.pt' does not exist; attempting automatic fallback search.
+2026-09-24 15:58:13,874 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\roberta_sst2_lora_baseline\finetuned_model.pt
+2026-09-24 15:58:13,883 [WARNING] QwenQualitySweep: Missing keys during load: ['roberta.embeddings.word_embeddings.weight', 'roberta.embeddings.token_type_embeddings.weight', 'roberta.embeddings.LayerNorm.weight', 'roberta.embeddings.LayerNorm.bias', 'roberta.embeddings.position_embeddings.weight', 'roberta.encoder.layer.0.attention.self.query.weight', 'roberta.encoder.layer.0.attention.self.query.bias', 'roberta.encoder.layer.0.attention.self.key.weight', 'roberta.encoder.layer.0.attention.self.key.bias', 'roberta.encoder.layer.0.attention.self.value.weight']
+2026-09-24 15:58:15,043 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\unified_adaptive_span\roberta\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-24 15:58:15,044 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-24 15:58:20,563 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 94.50%
+2026-09-24 15:58:20,773 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 15:58:20,773 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-24 15:58:20,774 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-24 15:58:20,774 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-24 15:58:20,774 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-24 15:58:20,774 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-24 15:58:20,774 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-24 15:58:20,774 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-24 15:58:20,775 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 15:58:20,775 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 15:58:20,970 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-24 15:58:26,899 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_adaptive_span\roberta\roberta_sst2_full_full_metrics.json
+2026-09-24 15:58:26,912 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_adaptive_span\roberta\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-24 15:58:27,149 [INFO] QwenQualitySweep: [1/2] full -> PASS 94.50% (F1: 0.9458, Peak VRAM: 703.34 MB)
+2026-09-24 15:58:27,149 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_adaptive_span\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-24 15:58:27,149 [INFO] QwenQualitySweep: [1/2] full Timing: eval_time=6.18s
+2026-09-24 15:58:27,149 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 15:58:27,458 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: adaptive_span (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-24 15:58:27,459 [WARNING] QwenQualitySweep: Module adaptive_span declared encoder_compatible / declared_causal_only_incompatible_with_encoder, attempting injection with fallback guard...
+2026-09-24 15:58:27,861 [ERROR] framework.attentions.adaptive_span_attention: AdaptiveSpanAttention construction failed.
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\attentions\adaptive_span_attention.py", line 1114, in inject_adaptive_span
+    new_block = AdaptiveSpanAttention(
+        config=cfg,
+    ...<10 lines>...
+        **kwargs,
+    )
+TypeError: framework.attentions.adaptive_span_attention.AdaptiveSpanAttention() got multiple values for keyword argument 'rank'
+2026-09-24 15:58:27,864 [ERROR] framework.attentions.adaptive_span_attention: AdaptiveSpanAttention construction failed.
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\attentions\adaptive_span_attention.py", line 1114, in inject_adaptive_span
+    new_block = AdaptiveSpanAttention(
+        config=cfg,
+    ...<10 lines>...
+        **kwargs,
+    )
+TypeError: framework.attentions.adaptive_span_attention.AdaptiveSpanAttention() got multiple values for keyword argument 'rank'
+2026-09-24 15:58:27,865 [ERROR] framework.attentions.adaptive_span_attention: AdaptiveSpanAttention construction failed.
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\attentions\adaptive_span_attention.py", line 1114, in inject_adaptive_span
+    new_block = AdaptiveSpanAttention(
+        config=cfg,
+    ...<10 lines>...
+        **kwargs,
+    )
+TypeError: framework.attentions.adaptive_span_attention.AdaptiveSpanAttention() got multiple values for keyword argument 'rank'
+2026-09-24 15:58:27,867 [ERROR] framework.attentions.adaptive_span_attention: AdaptiveSpanAttention construction failed.
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\attentions\adaptive_span_attention.py", line 1114, in inject_adaptive_span
+    new_block = AdaptiveSpanAttention(
+        config=cfg,
+    ...<10 lines>...
+        **kwargs,
+    )
+TypeError: framework.attentions.adaptive_span_attention.AdaptiveSpanAttention() got multiple values for keyword argument 'rank'
+2026-09-24 15:58:27,868 [ERROR] framework.attentions.adaptive_span_attention: AdaptiveSpanAttention construction failed.
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\attentions\adaptive_span_attention.py", line 1114, in inject_adaptive_span
+    new_block = AdaptiveSpanAttention(
+        config=cfg,
+    ...<10 lines>...
+        **kwargs,
+    )
+TypeError: framework.attentions.adaptive_span_attention.AdaptiveSpanAttention() got multiple values for keyword argument 'rank'
+2026-09-24 15:58:27,869 [ERROR] framework.attentions.adaptive_span_attention: AdaptiveSpanAttention construction failed.
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\attentions\adaptive_span_attention.py", line 1114, in inject_adaptive_span
+    new_block = AdaptiveSpanAttention(
+        config=cfg,
+    ...<10 lines>...
+        **kwargs,
+    )
+TypeError: framework.attentions.adaptive_span_attention.AdaptiveSpanAttention() got multiple values for keyword argument 'rank'
+2026-09-24 15:58:27,871 [ERROR] framework.attentions.adaptive_span_attention: AdaptiveSpanAttention construction failed.
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\attentions\adaptive_span_attention.py", line 1114, in inject_adaptive_span
+    new_block = AdaptiveSpanAttention(
+        config=cfg,
+    ...<10 lines>...
+        **kwargs,
+    )
+TypeError: framework.attentions.adaptive_span_attention.AdaptiveSpanAttention() got multiple values for keyword argument 'rank'
+2026-09-24 15:58:27,872 [ERROR] framework.attentions.adaptive_span_attention: AdaptiveSpanAttention construction failed.
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\attentions\adaptive_span_attention.py", line 1114, in inject_adaptive_span
+    new_block = AdaptiveSpanAttention(
+        config=cfg,
+    ...<10 lines>...
+        **kwargs,
+    )
+TypeError: framework.attentions.adaptive_span_attention.AdaptiveSpanAttention() got multiple values for keyword argument 'rank'
+2026-09-24 15:58:27,873 [ERROR] framework.attentions.adaptive_span_attention: AdaptiveSpanAttention construction failed.
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\attentions\adaptive_span_attention.py", line 1114, in inject_adaptive_span
+    new_block = AdaptiveSpanAttention(
+        config=cfg,
+    ...<10 lines>...
+        **kwargs,
+    )
+TypeError: framework.attentions.adaptive_span_attention.AdaptiveSpanAttention() got multiple values for keyword argument 'rank'
+2026-09-24 15:58:27,875 [ERROR] framework.attentions.adaptive_span_attention: AdaptiveSpanAttention construction failed.
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\attentions\adaptive_span_attention.py", line 1114, in inject_adaptive_span
+    new_block = AdaptiveSpanAttention(
+        config=cfg,
+    ...<10 lines>...
+        **kwargs,
+    )
+TypeError: framework.attentions.adaptive_span_attention.AdaptiveSpanAttention() got multiple values for keyword argument 'rank'
+2026-09-24 15:58:27,876 [ERROR] framework.attentions.adaptive_span_attention: AdaptiveSpanAttention construction failed.
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\attentions\adaptive_span_attention.py", line 1114, in inject_adaptive_span
+    new_block = AdaptiveSpanAttention(
+        config=cfg,
+    ...<10 lines>...
+        **kwargs,
+    )
+TypeError: framework.attentions.adaptive_span_attention.AdaptiveSpanAttention() got multiple values for keyword argument 'rank'
+2026-09-24 15:58:27,877 [ERROR] framework.attentions.adaptive_span_attention: AdaptiveSpanAttention construction failed.
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\attentions\adaptive_span_attention.py", line 1114, in inject_adaptive_span
+    new_block = AdaptiveSpanAttention(
+        config=cfg,
+    ...<10 lines>...
+        **kwargs,
+    )
+TypeError: framework.attentions.adaptive_span_attention.AdaptiveSpanAttention() got multiple values for keyword argument 'rank'
+2026-09-24 15:58:28,246 [INFO] framework.core.attention_utils: Successfully injected 'adaptive_span' into 12 transformer blocks.
+2026-09-24 15:58:28,265 [INFO] QwenQualitySweep: module=adaptive_span path=adapted_roberta
+2026-09-24 15:58:28,268 [INFO] QwenQualitySweep: module=adaptive_span injection summary: 0 SVDLinear layers active
+2026-09-24 15:58:28,268 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for adaptive_span (lr=2.0e-04)
+2026-09-24 15:58:28,519 [INFO] framework.utils.compat: Recovery fine-tuning selected 884880 trainable parameters across 84 tensors.
+2026-09-24 15:58:28,519 [INFO] framework.utils.compat: Discovered 84 trainable tensors (884880 params)
+2026-09-24 15:58:28,525 [INFO] QwenQualitySweep: LoRA fine-tuning: 884880 trainable parameters across 84 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-24 15:58:28,974 [INFO] QwenQualitySweep: Step 1/50 took 0.45s (loss=0.0789, bs=8, micro=8)
+2026-09-24 15:58:30,003 [INFO] QwenQualitySweep: Step 5/50 took 0.25s (loss=0.2259, bs=8, micro=8)
+2026-09-24 15:58:31,276 [INFO] QwenQualitySweep: Step 10/50 took 0.25s (loss=0.0038, bs=8, micro=8)
+2026-09-24 15:58:32,498 [INFO] QwenQualitySweep: Step 15/50 took 0.24s (loss=0.0222, bs=8, micro=8)
+2026-09-24 15:58:33,756 [INFO] QwenQualitySweep: Step 20/50 took 0.25s (loss=0.0529, bs=8, micro=8)
+2026-09-24 15:58:35,048 [INFO] QwenQualitySweep: Step 25/50 took 0.26s (loss=0.0017, bs=8, micro=8)
+2026-09-24 15:58:36,337 [INFO] QwenQualitySweep: Step 30/50 took 0.27s (loss=0.0034, bs=8, micro=8)
+2026-09-24 15:58:37,584 [INFO] QwenQualitySweep: Step 35/50 took 0.25s (loss=0.4041, bs=8, micro=8)
+2026-09-24 15:58:38,843 [INFO] QwenQualitySweep: Step 40/50 took 0.25s (loss=0.2026, bs=8, micro=8)
+2026-09-24 15:58:40,142 [INFO] QwenQualitySweep: Step 45/50 took 0.25s (loss=0.0028, bs=8, micro=8)
+2026-09-24 15:58:41,394 [INFO] QwenQualitySweep: Step 50/50 took 0.24s (loss=0.0057, bs=8, micro=8)
+2026-09-24 15:58:52,917 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_adaptive_span\roberta\roberta_sst2_adaptive_span_full_metrics.json
+2026-09-24 15:58:52,962 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_adaptive_span\roberta\checkpoints\adaptive_span\weights.pt (module_params=12, lora_params=88)
+2026-09-24 15:58:53,209 [INFO] QwenQualitySweep: [2/2] adaptive_span -> PASS 94.27% (F1: 0.9441, Peak VRAM: 653.51 MB)
+2026-09-24 15:58:53,209 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_adaptive_span\roberta\checkpoints\adaptive_span. Automated export will be handled post-sweep by orchestrator.
+2026-09-24 15:58:53,209 [INFO] QwenQualitySweep: [2/2] adaptive_span Timing: eval_time=25.75s
+2026-09-24 15:58:53,210 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 15:58:53,571 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 15:58:53,571 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-24 15:58:53,578 [INFO] QwenQualitySweep: 
+       Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+         full   PASS   94.50% 0.00% (base) 0.9458                  0            1.00x  703.3 MB               5.02              5.76
+adaptive_span   PASS   94.27%       -0.23% 0.9441                 12            1.00x  653.5 MB              10.96             12.57
+2026-09-24 15:58:53,578 [INFO] QwenQualitySweep: ================================================================================

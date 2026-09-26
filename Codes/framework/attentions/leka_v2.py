@@ -10,24 +10,6 @@ Supports:
 - Frobenius norm verification (>= 1e-4)
 - Safe injection returning None on failure
 
-Bug-fix map (2026 revision):
-  LV2-01  RoPE cos/sin cast to q/k dtype.
-  LV2-02  super().__init__ with try/except.
-  LV2-03  Recursion guard in injector.
-  LV2-04  Removed dead 'in locals()' check.
-  LV2-05  past_key_value support (RoPE offset).
-  LV2-06  Robust num_heads detection via multiple attribute names.
-  LV2-07  softpick matches reference (arXiv:2504.20966).
-  LV2-08  FactorizedLoRALinear replaces LoRALinear.
-  LV2-09  W_corr einsum corrected (per-head matmul).
-  LV2-10  softpick used consistently (local + landmark).
-  LV2-11  causal_local mask explicitly bool.
-  LV2-12  Landmark scorer wrapped in no_grad (efficiency).
-  LV2-13  anchor_boost applied BEFORE masking to avoid 0 collapse.
-  LV2-14  Forward sanity check after weight transfer.
-  LV2-15  Robust head_dim detection via q_proj/query/q_lin.
-  LV2-16  Single source of truth for decoder detection.
-  LV2-17  copy_weights raises on missing mandatory projections.
 """
 
 from __future__ import annotations

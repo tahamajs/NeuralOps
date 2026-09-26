@@ -1,0 +1,71 @@
+2026-09-24 19:21:07,250 [INFO] QwenQualitySweep: GPU VRAM: 5.12 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 19:21:07,250 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+2026-09-24 19:21:07,273 [INFO] QwenQualitySweep: Running 2 attention modules in-memory sequentially
+2026-09-24 19:21:07,453 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 104/104 [00:00<00:00, 3583.46it/s]
+2026-09-24 19:21:08,001 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-24 19:21:08,002 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 19:21:08,002 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:21:08,002 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 19:21:08,002 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
+2026-09-24 19:21:08,003 [INFO] QwenQualitySweep:   family:            bert
+2026-09-24 19:21:08,003 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-24 19:21:08,003 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-24 19:21:08,003 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 19:21:08,003 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 19:21:08,003 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 19:21:08,003 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:21:08,004 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\unified_asvd\distilbert\finetuned_model.pt' does not exist; attempting automatic fallback search.
+2026-09-24 19:21:08,034 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\unified_hgrn2_layer\distilbert\finetuned_model.pt
+2026-09-24 19:21:08,044 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
+2026-09-24 19:21:08,173 [INFO] QwenQualitySweep: Loading pre-cached batches from results\unified_hgrn2_layer\distilbert\batch_cache_sst2 (skipping tokenization)
+2026-09-24 19:21:09,075 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-24 19:21:12,935 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.71%
+2026-09-24 19:21:13,059 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:21:13,059 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-24 19:21:13,059 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-24 19:21:13,059 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-24 19:21:13,059 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-24 19:21:13,060 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-24 19:21:13,060 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-24 19:21:13,060 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-24 19:21:13,060 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:21:13,064 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 19:21:13,223 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-24 19:21:16,557 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_hgrn2_layer\distilbert\distilbert_sst2_full_full_metrics.json
+2026-09-24 19:21:16,710 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.71% (F1: 0.9099, Peak VRAM: 380.26 MB)
+2026-09-24 19:21:16,711 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_hgrn2_layer\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-24 19:21:16,711 [INFO] QwenQualitySweep: [1/2] full Timing: eval_time=3.49s
+2026-09-24 19:21:16,711 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 19:21:17,005 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: hgrn2_layer (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-24 19:21:17,812 [INFO] QwenQualitySweep: module=hgrn2_layer path=legacy_bert
+2026-09-24 19:21:17,813 [INFO] QwenQualitySweep: module=hgrn2_layer injection summary: 0 SVDLinear layers active
+2026-09-24 19:21:17,813 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for hgrn2_layer (lr=2.0e-04)
+2026-09-24 19:21:17,881 [INFO] framework.utils.compat: Recovery fine-tuning selected 294912 trainable parameters across 24 tensors.
+2026-09-24 19:21:17,881 [INFO] framework.utils.compat: Discovered 24 trainable tensors (294912 params)
+2026-09-24 19:21:17,884 [INFO] QwenQualitySweep: LoRA fine-tuning: 294912 trainable parameters across 24 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-24 19:21:20,815 [INFO] QwenQualitySweep: Step 1/50 took 2.93s (loss=0.7035, bs=8, micro=8)
+2026-09-24 19:21:31,814 [INFO] QwenQualitySweep: Step 5/50 took 6.65s (loss=0.9890, bs=8, micro=8)
+2026-09-24 19:21:37,170 [INFO] QwenQualitySweep: Step 10/50 took 2.64s (loss=0.4736, bs=8, micro=8)
+2026-09-24 19:21:40,639 [INFO] QwenQualitySweep: Step 15/50 took 0.25s (loss=0.4030, bs=8, micro=8)
+2026-09-24 19:21:46,385 [INFO] QwenQualitySweep: Step 20/50 took 2.24s (loss=0.6820, bs=8, micro=8)
+2026-09-24 19:21:49,139 [INFO] QwenQualitySweep: Step 25/50 took 0.30s (loss=0.8033, bs=8, micro=8)
+2026-09-24 19:21:53,269 [INFO] QwenQualitySweep: Step 30/50 took 1.47s (loss=0.5390, bs=8, micro=8)
+2026-09-24 19:21:55,975 [INFO] QwenQualitySweep: Step 35/50 took 0.30s (loss=0.5482, bs=8, micro=8)
+2026-09-24 19:22:00,016 [INFO] QwenQualitySweep: Step 40/50 took 1.38s (loss=0.6135, bs=8, micro=8)
+2026-09-24 19:22:02,557 [INFO] QwenQualitySweep: Step 45/50 took 0.27s (loss=0.4911, bs=8, micro=8)
+2026-09-24 19:22:05,016 [INFO] QwenQualitySweep: Step 50/50 took 0.29s (loss=0.6667, bs=8, micro=8)
+2026-09-24 19:22:29,122 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_hgrn2_layer\distilbert\distilbert_sst2_hgrn2_layer_full_metrics.json
+2026-09-24 19:22:29,495 [INFO] QwenQualitySweep: [2/2] hgrn2_layer -> MODERATE_EXPANSION 68.23% (F1: 0.7292, Peak VRAM: 489.41 MB)
+2026-09-24 19:22:29,496 [INFO] QwenQualitySweep: [Quality Guard] Module 'hgrn2_layer' did not pass quality criteria (status=MODERATE_EXPANSION, acc=68.23%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-24 19:22:29,511 [INFO] QwenQualitySweep: [2/2] hgrn2_layer Timing: eval_time=72.51s
+2026-09-24 19:22:29,511 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 19:22:29,866 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:22:29,866 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-24 19:22:29,878 [INFO] QwenQualitySweep: 
+                      Module             Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                        full               PASS   90.71% 0.00% (base) 0.9099                  0            1.00x  380.3 MB               2.57              2.94
+hgrn2_layer (efficient-attn) MODERATE_EXPANSION   68.23%      -22.48% 0.7292                  0            1.00x  489.4 MB              23.39             26.82
+2026-09-24 19:22:29,878 [INFO] QwenQualitySweep: ================================================================================

@@ -1,0 +1,26 @@
+[
+  {
+    "Model": "DistilBERT",
+    "Module": "a3",
+    "Status": "PASS",
+    "Accuracy (%)": 90.6,
+    "Threshold (%)": 56.0,
+    "Elapsed (s)": 73.1
+  },
+  {
+    "Model": "RoBERTa",
+    "Module": "a3",
+    "Status": "PASS",
+    "Accuracy (%)": 92.66,
+    "Threshold (%)": 56.0,
+    "Elapsed (s)": 64.7
+  },
+  {
+    "Model": "GPT-2",
+    "Module": "a3",
+    "Status": "PASS",
+    "Accuracy (%)": 87.16,
+    "Threshold (%)": 56.0,
+    "Elapsed (s)": 81.6
+  }
+]

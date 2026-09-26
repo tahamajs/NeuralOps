@@ -8,20 +8,6 @@ Hardened for production use across diverse transformer architectures:
 - GPT-2 (Causal Decoder with Conv1D)
 - Qwen / LLaMA (GQA with Rotary Position Embeddings)
 
-Bug-fix map:
-  SQ-FIX-01  copy_weights raises on missing mandatory projections (no None.shape crash).
-  SQ-FIX-02  injector recursion guard (_depth).
-  SQ-FIX-03  injector double-injection guard.
-  SQ-FIX-04  removed `'comp_config' in locals()` hack.
-  SQ-FIX-05  GQA pooling validates head_dim divisibility.
-  SQ-FIX-06  SDPA fast path also accepts additive attention_mask.
-  SQ-FIX-07  causal mask offset-aware for KV-cache.
-  SQ-FIX-08  head_mask broadcasting corrected (B,H,1,1).
-  SQ-FIX-09  KV-cache implemented (tuple + DynamicCache).
-  SQ-FIX-10  RoPE past_len offset.
-  SQ-FIX-11  no silent pad/truncate of output dims (raise).
-  SQ-FIX-12  is_nested_encoder set correctly for all branches in injector.
-  SQ-FIX-13  attention_mask dtype robust (bool / int / float).
 """
 
 import logging

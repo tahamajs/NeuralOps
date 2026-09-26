@@ -1,0 +1,8 @@
+{
+  "module": "svd_llm_v2_attention",
+  "model_path": "models\\gpt2",
+  "dataset": "wikitext2",
+  "perplexity": 2254.091796875,
+  "seq_len": 1024,
+  "stride": 512
+}

@@ -1,22 +1,5 @@
 """Linformer Attention – Production-hardened with full multi-architecture support.
 
-Bug-fix map (2026 revision):
-  LF-01  RoPE cos/sin cast to q/k dtype.
-  LF-02  super().__init__ with try/except.
-  LF-03  Injection depth via function argument (thread-safe).
-  LF-04  Robust head_dim detection.
-  LF-05  RoPE past_len offset for KV-cache.
-  LF-06  Removed dead output_scale parameter.
-  LF-07  GQA resize in copy_weights.
-  LF-08  Norm verification via float() cast.
-  LF-09  Proper causal mask for projected K/V.
-  LF-10  E/F interpolation with 3D input (safe).
-  LF-11  is_decoder detection via centralized helper.
-  LF-12  FactorizedLoRALinear replaces LoRALinear.
-  LF-13  Forward sanity check after weight transfer.
-  LF-14  attention_mask shape-safe handling.
-  LF-15  E/F init only on min(k, max_seq) diagonal.
-  LF-16  _is_single_layer via attribute whitelist (no string class names).
 """
 
 from __future__ import annotations

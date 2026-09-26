@@ -1,4 +1,4 @@
-r"""
+"""
 Compressed Multi-Head Attention for DistilBERT and Multi-Architecture via Joint Truncated SVD.
 
 Performs joint singular value decomposition on stacked query, key, and value projection matrices

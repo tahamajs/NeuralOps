@@ -3,21 +3,6 @@
 Partitions sequence tokens into discrete clusters, confining attention computation
 to intra-cluster tokens without materializing full [B, H, L, L] tensors.
 
-Bug-fix map (2026 revision):
-  RA-01  Chunked per-cluster attention via Sort + Gather (real O(N²/K), not masked).
-  RA-02  Proper masked scatter (scatter_add_) instead of blind torch.where.
-  RA-03  RoPE dtype-safe + past_len offset.
-  RA-04  FactorizedLoRALinear for parameter reduction.
-  RA-05  No dangling self.config reference.
-  RA-06  Recursion guard in inject_routing.
-  RA-07  Registry entries for 'routing' and 'inject_routing'.
-  RA-08  Stable k-means (deterministic init + n_iters clamp).
-  RA-09  Causal masking via absolute positions (preserves causality after reordering).
-  RA-10  Unified head_mask handling (view → (B, H, 1, 1)).
-  RA-11  Single mask pipeline (cluster ∧ causal ∧ valid ∧ self-anchor).
-  RA-12  Robust valid-mask helper.
-  RA-13  is_nested_encoder set in copy_weights only.
-  RA-14  num_clusters / n_iters passed through inject_routing.
 """
 
 from __future__ import annotations

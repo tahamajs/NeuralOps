@@ -1,8 +1,0 @@
-{
-  "module": "fused_svd_kernel",
-  "model_path": "models\\gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 2246.131591796875,
-  "seq_len": 1024,
-  "stride": 512
-}

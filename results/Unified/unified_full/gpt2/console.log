@@ -1,0 +1,61 @@
+2026-09-24 18:31:19,435 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 18:31:19,436 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+2026-09-24 18:31:19,459 [INFO] QwenQualitySweep: Running 2 attention modules in-memory sequentially
+2026-09-24 18:31:19,978 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+
+Loading weights:   0%|          | 0/149 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 149/149 [00:00<00:00, 4979.18it/s]
+2026-09-24 18:31:21,077 [INFO] QwenQualitySweep: model=models\gpt2_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 18:31:21,077 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 18:31:21,077 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:31:21,077 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 18:31:21,077 [INFO] QwenQualitySweep:   model:             models\gpt2_sst2
+2026-09-24 18:31:21,079 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-24 18:31:21,079 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-24 18:31:21,079 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-24 18:31:21,080 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 18:31:21,080 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 18:31:21,080 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 18:31:21,080 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:31:21,080 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\gpt2_sst2_lora_baseline\finetuned_model.pt' does not exist; attempting automatic fallback search.
+2026-09-24 18:31:21,082 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-24 18:31:24,094 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.1143
+2026-09-24 18:31:25,926 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.3716
+2026-09-24 18:31:27,757 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.4990
+2026-09-24 18:31:29,753 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.4857
+2026-09-24 18:31:31,952 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0739
+2026-09-24 18:31:33,925 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.6662
+2026-09-24 18:31:35,830 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.1685
+2026-09-24 18:31:38,021 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.2618
+2026-09-24 18:31:38,030 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_full\gpt2\finetuned_model.pt
+2026-09-24 18:31:39,928 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\unified_full\gpt2\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-24 18:31:39,928 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-24 18:31:46,560 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 89.33%
+2026-09-24 18:31:46,798 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:31:46,798 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-24 18:31:46,798 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-24 18:31:46,798 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-24 18:31:46,799 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-24 18:31:46,799 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-24 18:31:46,799 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-24 18:31:46,799 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-24 18:31:46,799 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:31:46,800 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 18:31:47,022 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-24 18:31:54,768 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_full\gpt2\gpt2_sst2_full_full_metrics.json
+2026-09-24 18:31:54,968 [INFO] QwenQualitySweep: [1/2] full -> PASS 89.33% (F1: 0.8942, Peak VRAM: 382.13 MB)
+2026-09-24 18:31:54,968 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_full\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-24 18:31:54,969 [INFO] QwenQualitySweep: [1/2] full Timing: eval_time=7.95s
+2026-09-24 18:31:54,969 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 18:31:55,276 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-24 18:32:02,795 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_full\gpt2\gpt2_sst2_full_full_metrics.json
+2026-09-24 18:32:03,141 [INFO] QwenQualitySweep: [2/2] full -> PASS 89.33% (F1: 0.8942, Peak VRAM: 382.12 MB)
+2026-09-24 18:32:03,141 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_full\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-24 18:32:03,141 [INFO] QwenQualitySweep: [2/2] full Timing: eval_time=7.86s
+2026-09-24 18:32:03,146 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 18:32:03,543 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:32:03,543 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2_sst2 on sst2)
+2026-09-24 18:32:03,554 [INFO] QwenQualitySweep: 
+Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+  full   PASS   89.33% 0.00% (base) 0.8942                  0            1.00x  382.1 MB               6.68              7.66
+2026-09-24 18:32:03,554 [INFO] QwenQualitySweep: ================================================================================

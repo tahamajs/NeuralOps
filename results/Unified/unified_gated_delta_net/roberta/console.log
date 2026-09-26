@@ -1,0 +1,65 @@
+2026-09-24 18:35:23,525 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 18:35:23,525 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=4 (explicit_parallel=False, explicit_batch=True)
+2026-09-24 18:35:23,548 [INFO] QwenQualitySweep: Running 2 attention modules in-memory sequentially
+2026-09-24 18:35:24,118 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 201/201 [00:00<00:00, 4105.25it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta_sst2
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-09-24 18:35:25,224 [INFO] QwenQualitySweep: model=models\roberta_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 18:35:25,224 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 18:35:25,224 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:35:25,225 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 18:35:25,225 [INFO] QwenQualitySweep:   model:             models\roberta_sst2
+2026-09-24 18:35:25,225 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-24 18:35:25,225 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-24 18:35:25,225 [INFO] QwenQualitySweep:   batch_size:        4
+2026-09-24 18:35:25,225 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 18:35:25,226 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 18:35:25,226 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 18:35:25,226 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:35:25,227 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\roberta_sst2_lora_baseline\finetuned_model.pt' does not exist; attempting automatic fallback search.
+2026-09-24 18:35:25,230 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-24 18:35:28,398 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0057
+2026-09-24 18:35:30,514 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0205
+2026-09-24 18:35:32,797 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.0443
+2026-09-24 18:35:34,876 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0104
+2026-09-24 18:35:37,054 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0025
+2026-09-24 18:35:39,187 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0019
+2026-09-24 18:35:41,205 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0153
+2026-09-24 18:35:43,120 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.0010
+2026-09-24 18:35:43,140 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_gated_delta_net\roberta\finetuned_model.pt
+2026-09-24 18:35:45,547 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\unified_gated_delta_net\roberta\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-24 18:35:45,547 [INFO] QwenQualitySweep: Prepared 218 eval batches and 50 train batches directly on GPU.
+2026-09-24 18:35:58,175 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 94.15%
+2026-09-24 18:35:58,406 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:35:58,408 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-24 18:35:58,408 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-24 18:35:58,408 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-24 18:35:58,408 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-24 18:35:58,408 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-24 18:35:58,409 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-24 18:35:58,409 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-24 18:35:58,409 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:35:58,409 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 18:35:58,594 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-24 18:36:12,009 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_gated_delta_net\roberta\roberta_sst2_full_full_metrics.json
+2026-09-24 18:36:12,284 [INFO] QwenQualitySweep: [1/2] full -> PASS 94.15% (F1: 0.9425, Peak VRAM: 281.07 MB)
+2026-09-24 18:36:12,286 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_gated_delta_net\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-24 18:36:12,286 [INFO] QwenQualitySweep: [1/2] full Timing: eval_time=13.69s
+2026-09-24 18:36:12,286 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 18:36:12,692 [WARNING] QwenQualitySweep: >>> Skipping DEPRECATED module [2/2]: gated_delta_net (bad_alloc during backprop on 6-layer encoders; chunked scan demands >15GB RAM)
+2026-09-24 18:36:12,698 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:36:12,698 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-24 18:36:12,716 [INFO] QwenQualitySweep: 
+                          Module          Status Accuracy    Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                            full            PASS   94.15% 0.00% (base) 0.9425                 0            1.00x  281.1 MB              12.39             14.21
+gated_delta_net (efficient-attn) SKIP_DEPRECATED    0.00%      -94.15%    N/A                 0            1.00x       N/A               0.00               N/A
+2026-09-24 18:36:12,716 [INFO] QwenQualitySweep: ================================================================================
