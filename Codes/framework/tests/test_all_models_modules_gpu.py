@@ -65,7 +65,7 @@ DEFAULT_MODEL_PATHS: Dict[str, Dict[str, Any]] = {
     "qwen3_5": {
         "family": "qwen3_5",
         "local_paths": [
-            "D:/SVD_Project/models/Qwen3.5-0.8B",
+            "PROJECT_ROOT/models/Qwen3.5-0.8B",
             "models/Qwen3.5-0.8B",
             "Qwen/Qwen2.5-0.5B",
         ],
@@ -76,7 +76,7 @@ DEFAULT_MODEL_PATHS: Dict[str, Dict[str, Any]] = {
     "gpt2": {
         "family": "gpt2",
         "local_paths": [
-            "D:/SVD_Project/models/gpt2",
+            "PROJECT_ROOT/models/gpt2",
             "models/gpt2",
             "gpt2",
         ],
@@ -87,7 +87,7 @@ DEFAULT_MODEL_PATHS: Dict[str, Dict[str, Any]] = {
     "roberta": {
         "family": "roberta",
         "local_paths": [
-            "D:/SVD_Project/models/roberta-base",
+            "PROJECT_ROOT/models/roberta-base",
             "models/roberta-base",
             "roberta-base",
         ],
@@ -98,7 +98,7 @@ DEFAULT_MODEL_PATHS: Dict[str, Dict[str, Any]] = {
     "distilbert": {
         "family": "distilbert",
         "local_paths": [
-            "D:/SVD_Project/models/distilbert_sst2",
+            "PROJECT_ROOT/models/distilbert_sst2",
             "models/distilbert_sst2",
             "distilbert-base-uncased",
         ],
