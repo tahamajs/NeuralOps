@@ -2,7 +2,7 @@
   "module": "aegis_v2",
   "model_path": "models/gpt2",
   "dataset": "wikitext2",
-  "perplexity": 2316.81591796875,
+  "perplexity": 2456.0126953125,
   "seq_len": 1024,
   "stride": 512
 }

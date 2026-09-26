@@ -1,0 +1,8 @@
+{
+  "module": "come_compressor",
+  "model_path": "models/gpt2",
+  "dataset": "wikitext2",
+  "perplexity": 96.97843933105469,
+  "seq_len": 1024,
+  "stride": 512
+}
