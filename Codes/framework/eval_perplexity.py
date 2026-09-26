@@ -1,10 +1,14 @@
+import sys
+from pathlib import Path
+
+# Sanitize sys.path before importing 'datasets' package so local Codes/framework/datasets doesn't shadow HuggingFace datasets
+sys.path = [p for p in sys.path if not p.rstrip("/\\").replace("\\", "/").endswith("Codes/framework") and not p.rstrip("/\\").replace("\\", "/").endswith("framework")]
+
 import torch
 import argparse
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from datasets import load_dataset
-from pathlib import Path
 import json
-import sys
 
 _cur_dir = Path(__file__).resolve().parent
 _codes_dir = _cur_dir.parent
