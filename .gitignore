@@ -343,3 +343,4 @@ debug_*.py
 paper/_PROGRESS.md
 
 /thesis_final
+results/.DS_Store
