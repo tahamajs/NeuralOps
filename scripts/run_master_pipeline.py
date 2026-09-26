@@ -27,7 +27,7 @@ def run_task(task: dict) -> dict:
             "--model", "models/gpt2",
             "--tasks", "piqa,arc_easy,arc_challenge,hellaswag,winogrande",
             "--num_samples", "500",
-            "--batch_size", "16",
+            "--batch_size", "12",
             "--output_dir", f"results/zeroshot_parallel/{module}",
         ]
     elif t == 'rank_sweep':
