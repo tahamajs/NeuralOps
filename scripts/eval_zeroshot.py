@@ -97,7 +97,7 @@ def _forward_with_oom_fallback(model, input_ids, attention_mask, device):
             return torch.cat([logits_1, logits_2], dim=0)
 
 
-def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=32):
+def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=32, module_name="none", model_name="models/gpt2", output_dir=None):
     cfg = TASKS[task_name]
     
     # 1. Lazy load dataset per task
@@ -244,23 +244,53 @@ def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=32):
     # 6. Evaluate accuracy
     correct = 0
     total = len(labels)
+    all_preds = []
+    all_scores_per_sample = []
+
     for sample_idx in range(total):
         n_c = num_choices_per_sample[sample_idx]
         sample_scores = [all_scores[(sample_idx, ci)] for ci in range(n_c)]
         pred = max(range(len(sample_scores)), key=lambda j: sample_scores[j])
+        all_preds.append(int(pred))
+        all_scores_per_sample.append(sample_scores)
         if pred == labels[sample_idx]:
             correct += 1
 
     tokenizer.padding_side = orig_pad_side
 
+    acc = correct / total * 100 if total > 0 else 0.0
+    task_elapsed = round(time.time() - t0, 2)
+
+    # Save per-sample detailed file if output_dir provided
+    if output_dir:
+        detailed = {
+            "task": task_name,
+            "module": module_name,
+            "model": model_name,
+            "num_samples": total,
+            "accuracy": round(acc, 2),
+            "per_sample": [
+                {
+                    "idx": i,
+                    "label": int(lbl),
+                    "pred": int(pred),
+                    "correct": bool(lbl == pred),
+                    "scores": [round(float(s), 4) for s in scores_i],
+                }
+                for i, (lbl, pred, scores_i) in enumerate(zip(labels, all_preds, all_scores_per_sample))
+            ],
+        }
+        out_path = Path(output_dir)
+        out_path.mkdir(parents=True, exist_ok=True)
+        with open(out_path / f"{task_name}_detailed.json", "w", encoding="utf-8") as f:
+            json.dump(detailed, f, indent=2)
+
     # 7. Strict memory cleanup per task
-    del items, all_scores, all_meta, labels, num_choices_per_sample
+    del items, all_scores, all_meta, labels, num_choices_per_sample, all_preds, all_scores_per_sample
     gc.collect()
     if device.type == "cuda":
         torch.cuda.empty_cache()
 
-    acc = correct / total * 100 if total > 0 else 0.0
-    task_elapsed = round(time.time() - t0, 2)
     return {
         "task": task_name,
         "accuracy": round(acc, 2),
@@ -302,7 +332,14 @@ def main():
         if not task_clean:
             continue
         print(f"\n=== Evaluating {task_clean} ===")
-        result = eval_task(model, tokenizer, task_clean, args.num_samples, batch_size=args.batch_size)
+        result = eval_task(
+            model, tokenizer, task_clean,
+            num_samples=args.num_samples,
+            batch_size=args.batch_size,
+            module_name=args.module,
+            model_name=args.model,
+            output_dir=args.output_dir,
+        )
         results[task_clean] = result
         print(f"  {task_clean}: {result['accuracy']:.2f}%")
 
@@ -332,6 +369,22 @@ def main():
     out_file = out_dir / f"{args.module}_zeroshot.json"
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(full_report, f, indent=2)
+
+    try:
+        from scripts.save_metadata import save_run_metadata
+        save_run_metadata(
+            output_dir=args.output_dir,
+            module=args.module,
+            model=args.model,
+            task="zeroshot_5tasks",
+            extra={
+                "num_samples": args.num_samples,
+                "tasks_evaluated": list(results.keys()),
+                "aggregate_avg": avg_acc,
+            },
+        )
+    except Exception as e:
+        print(f"Warning: could not save run_metadata.json: {e}")
 
     print(f"\nResults saved to {out_dir}")
 
