@@ -582,4 +582,4 @@ Evaluated on SST-2 sentiment classification (FP16, batch size 8, 200 recovery st
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **89.68%** | -1.38% | 0.8951 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-adaptive-sparse](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-adaptive-sparse) | 2026-09-19 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **89.91%** | -0.69% | 0.8984 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-adaptive-sparse](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-adaptive-sparse) | 2026-09-27 |
