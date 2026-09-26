@@ -11,12 +11,58 @@ High-throughput, memory-lean engine:
 import argparse
 import gc
 import json
+import os
+import random
+import sys
+import threading
 import time
+import numpy as np
+import psutil
 import torch
 from pathlib import Path
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import sys
+
+
+def get_ram_usage_gb():
+    """Return (used_gb, total_gb) for system RAM."""
+    vm = psutil.virtual_memory()
+    return (vm.total - vm.available) / 1e9, vm.total / 1e9
+
+
+def get_vram_usage_gb():
+    """Return (used_gb, total_gb) for GPU VRAM, or (0, 0) if no CUDA."""
+    if not torch.cuda.is_available():
+        return 0.0, 0.0
+    free, total = torch.cuda.mem_get_info()
+    return (total - free) / 1e9, total / 1e9
+
+
+def check_memory_limits(ram_limit_gb, vram_limit_gb, context=""):
+    """Raise MemoryError if RAM or VRAM exceeds limits."""
+    ram_used, ram_total = get_ram_usage_gb()
+    vram_used, vram_total = get_vram_usage_gb()
+    if ram_used > ram_limit_gb:
+        raise MemoryError(
+            f"[{context}] RAM overflow: {ram_used:.2f} GB used "
+            f"(limit {ram_limit_gb} GB, total {ram_total:.2f} GB)"
+        )
+    if vram_total > 0 and vram_used > vram_limit_gb:
+        raise MemoryError(
+            f"[{context}] VRAM overflow: {vram_used:.2f} GB used "
+            f"(limit {vram_limit_gb} GB, total {vram_total:.2f} GB)"
+        )
+    return {"ram_used_gb": round(ram_used, 2), "vram_used_gb": round(vram_used, 2)}
+
+
+def _memory_watchdog(ram_hard_limit_gb, interval=2.0):
+    """Background thread: force-exit if RAM exceeds hard limit."""
+    while True:
+        time.sleep(interval)
+        ram_used, _ = get_ram_usage_gb()
+        if ram_used > ram_hard_limit_gb:
+            print(f"[WATCHDOG] FATAL: RAM {ram_used:.2f} GB > {ram_hard_limit_gb} GB. Exiting.")
+            os._exit(137)
 
 # Ensure Codes directory is on sys.path
 HERE = Path(__file__).resolve().parent
@@ -79,8 +125,11 @@ PARQUET_URLS = {
 }
 
 
-def _forward_with_oom_fallback(model, input_ids, attention_mask, device):
-    """Executes forward pass with automatic halving fallback on CUDA OOM."""
+def _forward_with_oom_fallback(model, input_ids, attention_mask, device, depth=0):
+    """Forward pass with automatic halving fallback on CUDA OOM.
+    
+    Raises MemoryError if splitting cannot help (batch_size=1)."""
+    MAX_DEPTH = 10  # safety cap
     with torch.inference_mode():
         try:
             if device.type == "cuda":
@@ -89,15 +138,29 @@ def _forward_with_oom_fallback(model, input_ids, attention_mask, device):
             else:
                 return model(input_ids=input_ids, attention_mask=attention_mask).logits
         except torch.cuda.OutOfMemoryError:
+            # Safety: cannot split further
+            if len(input_ids) <= 1 or depth >= MAX_DEPTH:
+                if device.type == "cuda":
+                    torch.cuda.empty_cache()
+                raise MemoryError(
+                    f"VRAM OOM at batch_size={len(input_ids)}, depth={depth}. "
+                    f"Cannot split further. Reduce batch_size or model size."
+                )
             if device.type == "cuda":
                 torch.cuda.empty_cache()
-            half = max(1, len(input_ids) // 2)
-            logits_1 = _forward_with_oom_fallback(model, input_ids[:half], attention_mask[:half], device)
-            logits_2 = _forward_with_oom_fallback(model, input_ids[half:], attention_mask[half:], device)
+            half = len(input_ids) // 2
+            logits_1 = _forward_with_oom_fallback(
+                model, input_ids[:half], attention_mask[:half], device, depth + 1
+            )
+            logits_2 = _forward_with_oom_fallback(
+                model, input_ids[half:], attention_mask[half:], device, depth + 1
+            )
             return torch.cat([logits_1, logits_2], dim=0)
 
 
-def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=32, module_name="none", model_name="models/gpt2", output_dir=None):
+def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=8,
+              module_name="none", model_name="models/gpt2", output_dir=None,
+              max_ram_gb=8.0, max_vram_gb=5.5, auto_scale_batch=True, min_batch_size=1):
     cfg = TASKS[task_name]
     
     # 1. Lazy load dataset per task
@@ -172,41 +235,63 @@ def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=32, modul
     del ds
     gc.collect()
 
-    # 3. Pre-tokenize with max_length=512 (cuts buffer RAM/VRAM by 2x)
-    all_prompts = [ctx + cont for ctx, cont in all_pairs]
-    all_contexts = [ctx for ctx, _ in all_pairs]
-
-    enc_prompts = tokenizer(all_prompts, padding=False, truncation=True, max_length=512)
-    enc_contexts = tokenizer(all_contexts, padding=False, truncation=True, max_length=512)
-
-    del all_prompts, all_contexts, all_pairs
-    gc.collect()
-
+    # 3. Pre-tokenize in chunks to avoid RAM spike
+    CHUNK_SIZE = 2000  # tokenize 2000 pairs at a time
     items = []
-    for pair_idx, (p_ids, c_ids) in enumerate(zip(enc_prompts["input_ids"], enc_contexts["input_ids"])):
-        c_len = min(len(c_ids), len(p_ids))
-        items.append({
-            "pair_idx": pair_idx,
-            "meta": all_meta[pair_idx],
-            "input_ids": p_ids,
-            "ctx_len": c_len,
-            "seq_len": len(p_ids)
-        })
+    for chunk_start in range(0, len(all_pairs), CHUNK_SIZE):
+        chunk = all_pairs[chunk_start : chunk_start + CHUNK_SIZE]
+        chunk_prompts = [ctx + cont for ctx, cont in chunk]
+        chunk_contexts = [ctx for ctx, _ in chunk]
 
-    del enc_prompts, enc_contexts
+        enc_p = tokenizer(chunk_prompts, padding=False, truncation=True, max_length=512)
+        enc_c = tokenizer(chunk_contexts, padding=False, truncation=True, max_length=512)
+
+        for i, (p_ids, c_ids) in enumerate(zip(enc_p["input_ids"], enc_c["input_ids"])):
+            c_len = min(len(c_ids), len(p_ids))
+            items.append({
+                "pair_idx": chunk_start + i,
+                "meta": all_meta[chunk_start + i],
+                "input_ids": p_ids,
+                "ctx_len": c_len,
+                "seq_len": len(p_ids)
+            })
+
+        del chunk, chunk_prompts, chunk_contexts, enc_p, enc_c
+        gc.collect()
+
+    del all_pairs
     gc.collect()
 
     # 4. Sort by length to minimize padding waste
     items.sort(key=lambda x: x["seq_len"])
 
-    # 5. Batched scoring with batch_size=16
+    # 5. Batched scoring with dynamic batch_size & memory checks
     pad_token_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
     all_scores = {}
     t0 = time.time()
-    n_batches = (len(items) + batch_size - 1) // batch_size
+    current_batch_size = batch_size
 
-    for b_idx in range(n_batches):
-        batch_items = items[b_idx * batch_size : (b_idx + 1) * batch_size]
+    b_idx = 0
+    while b_idx < len(items):
+        # Check memory BEFORE each batch
+        try:
+            mem_stats = check_memory_limits(
+                max_ram_gb, max_vram_gb, context=f"{task_name} batch {b_idx}"
+            )
+        except MemoryError as e:
+            if auto_scale_batch and current_batch_size > min_batch_size:
+                new_bs = max(min_batch_size, current_batch_size // 2)
+                print(f"  [MEM] {e}. Reducing batch_size {current_batch_size} -> {new_bs}")
+                current_batch_size = new_bs
+                gc.collect()
+                if device.type == "cuda":
+                    torch.cuda.empty_cache()
+                continue
+            else:
+                print(f"  [ABORT] {e}")
+                raise
+
+        batch_items = items[b_idx : b_idx + current_batch_size]
         max_b_len = max(it["seq_len"] for it in batch_items)
 
         b_input_ids = []
@@ -219,8 +304,27 @@ def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=32, modul
         t_input_ids = torch.tensor(b_input_ids, dtype=torch.long, device=device)
         t_att_mask = torch.tensor(b_att_mask, dtype=torch.long, device=device)
 
-        logits = _forward_with_oom_fallback(model, t_input_ids, t_att_mask, device)
-        log_probs = torch.log_softmax(logits, dim=-1)
+        try:
+            logits = _forward_with_oom_fallback(model, t_input_ids, t_att_mask, device)
+        except MemoryError:
+            if auto_scale_batch and current_batch_size > min_batch_size:
+                new_bs = max(min_batch_size, current_batch_size // 2)
+                print(f"  [OOM] Reducing batch_size {current_batch_size} -> {new_bs}")
+                current_batch_size = new_bs
+                del t_input_ids, t_att_mask
+                gc.collect()
+                if device.type == "cuda":
+                    torch.cuda.empty_cache()
+                continue
+            else:
+                raise
+
+        # NaN safety
+        if not torch.isfinite(logits).all():
+            logits = torch.nan_to_num(logits, nan=-1e4, posinf=1e4, neginf=-1e4)
+
+        # FP32 log_softmax for numerical stability
+        log_probs = torch.log_softmax(logits.float(), dim=-1)
 
         for row_idx, it in enumerate(batch_items):
             c_len = it["ctx_len"]
@@ -234,12 +338,21 @@ def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=32, modul
             all_scores[it["meta"]] = score
 
         del logits, log_probs, t_input_ids, t_att_mask
+        b_idx += current_batch_size
 
-        if (b_idx + 1) % 10 == 0 or (b_idx + 1) == n_batches:
+        # Periodic cleanup every 5 batches
+        if b_idx % (current_batch_size * 5) < current_batch_size:
+            gc.collect()
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
+
+        # Progress reporting
+        if b_idx % (current_batch_size * 10) < current_batch_size or b_idx >= len(items):
             elapsed = time.time() - t0
-            eta = (elapsed / (b_idx + 1)) * (n_batches - (b_idx + 1))
-            pct = ((b_idx + 1) / n_batches) * 100
-            print(f"  {task_name}: batch {b_idx + 1}/{n_batches} ({pct:.0f}%, elapsed {elapsed:.1f}s, ETA {eta:.1f}s)")
+            print(f"  {task_name}: {b_idx}/{len(items)} items "
+                  f"({elapsed:.1f}s, bs={current_batch_size}, "
+                  f"RAM={mem_stats['ram_used_gb']}GB, "
+                  f"VRAM={mem_stats['vram_used_gb']}GB)")
 
     # 6. Evaluate accuracy
     correct = 0
@@ -307,9 +420,41 @@ def main():
     ap.add_argument("--model", default="models/gpt2")
     ap.add_argument("--tasks", default="piqa,arc_easy,arc_challenge,hellaswag,winogrande")
     ap.add_argument("--num_samples", type=int, default=500)
-    ap.add_argument("--batch_size", type=int, default=32)
+    ap.add_argument("--batch_size", type=int, default=8,
+                    help="Initial batch size (auto-reduced on memory pressure)")
+    ap.add_argument("--max_ram_gb", type=float, default=8.0,
+                    help="Abort if process RAM usage exceeds this (GB)")
+    ap.add_argument("--max_vram_gb", type=float, default=5.5,
+                    help="Abort if process VRAM usage exceeds this (GB)")
+    ap.add_argument("--auto_scale_batch", action="store_true", default=True,
+                    help="Automatically reduce batch_size on memory pressure")
+    ap.add_argument("--min_batch_size", type=int, default=1,
+                    help="Never reduce batch_size below this")
+    ap.add_argument("--enable_watchdog", action="store_true", default=True,
+                    help="Force-kill if RAM exceeds max_ram_gb + 2 GB")
+    ap.add_argument("--seed", type=int, default=42,
+                    help="Random seed for reproducibility")
     ap.add_argument("--output_dir", required=True)
     args = ap.parse_args()
+
+    # Reproducibility seed
+    torch.manual_seed(args.seed)
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+
+    # Optional background watchdog
+    if args.enable_watchdog and (args.max_ram_gb + 1.0 < 15.0):
+        watchdog = threading.Thread(
+            target=_memory_watchdog,
+            args=(args.max_ram_gb + 2.0,),
+            daemon=True,
+        )
+        watchdog.start()
+
+    # Print memory state
+    ram_used, ram_total = get_ram_usage_gb()
+    vram_used, vram_total = get_vram_usage_gb()
+    print(f"[START] RAM: {ram_used:.2f}/{ram_total:.2f} GB, VRAM: {vram_used:.2f}/{vram_total:.2f} GB")
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Loading {args.model} on {device}...")
@@ -339,6 +484,10 @@ def main():
             module_name=args.module,
             model_name=args.model,
             output_dir=args.output_dir,
+            max_ram_gb=args.max_ram_gb,
+            max_vram_gb=args.max_vram_gb,
+            auto_scale_batch=args.auto_scale_batch,
+            min_batch_size=args.min_batch_size,
         )
         results[task_clean] = result
         print(f"  {task_clean}: {result['accuracy']:.2f}%")
