@@ -1,0 +1,137 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Loading models/gpt2 on cuda...
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 4322.28it/s]
+2026-09-26 04:15:06,104 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 04:15:06,571 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 04:15:06,796 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/tree/refs%2Fconvert%2Fparquet/plain_text%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 04:15:26,989 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 04:15:27,445 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 04:15:27,682 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Easy%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 04:16:58,412 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 04:16:58,942 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Challenge%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 04:18:26,884 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 04:18:27,401 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Rowan/hellaswag/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 04:18:27,665 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Rowan/hellaswag/tree/refs%2Fconvert%2Fparquet/default%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 04:19:13,903 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 04:19:14,395 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/winogrande/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 04:19:14,672 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/winogrande/tree/refs%2Fconvert%2Fparquet/winogrande_xl%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+
+=== Evaluating piqa ===
+  piqa: batch 10/125 (8%, elapsed 2.7s, ETA 31.6s)
+  piqa: batch 20/125 (16%, elapsed 4.0s, ETA 21.0s)
+  piqa: batch 30/125 (24%, elapsed 5.4s, ETA 17.2s)
+  piqa: batch 40/125 (32%, elapsed 7.0s, ETA 14.9s)
+  piqa: batch 50/125 (40%, elapsed 8.0s, ETA 12.0s)
+  piqa: batch 60/125 (48%, elapsed 8.9s, ETA 9.6s)
+  piqa: batch 70/125 (56%, elapsed 9.7s, ETA 7.7s)
+  piqa: batch 80/125 (64%, elapsed 10.6s, ETA 6.0s)
+  piqa: batch 90/125 (72%, elapsed 11.5s, ETA 4.5s)
+  piqa: batch 100/125 (80%, elapsed 12.3s, ETA 3.1s)
+  piqa: batch 110/125 (88%, elapsed 13.3s, ETA 1.8s)
+  piqa: batch 120/125 (96%, elapsed 14.4s, ETA 0.6s)
+  piqa: batch 125/125 (100%, elapsed 17.6s, ETA 0.0s)
+  piqa: 59.00%
+
+=== Evaluating arc_easy ===
+  arc_easy: batch 10/250 (4%, elapsed 2.0s, ETA 47.0s)
+  arc_easy: batch 20/250 (8%, elapsed 5.1s, ETA 58.3s)
+  arc_easy: batch 30/250 (12%, elapsed 8.5s, ETA 62.5s)
+  arc_easy: batch 40/250 (16%, elapsed 12.0s, ETA 62.9s)
+  arc_easy: batch 50/250 (20%, elapsed 15.4s, ETA 61.5s)
+  arc_easy: batch 60/250 (24%, elapsed 18.9s, ETA 59.7s)
+  arc_easy: batch 70/250 (28%, elapsed 22.4s, ETA 57.6s)
+  arc_easy: batch 80/250 (32%, elapsed 25.6s, ETA 54.3s)
+  arc_easy: batch 90/250 (36%, elapsed 28.9s, ETA 51.4s)
+  arc_easy: batch 100/250 (40%, elapsed 32.5s, ETA 48.8s)
+  arc_easy: batch 110/250 (44%, elapsed 36.0s, ETA 45.8s)
+  arc_easy: batch 120/250 (48%, elapsed 39.4s, ETA 42.6s)
+  arc_easy: batch 130/250 (52%, elapsed 42.9s, ETA 39.6s)
+  arc_easy: batch 140/250 (56%, elapsed 46.4s, ETA 36.5s)
+  arc_easy: batch 150/250 (60%, elapsed 49.6s, ETA 33.0s)
+  arc_easy: batch 160/250 (64%, elapsed 52.9s, ETA 29.8s)
+  arc_easy: batch 170/250 (68%, elapsed 56.4s, ETA 26.6s)
+  arc_easy: batch 180/250 (72%, elapsed 60.0s, ETA 23.3s)
+  arc_easy: batch 190/250 (76%, elapsed 63.3s, ETA 20.0s)
+  arc_easy: batch 200/250 (80%, elapsed 66.9s, ETA 16.7s)
+  arc_easy: batch 210/250 (84%, elapsed 70.5s, ETA 13.4s)
+  arc_easy: batch 220/250 (88%, elapsed 74.0s, ETA 10.1s)
+  arc_easy: batch 230/250 (92%, elapsed 77.7s, ETA 6.8s)
+  arc_easy: batch 240/250 (96%, elapsed 84.9s, ETA 3.5s)
+  arc_easy: batch 250/250 (100%, elapsed 88.4s, ETA 0.0s)
+  arc_easy: 39.40%
+
+=== Evaluating arc_challenge ===
+  arc_challenge: batch 10/250 (4%, elapsed 2.2s, ETA 51.7s)
+  arc_challenge: batch 20/250 (8%, elapsed 4.1s, ETA 47.4s)
+  arc_challenge: batch 30/250 (12%, elapsed 6.1s, ETA 45.0s)
+  arc_challenge: batch 40/250 (16%, elapsed 8.5s, ETA 44.9s)
+  arc_challenge: batch 50/250 (20%, elapsed 10.9s, ETA 43.4s)
+  arc_challenge: batch 60/250 (24%, elapsed 13.0s, ETA 41.2s)
+  arc_challenge: batch 70/250 (28%, elapsed 15.1s, ETA 38.7s)
+  arc_challenge: batch 80/250 (32%, elapsed 17.4s, ETA 36.9s)
+  arc_challenge: batch 90/250 (36%, elapsed 19.7s, ETA 35.1s)
+  arc_challenge: batch 100/250 (40%, elapsed 21.9s, ETA 32.8s)
+  arc_challenge: batch 110/250 (44%, elapsed 23.9s, ETA 30.4s)
+  arc_challenge: batch 120/250 (48%, elapsed 26.1s, ETA 28.2s)
+  arc_challenge: batch 130/250 (52%, elapsed 28.5s, ETA 26.3s)
+  arc_challenge: batch 140/250 (56%, elapsed 30.8s, ETA 24.2s)
+  arc_challenge: batch 150/250 (60%, elapsed 32.8s, ETA 21.9s)
+  arc_challenge: batch 160/250 (64%, elapsed 34.8s, ETA 19.6s)
+  arc_challenge: batch 170/250 (68%, elapsed 37.3s, ETA 17.5s)
+  arc_challenge: batch 180/250 (72%, elapsed 39.5s, ETA 15.4s)
+  arc_challenge: batch 190/250 (76%, elapsed 41.6s, ETA 13.1s)
+  arc_challenge: batch 200/250 (80%, elapsed 43.8s, ETA 10.9s)
+  arc_challenge: batch 210/250 (84%, elapsed 46.2s, ETA 8.8s)
+  arc_challenge: batch 220/250 (88%, elapsed 48.6s, ETA 6.6s)
+  arc_challenge: batch 230/250 (92%, elapsed 50.4s, ETA 4.4s)
+  arc_challenge: batch 240/250 (96%, elapsed 52.3s, ETA 2.2s)
+  arc_challenge: batch 250/250 (100%, elapsed 84.5s, ETA 0.0s)
+  arc_challenge: 16.80%
+
+=== Evaluating hellaswag ===
+  hellaswag: batch 10/250 (4%, elapsed 5.7s, ETA 137.0s)
+  hellaswag: batch 20/250 (8%, elapsed 8.9s, ETA 102.7s)
+  hellaswag: batch 30/250 (12%, elapsed 11.6s, ETA 85.0s)
+  hellaswag: batch 40/250 (16%, elapsed 12.8s, ETA 67.3s)
+  hellaswag: batch 50/250 (20%, elapsed 13.8s, ETA 55.3s)
+  hellaswag: batch 60/250 (24%, elapsed 14.9s, ETA 47.3s)
+  hellaswag: batch 70/250 (28%, elapsed 16.4s, ETA 42.2s)
+  hellaswag: batch 80/250 (32%, elapsed 18.0s, ETA 38.2s)
+  hellaswag: batch 90/250 (36%, elapsed 19.6s, ETA 34.8s)
+  hellaswag: batch 100/250 (40%, elapsed 20.8s, ETA 31.2s)
+  hellaswag: batch 110/250 (44%, elapsed 21.9s, ETA 27.8s)
+  hellaswag: batch 120/250 (48%, elapsed 22.9s, ETA 24.8s)
+  hellaswag: batch 130/250 (52%, elapsed 23.9s, ETA 22.0s)
+  hellaswag: batch 140/250 (56%, elapsed 24.8s, ETA 19.5s)
+  hellaswag: batch 150/250 (60%, elapsed 25.8s, ETA 17.2s)
+  hellaswag: batch 160/250 (64%, elapsed 26.8s, ETA 15.1s)
+  hellaswag: batch 170/250 (68%, elapsed 27.9s, ETA 13.2s)
+  hellaswag: batch 180/250 (72%, elapsed 29.9s, ETA 11.6s)
+  hellaswag: batch 190/250 (76%, elapsed 31.9s, ETA 10.1s)
+  hellaswag: batch 200/250 (80%, elapsed 33.9s, ETA 8.5s)
+  hellaswag: batch 210/250 (84%, elapsed 35.8s, ETA 6.8s)
+  hellaswag: batch 220/250 (88%, elapsed 37.8s, ETA 5.2s)
+  hellaswag: batch 230/250 (92%, elapsed 39.9s, ETA 3.5s)
+  hellaswag: batch 240/250 (96%, elapsed 41.9s, ETA 1.7s)
+  hellaswag: batch 250/250 (100%, elapsed 43.9s, ETA 0.0s)
+  hellaswag: 31.40%
+
+=== Evaluating winogrande ===
+  winogrande: batch 10/125 (8%, elapsed 2.0s, ETA 23.3s)
+  winogrande: batch 20/125 (16%, elapsed 3.9s, ETA 20.5s)
+  winogrande: batch 30/125 (24%, elapsed 5.7s, ETA 18.1s)
+  winogrande: batch 40/125 (32%, elapsed 7.7s, ETA 16.3s)
+  winogrande: batch 50/125 (40%, elapsed 9.5s, ETA 14.3s)
+  winogrande: batch 60/125 (48%, elapsed 11.5s, ETA 12.5s)
+  winogrande: batch 70/125 (56%, elapsed 13.4s, ETA 10.5s)
+  winogrande: batch 80/125 (64%, elapsed 15.9s, ETA 9.0s)
+  winogrande: batch 90/125 (72%, elapsed 19.4s, ETA 7.5s)
+  winogrande: batch 100/125 (80%, elapsed 22.9s, ETA 5.7s)
+  winogrande: batch 110/125 (88%, elapsed 26.1s, ETA 3.6s)
+  winogrande: batch 120/125 (96%, elapsed 29.7s, ETA 1.2s)
+  winogrande: batch 125/125 (100%, elapsed 31.4s, ETA 0.0s)
+  winogrande: 49.60%
+Warning: could not save run_metadata.json: No module named 'scripts.save_metadata'
+
+Results saved to results\zeroshot_parallel\come_compressor

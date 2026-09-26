@@ -1,0 +1,26 @@
+module,reason
+aegis_v5,missing run_metadata.json
+aegis_v5,missing piqa.json
+aegis_v5,missing arc_easy.json
+aegis_v5,missing arc_challenge.json
+aegis_v5,missing hellaswag.json
+aegis_v5,missing winogrande.json
+aegis_v6,missing run_metadata.json
+aegis_v6,missing piqa.json
+aegis_v6,missing arc_easy.json
+aegis_v6,missing arc_challenge.json
+aegis_v6,missing hellaswag.json
+aegis_v6,missing winogrande.json
+armor_pruner,missing run_metadata.json
+armor_pruner,missing piqa.json
+armor_pruner,missing arc_easy.json
+armor_pruner,missing arc_challenge.json
+armor_pruner,missing hellaswag.json
+armor_pruner,missing winogrande.json
+ast_pruner,missing run_metadata.json
+ast_pruner,missing piqa.json
+ast_pruner,missing arc_easy.json
+ast_pruner,missing arc_challenge.json
+ast_pruner,missing hellaswag.json
+ast_pruner,missing winogrande.json
+come_compressor,missing run_metadata.json

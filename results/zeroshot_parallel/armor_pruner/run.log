@@ -1,0 +1,18 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+[START] RAM: 0.70/16.79 GB, VRAM: 0.00/8.59 GB
+Loading models/gpt2 on cuda...
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3974.14it/s]
+2026-09-26 05:10:10,528 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3592 on transformer.h.0.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 05:10:10,973 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.4006 on transformer.h.0.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 05:10:19,738 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3800 on transformer.h.0.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 05:10:21,754 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3773 on transformer.h.1.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 05:10:22,217 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3989 on transformer.h.1.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 05:10:29,139 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3772 on transformer.h.1.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 05:10:30,362 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3684 on transformer.h.1.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 05:10:32,361 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3723 on transformer.h.2.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 05:10:32,961 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.4027 on transformer.h.2.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 05:10:39,813 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3745 on transformer.h.2.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 05:10:41,336 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3934 on transformer.h.2.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 05:10:43,295 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3715 on transformer.h.3.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 05:10:43,764 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3989 on transformer.h.3.attn.c_proj exceeded threshold 0.3500.
