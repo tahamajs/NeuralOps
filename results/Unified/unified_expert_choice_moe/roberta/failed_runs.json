@@ -1,0 +1,12 @@
+[
+  {
+    "module": "expert_choice_moe",
+    "model": "models\\roberta_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 89.33,
+    "error": "base_before=124647170 base_after=138872078 delta=+11.41%",
+    "timestamp": "2026-09-24T18:15:14.837420"
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "module": "halo_regla",
+  "model_path": "D:/SVD_Project/models/gpt2",
+  "dataset": "wikitext2",
+  "perplexity": 29.019805908203125,
+  "seq_len": 1024,
+  "stride": 512
+}

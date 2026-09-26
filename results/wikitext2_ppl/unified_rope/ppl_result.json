@@ -1,8 +1,0 @@
-{
-  "module": "unified_rope",
-  "model_path": "D:/SVD_Project/models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 3799.27001953125,
-  "seq_len": 1024,
-  "stride": 512
-}

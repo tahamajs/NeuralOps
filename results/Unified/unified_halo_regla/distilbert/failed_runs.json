@@ -1,0 +1,12 @@
+[
+  {
+    "module": "halo_regla",
+    "model": "models\\distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 90.37,
+    "error": "base_before=66955010 base_after=67010378 delta=+0.08%",
+    "timestamp": "2026-09-24T18:47:49.488463"
+  }
+]
