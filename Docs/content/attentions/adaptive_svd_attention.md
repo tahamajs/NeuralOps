@@ -298,7 +298,7 @@ A Triton kernel for Adaptive SVD Attention fuses the frozen SVD base GEMM tile a
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **87.96%** | -2.64% | 0.8852 | 1.15x | 0 | [svd-linear-attention-distilbert-sst2-adaptive-svd-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-adaptive-svd-attention) | 2026-09-23 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **88.30%** | -2.30% | 0.8867 | 1.15x | 0 | [svd-linear-attention-distilbert-sst2-adaptive-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-adaptive-svd) | 2026-09-27 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **68.90%** | -12.90% | 0.6856 | 1.15x | 6 | [svd-linear-attention-distilbert-mnli-full-adaptive-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-adaptive-svd) | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **92.30%** | -2.00% | 0.9192 | 1.15x | 6 | N/A | 2026-09-19 |
 
