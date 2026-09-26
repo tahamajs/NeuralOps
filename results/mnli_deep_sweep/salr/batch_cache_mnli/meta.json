@@ -1,6 +1,0 @@
-{
-  "dataset": "mnli",
-  "max_length": 128,
-  "num_eval_batches": 11,
-  "num_train_batches": 50
-}
