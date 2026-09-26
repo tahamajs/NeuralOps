@@ -1,0 +1,12 @@
+[
+  {
+    "module": "salr",
+    "model": "models/distilbert_agnews_full",
+    "dataset": "agnews",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 70.18,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-25T17:50:41.588298"
+  }
+]
