@@ -646,7 +646,7 @@ print(f"[PASS] aegis_v6 forward logits shape:", outputs.logits.shape)
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **50.20%** | -0.80% | 0.4181 | 1.25x | 0 | N/A | 2026-09-18 |
 | **gpt2** | ag_news | `PASS` | 79.70% | **36.00%** | -43.70% | 0.2902 | 1.28x | 0 | N/A | 2026-09-18 |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **89.11%** | -1.49% | 0.8977 | 1.11x | 0 | [svd-linear-attention-distilbert-sst2-aegis-v6](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-v6) | 2026-09-25 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **89.11%** | -1.49% | 0.8977 | 1.11x | 0 | [svd-linear-attention-distilbert-sst2-aegis-v6](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-v6) | 2026-09-27 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **51.40%** | -30.40% | 0.4655 | 1.25x | 6 | [svd-linear-attention-distilbert-mnli-full-aegis-v6](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-aegis-v6) | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **93.30%** | -1.00% | 0.9290 | 1.25x | 0 | N/A | 2026-09-19 |
 | **distilbert-base-uncased-finetuned-sst-2-english** | sst2 | `PASS` | 90.60% | **89.11%** | -1.49% | 0.8977 | 1.11x | 0 | [svd-linear-attention-distilbert-base-uncased-finetuned-sst-2-english-aegis-v6](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-base-uncased-finetuned-sst-2-english-aegis-v6) | 2026-09-23 |
