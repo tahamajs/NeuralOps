@@ -13,3 +13,127 @@ Loading models/gpt2 on cuda...
 2026-09-26 17:53:31,092 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Easy%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
 2026-09-26 17:57:40,640 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
 2026-09-26 17:57:41,132 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Challenge%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 18:11:45,072 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 18:11:46,131 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Rowan/hellaswag/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 18:11:46,489 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Rowan/hellaswag/tree/refs%2Fconvert%2Fparquet/default%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 18:20:57,605 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 18:20:58,111 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/winogrande/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 18:20:58,352 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/winogrande/tree/refs%2Fconvert%2Fparquet/winogrande_xl%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+
+=== Evaluating piqa ===
+  piqa: 80/1000 items (4.0s, bs=8, RAM=1.52GB, VRAM=0.53GB)
+  piqa: 160/1000 items (5.9s, bs=8, RAM=1.52GB, VRAM=0.53GB)
+  piqa: 240/1000 items (8.0s, bs=8, RAM=1.52GB, VRAM=0.54GB)
+  piqa: 320/1000 items (9.9s, bs=8, RAM=1.52GB, VRAM=0.54GB)
+  piqa: 400/1000 items (11.8s, bs=8, RAM=1.52GB, VRAM=0.55GB)
+  piqa: 480/1000 items (13.7s, bs=8, RAM=1.52GB, VRAM=0.55GB)
+  piqa: 560/1000 items (15.6s, bs=8, RAM=1.52GB, VRAM=0.56GB)
+  piqa: 640/1000 items (17.6s, bs=8, RAM=1.52GB, VRAM=0.56GB)
+  piqa: 720/1000 items (19.6s, bs=8, RAM=1.52GB, VRAM=0.57GB)
+  piqa: 800/1000 items (21.5s, bs=8, RAM=1.52GB, VRAM=0.58GB)
+  piqa: 880/1000 items (23.5s, bs=8, RAM=1.52GB, VRAM=0.6GB)
+  piqa: 960/1000 items (25.6s, bs=8, RAM=1.52GB, VRAM=0.64GB)
+  piqa: 1000/1000 items (26.9s, bs=8, RAM=1.53GB, VRAM=0.73GB)
+  piqa: 54.00%
+
+=== Evaluating arc_easy ===
+  arc_easy: 80/1998 items (2.1s, bs=8, RAM=1.54GB, VRAM=0.53GB)
+  arc_easy: 160/1998 items (5.0s, bs=8, RAM=1.54GB, VRAM=0.53GB)
+  arc_easy: 240/1998 items (7.0s, bs=8, RAM=1.54GB, VRAM=0.53GB)
+  arc_easy: 320/1998 items (9.5s, bs=8, RAM=1.54GB, VRAM=0.53GB)
+  arc_easy: 400/1998 items (11.8s, bs=8, RAM=1.54GB, VRAM=0.54GB)
+  arc_easy: 480/1998 items (13.9s, bs=8, RAM=1.54GB, VRAM=0.54GB)
+  arc_easy: 560/1998 items (16.6s, bs=8, RAM=1.54GB, VRAM=0.54GB)
+  arc_easy: 640/1998 items (18.7s, bs=8, RAM=1.54GB, VRAM=0.54GB)
+  arc_easy: 720/1998 items (20.9s, bs=8, RAM=1.54GB, VRAM=0.54GB)
+  arc_easy: 800/1998 items (23.3s, bs=8, RAM=1.54GB, VRAM=0.54GB)
+  arc_easy: 880/1998 items (25.6s, bs=8, RAM=1.54GB, VRAM=0.55GB)
+  arc_easy: 960/1998 items (29.4s, bs=8, RAM=1.54GB, VRAM=0.55GB)
+  arc_easy: 1040/1998 items (36.2s, bs=8, RAM=1.72GB, VRAM=0.55GB)
+  arc_easy: 1120/1998 items (50.2s, bs=8, RAM=1.72GB, VRAM=0.55GB)
+  arc_easy: 1200/1998 items (65.6s, bs=8, RAM=1.72GB, VRAM=0.56GB)
+  arc_easy: 1280/1998 items (81.3s, bs=8, RAM=1.66GB, VRAM=0.56GB)
+  arc_easy: 1360/1998 items (96.6s, bs=8, RAM=1.66GB, VRAM=0.56GB)
+  arc_easy: 1440/1998 items (111.8s, bs=8, RAM=1.66GB, VRAM=0.56GB)
+  arc_easy: 1520/1998 items (127.1s, bs=8, RAM=1.66GB, VRAM=0.57GB)
+  arc_easy: 1600/1998 items (142.6s, bs=8, RAM=1.66GB, VRAM=0.57GB)
+  arc_easy: 1680/1998 items (158.1s, bs=8, RAM=1.6GB, VRAM=0.57GB)
+  arc_easy: 1760/1998 items (173.9s, bs=8, RAM=1.54GB, VRAM=0.58GB)
+  arc_easy: 1840/1998 items (190.5s, bs=8, RAM=1.54GB, VRAM=0.59GB)
+  arc_easy: 1920/1998 items (226.7s, bs=8, RAM=1.69GB, VRAM=0.6GB)
+  arc_easy: 2000/1998 items (246.1s, bs=8, RAM=1.68GB, VRAM=0.69GB)
+  arc_easy: 22.40%
+
+=== Evaluating arc_challenge ===
+  arc_challenge: 80/1997 items (5.1s, bs=8, RAM=1.66GB, VRAM=0.53GB)
+  arc_challenge: 160/1997 items (7.8s, bs=8, RAM=1.66GB, VRAM=0.53GB)
+  arc_challenge: 240/1997 items (10.1s, bs=8, RAM=1.66GB, VRAM=0.54GB)
+  arc_challenge: 320/1997 items (12.3s, bs=8, RAM=1.66GB, VRAM=0.54GB)
+  arc_challenge: 400/1997 items (14.7s, bs=8, RAM=1.66GB, VRAM=0.54GB)
+  arc_challenge: 480/1997 items (17.0s, bs=8, RAM=1.66GB, VRAM=0.54GB)
+  arc_challenge: 560/1997 items (19.7s, bs=8, RAM=1.66GB, VRAM=0.54GB)
+  arc_challenge: 640/1997 items (22.0s, bs=8, RAM=1.66GB, VRAM=0.55GB)
+  arc_challenge: 720/1997 items (24.2s, bs=8, RAM=1.66GB, VRAM=0.55GB)
+  arc_challenge: 800/1997 items (26.5s, bs=8, RAM=1.66GB, VRAM=0.55GB)
+  arc_challenge: 880/1997 items (30.7s, bs=8, RAM=1.66GB, VRAM=0.55GB)
+  arc_challenge: 960/1997 items (37.4s, bs=8, RAM=1.66GB, VRAM=0.56GB)
+  arc_challenge: 1040/1997 items (41.5s, bs=8, RAM=1.71GB, VRAM=0.56GB)
+  arc_challenge: 1120/1997 items (47.4s, bs=8, RAM=1.66GB, VRAM=0.56GB)
+  arc_challenge: 1200/1997 items (57.8s, bs=8, RAM=1.87GB, VRAM=0.57GB)
+  arc_challenge: 1280/1997 items (73.9s, bs=8, RAM=1.9GB, VRAM=0.57GB)
+  arc_challenge: 1360/1997 items (91.7s, bs=8, RAM=1.96GB, VRAM=0.57GB)
+  arc_challenge: 1440/1997 items (109.1s, bs=8, RAM=1.8GB, VRAM=0.58GB)
+  arc_challenge: 1520/1997 items (300.5s, bs=8, RAM=1.59GB, VRAM=0.58GB)
+  arc_challenge: 1600/1997 items (362.6s, bs=8, RAM=1.84GB, VRAM=0.58GB)
+  arc_challenge: 1680/1997 items (422.1s, bs=8, RAM=1.4GB, VRAM=0.59GB)
+  arc_challenge: 1760/1997 items (445.9s, bs=8, RAM=1.25GB, VRAM=0.6GB)
+  arc_challenge: 1840/1997 items (744.9s, bs=8, RAM=1.08GB, VRAM=0.61GB)
+  arc_challenge: 1920/1997 items (793.2s, bs=8, RAM=1.02GB, VRAM=0.63GB)
+  arc_challenge: 2000/1997 items (841.1s, bs=8, RAM=2.26GB, VRAM=0.74GB)
+  arc_challenge: 21.20%
+
+=== Evaluating hellaswag ===
+  hellaswag: 80/2000 items (15.5s, bs=8, RAM=1.07GB, VRAM=0.54GB)
+  hellaswag: 160/2000 items (27.2s, bs=8, RAM=0.99GB, VRAM=0.55GB)
+  hellaswag: 240/2000 items (39.1s, bs=8, RAM=0.97GB, VRAM=0.55GB)
+  hellaswag: 320/2000 items (53.0s, bs=8, RAM=1.05GB, VRAM=0.55GB)
+  hellaswag: 400/2000 items (63.7s, bs=8, RAM=0.97GB, VRAM=0.56GB)
+  hellaswag: 480/2000 items (371.8s, bs=8, RAM=1.43GB, VRAM=0.56GB)
+  hellaswag: 560/2000 items (381.1s, bs=8, RAM=1.21GB, VRAM=0.56GB)
+  hellaswag: 640/2000 items (392.0s, bs=8, RAM=1.16GB, VRAM=0.56GB)
+  hellaswag: 720/2000 items (401.4s, bs=8, RAM=1.14GB, VRAM=0.57GB)
+  hellaswag: 800/2000 items (475.9s, bs=8, RAM=0.9GB, VRAM=0.57GB)
+  hellaswag: 880/2000 items (484.2s, bs=8, RAM=0.88GB, VRAM=0.57GB)
+  hellaswag: 960/2000 items (487.5s, bs=8, RAM=0.85GB, VRAM=0.57GB)
+  hellaswag: 1040/2000 items (489.8s, bs=8, RAM=0.85GB, VRAM=0.57GB)
+  hellaswag: 1120/2000 items (492.5s, bs=8, RAM=0.85GB, VRAM=0.58GB)
+  hellaswag: 1200/2000 items (495.1s, bs=8, RAM=0.85GB, VRAM=0.58GB)
+  hellaswag: 1280/2000 items (497.7s, bs=8, RAM=0.85GB, VRAM=0.58GB)
+  hellaswag: 1360/2000 items (500.3s, bs=8, RAM=0.85GB, VRAM=0.58GB)
+  hellaswag: 1440/2000 items (502.8s, bs=8, RAM=0.85GB, VRAM=0.58GB)
+  hellaswag: 1520/2000 items (505.3s, bs=8, RAM=0.85GB, VRAM=0.59GB)
+  hellaswag: 1600/2000 items (507.9s, bs=8, RAM=0.85GB, VRAM=0.59GB)
+  hellaswag: 1680/2000 items (510.2s, bs=8, RAM=0.85GB, VRAM=0.6GB)
+  hellaswag: 1760/2000 items (538.8s, bs=8, RAM=1.02GB, VRAM=0.6GB)
+  hellaswag: 1840/2000 items (542.4s, bs=8, RAM=0.97GB, VRAM=0.61GB)
+  hellaswag: 1920/2000 items (544.4s, bs=8, RAM=0.97GB, VRAM=0.61GB)
+  hellaswag: 2000/2000 items (546.6s, bs=8, RAM=0.97GB, VRAM=0.64GB)
+  hellaswag: 26.60%
+
+=== Evaluating winogrande ===
+  winogrande: 80/1000 items (1.7s, bs=8, RAM=0.96GB, VRAM=0.54GB)
+  winogrande: 160/1000 items (3.4s, bs=8, RAM=0.96GB, VRAM=0.54GB)
+  winogrande: 240/1000 items (5.1s, bs=8, RAM=0.96GB, VRAM=0.54GB)
+  winogrande: 320/1000 items (6.8s, bs=8, RAM=0.96GB, VRAM=0.54GB)
+  winogrande: 400/1000 items (8.7s, bs=8, RAM=0.96GB, VRAM=0.54GB)
+  winogrande: 480/1000 items (10.2s, bs=8, RAM=0.95GB, VRAM=0.55GB)
+  winogrande: 560/1000 items (12.1s, bs=8, RAM=0.94GB, VRAM=0.55GB)
+  winogrande: 640/1000 items (13.8s, bs=8, RAM=0.92GB, VRAM=0.55GB)
+  winogrande: 720/1000 items (15.7s, bs=8, RAM=0.9GB, VRAM=0.55GB)
+  winogrande: 800/1000 items (17.5s, bs=8, RAM=0.9GB, VRAM=0.55GB)
+  winogrande: 880/1000 items (19.3s, bs=8, RAM=0.9GB, VRAM=0.55GB)
+  winogrande: 960/1000 items (21.1s, bs=8, RAM=0.9GB, VRAM=0.56GB)
+  winogrande: 1000/1000 items (22.1s, bs=8, RAM=0.9GB, VRAM=0.57GB)
+  winogrande: 50.40%
+
+Results saved to results\zeroshot_parallel\hla_attention
