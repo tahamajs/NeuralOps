@@ -221,7 +221,7 @@ class CompressedAttentionLayer2(CompressedAttentionLayer):
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **76.80%** | +25.80% | 0.7560 | 1.00x | 0 | N/A | 2026-09-18 |
 | **roberta-base** | ag_news | `PASS` | 74.50% | **35.00%** | -39.50% | 0.2947 | 1.00x | 0 | N/A | 2026-09-18 |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **89.33%** | -1.27% | 0.8986 | 1.11x | 0 | [svd-linear-attention-distilbert-sst2-compressed-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-compressed-attention) | 2026-09-23 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **89.33%** | -1.27% | 0.8984 | 1.11x | 0 | [svd-linear-attention-distilbert-sst2-compressed-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-compressed-attention) | 2026-09-27 |
 
 
 > [!NOTE]
