@@ -2955,10 +2955,10 @@ def run_single_module_main(args) -> dict:
     device = torch.device("cuda" if torch.cuda.is_available() else ("mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available() else "cpu"))
     if args.dataset_dir is None:
         for cand in [
-            Path("D:/SVD_Project/Codes/framework/data/glue_data") / args.dataset,
+            Path("PROJECT_ROOT_PLACEHOLDER/Codes/framework/data/glue_data") / args.dataset,
             Path("Codes/framework/data/glue_data") / args.dataset,
             Path(__file__).parent / "data" / "glue_data" / args.dataset,
-            Path("D:/SVD_Project/Codes/framework/data/glue_data/sst2"),
+            Path("PROJECT_ROOT_PLACEHOLDER/Codes/framework/data/glue_data/sst2"),
             Path("Codes/framework/data/glue_data/sst2"),
             Path(__file__).parent / "data" / "glue_data" / "sst2",
         ]:
@@ -2974,7 +2974,7 @@ def run_single_module_main(args) -> dict:
             cand_roberta = [
                 model_p.parent / "roberta_sst2",
                 Path("models/roberta_sst2"),
-                Path("D:/SVD_Project/models/roberta_sst2"),
+                Path("PROJECT_ROOT_PLACEHOLDER/models/roberta_sst2"),
             ]
             for c in cand_roberta:
                 if c.exists() and ((c / "config.json").exists() or (c / "model.safetensors").exists()):
@@ -2985,7 +2985,7 @@ def run_single_module_main(args) -> dict:
             cand_gpt2 = [
                 model_p.parent / "gpt2_sst2",
                 Path("models/gpt2_sst2"),
-                Path("D:/SVD_Project/models/gpt2_sst2"),
+                Path("PROJECT_ROOT_PLACEHOLDER/models/gpt2_sst2"),
             ]
             for c in cand_gpt2:
                 if c.exists() and ((c / "config.json").exists() or (c / "model.safetensors").exists()):
@@ -3010,7 +3010,7 @@ def run_single_module_main(args) -> dict:
             ds = load_dataset(args.dataset)
     except Exception as e:
         LOG.warning("Failed to load dataset '%s' from disk/hub (%s). Falling back to local sst2.", args.dataset, e)
-        fallback_sst2 = Path("D:/SVD_Project/Codes/framework/data/glue_data/sst2")
+        fallback_sst2 = Path("PROJECT_ROOT_PLACEHOLDER/Codes/framework/data/glue_data/sst2")
         if not fallback_sst2.exists():
             fallback_sst2 = Path(__file__).parent / "data" / "glue_data" / "sst2"
         ds = load_from_disk(str(fallback_sst2))
@@ -4213,7 +4213,7 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
     print(f"[ISOLATED] Launching {module_name} (timeout={timeout_s}s) -> {log_path}")
     t0 = time.monotonic()
 
-    base_dir = Path("D:/svd_project") if Path("D:/svd_project").exists() else HERE.parent.parent
+    base_dir = HERE.parent.parent  # project root, resolved from this file's location
     extra_flags = (0x08000000 | subprocess.CREATE_NEW_PROCESS_GROUP) if os.name == "nt" else 0
 
     with open(log_path, "w", encoding="utf-8") as log_file:
@@ -4287,10 +4287,10 @@ def main():
 
     if args.dataset_dir is None:
         for cand in [
-            Path("D:/SVD_Project/Codes/framework/data/glue_data") / args.dataset,
+            Path("PROJECT_ROOT_PLACEHOLDER/Codes/framework/data/glue_data") / args.dataset,
             Path("Codes/framework/data/glue_data") / args.dataset,
             Path(__file__).parent / "data" / "glue_data" / args.dataset,
-            Path("D:/SVD_Project/Codes/framework/data/glue_data/sst2"),
+            Path("PROJECT_ROOT_PLACEHOLDER/Codes/framework/data/glue_data/sst2"),
             Path("Codes/framework/data/glue_data/sst2"),
             Path(__file__).parent / "data" / "glue_data" / "sst2",
         ]:
