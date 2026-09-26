@@ -27,7 +27,7 @@ def run_task(task: dict) -> dict:
             "--model", "models/gpt2",
             "--tasks", "piqa,arc_easy,arc_challenge,hellaswag,winogrande",
             "--num_samples", "500",
-            "--batch_size", "8",
+            "--batch_size", "16",
             "--output_dir", f"results/zeroshot_parallel/{module}",
         ]
     elif t == 'rank_sweep':
@@ -77,7 +77,7 @@ def run_task(task: dict) -> dict:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--queue", default="audit/master_queue.csv")
-    ap.add_argument("--parallel", type=int, default=2)
+    ap.add_argument("--parallel", type=int, default=1)
     ap.add_argument("--max_tasks", type=int, default=None,
                     help="Stop after N tasks (for testing)")
     ap.add_argument("--task_filter", default=None,
