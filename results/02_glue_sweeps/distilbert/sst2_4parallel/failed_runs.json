@@ -328,5 +328,25 @@
     "accuracy_pct": 90.6,
     "error": "note: zero compressed layers, zero injected layers, model unchanged",
     "timestamp": "2026-09-27T03:28:53.859852"
+  },
+  {
+    "module": "gated_linear_attn",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "RuntimeError: The size of tensor a (12) must match the size of tensor b (16) at non-singleton dimension 1",
+    "timestamp": "2026-09-27T03:29:25.563950"
+  },
+  {
+    "module": "gqa",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL_BELOW_CHANCE",
+    "perplexity": "",
+    "accuracy_pct": 48.51,
+    "error": "FAIL: accuracy (48.51%) below chance threshold (56.00%)",
+    "timestamp": "2026-09-27T03:29:48.039708"
   }
 ]
