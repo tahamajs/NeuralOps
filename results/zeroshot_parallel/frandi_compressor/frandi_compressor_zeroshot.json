@@ -1,0 +1,52 @@
+{
+  "module": "frandi_compressor",
+  "model": "models/gpt2",
+  "device": "cuda",
+  "batch_size": 8,
+  "num_samples_per_task": 500,
+  "average_accuracy": 41.44,
+  "total_eval_seconds": 224.38,
+  "timestamp_utc": "2026-09-26T03:50:22Z",
+  "tasks": {
+    "piqa": {
+      "task": "piqa",
+      "accuracy": 62.0,
+      "correct_samples": 310,
+      "total_samples": 500,
+      "elapsed_seconds": 30.23,
+      "batch_size": 8
+    },
+    "arc_easy": {
+      "task": "arc_easy",
+      "accuracy": 40.6,
+      "correct_samples": 203,
+      "total_samples": 500,
+      "elapsed_seconds": 51.9,
+      "batch_size": 8
+    },
+    "arc_challenge": {
+      "task": "arc_challenge",
+      "accuracy": 19.2,
+      "correct_samples": 96,
+      "total_samples": 500,
+      "elapsed_seconds": 56.93,
+      "batch_size": 8
+    },
+    "hellaswag": {
+      "task": "hellaswag",
+      "accuracy": 33.2,
+      "correct_samples": 166,
+      "total_samples": 500,
+      "elapsed_seconds": 59.37,
+      "batch_size": 8
+    },
+    "winogrande": {
+      "task": "winogrande",
+      "accuracy": 52.2,
+      "correct_samples": 261,
+      "total_samples": 500,
+      "elapsed_seconds": 25.95,
+      "batch_size": 8
+    }
+  }
+}

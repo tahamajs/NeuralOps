@@ -1,2 +1,11 @@
 C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
   warnings.warn(
+[START] RAM: 0.70/16.79 GB, VRAM: 0.00/8.59 GB
+Loading models/gpt2 on cuda...
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 4523.48it/s]
+2026-09-26 07:24:20,749 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 07:24:21,287 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 07:24:21,529 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/tree/refs%2Fconvert%2Fparquet/plain_text%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 07:24:57,129 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 07:24:57,633 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 07:24:57,876 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Easy%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"

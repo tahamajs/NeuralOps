@@ -1,2 +1,13 @@
 C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
   warnings.warn(
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+[START] RAM: 0.70/16.79 GB, VRAM: 0.00/8.59 GB
+Loading models/gpt2 on cuda...
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 5375.17it/s]
+2026-09-26 07:22:11,434 [INFO] framework.compression_engine.fwsvd_compressor: No tokenizer provided for FWSVD; proceeding with standard unweighted SVD.
+2026-09-26 07:23:33,355 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.5110 on transformer.h.2.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-26 07:24:13,763 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.5470 on transformer.h.3.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-26 07:24:36,878 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.5273 on transformer.h.4.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-26 07:25:00,124 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.5033 on transformer.h.5.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-26 07:25:25,742 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.5348 on transformer.h.6.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-26 07:25:54,688 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.5386 on transformer.h.7.attn.c_attn exceeded threshold 0.5000. Skipping compression (fallback).

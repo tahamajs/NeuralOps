@@ -2,4 +2,60 @@ C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.p
   warnings.warn(
 [START] RAM: 0.70/16.79 GB, VRAM: 0.00/8.59 GB
 Loading models/gpt2 on cuda...
-Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 4322.76it/s]
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3437.02it/s]
+2026-09-26 07:06:39,040 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2364 on transformer.h.0.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 07:06:39,040 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.0.mlp.c_fc.
+2026-09-26 07:07:25,670 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2485 on transformer.h.0.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 07:07:25,670 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.0.mlp.c_proj.
+2026-09-26 07:09:00,724 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2691 on transformer.h.1.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 07:09:00,725 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.1.mlp.c_fc.
+2026-09-26 07:09:46,059 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2800 on transformer.h.1.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 07:09:46,059 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.1.mlp.c_proj.
+2026-09-26 07:10:19,821 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2185 on transformer.h.2.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 07:10:19,821 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.2.attn.c_proj.
+2026-09-26 07:11:10,464 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2575 on transformer.h.2.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 07:11:10,464 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.2.mlp.c_fc.
+2026-09-26 07:11:57,880 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2548 on transformer.h.2.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 07:11:57,881 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.2.mlp.c_proj.
+2026-09-26 07:12:12,707 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2165 on transformer.h.3.attn.c_attn exceeded threshold 0.2000.
+2026-09-26 07:12:12,707 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.3.attn.c_attn.
+2026-09-26 07:12:24,708 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2302 on transformer.h.3.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 07:12:24,708 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.3.attn.c_proj.
+2026-09-26 07:13:27,338 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2503 on transformer.h.3.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 07:13:27,338 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.3.mlp.c_fc.
+2026-09-26 07:14:22,365 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2433 on transformer.h.3.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 07:14:22,369 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.3.mlp.c_proj.
+2026-09-26 07:14:45,619 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2034 on transformer.h.4.attn.c_attn exceeded threshold 0.2000.
+2026-09-26 07:14:45,619 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.4.attn.c_attn.
+2026-09-26 07:14:56,916 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2181 on transformer.h.4.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 07:14:56,916 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.4.attn.c_proj.
+2026-09-26 07:16:07,574 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2453 on transformer.h.4.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 07:16:07,574 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.4.mlp.c_fc.
+2026-09-26 07:16:56,326 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2522 on transformer.h.4.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 07:16:56,326 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.4.mlp.c_proj.
+2026-09-26 07:17:29,147 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2480 on transformer.h.5.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 07:17:29,148 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.5.attn.c_proj.
+2026-09-26 07:18:29,460 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2457 on transformer.h.5.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 07:18:29,460 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.5.mlp.c_fc.
+2026-09-26 07:19:11,755 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2536 on transformer.h.5.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 07:19:11,756 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.5.mlp.c_proj.
+2026-09-26 07:19:45,289 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2167 on transformer.h.6.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 07:19:45,289 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.6.attn.c_proj.
+2026-09-26 07:20:43,815 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2486 on transformer.h.6.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 07:20:43,815 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.6.mlp.c_fc.
+2026-09-26 07:21:26,427 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2552 on transformer.h.6.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 07:21:26,427 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.6.mlp.c_proj.
+2026-09-26 07:21:51,513 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2073 on transformer.h.7.attn.c_attn exceeded threshold 0.2000.
+2026-09-26 07:21:51,513 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.7.attn.c_attn.
+2026-09-26 07:22:00,389 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2369 on transformer.h.7.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 07:22:00,389 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.7.attn.c_proj.
+2026-09-26 07:23:17,070 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2479 on transformer.h.7.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 07:23:17,070 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.7.mlp.c_fc.
+2026-09-26 07:24:14,833 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2588 on transformer.h.7.mlp.c_proj exceeded threshold 0.2000.
+2026-09-26 07:24:14,834 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.7.mlp.c_proj.
+2026-09-26 07:24:36,350 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2349 on transformer.h.8.attn.c_attn exceeded threshold 0.2000.
+2026-09-26 07:24:36,351 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.8.attn.c_attn.
+2026-09-26 07:24:49,997 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2258 on transformer.h.8.attn.c_proj exceeded threshold 0.2000.
+2026-09-26 07:24:49,997 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.8.attn.c_proj.
+2026-09-26 07:25:55,315 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.2529 on transformer.h.8.mlp.c_fc exceeded threshold 0.2000.
+2026-09-26 07:25:55,316 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on transformer.h.8.mlp.c_fc.

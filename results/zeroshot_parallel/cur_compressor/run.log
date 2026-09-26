@@ -1,7 +1,51 @@
 C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
   warnings.warn(
-[START] RAM: 0.70/16.79 GB, VRAM: 0.00/8.59 GB
+[START] RAM: 0.71/16.79 GB, VRAM: 0.00/8.59 GB
 Loading models/gpt2 on cuda...
-Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 5200.54it/s]
-2026-09-26 06:50:07,282 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.0.attn.c_attn error 0.6455 exceeded max_error 0.2000
-2026-09-26 06:50:11,560 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.0.attn.c_proj error 0.2868 exceeded max_error 0.2000
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3877.43it/s]
+2026-09-26 07:05:28,497 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.0.attn.c_attn error 0.6455 exceeded max_error 0.2000
+2026-09-26 07:05:36,066 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.0.attn.c_proj error 0.2868 exceeded max_error 0.2000
+2026-09-26 07:06:36,103 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.0.mlp.c_fc error 0.6999 exceeded max_error 0.2000
+2026-09-26 07:06:49,414 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.0.mlp.c_proj error 0.6875 exceeded max_error 0.2000
+2026-09-26 07:07:13,289 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.1.attn.c_attn error 0.6022 exceeded max_error 0.2000
+2026-09-26 07:07:22,104 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.1.attn.c_proj error 0.6539 exceeded max_error 0.2000
+2026-09-26 07:08:21,538 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.1.mlp.c_fc error 0.7172 exceeded max_error 0.2000
+2026-09-26 07:08:39,711 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.1.mlp.c_proj error 0.7190 exceeded max_error 0.2000
+2026-09-26 07:09:01,359 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.2.attn.c_attn error 0.6450 exceeded max_error 0.2000
+2026-09-26 07:09:07,899 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.2.attn.c_proj error 0.6750 exceeded max_error 0.2000
+2026-09-26 07:10:16,975 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.2.mlp.c_fc error 0.7140 exceeded max_error 0.2000
+2026-09-26 07:10:29,908 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.2.mlp.c_proj error 0.7073 exceeded max_error 0.2000
+2026-09-26 07:10:42,624 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.3.attn.c_attn error 0.6955 exceeded max_error 0.2000
+2026-09-26 07:10:51,371 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.3.attn.c_proj error 0.6495 exceeded max_error 0.2000
+2026-09-26 07:11:53,759 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.3.mlp.c_fc error 0.7257 exceeded max_error 0.2000
+2026-09-26 07:12:08,335 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.3.mlp.c_proj error 0.6923 exceeded max_error 0.2000
+2026-09-26 07:12:25,338 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.4.attn.c_attn error 0.6612 exceeded max_error 0.2000
+2026-09-26 07:12:31,073 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.4.attn.c_proj error 0.6466 exceeded max_error 0.2000
+2026-09-26 07:13:41,720 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.4.mlp.c_fc error 0.7174 exceeded max_error 0.2000
+2026-09-26 07:14:07,222 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.4.mlp.c_proj error 0.7002 exceeded max_error 0.2000
+2026-09-26 07:14:30,599 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.5.attn.c_attn error 0.6450 exceeded max_error 0.2000
+2026-09-26 07:14:40,695 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.5.attn.c_proj error 0.6823 exceeded max_error 0.2000
+2026-09-26 07:15:48,815 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.5.mlp.c_fc error 0.7193 exceeded max_error 0.2000
+2026-09-26 07:16:10,740 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.5.mlp.c_proj error 0.7053 exceeded max_error 0.2000
+2026-09-26 07:16:30,290 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.6.attn.c_attn error 0.6806 exceeded max_error 0.2000
+2026-09-26 07:16:36,823 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.6.attn.c_proj error 0.6486 exceeded max_error 0.2000
+2026-09-26 07:17:42,209 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.6.mlp.c_fc error 0.7244 exceeded max_error 0.2000
+2026-09-26 07:17:57,880 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.6.mlp.c_proj error 0.7111 exceeded max_error 0.2000
+2026-09-26 07:18:19,117 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.7.attn.c_attn error 0.6824 exceeded max_error 0.2000
+2026-09-26 07:18:24,502 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.7.attn.c_proj error 0.6733 exceeded max_error 0.2000
+2026-09-26 07:19:26,037 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.7.mlp.c_fc error 0.7311 exceeded max_error 0.2000
+2026-09-26 07:19:45,065 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.7.mlp.c_proj error 0.7178 exceeded max_error 0.2000
+2026-09-26 07:20:01,908 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.8.attn.c_attn error 0.7198 exceeded max_error 0.2000
+2026-09-26 07:20:04,020 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.8.attn.c_proj error 0.6769 exceeded max_error 0.2000
+2026-09-26 07:21:10,138 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.8.mlp.c_fc error 0.7408 exceeded max_error 0.2000
+2026-09-26 07:21:30,115 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.8.mlp.c_proj error 0.7126 exceeded max_error 0.2000
+2026-09-26 07:21:51,475 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.9.attn.c_attn error 0.7669 exceeded max_error 0.2000
+2026-09-26 07:21:58,373 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.9.attn.c_proj error 0.7191 exceeded max_error 0.2000
+2026-09-26 07:23:16,785 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.9.mlp.c_fc error 0.7411 exceeded max_error 0.2000
+2026-09-26 07:23:37,411 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.9.mlp.c_proj error 0.7185 exceeded max_error 0.2000
+2026-09-26 07:24:06,928 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.10.attn.c_attn error 0.7575 exceeded max_error 0.2000
+2026-09-26 07:24:14,063 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.10.attn.c_proj error 0.7519 exceeded max_error 0.2000
+2026-09-26 07:25:17,443 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.10.mlp.c_fc error 0.7433 exceeded max_error 0.2000
+2026-09-26 07:25:38,523 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.10.mlp.c_proj error 0.7307 exceeded max_error 0.2000
+2026-09-26 07:25:58,321 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.11.attn.c_attn error 0.7206 exceeded max_error 0.2000
+2026-09-26 07:26:04,627 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.11.attn.c_proj error 0.6840 exceeded max_error 0.2000
