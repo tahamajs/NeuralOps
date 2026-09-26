@@ -1,0 +1,104 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+[START] RAM: 0.70/16.79 GB, VRAM: 0.00/8.59 GB
+Loading models/gpt2 on cuda...
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 5210.40it/s]
+2026-09-26 06:49:55,587 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4636 on transformer.h.0.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:49:55,588 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.0.attn.c_attn.
+2026-09-26 06:49:55,618 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.3990 on transformer.h.0.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:55,619 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.0.attn.c_proj.
+2026-09-26 06:49:55,936 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4781 on transformer.h.0.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:55,936 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.0.mlp.c_proj.
+2026-09-26 06:49:55,982 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4469 on transformer.h.1.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:49:55,983 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.1.attn.c_attn.
+2026-09-26 06:49:56,041 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4470 on transformer.h.1.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 06:49:56,042 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.1.mlp.c_fc.
+2026-09-26 06:49:56,082 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4361 on transformer.h.1.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:56,082 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.1.mlp.c_proj.
+2026-09-26 06:49:56,098 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4492 on transformer.h.2.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:49:56,098 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.2.attn.c_attn.
+2026-09-26 06:49:56,106 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4345 on transformer.h.2.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:56,106 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.2.attn.c_proj.
+2026-09-26 06:49:56,149 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4460 on transformer.h.2.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 06:49:56,149 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.2.mlp.c_fc.
+2026-09-26 06:49:56,235 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4398 on transformer.h.2.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:56,241 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.2.mlp.c_proj.
+2026-09-26 06:49:56,292 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4511 on transformer.h.3.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:49:56,292 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.3.attn.c_attn.
+2026-09-26 06:49:56,313 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4804 on transformer.h.3.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:56,313 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.3.attn.c_proj.
+2026-09-26 06:49:56,359 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4452 on transformer.h.3.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 06:49:56,363 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.3.mlp.c_fc.
+2026-09-26 06:49:56,407 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4262 on transformer.h.3.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:56,408 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.3.mlp.c_proj.
+2026-09-26 06:49:56,440 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4470 on transformer.h.4.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:49:56,441 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.4.attn.c_attn.
+2026-09-26 06:49:56,454 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4047 on transformer.h.4.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:56,454 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.4.attn.c_proj.
+2026-09-26 06:49:56,488 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4477 on transformer.h.4.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 06:49:56,488 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.4.mlp.c_fc.
+2026-09-26 06:49:56,533 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4321 on transformer.h.4.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:56,533 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.4.mlp.c_proj.
+2026-09-26 06:49:56,556 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4483 on transformer.h.5.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:49:56,556 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.5.attn.c_attn.
+2026-09-26 06:49:56,564 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4254 on transformer.h.5.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:56,566 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.5.attn.c_proj.
+2026-09-26 06:49:56,605 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4493 on transformer.h.5.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 06:49:56,605 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.5.mlp.c_fc.
+2026-09-26 06:49:56,643 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4445 on transformer.h.5.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:56,643 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.5.mlp.c_proj.
+2026-09-26 06:49:56,676 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4479 on transformer.h.6.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:49:56,677 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.6.attn.c_attn.
+2026-09-26 06:49:56,684 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4052 on transformer.h.6.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:56,685 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.6.attn.c_proj.
+2026-09-26 06:49:56,712 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4483 on transformer.h.6.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 06:49:56,712 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.6.mlp.c_fc.
+2026-09-26 06:49:56,746 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4384 on transformer.h.6.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:56,746 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.6.mlp.c_proj.
+2026-09-26 06:49:56,785 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4485 on transformer.h.7.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:49:56,785 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.7.attn.c_attn.
+2026-09-26 06:49:56,793 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4065 on transformer.h.7.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:56,793 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.7.attn.c_proj.
+2026-09-26 06:49:56,827 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4477 on transformer.h.7.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 06:49:56,827 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.7.mlp.c_fc.
+2026-09-26 06:49:56,861 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4469 on transformer.h.7.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:56,861 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.7.mlp.c_proj.
+2026-09-26 06:49:56,881 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4496 on transformer.h.8.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:49:56,881 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.8.attn.c_attn.
+2026-09-26 06:49:56,899 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4178 on transformer.h.8.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:56,899 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.8.attn.c_proj.
+2026-09-26 06:49:56,949 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4461 on transformer.h.8.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 06:49:56,949 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.8.mlp.c_fc.
+2026-09-26 06:49:56,998 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4479 on transformer.h.8.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:56,998 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.8.mlp.c_proj.
+2026-09-26 06:49:57,027 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4509 on transformer.h.9.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:49:57,028 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.9.attn.c_attn.
+2026-09-26 06:49:57,046 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4535 on transformer.h.9.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:57,051 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.9.attn.c_proj.
+2026-09-26 06:49:57,089 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4475 on transformer.h.9.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 06:49:57,089 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.9.mlp.c_fc.
+2026-09-26 06:49:57,119 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4455 on transformer.h.9.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:57,119 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.9.mlp.c_proj.
+2026-09-26 06:49:57,156 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4508 on transformer.h.10.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:49:57,157 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.10.attn.c_attn.
+2026-09-26 06:49:57,166 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4129 on transformer.h.10.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:57,166 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.10.attn.c_proj.
+2026-09-26 06:49:57,203 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4470 on transformer.h.10.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 06:49:57,203 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.10.mlp.c_fc.
+2026-09-26 06:49:57,245 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4538 on transformer.h.10.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:57,245 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.10.mlp.c_proj.
+2026-09-26 06:49:57,283 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4488 on transformer.h.11.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:49:57,283 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.11.attn.c_attn.
+2026-09-26 06:49:57,290 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.3957 on transformer.h.11.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:57,290 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.11.attn.c_proj.
+2026-09-26 06:49:57,313 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4458 on transformer.h.11.mlp.c_fc exceeded threshold 0.3500.
+2026-09-26 06:49:57,313 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.11.mlp.c_fc.
+2026-09-26 06:49:57,344 [WARNING] framework.compression_engine.flap: FLAP reconstruction error 0.4711 on transformer.h.11.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:49:57,344 [INFO] framework.compression_engine.flap: FLAP: fallback to original on transformer.h.11.mlp.c_proj.
+2026-09-26 06:49:57,564 [INFO] framework.compression_engine.flap: FLAP compression complete: 2 compressed, 46 fallback. Avg error: 0.3393, Effective Param Ratio: 0.99x
+2026-09-26 06:50:00,286 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 06:50:00,780 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 06:50:01,041 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/tree/refs%2Fconvert%2Fparquet/plain_text%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 06:50:26,891 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 06:50:27,428 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 06:50:27,713 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Easy%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"

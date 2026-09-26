@@ -2,80 +2,209 @@ C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.p
   warnings.warn(
 [START] RAM: 0.70/16.79 GB, VRAM: 0.00/8.59 GB
 Loading models/gpt2 on cuda...
-Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 2825.28it/s]
-2026-09-26 05:45:46,629 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6570 on transformer.h.0.attn.c_attn exceeded threshold 0.3500.
-2026-09-26 05:45:46,631 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.0.attn.c_attn (fallback to original and frozen).
-2026-09-26 05:45:57,036 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.4203 on transformer.h.0.attn.c_proj exceeded threshold 0.3500.
-2026-09-26 05:45:57,037 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.0.attn.c_proj (fallback to original and frozen).
-2026-09-26 05:46:08,922 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7483 on transformer.h.0.mlp.c_proj exceeded threshold 0.3500.
-2026-09-26 05:46:08,922 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.0.mlp.c_proj (fallback to original and frozen).
-2026-09-26 05:46:21,381 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6635 on transformer.h.1.attn.c_attn exceeded threshold 0.3500.
-2026-09-26 05:46:21,381 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.1.attn.c_attn (fallback to original and frozen).
-2026-09-26 05:46:32,474 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.5034 on transformer.h.1.attn.c_proj exceeded threshold 0.3500.
-2026-09-26 05:46:32,475 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.1.attn.c_proj (fallback to original and frozen).
-2026-09-26 05:46:43,772 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7590 on transformer.h.1.mlp.c_proj exceeded threshold 0.3500.
-2026-09-26 05:46:43,772 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.1.mlp.c_proj (fallback to original and frozen).
-2026-09-26 05:46:56,643 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6960 on transformer.h.2.attn.c_attn exceeded threshold 0.3500.
-2026-09-26 05:46:56,644 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.2.attn.c_attn (fallback to original and frozen).
-2026-09-26 05:47:08,247 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6138 on transformer.h.2.attn.c_proj exceeded threshold 0.3500.
-2026-09-26 05:47:08,247 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.2.attn.c_proj (fallback to original and frozen).
-2026-09-26 05:47:23,888 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7360 on transformer.h.2.mlp.c_proj exceeded threshold 0.3500.
-2026-09-26 05:47:23,888 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.2.mlp.c_proj (fallback to original and frozen).
-2026-09-26 05:47:41,012 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7191 on transformer.h.3.attn.c_attn exceeded threshold 0.3500.
-2026-09-26 05:47:41,013 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.3.attn.c_attn (fallback to original and frozen).
-2026-09-26 05:47:53,955 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6220 on transformer.h.3.attn.c_proj exceeded threshold 0.3500.
-2026-09-26 05:47:53,955 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.3.attn.c_proj (fallback to original and frozen).
-2026-09-26 05:48:08,333 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7204 on transformer.h.3.mlp.c_proj exceeded threshold 0.3500.
-2026-09-26 05:48:08,333 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.3.mlp.c_proj (fallback to original and frozen).
-2026-09-26 05:48:24,168 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7018 on transformer.h.4.attn.c_attn exceeded threshold 0.3500.
-2026-09-26 05:48:24,168 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.4.attn.c_attn (fallback to original and frozen).
-2026-09-26 05:48:36,945 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6135 on transformer.h.4.attn.c_proj exceeded threshold 0.3500.
-2026-09-26 05:48:36,948 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.4.attn.c_proj (fallback to original and frozen).
-2026-09-26 05:48:53,008 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7318 on transformer.h.4.mlp.c_proj exceeded threshold 0.3500.
-2026-09-26 05:48:53,008 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.4.mlp.c_proj (fallback to original and frozen).
-2026-09-26 05:49:10,584 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6905 on transformer.h.5.attn.c_attn exceeded threshold 0.3500.
-2026-09-26 05:49:10,584 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.5.attn.c_attn (fallback to original and frozen).
-2026-09-26 05:49:25,281 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6392 on transformer.h.5.attn.c_proj exceeded threshold 0.3500.
-2026-09-26 05:49:25,281 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.5.attn.c_proj (fallback to original and frozen).
-2026-09-26 05:49:41,687 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7417 on transformer.h.5.mlp.c_proj exceeded threshold 0.3500.
-2026-09-26 05:49:41,688 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.5.mlp.c_proj (fallback to original and frozen).
-2026-09-26 05:49:57,845 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7204 on transformer.h.6.attn.c_attn exceeded threshold 0.3500.
-2026-09-26 05:49:57,845 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.6.attn.c_attn (fallback to original and frozen).
-2026-09-26 05:50:11,450 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6020 on transformer.h.6.attn.c_proj exceeded threshold 0.3500.
-2026-09-26 05:50:11,450 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.6.attn.c_proj (fallback to original and frozen).
-2026-09-26 05:50:29,221 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7496 on transformer.h.6.mlp.c_proj exceeded threshold 0.3500.
-2026-09-26 05:50:29,221 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.6.mlp.c_proj (fallback to original and frozen).
-2026-09-26 05:50:52,597 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7214 on transformer.h.7.attn.c_attn exceeded threshold 0.3500.
-2026-09-26 05:50:52,597 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.7.attn.c_attn (fallback to original and frozen).
-2026-09-26 05:51:10,547 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6295 on transformer.h.7.attn.c_proj exceeded threshold 0.3500.
-2026-09-26 05:51:10,552 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.7.attn.c_proj (fallback to original and frozen).
-2026-09-26 05:51:31,493 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7574 on transformer.h.7.mlp.c_proj exceeded threshold 0.3500.
-2026-09-26 05:51:31,494 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.7.mlp.c_proj (fallback to original and frozen).
-2026-09-26 05:51:52,574 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7519 on transformer.h.8.attn.c_attn exceeded threshold 0.3500.
-2026-09-26 05:51:52,574 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.8.attn.c_attn (fallback to original and frozen).
-2026-09-26 05:52:07,790 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6228 on transformer.h.8.attn.c_proj exceeded threshold 0.3500.
-2026-09-26 05:52:07,790 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.8.attn.c_proj (fallback to original and frozen).
-2026-09-26 05:52:25,943 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7566 on transformer.h.8.mlp.c_proj exceeded threshold 0.3500.
-2026-09-26 05:52:25,943 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.8.mlp.c_proj (fallback to original and frozen).
-2026-09-26 05:52:44,727 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7722 on transformer.h.9.attn.c_attn exceeded threshold 0.3500.
-2026-09-26 05:52:44,727 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.9.attn.c_attn (fallback to original and frozen).
-2026-09-26 05:52:59,128 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6871 on transformer.h.9.attn.c_proj exceeded threshold 0.3500.
-2026-09-26 05:52:59,128 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.9.attn.c_proj (fallback to original and frozen).
-2026-09-26 05:53:13,150 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7634 on transformer.h.9.mlp.c_proj exceeded threshold 0.3500.
-2026-09-26 05:53:13,151 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.9.mlp.c_proj (fallback to original and frozen).
-2026-09-26 05:53:29,030 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7495 on transformer.h.10.attn.c_attn exceeded threshold 0.3500.
-2026-09-26 05:53:29,030 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.10.attn.c_attn (fallback to original and frozen).
-2026-09-26 05:53:40,865 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7098 on transformer.h.10.attn.c_proj exceeded threshold 0.3500.
-2026-09-26 05:53:40,865 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.10.attn.c_proj (fallback to original and frozen).
-2026-09-26 05:53:56,118 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7716 on transformer.h.10.mlp.c_proj exceeded threshold 0.3500.
-2026-09-26 05:53:56,118 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.10.mlp.c_proj (fallback to original and frozen).
-2026-09-26 05:54:10,086 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7354 on transformer.h.11.attn.c_attn exceeded threshold 0.3500.
-2026-09-26 05:54:10,087 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.11.attn.c_attn (fallback to original and frozen).
-2026-09-26 05:54:21,929 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.5994 on transformer.h.11.attn.c_proj exceeded threshold 0.3500.
-2026-09-26 05:54:21,929 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.11.attn.c_proj (fallback to original and frozen).
-2026-09-26 05:54:35,952 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7692 on transformer.h.11.mlp.c_proj exceeded threshold 0.3500.
-2026-09-26 05:54:35,953 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.11.mlp.c_proj (fallback to original and frozen).
-2026-09-26 05:54:36,021 [INFO] framework.compression_engine.dobi_svd: Dobi-SVD compression complete: 0 compressed, 36 fallback. Avg error: 0.0000.
-2026-09-26 05:54:49,610 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
-2026-09-26 05:54:50,593 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
-2026-09-26 05:54:50,829 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/tree/refs%2Fconvert%2Fparquet/plain_text%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 4631.82it/s]
+2026-09-26 06:13:03,296 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6570 on transformer.h.0.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:13:03,296 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.0.attn.c_attn (fallback to original and frozen).
+2026-09-26 06:13:13,185 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.4203 on transformer.h.0.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:13:13,185 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.0.attn.c_proj (fallback to original and frozen).
+2026-09-26 06:13:25,279 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7483 on transformer.h.0.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:13:25,280 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.0.mlp.c_proj (fallback to original and frozen).
+2026-09-26 06:13:36,882 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6635 on transformer.h.1.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:13:36,882 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.1.attn.c_attn (fallback to original and frozen).
+2026-09-26 06:13:45,432 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.5034 on transformer.h.1.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:13:45,432 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.1.attn.c_proj (fallback to original and frozen).
+2026-09-26 06:14:00,598 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7590 on transformer.h.1.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:14:00,599 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.1.mlp.c_proj (fallback to original and frozen).
+2026-09-26 06:14:12,349 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6960 on transformer.h.2.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:14:12,350 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.2.attn.c_attn (fallback to original and frozen).
+2026-09-26 06:14:21,279 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6138 on transformer.h.2.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:14:21,279 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.2.attn.c_proj (fallback to original and frozen).
+2026-09-26 06:14:34,830 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7360 on transformer.h.2.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:14:34,830 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.2.mlp.c_proj (fallback to original and frozen).
+2026-09-26 06:14:47,953 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7191 on transformer.h.3.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:14:47,953 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.3.attn.c_attn (fallback to original and frozen).
+2026-09-26 06:14:57,675 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6220 on transformer.h.3.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:14:57,676 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.3.attn.c_proj (fallback to original and frozen).
+2026-09-26 06:15:08,320 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7204 on transformer.h.3.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:15:08,321 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.3.mlp.c_proj (fallback to original and frozen).
+2026-09-26 06:15:20,203 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7018 on transformer.h.4.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:15:20,203 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.4.attn.c_attn (fallback to original and frozen).
+2026-09-26 06:15:32,945 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6135 on transformer.h.4.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:15:32,945 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.4.attn.c_proj (fallback to original and frozen).
+2026-09-26 06:15:44,807 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7318 on transformer.h.4.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:15:44,807 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.4.mlp.c_proj (fallback to original and frozen).
+2026-09-26 06:15:55,887 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6905 on transformer.h.5.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:15:55,887 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.5.attn.c_attn (fallback to original and frozen).
+2026-09-26 06:16:08,105 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6392 on transformer.h.5.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:16:08,105 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.5.attn.c_proj (fallback to original and frozen).
+2026-09-26 06:16:20,395 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7417 on transformer.h.5.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:16:20,395 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.5.mlp.c_proj (fallback to original and frozen).
+2026-09-26 06:16:34,327 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7204 on transformer.h.6.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:16:34,327 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.6.attn.c_attn (fallback to original and frozen).
+2026-09-26 06:16:45,337 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6020 on transformer.h.6.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:16:45,337 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.6.attn.c_proj (fallback to original and frozen).
+2026-09-26 06:16:56,954 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7496 on transformer.h.6.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:16:56,957 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.6.mlp.c_proj (fallback to original and frozen).
+2026-09-26 06:17:11,162 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7214 on transformer.h.7.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:17:11,162 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.7.attn.c_attn (fallback to original and frozen).
+2026-09-26 06:17:20,977 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6295 on transformer.h.7.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:17:20,978 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.7.attn.c_proj (fallback to original and frozen).
+2026-09-26 06:17:28,269 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7574 on transformer.h.7.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:17:28,270 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.7.mlp.c_proj (fallback to original and frozen).
+2026-09-26 06:17:38,993 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7519 on transformer.h.8.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:17:38,993 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.8.attn.c_attn (fallback to original and frozen).
+2026-09-26 06:17:47,461 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6228 on transformer.h.8.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:17:47,462 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.8.attn.c_proj (fallback to original and frozen).
+2026-09-26 06:17:55,838 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7566 on transformer.h.8.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:17:55,838 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.8.mlp.c_proj (fallback to original and frozen).
+2026-09-26 06:18:05,054 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7722 on transformer.h.9.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:18:05,054 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.9.attn.c_attn (fallback to original and frozen).
+2026-09-26 06:18:11,651 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.6871 on transformer.h.9.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:18:11,652 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.9.attn.c_proj (fallback to original and frozen).
+2026-09-26 06:18:21,147 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7634 on transformer.h.9.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:18:21,150 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.9.mlp.c_proj (fallback to original and frozen).
+2026-09-26 06:18:32,149 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7495 on transformer.h.10.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:18:32,150 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.10.attn.c_attn (fallback to original and frozen).
+2026-09-26 06:18:38,984 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7098 on transformer.h.10.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:18:38,984 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.10.attn.c_proj (fallback to original and frozen).
+2026-09-26 06:18:47,242 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7716 on transformer.h.10.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:18:47,242 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.10.mlp.c_proj (fallback to original and frozen).
+2026-09-26 06:18:55,607 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7354 on transformer.h.11.attn.c_attn exceeded threshold 0.3500.
+2026-09-26 06:18:55,607 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.11.attn.c_attn (fallback to original and frozen).
+2026-09-26 06:19:01,776 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.5994 on transformer.h.11.attn.c_proj exceeded threshold 0.3500.
+2026-09-26 06:19:01,776 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.11.attn.c_proj (fallback to original and frozen).
+2026-09-26 06:19:08,240 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.7692 on transformer.h.11.mlp.c_proj exceeded threshold 0.3500.
+2026-09-26 06:19:08,240 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for transformer.h.11.mlp.c_proj (fallback to original and frozen).
+2026-09-26 06:19:08,242 [INFO] framework.compression_engine.dobi_svd: Dobi-SVD compression complete: 0 compressed, 36 fallback. Avg error: 0.0000.
+2026-09-26 06:19:10,541 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 06:19:11,696 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 06:19:11,919 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/tree/refs%2Fconvert%2Fparquet/plain_text%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 06:19:39,018 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 06:19:39,628 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 06:19:39,862 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Easy%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 06:20:21,701 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 06:20:22,168 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Challenge%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 06:21:05,773 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 06:21:06,291 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Rowan/hellaswag/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 06:21:06,520 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Rowan/hellaswag/tree/refs%2Fconvert%2Fparquet/default%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 06:21:49,016 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 06:21:49,593 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/winogrande/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 06:21:49,821 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/winogrande/tree/refs%2Fconvert%2Fparquet/winogrande_xl%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+
+=== Evaluating piqa ===
+  piqa: 80/1000 items (3.6s, bs=8, RAM=1.48GB, VRAM=0.52GB)
+  piqa: 160/1000 items (5.0s, bs=8, RAM=1.48GB, VRAM=0.53GB)
+  piqa: 240/1000 items (6.3s, bs=8, RAM=1.48GB, VRAM=0.53GB)
+  piqa: 320/1000 items (8.0s, bs=8, RAM=1.48GB, VRAM=0.54GB)
+  piqa: 400/1000 items (9.9s, bs=8, RAM=1.48GB, VRAM=0.54GB)
+  piqa: 480/1000 items (11.6s, bs=8, RAM=1.48GB, VRAM=0.55GB)
+  piqa: 560/1000 items (13.3s, bs=8, RAM=1.48GB, VRAM=0.55GB)
+  piqa: 640/1000 items (15.1s, bs=8, RAM=1.48GB, VRAM=0.56GB)
+  piqa: 720/1000 items (17.0s, bs=8, RAM=1.48GB, VRAM=0.56GB)
+  piqa: 800/1000 items (19.1s, bs=8, RAM=1.48GB, VRAM=0.57GB)
+  piqa: 880/1000 items (20.6s, bs=8, RAM=1.48GB, VRAM=0.59GB)
+  piqa: 960/1000 items (22.9s, bs=8, RAM=1.48GB, VRAM=0.64GB)
+  piqa: 1000/1000 items (24.0s, bs=8, RAM=1.48GB, VRAM=0.73GB)
+  piqa: 61.80%
+
+=== Evaluating arc_easy ===
+  arc_easy: 80/1998 items (1.3s, bs=8, RAM=1.5GB, VRAM=0.52GB)
+  arc_easy: 160/1998 items (2.4s, bs=8, RAM=1.5GB, VRAM=0.52GB)
+  arc_easy: 240/1998 items (4.0s, bs=8, RAM=1.5GB, VRAM=0.53GB)
+  arc_easy: 320/1998 items (5.6s, bs=8, RAM=1.5GB, VRAM=0.53GB)
+  arc_easy: 400/1998 items (7.0s, bs=8, RAM=1.5GB, VRAM=0.53GB)
+  arc_easy: 480/1998 items (8.2s, bs=8, RAM=1.5GB, VRAM=0.53GB)
+  arc_easy: 560/1998 items (9.5s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  arc_easy: 640/1998 items (10.6s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  arc_easy: 720/1998 items (11.8s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  arc_easy: 800/1998 items (12.9s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  arc_easy: 880/1998 items (14.0s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  arc_easy: 960/1998 items (15.9s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  arc_easy: 1040/1998 items (17.9s, bs=8, RAM=1.5GB, VRAM=0.55GB)
+  arc_easy: 1120/1998 items (19.7s, bs=8, RAM=1.5GB, VRAM=0.55GB)
+  arc_easy: 1200/1998 items (21.0s, bs=8, RAM=1.5GB, VRAM=0.55GB)
+  arc_easy: 1280/1998 items (22.4s, bs=8, RAM=1.5GB, VRAM=0.55GB)
+  arc_easy: 1360/1998 items (24.6s, bs=8, RAM=1.5GB, VRAM=0.56GB)
+  arc_easy: 1440/1998 items (26.1s, bs=8, RAM=1.5GB, VRAM=0.56GB)
+  arc_easy: 1520/1998 items (28.4s, bs=8, RAM=1.5GB, VRAM=0.56GB)
+  arc_easy: 1600/1998 items (30.7s, bs=8, RAM=1.5GB, VRAM=0.56GB)
+  arc_easy: 1680/1998 items (32.8s, bs=8, RAM=1.5GB, VRAM=0.57GB)
+  arc_easy: 1760/1998 items (35.5s, bs=8, RAM=1.5GB, VRAM=0.58GB)
+  arc_easy: 1840/1998 items (37.0s, bs=8, RAM=1.5GB, VRAM=0.59GB)
+  arc_easy: 1920/1998 items (38.4s, bs=8, RAM=1.5GB, VRAM=0.6GB)
+  arc_easy: 2000/1998 items (39.6s, bs=8, RAM=1.5GB, VRAM=0.69GB)
+  arc_easy: 41.20%
+
+=== Evaluating arc_challenge ===
+  arc_challenge: 80/1997 items (1.2s, bs=8, RAM=1.5GB, VRAM=0.53GB)
+  arc_challenge: 160/1997 items (2.7s, bs=8, RAM=1.5GB, VRAM=0.53GB)
+  arc_challenge: 240/1997 items (4.0s, bs=8, RAM=1.5GB, VRAM=0.53GB)
+  arc_challenge: 320/1997 items (5.2s, bs=8, RAM=1.5GB, VRAM=0.53GB)
+  arc_challenge: 400/1997 items (6.3s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  arc_challenge: 480/1997 items (7.5s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  arc_challenge: 560/1997 items (8.7s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  arc_challenge: 640/1997 items (9.9s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  arc_challenge: 720/1997 items (11.1s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  arc_challenge: 800/1997 items (12.9s, bs=8, RAM=1.5GB, VRAM=0.55GB)
+  arc_challenge: 880/1997 items (15.0s, bs=8, RAM=1.5GB, VRAM=0.55GB)
+  arc_challenge: 960/1997 items (16.4s, bs=8, RAM=1.5GB, VRAM=0.55GB)
+  arc_challenge: 1040/1997 items (18.0s, bs=8, RAM=1.5GB, VRAM=0.55GB)
+  arc_challenge: 1120/1997 items (20.2s, bs=8, RAM=1.5GB, VRAM=0.56GB)
+  arc_challenge: 1200/1997 items (21.9s, bs=8, RAM=1.5GB, VRAM=0.56GB)
+  arc_challenge: 1280/1997 items (24.8s, bs=8, RAM=1.5GB, VRAM=0.56GB)
+  arc_challenge: 1360/1997 items (28.2s, bs=8, RAM=1.5GB, VRAM=0.57GB)
+  arc_challenge: 1440/1997 items (31.0s, bs=8, RAM=1.5GB, VRAM=0.57GB)
+  arc_challenge: 1520/1997 items (33.0s, bs=8, RAM=1.5GB, VRAM=0.57GB)
+  arc_challenge: 1600/1997 items (34.8s, bs=8, RAM=1.5GB, VRAM=0.58GB)
+  arc_challenge: 1680/1997 items (36.1s, bs=8, RAM=1.5GB, VRAM=0.59GB)
+  arc_challenge: 1760/1997 items (37.3s, bs=8, RAM=1.5GB, VRAM=0.59GB)
+  arc_challenge: 1840/1997 items (38.4s, bs=8, RAM=1.5GB, VRAM=0.61GB)
+  arc_challenge: 1920/1997 items (40.0s, bs=8, RAM=1.5GB, VRAM=0.62GB)
+  arc_challenge: 2000/1997 items (41.5s, bs=8, RAM=1.5GB, VRAM=0.74GB)
+  arc_challenge: 19.80%
+
+=== Evaluating hellaswag ===
+  hellaswag: 80/2000 items (1.4s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  hellaswag: 160/2000 items (2.6s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  hellaswag: 240/2000 items (3.9s, bs=8, RAM=1.5GB, VRAM=0.55GB)
+  hellaswag: 320/2000 items (6.2s, bs=8, RAM=1.5GB, VRAM=0.55GB)
+  hellaswag: 400/2000 items (8.3s, bs=8, RAM=1.5GB, VRAM=0.55GB)
+  hellaswag: 480/2000 items (10.0s, bs=8, RAM=1.5GB, VRAM=0.56GB)
+  hellaswag: 560/2000 items (11.6s, bs=8, RAM=1.5GB, VRAM=0.56GB)
+  hellaswag: 640/2000 items (13.5s, bs=8, RAM=1.5GB, VRAM=0.56GB)
+  hellaswag: 720/2000 items (15.5s, bs=8, RAM=1.5GB, VRAM=0.56GB)
+  hellaswag: 800/2000 items (18.1s, bs=8, RAM=1.5GB, VRAM=0.56GB)
+  hellaswag: 880/2000 items (19.9s, bs=8, RAM=1.5GB, VRAM=0.56GB)
+  hellaswag: 960/2000 items (21.9s, bs=8, RAM=1.5GB, VRAM=0.56GB)
+  hellaswag: 1040/2000 items (23.8s, bs=8, RAM=1.5GB, VRAM=0.57GB)
+  hellaswag: 1120/2000 items (25.3s, bs=8, RAM=1.5GB, VRAM=0.57GB)
+  hellaswag: 1200/2000 items (26.7s, bs=8, RAM=1.5GB, VRAM=0.57GB)
+  hellaswag: 1280/2000 items (27.9s, bs=8, RAM=1.5GB, VRAM=0.57GB)
+  hellaswag: 1360/2000 items (29.1s, bs=8, RAM=1.5GB, VRAM=0.58GB)
+  hellaswag: 1440/2000 items (30.3s, bs=8, RAM=1.5GB, VRAM=0.58GB)
+  hellaswag: 1520/2000 items (32.2s, bs=8, RAM=1.5GB, VRAM=0.58GB)
+  hellaswag: 1600/2000 items (33.6s, bs=8, RAM=1.5GB, VRAM=0.59GB)
+  hellaswag: 1680/2000 items (34.8s, bs=8, RAM=1.5GB, VRAM=0.59GB)
+  hellaswag: 1760/2000 items (36.0s, bs=8, RAM=1.5GB, VRAM=0.59GB)
+  hellaswag: 1840/2000 items (37.2s, bs=8, RAM=1.5GB, VRAM=0.6GB)
+  hellaswag: 1920/2000 items (38.5s, bs=8, RAM=1.5GB, VRAM=0.61GB)
+  hellaswag: 2000/2000 items (39.9s, bs=8, RAM=1.5GB, VRAM=0.64GB)
+  hellaswag: 35.00%
+
+=== Evaluating winogrande ===
+  winogrande: 80/1000 items (1.2s, bs=8, RAM=1.5GB, VRAM=0.53GB)
+  winogrande: 160/1000 items (2.8s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  winogrande: 240/1000 items (5.5s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  winogrande: 320/1000 items (7.1s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  winogrande: 400/1000 items (8.9s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  winogrande: 480/1000 items (10.8s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  winogrande: 560/1000 items (13.0s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  winogrande: 640/1000 items (15.8s, bs=8, RAM=1.5GB, VRAM=0.54GB)
+  winogrande: 720/1000 items (17.7s, bs=8, RAM=1.5GB, VRAM=0.55GB)
+  winogrande: 800/1000 items (19.8s, bs=8, RAM=1.5GB, VRAM=0.55GB)
+  winogrande: 880/1000 items (21.6s, bs=8, RAM=1.5GB, VRAM=0.55GB)
+  winogrande: 960/1000 items (23.5s, bs=8, RAM=1.5GB, VRAM=0.55GB)
+  winogrande: 1000/1000 items (24.0s, bs=8, RAM=1.5GB, VRAM=0.56GB)
+  winogrande: 53.80%
+
+Results saved to results\zeroshot_parallel\dobi_svd
