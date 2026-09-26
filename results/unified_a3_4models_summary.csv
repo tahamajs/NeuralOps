@@ -1,4 +1,0 @@
-Model,Module,Status,Accuracy (%),Threshold (%),Elapsed (s)
-DistilBERT,a3,PASS,90.6,56.0,73.1
-RoBERTa,a3,PASS,92.66,56.0,64.7
-GPT-2,a3,PASS,87.16,56.0,81.6

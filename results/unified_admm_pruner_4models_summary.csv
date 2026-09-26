@@ -1,4 +1,0 @@
-model,slug,baseline_acc,acc,delta_acc,f1,status,passed_gate,num_compressed,num_fallback,actual_sparsity,avg_reconstruction_error,avg_distill_loss,latency_p95_ms,vram_peak_mb,out_dir,hf_repo
-distilbert,distilbert,0.9070999999999999,0.8979,-0.009199999999999875,0.8983,PASS,True,24,0,0.5,0.35896200686639207,0.00026825266832020134,0.0,233.49,results\unified_admm_pruner\distilbert,https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-admm-distill
-roberta,roberta,0.9438,0.9025,-0.0413,0.9024,PASS,True,48,0,0.5,0.35312546336449335,0.0004355140129822151,0.0,410.67,results\unified_admm_pruner\roberta,https://huggingface.co/Hooshaai/svd-linear-attention-roberta-admm-distill
-gpt2,gpt2,0.8933,0.0,-0.8933,0.0,TIMEOUT,False,24,0,0.5,0.36092856617623775,0.0022353002277668566,0.0,0.0,results\unified_admm_pruner\gpt2,N/A (Failed Gate)
