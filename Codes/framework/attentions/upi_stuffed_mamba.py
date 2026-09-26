@@ -1,4 +1,4 @@
-r"""
+"""
 UPI-Stuffed Mamba: Uncertainty-Penalized Interpolated Mamba SSM Block.
 Hardened for production use across diverse transformer architectures:
 - DistilBERT (Flat MHA)

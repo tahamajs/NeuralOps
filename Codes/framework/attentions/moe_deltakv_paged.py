@@ -2,11 +2,6 @@
 MoE-DeltaKV-Paged Hybrid Attention Module.
 Combines Mixture-of-Block-Attention (MoBA) with Paged Delta-KV cache compression.
 
-Fixes:
-- Straight-Through Estimator (STE) for differentiable 4-bit uniform and SVD quantization.
-- Non-causal bidirectional attention for encoder architectures (DistilBERT).
-- CLS token preservation in block 0.
-- Pretrained weight initialization via copy_weights.
 """
 
 import logging

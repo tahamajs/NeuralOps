@@ -3,17 +3,6 @@
 Implements multi-head linear recurrence with learned exponential decay gating,
 spherical normalization, denominator tracking, and pretrained weight transfer.
 
-Bug-fix map:
-  KDA-FIX-01  beta init from 2.0 → 5.0 (effective context ~8 → ~150 tokens
-              at L=128). Previous init was 16x too small.
-  KDA-FIX-02  Renamed `beta` → `lora_beta` and `output_scale` → `lora_output_scale`
-              so framework's `get_recovery_params` recognizes them as trainable.
-              Previously they were frozen at init values.
-  KDA-FIX-03  Fixed infinite recursion in `_kda_scan_chunked` for bidirectional
-              mode (L > 512). Added `_allow_bidirectional` flag.
-  KDA-FIX-04  RoPE cos/sin dtype cast to match q/k dtype.
-  KDA-FIX-05  Recursion guard in `inject_kda`.
-  KDA-FIX-06  NaN-safe decay clamping in softmax denominator.
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-r"""
+"""
 Grouped-Query Attention (GQA).
 
 Interpolates between Multi-Head Attention (MHA) and Multi-Query Attention (MQA) by dividing

@@ -2,28 +2,6 @@
 MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention (FASA).
 Production-Hardened (v2).
 
-Fixes (v2):
-  FASA-FIX-01  **Causality guard.** FASA pruning is disabled whenever
-               `past_key_value` is present, whenever the model is a decoder
-               (detected via multiple heuristics), or whenever `is_causal`
-               is True. This eliminates silent future-token leakage in
-               misclassified autoregressive models.
-  FASA-FIX-02  **`copy_weights` bias fix for nested encoders** — extracts
-               `.data` from submodule biases (was returning the module).
-  FASA-FIX-03  **`importance` cloned before in-place modification** of
-               index 0 (CLS protection).
-  FASA-FIX-04  **`super().__init__` config None-safe.**
-  FASA-FIX-05  **Idempotency guard in injector.**
-  FASA-FIX-06  **`is_decoder` not overwritten from source unless source
-               explicitly has it.**
-  FASA-FIX-07  **`mask` kwarg folded into attention_mask in a single place.**
-  FASA-FIX-08  **Reuse `mask_2d` in `_fasa_prune`** (no double compute).
-  FASA-FIX-09  **Storage accounting** (`storage_bytes()`).
-  FASA-FIX-10  **`head_mask` shape unified across both paths.**
-  FASA-FIX-11  **`num_heads` fallback derived from `hidden_size` if 0.**
-  FASA-FIX-12  **`FASA`/`fasa_inject` alias consistency.**
-  FASA-FIX-13  **`inject_mixattention_moska` no longer double-calls
-               `copy_weights` (constructor already does).**
 """
 
 import logging

@@ -1,27 +1,7 @@
-r"""
+"""
 GoldFinch-AHN: Adaptive Hybrid Network — Sliding Window + Gated Recurrent Memory.
 Production-Hardened (v2).
 
-Fixes (v2):
-  GF-FIX-01  **`logger` defined** (was NameError).
-  GF-FIX-02  **`copy_weights` no longer raises on near-zero norm.** Emits a
-              warning so the caller can decide; never kills the injection.
-  GF-FIX-03  **`head_mask` applied to Q/K/V-style channels before fusion**,
-              with correct shape handling.
-  GF-FIX-04  **`encoder_hidden_states` read from the parameter, not kwargs.**
-  GF-FIX-05  **`super().__init__` handles `rank=None` safely.**
-  GF-FIX-06  **Gated recurrent memory is a learnable gated cell** with a
-              proper per-token gate, not a plain linear layer.
-  GF-FIX-07  **RoPE fallback uses `k`** (consistent with attention semantics).
-  GF-FIX-08  **Idempotency guard in injector.**
-  GF-FIX-09  **`window_size` semantics documented** as full width; the
-              effective radius is `window_size // 2`.
-  GF-FIX-10  **Learnable per-head mixing via `delta_gate`.**
-  GF-FIX-11  **`output_scale` applied once.**
-  GF-FIX-12  **Storage accounting (`storage_bytes`).**
-  GF-FIX-13  **`head_mask` applied per-head before output projection.**
-  GF-FIX-14  **Config None-safe everywhere.**
-  GF-FIX-15  **No duplicate `freeze_base_weights` call.**
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-r"""
+"""
 XAttention: Block Sparse Attention with Coarse-to-Fine Routing.
 
 Partitions sequence tokens into non-overlapping blocks, evaluates coarse block-level routing,

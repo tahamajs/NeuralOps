@@ -13,14 +13,6 @@ Supports:
 - Frobenius norm verification (>= 1e-4)
 - Safe injection returning None on failure
 
-Bug-fix map (2026 revision):
-  PR-FIX-01  pinv + Schulz under torch.no_grad() -> prevents OOM at rank >= 64.
-  PR-FIX-02  del intermediates after use to free memory immediately.
-  PR-FIX-03  self.rank guarded against None (TypeError in min()).
-  PR-FIX-04  RoPE cos/sin cast to q/k dtype (fp16/fp32 mixing).
-  PR-FIX-05  forward returns softmax probs, not pre-softmax logits.
-  PR-FIX-06  inject_primal: recursion guard + removed dead `in locals()` check.
-  PR-FIX-07  Chunked head processing option for very large rank.
 """
 
 from __future__ import annotations

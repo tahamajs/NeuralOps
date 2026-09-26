@@ -1,4 +1,4 @@
-r"""
+"""
 SALT Attention: Singular Value Adaptation with Low-Rank Tuning.
 
 Parameter-efficient adaptation mechanism for transformer attention projections combining

@@ -1,4 +1,4 @@
-r"""
+"""
 Locality-Sensitive Hashing (LSH) Attention – Reformer style (Corrected).
 
 Approximates dense attention by clustering keys and queries into discrete hash buckets
@@ -14,22 +14,6 @@ Supports:
 - Frobenius norm verification (>= 1e-4)
 - Safe injection returning None on failure
 
-Bug-fix map (2026 revision):
-  LSH-01  RoPE dtype-safe + past_len offset.
-  LSH-02  super().__init__ with try/except.
-  LSH-03  ModelAdapter guarded with 3-level fallback.
-  LSH-04  Recursion guard in injector.
-  LSH-05  Removed dead 'in locals()' check.
-  LSH-06  past_key_value support for RoPE offset.
-  LSH-07  copy_weights raises on missing mandatory projections.
-  LSH-08  FactorizedLoRALinear replaces LoRALinear.
-  LSH-09  Chunked LSH attention (no N×N matrix).
-  LSH-10  self.config set explicitly.
-  LSH-11  num_buckets clamped to >= 2.
-  LSH-12  output_attentions honored in both paths.
-  LSH-13  Robust head_dim detection independent of ModelAdapter.
-  LSH-14  proj_matrices normalized along correct axis (per hyperplane).
-  LSH-15  Decoders fall back to exact attention (documented).
 """
 
 from __future__ import annotations

@@ -12,23 +12,6 @@ Supports:
 - Nested encoder bypass
 - Frobenius norm verification (>= 1e-4)
 - Safe injection returning None on failure
-
-Bug-fix map (2026 revision):
-  LEKA-01  RoPE cos/sin cast to q/k dtype.
-  LEKA-02  super().__init__ with try/except.
-  LEKA-03  Recursion guard in injector.
-  LEKA-04  Removed dead 'in locals()' check.
-  LEKA-05  past_key_value support (RoPE offset + KV-cache concat).
-  LEKA-06  copy_weights raises on missing mandatory projections.
-  LEKA-07  Robust head_dim detection.
-  LEKA-08  Chunked causal cumsum (no 5D tensor).
-  LEKA-09  output_scale removed (was dead).
-  LEKA-10  pres_gate documented (residual blend).
-  LEKA-11  FactorizedLoRALinear replaces LoRALinear.
-  LEKA-12  Removed unused imports.
-  LEKA-13  No mask on context (only on K/V).
-  LEKA-14  Projection buffer built with robust QR.
-  LEKA-15  Forward sanity check.
 """
 
 from __future__ import annotations
