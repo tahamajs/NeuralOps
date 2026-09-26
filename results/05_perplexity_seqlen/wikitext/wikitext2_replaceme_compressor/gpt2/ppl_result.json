@@ -1,0 +1,8 @@
+{
+  "module": "replaceme_compressor",
+  "model_path": "models/gpt2",
+  "dataset": "wikitext2",
+  "perplexity": 490.9252624511719,
+  "seq_len": 1024,
+  "stride": 512
+}
