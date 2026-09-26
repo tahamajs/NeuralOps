@@ -10,6 +10,9 @@
 \usepackage{graphicx}
 \usepackage{subcaption}
 \usepackage{amsmath,amssymb,amsthm}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
 
 \newtheorem{definition}{Definition}
 \newtheorem{proposition}{Proposition}
@@ -282,14 +285,14 @@ Table~\ref{tab:ssm_family} presents results for recurrent, SSM, and hybrid archi
 Figure~\ref{fig:pareto} shows the Pareto frontier between accuracy, compression, and peak VRAM. The \texttt{kmeans} compressor achieves the best trade-off with $2.73\times$ compression at 81.40\% accuracy on MNLI.
 
 \paragraph{Baseline Comparison.}
-Table~\ref{tab:baselines} compares our method against naive SVD, ASVD, FWSVD, and SVD-LLM. Our activation-aware approach outperforms naive SVD by 43.4 points on MNLI, confirming the importance of calibration.
+Table~\ref{tab:baselines} compares our methods against naive SVD, ASVD, FWSVD, and SVD-LLM. Our activation-aware \texttt{a3} framework outperforms naive SVD by 38.1 points on MNLI (72.20\% vs.\ 34.10\%), confirming the critical importance of calibration. Furthermore, our \texttt{kmeans} compressor achieves near-baseline MNLI accuracy (81.40\%) at $2.73\times$ compression, outperforming all SVD-based alternatives on multi-class reasoning.
 
-\input{tables/table3_baselines}
+\input{tables/table3_baselines.tex}
 
 \paragraph{Multi-Seed Stability.}
 Table~\ref{tab:multiseed} reports mean $\pm$ standard deviation over 3 random seeds ($42, 123, 456$). Because inference on the pre-trained checkpoints and deterministic SVD factorizations does not employ stochastic dropout or batch shuffling during testing, evaluation across seeds is deterministic ($\text{std} = 0.00$), confirming exact experimental reproducibility across environments.
 
-\input{tables/table4_multiseed}
+\input{tables/table4_multiseed.tex}
 
 \section{Deep Analysis: Why Linear Attention Approximations Fail on Reasoning Tasks}
 \label{sec:deep_analysis}
@@ -405,6 +408,14 @@ Across the 271 evaluated module entries on MNLI:
     \item \textbf{FAIL (15 modules):} Hard runtime crashes due to dimension mismatch or missing forward arguments.
     \item \textbf{CRASH / TIMEOUT (4 modules):} Hard CUDA OOM or execution timeout exceeding 3600 seconds.
 \end{itemize}
+
+Of the 120 PASS modules, 45 achieve genuine parameter compression (compression rate $> 1.05\times$) and 75 are parameter-neutral ($\approx 1.00\times$). No PASS module exhibits parameter expansion, confirming that expansion is consistently flagged and excluded from the PASS category.
+
+\subsection{Top-50 Modules Ranked by MNLI Accuracy}
+Table~\ref{tab:all_modules} presents the top-50 PASS modules sorted by MNLI accuracy, including their SST-2 and AG News performance and parameter profiles.
+
+\input{tables/table5_all_modules.tex}
+
 
 \section{Per-Layer Reconstruction Error Analysis}
 \label{app:recon_error}

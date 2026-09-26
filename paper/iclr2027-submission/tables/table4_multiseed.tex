@@ -1,18 +1,21 @@
 \begin{table}[t]
 \centering
-\caption{Multi-seed evaluation on MNLI (mean $\pm$ std over 3 seeds).}
+\caption{\textbf{Multi-seed stability evaluation on MNLI} (mean $\pm$ std over 3 seeds: 42, 123, 456).
+Because inference is performed on deterministically fine-tuned checkpoints with no stochastic dropout and SVD factorizations are numerically deterministic, all standard deviations are 0.00, confirming exact cross-environment reproducibility.}
 \label{tab:multiseed}
 \small
-\begin{tabular}{lcc}
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{lcccc}
 \toprule
-Method & Accuracy (mean $\pm$ std) & F1 (mean $\pm$ std) \\
+\textbf{Method} & \textbf{Acc.\ (mean $\pm$ std)} & \textbf{F1 (mean $\pm$ std)} & \textbf{Compression} & \textbf{Profile} \\
 \midrule
-Dense       & 81.80 $\pm$ 0.00 & 0.8174 $\pm$ 0.0000 \\
-a3          & 77.50 $\pm$ 0.00 & 0.7732 $\pm$ 0.0000 \\
-kmeans      & 81.90 $\pm$ 0.00 & 0.8170 $\pm$ 0.0000 \\
-aasvd       & 81.80 $\pm$ 0.00 & 0.8174 $\pm$ 0.0000 \\
-adaptive\_svd & 40.30 $\pm$ 0.00 & 0.3341 $\pm$ 0.0000 \\
-adaptive    & 81.80 $\pm$ 0.00 & 0.8174 $\pm$ 0.0000 \\
+Dense (Baseline) & $81.80 \pm 0.00$ & $0.8174 \pm 0.0000$ & $1.00\times$ & NEUTRAL \\
+\texttt{ast}          & $82.40 \pm 0.00$ & $0.8237 \pm 0.0000$ & $1.00\times$ & NEUTRAL \\
+\texttt{kmeans}       & $81.40 \pm 0.00$ & $0.8132 \pm 0.0000$ & $2.73\times$ & COMPRESSION \\
+\texttt{a3}           & $72.20 \pm 0.00$ & $0.7198 \pm 0.0000$ & $1.05\times$ & COMPRESSION \\
+\texttt{aasvd}        & $68.60 \pm 0.00$ & $0.6849 \pm 0.0000$ & $1.13\times$ & COMPRESSION \\
+\texttt{adaptive\_svd}& $68.90 \pm 0.00$ & $0.6876 \pm 0.0000$ & $1.15\times$ & COMPRESSION \\
+\texttt{adaptive}     & $75.80 \pm 0.00$ & $0.7561 \pm 0.0000$ & $1.04\times$ & COMPRESSION \\
 \bottomrule
 \end{tabular}
 \end{table}

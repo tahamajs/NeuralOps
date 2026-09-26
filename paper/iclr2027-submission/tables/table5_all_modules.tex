@@ -1,0 +1,65 @@
+% Auto-generated from results/sst2_summary.csv, mnli_summary.csv, agnews_summary.csv
+\begin{table}[p]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.5pt}
+\caption{\textbf{Top-50 PASS Modules ranked by MNLI accuracy.} All evaluated on DistilBERT-base.
+Profile: COMPRESS = compression\_rate $> 1.05\times$; NEUTRAL = $\approx 1.00\times$.}
+\label{tab:all_modules}
+\begin{tabular}{llccc|cc}
+\toprule
+\textbf{Module} & \textbf{Profile} & \textbf{SST-2} & \textbf{MNLI} & \textbf{AG News} & \textbf{Comp.} & \textbf{VRAM (MB)} \\
+\midrule
+\texttt{ast} & NEUTRAL & 90.4\% & 82.4\% & 94.4\% & 1.00$\times$ & 304.5 \\
+\texttt{liftr} & NEUTRAL & 91.1\% & 82.3\% & 94.9\% & 1.00$\times$ & 304.5 \\
+\texttt{nmf} & NEUTRAL & 90.5\% & 82.3\% & 94.7\% & 1.00$\times$ & 304.5 \\
+\texttt{uniql} & NEUTRAL & 91.1\% & 82.3\% & 94.9\% & 1.00$\times$ & 304.5 \\
+\texttt{roast} & NEUTRAL & 90.8\% & 82.2\% & 94.3\% & 1.00$\times$ & 304.5 \\
+\texttt{direct\_svd} & NEUTRAL & 90.6\% & 82.1\% & 94.4\% & 1.00$\times$ & 305.3 \\
+\texttt{erc} & NEUTRAL & 90.6\% & 82.1\% & 94.4\% & 1.00$\times$ & 305.3 \\
+\texttt{soka} & NEUTRAL & 90.7\% & 82.1\% & 94.4\% & 1.00$\times$ & 305.3 \\
+\texttt{subspace\_projection} & NEUTRAL & 90.7\% & 82.1\% & 94.4\% & 1.00$\times$ & 305.3 \\
+\texttt{rpca} & NEUTRAL & 90.4\% & 82.0\% & 94.9\% & 1.00$\times$ & 305.8 \\
+\texttt{salr} & NEUTRAL & 90.4\% & 82.0\% & 94.9\% & 1.00$\times$ & 305.3 \\
+\texttt{dynamic\_rank} & NEUTRAL & 90.6\% & 81.9\% & 94.4\% & 1.00$\times$ & 305.3 \\
+\texttt{inject\_dynamic\_entropy} & NEUTRAL & 90.5\% & 81.9\% & --\% & 1.00$\times$ & 305.3 \\
+\texttt{inject\_dynamic\_rank} & NEUTRAL & 90.5\% & 81.9\% & --\% & 1.00$\times$ & 305.3 \\
+\texttt{tomoe} & NEUTRAL & 90.9\% & 81.9\% & 94.4\% & 1.00$\times$ & 304.5 \\
+\texttt{full} & NEUTRAL & 91.1\% & 81.8\% & 94.3\% & 1.00$\times$ & 176.4 \\
+\texttt{cr} & NEUTRAL & 90.7\% & 81.8\% & 94.7\% & 1.00$\times$ & 304.5 \\
+\texttt{cur} & NEUTRAL & 90.7\% & 81.8\% & 94.7\% & 1.00$\times$ & 305.3 \\
+\texttt{dobi} & NEUTRAL & 91.1\% & 81.8\% & 94.3\% & 1.00$\times$ & 293.5 \\
+\texttt{dobi\_class} & NEUTRAL & 91.1\% & 81.8\% & 94.3\% & 1.00$\times$ & 293.5 \\
+\texttt{dynamic\_rank\_class} & NEUTRAL & 90.9\% & 81.8\% & 94.8\% & 1.00$\times$ & 305.3 \\
+\texttt{entropy\_budget} & NEUTRAL & 90.4\% & 81.8\% & 94.7\% & 1.00$\times$ & 305.3 \\
+\texttt{entropy\_rank\_allocator\_class} & NEUTRAL & 90.9\% & 81.8\% & 94.8\% & 1.00$\times$ & 305.3 \\
+\texttt{flap} & NEUTRAL & 90.4\% & 81.8\% & 94.7\% & 1.00$\times$ & 305.3 \\
+\texttt{flat\_llm} & NEUTRAL & 90.4\% & 81.8\% & 94.7\% & 1.00$\times$ & 304.5 \\
+\texttt{frandi\_compressor\_class} & NEUTRAL & 90.6\% & 81.8\% & 94.8\% & 1.00$\times$ & 305.3 \\
+\texttt{gfws} & NEUTRAL & 90.4\% & 81.8\% & 94.7\% & 1.00$\times$ & 305.3 \\
+\texttt{grecodec\_compressor\_class} & NEUTRAL & 90.6\% & 81.8\% & 94.8\% & 1.00$\times$ & 305.3 \\
+\texttt{hashed\_net\_class} & NEUTRAL & 90.9\% & 81.8\% & 94.8\% & 1.00$\times$ & 305.3 \\
+\texttt{hybridkv} & NEUTRAL & 91.1\% & 81.8\% & 94.3\% & 1.00$\times$ & 293.5 \\
+\texttt{hybridkv\_quantizer} & NEUTRAL & 91.1\% & 81.8\% & 94.3\% & 1.00$\times$ & 293.5 \\
+\texttt{inject\_dobi} & NEUTRAL & 91.1\% & 81.8\% & --\% & 1.00$\times$ & 293.5 \\
+\texttt{tomoe\_class} & NEUTRAL & 90.8\% & 81.8\% & 94.2\% & 1.00$\times$ & 304.5 \\
+\texttt{lillama} & NEUTRAL & 90.7\% & 81.7\% & 94.8\% & 1.00$\times$ & 304.5 \\
+\texttt{mamba\_shedder} & NEUTRAL & 90.7\% & 81.7\% & 94.8\% & 1.00$\times$ & 304.5 \\
+\texttt{saes} & NEUTRAL & 90.7\% & 81.7\% & 94.8\% & 1.00$\times$ & 305.8 \\
+\texttt{oats} & NEUTRAL & 90.6\% & 81.6\% & 94.4\% & 1.00$\times$ & 358.8 \\
+\texttt{rotational\_slicegpt} & NEUTRAL & 90.5\% & 81.6\% & 94.4\% & 1.00$\times$ & 304.5 \\
+\texttt{astro} & NEUTRAL & 90.6\% & 81.5\% & 94.5\% & 1.00$\times$ & 304.5 \\
+\texttt{frandi} & NEUTRAL & 90.9\% & 81.5\% & 94.8\% & 1.00$\times$ & 305.3 \\
+\texttt{grecodec} & NEUTRAL & 90.9\% & 81.5\% & 94.8\% & 1.00$\times$ & 305.3 \\
+\texttt{huffman} & NEUTRAL & 90.6\% & 81.5\% & 94.6\% & 1.00$\times$ & 305.3 \\
+\texttt{lsc} & NEUTRAL & 91.1\% & 81.5\% & 94.6\% & 1.00$\times$ & 305.3 \\
+\texttt{mgie} & NEUTRAL & --\% & 81.5\% & 94.6\% & 1.00$\times$ & 305.3 \\
+\texttt{mgie\_budget} & NEUTRAL & --\% & 81.5\% & 94.6\% & 1.00$\times$ & 305.3 \\
+\texttt{modegpt} & NEUTRAL & 91.1\% & 81.5\% & 94.6\% & 1.00$\times$ & 305.3 \\
+\texttt{slicegpt\_pca} & NEUTRAL & 91.1\% & 81.5\% & 94.6\% & 1.00$\times$ & 304.5 \\
+\texttt{swift\_svd\_act} & NEUTRAL & 91.1\% & 81.5\% & 94.6\% & 1.00$\times$ & 305.3 \\
+\texttt{inject\_optimal\_subspace\_projection} & NEUTRAL & --\% & 81.4\% & --\% & 1.00$\times$ & 305.3 \\
+\texttt{kmeans} & COMPRESS & 90.4\% & 81.4\% & 94.7\% & 2.73$\times$ & 539.9 \\
+\bottomrule
+\end{tabular}
+\end{table}

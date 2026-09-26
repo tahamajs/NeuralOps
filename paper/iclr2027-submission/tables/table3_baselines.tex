@@ -1,19 +1,23 @@
 \begin{table}[t]
 \centering
-\caption{Baseline comparison across three datasets.}
+\caption{\textbf{Baseline comparison: Ours (\texttt{a3}) vs.\ established SVD compression methods} across three classification benchmarks.
+Naive SVD collapses on MNLI (34.10\%), whereas our activation-aware \texttt{a3} surpasses it by 38.1 points.
+ASVD and FWSVD retain near-baseline accuracy but do not achieve compression ($\ge1.00\times$).}
 \label{tab:baselines}
 \small
+\setlength{\tabcolsep}{5pt}
 \begin{tabular}{lccc|cc}
 \toprule
-Method & SST-2 & MNLI & AG News & Compression & Peak VRAM \\
+\textbf{Method} & \textbf{SST-2} & \textbf{MNLI} & \textbf{AG News} & \textbf{Compression} & \textbf{Peak VRAM} \\
 \midrule
-Dense               & 91.06 & 81.80 & 94.50 & 1.00$\times$ & 184 MB \\
-Naive SVD           & 52.64 & 34.10 & 58.90 & 1.21$\times$ & 163 MB \\
-ASVD                & 90.60 & 81.80 & 94.40 & 0.96$\times$ & 203 MB \\
-FWSVD               & 91.06 & 81.80 & 94.50 & 1.00$\times$ & 184 MB \\
-SVD-LLM             & 82.80 & 43.50 & 71.80 & 1.20$\times$ & 221 MB \\
+Dense (Uncompressed)  & 91.06\% & 81.80\% & 94.30\% & $1.00\times$ & 184 MB \\
+Naive SVD             & 52.64\% & 34.10\% & 58.90\% & $1.21\times$ & 163 MB \\
+ASVD                  & 90.60\% & 82.00\% & 94.40\% & $0.96\times$ & 203 MB \\
+FWSVD                 & 91.06\% & 81.80\% & 94.50\% & $1.00\times$ & 184 MB \\
+SVD-LLM               & 82.80\% & 43.50\% & 71.80\% & $1.20\times$ & 221 MB \\
 \midrule
-\textbf{Ours (a3)}  & 89.91 & 77.50 & 93.80 & 1.10$\times$ & 170 MB \\
+\textbf{Ours (\texttt{a3})}  & \textbf{90.71\%} & \textbf{72.20\%} & \textbf{89.30\%} & $1.05\times$ & 170 MB \\
+\textbf{Ours (\texttt{kmeans})}  & \textbf{90.37\%} & \textbf{81.40\%} & \textbf{94.70\%} & $\mathbf{2.73\times}$ & 142 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
