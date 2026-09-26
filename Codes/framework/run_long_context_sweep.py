@@ -91,7 +91,7 @@ def parse_args():
                         help="Path to pre-trained/fine-tuned classification model")
     parser.add_argument("--dataset_dir", type=str, default="Codes/framework/data/byte_imdb",
                         help="Path to pre-cached byte-imdb dataset directory")
-    parser.add_argument("--output_dir", type=str, default="results/long_context",
+    parser.add_argument("--output_dir", type=str, default="results/05_perplexity_seqlen/long_context",
                         help="Directory to save sweep results and summary.csv")
     parser.add_argument("--modules", type=str, nargs="*", default=DEFAULT_LONG_CONTEXT_MODULES,
                         help="Modules to evaluate")

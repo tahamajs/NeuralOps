@@ -1,4 +1,4 @@
-"""
+r"""
 LSC: Low-Rank Spectral & Fourier-Domain Linear Compressor.
 Registered as 'lsc', 'lsc_class', 'lsc_compressor', 'lsc_factory'.
 

@@ -303,7 +303,7 @@ def main():
     parser.add_argument("--num_trials", type=int, default=3, help="Number of trials for median computation")
     parser.add_argument("--num_iters", type=int, default=25, help="Number of timed forward passes per trial")
     parser.add_argument("--warmup_iters", type=int, default=5, help="Number of warmup forward passes")
-    parser.add_argument("--output_dir", type=str, default="results/seqlen_scaling", help="Output directory")
+    parser.add_argument("--output_dir", type=str, default="results/05_perplexity_seqlen/seqlen_scaling", help="Output directory")
     parser.add_argument("--master_csv", type=str, default="results/SEQLEN_SCALING_MASTER.csv", help="Master CSV path")
     args = parser.parse_args()
 

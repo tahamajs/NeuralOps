@@ -4,12 +4,12 @@ full_mnli_validation.py
 Re-evaluates the top PASS modules from the local sweep against the full
 9815-sample MNLI validation_matched set.
 
-Usage (on hadi-windows in D:\\svd_project):
-    python Codes\\framework\\full_mnli_validation.py \
-        --model models\\distilbert_mnli_full \
-        --sweep_csv results\\distilbert_mnli_full_mnli_sweep\\summary.csv \
-        --dataset_dir Codes\\framework\\data\\glue_data\\mnli \
-        --out results\\distilbert_mnli_full_mnli_sweep\\full_mnli_validation.csv
+Usage (from project root):
+    python Codes/framework/full_mnli_validation.py \
+        --model models/distilbert_mnli_full \
+        --sweep_csv results/02_glue_sweeps/distilbert/distilbert_mnli_full_mnli_sweep/summary.csv \
+        --dataset_dir Codes/framework/data/glue_data/mnli \
+        --out results/02_glue_sweeps/distilbert/distilbert_mnli_full_mnli_sweep/full_mnli_validation.csv
 """
 from __future__ import annotations
 
