@@ -1,0 +1,8 @@
+{
+  "module": "factorised_matrix_state",
+  "model_path": "models/gpt2",
+  "dataset": "wikitext2",
+  "perplexity": 133073.1875,
+  "seq_len": 1024,
+  "stride": 512
+}
