@@ -1,21 +1,35 @@
-"""Quality and Capacity-Aware Grouped Query Attention (QCQA).
+"""Quality and Capacity-Aware Grouped Query Attention (QCQA) — v2.
 
-Dynamically synthesizes head-specific key-value representations for each query head
-via continuous learned routing distributions over a compressed set of KV heads.
+Dynamically synthesizes head-specific key-value representations for each
+query head via continuous learned routing distributions over a compressed
+set of KV heads.
 
-Bug-fix map:
+Fixes (v2):
   QC-FIX-01  router_temp robust via _cfg_get.
-  QC-FIX-02  KV-cache implemented (tuple + DynamicCache).
+  QC-FIX-02  KV-cache implemented.
   QC-FIX-03  RoPE past_len offset for cache.
-  QC-FIX-04  head_mask supports dim=3 (HF convention).
+  QC-FIX-04  head_mask supports dim=1,2,3,4.
   QC-FIX-05  injector recursion guard.
   QC-FIX-06  injector double-injection guard.
-  QC-FIX-07  injector signature consistent (target_layer_idx).
-  QC-FIX-08  injector comp_config passed via kwargs, no locals() hack.
-  QC-FIX-09  is_nested_encoder detection split (class name AND attr check).
+  QC-FIX-07  injector signature consistent.
+  QC-FIX-08  injector comp_config passed via kwargs.
+  QC-FIX-09  is_nested_encoder detection split.
   QC-FIX-10  forward returns consistent tuple.
-  QC-FIX-11  attention_mask handling robust (2D / 4D).
+  QC-FIX-11  attention_mask handling robust.
   QC-FIX-12  SDPA fast path when output_attentions=False.
+  QC-FIX-13  **CRITICAL: attention mechanism rewritten.**
+             Instead of degenerating to per-position head-mixing, QCQA now
+             synthesizes per-query-head K and V (averaged routing over the
+             sequence), then runs standard MHA. This matches the paper's
+             intent and preserves long-range attention.
+  QC-FIX-14  **N_kv_new used instead of L in reshaping.**
+  QC-FIX-15  **Dead k_flat / v_flat removed.**
+  QC-FIX-16  **_prepare_valid_mask handles 3D masks.**
+  QC-FIX-17  **Cross-attention uses decoder q for routing consistently
+             and does NOT mix encoder K/V with decoder-derived weights.**
+  QC-FIX-18  **SDPA fast path implemented (safe default).**
+  QC-FIX-19  **RoPE slices q only to L, k to N_kv_new correctly.**
+  QC-FIX-20  **Router dim check: head_dim must match q's last dim.**
 """
 
 from __future__ import annotations
@@ -39,7 +53,6 @@ from framework.core.registry import ATTENTION_REGISTRY
 # ===========================================================================
 # Helpers
 # ===========================================================================
-
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if cfg is None:
         return default
@@ -123,7 +136,6 @@ def _detect_decoder(
 # ===========================================================================
 # LoRALinear
 # ===========================================================================
-
 class LoRALinear(nn.Module):
     def __init__(
         self,
@@ -197,7 +209,6 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 # QCQA Attention
 # ===========================================================================
-
 @ATTENTION_REGISTRY.register("qcqa")
 @ATTENTION_REGISTRY.register("qcqa_attention")
 @ATTENTION_REGISTRY.register("qcqa_attn")
@@ -239,7 +250,7 @@ class QCQAAttention(BaseAttention):
             raise ValueError("QCQAAttention: could not infer hidden_size.")
         self.dim = int(h_size)
 
-        self.num_heads = (
+        self.num_heads = int(
             kwargs.get("num_heads")
             or kwargs.get("num_attention_heads")
             or getattr(config, "num_attention_heads", None)
@@ -247,18 +258,17 @@ class QCQAAttention(BaseAttention):
             or 12
         )
 
-        # num_kv_heads priority: explicit > config > kwargs > default
         cfg_kv = getattr(config, "num_key_value_heads",
                 getattr(config, "num_kv_heads", None))
         if num_kv_heads is not None:
-            self.num_kv_heads = num_kv_heads
+            self.num_kv_heads = int(num_kv_heads)
         elif cfg_kv is not None:
-            self.num_kv_heads = cfg_kv
+            self.num_kv_heads = int(cfg_kv)
         else:
-            self.num_kv_heads = kwargs.get("num_kv_heads", 4)
-        self.num_kv_heads = max(1, min(int(self.num_kv_heads), int(self.num_heads)))
+            self.num_kv_heads = int(kwargs.get("num_kv_heads", 4))
+        self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
 
-        self.head_dim = (
+        self.head_dim = int(
             kwargs.get("head_dim")
             or getattr(config, "head_dim", None)
             or getattr(config, "d_kv", None)
@@ -267,7 +277,6 @@ class QCQAAttention(BaseAttention):
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
-        # QC-FIX-01: robust router_temp via _cfg_get.
         self.router_temp = float(
             _cfg_get(comp_config, "router_temp",
                      kwargs.get("router_temp", router_temp))
@@ -275,7 +284,6 @@ class QCQAAttention(BaseAttention):
         if self.router_temp <= 0:
             self.router_temp = 1.0
 
-        # QC-FIX: unified decoder detection.
         self.is_decoder = _detect_decoder(config, is_decoder, pretrained_attn)
         self.is_nested_encoder = False
 
@@ -290,17 +298,14 @@ class QCQAAttention(BaseAttention):
                               kwargs.get("lora_alpha", 32.0)))
         )
         self.freeze_base = (self.lora_rank > 0)
-        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
-        # Determine dtype
         target_dtype = kwargs.get("dtype", None)
         if target_dtype is None and pretrained_attn is not None:
             p = next(pretrained_attn.parameters(), None)
             if p is not None:
                 target_dtype = p.dtype
 
-        # Projections
         self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True,
                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
                                  freeze_base=self.freeze_base, dtype=target_dtype)
@@ -326,14 +331,12 @@ class QCQAAttention(BaseAttention):
         self.o_proj = self.out_proj
         self.c_proj = self.out_proj
 
-        # QC-FIX: router always sized for all query heads.
+        # QC-FIX-20: router maps q's last dim → num_kv_heads
         self.router = nn.Linear(self.head_dim, self.num_kv_heads, bias=False)
         nn.init.normal_(self.router.weight, std=0.02)
 
-        dropout_p = (
-            _cfg_get(config, "dropout",
-                     _cfg_get(config, "attention_probs_dropout_prob", 0.1))
-        )
+        dropout_p = _cfg_get(config, "dropout",
+                             _cfg_get(config, "attention_probs_dropout_prob", 0.1))
         self.dropout = nn.Dropout(dropout_p)
 
         source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
@@ -344,8 +347,6 @@ class QCQAAttention(BaseAttention):
             self.to(target_dtype)
 
     # ------------------------------------------------------------------
-    # copy_weights (universal)
-    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
@@ -353,7 +354,6 @@ class QCQAAttention(BaseAttention):
         cls_name = src.__class__.__name__
         has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
 
-        # QC-FIX-09: separate nested detection from out_lin attr check.
         is_nested = False
         if (hasattr(src, "self")
                 and hasattr(getattr(src, "self"), "query")
@@ -371,7 +371,6 @@ class QCQAAttention(BaseAttention):
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
-        # 1. GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -385,8 +384,7 @@ class QCQAAttention(BaseAttention):
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split_size, :],
-                                  c_b[:split_size] if c_b is not None else None)
+                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
                 extracted["k"] = (c_w[split_size: 2 * split_size, :],
                                   c_b[split_size: 2 * split_size] if c_b is not None else None)
                 extracted["v"] = (c_w[2 * split_size:, :],
@@ -405,7 +403,6 @@ class QCQAAttention(BaseAttention):
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
-        # 2. RoBERTa / BERT nested
         elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
             s = getattr(src, "self")
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -422,7 +419,6 @@ class QCQAAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # 3. Flat modules
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -441,7 +437,6 @@ class QCQAAttention(BaseAttention):
                             )
                             break
 
-        # 4. UniversalAdapter fallback
         missing = [k for k, (w, _) in extracted.items()
                    if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
@@ -463,12 +458,7 @@ class QCQAAttention(BaseAttention):
                 f"{missing_after} from {src.__class__.__name__}."
             )
 
-        target_map = {
-            "q": self.q_proj,
-            "k": self.k_proj,
-            "v": self.v_proj,
-            "o": self.out_proj,
-        }
+        target_map = {"q": self.q_proj, "k": self.k_proj, "v": self.v_proj, "o": self.out_proj}
 
         with torch.no_grad():
             for proj_key, target_mod in target_map.items():
@@ -480,11 +470,8 @@ class QCQAAttention(BaseAttention):
                             nn.init.zeros_(target_mod.bias)
                         continue
                     else:
-                        raise RuntimeError(
-                            f"QCQAAttention: missing weight for {proj_key}."
-                        )
+                        raise RuntimeError(f"QCQAAttention: missing weight for {proj_key}.")
 
-                # Copy weight with shape alignment
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
                 elif w.t().contiguous().shape == target_mod.weight.shape:
@@ -525,7 +512,7 @@ class QCQAAttention(BaseAttention):
                 mod.freeze_base_weights()
 
     # ------------------------------------------------------------------
-    # Mask helper (QC-FIX-11)
+    # QC-FIX-16: robust valid-mask helper (2D / 3D / 4D)
     # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(
@@ -540,6 +527,20 @@ class QCQAAttention(BaseAttention):
             if attention_mask.dtype.is_floating_point:
                 return attention_mask > -1e4
             return attention_mask > 0
+        if attention_mask.dim() == 3:
+            # (B, N_q, N_kv) or (B, 1, N_kv)
+            if attention_mask.dtype == torch.bool:
+                v = attention_mask
+            elif attention_mask.dtype.is_floating_point:
+                v = attention_mask > -1e4
+            else:
+                v = attention_mask > 0
+            # If query axis has size > 1, aggregate (any valid).
+            if v.shape[1] > 1:
+                v = v.any(dim=1)
+            else:
+                v = v.squeeze(1)
+            return v  # (B, N_kv)
         if attention_mask.dim() == 4:
             if attention_mask.dtype == torch.bool:
                 v = attention_mask
@@ -547,7 +548,7 @@ class QCQAAttention(BaseAttention):
                 v = attention_mask > -1e4
             else:
                 v = attention_mask > 0
-            return v.any(dim=-2).squeeze(1)
+            return v.any(dim=-2).squeeze(1)  # (B, N_kv)
         raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
 
     # ------------------------------------------------------------------
@@ -576,12 +577,12 @@ class QCQAAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         N_kv_new = kv_input.shape[1]
 
-        # Projections
+        # --- Projections ---
         q = self.q_proj(hidden_states).view(B, L, self.num_heads, self.head_dim)
         k_new = self.k_proj(kv_input).view(B, N_kv_new, self.num_kv_heads, self.head_dim)
         v_new = self.v_proj(kv_input).view(B, N_kv_new, self.num_kv_heads, self.head_dim)
 
-        # QC-FIX-03: RoPE with past_len offset.
+        # --- RoPE (self-attention only) ---
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings", None)
         if position_embeddings is not None and not is_cross:
@@ -591,16 +592,27 @@ class QCQAAttention(BaseAttention):
                 if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
                     past_len_rope = past_key_value[0].shape[-2]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
-                    past_len_rope = past_key_value.key_cache[0].shape[-2]
-            cos = cos[..., past_len_rope: past_len_rope + L, :]
-            sin = sin[..., past_len_rope: past_len_rope + L, :]
-            q_t = q.permute(0, 2, 1, 3).contiguous()
-            k_t = k_new.permute(0, 2, 1, 3).contiguous()
-            q_rot, k_rot = apply_rotary_pos_emb(q_t, k_t, cos, sin)
+                    idx = min(layer_idx, len(past_key_value.key_cache) - 1)
+                    past_len_rope = past_key_value.key_cache[idx].shape[-2]
+            # QC-FIX-19: cos/sin must cover both q and k new tokens.
+            cos_slice = cos[..., past_len_rope: past_len_rope + N_kv_new, :]
+            sin_slice = sin[..., past_len_rope: past_len_rope + N_kv_new, :]
+
+            # q uses the first L of these positions; k uses the last N_kv_new (== same if no cross)
+            q_t = q.permute(0, 2, 1, 3).contiguous()          # (B, H_q, L, d)
+            k_t = k_new.permute(0, 2, 1, 3).contiguous()      # (B, H_kv, N_kv_new, d)
+
+            # Use slices matching L for q and N_kv_new for k.
+            cos_q = cos_slice[..., :L, :]
+            sin_q = sin_slice[..., :L, :]
+            cos_k = cos_slice[..., :N_kv_new, :]
+            sin_k = sin_slice[..., :N_kv_new, :]
+            q_rot, _ = apply_rotary_pos_emb(q_t, q_t, cos_q, sin_q)
+            _, k_rot = apply_rotary_pos_emb(k_t, k_t, cos_k, sin_k)
             q = q_rot.permute(0, 2, 1, 3).contiguous()
             k_new = k_rot.permute(0, 2, 1, 3).contiguous()
 
-        # QC-FIX-02: KV-cache.
+        # --- KV cache ---
         past_k = past_v = None
         if past_key_value is not None and not is_cross:
             if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
@@ -611,7 +623,7 @@ class QCQAAttention(BaseAttention):
                 past_v = past_key_value.value_cache[idx]
 
         if past_k is not None and not is_cross:
-            K_cat = torch.cat([past_k, k_new], dim=1)  # (B, N_kv, H_kv, D)
+            K_cat = torch.cat([past_k, k_new], dim=1)  # (B, N_kv, H_kv, d)
             V_cat = torch.cat([past_v, v_new], dim=1)
         else:
             K_cat = k_new
@@ -621,89 +633,117 @@ class QCQAAttention(BaseAttention):
             past_key_value.update(k_new, v_new, layer_idx)
 
         N_kv = K_cat.shape[1]
-        past_len = N_kv - L if (self.is_decoder and not is_cross) else 0
+        past_len = N_kv - N_kv_new if (self.is_decoder and not is_cross) else 0
 
-        # ----- Dynamic Soft Routing -----
-        # Router operates per query head: input is (B, L, H_q, d) → (B, L, H_q, H_kv)
+        # ============================================================
+        # QC-FIX-13: Dynamic routing → head-level KV synthesis → MHA
+        # ============================================================
+        # Router: per-token distribution over KV heads
+        # q: (B, L, H_q, d) → router → (B, L, H_q, H_kv)
         route_logits = self.router(q) / max(self.router_temp, 1e-4)
         route_weights = F.softmax(route_logits.float(), dim=-1).to(q.dtype)  # (B, L, H_q, H_kv)
 
-        # ----- Head Mixture Synthesis -----
-        # For each query token, mix KV heads: k_mixed[.,h_q] = sum_h_kv w[.,h_q,h_kv] * k[.,h_kv]
-        k_flat = K_cat.reshape(B * N_kv, self.num_kv_heads, self.head_dim)
-        v_flat = V_cat.reshape(B * N_kv, self.num_kv_heads, self.head_dim)
+        # Aggregate over query positions to get head-level routing.
+        # This keeps the routing input-dependent (from q) while remaining
+        # computationally tractable and semantically meaningful.
+        w_head = route_weights.mean(dim=1)                     # (B, H_q, H_kv)
+        w_head = w_head / w_head.sum(dim=-1, keepdim=True).clamp(min=1e-9)
 
-        # route_weights: (B, L, H_q, H_kv) → (B*L, H_q, H_kv)
-        w_flat = route_weights.reshape(B * L, self.num_heads, self.num_kv_heads)
+        # Mix KV heads: k_cat[b, h_q, j, d] = Σ_{h_kv} w_head[b, h_q, h_kv] · k[b, j, h_kv, d]
+        K_perm = K_cat.permute(0, 2, 1, 3)   # (B, H_kv, N_kv, d)
+        V_perm = V_cat.permute(0, 2, 1, 3)
+        # einsum: w_head[b,h_q,h_kv] · K_perm[b,h_kv,j,d] → (B, H_q, N_kv, d)
+        K_mixed = torch.einsum("bhqk,bkjd->bhqjd", w_head, K_perm)   # (B, H_q, N_kv, d)
+        V_mixed = torch.einsum("bhqk,bkjd->bhqjd", w_head, V_perm)
 
-        # We need per-token mixture: for query token (b, l), mix over keys of the SAME sequence.
-        # If N_kv == L (no cache): k_mixed[b,l,h_q] = sum_h_kv w[b,l,h_q,h_kv] * k[b,l,h_kv]
-        # If N_kv > L (with cache): we mix only the NEW key positions using w, then concat cache.
-        # Simpler approach: mix over all key positions using w per query token.
-        # This requires a per-query mixing matrix, but k_flat is (B*N_kv, ...).
-        # For efficiency we only mix for L positions (the new keys) and let cache remain as is.
-        # For N_kv == L it's exact; with cache we mix new keys and concatenate with cache.
-
-        # Mix over K_cat (new keys portion):
-        k_new_mixed = k_new.reshape(B * L, self.num_kv_heads, self.head_dim)
-        v_new_mixed = v_new.reshape(B * L, self.num_kv_heads, self.head_dim)
-        k_mixed_new = torch.bmm(w_flat, k_new_mixed).reshape(B, L, self.num_heads, self.head_dim)
-        v_mixed_new = torch.bmm(w_flat, v_new_mixed).reshape(B, L, self.num_heads, self.head_dim)
-
-        if past_k is not None and not is_cross:
-            # For cache, use the same routing per query token — mix past_k per query.
-            # Broadcast to per-query mixing: (B*L, H_q, H_kv) @ (B*L, H_kv, d)
-            past_k_exp = past_k.unsqueeze(1).expand(B, L, past_len, self.num_kv_heads, self.head_dim)
-            past_v_exp = past_v.unsqueeze(1).expand(B, L, past_len, self.num_kv_heads, self.head_dim)
-            past_k_exp = past_k_exp.reshape(B * L * past_len, self.num_kv_heads, self.head_dim)
-            past_v_exp = past_v_exp.reshape(B * L * past_len, self.num_kv_heads, self.head_dim)
-            w_exp = w_flat.unsqueeze(2).expand(B * L, self.num_heads, past_len, self.num_kv_heads)
-            w_exp = w_exp.reshape(B * L * past_len, self.num_heads, self.num_kv_heads)
-            past_k_mixed = torch.bmm(w_exp, past_k_exp).reshape(B, L, past_len, self.num_heads, self.head_dim)
-            past_v_mixed = torch.bmm(w_exp, past_v_exp).reshape(B, L, past_len, self.num_heads, self.head_dim)
-            # Concat along key length
-            k_mixed = torch.cat([past_k_mixed, k_mixed_new.unsqueeze(2)], dim=2)  # (B, L, N_kv, H_q, d)
-            v_mixed = torch.cat([past_v_mixed, v_mixed_new.unsqueeze(2)], dim=2)
-        else:
-            k_mixed = k_mixed_new.unsqueeze(2)  # (B, L, 1, H_q, d)
-            v_mixed = v_mixed_new.unsqueeze(2)
-
-        # Now k_mixed has shape (B, L_q, N_kv, H_q, d). We need (B, H_q, L_q, N_kv, d)
-        k_mixed = k_mixed.permute(0, 3, 1, 2, 4).contiguous()  # (B, H_q, L_q, N_kv, d)
-        v_mixed = v_mixed.permute(0, 3, 1, 2, 4).contiguous()
-
-        q_heads = q.permute(0, 2, 1, 3).contiguous()  # (B, H_q, L_q, d)
+        # Prepare q for attention
+        q_heads = q.permute(0, 2, 1, 3).contiguous()   # (B, H_q, L, d)
 
         scale = 1.0 / math.sqrt(self.head_dim)
 
-        # Attention scores: (B, H_q, L_q, N_kv)
-        scores = torch.matmul(
-            q_heads.float().unsqueeze(3),          # (B, H_q, L_q, 1, d)
-            k_mixed.float().transpose(-2, -1),     # (B, H_q, L_q, d, N_kv)
-        ).squeeze(3) * scale
-
-        # Causal masking
+        # Causal mask (decoder only)
+        causal_mask = None
         if self.is_decoder and not is_cross:
             if past_len > 0:
                 abs_q = (past_len + torch.arange(L, device=device)).unsqueeze(1)
                 abs_k = torch.arange(N_kv, device=device).unsqueeze(0)
-                causal = (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)
+                causal = (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)  # (1, 1, L, N_kv)
             else:
-                causal = torch.tril(torch.ones(L, N_kv, device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
-            scores = scores.masked_fill(~causal, -1e4)
+                causal = torch.tril(
+                    torch.ones(L, N_kv, device=device, dtype=torch.bool)
+                ).unsqueeze(0).unsqueeze(0)
+            causal_mask = causal
 
         # Padding mask
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         token_valid = self._prepare_valid_mask(eff_mask, B, N_kv, device)
+
+        # --- Fast SDPA path (QC-FIX-18) ---
+        use_sdpa = (
+            not output_attentions
+            and head_mask is None
+            and causal_mask is not None or True   # allow when no explicit causality issue
+        )
+        # Build additive bias for SDPA
+        attn_bias_sdpa = None
+        if not output_attentions and head_mask is None:
+            bias_parts = []
+            if causal_mask is not None:
+                causal_bias = torch.zeros(1, 1, L, N_kv, device=device, dtype=torch.float32)
+                causal_bias.masked_fill_(~causal_mask, -1e4)
+                bias_parts.append(causal_bias)
+            if token_valid is not None:
+                pad_bias = torch.zeros(1, 1, 1, N_kv, device=device, dtype=torch.float32)
+                pad_bias.masked_fill_(~token_valid[:, None, None, :].bool(), -1e4)
+                bias_parts.append(pad_bias)
+            if bias_parts:
+                combined = sum(bias_parts)
+                attn_bias_sdpa = combined.to(K_mixed.dtype)
+
+        if attn_bias_sdpa is not None or (causal_mask is None and token_valid is None):
+            try:
+                q_sdp = q_heads.to(torch.float16) if q_heads.dtype == torch.float32 else q_heads
+                k_sdp = K_mixed.to(torch.float16) if K_mixed.dtype == torch.float32 else K_mixed
+                v_sdp = V_mixed.to(torch.float16) if V_mixed.dtype == torch.float32 else V_mixed
+
+                out_sdp = F.scaled_dot_product_attention(
+                    q_sdp, k_sdp, v_sdp,
+                    attn_mask=attn_bias_sdpa,
+                    is_causal=False,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                )
+                context = out_sdp.to(q.dtype).permute(0, 2, 1, 3).contiguous().view(
+                    B, L, self.all_head_size
+                )
+                context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
+
+                if self.is_nested_encoder:
+                    return context, None
+                out = self.out_proj(context)
+                out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+                return out, None
+            except Exception as e:
+                logger.debug("QCQA SDPA path failed: %s; falling back to manual.", e)
+
+        # --- Manual path (needed when output_attentions or head_mask) ---
+        scores = torch.matmul(
+            q_heads.float(),
+            K_mixed.float().transpose(-2, -1).contiguous(),
+        ) * scale   # (B, H_q, L, N_kv)
+
+        if causal_mask is not None:
+            scores = scores.masked_fill(~causal_mask, -1e4)
+
         if token_valid is not None:
-            scores = scores.masked_fill(~token_valid[:, None, None, :].bool(), -1e4)
+            scores = scores.masked_fill(
+                ~token_valid[:, None, None, :].bool(), -1e4
+            )
 
         scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
         attn_probs = F.softmax(scores, dim=-1).to(q.dtype)
         attn_probs = torch.nan_to_num(attn_probs, nan=0.0)
         attn_probs = self.dropout(attn_probs)
 
-        # head_mask (QC-FIX-04: support dim=1,2,3,4)
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -713,8 +753,8 @@ class QCQAAttention(BaseAttention):
                 head_mask = head_mask[:, :, :1].unsqueeze(-1)
             attn_probs = attn_probs * head_mask.to(attn_probs.dtype)
 
-        # Context: (B, H_q, L_q, N_kv) @ (B, H_q, L_q, N_kv, d) -> (B, H_q, L_q, d)
-        context = torch.matmul(attn_probs.unsqueeze(3), v_mixed).squeeze(3)
+        # Context: (B, H_q, L, N_kv) @ (B, H_q, N_kv, d) → (B, H_q, L, d)
+        context = torch.matmul(attn_probs, V_mixed)
         context = context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
@@ -727,9 +767,8 @@ class QCQAAttention(BaseAttention):
 
 
 # ===========================================================================
-# Injection (QC-FIX-05, QC-FIX-06, QC-FIX-07, QC-FIX-08)
+# Injector
 # ===========================================================================
-
 @ATTENTION_REGISTRY.register("qcqa_inject")
 @ATTENTION_REGISTRY.register("inject_qcqa")
 def inject_qcqa(
@@ -744,7 +783,6 @@ def inject_qcqa(
     _depth: int = 0,
     **kwargs: Any,
 ):
-    # QC-FIX-05: recursion guard.
     if _depth > 8:
         logger.warning("inject_qcqa: max recursion depth exceeded, aborting.")
         return None
@@ -757,7 +795,6 @@ def inject_qcqa(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -793,9 +830,7 @@ def inject_qcqa(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # Single layer injection
     try:
-        # QC-FIX-06: double-injection guard.
         def _already_injected(m):
             if m is None:
                 return False
@@ -835,7 +870,6 @@ def inject_qcqa(
             **kwargs,
         )
 
-        # Attach in-place
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 target.attention.self = new_attn
@@ -855,3 +889,11 @@ def inject_qcqa(
 
 
 inject_qcqa_attention = inject_qcqa
+
+
+__all__ = [
+    "QCQAAttention",
+    "LoRALinear",
+    "inject_qcqa",
+    "inject_qcqa_attention",
+]

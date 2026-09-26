@@ -1,9 +1,6 @@
-"""Refined Gated Linear Attention (ReGLA) – Production-Hardened.
+"""Refined Gated Linear Attention (ReGLA) – Production-Hardened (v2).
 
-Combines element-wise key gating, normalized linear attention kernel evaluation,
-and short-range depthwise 1D convolutions without O(L) memory explosion.
-
-Bug-fix map (2026 revision):
+Fixes (v2):
   RE-01  RoPE past_len offset for KV-cache.
   RE-02  RoPE dtype-safe.
   RE-03  Conv1d device/dtype correct.
@@ -21,6 +18,15 @@ Bug-fix map (2026 revision):
   RE-15  output shape checked.
   RE-16  No dangling self.config.
   RE-17  Missing weights raise RuntimeError.
+  RE-18  **inject_regla passes the OUTER attention container to
+          ReGLAAttention for nested models, so copy_weights can
+          correctly extract output projection.**
+  RE-19  **inject_regla propagates kernel_size, chunk_size, rank
+          from comp_config to ReGLAAttention.**
+  RE-20  **inject_regla sets out_proj = Identity when attaching
+          new_attn into a nested encoder, matching copy_weights.**
+  RE-21  **loc.shape[-1] check compares against self.dim (hidden size)
+          and provides a clearer error message.**
 """
 
 import logging
@@ -41,7 +47,6 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # Helpers
 # ===========================================================================
-
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if cfg is None:
         return default
@@ -67,7 +72,6 @@ def apply_rotary_pos_emb(
     cos: torch.Tensor,
     sin: torch.Tensor,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """RE-01/RE-02: dtype-safe, past_len-aware RoPE."""
     if cos is None or sin is None:
         return q, k
 
@@ -113,9 +117,8 @@ def apply_rotary_pos_emb(
 
 
 # ===========================================================================
-# RE-05: LoRALinear with device/dtype
+# LoRALinear
 # ===========================================================================
-
 class LoRALinear(nn.Module):
     def __init__(
         self,
@@ -186,9 +189,8 @@ class LoRALinear(nn.Module):
 
 
 # ===========================================================================
-# RE-12: class registered under *_class
+# ReGLAAttention
 # ===========================================================================
-
 @ATTENTION_REGISTRY.register("regla_class")
 @ATTENTION_REGISTRY.register("regla_attention_class")
 class ReGLAAttention(BaseAttention):
@@ -203,7 +205,7 @@ class ReGLAAttention(BaseAttention):
         hidden_size: Optional[int] = None,
         num_heads: Optional[int] = None,
         is_decoder: Optional[bool] = None,
-        chunk_size: int = 64,   # RE-07
+        chunk_size: int = 64,
         **kwargs: Any,
     ) -> None:
         try:
@@ -252,7 +254,6 @@ class ReGLAAttention(BaseAttention):
             self.head_dim = self.dim // self.num_heads
 
         if self.dim % self.num_heads != 0:
-            # Fallback: adjust head_dim
             self.head_dim = self.dim // self.num_heads
 
         # -------- num_kv_heads --------
@@ -269,10 +270,9 @@ class ReGLAAttention(BaseAttention):
         self.kernel_size = int(kernel_size)
         self.chunk_size = max(1, int(chunk_size))
 
-        # RE-06: conv_scale as raw learnable scale (init 0 → contribution 0 at start)
         self.conv_scale = nn.Parameter(torch.zeros(1))
 
-        # RE-04: single is_decoder detection
+        # -------- is_decoder --------
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -344,7 +344,7 @@ class ReGLAAttention(BaseAttention):
             device=target_device, dtype=target_dtype,
         )
 
-        # Aliases for framework
+        # Aliases
         self.query = self.q_proj
         self.key = self.k_proj
         self.value = self.v_proj
@@ -354,7 +354,7 @@ class ReGLAAttention(BaseAttention):
         self.out_lin = self.out_proj
         self.dense = self.out_proj
 
-        # RE-03: Conv1d with device/dtype
+        # Conv1d
         self.conv = nn.Conv1d(
             in_channels=self.dim,
             out_channels=self.dim,
@@ -365,7 +365,6 @@ class ReGLAAttention(BaseAttention):
             dtype=target_dtype,
         )
 
-        # Initialize gate_proj independently
         with torch.no_grad():
             nn.init.normal_(self.gate_proj.weight, mean=0.0, std=0.02)
             if self.gate_proj.bias is not None:
@@ -427,7 +426,7 @@ class ReGLAAttention(BaseAttention):
                     bias_o = getattr(c_proj_mod, "bias", None)
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
-        # RoBERTa nested
+        # RoBERTa nested (outer container)
         elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
             s = getattr(src, "self")
             for proj_key, sub_name in (("q", "query"), ("k", "key"), ("v", "value")):
@@ -472,7 +471,6 @@ class ReGLAAttention(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items()
                          if w is None and (k != "o" or not self.is_nested_encoder)]
-        # RE-17: raise on missing
         if missing_after:
             raise RuntimeError(
                 f"ReGLAAttention.copy_weights: missing {missing_after} from {cls_name}."
@@ -520,8 +518,6 @@ class ReGLAAttention(BaseAttention):
                     target_mod.freeze_base_weights()
 
     # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -548,7 +544,7 @@ class ReGLAAttention(BaseAttention):
         v = self.v_proj(x).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3).contiguous()
         g = self.gate_proj(x).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3).contiguous()
 
-        # RE-01: RoPE with past_len offset
+        # RoPE with past_len offset
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings", None)
         if position_embeddings is not None:
@@ -596,7 +592,6 @@ class ReGLAAttention(BaseAttention):
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
 
         if is_causal:
-            # RE-07: configurable chunk_size
             chunk = self.chunk_size
             S = torch.zeros(B, self.num_heads, self.head_dim, self.head_dim,
                             device=device, dtype=q_act.dtype)
@@ -632,7 +627,6 @@ class ReGLAAttention(BaseAttention):
 
         out = out * mask_4d
 
-        # RE-08: head_mask unified
         if head_mask is not None:
             if head_mask.dim() == 1:
                 hm = head_mask.view(1, -1, 1, 1)
@@ -656,17 +650,14 @@ class ReGLAAttention(BaseAttention):
             x_pad = F.pad(x_in, (p, p))
             loc = self.conv(x_pad).permute(0, 2, 1)
 
-        # RE-09: no silent pad/truncate; error if mismatch
-        if loc.shape[-1] != self.all_head_size:
+        if loc.shape[-1] != self.dim:
             raise RuntimeError(
-                f"ReGLAAttention: conv output dim {loc.shape[-1]} != all_head_size {self.all_head_size}"
+                f"ReGLAAttention: conv output dim {loc.shape[-1]} != hidden dim {self.dim}"
             )
 
-        # RE-06: raw conv_scale
         fused = out + self.conv_scale.to(out.dtype) * loc
         fused = fused * valid_mask.unsqueeze(-1).to(fused.dtype)
 
-        # RE-15: output check
         if self.is_nested_encoder:
             output = fused
         else:
@@ -681,9 +672,8 @@ class ReGLAAttention(BaseAttention):
 
 
 # ===========================================================================
-# RE-11/RE-12: injector with recursion guard
+# Injector
 # ===========================================================================
-
 @ATTENTION_REGISTRY.register("regla")
 @ATTENTION_REGISTRY.register("regla_attention")
 @ATTENTION_REGISTRY.register("regla_inject")
@@ -751,16 +741,16 @@ def inject_regla(
                 if hasattr(target, attr):
                     cand = getattr(target, attr)
                     if isinstance(cand, nn.Module) and cand is not target:
-                        src_attn = getattr(cand, "self", cand)
+                        # RE-18: pass the OUTER container (cand) so copy_weights
+                        # can extract output projection for nested models.
+                        src_attn = cand
                         break
         if src_attn is None:
             src_attn = target
 
-        # Double-injection guard
         if isinstance(src_attn, ReGLAAttention) or "ReGLA" in src_attn.__class__.__name__:
             return None
 
-        # Skip hybrid layers
         c_name = src_attn.__class__.__name__
         if "DeltaNet" in c_name or "LinearAttention" in c_name:
             return None
@@ -789,17 +779,29 @@ def inject_regla(
             _cfg_get(cfg, "num_attention_heads", 12)
         )
 
+        # RE-19: propagate kernel_size, chunk_size, rank from comp_config
+        attn_kwargs = {}
+        if comp_config is not None:
+            for key in ("kernel_size", "chunk_size", "rank"):
+                val = getattr(comp_config, key, None)
+                if val is not None:
+                    attn_kwargs[key] = val
+
         new_attn = ReGLAAttention(
             config=cfg,
             pretrained_attn=src_attn if src_attn is not target else None,
             hidden_size=hidden_size,
             num_heads=num_heads,
+            **attn_kwargs,
             **kwargs,
         )
 
+        # RE-20: ensure out_proj is Identity when attaching to nested encoder
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 new_attn.is_nested_encoder = True
+                if not isinstance(new_attn.out_proj, nn.Identity):
+                    new_attn.out_proj = nn.Identity()
                 target.attention.self = new_attn
             else:
                 new_attn.is_nested_encoder = False
@@ -812,6 +814,8 @@ def inject_regla(
             target.attn = new_attn
         elif hasattr(target, "self"):
             new_attn.is_nested_encoder = True
+            if not isinstance(new_attn.out_proj, nn.Identity):
+                new_attn.out_proj = nn.Identity()
             target.self = new_attn
 
         return new_attn
