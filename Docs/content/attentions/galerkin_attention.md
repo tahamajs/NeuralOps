@@ -428,4 +428,4 @@ injected_model = inject_galerkin_attention(model=model, basis_rank=32)
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **76.83%** | -13.77% | 0.7740 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-galerkin-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-galerkin-attention) | 2026-09-23 || **distilbert-sst2 (initial)** | sst2 | `PASS` | 90.60% | **75.11%** | -15.49% | 0.7554 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-galerkin-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-galerkin-attention) | 2026-09-18 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **78.90%** | -11.70% | 0.7928 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-galerkin](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-galerkin) | 2026-09-27 |
