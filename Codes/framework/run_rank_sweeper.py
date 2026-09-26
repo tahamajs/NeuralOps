@@ -84,7 +84,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
                    help="Max VRAM fraction per process (default: auto)")
     p.add_argument("--timeout", type=int, default=3600,
                    help="Timeout per rank in seconds")
-    p.add_argument("--output_base", default="results/rank_sweep",
+    p.add_argument("--output_base", default="results/04_rank_sweeps/mixed/rank_sweep",
                    help="Base output directory")
     p.add_argument("--parent_checkpoint", default=None,
                    help="Path to baseline checkpoint (auto-detect if None)")
@@ -350,7 +350,7 @@ def _install_sigint_handler() -> None:
 def main(argv: Optional[List[str]] = None) -> int:
     # Ensure we're running from project root
     if not Path("Codes/framework/run_quality_sweep.py").exists():
-        print("[FATAL] Must run from the project root (D:\\SVD_Project). "
+        print("[FATAL] Must run from the project root directory. "
               "Could not find Codes/framework/run_quality_sweep.py")
         return 2
 

@@ -104,7 +104,7 @@ def parse_args():
                         help="WikiText dataset configuration name")
     parser.add_argument("--split", type=str, default="test",
                         help="Dataset split for evaluation (test or validation)")
-    parser.add_argument("--output_dir", type=str, default="results/gpt2_sweep",
+    parser.add_argument("--output_dir", type=str, default="results/02_glue_sweeps/gpt2/gpt2_sweep",
                         help="Output directory for results and summary")
     parser.add_argument("--modules", type=str, nargs="*", default=DEFAULT_DECODER_MODULES,
                         help="List of modules to evaluate")

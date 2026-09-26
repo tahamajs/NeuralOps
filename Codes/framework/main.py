@@ -63,17 +63,11 @@ os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "120")
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
-# Point to local cache if present
+# Point to local cache if present — checked in priority order, first match wins
 _potential_caches = [
-    _CODES.parent / "cache",
-    Path.home() / ".cache" / "huggingface" / "hub",
-    Path.home() / ".cache" / "huggingface",
-    Path("D:/huggingface_cache"),
-    Path("C:/huggingface_cache"),
-    Path("C:/Users/Hadi Schumacher/SVD_Project/cache"),
-    Path("C:/Users/Hadi Schumacher/.cache/huggingface/hub"),
-    Path("C:/Users/Hadi Schumacher/.cache/huggingface"),
-    Path("D:/SVD_Project/cache"),
+    _CODES.parent / "cache",                                 # <project>/cache  (local override)
+    Path.home() / ".cache" / "huggingface" / "hub",         # ~/.cache/hf/hub  (standard)
+    Path.home() / ".cache" / "huggingface",                  # ~/.cache/hf
 ]
 for pc in _potential_caches:
     if pc.exists():
