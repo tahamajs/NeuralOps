@@ -298,5 +298,15 @@
     "accuracy_pct": 90.83,
     "error": "note: zero compressed layers, zero injected layers, model unchanged",
     "timestamp": "2026-09-27T03:27:33.156107"
+  },
+  {
+    "module": "frandi_compressor_class",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T03:27:50.226072"
   }
 ]
