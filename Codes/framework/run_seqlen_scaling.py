@@ -61,7 +61,7 @@ def parse_args():
     )
     parser.add_argument("--model_path", type=str, default="models/distilbert_sst2",
                         help="Base model path")
-    parser.add_argument("--output_dir", type=str, default="results/seqlen_scaling",
+    parser.add_argument("--output_dir", type=str, default="results/05_perplexity_seqlen/seqlen_scaling",
                         help="Directory to save scaling outputs")
     parser.add_argument("--seq_lens", type=int, nargs="*", default=SEQLENS,
                         help="Sequence lengths to evaluate")

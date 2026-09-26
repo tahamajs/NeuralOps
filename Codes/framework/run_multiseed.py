@@ -64,7 +64,7 @@ def parse_args():
                         help="Path to fine-tuned model checkpoint")
     parser.add_argument("--dataset_dir", type=str, default="Codes/framework/data/glue_data/mnli",
                         help="Path to MNLI dataset directory")
-    parser.add_argument("--output_dir", type=str, default="results/multiseed",
+    parser.add_argument("--output_dir", type=str, default="results/06_multiseed/multiseed",
                         help="Directory to save multi-seed results")
     parser.add_argument("--seeds", type=str, default="42,123,456",
                         help="List or comma-separated string of random seeds")

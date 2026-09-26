@@ -100,7 +100,7 @@ def parse_args():
     )
     parser.add_argument("--rank", type=int, default=64,
                         help="Decomposition rank for low-rank methods")
-    parser.add_argument("--output_dir", type=str, default="results/baseline_comparison",
+    parser.add_argument("--output_dir", type=str, default="results/01_baselines/baseline_comparison",
                         help="Destination directory for outputs")
     parser.add_argument("--datasets", nargs="*", default=DATASETS,
                         help="List of datasets to evaluate")
