@@ -3,26 +3,6 @@ FRanDI: Feature-Regression Aligned SVD Compressor — Production-Hardened (v2).
 
 Registered as 'frandi' and 'frandi_compressor'.
 
-Bug-fix map (v2):
-  FR-FIX-01  LoRA dtype matches base dtype.
-  FR-FIX-02  orthogonal_ init in fp32 then cast.
-  FR-FIX-03  lora_A/lora_B allocated in base dtype.
-  FR-FIX-04  Covariance collection bounded by num_calibration_batches.
-  FR-FIX-05  Cholesky regularization avoids materializing eye(in_f).
-  FR-FIX-06  solve_triangular in fp32.
-  FR-FIX-07  forward sanity check includes attention_mask.
-  FR-FIX-08  max_error default relaxed to 0.5.
-  FR-FIX-09  **Removed `is_custom_attention = True` from FRanDILinear.**
-  FR-FIX-10  **Whitening triangular solve fixed:**
-             solve L^T @ A^T = A_tilde^T for A^T,
-             which gives A = A_tilde @ L^{-1} (correct FRanDI math).
-  FR-FIX-11  **_select_rank respects rank cap when energy_threshold set.**
-  FR-FIX-12  **target_layers=[] treated as None.**
-  FR-FIX-13  **min-rank threshold scales with requested rank.**
-  FR-FIX-14  **Covariance accumulated in fp32 with bounded memory.**
-  FR-FIX-15  **Weight cache with version tracking.**
-  FR-FIX-16  **merge() method for PEFT/HF compatibility.**
-  FR-FIX-17  **GQA asymmetric guard is always active.**
 """
 
 from __future__ import annotations

@@ -16,14 +16,6 @@ Key Components:
 4. Activation Error Validation:
    - Measures downstream effect on centered activation distribution.
 
-=== Fix (2026-09-25): Q/K/V-Aware SVD for GPT-2 Fused Conv1D ===
-Problem: GPT-2's c_attn is a fused Conv1D (768, 2304) packing [Q|K|V] into one
-matrix. Matrix SVD treats this as one homogeneous matrix, but Q, K, V have
-different statistical patterns. Compressing the fused matrix destroys softmax
-attention semantics, causing PPL to blow up (41 -> 500+).
-
-Solution: Detect fused QKV, split it into 3 independent SVDLinear factors,
-concatenate outputs in forward pass. Each factor compressed independently.
 """
 
 from __future__ import annotations

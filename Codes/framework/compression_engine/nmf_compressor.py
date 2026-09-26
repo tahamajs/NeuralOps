@@ -3,30 +3,6 @@ NMF: Non-negative Matrix Factorization Linear Compressor.
 
 Registered in COMPRESSOR_REGISTRY as 'nmf', 'nmf_compressor'.
 
-Fixes (v2):
-  NMF-FIX-01  is_custom_attention = False (NMFLinear is a Linear layer).
-  NMF-FIX-02  **W_sign is a proper buffer** (always present). Default is
-              registered as empty; set by from_linear.
-  NMF-FIX-03  **Single reconstruction path**: `weight` property and
-              `forward` both use `H @ V * W_sign`. The `shift` mode is
-              removed entirely, since it was incompatible with the sign
-              decomposition.
-  NMF-FIX-04  **LoRA wrapper preserved**: only `module.base_layer` is
-              replaced when a wrapper exists.
-  NMF-FIX-05  **Device/dtype consistency**: `from_linear` performs the
-              decomposition on GPU (if available) but returns factors on
-              the ORIGINAL device/dtype of the source weight.
-  NMF-FIX-06  **Dtype-safe forward**: x_flat is cast to the dtype of V
-              before matmul.
-  NMF-FIX-07  **Accurate parameter accounting**: original count excludes
-              already-compressed modules; compressed count uses
-              `sum(p.numel() for p in nmf_layer.parameters())`.
-  NMF-FIX-08  **Rank budget documented**: `param_cap` is now
-              `max(1, (in*out) // (in + out))` — the maximum rank such that
-              rank*(in + out) < in*out (i.e., strictly smaller storage).
-  NMF-FIX-09  **Error recomputed on the exact forward path** (weight
-              property), guaranteeing consistency.
-  NMF-FIX-10  Sign handling protects zero and near-zero weights.
 """
 
 from __future__ import annotations

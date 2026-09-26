@@ -3,26 +3,6 @@ MGIE-SVD with Total Rank Budget: Global Entropy-Proportional Rank Allocation.
 
 Registered as 'mgie_budget', 'mgie_budget_factory', 'mgie_svd_budget_factory'.
 
-Bug-fix map (v2):
-  MGIE-BUDGET-FIX-01  is_custom_attention = False on compressor.
-  MGIE-BUDGET-FIX-02  **Preserve LoRA wrapper**: if the target module has a
-                      `base_layer`, set `module.base_layer = svd_layer`
-                      instead of replacing the entire wrapper.
-  MGIE-BUDGET-FIX-03  **Forward sanity check** no longer calls `dummy.float()`;
-                      tries `input_ids=`, then positional, then embedding-level.
-  MGIE-BUDGET-FIX-04  **Accurate effective_parameter_ratio** from
-                      `self._compressed_params / total_orig_params`.
-  MGIE-BUDGET-FIX-05  **Bias copy under torch.no_grad()**.
-  MGIE-BUDGET-FIX-06  **Total rank budget enforced**: after entropy
-                      allocation, if sum(r_i) > total_rank_budget, ranks are
-                      reduced proportionally (with min_rank floor) until the
-                      sum fits.
-  MGIE-BUDGET-FIX-07  **Skip already-compressed SVDLinear modules**
-                      (idempotency).
-  MGIE-BUDGET-FIX-08  **Clear error** if SVDLinear lacks
-                      `set_low_rank_factors`.
-  MGIE-BUDGET-FIX-09  **Consistent dtype/device** for SVD factors.
-  MGIE-BUDGET-FIX-10  **Edge case guard** when `total_entropy ≈ 0`.
 """
 
 from __future__ import annotations

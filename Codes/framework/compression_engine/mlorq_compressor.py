@@ -7,23 +7,6 @@ This version stores U, S, Vt as PACKED INT tensors (bits ∈ {2,4,8}), so the
 memory budget formula `(out*r + r*in + r) * bits` is exact. The forward pass
 dequantizes on the fly and never materializes the dense weight.
 
-Bug-fix map (v2):
-  MLR-FIX-01  is_custom_attention = False on compressor.
-  MLR-FIX-02  **MLoRQLoRALinear stores packed quantized factors** (U, S, Vt)
-              instead of a dense weight. Forward uses factorized matmuls.
-  MLR-FIX-03  **Real bit-packing**: 2/4-bit factors are packed into int8,
-              halving/quartering storage vs naive int8.
-  MLR-FIX-04  **Greedy budget allocation**: start with cheapest candidate per
-              layer that meets max_error; then either downgrade (if over
-              budget) or upgrade (if under budget) using error/bit trade-off.
-  MLR-FIX-05  **LoRA wrapper preserved**: only `module.base_layer` is
-              replaced when a wrapper exists.
-  MLR-FIX-06  **Forward sanity check** no longer calls `dummy.float()`.
-  MLR-FIX-07  **Accurate byte accounting**: reports real packed storage vs
-              original storage.
-  MLR-FIX-08  **Bias preserved** in `from_linear` when not explicitly given.
-  MLR-FIX-09  **Randomized SVD** for large weights to avoid OOM.
-  MLR-FIX-10  **Empty rank guard** treats r<1 as fallback.
 """
 
 from __future__ import annotations
