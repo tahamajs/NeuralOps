@@ -21,14 +21,20 @@ COMP_DIR = PROJECT_ROOT / "Codes" / "framework" / "compression_engine"
 
 
 def get_all_modules():
-    mods = set()
-    for d in [ATTN_DIR, COMP_DIR]:
-        if d.exists():
-            for p in d.glob("*.py"):
-                name = p.name
-                if not name.startswith("__") and not name.startswith("._") and not name.startswith("."):
-                    mods.add(p.stem)
-    return sorted(list(mods))
+    try:
+        sys.path.insert(0, str(PROJECT_ROOT / "Codes"))
+        from framework.run_quality_sweep import modules
+        return sorted(list(modules()))
+    except Exception as e:
+        print(f"Warning: Failed to load canonical modules(): {e}, falling back to directory scan", flush=True)
+        mods = set()
+        for d in [ATTN_DIR, COMP_DIR]:
+            if d.exists():
+                for p in d.glob("*.py"):
+                    name = p.name
+                    if not name.startswith("__") and not name.startswith("._") and not name.startswith("."):
+                        mods.add(p.stem)
+        return sorted(list(mods))
 
 
 def get_existing_completed(output_dir: Path):
@@ -158,10 +164,11 @@ def main():
                 completed_count += 1
                 if res["returncode"] == 0:
                     status_str = "SUCCESS"
+                    print(f"[{completed_count}/{len(pending)}] {mod:35} | {status_str:10} | {res['elapsed_s']:6.1f}s", flush=True)
                 else:
                     status_str = f"EXIT({res['returncode']})"
                     failed_count += 1
-                print(f"[{completed_count}/{len(pending)}] {mod:35} | {status_str:10} | {res['elapsed_s']:6.1f}s", flush=True)
+                    print(f"[{completed_count}/{len(pending)}] {mod:35} | {status_str:10} | {res['elapsed_s']:6.1f}s | Output: {res['output'][-200:] if res['output'] else 'none'}", flush=True)
             except Exception as e:
                 completed_count += 1
                 failed_count += 1
