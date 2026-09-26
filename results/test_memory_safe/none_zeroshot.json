@@ -1,0 +1,20 @@
+{
+  "module": "none",
+  "model": "models/gpt2",
+  "device": "cuda",
+  "batch_size": 8,
+  "num_samples_per_task": 50,
+  "average_accuracy": 54.0,
+  "total_eval_seconds": 15.42,
+  "timestamp_utc": "2026-09-26T00:50:45Z",
+  "tasks": {
+    "piqa": {
+      "task": "piqa",
+      "accuracy": 54.0,
+      "correct_samples": 27,
+      "total_samples": 50,
+      "elapsed_seconds": 15.42,
+      "batch_size": 8
+    }
+  }
+}

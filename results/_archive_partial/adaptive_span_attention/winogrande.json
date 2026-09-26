@@ -1,0 +1,5 @@
+{
+  "task": "winogrande",
+  "accuracy": 54.4,
+  "num_samples": 500
+}

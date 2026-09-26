@@ -1,0 +1,5 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+64,armor_pruner,PASS,59.7,0.5569,0.9904,279.03,0.966,-3.52,24,0,254.6,66956548,69315844
+128,armor_pruner,CRASH_NO_OUTPUT,0.0,0.0,0.0,0.0,1.0,0.0,0,0,214.9,0,0
+256,armor_pruner,ERROR_CODE_1,0.0,0.0,99.0,0.0,1.0,,0,0,116.9,,
+384,armor_pruner,ERROR_CODE_1,0.0,0.0,99.0,0.0,1.0,,0,0,131.2,,
