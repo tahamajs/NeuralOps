@@ -150,7 +150,7 @@ python Codes/framework/launch_gpu_server.py \
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **78.10%** | -12.50% | 0.7861 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-cosformer](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-cosformer) | 2026-09-25 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **78.78%** | -11.82% | 0.7846 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-cosformer](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-cosformer) | 2026-09-27 |
 
 
 Evaluated on NVIDIA Tensor Core GPUs across standard GLUE benchmark suites:
