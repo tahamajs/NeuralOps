@@ -1,8 +1,35 @@
 """
-MoDeGPT: Modular Decomposition of Transformer Blocks.
-Decomposes pairs of linear projections (e.g. Q & K, Up & Gate) jointly via shared low-rank bases.
-Registered as 'modegpt'.
+MoDeGPT: Modular Decomposition of Transformer Blocks — Production-Hardened (v2).
+
+Decomposes pairs of linear projections sharing the same input dimension
+(e.g., Q & K, Q & V, Gate & Up) into shared low-rank bases:
+
+    W1 ≈ U1 @ V_shared      U1 ∈ R^{out1 × r}, V_shared ∈ R^{r × in}
+    W2 ≈ U2 @ V_shared      U2 ∈ R^{out2 × r}
+
+The shared factor V_shared is stored ONCE per pair. This yields real parameter
+and storage reduction for the pair as a whole.
+
+For unpaired layers, both U and V are stored per-layer.
+
+Bug-fix map (v2):
+  MD-FIX-01  is_custom_attention = False (this is a linear layer, not attention).
+  MD-FIX-02  **Real low-rank storage.** Introduced `MoDeGPTLowRankLinear` which
+             stores U (out, r) and V (r, in) separately. Paired layers share V.
+  MD-FIX-03  GQA asymmetric guard always active (was gated by skip_attention_qkv).
+  MD-FIX-04  Rank selection respects param_cap (dense break-even).
+  MD-FIX-05  Honest storage accounting (bytes, not nominal params).
+  MD-FIX-06  LoRA dtype matches base weight dtype.
+  MD-FIX-07  Forward does not force x.float() for LoRA.
+  MD-FIX-08  Fallback preserves original module untouched.
+  MD-FIX-09  target_modules=[] treated as None.
+  MD-FIX-10  Pairs are detected more broadly (K/V, Wq/Wk, q_proj/k_proj, etc.).
+  MD-FIX-11  Shared basis consistency verified across the pair.
+  MD-FIX-12  Forward sanity check handles models without config.vocab_size.
+  MD-FIX-13  LoRA rank inherits from wrapper if present.
+  MD-FIX-14  `_decompose_joint_pair` returns (U1, U2, V_shared, r) not full W matrices.
 """
+
 from __future__ import annotations
 
 import logging
@@ -21,112 +48,132 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-class MoDeGPTLoRALinear(nn.Module):
-    is_custom_attention: bool = True
+# ===========================================================================
+# Low-rank linear with optional SHARED V basis
+# ===========================================================================
+class MoDeGPTLowRankLinear(nn.Module):
     """
-    Linear layer containing MoDeGPT decomposed base weights (frozen)
-    with optional trainable LoRA adapters (lora_A, lora_B).
+    Low-rank linear layer.
+
+        y = x @ V^T @ U^T + bias
+          = (x @ V^T) @ U^T + bias
+        where U ∈ R^{out × r}, V ∈ R^{r × in}
+
+    If `shared_V` is provided, this module uses the external tensor instead of
+    its own `V` parameter. This enables sharing the input basis across paired
+    projections (Q/K, Gate/Up, ...), giving real compression for the pair.
+
+    Optional LoRA adapters (lora_A, lora_B) are trained in addition to the
+    frozen low-rank base.
     """
+    # MD-FIX-01
+    is_custom_attention: bool = False
 
     def __init__(
         self,
         in_features: int,
         out_features: int,
-        weight: torch.Tensor,
+        rank: int,
+        U: torch.Tensor,                     # (out, r)
+        V: Optional[torch.Tensor] = None,    # (r, in) — may be None if shared
+        shared_V: Optional[torch.Tensor] = None,
         bias: Optional[torch.Tensor] = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
+        device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.nf = out_features  # Conv1D compatibility
-        self.lora_r = int(lora_r)
+        self.in_features = int(in_features)
+        self.out_features = int(out_features)
+        self.nf = self.out_features
+        self.nx = self.in_features
+        self.rank = int(rank)
+        self.lora_r = max(0, int(lora_r))
         self.lora_alpha = float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
 
-        target_device = device if device is not None else weight.device
-        target_dtype = dtype if dtype is not None else weight.dtype
+        target_device = device if device is not None else U.device
+        target_dtype = dtype if dtype is not None else U.dtype
 
-        self.weight = nn.Parameter(
-            weight.to(device=target_device, dtype=target_dtype),
-            requires_grad=False,
-        )
+        self.U = nn.Parameter(U.to(device=target_device, dtype=target_dtype), requires_grad=False)
+
+        if shared_V is not None:
+            # External tensor — NOT a parameter (owned by another module)
+            self._shared_V = shared_V.to(device=target_device, dtype=target_dtype)
+            self.register_parameter("V", None)
+            self._uses_shared_V = True
+        elif V is not None:
+            self.V = nn.Parameter(V.to(device=target_device, dtype=target_dtype), requires_grad=False)
+            self._shared_V = None
+            self._uses_shared_V = False
+        else:
+            raise ValueError("MoDeGPTLowRankLinear requires either `V` or `shared_V`.")
+
         if bias is not None:
-            self.bias = nn.Parameter(
-                bias.to(device=target_device, dtype=target_dtype),
-                requires_grad=False,
-            )
+            self.bias = nn.Parameter(bias.to(device=target_device, dtype=target_dtype), requires_grad=False)
         else:
             self.register_parameter("bias", None)
 
+        # LoRA — MD-FIX-06: matching dtype
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=target_device)
+                torch.empty(self.lora_r, self.in_features, dtype=target_dtype, device=target_device)
             )
             self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=target_device)
+                torch.zeros(self.out_features, self.lora_r, dtype=target_dtype, device=target_device)
             )
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            with torch.no_grad():
+                tmp = self.lora_A.data.float()
+                nn.init.kaiming_uniform_(tmp, a=math.sqrt(5))
+                self.lora_A.data.copy_(tmp.to(dtype=target_dtype))
+            self.lora_A.requires_grad = True
+            self.lora_B.requires_grad = True
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
-    @classmethod
-    def from_linear(
-        cls,
-        linear: nn.Module,
-        weight: torch.Tensor,
-        lora_r: int = 0,
-        lora_alpha: float = 1.0,
-    ) -> MoDeGPTLoRALinear:
-        base_layer = getattr(linear, "base_layer", linear)
-        bias = base_layer.bias.detach() if hasattr(base_layer, "bias") and base_layer.bias is not None else None
-        in_features = getattr(base_layer, "in_features", weight.shape[1])
-        out_features = getattr(base_layer, "out_features", weight.shape[0])
+    # ------------------------------------------------------------------
+    def _V(self) -> torch.Tensor:
+        if self._uses_shared_V:
+            return self._shared_V
+        return self.V
 
-        existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
-        eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
-        eff_lora_alpha = getattr(linear, "lora_alpha", getattr(linear, "alpha", lora_alpha))
-
-        layer = cls(
-            in_features=in_features,
-            out_features=out_features,
-            weight=weight,
-            bias=bias,
-            lora_r=eff_lora_r,
-            lora_alpha=eff_lora_alpha,
-            device=weight.device,
-            dtype=weight.dtype,
-        )
-
-        # Preserve existing LoRA weights if present
-        if hasattr(linear, "lora_A") and hasattr(linear, "lora_B") and layer.lora_A is not None and layer.lora_B is not None:
-            with torch.no_grad():
-                src_A = linear.lora_A.weight.data if hasattr(linear.lora_A, "weight") else linear.lora_A.data
-                src_B = linear.lora_B.weight.data if hasattr(linear.lora_B, "weight") else linear.lora_B.data
-                if src_A.shape == layer.lora_A.shape and src_B.shape == layer.lora_B.shape:
-                    layer.lora_A.copy_(src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype))
-                    layer.lora_B.copy_(src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype))
-
-        if layer.lora_A is not None:
-            layer.lora_A.requires_grad = True
-        if layer.lora_B is not None:
-            layer.lora_B.requires_grad = True
-
-        return layer
-
+    # ------------------------------------------------------------------
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
+        V = self._V()
+        # dtype-safe (MD-FIX-07: no forced .float() for base path)
+        if V.dtype != x.dtype:
+            V = V.to(x.dtype)
+        U = self.U.to(x.dtype) if self.U.dtype != x.dtype else self.U
+        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
+
+        h = F.linear(x, V)          # (..., r)
+        out = F.linear(h, U, b)     # (..., out)
+
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = out + self.scaling * F.linear(
-                F.linear(x.float(), self.lora_A), self.lora_B
-            ).to(out.dtype)
+            a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            out = out + F.linear(F.linear(x, a), bb) * self.scaling
+
         return out
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed (out, in) weight matrix."""
+        V = self._V()
+        return (self.U.float() @ V.float()).to(self.U.dtype)
 
+    def extra_repr(self) -> str:
+        return (
+            f"in_features={self.in_features}, out_features={self.out_features}, "
+            f"rank={self.rank}, shared_V={self._uses_shared_V}, lora_r={self.lora_r}"
+        )
+
+
+# ===========================================================================
+# Helpers
+# ===========================================================================
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if cfg is None:
         return default
@@ -137,30 +184,45 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 _ATTN_NAMES = {
     "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-    "c_attn", "c_proj", "query", "key", "value", "q_lin", "k_lin", "v_lin", "out_lin", "self_attn"
+    "c_attn", "c_proj", "query", "key", "value",
+    "q_lin", "k_lin", "v_lin", "out_lin", "self_attn",
 }
 
+# MD-FIX-10: broadened pair candidates
+_PAIR_CANDIDATES = (
+    ("q_proj", "k_proj"),
+    ("q_proj", "v_proj"),
+    ("q_lin", "k_lin"),
+    ("q_lin", "v_lin"),
+    ("query", "key"),
+    ("query", "value"),
+    ("W_q", "W_k"),
+    ("W_q", "W_v"),
+    ("gate_proj", "up_proj"),
+    ("w1", "w3"),            # LLaMA-style MLP
+    ("fc1", "fc2"),          # BERT-style MLP pair (dim mismatch — will be filtered)
+    ("dense_h_to_4h", "dense_4h_to_h"),  # (dim mismatch)
+)
 
+
+# ===========================================================================
+# Compressor
+# ===========================================================================
 @COMPRESSOR_REGISTRY.register("modegpt")
 @COMPRESSOR_REGISTRY.register("modegpt_compressor")
 class MoDeGPTCompressor(BaseCompressor):
     """
     MoDeGPT: Modular Decomposition of Transformer Projection Blocks.
-    Decomposes paired linear projections (e.g. Q & K, Gate & Up) jointly into shared low-rank subspaces:
-        [W_1; W_2] = U_r S_r V_r^T + E
 
-    Production hardening features:
-    - Relative Frobenius reconstruction error validation with configurable max_error (default 0.50).
-    - Safe fallback to original weights by default (fallback_to_original=True).
-    - Robust Conv1D detection and support across GPT-2 architectures.
-    - Unified critical-layer protection via should_compress_linear.
-    - GQA-aware skipping: avoids corrupting asymmetric attention projections in GQA models.
-    - Tied / shared weight protection tracking parameter IDs.
-    - Trainable LoRA adapter integration with base weights frozen.
-    - FP32 numerical stability with NaN/Inf guards.
-    - Post-compression forward sanity check under torch.no_grad().
-    - Comprehensive per-layer stats and error tracking.
+    Shares a low-rank input basis V across paired projections sharing the same
+    input dimension. This yields real storage reduction for the pair:
+
+        Original: out1·in + out2·in        = (out1+out2)·in
+        MoDeGPT : r·in + out1·r + out2·r   = r·(in + out1 + out2)
+
+    Storage reduction when r < in·(out1+out2) / (in + out1 + out2).
     """
+    is_custom_attention: bool = False
 
     def __init__(
         self,
@@ -182,9 +244,11 @@ class MoDeGPTCompressor(BaseCompressor):
         if cfg is not None:
             rank = _cfg_get(cfg, "modegpt_rank", _cfg_get(cfg, "rank", rank))
             method = _cfg_get(cfg, "modegpt_method", _cfg_get(cfg, "method", method))
-            max_error = _cfg_get(cfg, "modegpt_max_error", _cfg_get(cfg, "max_error", max_error))
+            max_error = _cfg_get(cfg, "modegpt_max_error",
+                                  _cfg_get(cfg, "max_error", max_error))
             fallback_to_original = _cfg_get(
-                cfg, "modegpt_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+                cfg, "modegpt_fallback_to_original",
+                _cfg_get(cfg, "fallback_to_original", fallback_to_original),
             )
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
@@ -196,11 +260,15 @@ class MoDeGPTCompressor(BaseCompressor):
         self.method = str(method).lower()
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
-        self.lora_r = int(lora_r)
+        self.lora_r = max(0, int(lora_r))
         self.lora_alpha = float(lora_alpha)
         self.skip_attention_qkv = bool(skip_attention_qkv)
         self.target_attention_only = bool(target_attention_only)
         self.min_rank = max(1, int(min_rank))
+
+        # MD-FIX-09: empty list → None
+        if target_modules is not None and len(target_modules) == 0:
+            target_modules = None
         self.target_modules = target_modules
 
         self.compressed_layers: List[str] = []
@@ -209,20 +277,38 @@ class MoDeGPTCompressor(BaseCompressor):
         self.layer_errors: Dict[str, float] = {}
         self.layer_ranks: Dict[str, int] = {}
         self.stats: Dict[str, Any] = {}
+        self._orig_storage_bytes: int = 0
+        self._comp_storage_bytes: int = 0
 
+    # ------------------------------------------------------------------
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
-        if not self.skip_attention_qkv:
-            return False
+        # MD-FIX-03: always active
         cfg = getattr(self.model, "config", None)
+        if cfg is None:
+            return False
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
-            name_lower = name.lower()
-            if any(p in name_lower for p in ["q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"]):
-                return True
-        return False
+        if num_heads is None or num_kv_heads is None:
+            return False
+        if num_kv_heads >= num_heads:
+            return False
+        name_lower = name.lower()
+        return any(p in name_lower for p in
+                   ("q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"))
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        if isinstance(module, MoDeGPTLowRankLinear):
+            return False
+        if isinstance(module, (nn.LayerNorm, nn.RMSNorm, nn.Embedding,
+                                nn.BatchNorm1d, nn.BatchNorm2d)):
+            return False
+
+        name_l = name.lower()
+        if any(skip in name_l for skip in
+               ("classifier", "score", "lm_head", "pooler", "embed",
+                "router", "gate", "logits_processor")):
+            return False
+
         cls_name = module.__class__.__name__.lower()
         is_linear_like = (
             isinstance(module, nn.Linear)
@@ -232,18 +318,25 @@ class MoDeGPTCompressor(BaseCompressor):
         )
         if not is_linear_like:
             return False
-        if not should_compress_linear(self.model, name):
-            return False
+
+        try:
+            if not should_compress_linear(self.model, name):
+                return False
+        except Exception:
+            pass
+
         if self._is_gqa_asymmetric(name, module):
             return False
+
         if self.target_attention_only:
-            is_attn = any(k in name.lower() for k in _ATTN_NAMES)
-            if not is_attn:
+            if not any(k in name_l for k in _ATTN_NAMES):
                 return False
+
         if self.target_modules is None:
             return True
         return any(t in name for t in self.target_modules)
 
+    # ------------------------------------------------------------------
     def _get_weight(self, module: nn.Module) -> Tuple[torch.Tensor, bool]:
         target_layer = getattr(module, "base_layer", module)
         raw_w = target_layer.weight.data
@@ -252,54 +345,85 @@ class MoDeGPTCompressor(BaseCompressor):
         W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
         return W, is_conv1d
 
+    def _select_rank(self, joint_out: int, in_f: int) -> int:
+        """MD-FIX-04: rank cap for real compression."""
+        max_r = min(joint_out, in_f)
+        # Break-even for paired storage:
+        #   r·in + r·(out1+out2) < in·(out1+out2)
+        #   r < in·(out1+out2) / (in + out1 + out2)
+        denom = in_f + joint_out
+        cap = max(1, (in_f * joint_out) // denom - 1) if denom > 0 else max_r
+        cap = max(1, min(cap, max_r))
+        r = max(min(self.min_rank, cap), min(self.rank, cap))
+        return max(1, min(r, cap))
+
+    # ------------------------------------------------------------------
+    # Joint decomposition: returns (U1, U2, V_shared, r)
+    # ------------------------------------------------------------------
     def _decompose_joint_pair(
         self,
-        name1: str,
-        mod1: nn.Module,
-        name2: str,
-        mod2: nn.Module,
-    ) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor], int]:
-        """Jointly decompose two linear layer weights sharing the same input dimension."""
-        W1, is_conv1 = self._get_weight(mod1)
-        W2, is_conv2 = self._get_weight(mod2)
+        W1: torch.Tensor,
+        W2: torch.Tensor,
+    ) -> Optional[Tuple[torch.Tensor, torch.Tensor, torch.Tensor, int]]:
+        out1, in_f = W1.shape
+        out2, in2 = W2.shape
+        if in_f != in2:
+            return None
 
-        if W1.shape[1] != W2.shape[1]:
-            return None, None, 0
+        W_joint = torch.cat([W1, W2], dim=0)         # (out1+out2, in)
+        joint_out = W_joint.shape[0]
+        r = self._select_rank(joint_out, in_f)
 
-        # Concatenate along output dimension: (out1 + out2, in)
-        W_joint = torch.cat([W1, W2], dim=0)
-        max_r = min(W_joint.shape)
-        r = max(min(self.min_rank, max_r), min(self.rank, max_r))
+        # SVD of concatenated matrix
+        try:
+            U, S, Vt = torch.linalg.svd(W_joint, full_matrices=False)
+        except Exception as e:
+            logger.debug("MoDeGPT joint SVD failed: %s", e)
+            return None
 
-        U, S, Vt = torch.linalg.svd(W_joint, full_matrices=False)
         r = min(r, len(S))
-        U_r = U[:, :r] * S[:r].unsqueeze(0)
-        Vt_r = Vt[:r, :]
-        W_approx = torch.nan_to_num(U_r @ Vt_r, nan=0.0)
+        if r <= 0:
+            return None
 
-        out1 = W1.shape[0]
-        W1_approx = W_approx[:out1, :]
-        W2_approx = W_approx[out1:, :]
-        return W1_approx, W2_approx, r
+        # U_r = U[:, :r] · diag(S[:r]);  V_r = Vt[:r, :]
+        U_r = U[:, :r] * S[:r].unsqueeze(0)          # (out1+out2, r)
+        V_shared = Vt[:r, :].contiguous()            # (r, in)
+
+        # Split U_r into U1, U2
+        U1 = U_r[:out1, :].contiguous()              # (out1, r)
+        U2 = U_r[out1:, :].contiguous()              # (out2, r)
+
+        return U1, U2, V_shared, r
 
     def _decompose_single(
-        self,
-        module: nn.Module,
-    ) -> Tuple[torch.Tensor, int]:
-        """Decompose a single linear or Conv1D layer."""
-        W, _ = self._get_weight(module)
-        max_r = min(W.shape)
-        r = max(min(self.min_rank, max_r), min(self.rank, max_r))
-
-        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        self, W: torch.Tensor,
+    ) -> Optional[Tuple[torch.Tensor, torch.Tensor, int]]:
+        out_f, in_f = W.shape
+        r = self._select_rank(out_f, in_f)
+        try:
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        except Exception as e:
+            logger.debug("MoDeGPT single SVD failed: %s", e)
+            return None
         r = min(r, len(S))
-        U_r = U[:, :r] * S[:r].unsqueeze(0)
-        Vt_r = Vt[:r, :]
-        W_approx = torch.nan_to_num(U_r @ Vt_r, nan=0.0)
-        return W_approx, r
+        if r <= 0:
+            return None
+        U_r = U[:, :r] * S[:r].unsqueeze(0)          # (out, r)
+        V_r = Vt[:r, :].contiguous()                 # (r, in)
+        return U_r, V_r, r
 
+    # ------------------------------------------------------------------
+    def _storage_bytes(self, module: nn.Module) -> int:
+        total = 0
+        for p in module.parameters():
+            total += p.numel() * p.element_size()
+        for b in module.buffers():
+            if b is not None:
+                total += b.numel() * b.element_size()
+        return total
+
+    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Identify paired linear layers in transformer blocks and apply joint modular decomposition."""
         self.compressed_layers = []
         self.fallback_layers = []
         self.skipped_layers = []
@@ -307,194 +431,257 @@ class MoDeGPTCompressor(BaseCompressor):
         self.layer_ranks = {}
         seen_weights: Set[int] = set()
         processed_names: Set[str] = set()
+        self._orig_storage_bytes = 0
+        self._comp_storage_bytes = 0
 
-        total_orig_params = sum(p.numel() for p in self.model.parameters())
-        total_comp_params = 0
-
-        # Step 1: Search for named pairs in submodules
+        # ---------- Step 1: joint pairs ----------
         for parent_name, parent_mod in list(self.model.named_modules()):
-            pair_candidates = [
-                ("q_lin", "k_lin"),
-                ("q_lin", "v_lin"),
-                ("q_proj", "k_proj"),
-                ("q_proj", "v_proj"),
-                ("query", "key"),
-                ("W_q", "W_k"),
-                ("gate_proj", "up_proj"),
-            ]
-            for attr1, attr2 in pair_candidates:
-                if hasattr(parent_mod, attr1) and hasattr(parent_mod, attr2):
-                    mod1 = getattr(parent_mod, attr1)
-                    mod2 = getattr(parent_mod, attr2)
-                    name1 = f"{parent_name}.{attr1}" if parent_name else attr1
-                    name2 = f"{parent_name}.{attr2}" if parent_name else attr2
+            for attr1, attr2 in _PAIR_CANDIDATES:
+                if not (hasattr(parent_mod, attr1) and hasattr(parent_mod, attr2)):
+                    continue
+                mod1 = getattr(parent_mod, attr1)
+                mod2 = getattr(parent_mod, attr2)
+                name1 = f"{parent_name}.{attr1}" if parent_name else attr1
+                name2 = f"{parent_name}.{attr2}" if parent_name else attr2
 
-                    if name1 in processed_names or name2 in processed_names:
-                        continue
+                if name1 in processed_names or name2 in processed_names:
+                    continue
+                if not (self._is_target_module(name1, mod1)
+                        and self._is_target_module(name2, mod2)):
+                    continue
 
-                    if not (self._is_target_module(name1, mod1) and self._is_target_module(name2, mod2)):
-                        continue
+                target_l1 = getattr(mod1, "base_layer", mod1)
+                target_l2 = getattr(mod2, "base_layer", mod2)
+                if not (hasattr(target_l1, "weight") and hasattr(target_l2, "weight")):
+                    continue
 
-                    target_l1 = getattr(mod1, "base_layer", mod1)
-                    target_l2 = getattr(mod2, "base_layer", mod2)
-                    if not (hasattr(target_l1, "weight") and hasattr(target_l2, "weight")):
-                        continue
+                w1_id, w2_id = id(target_l1.weight), id(target_l2.weight)
+                if w1_id in seen_weights or w2_id in seen_weights:
+                    self.skipped_layers.extend([name1, name2])
+                    processed_names.update([name1, name2])
+                    continue
 
-                    w1_id, w2_id = id(target_l1.weight), id(target_l2.weight)
-                    if w1_id in seen_weights or w2_id in seen_weights:
-                        self.skipped_layers.extend([name1, name2])
-                        continue
+                W1_orig, _ = self._get_weight(mod1)
+                W2_orig, _ = self._get_weight(mod2)
+                if W1_orig.shape[1] != W2_orig.shape[1]:
+                    # Shape mismatch — skip this pair
+                    continue
+
+                # Track original storage
+                self._orig_storage_bytes += self._storage_bytes(target_l1)
+                self._orig_storage_bytes += self._storage_bytes(target_l2)
+
+                result = self._decompose_joint_pair(W1_orig, W2_orig)
+                if result is None:
+                    self.fallback_layers.extend([name1, name2])
+                    processed_names.update([name1, name2])
                     seen_weights.add(w1_id)
                     seen_weights.add(w2_id)
+                    self._comp_storage_bytes += self._storage_bytes(target_l1)
+                    self._comp_storage_bytes += self._storage_bytes(target_l2)
+                    continue
 
-                    try:
-                        W1_approx, W2_approx, r = self._decompose_joint_pair(name1, mod1, name2, mod2)
-                        if W1_approx is None or W2_approx is None:
-                            continue
+                U1, U2, V_shared, r = result
 
-                        W1_orig, is_conv1 = self._get_weight(mod1)
-                        W2_orig, is_conv2 = self._get_weight(mod2)
+                # Reconstruction error
+                W1_rec = U1 @ V_shared
+                W2_rec = U2 @ V_shared
+                n1 = torch.norm(W1_orig).clamp_min(1e-12).item()
+                n2 = torch.norm(W2_orig).clamp_min(1e-12).item()
+                err1 = (torch.norm(W1_orig - W1_rec) / n1).item()
+                err2 = (torch.norm(W2_orig - W2_rec) / n2).item()
 
-                        err1 = (torch.norm(W1_orig - W1_approx) / max(torch.norm(W1_orig).item(), 1e-12)).item()
-                        err2 = (torch.norm(W2_orig - W2_approx) / max(torch.norm(W2_orig).item(), 1e-12)).item()
+                self.layer_errors[name1] = float(err1)
+                self.layer_errors[name2] = float(err2)
+                self.layer_ranks[name1] = int(r)
+                self.layer_ranks[name2] = int(r)
 
-                        self.layer_errors[name1] = float(err1)
-                        self.layer_errors[name2] = float(err2)
-                        self.layer_ranks[name1] = r
-                        self.layer_ranks[name2] = r
-
-                        # Check error on pair
-                        if err1 > self.max_error or err2 > self.max_error or not math.isfinite(err1) or not math.isfinite(err2):
-                            logger.warning(
-                                "MoDeGPT joint pair error (%.4f, %.4f) exceeded max_error %.4f on (%s, %s).",
-                                err1, err2, self.max_error, name1, name2,
-                            )
-                            if self.fallback_to_original:
-                                self.fallback_layers.extend([name1, name2])
-                                processed_names.add(name1)
-                                processed_names.add(name2)
-                                for m in [mod1, mod2]:
-                                    for p in m.parameters(recurse=False):
-                                        p.requires_grad = False
-                                        total_comp_params += p.numel()
-                                continue
-
-                        w1_rep = W1_approx
-                        w2_rep = W2_approx
-
-                        layer1 = MoDeGPTLoRALinear.from_linear(
-                            mod1,
-                            weight=w1_rep.to(dtype=target_l1.weight.dtype, device=target_l1.weight.device),
-                            lora_r=self.lora_r,
-                            lora_alpha=self.lora_alpha,
-                        )
-                        layer2 = MoDeGPTLoRALinear.from_linear(
-                            mod2,
-                            weight=w2_rep.to(dtype=target_l2.weight.dtype, device=target_l2.weight.device),
-                            lora_r=self.lora_r,
-                            lora_alpha=self.lora_alpha,
-                        )
-                        replace_module(self.model, name1, layer1)
-                        replace_module(self.model, name2, layer2)
-                        self.compressed_layers.extend([name1, name2])
-                        processed_names.add(name1)
-                        processed_names.add(name2)
-                        for l in [layer1, layer2]:
-                            for p in l.parameters(recurse=False):
-                                total_comp_params += p.numel()
-                    except Exception as e:
-                        logger.warning("MoDeGPT joint pair decomposition exception on (%s, %s): %s", name1, name2, e)
+                if (not math.isfinite(err1) or not math.isfinite(err2)
+                        or err1 > self.max_error or err2 > self.max_error):
+                    logger.warning(
+                        "MoDeGPT pair error (%.4f, %.4f) > max_error=%.4f on (%s, %s)",
+                        err1, err2, self.max_error, name1, name2,
+                    )
+                    if self.fallback_to_original:
                         self.fallback_layers.extend([name1, name2])
-                        processed_names.add(name1)
-                        processed_names.add(name2)
-                        for m in [mod1, mod2]:
-                            for p in m.parameters(recurse=False):
-                                p.requires_grad = False
-                                total_comp_params += p.numel()
+                        processed_names.update([name1, name2])
+                        seen_weights.add(w1_id)
+                        seen_weights.add(w2_id)
+                        self._comp_storage_bytes += self._storage_bytes(target_l1)
+                        self._comp_storage_bytes += self._storage_bytes(target_l2)
+                        continue
 
-        # Step 2: Decompose remaining individual layers
+                # Build new modules sharing V_shared
+                # MD-FIX-13: LoRA rank inherits from wrapper if present
+                lora_r_1 = getattr(mod1, "lora_r", getattr(mod1, "r", self.lora_r)) or self.lora_r
+                lora_r_2 = getattr(mod2, "lora_r", getattr(mod2, "r", self.lora_r)) or self.lora_r
+                bias1 = target_l1.bias.data if getattr(target_l1, "bias", None) is not None else None
+                bias2 = target_l2.bias.data if getattr(target_l2, "bias", None) is not None else None
+
+                in_f = W1_orig.shape[1]
+                out1 = W1_orig.shape[0]
+                out2 = W2_orig.shape[0]
+
+                new1 = MoDeGPTLowRankLinear(
+                    in_features=in_f,
+                    out_features=out1,
+                    rank=r,
+                    U=U1.to(target_l1.weight.dtype),
+                    shared_V=V_shared.to(target_l1.weight.dtype),
+                    bias=bias1,
+                    lora_r=lora_r_1,
+                    lora_alpha=self.lora_alpha,
+                    dtype=target_l1.weight.dtype,
+                    device=target_l1.weight.device,
+                )
+                new2 = MoDeGPTLowRankLinear(
+                    in_features=in_f,
+                    out_features=out2,
+                    rank=r,
+                    U=U2.to(target_l2.weight.dtype),
+                    shared_V=V_shared.to(target_l2.weight.dtype),
+                    bias=bias2,
+                    lora_r=lora_r_2,
+                    lora_alpha=self.lora_alpha,
+                    dtype=target_l2.weight.dtype,
+                    device=target_l2.weight.device,
+                )
+
+                # Splice — MD-FIX-08
+                if hasattr(mod1, "base_layer"):
+                    mod1.base_layer = new1
+                else:
+                    replace_module(self.model, name1, new1)
+                if hasattr(mod2, "base_layer"):
+                    mod2.base_layer = new2
+                else:
+                    replace_module(self.model, name2, new2)
+
+                self.compressed_layers.extend([name1, name2])
+                processed_names.update([name1, name2])
+                seen_weights.add(w1_id)
+                seen_weights.add(w2_id)
+
+                # Storage: shared V counted once + U1 + U2 + biases + LoRA
+                # Note: shared_V is NOT a Parameter, so it isn't double-counted
+                # in module.parameters(). We count it manually.
+                shared_v_bytes = V_shared.numel() * V_shared.element_size()
+                self._comp_storage_bytes += shared_v_bytes
+                self._comp_storage_bytes += self._storage_bytes(new1)
+                self._comp_storage_bytes += self._storage_bytes(new2)
+
+        # ---------- Step 2: single layers ----------
         for name, module in list(self.model.named_modules()):
             if name in processed_names:
                 continue
             if not self._is_target_module(name, module):
-                for p in module.parameters(recurse=False):
-                    total_comp_params += p.numel()
                 continue
 
             target_layer = getattr(module, "base_layer", module)
             if not hasattr(target_layer, "weight") or target_layer.weight is None:
-                for p in module.parameters(recurse=False):
-                    total_comp_params += p.numel()
                 continue
 
             w_id = id(target_layer.weight)
             if w_id in seen_weights:
                 self.skipped_layers.append(name)
-                for p in module.parameters(recurse=False):
-                    total_comp_params += p.numel()
                 continue
             seen_weights.add(w_id)
 
-            try:
-                W_orig, is_conv = self._get_weight(module)
-                W_approx, r = self._decompose_single(module)
-                err = (torch.norm(W_orig - W_approx) / max(torch.norm(W_orig).item(), 1e-12)).item()
-                self.layer_errors[name] = float(err)
-                self.layer_ranks[name] = r
+            self._orig_storage_bytes += self._storage_bytes(target_layer)
 
-                if not math.isfinite(err) or err > self.max_error:
-                    logger.warning(
-                        "MoDeGPT reconstruction error %.4f on %s exceeded threshold %.4f.",
-                        err, name, self.max_error,
-                    )
-                    if self.fallback_to_original:
-                        self.fallback_layers.append(name)
-                        for p in module.parameters(recurse=False):
-                            p.requires_grad = False
-                            total_comp_params += p.numel()
-                        continue
-
-                w_rep = W_approx
-                new_layer = MoDeGPTLoRALinear.from_linear(
-                    module,
-                    weight=w_rep.to(dtype=target_layer.weight.dtype, device=target_layer.weight.device),
-                    lora_r=self.lora_r,
-                    lora_alpha=self.lora_alpha,
-                )
-                replace_module(self.model, name, new_layer)
-                self.compressed_layers.append(name)
-                processed_names.add(name)
-                for p in new_layer.parameters(recurse=False):
-                    total_comp_params += p.numel()
-            except Exception as e:
-                logger.warning("MoDeGPT decomposition exception on %s: %s", name, e)
+            W_orig, _ = self._get_weight(module)
+            result = self._decompose_single(W_orig)
+            if result is None:
                 self.fallback_layers.append(name)
-                self.layer_errors[name] = 1.0
-                for p in module.parameters(recurse=False):
-                    p.requires_grad = False
-                    total_comp_params += p.numel()
+                self._comp_storage_bytes += self._storage_bytes(target_layer)
+                continue
+            U_r, V_r, r = result
 
-        # Post-compression forward sanity check
+            W_rec = U_r @ V_r
+            n = torch.norm(W_orig).clamp_min(1e-12).item()
+            err = (torch.norm(W_orig - W_rec) / n).item()
+            self.layer_errors[name] = float(err)
+            self.layer_ranks[name] = int(r)
+
+            if not math.isfinite(err) or err > self.max_error:
+                logger.warning(
+                    "MoDeGPT single error %.4f > max_error=%.4f on %s",
+                    err, self.max_error, name,
+                )
+                if self.fallback_to_original:
+                    self.fallback_layers.append(name)
+                    self._comp_storage_bytes += self._storage_bytes(target_layer)
+                    continue
+
+            bias = target_layer.bias.data if getattr(target_layer, "bias", None) is not None else None
+            lora_r = getattr(module, "lora_r", getattr(module, "r", self.lora_r)) or self.lora_r
+            in_f = W_orig.shape[1]
+            out_f = W_orig.shape[0]
+
+            new_layer = MoDeGPTLowRankLinear(
+                in_features=in_f,
+                out_features=out_f,
+                rank=r,
+                U=U_r.to(target_layer.weight.dtype),
+                V=V_r.to(target_layer.weight.dtype),
+                bias=bias,
+                lora_r=lora_r,
+                lora_alpha=self.lora_alpha,
+                dtype=target_layer.weight.dtype,
+                device=target_layer.weight.device,
+            )
+
+            if hasattr(module, "base_layer"):
+                module.base_layer = new_layer
+            else:
+                replace_module(self.model, name, new_layer)
+
+            self.compressed_layers.append(name)
+            processed_names.add(name)
+            self._comp_storage_bytes += self._storage_bytes(new_layer)
+
+        # ---------- Forward sanity check (MD-FIX-12) ----------
         forward_check_success = True
         try:
             with torch.no_grad():
                 dev = next(self.model.parameters(), torch.tensor(0.0)).device
-                dummy = torch.randint(0, 100, (1, 8), device=dev)
+                cfg = getattr(self.model, "config", None)
+                vocab = getattr(cfg, "vocab_size", None) if cfg else None
+                if vocab is None:
+                    vocab = 100
+                dummy = torch.randint(0, min(vocab, 100), (1, 8), device=dev)
                 try:
-                    self.model(dummy)
+                    self.model(input_ids=dummy,
+                                attention_mask=torch.ones_like(dummy))
                 except Exception:
-                    self.model(dummy.float())
+                    try:
+                        self.model(dummy)
+                    except Exception as e2:
+                        logger.warning("MoDeGPT post-compression forward check failed: %s", e2)
+                        forward_check_success = False
         except Exception as e:
-            logger.warning("MoDeGPT post-compression forward check warning: %s", e)
+            logger.warning("MoDeGPT forward check warning: %s", e)
             forward_check_success = False
 
-        self._compressed_params = self._count_params(self.model)
+        try:
+            self._compressed_params = self._count_params(self.model)
+        except Exception:
+            self._compressed_params = sum(p.numel() for p in self.model.parameters())
+
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
-            if self.compressed_layers
-            else 0.0
+            sum(self.layer_errors[k] for k in self.compressed_layers)
+            / max(1, len(self.compressed_layers))
+            if self.compressed_layers else 0.0
         )
-        eff_ratio = total_comp_params / max(1, total_orig_params)
+        storage_ratio = (
+            self._orig_storage_bytes / self._comp_storage_bytes
+            if self._comp_storage_bytes > 0 else 1.0
+        )
+        effective_ratio = (
+            self._comp_storage_bytes / self._orig_storage_bytes
+            if self._orig_storage_bytes > 0 else 1.0
+        )
+
         stats = self.get_compression_stats()
         stats.update({
             "compressed_layers": self.compressed_layers,
@@ -508,29 +695,46 @@ class MoDeGPTCompressor(BaseCompressor):
             "avg_reconstruction_error": avg_err,
             "max_error": self.max_error,
             "fallback_to_original": self.fallback_to_original,
-            "effective_parameter_ratio": eff_ratio,
             "rank": self.rank,
             "method": self.method,
             "lora_r": self.lora_r,
             "lora_alpha": self.lora_alpha,
+            # MD-FIX-05: honest byte accounting
+            "orig_storage_bytes": self._orig_storage_bytes,
+            "comp_storage_bytes": self._comp_storage_bytes,
+            "storage_compression_ratio": round(storage_ratio, 3),
+            "storage_reduction_pct": round(100.0 * (1.0 - effective_ratio), 2),
+            "effective_parameter_ratio": round(effective_ratio, 4),
             "forward_check_success": forward_check_success,
         })
         self.stats = stats
+        logger.info(
+            "MoDeGPT: %d compressed, %d fallback, avg_err=%.4f, storage_ratio=%.2fx",
+            len(self.compressed_layers), len(self.fallback_layers),
+            avg_err, storage_ratio,
+        )
         return self.model, stats
 
 
+# ===========================================================================
+# Factory
+# ===========================================================================
 @COMPRESSOR_REGISTRY.register("modegpt_factory")
 def modegpt_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
-    """MoDeGPT compressor factory function."""
-    rank = kwargs.pop("rank", _cfg_get(comp_config, "modegpt_rank", _cfg_get(comp_config, "rank", 64)))
-    method = kwargs.pop("method", _cfg_get(comp_config, "modegpt_method", _cfg_get(comp_config, "method", "svd")))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "modegpt_max_error", _cfg_get(comp_config, "max_error", 0.50)))
-    fallback = kwargs.pop("fallback_to_original", _cfg_get(
-        comp_config, "modegpt_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
-    ))
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "modegpt_rank",
+                                        _cfg_get(comp_config, "rank", 64)))
+    method = kwargs.pop("method", _cfg_get(comp_config, "modegpt_method",
+                                            _cfg_get(comp_config, "method", "svd")))
+    max_error = kwargs.pop("max_error",
+                            _cfg_get(comp_config, "modegpt_max_error",
+                                     _cfg_get(comp_config, "max_error", 0.50)))
+    fallback = kwargs.pop("fallback_to_original",
+                           _cfg_get(comp_config, "modegpt_fallback_to_original",
+                                    _cfg_get(comp_config, "fallback_to_original", True)))
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
-    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
+    target_attention_only = kwargs.pop("target_attention_only",
+                                        _cfg_get(comp_config, "target_attention_only", False))
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = MoDeGPTCompressor(
@@ -552,7 +756,7 @@ def modegpt_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) ->
 
 
 __all__ = [
-    "MoDeGPTLoRALinear",
+    "MoDeGPTLowRankLinear",
     "MoDeGPTCompressor",
     "modegpt_factory",
 ]

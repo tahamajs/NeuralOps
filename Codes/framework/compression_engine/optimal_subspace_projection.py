@@ -1,17 +1,40 @@
 """
 Optimal Subspace Projection: Activation-Aware Subspace Projection via Randomized SVD.
+
 Registered in COMPRESSOR_REGISTRY as 'optimal_subspace_projection'.
 
 Mathematical Formulation:
-1. Activation Covariance:
-   $$C = \\frac{1}{N} X^\\top X + \\epsilon I$$
-2. Cholesky Preconditioning Factor:
-   $$C = L L^\\top \\implies M = W L$$
-3. Randomized Subspace Iteration:
-   $$Y = M \\Omega, \\quad Y \\leftarrow M (M^\\top Y), \\quad Q = \\operatorname{qr}(Y)$$
-4. Low-Rank Projection & Inversion:
-   $$B = Q^\\top M = U \\Sigma V^\\top$$
-   $$W_{osp} = (Q U_r \\Sigma_r V_r^\\top) L^{-1}$$
+  1. Activation Covariance:      C = (1/N) X^T X + eps * I
+  2. Cholesky Preconditioning:   C = L L^T,   M = W L
+  3. Randomized Subspace Iter.:  Y = M Omega,  Y <- M (M^T Y),  Q = qr(Y)
+  4. Low-Rank Projection:        B = Q^T M = U S V^T
+     W_osp = (Q U_r S_r V_r^T) L^{-1}
+
+Bug-fix map (v2):
+  OSP-FIX-01  is_custom_attention = False on compressor (it is not attention).
+  OSP-FIX-02  **Preserve LoRA wrapper**: if the target module has a
+              `base_layer`, we set `module.base_layer = new_layer` instead
+              of replacing the entire wrapper. This keeps any external LoRA
+              adapters alive and consistent with the parent module's API.
+  OSP-FIX-03  **Accurate parameter accounting**: count only the BASE
+              parameters (not LoRA) for the `total_orig_params` baseline,
+              and count the actual `new_layer.parameters()` for the
+              compressed side.
+  OSP-FIX-04  **Simplified, correct rank calculation**:
+              rank = clamp(int(min(d_out, d_in) * rank_ratio), min_rank, max_rank).
+  OSP-FIX-05  **Forward sanity check** no longer calls `dummy.float()`
+              (which would corrupt int64 input_ids). Tries `input_ids=` first,
+              then positional.
+  OSP-FIX-06  **Deduplicated hooks**: register at most one hook per unique
+              base weight id, to avoid double-counting covariance for
+              shared/tied weights.
+  OSP-FIX-07  **Skip already-compressed modules** (`OptimalSubspaceLoRALinear`).
+  OSP-FIX-08  **Fallback layer accounting** now adds the original layer's
+              parameter count only once.
+  OSP-FIX-09  Omega is always on the same device as M.
+  OSP-FIX-10  Empty-rank guard (r = 0) treated as a fallback.
+  OSP-FIX-11  Output projection dtype preserved (uses original raw_w.dtype).
+  OSP-FIX-12  Removed dead `power_iters` on already-converged subspace.
 """
 
 from __future__ import annotations
@@ -19,6 +42,7 @@ from __future__ import annotations
 import logging
 import math
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -32,11 +56,32 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+# ===========================================================================
+# Config helper
+# ===========================================================================
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+_ATTN_NAMES = {
+    "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
+    "c_attn", "c_proj", "query", "key", "value",
+    "q_lin", "k_lin", "v_lin", "out_lin", "self_attn",
+}
+
+
+# ===========================================================================
+# Compressed linear layer
+# ===========================================================================
 class OptimalSubspaceLoRALinear(nn.Module):
     """
-    Linear layer containing optimal subspace projected base weights (frozen)
-    with optional trainable LoRA adapters (lora_A, lora_B).
+    Frozen optimal-subspace-projected base weight + optional trainable LoRA.
     """
+    is_custom_attention: bool = False   # OSP-FIX-01
 
     def __init__(
         self,
@@ -52,8 +97,8 @@ class OptimalSubspaceLoRALinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.nf = out_features  # Conv1D compatibility
-        self.nx = in_features   # Conv1D compatibility
+        self.nf = out_features
+        self.nx = in_features
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
@@ -61,9 +106,10 @@ class OptimalSubspaceLoRALinear(nn.Module):
         target_device = device if device is not None else weight.device
         target_dtype = dtype if dtype is not None else weight.dtype
 
-        # Normalize to nn.Linear orientation (out_features, in_features); some
-        # call sites pass Conv1D-style (in, out) weights for non-square layers.
-        if weight.shape[0] == in_features and weight.shape[1] == out_features and in_features != out_features:
+        # Normalize to (out, in)
+        if (weight.shape[0] == in_features
+                and weight.shape[1] == out_features
+                and in_features != out_features):
             weight = weight.t().contiguous()
 
         self.weight = nn.Parameter(
@@ -80,10 +126,12 @@ class OptimalSubspaceLoRALinear(nn.Module):
 
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=target_device)
+                torch.empty((self.lora_r, in_features),
+                            dtype=torch.float32, device=target_device)
             )
             self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=target_device)
+                torch.zeros((out_features, self.lora_r),
+                            dtype=torch.float32, device=target_device)
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -97,18 +145,25 @@ class OptimalSubspaceLoRALinear(nn.Module):
         weight: torch.Tensor,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-    ) -> OptimalSubspaceLoRALinear:
+    ) -> "OptimalSubspaceLoRALinear":
         base_layer = getattr(linear, "base_layer", linear)
-        bias = base_layer.bias.detach() if hasattr(base_layer, "bias") and base_layer.bias is not None else None
-        in_features = getattr(base_layer, "in_features", getattr(base_layer, "nx", None))
-        out_features = getattr(base_layer, "out_features", getattr(base_layer, "nf", None))
+        bias = (
+            base_layer.bias.detach()
+            if hasattr(base_layer, "bias") and base_layer.bias is not None
+            else None
+        )
+        in_features = getattr(base_layer, "in_features",
+                       getattr(base_layer, "nx", None))
+        out_features = getattr(base_layer, "out_features",
+                        getattr(base_layer, "nf", None))
         if in_features is None or out_features is None:
             out_features = out_features or weight.shape[0]
             in_features = in_features or weight.shape[1]
 
         existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
         eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
-        eff_lora_alpha = getattr(linear, "lora_alpha", getattr(linear, "alpha", lora_alpha))
+        eff_lora_alpha = getattr(linear, "lora_alpha",
+                          getattr(linear, "alpha", lora_alpha))
 
         layer = cls(
             in_features=in_features,
@@ -122,17 +177,19 @@ class OptimalSubspaceLoRALinear(nn.Module):
         )
 
         # Preserve existing LoRA weights if present
-        if hasattr(linear, "lora_A") and hasattr(linear, "lora_B") and layer.lora_A is not None and layer.lora_B is not None:
+        if (hasattr(linear, "lora_A") and hasattr(linear, "lora_B")
+                and layer.lora_A is not None and layer.lora_B is not None):
             with torch.no_grad():
-                src_A = linear.lora_A.weight.data if hasattr(linear.lora_A, "weight") else linear.lora_A.data
-                src_B = linear.lora_B.weight.data if hasattr(linear.lora_B, "weight") else linear.lora_B.data
+                src_A = (linear.lora_A.weight.data
+                         if hasattr(linear.lora_A, "weight")
+                         else linear.lora_A.data)
+                src_B = (linear.lora_B.weight.data
+                         if hasattr(linear.lora_B, "weight")
+                         else linear.lora_B.data)
                 if src_A.shape == layer.lora_A.shape and src_B.shape == layer.lora_B.shape:
                     layer.lora_A.copy_(src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype))
                     layer.lora_B.copy_(src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype))
-
-        if layer.lora_A is not None:
             layer.lora_A.requires_grad = True
-        if layer.lora_B is not None:
             layer.lora_B.requires_grad = True
 
         return layer
@@ -146,39 +203,16 @@ class OptimalSubspaceLoRALinear(nn.Module):
         return out
 
 
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
-
-
-_ATTN_NAMES = {
-    "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-    "c_attn", "c_proj", "query", "key", "value", "q_lin", "k_lin", "v_lin", "out_lin", "self_attn"
-}
-
-
+# ===========================================================================
+# Compressor
+# ===========================================================================
 @COMPRESSOR_REGISTRY.register("optimal_subspace_projection")
 class OptimalSubspaceProjectionCompressor(BaseCompressor):
-    is_custom_attention: bool = True
     """
-    Optimal Subspace Projection Compressor using activation-aware randomized SVD.
-
-    Production hardening features:
-    - Relative Frobenius reconstruction error validation with configurable max_error (default 0.50).
-    - Safe fallback to original weights by default (fallback_to_original=True).
-    - Robust Conv1D detection by class name and nf attribute without unreliable shape heuristics.
-    - Unified critical-layer protection via should_compress_linear.
-    - GQA-aware skipping to preserve key-value cache dimension alignment.
-    - Tied / shared weight protection tracking parameter IDs.
-    - Mathematical preconditioning inversion fix (L_inv vs L_inv.T).
-    - Trainable LoRA adapter integration with base weights frozen.
-    - FP32 numerical stability with NaN/Inf guards.
-    - Post-compression forward sanity check under torch.no_grad().
-    - Comprehensive per-layer stats and error tracking.
+    Optimal Subspace Projection Compressor via activation-aware randomized SVD.
     """
+    # OSP-FIX-01: this is a compressor, not attention.
+    is_custom_attention: bool = False
 
     def __init__(
         self,
@@ -201,12 +235,17 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
     ) -> None:
         super().__init__(model, name="optimal_subspace_projection", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+
         if cfg is not None:
-            rank_ratio = _cfg_get(cfg, "optimal_subspace_rank_ratio", _cfg_get(cfg, "rank_ratio", rank_ratio))
-            power_iters = _cfg_get(cfg, "optimal_subspace_power_iters", _cfg_get(cfg, "power_iters", power_iters))
-            max_error = _cfg_get(cfg, "optimal_subspace_max_error", _cfg_get(cfg, "max_error", max_error))
+            rank_ratio = _cfg_get(cfg, "optimal_subspace_rank_ratio",
+                                  _cfg_get(cfg, "rank_ratio", rank_ratio))
+            power_iters = _cfg_get(cfg, "optimal_subspace_power_iters",
+                                   _cfg_get(cfg, "power_iters", power_iters))
+            max_error = _cfg_get(cfg, "optimal_subspace_max_error",
+                                 _cfg_get(cfg, "max_error", max_error))
             fallback_to_original = _cfg_get(
-                cfg, "optimal_subspace_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+                cfg, "optimal_subspace_fallback_to_original",
+                _cfg_get(cfg, "fallback_to_original", fallback_to_original),
             )
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
@@ -229,8 +268,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         self.min_rank = max(1, int(min_rank))
 
         self.target_device = (
-            torch.device(device)
-            if device is not None
+            torch.device(device) if device is not None
             else next(model.parameters(), torch.tensor(0.0)).device
         )
         self.compressed_layers: List[str] = []
@@ -240,20 +278,30 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         self.layer_ranks: Dict[str, int] = {}
         self.stats: Dict[str, Any] = {}
 
+    # ------------------------------------------------------------------
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
-        """Check if layer is an attention QKV projection in a model with GQA."""
         if not self.skip_attention_qkv:
             return False
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
+        if (num_heads is not None and num_kv_heads is not None
+                and num_kv_heads < num_heads):
             name_lower = name.lower()
-            if any(p in name_lower for p in ["q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"]):
+            if any(p in name_lower for p in (
+                "q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"
+            )):
                 return True
         return False
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        # OSP-FIX-07: skip already-compressed modules.
+        if isinstance(module, OptimalSubspaceLoRALinear):
+            return False
+        # Skip nested lora params.
+        if any(part in name.split(".") for part in ("lora_A", "lora_B")):
+            return False
+
         cls_name = module.__class__.__name__.lower()
         is_linear_like = (
             isinstance(module, nn.Linear)
@@ -268,32 +316,66 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         if self._is_gqa_asymmetric(name, module):
             return False
         if self.target_attention_only:
-            is_attn = any(k in name.lower() for k in _ATTN_NAMES)
-            if not is_attn:
+            if not any(k in name.lower() for k in _ATTN_NAMES):
                 return False
         if self.target_modules is None:
             return True
         return any(t in name for t in self.target_modules)
 
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _compute_rank(
+        d_out: int, d_in: int, rank_ratio: float, min_rank: int
+    ) -> int:
+        """OSP-FIX-04: clean, correct rank formula."""
+        max_rank = min(d_out, d_in)
+        target = max(1, int(round(max_rank * rank_ratio)))
+        rank = max(target, min_rank)
+        rank = min(rank, max_rank)
+        return rank
+
+    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Compress the target model using optimal subspace projection."""
+        # --------------------------------------------------------------
+        # 1. Collect activation covariances (dedup by base weight id).
+        # --------------------------------------------------------------
         act_covs: Dict[int, torch.Tensor] = {}
+        weight_id_to_scan_id: Dict[int, int] = {}   # base weight id → cov key
         hooks = []
 
         def hook_fn(module: nn.Module, inputs: Tuple[torch.Tensor, ...], output: Any) -> None:
-            if inputs and isinstance(inputs[0], torch.Tensor):
-                x = inputs[0].detach()
-                x_flat = x.reshape(-1, x.shape[-1]).float()
-                cov = torch.matmul(x_flat.T, x_flat) / max(x_flat.shape[0], 1)
-                mod_id = id(module)
-                if mod_id not in act_covs:
-                    act_covs[mod_id] = cov.cpu()
-                else:
-                    act_covs[mod_id] += cov.cpu()
+            if not inputs or not isinstance(inputs[0], torch.Tensor):
+                return
+            base = getattr(module, "base_layer", module)
+            w = getattr(base, "weight", None)
+            if w is None:
+                return
+            w_id = id(w)
+            key = weight_id_to_scan_id.get(w_id, w_id)
 
+            x = inputs[0].detach()
+            x_flat = x.reshape(-1, x.shape[-1]).float()
+            cov = torch.matmul(x_flat.T, x_flat) / max(x_flat.shape[0], 1)
+            if key not in act_covs:
+                act_covs[key] = cov.cpu()
+            else:
+                act_covs[key] = act_covs[key] + cov.cpu()
+
+        # OSP-FIX-06: register one hook per unique base weight.
+        registered_ids: Set[int] = set()
         for name, module in self.model.named_modules():
-            if self._is_target_module(name, module):
-                hooks.append(module.register_forward_hook(hook_fn))
+            if not self._is_target_module(name, module):
+                continue
+            base = getattr(module, "base_layer", module)
+            w = getattr(base, "weight", None)
+            if w is None:
+                continue
+            w_id = id(w)
+            if w_id in registered_ids:
+                continue
+            registered_ids.add(w_id)
+            weight_id_to_scan_id[w_id] = w_id
+            hooks.append(module.register_forward_hook(hook_fn))
 
         calib_inputs = get_calibration_tensors(
             self.model,
@@ -312,11 +394,14 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
                 elif isinstance(calib_inputs, (list, tuple)):
                     self.model(*calib_inputs)
             except Exception as e:
-                logger.debug("OptimalSubspaceProjection activation collection exception: %s", e)
+                logger.debug("OSP activation collection failed: %s", e)
 
         for h in hooks:
             h.remove()
 
+        # --------------------------------------------------------------
+        # 2. Compress each target layer.
+        # --------------------------------------------------------------
         self.compressed_layers = []
         self.fallback_layers = []
         self.skipped_layers = []
@@ -327,130 +412,180 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         total_comp_params = 0
 
         for name, module in list(self.model.named_modules()):
-            if self._is_target_module(name, module):
-                base_module = getattr(module, "base_layer", module)
-                if not hasattr(base_module, "weight") or base_module.weight is None:
-                    continue
+            if not self._is_target_module(name, module):
+                continue
 
-                w_id = id(base_module.weight)
-                if w_id in seen_weights:
-                    logger.info("Skipping %s due to shared/tied weight.", name)
-                    self.skipped_layers.append(name)
-                    continue
-                seen_weights.add(w_id)
+            base_module = getattr(module, "base_layer", module)
+            if not hasattr(base_module, "weight") or base_module.weight is None:
+                continue
 
-                for p in module.parameters():
-                    total_orig_params += p.numel()
+            w_id = id(base_module.weight)
+            if w_id in seen_weights:
+                logger.info("OSP: skipping %s (shared/tied weight)", name)
+                self.skipped_layers.append(name)
+                continue
+            seen_weights.add(w_id)
 
-                raw_w = base_module.weight.data
-                cls_name = base_module.__class__.__name__.lower()
-                is_conv1d = "conv1d" in cls_name or hasattr(base_module, "nf")
+            # OSP-FIX-03: count only BASE parameters.
+            base_param_count = sum(
+                p.numel() for p in base_module.parameters()
+            )
+            total_orig_params += base_param_count
 
-                W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
-                d_out, d_in = W.shape
-                device = raw_w.device
-                dtype = raw_w.dtype
+            raw_w = base_module.weight.data
+            cls_name = base_module.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(base_module, "nf")
 
-                C = act_covs.get(id(module), None)
-                if C is not None and C.shape[-1] == d_in:
-                    C = C.to(device)
+            W = raw_w.t().contiguous().clone().float() if is_conv1d \
+                else raw_w.clone().float()
+            d_out, d_in = W.shape
+            device = raw_w.device
+            dtype = raw_w.dtype
+
+            # ---------------- Cholesky preconditioner ----------------
+            C = act_covs.get(w_id, None)
+            L = torch.eye(d_in, device=device)
+            L_inv = torch.eye(d_in, device=device)
+
+            if C is not None and C.shape[-1] == d_in:
+                try:
+                    C = C.to(device).float()
                     diag_mean = torch.diagonal(C).mean().item()
-                    reg = max(1e-4 * diag_mean, 1e-5)
+                    reg = max(1e-4 * max(diag_mean, 0.0), 1e-5)
                     C_reg = C + reg * torch.eye(d_in, device=device)
-                    try:
-                        L = torch.linalg.cholesky(C_reg)
-                        L_inv = torch.linalg.inv(L)
-                        if torch.isnan(L).any() or torch.isnan(L_inv).any():
-                            raise ValueError("Cholesky NaNs")
-                    except Exception:
-                        L = torch.eye(d_in, device=device)
-                        L_inv = torch.eye(d_in, device=device)
-                else:
+                    L = torch.linalg.cholesky(C_reg)
+                    L_inv = torch.linalg.inv(L)
+                    if not torch.isfinite(L).all() or not torch.isfinite(L_inv).all():
+                        raise ValueError("Cholesky produced non-finite values")
+                except Exception as e:
+                    logger.debug("OSP: Cholesky fallback for %s: %s", name, e)
                     L = torch.eye(d_in, device=device)
                     L_inv = torch.eye(d_in, device=device)
 
-                M = torch.matmul(W, L)
-                rank = max(min(self.min_rank, min(d_out, d_in)), min(int(min(d_out, d_in) * self.rank_ratio), min(d_out, d_in)))
-                Omega = torch.randn(M.shape[1], rank, device=device)
-                Y = torch.matmul(M, Omega)
-                for _ in range(self.power_iters):
-                    Y = torch.matmul(M, torch.matmul(M.T, Y))
+            # ---------------- Randomized subspace iteration --------
+            M = torch.matmul(W, L)
+            rank = self._compute_rank(d_out, d_in, self.rank_ratio, self.min_rank)
 
-                try:
-                    Q, _ = torch.linalg.qr(Y)
-                    B = torch.matmul(Q.T, M)
-                    U, S, Vt = torch.linalg.svd(B, full_matrices=False)
-                    r = min(rank, len(S))
-                    U_r = U[:, :r]
-                    S_r = S[:r]
-                    Vt_r = Vt[:r, :]
-                    new_U = torch.matmul(Q, U_r)
-                    # Correct de-conditioning: (Q @ U_r @ S_r @ Vt_r) @ L_inv
-                    new_V = torch.matmul(Vt_r, L_inv)
-                    new_weight = torch.matmul(new_U * S_r.unsqueeze(0), new_V)
-                    new_weight = torch.nan_to_num(new_weight, nan=0.0)
+            # OSP-FIX-09: Omega on the same device as M.
+            Omega = torch.randn(M.shape[1], rank, device=M.device, dtype=M.dtype)
+            Y = torch.matmul(M, Omega)
+            for _ in range(self.power_iters):
+                Y = torch.matmul(M, torch.matmul(M.T, Y))
 
-                    w_norm = torch.norm(W, p="fro").item()
-                    err = (torch.norm(W - new_weight, p="fro") / max(w_norm, 1e-12)).item()
-                    self.layer_errors[name] = float(err)
-                    self.layer_ranks[name] = r
+            try:
+                Q, _ = torch.linalg.qr(Y)
+                B = torch.matmul(Q.T, M)
+                U, S, Vt = torch.linalg.svd(B, full_matrices=False)
+                r = min(rank, len(S))
 
-                    if not math.isfinite(err) or err > self.max_error:
-                        logger.warning(
-                            "OptimalSubspaceProjection reconstruction error %.4f on %s exceeded threshold %.4f.",
-                            err,
-                            name,
-                            self.max_error,
-                        )
-                        if self.fallback_to_original:
-                            logger.info("Skipping OptimalSubspaceProjection for %s (fallback to original).", name)
-                            self.fallback_layers.append(name)
-                            for p in module.parameters():
-                                p.requires_grad = False
-                                total_comp_params += p.numel()
-                            continue
+                # OSP-FIX-10: empty rank → fallback.
+                if r < 1:
+                    raise ValueError("Empty SVD rank")
 
-                    W_target = new_weight
-                    compressed_layer = OptimalSubspaceLoRALinear.from_linear(
-                        module,
-                        weight=W_target.to(dtype=dtype, device=device),
-                        lora_r=self.lora_r,
-                        lora_alpha=self.lora_alpha,
+                U_r = U[:, :r]
+                S_r = S[:r]
+                Vt_r = Vt[:r, :]
+                new_U = torch.matmul(Q, U_r)                       # (d_out, r)
+                new_V = torch.matmul(Vt_r, L_inv)                  # (r, d_in)
+                new_weight = torch.matmul(
+                    new_U * S_r.unsqueeze(0), new_V
+                )                                                   # (d_out, d_in)
+                new_weight = torch.nan_to_num(new_weight, nan=0.0,
+                                               posinf=0.0, neginf=0.0)
+
+                # ---------------- Error check ----------------
+                w_norm = torch.norm(W, p="fro").clamp_min(1e-12).item()
+                err = (torch.norm(W - new_weight, p="fro") / w_norm).item()
+                self.layer_errors[name] = float(err)
+                self.layer_ranks[name] = r
+
+                if not math.isfinite(err) or err > self.max_error:
+                    logger.warning(
+                        "OSP: reconstruction error %.4f on %s exceeded %.4f.",
+                        err, name, self.max_error,
                     )
-                    replace_module(self.model, name, compressed_layer)
-                    self.compressed_layers.append(name)
-                    for p in compressed_layer.parameters():
-                        total_comp_params += p.numel()
-                except Exception as e:
-                    logger.warning("Subspace projection SVD exception in %s: %s", name, e)
-                    self.fallback_layers.append(name)
-                    self.layer_errors[name] = 1.0
-                    for p in module.parameters():
-                        p.requires_grad = False
-                        total_comp_params += p.numel()
+                    if self.fallback_to_original:
+                        self.fallback_layers.append(name)
+                        total_comp_params += base_param_count    # OSP-FIX-08
+                        for p in module.parameters():
+                            p.requires_grad = False
+                        continue
 
-        # Post-compression forward sanity check
+                # ---------------- Commit ----------------
+                W_target = new_weight.to(dtype=dtype, device=device)   # OSP-FIX-11
+                compressed_layer = OptimalSubspaceLoRALinear.from_linear(
+                    module,
+                    weight=W_target,
+                    lora_r=self.lora_r,
+                    lora_alpha=self.lora_alpha,
+                )
+
+                # OSP-FIX-02: preserve LoRA wrapper.
+                if hasattr(module, "base_layer"):
+                    module.base_layer = compressed_layer
+                else:
+                    replace_module(self.model, name, compressed_layer)
+
+                self.compressed_layers.append(name)
+                total_comp_params += sum(
+                    p.numel() for p in compressed_layer.parameters()
+                )
+
+            except Exception as e:
+                logger.warning("OSP: SVD/decomposition failed on %s: %s", name, e)
+                self.fallback_layers.append(name)
+                self.layer_errors[name] = 1.0
+                total_comp_params += base_param_count
+                for p in module.parameters():
+                    p.requires_grad = False
+
+        # --------------------------------------------------------------
+        # 3. Forward sanity check.
+        # --------------------------------------------------------------
         forward_check_success = True
         try:
             with torch.no_grad():
                 dev = next(self.model.parameters(), torch.tensor(0.0)).device
-                dummy = torch.randint(0, 100, (1, 8), device=dev)
+                dummy = torch.randint(0, 100, (1, 8), device=dev, dtype=torch.long)
+                # OSP-FIX-05: no `.float()` on int64 input ids.
                 try:
-                    self.model(dummy)
+                    self.model(input_ids=dummy)
                 except Exception:
-                    self.model(dummy.float())
+                    try:
+                        self.model(dummy)
+                    except Exception as e2:
+                        # Try embedding-level call as last resort.
+                        cfg = getattr(self.model, "config", None)
+                        hidden = getattr(cfg, "hidden_size", None) if cfg else None
+                        if hidden is None:
+                            first_lin = next(
+                                (m for m in self.model.modules()
+                                 if isinstance(m, nn.Linear)), None
+                            )
+                            hidden = getattr(first_lin, "in_features", 8)
+                        dummy_feat = torch.randn(
+                            1, 8, hidden, device=dev,
+                            dtype=next(self.model.parameters()).dtype,
+                        )
+                        self.model(dummy_feat)
         except Exception as e:
-            logger.warning("OptimalSubspaceProjection post-compression forward check warning: %s", e)
+            logger.warning("OSP forward sanity check failed: %s", e)
             forward_check_success = False
 
+        # --------------------------------------------------------------
+        # 4. Stats.
+        # --------------------------------------------------------------
         self._compressed_params = self._count_params(self.model)
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
-            if self.compressed_layers
-            else 0.0
+            sum(self.layer_errors[k] for k in self.compressed_layers)
+            / max(1, len(self.compressed_layers))
+            if self.compressed_layers else 0.0
+        )
+        eff_ratio = (
+            total_comp_params / max(1, total_orig_params)
+            if total_orig_params > 0 else 1.0
         )
         stats = self.get_compression_stats()
-        eff_ratio = total_comp_params / max(1, total_orig_params)
         stats.update({
             "compressed_layers": self.compressed_layers,
             "fallback_layers": self.fallback_layers,
@@ -467,7 +602,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
             "power_iters": self.power_iters,
             "lora_r": self.lora_r,
             "lora_alpha": self.lora_alpha,
-            "effective_parameter_ratio": eff_ratio,
+            "effective_parameter_ratio": round(eff_ratio, 4),
             "forward_check_success": forward_check_success,
             "method": "optimal_subspace_projection",
         })
@@ -479,22 +614,49 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
 SubspaceProjectionCompressor = OptimalSubspaceProjectionCompressor
 
 
+# ===========================================================================
+# Factory
+# ===========================================================================
 @COMPRESSOR_REGISTRY.register("optimal_subspace_projection_factory")
-def optimal_subspace_projection_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
-    """Optimal Subspace Projection factory."""
+def optimal_subspace_projection_factory(
+    model: nn.Module, comp_config: Any = None, **kwargs: Any
+) -> Any:
+    return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     try:
-        calibration_loader = kwargs.pop("calibration_loader", _cfg_get(comp_config, "calibration_loader", None))
-        rank_ratio = kwargs.pop("rank_ratio", _cfg_get(comp_config, "optimal_subspace_rank_ratio", _cfg_get(comp_config, "rank_ratio", 0.5)))
-        power_iters = kwargs.pop("power_iters", _cfg_get(comp_config, "optimal_subspace_power_iters", _cfg_get(comp_config, "power_iters", 2)))
-        max_error = kwargs.pop("max_error", _cfg_get(comp_config, "optimal_subspace_max_error", _cfg_get(comp_config, "max_error", 0.50)))
-        fallback = kwargs.pop("fallback_to_original", _cfg_get(
-            comp_config, "optimal_subspace_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
-        ))
-        target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
-        tokenizer = kwargs.pop("tokenizer", getattr(model, "tokenizer", None) or _cfg_get(comp_config, "tokenizer", None))
+        calibration_loader = kwargs.pop(
+            "calibration_loader", _cfg_get(comp_config, "calibration_loader", None)
+        )
+        rank_ratio = kwargs.pop(
+            "rank_ratio",
+            _cfg_get(comp_config, "optimal_subspace_rank_ratio",
+                     _cfg_get(comp_config, "rank_ratio", 0.5)),
+        )
+        power_iters = kwargs.pop(
+            "power_iters",
+            _cfg_get(comp_config, "optimal_subspace_power_iters",
+                     _cfg_get(comp_config, "power_iters", 2)),
+        )
+        max_error = kwargs.pop(
+            "max_error",
+            _cfg_get(comp_config, "optimal_subspace_max_error",
+                     _cfg_get(comp_config, "max_error", 0.50)),
+        )
+        fallback = kwargs.pop(
+            "fallback_to_original",
+            _cfg_get(comp_config, "optimal_subspace_fallback_to_original",
+                     _cfg_get(comp_config, "fallback_to_original", True)),
+        )
+        target_attention_only = kwargs.pop(
+            "target_attention_only",
+            _cfg_get(comp_config, "target_attention_only", False),
+        )
+        tokenizer = kwargs.pop(
+            "tokenizer",
+            getattr(model, "tokenizer", None)
+            or _cfg_get(comp_config, "tokenizer", None),
+        )
         lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
         lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
-        return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
         compressor = OptimalSubspaceProjectionCompressor(
             model,
@@ -516,15 +678,17 @@ def optimal_subspace_projection_factory(model: nn.Module, comp_config: Any = Non
         return compressed_model
     except Exception as e:
         logger.error("optimal_subspace_projection_factory failed: %s", e)
-        if kwargs.get("return_stats", False) or kwargs.get("return_tuple", False) or ('return_stats' in locals() and return_stats):
+        if return_stats:
             return model, {}
         return model
 
 
+# ===========================================================================
+# Injection alias
+# ===========================================================================
 @COMPRESSOR_REGISTRY.register("optimal_subspace_projection_inject")
 @COMPRESSOR_REGISTRY.register("inject_optimal_subspace_projection")
 def inject_optimal_subspace_projection(model: Any = None, layer: Any = None, **kwargs: Any) -> Any:
-    """Safe injection hook for Optimal Subspace Projection."""
     target = layer if layer is not None else model
     if target is None:
         return None

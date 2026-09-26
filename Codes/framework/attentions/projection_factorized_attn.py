@@ -1,17 +1,28 @@
-"""Projection Factorized SVD Linear Attention.
+"""Projection Factorized SVD Linear Attention — Production-Hardened (v2).
 
-Fixes (2026-09-26):
-- FIX-1: `inject_projection_factorized_attn` now discovers the source attention
-  across all architecture variants (GPT-2 `layer.attn`, RoBERTa/BERT
-  `layer.attention.self`, T5 `layer.self_attn`, generic `layer.attention`).
-- FIX-2: Pre-discovered `src_attn` is passed explicitly as `old_attn` to the
-  delegated `inject_svd_linear_attention`, so the delegate never has to guess.
-- FIX-3: Fallback replacement ensures the new module is placed in the correct
-  attribute (including `layer.attn` for GPT-2) even if the delegate only
-  writes to `layer.attention` / `layer.self`.
-- FIX-4: Idempotency guard prevents double-injection.
-- FIX-5: Explicit error logging when no source attention can be found.
+Delegates to `inject_svd_linear_attention` with a pre-discovered source
+attention and robust attribute-level replacement for all supported
+architectures (GPT-2, RoBERTa/BERT, DistilBERT, T5, generic).
+
+Fixes (v2):
+  FIX-1  Discovers source attention across all architecture variants.
+  FIX-2  Pre-discovered `src_attn` is passed explicitly as `old_attn`.
+  FIX-3  Fallback replacement ensures new module is placed in the correct
+         attribute (including `layer.attn` for GPT-2).
+  FIX-4  Idempotency guard prevents double-injection.
+  FIX-5  Explicit error logging when no source attention can be found.
+  FIX-6  **`comp_config` is now forwarded to the delegate.**
+  FIX-7  **Removed broken `locals()` check; uses a clean filter of kwargs.**
+  FIX-8  **Strips conflicting keys (layer, model, old_attn, layer_idx,
+         total_layers) from kwargs before delegating.**
+  FIX-9  **Return value is type-checked; only nn.Module instances that
+         differ from the source and the model are attached.**
+  FIX-10 **Idempotency guard skips the current attribute and continues
+         scanning other candidates.**
+  FIX-11 **`total_layers` (int) is propagated to the delegate.**
 """
+
+from __future__ import annotations
 
 from typing import Any, Optional
 import logging
@@ -29,13 +40,112 @@ from framework.attentions.svd_linear_attention import (
 logger = logging.getLogger(__name__)
 
 
+# ===========================================================================
+# Registered class
+# ===========================================================================
 @ATTENTION_REGISTRY.register("projection_factorized_attn")
 class ProjectionFactorizedAttention(SVDLinearAttention):
     r"""Projection Factorized SVD Linear Attention."""
     is_custom_attention: bool = True
-    pass
 
 
+# ===========================================================================
+# Helpers
+# ===========================================================================
+_CANDIDATE_ATTRS = ("attn", "attention", "self_attn", "self")
+
+# Keys that must NOT be passed through `**kwargs` to the delegate, since
+# they are positional/keyword arguments of the delegate signature itself.
+_RESERVED_KEYS = frozenset({
+    "model", "layer", "model_config", "comp_config",
+    "old_attn", "layer_idx", "total_layers",
+})
+
+
+def _is_already_injected(module: nn.Module) -> bool:
+    """True if `module` is an SVDLinearAttention (or subclass)."""
+    if module is None:
+        return False
+    if isinstance(module, SVDLinearAttention):
+        return True
+    if isinstance(module, ProjectionFactorizedAttention):
+        return True
+    return "SVDLinearAttention" in module.__class__.__name__
+
+
+def _find_source_attention(
+    layer: nn.Module,
+) -> Optional[tuple[str, nn.Module, bool]]:
+    """
+    Return (attr_name, src_attn, src_is_nested) if a non-injected source
+    attention is found; otherwise None.
+
+    Scans `_CANDIDATE_ATTRS` in priority order and skips attributes that
+    already contain an injected attention (FIX-10).
+    """
+    for attr in _CANDIDATE_ATTRS:
+        candidate = getattr(layer, attr, None)
+        if candidate is None:
+            continue
+
+        # FIX-10: skip already-injected attributes, keep scanning others.
+        if _is_already_injected(candidate):
+            # Nested case: layer.attention.self may be injected.
+            if hasattr(candidate, "self") and _is_already_injected(candidate.self):
+                continue
+            if _is_already_injected(candidate):
+                continue
+
+        # RoBERTa/BERT nested: layer.attention.self has .query
+        if hasattr(candidate, "self") and hasattr(candidate.self, "query"):
+            return attr, candidate.self, True
+
+        return attr, candidate, False
+
+    return None
+
+
+def _attach_with_fallback(
+    layer: nn.Module,
+    attr_name: str,
+    src_attn: nn.Module,
+    src_is_nested: bool,
+    result: nn.Module,
+) -> bool:
+    """
+    FIX-3 / FIX-9: Ensure `result` is attached to the correct attribute slot.
+
+    Returns True if a forced replacement was performed, False otherwise.
+    """
+    if result is None or result is layer or result is src_attn:
+        return False
+    if not isinstance(result, nn.Module):
+        return False
+
+    if src_is_nested:
+        parent = getattr(layer, attr_name, None)
+        if parent is not None and getattr(parent, "self", None) is src_attn:
+            parent.self = result
+            logger.debug(
+                "inject_projection_factorized_attn: forced replacement of %s.%s.self",
+                type(layer).__name__, attr_name,
+            )
+            return True
+    else:
+        if getattr(layer, attr_name, None) is src_attn:
+            setattr(layer, attr_name, result)
+            logger.debug(
+                "inject_projection_factorized_attn: forced replacement of %s.%s",
+                type(layer).__name__, attr_name,
+            )
+            return True
+
+    return False
+
+
+# ===========================================================================
+# Injector
+# ===========================================================================
 def inject_projection_factorized_attn(
     layer: Any = None,
     model: Any = None,
@@ -76,14 +186,16 @@ def inject_projection_factorized_attn(
     if layer_list is not None:
         num_injected = 0
         tot = len(layer_list)
+        # FIX-8: strip reserved keys once (they'll be re-supplied explicitly).
+        forward_kwargs = {k: v for k, v in kwargs.items() if k not in _RESERVED_KEYS}
         for idx, lyr in enumerate(layer_list):
             res = inject_projection_factorized_attn(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                comp_config=comp_config,   # FIX-6
                 layer_idx=idx,
-                total_layers=tot,
-                **kwargs,
+                total_layers=tot,          # FIX-11
+                **forward_kwargs,
             )
             if res is not None:
                 num_injected += 1
@@ -92,88 +204,64 @@ def inject_projection_factorized_attn(
     # ---- Single-layer injection ----
     layer = target
 
-    # ============================================================
-    # FIX-1: Discover source attention across all architecture variants
-    # ============================================================
-    src_attn = old_attn
-    src_attr_name: Optional[str] = None      # which attribute held the source ("attn", "attention", ...)
-    src_is_nested: bool = False              # True for RoBERTa/BERT (layer.attention.self)
-
-    if src_attn is None:
-        for attr in ("attn", "attention", "self_attn", "self"):
-            candidate = getattr(layer, attr, None)
-            if candidate is None:
-                continue
-
-            # FIX-4: idempotency guard
-            if isinstance(candidate, SVDLinearAttention) or "SVDLinear" in candidate.__class__.__name__:
-                logger.debug(
-                    "inject_projection_factorized_attn: %s.%s is already SVDLinearAttention, skipping",
-                    type(layer).__name__, attr,
-                )
-                return None
-
-            # RoBERTa/BERT nested: layer.attention.self has .query
-            if hasattr(candidate, "self") and hasattr(candidate.self, "query"):
-                src_attn = candidate.self
-                src_attr_name = attr
-                src_is_nested = True
-            else:
-                src_attn = candidate
-                src_attr_name = attr
-                src_is_nested = False
-            break
-
-    if src_attn is None:
-        # FIX-5: explicit error logging
+    # FIX-1: discover source attention
+    src_info = _find_source_attention(layer) if old_attn is None else None
+    if old_attn is not None:
+        src_attn = old_attn
+        src_attr_name = None
+        src_is_nested = False
+    elif src_info is not None:
+        src_attr_name, src_attn, src_is_nested = src_info
+    else:
         logger.warning(
             "inject_projection_factorized_attn: no source attention found on %s "
-            "(checked: attn, attention, self_attn, self)",
-            type(layer).__name__,
+            "(checked: %s)",
+            type(layer).__name__, ", ".join(_CANDIDATE_ATTRS),
         )
         return None
 
-    # ============================================================
-    # Delegate to underlying injector with explicit old_attn
-    # (so it never has to guess the source attribute)
-    # ============================================================
+    # FIX-4 / FIX-10: already-injected guard for the specific src_attn
+    if _is_already_injected(src_attn):
+        logger.debug(
+            "inject_projection_factorized_attn: %s is already injected, skipping",
+            type(src_attn).__name__,
+        )
+        return None
+
+    # FIX-8: clean kwargs before delegating.
+    delegate_kwargs = {k: v for k, v in kwargs.items() if k not in _RESERVED_KEYS}
+
+    # FIX-2 / FIX-6 / FIX-11: delegate with explicit old_attn + comp_config
     try:
         result = inject_svd_linear_attention(
             model=model,
             layer=layer,
-            model_config=model_config,
-            old_attn=src_attn,
-            **kwargs,
+            model_config=model_config if model_config is not None else cfg,
+            comp_config=comp_config,   # FIX-6
+            old_attn=src_attn,         # FIX-2
+            layer_idx=layer_idx,
+            total_layers=total_layers, # FIX-11
+            **delegate_kwargs,
         )
     except Exception as e:
-        logger.error("inject_svd_linear_attention delegate failed: %s", e)
+        logger.error(
+            "inject_svd_linear_attention delegate failed on %s: %s",
+            type(layer).__name__, e,
+        )
         return None
 
     if result is None:
         return None
 
-    # ============================================================
-    # FIX-3: Fallback replacement for GPT-2 and other missed architectures
-    #   The delegate may have replaced the correct attribute on DistilBERT /
-    #   RoBERTa, but on GPT-2 it typically only checks `layer.attention` and
-    #   `layer.self`, leaving `layer.attn` unchanged. We verify and patch.
-    # ============================================================
-    if src_attr_name is not None and result is not layer:
-        if src_is_nested:
-            parent = getattr(layer, src_attr_name, None)
-            if parent is not None and getattr(parent, "self", None) is src_attn:
-                parent.self = result
-                logger.debug(
-                    "inject_projection_factorized_attn: forced replacement of %s.%s.self",
-                    type(layer).__name__, src_attr_name,
-                )
-        else:
-            if getattr(layer, src_attr_name, None) is src_attn:
-                setattr(layer, src_attr_name, result)
-                logger.debug(
-                    "inject_projection_factorized_attn: forced replacement of %s.%s",
-                    type(layer).__name__, src_attr_name,
-                )
+    # FIX-3 / FIX-9: fallback attribute replacement
+    if src_attr_name is not None:
+        _attach_with_fallback(
+            layer=layer,
+            attr_name=src_attr_name,
+            src_attn=src_attn,
+            src_is_nested=src_is_nested,
+            result=result,
+        )
 
     return result
 
