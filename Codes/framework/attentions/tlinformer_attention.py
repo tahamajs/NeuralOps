@@ -4,33 +4,6 @@ Reference: LinFormer (Wang et al., 2020).
 
 Production-hardened for DistilBERT, RoBERTa, GPT-2, Qwen3.5.
 
-Fixes (v2):
-  TLF-FIX-01  **Causal mode falls back to dense attention.** LinFormer's
-              sequence projection is fundamentally non-causal: a projected
-              key mixes information from all N positions and therefore cannot
-              be masked per-query without losing the linear-time advantage.
-              For decoders we return dense attention (equal to the base model)
-              rather than corrupting the model with a fake causal projection.
-  TLF-FIX-02  **Padding mask now correctly zeros KEY contributions**, and
-              query-side outputs are zeroed at the end.
-  TLF-FIX-03  **head_mask** correctly handled for 1D / 2D / 3D / 4D shapes.
-  TLF-FIX-04  **is_custom_attention = True** explicit.
-  TLF-FIX-05  **LoRA is dtype-safe** in forward.
-  TLF-FIX-06  **E / F projections are registered as buffers** so state_dict
-              loading works, and NOT as extra parameters that would silently
-              double the effective rank count.
-  TLF-FIX-07  **Sequence-projection is used only for the true linear-time
-              regime (N > rank).** For N ≤ rank it degenerates to identity,
-              which is exactly the original LinFormer "rank equals sequence"
-              boundary and gives an honest baseline.
-  TLF-FIX-08  **No F.interpolate hack.** If N > max_seq_len, log a warning
-              and use the first max_seq_len columns (bounded to model support).
-  TLF-FIX-09  **copy_weights logs shape truncation** (was silent).
-  TLF-FIX-10  **Encoder attention mask**: mask keys, not queries.
-  TLF-FIX-11  **LoRA copy from source is dtype-safe**.
-  TLF-FIX-12  **`E` / `F` properties return buffers without shadowing.**
-  TLF-FIX-13  **Rank parameter clamped to ≤ head_dim** for numerical
-              stability of the projected scores.
 """
 
 from __future__ import annotations

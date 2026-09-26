@@ -1,4 +1,4 @@
-r"""FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention Module.
+"""FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention Module.
 
 Implements hybrid sparse attention with block gating, full-attention short sequence fast-path,
 and subspace estimation.

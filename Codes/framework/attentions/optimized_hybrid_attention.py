@@ -4,26 +4,6 @@ Fuses localized sliding-window self-attention with sequence-compressed
 low-rank global attention via dynamic head-wise gated modulation and exact
 pretrained weight transfer.
 
-Fixes (v2):
-  OHA-FIX-01   RoPE cos/sin cast to q/k dtype.
-  OHA-FIX-02   compression_rank decoupled from attention rank.
-  OHA-FIX-03   **Causality-safe chunk-based compression.** Slot r pools
-               exactly positions [r·c, (r+1)·c − 1], and a query at
-               position i can only attend to slot r if the entire chunk
-               is at or before i (chunk_end[r] ≤ i).
-  OHA-FIX-04   Recursion guard.
-  OHA-FIX-05   Robust hidden_size / num_heads detection.
-  OHA-FIX-06   window_size = full width; radius = window_size // 2.
-  OHA-FIX-07   Unified head_mask handling.
-  OHA-FIX-08   num_heads fallback → hidden_size // 64.
-  OHA-FIX-09   is_decoder detection helper.
-  OHA-FIX-10   mask_inv cast to comp dtype; boolean cleanliness.
-  OHA-FIX-11   RoPE past_len offset for KV-cache decoding.
-  OHA-FIX-12   output_attentions returns local branch only.
-  OHA-FIX-13   Forward sanity check after weight transfer.
-  OHA-FIX-14   **Invalid slots (empty chunks) are zeroed out.**
-  OHA-FIX-15   **copy_weights logs when truncation or transpose occurs.**
-  OHA-FIX-16   **LoRALinear.forward is dtype/device safe.**
 """
 
 from __future__ import annotations

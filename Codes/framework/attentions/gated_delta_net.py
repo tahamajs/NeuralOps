@@ -1,29 +1,5 @@
-r"""Gated DeltaNet Attention Module — Production-Hardened (v2).
+"""Gated DeltaNet Attention Module — Production-Hardened (v2).
 
-Fixes (v2):
-  GDN-FIX-01  **`super().__init__` with None-safe rank.**
-  GDN-FIX-02  **Removed `step.clamp(min=0, max=1)`** — DeltaNet step should
-              be `alpha_t / (1 + ||k_t||²)` without clipping. The alpha and
-              beta gates already have bounded magnitudes via sigmoid.
-  GDN-FIX-03  **Removed `F.normalize(k)/sqrt(d)` scaling.** Keys are only
-              L2-normalized (as in standard DeltaNet), queries are L2-
-              normalized too. The `1/sqrt(d)` is folded into the outer
-              output scaling (not applied per-token to k).
-  GDN-FIX-04  **4D mask handled via `any` over query axis.**
-  GDN-FIX-05  **No double masking** — masking is applied once on `k,v` at
-              scan input.
-  GDN-FIX-06  **Idempotency guard in injector.**
-  GDN-FIX-07  **Storage accounting (`storage_bytes`).**
-  GDN-FIX-08  **`is_causal` requires L > 1 and no past_key_value.**
-  GDN-FIX-09  **Chunk inner loop vectorized partially** — we keep the
-              recurrent state update but remove per-token Python overhead
-              where possible by precomputing denominator and combining
-              intermediate ops.
-  GDN-FIX-10  **Removed debug log spam.**
-  GDN-FIX-11  **`head_mask` shape handling unified.**
-  GDN-FIX-12  **`merge()` call on GPT-2 c_attn is guarded.**
-  GDN-FIX-13  **`output_scale` param added and applied once.**
-  GDN-FIX-14  **`chunk_size` clamped to safe range.**
 """
 
 from __future__ import annotations

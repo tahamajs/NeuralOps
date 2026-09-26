@@ -1,4 +1,4 @@
-r"""
+"""
 Universal Rotary Position Embedding Attention (UnifiedRoPE).
 Hardened for production use across diverse transformer architectures:
 - DistilBERT (Flat MHA)

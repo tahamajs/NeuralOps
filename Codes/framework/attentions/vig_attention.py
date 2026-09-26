@@ -1,4 +1,4 @@
-r"""
+"""
 ViG Attention: Vision GNN-inspired 2D Grid Linear Attention with Gated Fusion.
 Hardened for production use across diverse transformer architectures:
 - DistilBERT (Flat MHA)

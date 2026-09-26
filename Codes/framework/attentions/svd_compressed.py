@@ -1,4 +1,4 @@
-r"""
+"""
 SVD-Compressed Attention with Importance-Aware Lagrangian Rank Allocation.
 
 Truncated Singular Value Decomposition (SVD) attention compression module with

@@ -4,32 +4,6 @@ Dynamically synthesizes head-specific key-value representations for each
 query head via continuous learned routing distributions over a compressed
 set of KV heads.
 
-Fixes (v2):
-  QC-FIX-01  router_temp robust via _cfg_get.
-  QC-FIX-02  KV-cache implemented.
-  QC-FIX-03  RoPE past_len offset for cache.
-  QC-FIX-04  head_mask supports dim=1,2,3,4.
-  QC-FIX-05  injector recursion guard.
-  QC-FIX-06  injector double-injection guard.
-  QC-FIX-07  injector signature consistent.
-  QC-FIX-08  injector comp_config passed via kwargs.
-  QC-FIX-09  is_nested_encoder detection split.
-  QC-FIX-10  forward returns consistent tuple.
-  QC-FIX-11  attention_mask handling robust.
-  QC-FIX-12  SDPA fast path when output_attentions=False.
-  QC-FIX-13  **CRITICAL: attention mechanism rewritten.**
-             Instead of degenerating to per-position head-mixing, QCQA now
-             synthesizes per-query-head K and V (averaged routing over the
-             sequence), then runs standard MHA. This matches the paper's
-             intent and preserves long-range attention.
-  QC-FIX-14  **N_kv_new used instead of L in reshaping.**
-  QC-FIX-15  **Dead k_flat / v_flat removed.**
-  QC-FIX-16  **_prepare_valid_mask handles 3D masks.**
-  QC-FIX-17  **Cross-attention uses decoder q for routing consistently
-             and does NOT mix encoder K/V with decoder-derived weights.**
-  QC-FIX-18  **SDPA fast path implemented (safe default).**
-  QC-FIX-19  **RoPE slices q only to L, k to N_kv_new correctly.**
-  QC-FIX-20  **Router dim check: head_dim must match q's last dim.**
 """
 
 from __future__ import annotations

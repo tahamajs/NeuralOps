@@ -1,4 +1,4 @@
-r"""
+"""
 Hamming Attention Distillation (HAD) Module (Corrected).
 
 Approximates dense inner products with differentiable continuous relaxations of
@@ -6,18 +6,6 @@ Hamming distances over sign-binarized representations with calibrated temperatur
 scaling, multi-architecture weight transfer, trainable LoRA residual adapters,
 GQA, RoPE, and causal decoding.
 
-Bug-fix map (2026):
-  HAD-FIX-01  Renamed trainable scalars (q_scale, k_scale, temp) → lora_q_scale,
-              lora_k_scale, lora_temp so framework's `get_recovery_params`
-              recognizes them. Previously these were frozen at init values.
-  HAD-FIX-02  Temperature clamped positive during forward (softmax over
-              negative Hamming distance requires positive temperature).
-  HAD-FIX-03  RoPE cos/sin dtype cast to match q/k (fp16/fp32 mixing).
-  HAD-FIX-04  Injector recursion guard (`_depth`).
-  HAD-FIX-05  is_nested_encoder preserved correctly across copy_weights.
-  HAD-FIX-06  Removed unused `sparsity_ratio` and `distill_temperature`
-              dead-end fields; kept as accepted args for API compat.
-  HAD-FIX-07  ModelAdapter failures no longer silently swallowed.
 
 NOTE: This module is LoRA-only. The `rank` argument is accepted for API
 compatibility but does not trigger SVD compression; use `lora_rank` to

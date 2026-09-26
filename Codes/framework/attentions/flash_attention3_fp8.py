@@ -1,4 +1,4 @@
-r"""FlashAttention-3 FP8: Low-Precision 8-bit Float Transformer Attention.
+"""FlashAttention-3 FP8: Low-Precision 8-bit Float Transformer Attention.
 
 Implements FlashAttention-3 utilizing FP8 (e4m3fn) precision format for NVIDIA Hopper (SM 9.0+)
 Tensor Cores with per-tensor dynamic scaling and de-scaling, with automatic fallback to

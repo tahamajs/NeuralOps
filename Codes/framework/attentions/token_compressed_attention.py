@@ -4,39 +4,6 @@ Token-Compressed Attention — Production-Hardened (v2).
 Compresses Key and Value sequence tokens using energy/norm + learned saliency
 scoring, while always preserving token 0 ([CLS] / first token).
 
-Fixes (v2):
-  TC-01  LoRALinear respects device/dtype.
-  TC-02  RoPE past_len offset for KV-cache.
-  TC-03  All aliases defined.
-  TC-04  head_mask shape unified.
-  TC-05  score_net respects device/dtype.
-  TC-06  CLS preservation via mask (no in-place mutation).
-  TC-07  SDPA fast path when no compression/head_mask.
-  TC-08  No silent pad/truncate; raise on mismatch.
-  TC-09  Recursion guard in injector.
-  TC-10  Decoder detection in injector.
-  TC-11  Saliency uses hidden_states (documented).
-  TC-12  Robust 4D-mask handling.
-  TC-13  Sort + causal handled via absolute positions.
-  TC-14  **Separate registry keys for class and injector.**
-  TC-15  num_heads fallback derived from hidden_size.
-  TC-16  All common aliases present.
-  TC-17  repeat_kv imported robustly.
-  TC-18  score_net created on same device as base projections.
-  TC-19  valid_mask not applied to query positions.
-  TC-20  CLS boost skipped when CLS is padding.
-  TC-21  **Causality leak eliminated.** When all kept tokens for a query
-         are future, we fall back to the CLS token (position 0), which is
-         always ≤ query position for L ≥ 1.
-  TC-22  **CLS is always kept for decoders.** Because a decoder's query at
-         position 0 only sees CLS, dropping it would be catastrophic.
-  TC-23  **KV-cache mode bypasses compression.** When `past_key_value` is
-         provided and `L == 1`, compression is skipped (the cache is
-         already in use and per-step selection would be unstable).
-  TC-24  **score_net output initialized to zero-ish** for stable start.
-  TC-25  **Empty-importance fallback**: if all tokens have importance -1e4
-         (all padding), we keep index 0 to avoid topk on garbage.
-  TC-26  **`is_nested_encoder` set explicitly by injector after splice.**
 """
 
 import logging

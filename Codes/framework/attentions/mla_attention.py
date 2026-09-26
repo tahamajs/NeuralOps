@@ -3,15 +3,6 @@
 Paper: https://arxiv.org/abs/2405.04434
 Hardened for multi-architecture production deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.
 
-Fixes (2026-09-26):
-- FIX-1: `inject_mla` now discovers the source attention across all architecture
-  variants (GPT-2 `layer.attn`, RoBERTa/BERT `layer.attention.self`, T5
-  `layer.self_attn`, generic `layer.attention`).
-- FIX-2: Replacement handles `layer.attn` (GPT-2) explicitly.
-- FIX-3: Idempotency guard prevents double-injection.
-- FIX-4: Explicit error logging when no source attention is found.
-- FIX-5: Return value is the injected `MLAAttention` module (not the target
-  layer), so the caller's `num_injected` counter increments correctly.
 """
 
 import logging

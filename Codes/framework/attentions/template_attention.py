@@ -3,21 +3,6 @@ Template Attention Mechanism (YourCustomAttention) – Production-Hardened.
 Supports: DistilBERT (Flat MHA), RoBERTa/BERT (Nested Encoder),
 GPT-2 (Causal Decoder with Conv1D), Qwen/LLaMA (GQA + RoPE).
 
-Bug-fix map (2026 revision):
-  TA-01  LoRALinear respects device/dtype.
-  TA-02  RoPE past_len offset for KV-cache.
-  TA-03  SDPA receives attention_mask.
-  TA-04  all_head_size explicitly defined.
-  TA-05  head_mask shape unified (B, H, 1, 1).
-  TA-06  rank_proj respects device/dtype.
-  TA-07  lora_scaling transfer consistent.
-  TA-08  SDPA exceptions logged.
-  TA-09  Recursion guard in injector.
-  TA-10  Single registry key per role.
-  TA-11  Removed unused unsqueeze_dim param.
-  TA-12  RoPE dims aligned with cos/sin shapes.
-  TA-13  num_heads fallback derived from hidden_size.
-  TA-14  No silent pad/truncate.
 """
 
 import logging

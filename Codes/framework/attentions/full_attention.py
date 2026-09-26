@@ -1,18 +1,9 @@
-r"""
+"""
 Standard Multi-Head Scaled Dot-Product Attention (Vaswani et al., 2017).
 
 Computes pairwise token interactions across multiple representation subspaces with frozen base weights,
 trainable LoRA residual adapters, multi-architecture weight transfer, GQA, RoPE, and causal decoding.
 
-Fixes (2026-09-26):
-- FIX-1: `inject_full_attention` now discovers the source attention across
-  GPT-2 (layer.attn), RoBERTa/BERT (layer.attention.self), T5 (layer.self_attn)
-  and generic (layer.attention) architectures.
-- FIX-2: Replacement now handles `layer.attn` (GPT-2) explicitly instead of
-  silently writing a new `.attention` attribute that is never read.
-- FIX-3: Removed duplicate `if model_config is None:` initialization block.
-- FIX-4: Added idempotency guard to avoid double-injection.
-- FIX-5: Added explicit error logging when no source attention can be found.
 """
 
 from __future__ import annotations

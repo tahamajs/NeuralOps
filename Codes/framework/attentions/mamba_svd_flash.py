@@ -3,30 +3,6 @@
 Fuses bidirectional selective state-space dynamics with online low-rank SVD
 of state transitions, coupled with a Multi-Head / GQA FlashAttention path.
 
-Fixes (v2):
-  MSF-FIX-01  **`self.dropout` defined** (was a NameError waiting to happen).
-  MSF-FIX-02  **`self.rank` set from `rank`** — previously forced to 1.
-  MSF-FIX-03  **Registry flags `supports_causal=True, supports_gqa=True`.**
-  MSF-FIX-04  **4D mask handled via last-row / last-head reduction**, not
-              diagonal-only extraction.
-  MSF-FIX-05  **No double masking** of the output; masking happens either in
-              scores or on the output, not both.
-  MSF-FIX-06  **OS-specific Windows fallback removed.** SSM scan is
-              environment-agnostic.
-  MSF-FIX-07  **Long-sequence decoder fallback replaced with a low-rank
-              parallel-scan approximation**, not an identity-like shortcut.
-  MSF-FIX-08  **Bidirectional mixing is learnable** when the encoder is not
-              a decoder.
-  MSF-FIX-09  **dtype-safe `LoRALinear.forward`.**
-  MSF-FIX-10  **Idempotency guard in injector.**
-  MSF-FIX-11  **Storage accounting (`storage_bytes`).**
-  MSF-FIX-12  **`F.normalize` over the rank dimension of U** (was over D).
-  MSF-FIX-13  **Single mask path**: mask is normalized once and reused.
-  MSF-FIX-14  **`head_mask` handled uniformly.**
-  MSF-FIX-15  **Chunk loop bounded and masked correctly.**
-  MSF-FIX-16  **`get_token_valid_mask` fallback if unavailable.**
-  MSF-FIX-17  **Rank of SSM path is respected and balanced across chunk.**
-  MSF-FIX-18  **Config None-safe in `__init__` and injector.**
 """
 
 from __future__ import annotations

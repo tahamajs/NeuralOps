@@ -1,4 +1,4 @@
-r"""FlashAttention-3: Fast and Memory-Efficient Exact Attention with Asynchronous Hardware Overlap.
+"""FlashAttention-3: Fast and Memory-Efficient Exact Attention with Asynchronous Hardware Overlap.
 
 Integrates FlashAttention-3 kernels (with Hopper TMA asynchronous memory copy and FP8 precision support)
 alongside graceful fallback to PyTorch's hardware-accelerated Scaled Dot-Product Attention (SDPA) and exact pretrained weight copying.

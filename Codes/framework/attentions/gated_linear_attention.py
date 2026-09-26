@@ -4,29 +4,6 @@ Multi-head linear recurrent attention with data-dependent decay gating,
 multiplicative SiLU output gating, denominator normalization, and pretrained
 weight transfer. Supports DistilBERT, RoBERTa, GPT-2, and Qwen.
 
-Fixes (v2):
-  GLA-FIX-01  **O(L²) parallel scan replaced with a chunked recurrent scan**
-              that is O(L · chunk). The chunked scan is implemented in a
-              numerically stable, memory-efficient way and eliminates the
-              L×L intermediate matrices.
-  GLA-FIX-02  **`super().__init__` with None-safe rank.**
-  GLA-FIX-03  **Decoder detection rewritten** with a single helper.
-  GLA-FIX-04  **4D mask handled correctly** via `any` over queries.
-  GLA-FIX-05  **No double masking** — mask applied either in scan or on
-              output, not both.
-  GLA-FIX-06  **Denominator fixed** to the standard linear-attention form
-              `Z = Σ_j φ(k_j) · D_ij`, matching the numerator.
-  GLA-FIX-07  **`is_causal` requires L > 1 and no past_key_value.**
-  GLA-FIX-08  **`log_decay` init to 0.0** (sigmoid ≈ 0.5) for balanced
-              initial retention.
-  GLA-FIX-09  **Bias copy for Q and K/V is now correct** (only when the
-              target has bias).
-  GLA-FIX-10  **Idempotency guard in injector.**
-  GLA-FIX-11  **Storage accounting (`storage_bytes`).**
-  GLA-FIX-12  **`head_mask` applied consistently to `y` and to `z` path.**
-  GLA-FIX-13  **Checkpoint path guarded.**
-  GLA-FIX-14  **`is_nested_encoder` determination unified.**
-  GLA-FIX-15  **`output_scale` applied once.**
 """
 
 import logging

@@ -1,4 +1,4 @@
-r"""
+"""
 NEXUS: Neural Efficient X-scoring Unified Sparse Attention.
 
 =============================================================
@@ -10,17 +10,6 @@ Hybrid sparse attention architecture combining multi-scale sparsity mechanisms:
  5. Spectraformer random Fourier feature rectification (2025) - global linear fallback
  6. Softpick rectified softmax (2025) - natural ~47% activation sparsity
 
-Bug-fix map:
-  NX-01  Removed broken injected code (is_cross / hidden_states NameError).
-  NX-02  SDPA path removed from DSS (was never runnable).
-  NX-03  SpectraformerRectify division clamp corrected.
-  NX-04  is_decoder propagated from NEXUSAttention to DualStageStripeAttention.
-  NX-05  _get_token_valid_mask robust for all-zero masks.
-  NX-06  XAttentionScorer vectorized (no nested Python loops).
-  NX-07  Causal mask added in DSS for decoder.
-  NX-08  RoPE past_len offset for KV-cache.
-  NX-09  is_nested_encoder consistency between copy_weights and injector.
-  NX-10  LoRALinear no longer moves itself on every forward.
 """
 
 import logging

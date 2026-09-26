@@ -3,30 +3,6 @@
 Randomized linear subspace sketching via fixed head-wise Gaussian random
 projection buffers to compress query-key similarity evaluations.
 
-Fixes (v2):
-  RPC-01  Single registry key 'rpc' on factory only (class under *_class).
-  RPC-02  FactorizedLoRALinear for parameter reduction.
-  RPC-03  proj as fp32 buffer, converted at use site.
-  RPC-04  proj cached as fp32 for stability; cast in einsum.
-  RPC-05  Separate q_proj and k_proj random matrices (asymmetric sketching).
-  RPC-06  Robust attention-mask helper.
-  RPC-07  Causal masking only for self-attention (not cross).
-  RPC-08  RoPE past_len offset for KV-cache.
-  RPC-09  Recursion guard in inject_rpc.
-  RPC-10  No silent pad/truncate; assert shape.
-  RPC-11  is_nested_encoder determined once in copy_weights.
-  RPC-12  self.config not stored separately.
-  RPC-13  **Removed duplicate `if layer_list is not None:` block.**
-  RPC-14  **Random projections are seeded (deterministic).**
-  RPC-15  **Score scale uses `1/sqrt(head_dim)`** (sketching preserves the
-           inner-product scale, so scaling by `sketch_rank` is wrong).
-  RPC-16  **`weight` property caches with version tracking.**
-  RPC-17  **`_svd_init` freezes base weights after init.**
-  RPC-18  **Honest storage accounting.**
-  RPC-19  **`proj_q`/`proj_k` are non-persistent buffers.**
-  RPC-20  **Mask shape uniformly normalized to (B, L_kv) before applying.**
-  RPC-21  **Causal mask skipped in encoder (is_decoder=False).**
-  RPC-22  **Configurable `sketch_scale` option.**
 """
 
 from __future__ import annotations
