@@ -1,2 +1,14 @@
 C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
   warnings.warn(
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+[START] RAM: 0.70/16.79 GB, VRAM: 0.00/8.59 GB
+Loading models/gpt2 on cuda...
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 4385.18it/s]
+2026-09-26 07:31:40,282 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 07:31:40,797 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 07:31:41,057 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/tree/refs%2Fconvert%2Fparquet/plain_text%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 07:33:20,067 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 07:33:20,562 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 07:33:20,787 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Easy%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 07:34:28,569 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 07:34:29,067 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Challenge%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
