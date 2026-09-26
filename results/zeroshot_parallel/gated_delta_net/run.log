@@ -3,57 +3,7 @@ C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.p
 Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
 [START] RAM: 0.70/16.79 GB, VRAM: 0.00/8.59 GB
 Loading models/gpt2 on cuda...
-Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 5366.57it/s]
-2026-09-26 07:30:16,378 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
-2026-09-26 07:30:16,897 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
-2026-09-26 07:30:17,159 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/tree/refs%2Fconvert%2Fparquet/plain_text%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
-2026-09-26 07:34:52,659 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
-2026-09-26 07:34:53,179 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
-2026-09-26 07:34:53,420 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Easy%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
-
-=== Evaluating piqa ===
-  piqa: 80/1000 items (16.2s, bs=8, RAM=1.54GB, VRAM=0.67GB)
-  piqa: 160/1000 items (32.1s, bs=8, RAM=1.54GB, VRAM=0.68GB)
-  piqa: 240/1000 items (48.3s, bs=8, RAM=1.54GB, VRAM=0.68GB)
-  piqa: 320/1000 items (60.7s, bs=8, RAM=1.54GB, VRAM=0.69GB)
-  piqa: 400/1000 items (71.0s, bs=8, RAM=1.54GB, VRAM=0.69GB)
-  piqa: 480/1000 items (81.0s, bs=8, RAM=1.54GB, VRAM=0.7GB)
-  piqa: 560/1000 items (90.7s, bs=8, RAM=1.54GB, VRAM=0.7GB)
-  piqa: 640/1000 items (100.5s, bs=8, RAM=1.54GB, VRAM=0.71GB)
-  piqa: 720/1000 items (183.9s, bs=8, RAM=1.85GB, VRAM=0.71GB)
-  piqa: 800/1000 items (203.7s, bs=8, RAM=1.9GB, VRAM=0.72GB)
-  piqa: 880/1000 items (225.0s, bs=8, RAM=1.71GB, VRAM=0.74GB)
-  piqa: 960/1000 items (253.7s, bs=8, RAM=1.6GB, VRAM=0.78GB)
-  piqa: 1000/1000 items (273.5s, bs=8, RAM=1.6GB, VRAM=0.87GB)
-  piqa: 52.40%
-
-=== Evaluating arc_easy ===
-  arc_easy: 80/1998 items (10.2s, bs=8, RAM=1.76GB, VRAM=0.67GB)
-  arc_easy: 160/1998 items (23.1s, bs=8, RAM=1.75GB, VRAM=0.67GB)
-  arc_easy: 240/1998 items (33.2s, bs=8, RAM=1.7GB, VRAM=0.68GB)
-  arc_easy: 320/1998 items (108.9s, bs=8, RAM=1.94GB, VRAM=0.68GB)
-  arc_easy: 400/1998 items (239.4s, bs=8, RAM=1.73GB, VRAM=0.68GB)
-  arc_easy: 480/1998 items (381.6s, bs=8, RAM=1.54GB, VRAM=0.68GB)
-  arc_easy: 560/1998 items (36189.6s, bs=8, RAM=1.28GB, VRAM=0.69GB)
-  arc_easy: 640/1998 items (36280.2s, bs=8, RAM=1.06GB, VRAM=0.69GB)
-  arc_easy: 720/1998 items (36369.7s, bs=8, RAM=0.82GB, VRAM=0.69GB)
-  arc_easy: 800/1998 items (36462.8s, bs=8, RAM=0.63GB, VRAM=0.69GB)
-  arc_easy: 880/1998 items (36556.1s, bs=8, RAM=0.45GB, VRAM=0.69GB)
-Traceback (most recent call last):
-  File "D:\SVD_Project\scripts\eval_zeroshot.py", line 548, in <module>
-    main()
-    ~~~~^^
-  File "D:\SVD_Project\scripts\eval_zeroshot.py", line 483, in main
-    result = eval_task(
-        model, tokenizer, task_clean,
-    ...<8 lines>...
-        min_batch_size=args.min_batch_size,
-    )
-  File "D:\SVD_Project\scripts\eval_zeroshot.py", line 326, in eval_task
-    if not torch.isfinite(logits).all():
-           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^
-RuntimeError: CUDA error: an illegal memory access was encountered
-CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1
-Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3236.04it/s]
+2026-09-26 18:51:35,949 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 18:51:36,821 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 18:51:37,084 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/tree/refs%2Fconvert%2Fparquet/plain_text%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"

@@ -3,7 +3,7 @@ C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.p
 Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
 [START] RAM: 0.70/16.79 GB, VRAM: 0.00/8.59 GB
 Loading models/gpt2 on cuda...
-Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3454.85it/s]
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3735.76it/s]
 Traceback (most recent call last):
   File "D:\SVD_Project\scripts\eval_zeroshot.py", line 548, in <module>
     main()

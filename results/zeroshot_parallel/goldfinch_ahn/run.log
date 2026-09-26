@@ -3,98 +3,10 @@ C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.p
 Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
 [START] RAM: 0.70/16.79 GB, VRAM: 0.00/8.59 GB
 Loading models/gpt2 on cuda...
-Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 4500.20it/s]
-2026-09-26 07:32:16,662 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
-2026-09-26 07:32:17,163 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
-2026-09-26 07:32:17,428 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/tree/refs%2Fconvert%2Fparquet/plain_text%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
-2026-09-26 07:33:45,741 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
-2026-09-26 07:33:46,195 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
-2026-09-26 07:33:46,416 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Easy%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
-2026-09-26 07:34:43,249 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
-2026-09-26 07:34:43,715 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Challenge%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
-
-=== Evaluating piqa ===
-  piqa: 80/1000 items (44.6s, bs=8, RAM=1.54GB, VRAM=0.56GB)
-  piqa: 160/1000 items (60.4s, bs=8, RAM=1.75GB, VRAM=0.56GB)
-  piqa: 240/1000 items (62.5s, bs=8, RAM=1.68GB, VRAM=0.57GB)
-  piqa: 320/1000 items (64.6s, bs=8, RAM=1.68GB, VRAM=0.57GB)
-  piqa: 400/1000 items (66.5s, bs=8, RAM=1.68GB, VRAM=0.58GB)
-  piqa: 480/1000 items (68.9s, bs=8, RAM=1.68GB, VRAM=0.58GB)
-  piqa: 560/1000 items (70.8s, bs=8, RAM=1.67GB, VRAM=0.58GB)
-  piqa: 640/1000 items (72.8s, bs=8, RAM=1.66GB, VRAM=0.59GB)
-  piqa: 720/1000 items (74.7s, bs=8, RAM=1.66GB, VRAM=0.6GB)
-  piqa: 800/1000 items (78.2s, bs=8, RAM=1.66GB, VRAM=0.61GB)
-  piqa: 880/1000 items (80.1s, bs=8, RAM=1.73GB, VRAM=0.63GB)
-  piqa: 960/1000 items (82.4s, bs=8, RAM=1.66GB, VRAM=0.67GB)
-  piqa: 1000/1000 items (86.3s, bs=8, RAM=1.66GB, VRAM=0.76GB)
-  piqa: 60.40%
-
-=== Evaluating arc_easy ===
-  arc_easy: 80/1998 items (2.6s, bs=8, RAM=1.75GB, VRAM=0.56GB)
-  arc_easy: 160/1998 items (4.6s, bs=8, RAM=1.75GB, VRAM=0.56GB)
-  arc_easy: 240/1998 items (6.4s, bs=8, RAM=1.75GB, VRAM=0.56GB)
-  arc_easy: 320/1998 items (8.3s, bs=8, RAM=1.75GB, VRAM=0.56GB)
-  arc_easy: 400/1998 items (10.3s, bs=8, RAM=1.75GB, VRAM=0.57GB)
-  arc_easy: 480/1998 items (12.2s, bs=8, RAM=1.75GB, VRAM=0.57GB)
-  arc_easy: 560/1998 items (14.2s, bs=8, RAM=1.75GB, VRAM=0.57GB)
-  arc_easy: 640/1998 items (16.1s, bs=8, RAM=1.75GB, VRAM=0.57GB)
-  arc_easy: 720/1998 items (18.0s, bs=8, RAM=1.75GB, VRAM=0.57GB)
-  arc_easy: 800/1998 items (20.2s, bs=8, RAM=1.75GB, VRAM=0.57GB)
-  arc_easy: 880/1998 items (22.7s, bs=8, RAM=1.75GB, VRAM=0.58GB)
-  arc_easy: 960/1998 items (25.0s, bs=8, RAM=1.75GB, VRAM=0.58GB)
-  arc_easy: 1040/1998 items (28.3s, bs=8, RAM=1.75GB, VRAM=0.58GB)
-  arc_easy: 1120/1998 items (31.6s, bs=8, RAM=1.75GB, VRAM=0.58GB)
-  arc_easy: 1200/1998 items (33.6s, bs=8, RAM=1.75GB, VRAM=0.58GB)
-  arc_easy: 1280/1998 items (35.4s, bs=8, RAM=1.75GB, VRAM=0.59GB)
-  arc_easy: 1360/1998 items (37.4s, bs=8, RAM=1.75GB, VRAM=0.59GB)
-  arc_easy: 1440/1998 items (39.4s, bs=8, RAM=1.75GB, VRAM=0.59GB)
-  arc_easy: 1520/1998 items (41.5s, bs=8, RAM=1.58GB, VRAM=0.6GB)
-  arc_easy: 1600/1998 items (43.6s, bs=8, RAM=1.58GB, VRAM=0.6GB)
-  arc_easy: 1680/1998 items (46.5s, bs=8, RAM=1.58GB, VRAM=0.6GB)
-  arc_easy: 1760/1998 items (48.8s, bs=8, RAM=1.58GB, VRAM=0.61GB)
-  arc_easy: 1840/1998 items (50.8s, bs=8, RAM=1.58GB, VRAM=0.62GB)
-  arc_easy: 1920/1998 items (52.8s, bs=8, RAM=1.51GB, VRAM=0.63GB)
-  arc_easy: 2000/1998 items (54.8s, bs=8, RAM=1.51GB, VRAM=0.72GB)
-  arc_easy: 39.60%
-
-=== Evaluating arc_challenge ===
-  arc_challenge: 80/1997 items (2.4s, bs=8, RAM=1.76GB, VRAM=0.56GB)
-  arc_challenge: 160/1997 items (4.8s, bs=8, RAM=1.76GB, VRAM=0.56GB)
-  arc_challenge: 240/1997 items (6.7s, bs=8, RAM=1.69GB, VRAM=0.57GB)
-  arc_challenge: 320/1997 items (8.3s, bs=8, RAM=1.69GB, VRAM=0.57GB)
-  arc_challenge: 400/1997 items (10.4s, bs=8, RAM=1.69GB, VRAM=0.57GB)
-  arc_challenge: 480/1997 items (12.4s, bs=8, RAM=1.69GB, VRAM=0.57GB)
-  arc_challenge: 560/1997 items (14.2s, bs=8, RAM=1.69GB, VRAM=0.57GB)
-  arc_challenge: 640/1997 items (16.1s, bs=8, RAM=1.69GB, VRAM=0.58GB)
-  arc_challenge: 720/1997 items (17.9s, bs=8, RAM=1.69GB, VRAM=0.58GB)
-  arc_challenge: 800/1997 items (19.7s, bs=8, RAM=1.69GB, VRAM=0.58GB)
-  arc_challenge: 880/1997 items (21.2s, bs=8, RAM=1.62GB, VRAM=0.58GB)
-  arc_challenge: 960/1997 items (22.9s, bs=8, RAM=1.55GB, VRAM=0.59GB)
-  arc_challenge: 1040/1997 items (24.7s, bs=8, RAM=1.52GB, VRAM=0.59GB)
-  arc_challenge: 1120/1997 items (26.6s, bs=8, RAM=1.52GB, VRAM=0.59GB)
-  arc_challenge: 1200/1997 items (31.8s, bs=8, RAM=1.52GB, VRAM=0.59GB)
-  arc_challenge: 1280/1997 items (33.9s, bs=8, RAM=1.52GB, VRAM=0.6GB)
-  arc_challenge: 1360/1997 items (35.8s, bs=8, RAM=1.52GB, VRAM=0.6GB)
-  arc_challenge: 1440/1997 items (38.0s, bs=8, RAM=1.52GB, VRAM=0.61GB)
-  arc_challenge: 1520/1997 items (40.0s, bs=8, RAM=1.52GB, VRAM=0.61GB)
-  arc_challenge: 1600/1997 items (41.9s, bs=8, RAM=1.52GB, VRAM=0.61GB)
-  arc_challenge: 1680/1997 items (44.9s, bs=8, RAM=1.92GB, VRAM=0.62GB)
-  arc_challenge: 1760/1997 items (58.1s, bs=8, RAM=2.24GB, VRAM=0.63GB)
-Traceback (most recent call last):
-  File "D:\SVD_Project\scripts\eval_zeroshot.py", line 548, in <module>
-    main()
-    ~~~~^^
-  File "D:\SVD_Project\scripts\eval_zeroshot.py", line 483, in main
-    result = eval_task(
-        model, tokenizer, task_clean,
-    ...<8 lines>...
-        min_batch_size=args.min_batch_size,
-    )
-  File "D:\SVD_Project\scripts\eval_zeroshot.py", line 326, in eval_task
-    if not torch.isfinite(logits).all():
-           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^
-RuntimeError: CUDA error: an illegal memory access was encountered
-CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1
-Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 4520.88it/s]
+2026-09-26 18:51:36,757 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 18:51:37,267 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 18:51:37,535 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/tree/refs%2Fconvert%2Fparquet/plain_text%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 18:52:20,813 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 18:52:21,336 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 18:52:21,579 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Easy%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
