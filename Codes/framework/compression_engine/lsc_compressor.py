@@ -8,20 +8,6 @@ Mathematical Formulation:
   3. Top-k selection: M_spectral = Top-k(M), k = min(r*r, d_out*d_in)
   4. Inverse DFT: W_lsc = Re(F_2D^{-1}(\hat{W} ⊙ M_spectral))
 
-Bug-fix map:
-  LSC-FIX-01  is_custom_attention = False on compressor.
-  LSC-FIX-02  Robust LoRA rank detection (_detect_lora_rank).
-  LSC-FIX-03  LoRA dtype matches base weight dtype.
-  LSC-FIX-04  Forward check uses input_ids (long tensor).
-  LSC-FIX-05  skip_should_compress_filter option.
-  LSC-FIX-06  Debug logging when no targets.
-  LSC-FIX-07  LSCPrunedLoRALinear.is_custom_attention = False (it's a linear).
-  LSC-FIX-08  Guard against degenerate all-zero spectral mask.
-  LSC-FIX-09  Preserve requires_grad=False for fallback base weights.
-  LSC-FIX-10  Robust forward sanity check with attention_mask fallback.
-  LSC-FIX-11  Factory registered under 'lsc' name.
-  LSC-FIX-12  Parameter accounting deduplicated by id().
-  LSC-FIX-13  Write compression_stats onto model for framework visibility.
 """
 
 from __future__ import annotations

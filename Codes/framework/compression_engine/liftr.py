@@ -6,22 +6,6 @@ Mathematical Formulation:
   Activation:    ReLU(x) → Identity(x), GELU(x) / SiLU(x) ≈ α·x
   Attention:     Softmax(QK^T/√d)V → (1/N) Σ V_i
 
-Bug-fix map:
-  LIFTR-FIX-01  is_custom_attention = False on compressor.
-  LIFTR-FIX-02  _LinearizedAttentionWrapper.is_custom_attention = False.
-  LIFTR-FIX-03  dummy_in scope is safe across all branches.
-  LIFTR-FIX-04  Robust fallback (pass through original attention).
-  LIFTR-FIX-05  Return tuple format based on wrapped module class.
-  LIFTR-FIX-06  Skip already-compressed module types.
-  LIFTR-FIX-07  Debug logging for replacement decisions.
-  LIFTR-FIX-08  Explicit note about no parameter reduction.
-  LIFTR-FIX-09  output_attentions honored (return signature).
-  LIFTR-FIX-10  Safe SiLU detection (PyTorch version guard).
-  LIFTR-FIX-11  No torch.tensor(0.0) default arg in device resolution.
-  LIFTR-FIX-12  BERT nested: handle both .self and .output separately.
-  LIFTR-FIX-13  skip_should_compress_filter option.
-  LIFTR-FIX-14  Forward check uses model's device (not hardcoded).
-  LIFTR-FIX-15  Idempotence flag on the model.
 """
 
 from __future__ import annotations

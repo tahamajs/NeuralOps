@@ -8,6 +8,7 @@ Production-hardened with:
 - Conv1D support (GPT-2)
 - Critical layer protection (classifier, score, lm_head, pooler, embedding)
 - Detailed per-layer error stats logging
+
 """
 from __future__ import annotations
 

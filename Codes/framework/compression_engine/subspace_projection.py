@@ -4,21 +4,6 @@ Subspace Projection Compressor: Low-Rank Subspace Projection and Factorization.
 Registered in COMPRESSOR_REGISTRY as 'subspace_projection',
 'subspace_projection_compressor'.
 
-Bug-fix map (v2):
-  SP-FIX-01  is_custom_attention = False on SubspaceLinear and compressor.
-  SP-FIX-02  **Added missing `import logging` and `logger`.**
-  SP-FIX-03  **dtype-safe forward**: A, B, bias are cast to x_flat's dtype.
-  SP-FIX-04  **LoRA transfer handles Parameter and Module** (uses
-             `getattr(m, "weight", m)`).
-  SP-FIX-05  **`target_layers=[]` treated as None.**
-  SP-FIX-06  **`method` documented as currently only 'svd' is implemented.**
-  SP-FIX-07  **`param_cap` formula corrected** (no spurious `-1`).
-  SP-FIX-08  **Forward sanity check** added at end of `compress()`.
-  SP-FIX-09  **Honest storage accounting** (`storage_compression_ratio`).
-  SP-FIX-10  **LoRA wrapper preserved** when `module.base_layer` exists.
-  SP-FIX-11  **Bias copy under `torch.no_grad()`.**
-  SP-FIX-12  **Skip already-compressed SubspaceLinear modules**
-             (idempotency).
 """
 
 from __future__ import annotations

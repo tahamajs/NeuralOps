@@ -6,24 +6,6 @@ LayerNorm + Linear residual block with optional trainable LoRA fine-tuning adapt
 
 Registered in COMPRESSOR_REGISTRY as 'replaceme', 'replaceme_compressor', and 'replaceme_factory'.
 
-Bug-fix map (v2):
-  RM-FIX-01  **Removed meaningless reconstruction error check.** The block is
-             intentionally zero-initialized (near-identity), so its output
-             cannot match the original layer. The check only caused spurious
-             fallbacks.
-  RM-FIX-02  **Fixed tuple-return logic.** When the original layer returns a
-             tuple, the replacement now returns a tuple of length 1, not
-             appending stale input tensors.
-  RM-FIX-03  **fallback_layers now stores layer indices**, not a count.
-  RM-FIX-04  **forward sanity check uses `input_ids=` keyword** to be
-             compatible with HuggingFace models.
-  RM-FIX-05  **Removed unused `orig_params` and `target_attention_only`.**
-  RM-FIX-06  **_find_transformer_layers filters out short ModuleLists**
-             (length < 2) and verifies the first element is a transformer
-             layer.
-  RM-FIX-07  **Robust hidden_size resolution** with fallback to the model's
-             first transformer layer's hidden size.
-  RM-FIX-08  **Preserve model dtype/device** in the replacement block.
 """
 
 from __future__ import annotations

@@ -1,24 +1,6 @@
 """UniQL: Joint low-rank + uniform quantization compressor.
 
 Registered as 'uniql', 'uniql_compressor', 'uniql_factory'.
-
-Fixes applied:
-  UQ-01  Compressor no longer lies about `is_custom_attention`. That flag was
-         causing the layer counter to misclassify compressors as attention.
-  UQ-02  Introduced a real `UniQLinear` module that STORES int8 U, S, Vt
-         tensors, so parameter count and memory actually shrink.
-  UQ-03  Quantization now happens on the STORED tensors, not on a temporary
-         reconstruction that is then copied back as full-precision.
-  UQ-04  SVD/quantization handling of Conv1D unified (transpose is explicit).
-  UQ-05  Retry schedule corrected: bits escalation is monotonic and bounded;
-         rank escalation is only attempted after bits saturate.
-  UQ-06  Bias is handled per-layer with correct shape for Conv1D.
-  UQ-07  Honest stats: storage bytes vs. numerical reconstruction error are
-         reported separately. No fake "compression_rate = 1.0" masquerading
-         as a success.
-  UQ-08  Fallback path preserves the original module object (no weight copy).
-  UQ-09  LayerNorm/RMSNorm/Embedding protections preserved.
-  UQ-10  Conv1D detection robust across transformers versions.
 """
 from __future__ import annotations
 

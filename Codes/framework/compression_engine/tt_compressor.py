@@ -24,22 +24,6 @@ This hardened version mitigates the failure by:
   3. Conservative dimension factorization that avoids pathological splits.
   4. Full FP32 computation, deterministic caching, and honest stats.
 
-Bug-fix map:
-  TT-FIX-01  is_custom_attention = False (this is a compressor).
-  TT-FIX-02  Deprecation warning removed — the module still runs but with the
-             per-layer SVD fallback described above.
-  TT-FIX-03  factorize_dimension_pair prefers balanced factors; pathological
-             splits like (1, 768) are refused.
-  TT-FIX-04  TT-SVD is adaptive: rank per core is chosen by energy threshold.
-  TT-FIX-05  Per-layer fallback to SVDLinearLayer when TT error exceeds
-             max_error AND a fallback policy allows it.
-  TT-FIX-06  materialize_weight() caches unconditionally in eval mode and
-             invalidates on parameter mutation via _version tracking.
-  TT-FIX-07  Conv1D transpose is explicit and validated.
-  TT-FIX-08  honest storage accounting (int8/fp32 bytes vs original).
-  TT-FIX-09  Forward dispatch handles any `d` and does not silently fall back
-             to materialization for small batches.
-  TT-FIX-10  Rank budget respects strict_rank when requested.
 """
 
 from __future__ import annotations

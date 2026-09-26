@@ -8,44 +8,6 @@ Real KV cache compression:
   4. Attention sink preservation (first token) + optional last-token preservation
      in PREFILL only.
 
-Fixes (v2):
-  AXKV-FIX-01  **`is_custom_attention = False`** on the compressor (a
-               compressor is not an attention module; using True was
-               corrupting the framework's injection counter).
-  AXKV-FIX-02  **`preserve_last_token` only active during PREFILL**
-               (T_new > 1). During incremental decoding (T_new == 1),
-               we no longer keep every token in fp16 — that was silently
-               defeating the compression.
-  AXKV-FIX-03  **Reconstruction cache** avoids re-decompressing the entire
-               history on every decoding step. Each `update()` only
-               decompresses the newly appended token(s), then concatenates.
-  AXKV-FIX-04  **`__len__` counts all entries**, not just the first one.
-  AXKV-FIX-05  **`reorder_cache`** correctly handles the HF beam-search
-               API and preserves the reconstruction cache.
-  AXKV-FIX-06  **`_joint_svd_shared_basis` fallback** uses a proper
-               randomized algorithm with bounded memory instead of a
-               full SVD that can OOM.
-  AXKV-FIX-07  **Calibration loss** uses next-token prediction for causal
-               LMs and masked-LM objective for encoders; falls back to a
-               safe reconstruction loss otherwise. Gradients are collected
-               under `torch.enable_grad()` explicitly.
-  AXKV-FIX-08  **`_find_attention_modules`** excludes generic `value`
-               attributes (which collide with `nn.Module.value` methods
-               on some frameworks) and correctly handles GPT-2's fused
-               `c_attn`.
-  AXKV-FIX-09  **Storage accounting is unified**: one set of byte counters
-               used everywhere; the "theoretical" ratio and the runtime
-               ratio are the same number.
-  AXKV-FIX-10  **Cache construction is deterministic** (seeded synthetic
-               calibration).
-  AXKV-FIX-11  **Robust dtype handling**: reconstruction always in fp32,
-               cast to hidden dtype at return.
-  AXKV-FIX-12  **Sink tokens are only prepended once**, correctly across
-               prefill + decode.
-  AXKV-FIX-13  **HF `_supports_cache_class`** is only set if the transformers
-               version actually uses it.
-  AXKV-FIX-14  **Bit-allocation respects a floor** so that no component is
-               silently dropped without the caller knowing.
 """
 
 from __future__ import annotations

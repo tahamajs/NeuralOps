@@ -1,4 +1,4 @@
-r"""
+"""
 ProxSparse: Proximal Gradient Regularized Structured & Semi-Structured Sparsity.
 
 Registered in COMPRESSOR_REGISTRY as 'proxsparse', 'proxsparse_pruner',
@@ -24,21 +24,6 @@ where:
   - S_a(x) = sign(x) * max(|x| - a, 0)  (soft-thresholding)
   - Pi_S is the hard projection (percentile/2:4/block top-k)
 
-Bug-fix map (v2):
-  PS-FIX-01  Correct proximal gradient update (gradient step + soft-threshold
-             + projection). Previous code did a fixed 0.5 relaxation.
-  PS-FIX-02  Removed double mask application in ProxSparsePrunedLoRALinear.
-             `weight` is already pruned; forward no longer re-multiplies.
-  PS-FIX-03  Mask buffer stored as bool (1 byte), not float32 (4 bytes).
-  PS-FIX-04  Added configurable `learning_rate` (default 0.5).
-  PS-FIX-05  Removed redundant mask param from forward path.
-  PS-FIX-06  Bias cast includes device.
-  PS-FIX-07  Docstring aligned with correct algorithm.
-  PS-FIX-08  `effective_parameter_ratio` now reports a meaningful
-             "effective_parameter_ratio" = (nonzeros + LoRA) / total,
-             distinct from `compression_ratio` (parameter-count based).
-  PS-FIX-09  `ProxSparsePrunedLoRALinear.from_linear` robust for Conv1D.
-  PS-FIX-10  Numeric guards: skip NaN/Inf early; preserve dtype/device.
 """
 
 from __future__ import annotations

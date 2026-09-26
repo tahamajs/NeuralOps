@@ -3,31 +3,6 @@ FLAT-LLM: Activation-Aware Structured Dimension & Neuron Pruning.
 
 Registered as 'flat_llm', 'flat_llm_compressor'.
 
-Fixes (v2):
-  FLT-FIX-01  **Real parameter reduction via factorized storage.** The
-              pruned layer is a `PrunedChannelLinear` that stores ONLY the
-              kept rows of W (k × in) plus an index buffer, and scatters
-              them back to (out × in) zeros in forward. Storage shrinks
-              from out·in to k·in.
-  FLT-FIX-02  **Honest stats.** `effective_parameter_ratio` is computed
-              from the actual `.parameters()` count of the new module.
-  FLT-FIX-03  `structured_24` reports "no storage reduction" honestly,
-              because 2:4 sparsity is compute-only unless a sparse kernel
-              is used.
-  FLT-FIX-04  `damping` is applied as regularization when using activation
-              covariance.
-  FLT-FIX-05  Calibration collects per-channel output covariance diagonal
-              across multiple batches (default 8).
-  FLT-FIX-06  `target_attention_only` pre-pass removed (it was a no-op).
-  FLT-FIX-07  Forward sanity check includes attention_mask.
-  FLT-FIX-08  Bias handling for Conv1D and nn.Linear unified.
-  FLT-FIX-09  `is_custom_attention = False` (this is not attention).
-  FLT-FIX-10  LoRA parameters preserved and kept trainable.
-  FLT-FIX-11  Factory `return_stats` support.
-  FLT-FIX-12  LayerNorm/Embedding never mutated.
-  FLT-FIX-13  Shape mismatch guarded explicitly.
-  FLT-FIX-14  When `fallback_to_original=True` and error exceeds threshold,
-              the original module is preserved untouched.
 """
 
 from __future__ import annotations

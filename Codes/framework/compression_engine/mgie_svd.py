@@ -3,21 +3,6 @@ MGIE-SVD: Maximum Information Entropy SVD Rank Selection.
 
 Registered as 'mgie', 'mgie_svd', 'mgie_factory', 'mgie_svd_factory'.
 
-Bug-fix map (v2):
-  MGIE-FIX-01  is_custom_attention = False on compressor.
-  MGIE-FIX-02  **Preserve LoRA wrapper**: if the target module has a
-               `base_layer`, set `module.base_layer = svd_layer` instead of
-               replacing the entire wrapper.
-  MGIE-FIX-03  **Forward sanity check** no longer calls `dummy.float()`;
-               tries `input_ids=` then positional.
-  MGIE-FIX-04  **Accurate effective_parameter_ratio**: computed from the
-               actual parameter counts of the model before and after
-               compression, not from a manual loop.
-  MGIE-FIX-05  **Bias copy under no_grad**.
-  MGIE-FIX-06  **Entropy rank formula guarded** for max_rank == 1.
-  MGIE-FIX-07  **Skip already-compressed SVDLinear modules** (idempotency).
-  MGIE-FIX-08  **Clear error logs** for missing SVDLinear API.
-  MGIE-FIX-09  **All-caps fallback** when SVD fails.
 """
 
 from __future__ import annotations

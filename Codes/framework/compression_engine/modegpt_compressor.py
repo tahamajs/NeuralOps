@@ -12,22 +12,6 @@ and storage reduction for the pair as a whole.
 
 For unpaired layers, both U and V are stored per-layer.
 
-Bug-fix map (v2):
-  MD-FIX-01  is_custom_attention = False (this is a linear layer, not attention).
-  MD-FIX-02  **Real low-rank storage.** Introduced `MoDeGPTLowRankLinear` which
-             stores U (out, r) and V (r, in) separately. Paired layers share V.
-  MD-FIX-03  GQA asymmetric guard always active (was gated by skip_attention_qkv).
-  MD-FIX-04  Rank selection respects param_cap (dense break-even).
-  MD-FIX-05  Honest storage accounting (bytes, not nominal params).
-  MD-FIX-06  LoRA dtype matches base weight dtype.
-  MD-FIX-07  Forward does not force x.float() for LoRA.
-  MD-FIX-08  Fallback preserves original module untouched.
-  MD-FIX-09  target_modules=[] treated as None.
-  MD-FIX-10  Pairs are detected more broadly (K/V, Wq/Wk, q_proj/k_proj, etc.).
-  MD-FIX-11  Shared basis consistency verified across the pair.
-  MD-FIX-12  Forward sanity check handles models without config.vocab_size.
-  MD-FIX-13  LoRA rank inherits from wrapper if present.
-  MD-FIX-14  `_decompose_joint_pair` returns (U1, U2, V_shared, r) not full W matrices.
 """
 
 from __future__ import annotations

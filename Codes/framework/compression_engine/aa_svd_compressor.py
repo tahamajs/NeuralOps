@@ -7,33 +7,6 @@ Projects weights onto principal activation subspaces and replaces dense
 nn.Linear/Conv1D layers with structural low-rank SVDLinear modules:
     y = (x · V^T) · U^T + LoRA(x) + b
 
-Fixes (v2):
-  AASVD-FIX-01  **`SVDLinear.is_custom_attention = False`** (was True —
-                this is a linear layer, not attention).
-  AASVD-FIX-02  **`self.comp_config` set in `__init__`.**
-  AASVD-FIX-03  **`lora_r` / `lora_alpha` are first-class attributes** on
-                the compressor, read from cfg/kwargs once.
-  AASVD-FIX-04  **`_cfg_get` used for all config access** (handles dict).
-  AASVD-FIX-05  **Autocast context is built via a proper helper**, not a
-                broken `hasattr(torch, "autocast")` check.
-  AASVD-FIX-06  **EMA is corrected**: each layer tracks its own update
-                count so the first observation is assigned weight 1.0
-                (no warmup bias toward zero).
-  AASVD-FIX-07  **`input_mean` removed** (was dead code); replaced with a
-                `zero_center_input` flag that is honored in forward.
-  AASVD-FIX-08  **`self.device` is derived once and used consistently.**
-  AASVD-FIX-09  **Covariance accumulation dtype configurable** via
-                `cov_dtype='float32'` (default) or `'float16'` to save RAM.
-  AASVD-FIX-10  **STRS candidates built dynamically** from a geometric grid.
-  AASVD-FIX-11  **Storage accounting** via `orig_storage_bytes` /
-                `comp_storage_bytes`.
-  AASVD-FIX-12  **Padding filter uses `amax > 0`** instead of `sum(abs) > 1e-5`.
-  AASVD-FIX-13  **Idempotency guard in `compress`.**
-  AASVD-FIX-14  **`_compressed_params` and `_original_params` initialized.**
-  AASVD-FIX-15  **`register_buffer("input_mean", None)` removed** (PyTorch
-                API does not support registering None buffers cleanly across
-                versions; use attribute instead).
-  AASVD-FIX-16  **`contextlib.suppress` for CUDA free.**
 """
 
 from __future__ import annotations

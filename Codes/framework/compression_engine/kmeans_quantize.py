@@ -3,33 +3,6 @@
 Registered as 'kmeans_class', 'kmeans_quantize_class', 'kmeans_compressor_class',
               'kmeans', 'kmeans_quantize', 'kmeans_factory', 'kmeans_quantize_factory'.
 
-Bug-fix map (v2):
-  KM-FIX-01   self.scaling recomputed after LoRA-rank override.
-  KM-FIX-02   LoRA detection handles Parameter + nn.Linear + wrapper conventions.
-  KM-FIX-03   is_custom_attention = False on compressor.
-  KM-FIX-04   existing_lora_alpha derived from layer (multiple attribute names).
-  KM-FIX-05   Safe device resolution helper.
-  KM-FIX-06   try/except around _count_params.
-  KM-FIX-07   **Real storage accounting** (bytes, not a fabricated formula).
-  KM-FIX-08   Idempotence flag.
-  KM-FIX-09   skip_should_compress_filter option.
-  KM-FIX-10   min_layer_dim option.
-  KM-FIX-11   Recursion guard in factory.
-  KM-FIX-12   Debug logging in target scan.
-  KM-FIX-13   Robust forward sanity check.
-  KM-FIX-14   weight setter removed (breaks optimizer state).
-  KM-FIX-15   LoRA parameters created in base dtype.
-  KM-FIX-16   **indices stored as int8/int16/int32 based on n_clusters**
-              (saves up to 8x memory vs int64).
-  KM-FIX-17   **STE casts indices to int64 internally** — safe for all dtypes.
-  KM-FIX-18   **LoRA wrapper preserved** — set `module.base_layer = new_layer`
-              instead of `replace_module` when wrapping is present.
-  KM-FIX-19   **_detect_lora supports lora_scaling attribute** (CHELA-SLAY style).
-  KM-FIX-20   **Weight cache in eval mode** — avoids repeated reconstruct.
-  KM-FIX-21   **Deterministic k-means seed** via `torch.manual_seed` for
-              reproducible centroids.
-  KM-FIX-22   **Bias and LoRA counted in storage stats** with correct dtype.
-  KM-FIX-23   **Centroids frozen when lora_r > 0** — pure quantizer mode.
 """
 
 from __future__ import annotations
