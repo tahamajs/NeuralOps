@@ -25,31 +25,34 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 def get_ram_usage_gb():
-    """Return (used_gb, total_gb) for system RAM."""
+    """Return (used_gb, total_gb) for process RAM (RSS) and system total."""
+    process = psutil.Process(os.getpid())
+    process_ram = process.memory_info().rss / 1e9
     vm = psutil.virtual_memory()
-    return (vm.total - vm.available) / 1e9, vm.total / 1e9
+    return process_ram, vm.total / 1e9
 
 
 def get_vram_usage_gb():
-    """Return (used_gb, total_gb) for GPU VRAM, or (0, 0) if no CUDA."""
+    """Return (used_gb, total_gb) for process GPU VRAM allocated."""
     if not torch.cuda.is_available():
         return 0.0, 0.0
-    free, total = torch.cuda.mem_get_info()
-    return (total - free) / 1e9, total / 1e9
+    allocated = torch.cuda.memory_allocated() / 1e9
+    total = torch.cuda.get_device_properties(0).total_memory / 1e9
+    return allocated, total
 
 
 def check_memory_limits(ram_limit_gb, vram_limit_gb, context=""):
-    """Raise MemoryError if RAM or VRAM exceeds limits."""
+    """Raise MemoryError if process RAM or VRAM exceeds limits."""
     ram_used, ram_total = get_ram_usage_gb()
     vram_used, vram_total = get_vram_usage_gb()
     if ram_used > ram_limit_gb:
         raise MemoryError(
-            f"[{context}] RAM overflow: {ram_used:.2f} GB used "
+            f"[{context}] Process RAM overflow: {ram_used:.2f} GB used "
             f"(limit {ram_limit_gb} GB, total {ram_total:.2f} GB)"
         )
     if vram_total > 0 and vram_used > vram_limit_gb:
         raise MemoryError(
-            f"[{context}] VRAM overflow: {vram_used:.2f} GB used "
+            f"[{context}] Process VRAM overflow: {vram_used:.2f} GB used "
             f"(limit {vram_limit_gb} GB, total {vram_total:.2f} GB)"
         )
     return {"ram_used_gb": round(ram_used, 2), "vram_used_gb": round(vram_used, 2)}
