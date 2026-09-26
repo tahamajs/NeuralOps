@@ -457,6 +457,8 @@ class SpectraformerRectify(nn.Module):
 # ===========================================================================
 
 @ATTENTION_REGISTRY.register("nexus", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("nexus_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("NEXUSAttention", supports_causal=True, supports_gqa=True)
 class NEXUSAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
