@@ -1,4 +1,4 @@
-r"""
+"""
 Adaptive Span Attention — Final Corrected Implementation.
 Based on: Sukhbaatar et al., 2019 (arXiv:1905.07799)
 
@@ -10,10 +10,7 @@ Math:
 
 Notes on the ramp application order:
     Multiplying after softmax and renormalizing is *mathematically equivalent*
-    to the paper's "mask inside softmax" formulation:
-        softmax_ij * g_ij / sum_j(softmax_ij * g_ij)
-        = exp(s_ij) g_ij / sum_j exp(s_ij) g_ij
-    The renormalization denominator cancels out the softmax partition Z_i.
+    to the paper's "mask inside softmax" formulation.
 """
 
 from __future__ import annotations
@@ -79,11 +76,7 @@ def _gather_cos_sin(
     sin: torch.Tensor,
     position_ids: torch.Tensor,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Gather cos/sin rows using absolute position_ids (supports cache offsets).
-
-    cos/sin are expected as [seq, d] or [1, 1, seq, d] or [B, 1, seq, d].
-    position_ids is [B, N]. Output is [B, 1, N, d].
-    """
+    """Gather cos/sin rows using absolute position_ids (supports cache offsets)."""
     if cos.dim() == 2:
         cos = cos.unsqueeze(0).unsqueeze(0)
         sin = sin.unsqueeze(0).unsqueeze(0)
@@ -91,27 +84,23 @@ def _gather_cos_sin(
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
 
-    # cos: [B_or_1, 1, S, d]
     Bc = cos.shape[0]
     S = cos.shape[-2]
     d = cos.shape[-1]
 
-    # Clamp ids to safe range (should never trigger, but avoids indexing crash).
     ids = position_ids.clamp(min=0, max=S - 1)  # [B, N]
 
     if Bc == 1:
-        # Broadcast to batch
         cos_g = cos[0, 0][ids]  # [B, N, d]
         sin_g = sin[0, 0][ids]
         cos_g = cos_g.unsqueeze(1)  # [B, 1, N, d]
         sin_g = sin_g.unsqueeze(1)
     else:
-        # Per-batch gather
         cos_g = torch.gather(
-            cos.expand(-1, -1, -1, -1).squeeze(1),  # [B, S, d]
+            cos.expand(-1, -1, -1, -1).squeeze(1),
             1,
-            ids.unsqueeze(-1).expand(-1, -1, d),     # [B, N, d]
-        ).unsqueeze(1)  # [B, 1, N, d]
+            ids.unsqueeze(-1).expand(-1, -1, d),
+        ).unsqueeze(1)
         sin_g = torch.gather(
             sin.expand(-1, -1, -1, -1).squeeze(1),
             1,
@@ -127,9 +116,7 @@ def apply_rotary_pos_emb(
     sin: torch.Tensor,
     position_ids: Optional[torch.Tensor] = None,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Apply RoPE using absolute position_ids. No sequence-dim repetition is used:
-    position_ids is mandatory when cos/sin are shorter than the sequence.
-    """
+    """Apply RoPE using absolute position_ids."""
     if cos is None or sin is None:
         return q, k
 
@@ -138,7 +125,6 @@ def apply_rotary_pos_emb(
     if position_ids is not None:
         cos, sin = _gather_cos_sin(cos, sin, position_ids)
     else:
-        # Fallback: assume cos/sin already aligned with the sequence.
         if cos.dim() == 2:
             cos = cos.unsqueeze(0).unsqueeze(0)
             sin = sin.unsqueeze(0).unsqueeze(0)
@@ -174,11 +160,7 @@ def apply_rotary_pos_emb(
 # =============================================================================
 
 def _safe_mask_value(dtype: torch.dtype) -> float:
-    """Return a numerically safe mask value for the given dtype.
-
-    In FP16, torch.finfo.min = -65504 and adding a negative position bias
-    (e.g. from T5) can overflow to -inf -> softmax -> NaN. Use -1e4 instead.
-    """
+    """Return a numerically safe mask value for the given dtype."""
     if dtype in (torch.float16, torch.bfloat16):
         return -1e4
     return -1e9
@@ -193,14 +175,7 @@ def _build_keep_mask(
     encoder_attention_mask: Optional[torch.Tensor],
     device: torch.device,
 ) -> Optional[torch.Tensor]:
-    """Build a boolean mask [B, 1, N_q, N_k] where True = keep.
-
-    Handles:
-      - causal masking with generation offset (N_k > N_q)
-      - 2D padding masks [B, N_k]
-      - 4D additive/bool masks [B, *, N_q, N_k]
-      - encoder_attention_mask for cross-attention (applied to K dim)
-    """
+    """Build a boolean mask [B, 1, N_q, N_k] where True = keep."""
     mask = None
 
     if is_causal:
@@ -496,8 +471,13 @@ class AdaptiveSpanAttention(BaseAttention):
                                        lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
                                        freeze_base=self.freeze_base, dtype=target_dtype)
 
-        # Paper-aligned: start with a small span (sigmoid(-2.0) ~ 0.12).
-        self.span_logits = nn.Parameter(torch.full((self.num_heads,), -2.0, dtype=torch.float32))
+        # =========================================================================
+        # FIX: Zero-Shot Readiness
+        # Changed initialization from -2.0 to 5.0 so that sigmoid(5.0) ~ 0.99
+        # This gives the model a near-full context window for zero-shot eval
+        # preventing the "15-token amnesia" bug.
+        # =========================================================================
+        self.span_logits = nn.Parameter(torch.full((self.num_heads,), 5.0, dtype=torch.float32))
 
         dropout_p = getattr(config, "dropout",
                     getattr(config, "hidden_dropout_prob",
@@ -892,13 +872,9 @@ class AdaptiveSpanAttention(BaseAttention):
             if position_ids is not None:
                 # position_ids: [B, N_q]; pad with past offset if using cache with rolling
                 q_pos = position_ids[0].to(torch.float32)  # assume shared across batch
-                # For K positions, use a shared absolute reference. If rolling cache
-                # dropped tokens, use the last N_k positions ending at the latest key.
                 if N_k == N_q:
                     k_pos = q_pos
                 else:
-                    # Approximate: assume keys occupy the N_k immediately preceding
-                    # (and including) the last query position.
                     last_q = q_pos[-1].item()
                     k_pos = torch.arange(last_q - N_k + 1, last_q + 1,
                                          device=device, dtype=torch.float32)
@@ -968,23 +944,18 @@ class AdaptiveSpanAttention(BaseAttention):
         style = self.return_style
 
         if style == "bert":
-            # BERT/RoBERTa: (context, attn_weights_or_None)
             return output, attn
 
         if style == "gpt2":
-            # GPT-2: (output, present) or (output, present, attn_weights)
             if output_attentions:
                 return output, past_kv, attn
             return output, past_kv
 
         if style == "t5":
-            # T5: returns (output, position_bias) or (output, position_bias, attn)
             if output_attentions:
                 return output, position_bias, attn
             return output, position_bias
 
-        # "llama" (default modern decoder):
-        # (output, attn_weights_or_None, past_key_value)
         return output, attn, past_kv
 
 
