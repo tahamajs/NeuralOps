@@ -260,7 +260,15 @@ def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=32):
         torch.cuda.empty_cache()
 
     acc = correct / total * 100 if total > 0 else 0.0
-    return {"task": task_name, "accuracy": round(acc, 2), "num_samples": total}
+    task_elapsed = round(time.time() - t0, 2)
+    return {
+        "task": task_name,
+        "accuracy": round(acc, 2),
+        "correct_samples": correct,
+        "total_samples": total,
+        "elapsed_seconds": task_elapsed,
+        "batch_size": batch_size,
+    }
 
 
 def main():
@@ -303,9 +311,27 @@ def main():
     for task_clean, res in results.items():
         with open(out_dir / f"{task_clean}.json", "w", encoding="utf-8") as f:
             json.dump(res, f, indent=2)
+
+    # Compute overall module summary
+    valid_accs = [r["accuracy"] for r in results.values() if "accuracy" in r]
+    avg_acc = round(sum(valid_accs) / len(valid_accs), 2) if valid_accs else None
+    total_elapsed = round(sum(r.get("elapsed_seconds", 0) for r in results.values()), 2)
+    
+    full_report = {
+        "module": args.module,
+        "model": args.model,
+        "device": device,
+        "batch_size": args.batch_size,
+        "num_samples_per_task": args.num_samples,
+        "average_accuracy": avg_acc,
+        "total_eval_seconds": total_elapsed,
+        "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "tasks": results
+    }
+
     out_file = out_dir / f"{args.module}_zeroshot.json"
     with open(out_file, "w", encoding="utf-8") as f:
-        json.dump(results, f, indent=2)
+        json.dump(full_report, f, indent=2)
 
     print(f"\nResults saved to {out_dir}")
 
