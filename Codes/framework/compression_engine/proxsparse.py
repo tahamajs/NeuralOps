@@ -450,7 +450,7 @@ class ProxSparsePruner(BaseCompressor):
                     W, mask = self._project_sparse(W_prox)
 
                 # Final projection (mask from last iteration already applied).
-                W_final = torch.nan_to_num(W, nan=0.0, inf=0.0, -inf=0.0)
+                W_final = torch.nan_to_num(W, nan=0.0, posinf=0.0, neginf=0.0)
 
                 w_norm = torch.norm(W_0, p="fro").clamp_min(1e-12).item()
                 err = (torch.norm(W_0 - W_final, p="fro") / w_norm).item()
