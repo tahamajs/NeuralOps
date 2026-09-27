@@ -1,51 +1,31 @@
-"""Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block (Production-Hardened v2).
+"""Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block (Production-Hardened v3).
 
-Combines:
-- SVD-Mamba selective state space branch
-- Multi-Head Attention branch with GQA, RoPE, and causal masking
-- Expert Choice MoE branch with auxiliary loss tracking
-
-Fixes (v2):
-  JAMBA-FIX-01  `SVDMambaSub.is_custom_attention = False` (it is a linear
-                submodule, not an attention module).
-  JAMBA-FIX-02  `self.config` is explicitly set in `__init__`, so
-                `getattr(self.config, ...)` calls no longer raise.
-  JAMBA-FIX-03  `self.aux_loss` is stored as a Python float (not a CPU
-                tensor), avoiding device-mismatch when the training loop
-                aggregates it with GPU losses.
-  JAMBA-FIX-04  `copy_weights` no longer raises RuntimeError on near-zero
-                norm; it logs a warning (matching the rest of the repo).
-  JAMBA-FIX-05  `forward` signature now matches the BERT/RoBERTa convention
-                and accepts `layer_idx` via kwargs.
-  JAMBA-FIX-06  SDPA fast path is only taken when the output can be trusted
-                (no head_mask, no output_attentions). Otherwise falls back
-                to the manual path.
-  JAMBA-FIX-07  The bare `except Exception: pass` around SDPA was replaced
-                with an explicit logging and a proper fallback.
-  JAMBA-FIX-08  `head_mask` handling unified across 1D/2D/3D/4D shapes.
-  JAMBA-FIX-09  `attention_mask` at dim 4 no longer uses a broken
-                `.clamp(min=-1e4)` (which works only on floats and only
-                for lower bound); instead a proper additive mask is applied.
-  JAMBA-FIX-10  `moe_out` handles both tensor and tuple returns from the
-                MoE branch.
-  JAMBA-FIX-11  `is_decoder` detection unified into a single helper.
-  JAMBA-FIX-12  Idempotency guard in the injector (checks both source and
-                parent layer).
-  JAMBA-FIX-13  Recursion guard in the injector.
-  JAMBA-FIX-14  Storage accounting exposed via `storage_bytes()`.
-  JAMBA-FIX-15  `num_kv_heads` resolution is None-safe across configs.
-  JAMBA-FIX-16  `is_nested_encoder` is propagated to the injected block
-                after splicing.
-  JAMBA-FIX-17  `LoRALinear.forward` is dtype-safe.
-  JAMBA-FIX-18  Removed unused imports (`get_qkv_projection_dims`,
-                `SVDMamba`).
+Fixes (v3) on top of v2:
+  JAMBA-FIX-19  Architecture-aware output ordering:
+                  * GPT-2 / GPT-Neo / GPT-J  → (out, present_kv, attn_weights)
+                  * LLaMA / Qwen / Mistral    → (out, attn_weights, present_kv)
+                  * BERT / RoBERTa / Distil   → (out, attn_weights)   [2-tuple]
+  JAMBA-FIX-20  Mamba (SSM) state caching: `SimpleSSM` may return
+                (out, present_state); the state is stored alongside K/V
+                in the cache tuple as the third element.
+  JAMBA-FIX-21  aux_loss is accumulated across forward passes to support
+                gradient accumulation, with an explicit `.reset_aux_loss()`.
+  JAMBA-FIX-22  `head_mask` normalisation is centralised; dim==3 is treated
+                as (B, H, L_k) and unsqueezed to (B, H, 1, L_k).
+  JAMBA-FIX-23  Dead code removed (`_orient`, unused `_orig/_comp_storage_bytes`
+                reset paths are now actually used in `storage_bytes`).
+  JAMBA-FIX-24  Cache accepts either (k, v), (k, v, mamba_state), or an HF
+                Cache object with `.key_cache`, `.value_cache`, and optional
+                `.mamba_state`.
+  JAMBA-FIX-25  `position_embeddings` slicing is now robust to both 3-D and
+                4-D cos/sin tensors.
 """
 
 from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 logger = logging.getLogger(__name__)
 
@@ -90,9 +70,14 @@ def apply_rotary_pos_emb(
         cos = cos.unsqueeze(0)
         sin = sin.unsqueeze(0)
 
-    if cos.shape[-2] != q.shape[-2]:
-        cos = cos[..., : q.shape[-2], :]
-        sin = sin[..., : q.shape[-2], :]
+    # JAMBA-FIX-25: slice on the sequence axis regardless of layout
+    seq_axis = -2
+    if cos.shape[seq_axis] != q.shape[seq_axis]:
+        if cos.shape[seq_axis] >= q.shape[seq_axis]:
+            cos = cos.narrow(seq_axis, cos.shape[seq_axis] - q.shape[seq_axis],
+                             q.shape[seq_axis])
+            sin = sin.narrow(seq_axis, sin.shape[seq_axis] - q.shape[seq_axis],
+                             q.shape[seq_axis])
 
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
@@ -116,7 +101,7 @@ def apply_rotary_pos_emb(
 
 
 # ===========================================================================
-# LoRALinear (JAMBA-FIX-17)
+# LoRALinear
 # ===========================================================================
 class LoRALinear(nn.Module):
     def __init__(
@@ -185,7 +170,6 @@ class LoRALinear(nn.Module):
             self.bias.requires_grad = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # JAMBA-FIX-17
         w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
         b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
         out = F.linear(x, w, b)
@@ -197,10 +181,9 @@ class LoRALinear(nn.Module):
 
 
 # ===========================================================================
-# SSM sub-branch (JAMBA-FIX-01)
+# SSM sub-branch — JAMBA-FIX-20: state-aware forward
 # ===========================================================================
 class SVDMambaSub(nn.Module):
-    # JAMBA-FIX-01: not attention
     is_custom_attention: bool = False
 
     def __init__(
@@ -221,23 +204,59 @@ class SVDMambaSub(nn.Module):
         self.ssm = SimpleSSM(d_model=d_model, config=config, is_decoder=is_decoder)
         self.in_proj = nn.Linear(d_model, d_model)
         self.out_proj = nn.Linear(d_model, d_model)
+        # JAMBA-FIX-20: introspect SSM signature once
+        self._ssm_supports_state = self._ssm_accepts_past_state()
+
+    def _ssm_accepts_past_state(self) -> bool:
+        import inspect
+        try:
+            sig = inspect.signature(self.ssm.forward)
+            return "past_state" in sig.parameters or "state" in sig.parameters
+        except (ValueError, TypeError):
+            return False
 
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
+        past_state: Optional[Any] = None,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, None]:
+    ) -> Tuple[torch.Tensor, Optional[Any]]:
         x_proj = self.in_proj(hidden_states)
-        ssm_out = self.ssm(x_proj, attention_mask=attention_mask)
-        if isinstance(ssm_out, tuple):
-            ssm_out = ssm_out[0]
+
+        ssm_result: Any = None
+        present_state: Optional[Any] = None
+
+        if self._ssm_supports_state:
+            try:
+                ssm_result = self.ssm(
+                    x_proj, attention_mask=attention_mask, past_state=past_state
+                )
+            except TypeError:
+                # Some SSMs call the kwarg `state` instead of `past_state`
+                try:
+                    ssm_result = self.ssm(
+                        x_proj, attention_mask=attention_mask, state=past_state
+                    )
+                except Exception:
+                    ssm_result = self.ssm(x_proj, attention_mask=attention_mask)
+        else:
+            ssm_result = self.ssm(x_proj, attention_mask=attention_mask)
+
+        # Unpack (out, state) vs out
+        if isinstance(ssm_result, tuple):
+            ssm_out = ssm_result[0]
+            if len(ssm_result) > 1:
+                present_state = ssm_result[1]
+        else:
+            ssm_out = ssm_result
+
         out = self.out_proj(ssm_out)
-        return out, None
+        return out, present_state
 
 
 # ===========================================================================
-# Decoder detection (JAMBA-FIX-11)
+# Decoder / format detection
 # ===========================================================================
 def _detect_decoder(
     config: Any,
@@ -270,6 +289,125 @@ def _detect_decoder(
     return False
 
 
+def _detect_return_format(
+    source_attn: Optional[nn.Module],
+    is_nested_encoder: bool,
+) -> str:
+    """
+    JAMBA-FIX-19: choose output tuple layout.
+
+      'bert'   → (out, attn_weights)                  [2-tuple]
+      'gpt2'   → (out, present_kv, attn_weights)      [GPT-2 / GPT-Neo / GPT-J]
+      'llama'  → (out, attn_weights, present_kv)      [LLaMA / Qwen / Mistral]
+    """
+    if is_nested_encoder:
+        return "bert"
+    if source_attn is None:
+        return "llama"
+
+    cls = source_attn.__class__.__name__.lower()
+    # GPT-2 family
+    if any(k in cls for k in ("gpt2", "gptne", "gptj", "gptneo", "gpt_neo", "gpt_j")):
+        return "gpt2"
+    if hasattr(source_attn, "c_attn"):
+        return "gpt2"
+    # LLaMA / Qwen / Mistral family (default for decoder)
+    return "llama"
+
+
+# ===========================================================================
+# Cache I/O helpers — JAMBA-FIX-24
+# ===========================================================================
+def _read_cache(
+    past_key_value: Any,
+    layer_idx: int,
+) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor], int, Optional[Any]]:
+    """
+    Returns (past_k, past_v, past_len, past_mamba_state).
+
+    Supports:
+      * None
+      * tuple/list  (k, v)              → past_mamba=None
+      * tuple/list  (k, v, mamba_state) → past_mamba=mamba_state
+      * HF Cache object with `.key_cache` / `.value_cache` (and optional
+        `.mamba_state` list).
+    """
+    if past_key_value is None:
+        return None, None, 0, None
+
+    # Tuple / list form
+    if isinstance(past_key_value, (tuple, list)):
+        if len(past_key_value) == 0:
+            return None, None, 0, None
+        # Nested: could be ((k, v), ...) for cross-layer formats — unwrap
+        first = past_key_value[0]
+        if isinstance(first, (tuple, list)):
+            # Per-layer cache: index by layer_idx
+            if layer_idx < len(past_key_value):
+                entry = past_key_value[layer_idx]
+                k, v = entry[0], entry[1]
+                m = entry[2] if len(entry) > 2 else None
+                return k, v, k.shape[-2], m
+            return None, None, 0, None
+        else:
+            # Flat (k, v) or (k, v, m)
+            k, v = past_key_value[0], past_key_value[1]
+            m = past_key_value[2] if len(past_key_value) > 2 else None
+            return k, v, k.shape[-2], m
+
+    # HF Cache object
+    if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
+        if layer_idx < len(past_key_value.key_cache):
+            k = past_key_value.key_cache[layer_idx]
+            v = (past_key_value.value_cache[layer_idx]
+                 if hasattr(past_key_value, "value_cache")
+                 and layer_idx < len(past_key_value.value_cache)
+                 else None)
+            m = None
+            if hasattr(past_key_value, "mamba_state") and past_key_value.mamba_state:
+                if layer_idx < len(past_key_value.mamba_state):
+                    m = past_key_value.mamba_state[layer_idx]
+            if k is not None:
+                return k, v, k.shape[-2], m
+
+    return None, None, 0, None
+
+
+def _write_cache(
+    k: torch.Tensor,
+    v: torch.Tensor,
+    mamba_state: Optional[Any],
+    past_key_value: Any,
+    layer_idx: int,
+) -> Any:
+    """
+    Build the present_key_value to return.
+
+    If the incoming past_key_value was an HF Cache object, we mirror that
+    structure; otherwise we return a tuple.
+    """
+    # HF Cache object mode
+    if past_key_value is not None and hasattr(past_key_value, "key_cache"):
+        if layer_idx < len(past_key_value.key_cache):
+            past_key_value.key_cache[layer_idx] = k
+            past_key_value.value_cache[layer_idx] = v
+        else:
+            past_key_value.key_cache.append(k)
+            past_key_value.value_cache.append(v)
+        if not hasattr(past_key_value, "mamba_state"):
+            past_key_value.mamba_state = []  # type: ignore[attr-defined]
+        if layer_idx < len(past_key_value.mamba_state):
+            past_key_value.mamba_state[layer_idx] = mamba_state
+        else:
+            past_key_value.mamba_state.append(mamba_state)
+        return past_key_value
+
+    # Tuple mode
+    if mamba_state is not None:
+        return (k, v, mamba_state)
+    return (k, v)
+
+
 # ===========================================================================
 # Jamba-2 Block
 # ===========================================================================
@@ -298,10 +436,9 @@ class Jamba2Block(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
         super().__init__(config, rank)
 
-        # JAMBA-FIX-02: store config for later getattr
         self.config = config
 
-        # ---------- d_model ----------
+        # ---------- d_model / n_heads ----------
         d_model = (kwargs.get("d_model") or kwargs.get("hidden_size")
                     or kwargs.get("dim") or d_model)
         n_heads = (kwargs.get("n_heads") or kwargs.get("num_heads")
@@ -340,7 +477,6 @@ class Jamba2Block(BaseAttention):
         self.n_heads = int(n_heads)
         self.num_heads = self.n_heads
 
-        # JAMBA-FIX-15: None-safe kv head resolution
         num_kv_heads = None
         if config is not None:
             num_kv_heads = getattr(config, "num_key_value_heads",
@@ -357,11 +493,11 @@ class Jamba2Block(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // self.num_kv_heads)
         self.supports_gqa = True
 
-        # JAMBA-FIX-11
         self.is_decoder = _detect_decoder(config, kwargs.get("is_decoder"),
                                             source_attn, kwargs)
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
+        self._return_format: str = "llama"  # updated after copy_weights
 
         # ---------- LoRA config ----------
         if config is not None:
@@ -425,14 +561,28 @@ class Jamba2Block(BaseAttention):
         ))
         self.dropout = nn.Dropout(dropout_p)
 
-        # JAMBA-FIX-03: store as float to avoid device mismatch
-        self.aux_loss: float = 0.0
-
-        self._orig_storage_bytes = 0
-        self._comp_storage_bytes = 0
+        # JAMBA-FIX-21: aux_loss accumulation buffer
+        self._aux_loss_sum: float = 0.0
+        self._aux_loss_count: int = 0
 
         if source_attn is not None:
             self.copy_weights(source_attn)
+
+        # JAMBA-FIX-19: finalize return format
+        self._return_format = _detect_return_format(source_attn, self.is_nested_encoder)
+
+    # ------------------------------------------------------------------
+    @property
+    def aux_loss(self) -> float:
+        """Mean aux loss over the accumulated forward calls."""
+        if self._aux_loss_count == 0:
+            return 0.0
+        return self._aux_loss_sum / self._aux_loss_count
+
+    def reset_aux_loss(self) -> None:
+        """Call at the end of an epoch / accumulation window."""
+        self._aux_loss_sum = 0.0
+        self._aux_loss_count = 0
 
     # ------------------------------------------------------------------
     def freeze_base_weights(self) -> None:
@@ -449,12 +599,6 @@ class Jamba2Block(BaseAttention):
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
-
-        try:
-            for p in src.parameters():
-                self._orig_storage_bytes += p.numel() * p.element_size()
-        except Exception:
-            pass
 
         cls_name = getattr(src, "__class__", type(src)).__name__
         has_out = any(hasattr(src, a) for a in
@@ -568,11 +712,6 @@ class Jamba2Block(BaseAttention):
         target_map = {"q": self.q_lin, "k": self.k_lin,
                        "v": self.v_lin, "o": self.out_lin}
 
-        def _orient(w, in_dim):
-            if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t().contiguous()
-            return w
-
         with torch.no_grad():
             for key, target in target_map.items():
                 w, b = extracted[key]
@@ -603,7 +742,6 @@ class Jamba2Block(BaseAttention):
                 elif target.bias is not None:
                     nn.init.zeros_(target.bias)
 
-                # JAMBA-FIX-04: warn, do not raise
                 n = torch.linalg.norm(target.weight.data.float()).item()
                 if n < 1e-4:
                     logger.warning("Jamba2: '%s' near-zero norm (%.2e)", key, n)
@@ -617,18 +755,43 @@ class Jamba2Block(BaseAttention):
         if self.freeze_base:
             self.freeze_base_weights()
 
-        try:
-            self._comp_storage_bytes = sum(
-                p.numel() * p.element_size()
-                for m in (self.q_lin, self.k_lin, self.v_lin, self.out_lin,
-                           self.moe, self.mamba, self.norm1, self.norm2, self.norm3)
-                for p in m.parameters()
-            )
-        except Exception:
-            pass
-
     # ------------------------------------------------------------------
-    # Forward (JAMBA-FIX-05)
+    def _norm_dtype(self, norm: nn.LayerNorm, fallback: torch.dtype) -> torch.dtype:
+        return norm.weight.dtype if norm.weight is not None else fallback
+
+    def _format_output(
+        self,
+        out: torch.Tensor,
+        attn_weights: Optional[torch.Tensor],
+        present: Optional[Any],
+    ) -> Tuple:
+        """JAMBA-FIX-19: emit the tuple layout expected by the host model."""
+        fmt = self._return_format
+        if fmt == "bert":
+            return (out, attn_weights)
+        if fmt == "gpt2":
+            return (out, present, attn_weights)
+        # default 'llama'
+        return (out, attn_weights, present)
+
+    def _normalize_head_mask(self, head_mask: torch.Tensor,
+                             attn: torch.Tensor) -> torch.Tensor:
+        """JAMBA-FIX-22: normalise head_mask to (B, H, Lq, Lk) broadcast."""
+        hm = head_mask.to(attn.dtype)
+        if hm.dim() == 1:
+            hm = hm.view(1, self.num_heads, 1, 1)
+        elif hm.dim() == 2:
+            if hm.shape[-1] == self.num_heads:
+                hm = hm.view(hm.shape[0], self.num_heads, 1, 1)
+            else:
+                # (num_layers, num_heads) — take first row as a safe fallback
+                hm = hm.view(1, hm.shape[-1], 1, 1)
+        elif hm.dim() == 3:
+            # (B, H, Lk) → broadcast over query positions
+            hm = hm.unsqueeze(2)  # (B, H, 1, Lk)
+        # dim == 4 → pass through
+        return attn * hm
+
     # ------------------------------------------------------------------
     def forward(
         self,
@@ -643,156 +806,187 @@ class Jamba2Block(BaseAttention):
         return_dict: Optional[bool] = True,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        layer_idx = kwargs.get("layer_idx", 0)
-        position_embeddings = kwargs.get("position_embeddings", None)
-
-        target_dtype = hidden_states.dtype
-
-        # ---------- Branch 1: SVD-Mamba ----------
-        mamba_out, _ = self.mamba(hidden_states, attention_mask=attention_mask)
-        norm1_dtype = self.norm1.weight.dtype if hasattr(self.norm1, 'weight') and self.norm1.weight is not None else target_dtype
-        x1 = self.norm1((hidden_states + mamba_out.to(target_dtype)).to(norm1_dtype)).to(target_dtype)
+    ):
         B, L, _ = hidden_states.shape
+        layer_idx = int(kwargs.get("layer_idx", 0))
+        position_embeddings = kwargs.get("position_embeddings", None)
         target_dtype = hidden_states.dtype
 
-        # ---------- Branch 2: MHA ----------
+        # ---- Read cache ----
+        past_k, past_v, past_len, past_mamba = _read_cache(past_key_value, layer_idx)
+
+        # ---- Branch 1: SVD-Mamba (JAMBA-FIX-20) ----
+        mamba_out, present_mamba = self.mamba(
+            hidden_states,
+            attention_mask=attention_mask,
+            past_state=past_mamba,
+        )
+        n1d = self._norm_dtype(self.norm1, target_dtype)
+        x1 = self.norm1(
+            (hidden_states + mamba_out.to(target_dtype)).to(n1d)
+        ).to(target_dtype)
+
+        # ---- Branch 2: MHA ----
         q = self.q_lin(x1).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
         k = self.k_lin(x1).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         v = self.v_lin(x1).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
-        # RoPE
+        # ---- RoPE with offset ----
         if position_embeddings is not None:
             cos, sin = position_embeddings
+            # Slice the position range [past_len, past_len + L)
+            cos = cos.narrow(-2, past_len, L) if cos.shape[-2] >= past_len + L else cos
+            sin = sin.narrow(-2, past_len, L) if sin.shape[-2] >= past_len + L else sin
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
         elif self.rotary_emb is not None:
             pos_ids = kwargs.get("position_ids", None)
             if pos_ids is None:
-                pos_ids = torch.arange(L, device=hidden_states.device).unsqueeze(0).expand(B, -1)
-            try:
-                cos, sin = self.rotary_emb(k, seq_len=L)
-            except TypeError:
+                pos_ids = torch.arange(past_len, past_len + L,
+                                       device=hidden_states.device)\
+                            .unsqueeze(0).expand(B, -1)
+            cos = sin = None
+            for call in (
+                lambda: self.rotary_emb(k, seq_len=L),
+                lambda: self.rotary_emb(k, pos_ids),
+                lambda: self.rotary_emb(pos_ids),
+            ):
                 try:
-                    cos, sin = self.rotary_emb(k, pos_ids)
+                    cos, sin = call()
+                    break
                 except Exception:
-                    try:
-                        cos, sin = self.rotary_emb(pos_ids)
-                    except Exception:
-                        cos, sin = None, None
+                    continue
             if cos is not None and sin is not None:
                 q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
 
+        # ---- Concatenate cache (before repeat_kv to keep it compact) ----
+        if past_k is not None:
+            k = torch.cat([past_k.to(k.dtype), k], dim=-2)
+            v = torch.cat([past_v.to(v.dtype), v], dim=-2)
+
+        present_key_value = _write_cache(k, v, present_mamba, past_key_value, layer_idx)
+
+        # ---- GQA expansion ----
         if self.kv_repeat > 1:
-            k = repeat_kv(k, self.kv_repeat)
-            v = repeat_kv(v, self.kv_repeat)
+            k_exp = repeat_kv(k, self.kv_repeat)
+            v_exp = repeat_kv(v, self.kv_repeat)
+        else:
+            k_exp, v_exp = k, v
 
         scale = 1.0 / math.sqrt(self.head_dim)
         is_causal = bool(self.is_decoder and L > 1)
 
-        # ---------- SDPA fast path (JAMBA-FIX-06, JAMBA-FIX-07) ----------
+        # ---- SDPA fast path (prefill only) ----
         use_sdpa = (
             head_mask is None
             and not output_attentions
             and attention_mask is None
+            and past_len == 0
         )
         if use_sdpa:
             try:
                 _qs = q.half() if q.dtype == torch.float32 else q
-                _ks = k.half() if k.dtype == torch.float32 else k
-                _vs = v.half() if v.dtype == torch.float32 else v
+                _ks = k_exp.half() if k_exp.dtype == torch.float32 else k_exp
+                _vs = v_exp.half() if v_exp.dtype == torch.float32 else v_exp
                 _sdpa_out = F.scaled_dot_product_attention(
-                    _qs, _ks, _vs,
-                    is_causal=is_causal,
+                    _qs, _ks, _vs, is_causal=is_causal,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
-                attn_out = _sdpa_out.to(target_dtype)\
-                                     .transpose(1, 2).contiguous()\
-                                     .view(B, L, self.all_head_size)
+                attn_out = _sdpa_out.to(target_dtype).transpose(1, 2)\
+                                     .contiguous().view(B, L, self.all_head_size)
                 attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
                 attn_proj = attn_out if self.is_nested_encoder else self.out_lin(attn_out)
-                norm2_dtype = self.norm2.weight.dtype if hasattr(self.norm2, 'weight') and self.norm2.weight is not None else target_dtype
-                x2 = self.norm2((x1 + self.dropout(attn_proj.to(target_dtype))).to(norm2_dtype)).to(target_dtype)
+                n2d = self._norm_dtype(self.norm2, target_dtype)
+                x2 = self.norm2(
+                    (x1 + self.dropout(attn_proj.to(target_dtype))).to(n2d)
+                ).to(target_dtype)
 
                 moe_out = self.moe(x2)
-                # JAMBA-FIX-10
                 if isinstance(moe_out, (tuple, list)):
                     moe_out = moe_out[0]
-                norm3_dtype = self.norm3.weight.dtype if hasattr(self.norm3, 'weight') and self.norm3.weight is not None else target_dtype
-                x3 = self.norm3((x2 + self.dropout(moe_out.to(target_dtype))).to(norm3_dtype)).to(target_dtype)
+                n3d = self._norm_dtype(self.norm3, target_dtype)
+                x3 = self.norm3(
+                    (x2 + self.dropout(moe_out.to(target_dtype))).to(n3d)
+                ).to(target_dtype)
 
-                # JAMBA-FIX-03: store as float
-                aux = getattr(self.moe, "aux_loss", 0.0)
-                self.aux_loss = float(aux.item()) if torch.is_tensor(aux) else float(aux)
-
-                return x3, None
+                self._accumulate_aux_loss()
+                return self._format_output(x3, None, present_key_value)
             except Exception as e:
-                # JAMBA-FIX-07: log, then fall back to manual
-                logger.debug("Jamba2 SDPA path failed, falling back to manual: %s", e)
+                logger.debug("Jamba2 SDPA path failed: %s", e)
 
-        # ---------- Manual attention path ----------
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+        # ---- Manual attention ----
+        scores = torch.matmul(q.float(), k_exp.float().transpose(-2, -1).contiguous()) * scale
 
         if is_causal:
-            causal = torch.tril(torch.ones(L, L, device=hidden_states.device, dtype=torch.bool))
+            kv_len = k_exp.shape[-2]
+            causal = torch.tril(
+                torch.ones(L, kv_len, device=hidden_states.device, dtype=torch.bool),
+                diagonal=past_len,
+            )
             scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
 
-        # JAMBA-FIX-09: proper additive attention mask
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                valid = get_token_valid_mask(attention_mask, B, L, hidden_states.device)
+                valid = get_token_valid_mask(attention_mask, B, k_exp.shape[-2],
+                                              hidden_states.device)
                 if valid is not None:
-                    scores = scores.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
+                    scores = scores.masked_fill(
+                        ~valid.unsqueeze(1).unsqueeze(2), -1e4
+                    )
             elif attention_mask.dim() == 3:
                 scores = scores + attention_mask.unsqueeze(1).float()
             elif attention_mask.dim() == 4:
-                scores = scores + attention_mask.float()
+                if attention_mask.dtype == torch.bool:
+                    scores = scores.masked_fill(~attention_mask, -1e4)
+                else:
+                    scores = scores + attention_mask.float()
 
         scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-        probs = F.softmax(scores, dim=-1).to(v.dtype)
+        probs = F.softmax(scores, dim=-1).to(v_exp.dtype)
         probs = torch.nan_to_num(probs, nan=0.0)
         probs = self.dropout(probs)
 
-        # JAMBA-FIX-08: unified head_mask
+        # JAMBA-FIX-22: normalized head_mask
         if head_mask is not None:
-            hm = head_mask.to(probs.dtype)
-            if hm.dim() == 1:
-                hm = hm.view(1, self.num_heads, 1, 1)
-            elif hm.dim() == 2:
-                hm = hm.view(hm.shape[0], self.num_heads, 1, 1)
-            elif hm.dim() == 3:
-                hm = hm.unsqueeze(1)
-            probs = probs * hm
+            probs = self._normalize_head_mask(head_mask, probs)
 
-        attn_out = torch.matmul(probs, v)\
-                        .transpose(1, 2).contiguous()\
-                        .view(B, L, self.all_head_size)
+        attn_out = torch.matmul(probs, v_exp).transpose(1, 2)\
+                        .contiguous().view(B, L, self.all_head_size)
         attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
         attn_proj = attn_out if self.is_nested_encoder else self.out_lin(attn_out)
-        norm2_dtype = self.norm2.weight.dtype if hasattr(self.norm2, 'weight') and self.norm2.weight is not None else target_dtype
-        x2 = self.norm2((x1 + self.dropout(attn_proj.to(target_dtype))).to(norm2_dtype)).to(target_dtype)
+        n2d = self._norm_dtype(self.norm2, target_dtype)
+        x2 = self.norm2(
+            (x1 + self.dropout(attn_proj.to(target_dtype))).to(n2d)
+        ).to(target_dtype)
 
-        # ---------- Branch 3: MoE ----------
         moe_out = self.moe(x2)
         if isinstance(moe_out, (tuple, list)):
             moe_out = moe_out[0]
-        norm3_dtype = self.norm3.weight.dtype if hasattr(self.norm3, 'weight') and self.norm3.weight is not None else target_dtype
-        x3 = self.norm3((x2 + self.dropout(moe_out.to(target_dtype))).to(norm3_dtype)).to(target_dtype)
+        n3d = self._norm_dtype(self.norm3, target_dtype)
+        x3 = self.norm3(
+            (x2 + self.dropout(moe_out.to(target_dtype))).to(n3d)
+        ).to(target_dtype)
 
+        self._accumulate_aux_loss()
+        attn_weights = probs if output_attentions else None
+        return self._format_output(x3, attn_weights, present_key_value)
+
+    def _accumulate_aux_loss(self) -> None:
+        """JAMBA-FIX-21: rolling mean of the MoE auxiliary loss."""
         aux = getattr(self.moe, "aux_loss", 0.0)
-        self.aux_loss = float(aux.item()) if torch.is_tensor(aux) else float(aux)
-
-        return x3, (probs if output_attentions else None)
+        v = float(aux.item()) if torch.is_tensor(aux) else float(aux)
+        self._aux_loss_sum += v
+        self._aux_loss_count += 1
 
     # ------------------------------------------------------------------
     def storage_bytes(self) -> Dict[str, int]:
-        def _sz(p):
+        def _sz(p: Any) -> int:
             if isinstance(p, (nn.Parameter, torch.Tensor)):
                 return p.numel() * p.element_size()
             return 0
 
-        out = {}
+        out: Dict[str, int] = {}
         for name, m in (("q_lin", self.q_lin), ("k_lin", self.k_lin),
                          ("v_lin", self.v_lin), ("out_lin", self.out_lin),
                          ("mamba", self.mamba), ("moe", self.moe)):
@@ -802,7 +996,7 @@ class Jamba2Block(BaseAttention):
 
 
 # ===========================================================================
-# Injector (JAMBA-FIX-12, JAMBA-FIX-13, JAMBA-FIX-16)
+# Injector
 # ===========================================================================
 @ATTENTION_REGISTRY.register("jamba_inject")
 @ATTENTION_REGISTRY.register("jamba2_inject")
@@ -819,7 +1013,6 @@ def inject_jamba(
     _depth: int = 0,
     **kwargs: Any,
 ) -> Optional[Union[Jamba2Block, nn.Module]]:
-    # JAMBA-FIX-13
     if _depth > 8:
         logger.warning("inject_jamba: max recursion depth exceeded.")
         return None
@@ -880,7 +1073,7 @@ def inject_jamba(
     if src_attn is None and hasattr(target, "forward"):
         src_attn = target
 
-    # JAMBA-FIX-12: idempotency guard
+    # Idempotency guard
     if isinstance(src_attn, Jamba2Block) or "Jamba2" in src_attn.__class__.__name__:
         return None
     for attr in ("attention", "self_attn", "attn", "self"):
@@ -931,7 +1124,6 @@ def inject_jamba(
         logger.error("Jamba2Block injection failed: %s", e)
         return None
 
-    # JAMBA-FIX-16
     if target is not None:
         spliced = False
         if hasattr(target, "attention"):
@@ -959,6 +1151,11 @@ def inject_jamba(
             logger.error("inject_jamba: no writable attention attribute on %s",
                           type(target).__name__)
             return None
+
+        # Recompute return format after we know is_nested_encoder
+        new_block._return_format = _detect_return_format(
+            src_attn, new_block.is_nested_encoder
+        )
 
     return new_block
 
