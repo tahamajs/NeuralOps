@@ -1088,5 +1088,25 @@
     "accuracy_pct": 90.71,
     "error": "note: zero compressed layers, zero injected layers, model unchanged",
     "timestamp": "2026-09-27T06:30:10.668245"
+  },
+  {
+    "module": "upi_mamba",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL_BELOW_CHANCE",
+    "perplexity": "",
+    "accuracy_pct": 50.92,
+    "error": "FAIL: accuracy (50.92%) below chance threshold (56.00%)",
+    "timestamp": "2026-09-27T06:31:11.358111"
+  },
+  {
+    "module": "zeros",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL_BELOW_CHANCE",
+    "perplexity": "",
+    "accuracy_pct": 51.83,
+    "error": "FAIL: accuracy (51.83%) below chance threshold (56.00%)",
+    "timestamp": "2026-09-27T06:31:58.512685"
   }
 ]
