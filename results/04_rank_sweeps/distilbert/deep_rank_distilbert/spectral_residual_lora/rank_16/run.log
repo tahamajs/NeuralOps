@@ -6,3 +6,4 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-27 09:27:13,791 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=8 (explicit_parallel=True, explicit_batch=True)
 2026-09-27 09:27:13,815 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=1)
 [ISOLATED] Launching spectral_residual_lora (timeout=3600s) -> logs\isolated\spectral_residual_lora_r16_bert.log
+[ISOLATED] spectral_residual_lora exited with code 0 in 85.2s
