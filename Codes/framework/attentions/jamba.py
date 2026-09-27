@@ -1,24 +1,6 @@
-"""Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block (Production-Hardened v3).
+"""
+Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block .
 
-Fixes (v3) on top of v2:
-  JAMBA-FIX-19  Architecture-aware output ordering:
-                  * GPT-2 / GPT-Neo / GPT-J  → (out, present_kv, attn_weights)
-                  * LLaMA / Qwen / Mistral    → (out, attn_weights, present_kv)
-                  * BERT / RoBERTa / Distil   → (out, attn_weights)   [2-tuple]
-  JAMBA-FIX-20  Mamba (SSM) state caching: `SimpleSSM` may return
-                (out, present_state); the state is stored alongside K/V
-                in the cache tuple as the third element.
-  JAMBA-FIX-21  aux_loss is accumulated across forward passes to support
-                gradient accumulation, with an explicit `.reset_aux_loss()`.
-  JAMBA-FIX-22  `head_mask` normalisation is centralised; dim==3 is treated
-                as (B, H, L_k) and unsqueezed to (B, H, 1, L_k).
-  JAMBA-FIX-23  Dead code removed (`_orient`, unused `_orig/_comp_storage_bytes`
-                reset paths are now actually used in `storage_bytes`).
-  JAMBA-FIX-24  Cache accepts either (k, v), (k, v, mamba_state), or an HF
-                Cache object with `.key_cache`, `.value_cache`, and optional
-                `.mamba_state`.
-  JAMBA-FIX-25  `position_embeddings` slicing is now robust to both 3-D and
-                4-D cos/sin tensors.
 """
 
 from __future__ import annotations
