@@ -673,7 +673,7 @@ __all__ = [
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **78.67%** | -12.39% | 0.8158 | 1.20x | 6 | [svd-linear-attention-distilbert-sst2-res-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-res-svd) | 2026-09-19 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **85.89%** | -4.71% | 0.8588 | 1.20x | 0 | [svd-linear-attention-distilbert-sst2-res-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-res-svd) | 2026-09-27 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **51.40%** | -30.40% | 0.4961 | 1.20x | 0 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **90.70%** | -3.60% | 0.9039 | 1.20x | 0 | [svd-linear-attention-distilbert-agnews-full-res-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-res-svd) | 2026-09-19 |
 
