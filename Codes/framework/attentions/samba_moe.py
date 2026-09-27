@@ -227,15 +227,19 @@ class SambaMoEBlock(BaseAttention):
         if moe_out.shape[-1] != x.shape[-1]:
             moe_out = F.pad(moe_out, (0, x.shape[-1] - moe_out.shape[-1])) if moe_out.shape[-1] < x.shape[-1] else moe_out[..., :x.shape[-1]]
 
+        target_dtype = hidden_states.dtype
+        x = x.to(target_dtype)
+        moe_out = moe_out.to(target_dtype)
+
         if self.is_nested_encoder:
             # Nested encoder: bypass outer LayerNorm (self.norm) and double residual
             out = x + moe_out
         else:
-            out = self.norm(x + moe_out)
+            out = self.norm(x + moe_out).to(target_dtype)
 
         if out.shape[-1] != hidden_states.shape[-1]:
             out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1])) if out.shape[-1] < hidden_states.shape[-1] else out[..., :hidden_states.shape[-1]]
-        return (out, attn_w)
+        return (out.to(target_dtype), attn_w)
 
 
 @ATTENTION_REGISTRY.register("samba_moe_inject")

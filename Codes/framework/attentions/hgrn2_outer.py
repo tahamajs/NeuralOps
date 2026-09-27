@@ -542,7 +542,7 @@ class HGRN2OuterBlock(BaseAttention):
             S_prev = S_all[:, :, -1]     # (B, H, d, d)
             z_prev = z_all[:, :, -1]     # (B, H, d)
 
-        return torch.cat(outputs, dim=2)  # (B, H, L, d)
+        return torch.cat(outputs, dim=2).to(q.dtype)  # (B, H, L, d)
 
     # ------------------------------------------------------------------
     # Storage
@@ -644,8 +644,10 @@ class HGRN2OuterBlock(BaseAttention):
             y_bwd_r = self._chunked_scan(q_r, k_r, v_r, f_r, chunk_size=self.chunk_size)
             y_bwd = torch.flip(y_bwd_r, dims=[2])
             y = 0.5 * (y_fwd + y_bwd)
+            y = y.to(hidden_states.dtype)
 
-        y = self.state_norm(y)
+        sn_dtype = self.state_norm.weight.dtype if hasattr(self.state_norm, 'weight') and self.state_norm.weight is not None else hidden_states.dtype
+        y = self.state_norm(y.to(sn_dtype)).to(hidden_states.dtype)
         y = torch.nan_to_num(y, nan=0.0, posinf=1e4, neginf=-1e4)
 
         # ---- head_mask ----

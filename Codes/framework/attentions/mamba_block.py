@@ -282,15 +282,16 @@ class MambaBlock(nn.Module):
             )
             y_b = y_b.transpose(1, 2)
             y_b = torch.flip(y_b, dims=[1])
-            y = 0.5 * (y + y_b)
+            y = (0.5 * (y + y_b)).to(hidden_states.dtype)
 
-        y = y * F.silu(z)
+        target_dtype = hidden_states.dtype
+        y = (y.to(target_dtype) * F.silu(z.to(target_dtype))).to(target_dtype)
         out = self.out_proj(y)
 
         if attention_mask is not None and attention_mask.dim() == 2:
             out = out * attention_mask.unsqueeze(-1).to(out.dtype)
 
-        return out, None
+        return out.to(target_dtype), None
 
 
 Mamba = MambaBlock
