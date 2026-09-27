@@ -216,6 +216,10 @@ def main():
         parsed_mods = [m.strip() for m in args.modules.split(",") if m.strip()]
     if not parsed_mods or parsed_mods == ["all"]:
         parsed_mods = get_all_decoder_modules("all")
+    if args.total_workers > 1:
+        # Worker sharding: assign every Nth module
+        parsed_mods = [m for i, m in enumerate(parsed_mods) if (i % args.total_workers) == args.worker_id]
+        LOG.info("Worker %d/%d assigned %d modules", args.worker_id, args.total_workers, len(parsed_mods))
     args.modules = parsed_mods
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -238,7 +242,10 @@ def main():
 
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    summary_csv = out_dir / "summary.csv"
+    if args.total_workers > 1:
+        summary_csv = out_dir / f"summary_worker_{args.worker_id}.csv"
+    else:
+        summary_csv = out_dir / "summary.csv"
 
     # Load Tokenizer & Dataset
     tokenizer = AutoTokenizer.from_pretrained(args.model_path if Path(args.model_path).exists() else "gpt2")
@@ -290,17 +297,22 @@ def main():
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
-    # Load existing results if summary.csv exists
+    # Load existing results if summary.csv or worker summary exists
     existing_mods = set()
-    if summary_csv.exists():
-        try:
-            with open(summary_csv, "r", encoding="utf-8") as f:
-                reader = csv.DictReader(f)
-                for r in reader:
-                    results.append(r)
-                    existing_mods.add(r.get("module_name"))
-        except Exception:
-            pass
+    main_summary = out_dir / "summary.csv"
+    for csv_path in [main_summary, summary_csv]:
+        if csv_path.exists():
+            try:
+                with open(csv_path, "r", encoding="utf-8") as f:
+                    reader = csv.DictReader(f)
+                    for r in reader:
+                        m_name = r.get("module_name")
+                        if m_name and r.get("status") in ("PASS", "PASS_DEGRADED"):
+                            existing_mods.add(m_name)
+                            if csv_path == summary_csv:
+                                results.append(r)
+            except Exception:
+                pass
 
     # 2. Iterate through compression modules
     for idx, mod in enumerate(args.modules, 1):
@@ -324,9 +336,18 @@ def main():
                 cand_model.half()
             cand_model.to(device)
 
+            # Prepare calibration sample from dataset
+            try:
+                calib_texts = [t for t in ds["text"][:32] if len(t.strip()) > 20][:8]
+                calib_enc = tokenizer(calib_texts or ["The quick brown fox jumps over the lazy dog."],
+                                      return_tensors="pt", padding=True, truncation=True, max_length=128)
+                calib_input = calib_enc.input_ids.to(device)
+            except Exception:
+                calib_input = torch.randint(0, 1000, (4, 64), device=device)
+
             typ = "attention" if mod in ATTENTION_REGISTRY else "compressor"
             cand_model, comp_stats = apply_module_to_model(
-                cand_model, mod, typ, rank=args.rank, device=device
+                cand_model, mod, typ, rank=args.rank, device=device, calibration_data=calib_input
             )
 
             p_after = sum(p.numel() for p in cand_model.parameters())
@@ -392,6 +413,17 @@ def main():
             writer.writeheader()
             for r in results:
                 writer.writerow(r)
+
+        if args.total_workers > 1 and main_summary != summary_csv:
+            try:
+                write_hdr = not main_summary.exists()
+                with open(main_summary, "a", newline="", encoding="utf-8") as mf:
+                    mwriter = csv.DictWriter(mf, fieldnames=CSV_FIELDS, extrasaction="ignore")
+                    if write_hdr:
+                        mwriter.writeheader()
+                    mwriter.writerow(row)
+            except Exception:
+                pass
 
     print(f"\n[DONE] Decoder sweep completed. Results written to {summary_csv}")
 
