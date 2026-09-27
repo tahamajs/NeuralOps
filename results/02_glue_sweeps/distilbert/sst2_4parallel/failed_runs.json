@@ -758,5 +758,15 @@
     "accuracy_pct": 89.79,
     "error": "note: zero compressed layers, zero injected layers, model unchanged",
     "timestamp": "2026-09-27T05:57:21.330483"
+  },
+  {
+    "module": "phantom",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL_BELOW_CHANCE",
+    "perplexity": "",
+    "accuracy_pct": 50.57,
+    "error": "FAIL: accuracy (50.57%) below chance threshold (56.00%)",
+    "timestamp": "2026-09-27T05:58:12.461257"
   }
 ]
