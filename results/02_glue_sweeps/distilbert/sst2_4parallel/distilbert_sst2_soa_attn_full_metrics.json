@@ -1,0 +1,59 @@
+{
+    "model": "distilbert_sst2_soa_attn",
+    "performance": {
+        "accuracy_pct": 89.22,
+        "f1_score": 0.8974,
+        "f1_macro": 0.8919,
+        "precision": 0.8941,
+        "recall": 0.8916,
+        "val_loss": 0.3612,
+        "perplexity": null,
+        "status": "PASS",
+        "elapsed_s": 23.58
+    },
+    "efficiency": {
+        "total_params_before": 66955010,
+        "total_params_after": 60282626,
+        "trainable_recovery_params": 405504,
+        "compression_rate": 1.1107,
+        "compression_ratio_pct": 9.97,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 0,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 6,
+        "lora_params": 405504,
+        "avg_reconstruction_error": null,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {
+            "distilbert.transformer.layer.0.attention": 128,
+            "distilbert.transformer.layer.1.attention": 128,
+            "distilbert.transformer.layer.2.attention": 128,
+            "distilbert.transformer.layer.3.attention": 128,
+            "distilbert.transformer.layer.4.attention": 128,
+            "distilbert.transformer.layer.5.attention": 128
+        }
+    },
+    "hardware": {
+        "peak_vram_mb": 365.21,
+        "tokens_per_sec": 31830.01
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 317.08,
+        "L_256_vram_mb": 320.65,
+        "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+    },
+    "seed": 42,
+    "git_sha": "bf3fb3914",
+    "git_dirty": true,
+    "torch_version": "2.6.0+cu124",
+    "transformers_version": "5.5.0",
+    "cuda_version": "12.4",
+    "timestamp": "2026-09-27T02:41:24.941068+00:00"
+}

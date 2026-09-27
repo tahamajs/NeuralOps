@@ -530,16 +530,6 @@
     "timestamp": "2026-09-27T04:45:41.674816"
   },
   {
-    "module": "kronecker_tt_lora",
-    "model": "models/distilbert_sst2",
-    "dataset": "sst2",
-    "status": "MODERATE_EXPANSION",
-    "perplexity": "",
-    "accuracy_pct": 90.71,
-    "error": "base_before=66955010 base_after=68627714 delta=+2.50%",
-    "timestamp": "2026-09-27T04:54:30.671481"
-  },
-  {
     "module": "jamba_info",
     "model": "models/distilbert_sst2",
     "dataset": "sst2",
@@ -548,36 +538,6 @@
     "accuracy_pct": 89.56,
     "error": "base_before=66955010 base_after=99003656 delta=+47.9%",
     "timestamp": "2026-09-27T04:54:53.335902"
-  },
-  {
-    "module": "kronecker_tt_lora_class",
-    "model": "models/distilbert_sst2",
-    "dataset": "sst2",
-    "status": "MODERATE_EXPANSION",
-    "perplexity": "",
-    "accuracy_pct": 90.83,
-    "error": "base_before=66955010 base_after=68627714 delta=+2.50%",
-    "timestamp": "2026-09-27T04:55:30.914770"
-  },
-  {
-    "module": "kvtc",
-    "model": "models/distilbert_sst2",
-    "dataset": "sst2",
-    "status": "PASS_NO_COMPRESSION",
-    "perplexity": "",
-    "accuracy_pct": 90.6,
-    "error": "note: zero compressed layers, zero injected layers, model unchanged",
-    "timestamp": "2026-09-27T04:55:35.469433"
-  },
-  {
-    "module": "liftr",
-    "model": "models/distilbert_sst2",
-    "dataset": "sst2",
-    "status": "PASS_NO_COMPRESSION",
-    "perplexity": "",
-    "accuracy_pct": 90.25,
-    "error": "note: zero compressed layers, zero injected layers, model unchanged",
-    "timestamp": "2026-09-27T04:57:15.862413"
   },
   {
     "module": "liftr_class",
@@ -658,5 +618,335 @@
     "accuracy_pct": 51.15,
     "error": "FAIL: accuracy (51.15%) below chance threshold (56.00%)",
     "timestamp": "2026-09-27T05:03:39.160836"
+  },
+  {
+    "module": "modegpt",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.94,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T05:09:43.829695"
+  },
+  {
+    "module": "kronecker_tt_lora_class",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 90.83,
+    "error": "base_before=66955010 base_after=68627714 delta=+2.50%",
+    "timestamp": "2026-09-27T05:31:13.127044"
+  },
+  {
+    "module": "kronecker_tt_lora",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 90.71,
+    "error": "base_before=66955010 base_after=68627714 delta=+2.50%",
+    "timestamp": "2026-09-27T05:31:22.971123"
+  },
+  {
+    "module": "kvtc",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T05:32:27.099774"
+  },
+  {
+    "module": "liftr",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.25,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T05:32:32.119608"
+  },
+  {
+    "module": "moe_deltakv_paged",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL_BELOW_CHANCE",
+    "perplexity": "",
+    "accuracy_pct": 50.92,
+    "error": "FAIL_BELOW_CHANCE: zero compressed layers, zero injected layers (FAIL: accuracy (50.92%) below chance threshold (56.00%))",
+    "timestamp": "2026-09-27T05:44:53.739942"
+  },
+  {
+    "module": "hymba_transx",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "SKIP_BERT_TIMEOUT",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "Module pipeline exceeded hard 1200s timeout",
+    "timestamp": "2026-09-27T05:49:41.890600"
+  },
+  {
+    "module": "nasc",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 88.42,
+    "error": "base_before=66955010 base_after=66993428 delta=+0.06%",
+    "timestamp": "2026-09-27T05:53:55.076231"
+  },
+  {
+    "module": "mamba",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 50.92,
+    "error": "base_before=66955010 base_after=75406082 delta=+12.62%",
+    "timestamp": "2026-09-27T05:53:59.638569"
+  },
+  {
+    "module": "nha",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T05:54:30.239138"
+  },
+  {
+    "module": "nli_softmax_class",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.94,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T05:55:08.420084"
+  },
+  {
+    "module": "nmf",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "NameError: name 'logger' is not defined",
+    "timestamp": "2026-09-27T05:55:28.133240"
+  },
+  {
+    "module": "oha",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 90.14,
+    "error": "base_before=66955010 base_after=67305290 delta=+0.52%",
+    "timestamp": "2026-09-27T05:56:31.364750"
+  },
+  {
+    "module": "padre",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 89.79,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T05:57:21.330483"
+  },
+  {
+    "module": "phantom",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL_BELOW_CHANCE",
+    "perplexity": "",
+    "accuracy_pct": 50.57,
+    "error": "FAIL: accuracy (50.57%) below chance threshold (56.00%)",
+    "timestamp": "2026-09-27T05:58:12.461257"
+  },
+  {
+    "module": "qcqa",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "RuntimeError: einsum(): the number of subscripts in the equation (4) does not match the number of dimensions (3) for operand 0 and no ellipsis was given",
+    "timestamp": "2026-09-27T05:58:49.382867"
+  },
+  {
+    "module": "ptp",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "base_before=66955010 base_after=67250696 delta=+0.44%",
+    "timestamp": "2026-09-27T05:59:02.205893"
+  },
+  {
+    "module": "reap_moe",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 86.81,
+    "error": "base_before=66955010 base_after=70551554 delta=+5.37%",
+    "timestamp": "2026-09-27T05:59:45.433222"
+  },
+  {
+    "module": "regla",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 81.77,
+    "error": "base_before=66955010 base_after=70517000 delta=+5.32%",
+    "timestamp": "2026-09-27T05:59:58.536480"
+  },
+  {
+    "module": "replace",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.94,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:00:22.527523"
+  },
+  {
+    "module": "regla_class",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 81.77,
+    "error": "base_before=66955010 base_after=70517000 delta=+5.32%",
+    "timestamp": "2026-09-27T06:00:38.697672"
+  },
+  {
+    "module": "roast",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.71,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:02:43.295517"
+  },
+  {
+    "module": "routing",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "SKIP_BERT_ARCHITECTURAL",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "note: architecture unsupported by module (Could not instantiate attention class inject_routing)",
+    "timestamp": "2026-09-27T06:02:49.434519"
+  },
+  {
+    "module": "rotational_slicegpt",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.71,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:02:52.259153"
+  },
+  {
+    "module": "routing_class",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "RuntimeError: scatter(): Expected self.dtype to be equal to src.dtype",
+    "timestamp": "2026-09-27T06:03:33.915037"
+  },
+  {
+    "module": "rpca",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:04:49.535755"
+  },
+  {
+    "module": "salr",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:05:08.691526"
+  },
+  {
+    "module": "saes",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.71,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:05:08.979138"
+  },
+  {
+    "module": "slicegpt_pca",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.94,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:10:19.607503"
+  },
+  {
+    "module": "slicegpt",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.94,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:10:25.808952"
+  },
+  {
+    "module": "slim",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 89.91,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:11:48.242265"
+  },
+  {
+    "module": "spectraformer",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 78.44,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:15:34.181570"
+  },
+  {
+    "module": "sparsegpt",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.71,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:16:25.924952"
   }
 ]
