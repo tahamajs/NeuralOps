@@ -234,18 +234,39 @@ def compute_method_d_loss(
 
 
 def set_train_scope(model, train_scope="all"):
+    """
+    Configure trainable parameters.
+
+    - 'all'                 : train everything
+    - 'mamba'/'attention'/'module' : train ONLY parameters inside
+                                    the attention submodule, EXCEPT the
+                                    original GPT-2 c_attn/c_proj fused
+                                    projections. This works for ANY
+                                    injected attention module, whether it
+                                    uses UniversalAttentionWrapper or
+                                    injects directly (q_proj, k_proj, ...).
+    """
     if train_scope == "all":
         for p in model.parameters():
             p.requires_grad = True
-    elif train_scope == "mamba":
+    elif train_scope in ("mamba", "attention", "module"):
         for name, p in model.named_parameters():
-            # Correct filter for this setup: the mamba_block lives
-            # inside a UniversalAttentionWrapper named
-            # `_wrapped_attention`.
-            p.requires_grad = "_wrapped_attention" in name
+            # Must be inside a transformer block's attention submodule
+            if ".attn." not in name:
+                p.requires_grad = False
+                continue
+
+            # Within .attn., inspect the immediate submodule name
+            sub = name.split(".attn.", 1)[-1]
+
+            # Skip original GPT-2 fused projections
+            if sub.startswith(("c_attn", "c_proj")):
+                p.requires_grad = False
+            else:
+                p.requires_grad = True
     else:
         raise ValueError(f"Unknown train_scope: {train_scope}")
-    
+
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     total = sum(p.numel() for p in model.parameters())
     LOG.info("Train scope '%s': %d/%d trainable (%.2f%%)",
