@@ -233,51 +233,25 @@ def compute_method_d_loss(
     return 0.5 * loss_kl + 0.4 * hidden_d + 0.1 * loss_ce
 
 
-def set_train_scope(model: nn.Module, train_scope: str = "all") -> int:
-    """
-    Configures trainable parameters based on train_scope:
-    - 'all': train all parameters
-    - 'mamba': freeze everything except Mamba / SSM branch parameters
-    """
-    scope = train_scope.lower()
-    trainable_count = 0
-
-    if scope == "all":
+def set_train_scope(model, train_scope="all"):
+    if train_scope == "all":
         for p in model.parameters():
             p.requires_grad = True
-            trainable_count += p.numel()
-        return trainable_count
-
-    if scope == "mamba":
-        # Target keywords for Mamba / SSM / adapter parameters
-        target_keywords = (
-            "mamba",
-            "ssm",
-            "lora_",
-            "adapter",
-            "gating",
-            "alpha",
-            "dt_scale",
-            "_wrapped_attention",  # Injected custom attention module wrapper
-        )
-
+    elif train_scope == "mamba":
         for name, p in model.named_parameters():
-            name_lower = name.lower()
-            is_target = any(k in name_lower for k in target_keywords)
-
-            # Ensure base transformer layers (mlp, ln_1, ln_2, ln_f, wte, wpe) are frozen
-            if any(base in name_lower for base in ("mlp", "ln_1", "ln_2", "ln_f", "wte", "wpe")):
-                is_target = False
-
-            if is_target:
-                p.requires_grad = True
-                trainable_count += p.numel()
-            else:
-                p.requires_grad = False
-
-        return trainable_count
-
-    raise ValueError(f"Unknown train_scope: {train_scope}")
+            # Correct filter for this setup: the mamba_block lives
+            # inside a UniversalAttentionWrapper named
+            # `_wrapped_attention`.
+            p.requires_grad = "_wrapped_attention" in name
+    else:
+        raise ValueError(f"Unknown train_scope: {train_scope}")
+    
+    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    total = sum(p.numel() for p in model.parameters())
+    LOG.info("Train scope '%s': %d/%d trainable (%.2f%%)",
+             train_scope, trainable, total,
+             100.0 * trainable / max(1, total))
+    return trainable
 
 
 # -----------------------------------------------------------------------------
@@ -346,7 +320,8 @@ def run_kd_method(
         return max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
 
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
-    scaler = torch.cuda.amp.GradScaler(enabled=args.fp16 and device.startswith("cuda"))
+    use_scaler = bool(args.fp16 and device.startswith("cuda") and not any(p.dtype == torch.float16 for p in trainable_params))
+    scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
 
     # Training state
     ppl_history: Dict[int, float] = {}
@@ -417,14 +392,21 @@ def run_kd_method(
                 loss_scaled = loss / args.grad_accum_steps
                 final_loss = float(loss.item())
 
-            scaler.scale(loss_scaled).backward()
+            if use_scaler:
+                scaler.scale(loss_scaled).backward()
+            else:
+                loss_scaled.backward()
             accum_count += 1
 
             if accum_count % args.grad_accum_steps == 0:
-                scaler.unscale_(optimizer)
-                torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
-                scaler.step(optimizer)
-                scaler.update()
+                if use_scaler:
+                    scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
+                    torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
+                    optimizer.step()
                 optimizer.zero_grad()
                 scheduler.step()
                 step += 1
