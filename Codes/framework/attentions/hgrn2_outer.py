@@ -781,6 +781,8 @@ def inject_hgrn2_outer(
     )
 
     try:
+        kwargs.pop("dim", None)
+        kwargs.pop("num_heads", None)
         new_block = HGRN2OuterBlock(
             config=cfg, dim=dim, num_heads=num_heads,
             is_decoder=is_dec,

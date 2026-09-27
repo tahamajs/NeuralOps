@@ -649,6 +649,9 @@ def inject_samba_m3(
         lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
         lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 32.0))
 
+        kwargs.pop("d_model", None)
+        kwargs.pop("n_heads", None)
+        kwargs.pop("num_heads", None)
         new_block = SAMBAM3Block(
             config=model_config,
             d_model=d_model,
