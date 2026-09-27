@@ -174,12 +174,12 @@ class FactorisedLoRALinear(nn.Module):
             self.U.data.zero_()
             self.S.data.zero_()
             self.V.data.zero_()
-            self.U.data[:, :r].copy_(U[:, :r].to(self.U.dtype, self.U.device))
-            self.S.data[:r].copy_(S[:r].to(self.S.dtype, self.S.device))
-            self.V.data[:, :r].copy_(Vt[:r, :].t().contiguous().to(self.V.dtype, self.V.device))
+            self.U.data[:, :r].copy_(U[:, :r].to(device=self.U.device, dtype=self.U.dtype))
+            self.S.data[:r].copy_(S[:r].to(device=self.S.device, dtype=self.S.dtype))
+            self.V.data[:, :r].copy_(Vt[:r, :].t().contiguous().to(device=self.V.device, dtype=self.V.dtype))
             if bias is not None and self.bias is not None:
                 n = min(self.bias.numel(), bias.numel())
-                self.bias.data[:n].copy_(bias[:n].to(self.bias.dtype, self.bias.device))
+                self.bias.data[:n].copy_(bias[:n].to(device=self.bias.device, dtype=self.bias.dtype))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_dtype = x.dtype
