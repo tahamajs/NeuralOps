@@ -199,6 +199,7 @@ OOM_MODULE_BATCH_OVERRIDES: Dict[str, int] = {
     "kronecker_tt_lora": 4,
     "gated_delta_net": 4, "hgrn2_gated_deltanet": 4,
     "nasc": 8, "nasc_attention": 8,
+    "mamba": 4, "mamba_ssm": 4, "moe_deltakv_paged": 4,
 }
 
 
