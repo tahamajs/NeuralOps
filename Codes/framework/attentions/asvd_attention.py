@@ -291,7 +291,7 @@ class ASVDAttention(BaseAttention):
         self.rank: int = getattr(
             config,
             "asvd_rank",
-            rank if rank is not None else getattr(config, "rank", kwargs.get("rank", 32)),
+            rank if rank is not None else getattr(config, "rank", kwargs.pop("rank", 32)),
         )
         self.lora_rank: int = getattr(config, "lora_rank", kwargs.get("lora_rank", 32))
         self.freeze_base: bool = getattr(config, "freeze_base", kwargs.get("freeze_base", self.lora_rank > 0))

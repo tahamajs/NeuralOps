@@ -135,7 +135,7 @@ class AegisSpectronFP8Config:
                                        self.hidden_size // max(1, self.num_heads))))
         self.window_size = int(kwargs.get("window_size", kwargs.get("local_window",
                                     kwargs.get("block_size", 64))))
-        self.svd_rank = int(kwargs.get("svd_rank", kwargs.get("rank", min(128, self.hidden_size))))
+        self.svd_rank = int(kwargs.get("svd_rank", kwargs.pop("rank", min(128, self.hidden_size))))
         self.lora_rank = int(kwargs.get("lora_rank", kwargs.get("lora_r", 32)))
         self.temperature = float(kwargs.get("temperature", 1.0))
         self.lambda_cost = float(kwargs.get("lambda_cost", 0.1))

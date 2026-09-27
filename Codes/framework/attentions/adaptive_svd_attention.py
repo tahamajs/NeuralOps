@@ -190,7 +190,7 @@ class AdaptiveSVDAttention(BaseAttention):
             self.hidden_size = kwargs.get("hidden_size", 768)
             self.num_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
             self.num_kv_heads = kwargs.get("num_kv_heads", kwargs.get("num_key_value_heads", self.num_heads))
-            self.svd_rank = svd_rank if svd_rank is not None else kwargs.get("rank", 32)
+            self.svd_rank = svd_rank if svd_rank is not None else kwargs.pop("rank", 32)
             self.residual_rank = residual_rank
             self.energy_threshold = float(kwargs.get("energy_threshold", energy_threshold))
             dropout_p = kwargs.get("dropout", 0.1)
@@ -792,7 +792,7 @@ def inject_adaptive_svd(
             getattr(
                 comp_config,
                 "rank",
-                getattr(model_config, "svd_rank", getattr(model_config, "rank", kwargs.get("rank", _h_size_fallback))),
+                getattr(model_config, "svd_rank", getattr(model_config, "rank", kwargs.pop("rank", _h_size_fallback))),
             ),
         )
         residual_rank = getattr(comp_config, "residual_rank", getattr(model_config, "residual_rank", kwargs.get("residual_rank", 16)))

@@ -198,7 +198,7 @@ class SpectraformerAttention(BaseAttention):
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
-        self.rank = _cfg_get(comp_config, "spectraformer_rank", _cfg_get(config, "spectraformer_rank", kwargs.get("rank", rank or 64)))
+        self.rank = _cfg_get(comp_config, "spectraformer_rank", _cfg_get(config, "spectraformer_rank", kwargs.pop("rank", rank or 64)))
 
         # Causal decoder detection
         is_dec = _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))

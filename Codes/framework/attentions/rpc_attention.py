@@ -251,8 +251,7 @@ class RPCAttention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         # ---- sketch rank ----
-        raw_rank = kwargs.get(
-            "rank",
+        raw_rank = kwargs.pop("rank",
             _cfg_get(comp_config, "rank",
                      _cfg_get(config, "rank", rank if rank is not None else 64)),
         )
