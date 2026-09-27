@@ -56,10 +56,19 @@ def get_existing_completed(output_dir: Path):
 
 
 def run_single_module(module: str, args, output_dir: Path):
-    # Wait until system has healthy RAM headroom (>= 2.0 GB)
+    # Wait until system has healthy RAM headroom (>= 2.0 GB) and VRAM headroom (>= 1.5 GB if CUDA available)
     while True:
         free_ram_gb = psutil.virtual_memory().available / 1e9
-        if free_ram_gb >= 2.0:
+        vram_ok = True
+        try:
+            import torch
+            if torch.cuda.is_available():
+                free_b, total_b = torch.cuda.mem_get_info()
+                if (free_b / 1e9) < 1.2:
+                    vram_ok = False
+        except Exception:
+            pass
+        if free_ram_gb >= 2.0 and vram_ok:
             break
         time.sleep(2)
 
