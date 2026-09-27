@@ -200,7 +200,7 @@ class TLinFormerAttention(BaseAttention):
         requested_rank = int(_cfg_get(comp_config, "tlinformer_rank",
                                        getattr(config, "tlinformer_rank", None)
                                        if config else None)
-                              or kwargs.get("rank", rank or 64))
+                              or kwargs.pop("rank", rank or 64))
         self.rank = max(1, min(requested_rank, self.head_dim))
 
         self.max_seq_len = int(getattr(config, "max_position_embeddings",

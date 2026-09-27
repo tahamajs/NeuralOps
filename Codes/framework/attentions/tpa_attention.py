@@ -336,7 +336,7 @@ class TPAttention(BaseAttention):
         self.kv_head_size = self.num_kv_heads * self.head_dim
 
         # ---- rank (head-rank for tensor product) ----
-        raw_r = kwargs.get("rank", _cfg_get(config, "rank", rank))
+        raw_r = kwargs.pop("rank", _cfg_get(config, "rank", rank))
         # TPA-FIX-02: rank must satisfy r*r == head_dim for tensor product.
         # If not, we use the qk_proj path (proper projection).
         self.rank = int(raw_r)

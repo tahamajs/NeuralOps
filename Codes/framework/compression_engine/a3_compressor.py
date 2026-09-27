@@ -1030,7 +1030,7 @@ def a3_compressor_factory(
 
     if comp_config is not None:
         r = _cfg_get(comp_config, "a3_rank", _cfg_get(comp_config, "rank",
-                                                       kwargs.get("rank", rank)))
+                                                       kwargs.pop("rank", rank)))
         u_fish = _cfg_get(comp_config, "a3_use_energy_weighting",
                            _cfg_get(comp_config, "use_energy_weighting",
                                     _cfg_get(comp_config, "a3_use_fisher",
@@ -1067,7 +1067,7 @@ def a3_compressor_factory(
                             _cfg_get(comp_config, "n_calib",
                                      kwargs.get("n_calib", 500)))
     else:
-        r = kwargs.get("rank", rank)
+        r = kwargs.pop("rank", rank)
         u_fish = kwargs.get("use_energy_weighting", kwargs.get("use_fisher", use_fisher))
         u_chol = kwargs.get("use_cholesky", use_cholesky)
         allow_ln = kwargs.get("allow_ln_failure", allow_ln_failure)

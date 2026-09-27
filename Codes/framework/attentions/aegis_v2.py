@@ -442,7 +442,7 @@ class AegisAttentionV2(BaseAttention):
                 local_window=kwargs.get("local_window",
                              getattr(config, "block_size",
                              getattr(config, "local_window", 64))) if config is not None else 64,
-                rank=kwargs.get("rank",
+                rank=kwargs.pop("rank",
                      getattr(config, "lora_r",
                      getattr(config, "rank", 64))) if config is not None else 64,
                 kernel_feature_dim=getattr(config, "rff_features",

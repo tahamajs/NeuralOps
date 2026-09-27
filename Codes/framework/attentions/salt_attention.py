@@ -288,7 +288,7 @@ class SALTAttention(BaseAttention):
         self.kv_repeat: int = max(1, self.num_heads // self.num_kv_heads)
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
 
-        self.rank: int = rank if rank is not None else int(_cfg_get(config, "salt_rank", _cfg_get(config, "rank", kwargs.get("rank", 16))))
+        self.rank: int = rank if rank is not None else int(_cfg_get(config, "salt_rank", _cfg_get(config, "rank", kwargs.pop("rank", 16))))
 
         # Adaptive rank & Fisher flags
         if adaptive_rank is not None:

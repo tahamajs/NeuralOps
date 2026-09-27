@@ -988,7 +988,7 @@ def inject_aegis_hybrid(
         num_key_value_heads=getattr(cfg, "num_key_value_heads", n_heads) if cfg else n_heads,
         local_window=kwargs.get("local_window",
                      getattr(comp_config, "local_window", 256) if comp_config else 256),
-        rank=kwargs.get("rank",
+        rank=kwargs.pop("rank",
               getattr(comp_config, "rank", min(128, h_size)) if comp_config else min(128, h_size)),
         lora_rank=kwargs.get("lora_rank",
                    getattr(comp_config, "lora_rank", 32) if comp_config else 32),

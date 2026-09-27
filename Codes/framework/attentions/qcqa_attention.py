@@ -198,7 +198,7 @@ class QCQAAttention(BaseAttention):
         is_decoder: Optional[bool] = None,
         **kwargs: Any,
     ) -> None:
-        rank = kwargs.get("rank", 64)
+        rank = kwargs.pop("rank", 64)
         super().__init__(config, rank)
         self.config = config
         comp_config = kwargs.get("comp_config", None) or getattr(config, "compression_config", None)
