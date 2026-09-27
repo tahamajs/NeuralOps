@@ -428,5 +428,75 @@
     "accuracy_pct": 65.83,
     "error": "base_before=66955010 base_after=70503170 delta=+5.30%",
     "timestamp": "2026-09-27T03:34:23.131263"
+  },
+  {
+    "module": "hgrn2_outer",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "SKIP_BERT_TIMEOUT",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "Module pipeline exceeded hard 1200s timeout",
+    "timestamp": "2026-09-27T03:53:33.559464"
+  },
+  {
+    "module": "granite_hybrid",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "SKIP_BERT_TIMEOUT",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "Module pipeline exceeded hard 1200s timeout",
+    "timestamp": "2026-09-27T03:53:44.762616"
+  },
+  {
+    "module": "huffman",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T03:53:47.607040"
+  },
+  {
+    "module": "hybrid_attention",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 89.79,
+    "error": "base_before=66955010 base_after=67010378 delta=+0.08%",
+    "timestamp": "2026-09-27T03:53:55.208604"
+  },
+  {
+    "module": "hybridkv_class",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T03:54:48.571409"
+  },
+  {
+    "module": "hybridkv",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T03:54:48.604732"
+  },
+  {
+    "module": "infini",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "RuntimeError: Failed to execute forward pass on InfiniAttention",
+    "timestamp": "2026-09-27T03:55:16.451708"
   }
 ]
