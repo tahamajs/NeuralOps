@@ -176,6 +176,7 @@ if outputs.attentions is not None:
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **46.90%** | -34.90% | 0.4587 | 1.17x | 0 | N/A | 2026-09-19 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **83.26%** | -7.34% | 0.8399 | 1.17x | 0 | [svd-linear-attention-distilbert-sst2-vspec](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-vspec) | 2026-09-27 |
 
 
 | Model | Baseline Acc | VSpec Acc | Δ Acc | F1 | Peak VRAM | Status |

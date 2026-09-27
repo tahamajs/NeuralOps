@@ -968,5 +968,125 @@
     "accuracy_pct": 90.6,
     "error": "note: zero compressed layers, zero injected layers, model unchanged",
     "timestamp": "2026-09-27T06:21:23.638921"
+  },
+  {
+    "module": "svd_seq",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL_BELOW_CHANCE",
+    "perplexity": "",
+    "accuracy_pct": 50.57,
+    "error": "FAIL: accuracy (50.57%) below chance threshold (56.00%)",
+    "timestamp": "2026-09-27T06:25:50.675412"
+  },
+  {
+    "module": "swift_svd",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.94,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:26:49.200858"
+  },
+  {
+    "module": "samba_m3",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "SKIP_BERT_TIMEOUT",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "Module pipeline exceeded hard 1200s timeout",
+    "timestamp": "2026-09-27T06:27:09.918841"
+  },
+  {
+    "module": "template_attention_class",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "base_before=66955010 base_after=67249922 delta=+0.44%",
+    "timestamp": "2026-09-27T06:27:47.510540"
+  },
+  {
+    "module": "tlinformer",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "RuntimeError: The size of tensor a (64) must match the size of tensor b (128) at non-singleton dimension 3",
+    "timestamp": "2026-09-27T06:27:49.966662"
+  },
+  {
+    "module": "token_compressed",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "base_before=66955010 base_after=67250696 delta=+0.44%",
+    "timestamp": "2026-09-27T06:28:11.501525"
+  },
+  {
+    "module": "tomoe",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.71,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:28:43.450316"
+  },
+  {
+    "module": "tomoe_class",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.37,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:28:59.662621"
+  },
+  {
+    "module": "tpa",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "EXTREME_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 77.98,
+    "error": "base_before=66955010 base_after=94470914 delta=+41.1%",
+    "timestamp": "2026-09-27T06:29:13.753168"
+  },
+  {
+    "module": "unified_rope",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 88.88,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:29:40.451122"
+  },
+  {
+    "module": "vig",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 88.65,
+    "error": "base_before=66955010 base_after=67065746 delta=+0.17%",
+    "timestamp": "2026-09-27T06:30:09.857716"
+  },
+  {
+    "module": "uniql",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.71,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:30:10.668245"
   }
 ]
