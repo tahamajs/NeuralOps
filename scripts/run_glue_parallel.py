@@ -116,6 +116,7 @@ def main():
     parser.add_argument("--recovery_steps", type=int, default=50, help="Fine-tuning recovery steps")
     parser.add_argument("--timeout", type=int, default=1200, help="Per-module timeout in seconds")
     parser.add_argument("--modules", default=None, help="Comma-separated modules list or path to txt file")
+    parser.add_argument("--rerun", default=None, help="Comma-separated list of modules to force rerun even if already present in summary.csv")
     args = parser.parse_args()
 
     out_dir = Path(args.output_dir)
@@ -129,8 +130,11 @@ def main():
     else:
         modules = get_all_modules()
 
+    rerun_mods = set([m.strip() for m in args.rerun.split(",") if m.strip()]) if args.rerun else set()
     done = get_existing_completed(out_dir)
-    pending = [m for m in modules if m not in done]
+    # If a module is in rerun_mods, do not count it as done
+    done_effective = done - rerun_mods
+    pending = [m for m in modules if m not in done_effective]
 
     print(f"================================================================================", flush=True)
     print(f"PARALLEL GLUE SWEEP ORCHESTRATOR", flush=True)
