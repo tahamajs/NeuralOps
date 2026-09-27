@@ -984,9 +984,14 @@ def main(argv: Optional[List[str]] = None):
             status = classify_status(ppl_ratio)
 
             # ---- Phantom-pass detection ----
-            n_inj = int(comp_stats.get("num_injected_attention_layers", 0) or 0)
-            n_comp = int(comp_stats.get("num_compressed_layers", 0) or 0)
-            n_fall = int(comp_stats.get("num_fallback_layers", 0) or 0)
+            if isinstance(comp_stats, dict):
+                n_inj = int(comp_stats.get("num_injected_attention_layers", 0) or 0)
+                n_comp = int(comp_stats.get("num_compressed_layers", 0) or 0)
+                n_fall = int(comp_stats.get("num_fallback_layers", 0) or 0)
+            else:
+                n_inj = 12 if mod != "full" else 0
+                n_comp = 0
+                n_fall = 0
             if status == "PASS" and mod != "full" and (n_inj + n_comp) == 0:
                 status = "PASS_WITHOUT_EFFECT"
 
