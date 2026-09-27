@@ -478,8 +478,8 @@ class HGRN2OuterBlock(BaseAttention):
         B, H, L, d = q.shape
         num_chunks = (L + chunk_size - 1) // chunk_size
 
-        S_prev = torch.zeros(B, H, d, d, device=q.device, dtype=torch.float32)
-        z_prev = torch.zeros(B, H, d, device=q.device, dtype=torch.float32)
+        S_prev = torch.zeros(B, H, d, d, device=q.device, dtype=q.dtype)
+        z_prev = torch.zeros(B, H, d, device=q.device, dtype=q.dtype)
 
         outputs = []
 
@@ -517,18 +517,18 @@ class HGRN2OuterBlock(BaseAttention):
             valid = (i_idx == 0) | (i_idx <= j_idx + 1)
             fill_val = -1e4 if log_decay.dtype == torch.float16 else -1e9
             log_decay = log_decay.masked_fill(~valid, fill_val)
-            decay = torch.exp(log_decay)  # (B, H, C+1, C)
+            decay = torch.exp(log_decay).to(q.dtype)  # (B, H, C+1, C)
 
             # ---- within-chunk write contributions ----
-            one_minus_f = 1.0 - f_c                                   # (B, H, C)
+            one_minus_f = (1.0 - f_c).to(q.dtype)                                   # (B, H, C)
             W_kv = one_minus_f[..., None, None] * (
                 k_c.unsqueeze(-1) * v_c.unsqueeze(-2)
             )                                                          # (B, H, C, d, d)
             W_k = one_minus_f[..., None] * k_c                         # (B, H, C, d)
 
             # Combined with prev state as index 0
-            combined_kv = torch.cat([S_prev.unsqueeze(2), W_kv], dim=2)  # (B, H, C+1, d, d)
-            combined_k = torch.cat([z_prev.unsqueeze(2), W_k], dim=2)    # (B, H, C+1, d)
+            combined_kv = torch.cat([S_prev.unsqueeze(2), W_kv], dim=2).to(q.dtype)  # (B, H, C+1, d, d)
+            combined_k = torch.cat([z_prev.unsqueeze(2), W_k], dim=2).to(q.dtype)    # (B, H, C+1, d)
 
             # S_all[j] = sum_i decay[i, j] * combined[i]
             S_all = torch.einsum("bhij,bhiae->bhjae", decay, combined_kv)  # (B, H, C, d, d)
