@@ -49,7 +49,6 @@ docs/_build/
 # ============================================================
 # Django
 # ============================================================
-*.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
@@ -153,7 +152,7 @@ desktop.ini
 # ============================================================
 *.aux
 *.lof
-*.log
+# *.log
 *.lot
 *.flg
 *.out
@@ -244,8 +243,8 @@ temp_modules_docs/
 
 
 
-results/*.log
-*/**/*.log
+# results/*.log
+# */**/*.log
 *.pdf
 
 # ═══════════════════════════════════════════════
@@ -284,7 +283,11 @@ results/**/*.pt
 results/**/*.bin
 results/**/*.safetensors
 benchmark_logs/
-logs/
+# logs/*
+# !logs/isolated/
+# !logs/isolated/*
+# !logs/isolated_results/
+# !logs/isolated_results/*
 
 # ═══════════════════════════════════════════════
 # Paper artifacts (Track generated tables, figures, metrics, cards)
