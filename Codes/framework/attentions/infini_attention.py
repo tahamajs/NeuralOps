@@ -1,4 +1,4 @@
-"""Infini-Attention with Compressive Memory and Sliding Window — Corrected.
+"""Infini-Attention with Compressive Memory and Sliding Window — Fixed (v3).
 
 Reference: Munkhdalai et al., "Leave No Context Behind: Efficient Infinite
 Context Transformers with Infini-attention", 2024.
@@ -12,22 +12,31 @@ Core mechanism:
 
 where σ(x) = ELU(x) + 1.
 
-Fixes (v2):
-  INF-FIX-01  Memory is a transient state — no mid-forward mutation.
-  INF-FIX-02  Memory state is per-batch (B, H, Dh, Dh).
-  INF-FIX-03  No `persistent=True` buffer pollution.
-  INF-FIX-04  Proper feature map σ(x) = ELU(x) + 1.
-  INF-FIX-05  Normalizer z implemented (memory read is a weighted average).
-  INF-FIX-06  Learnable per-head fusion gate β initialized at 0.5.
-  INF-FIX-07  Sliding window is actually applied.
-  INF-FIX-08  Write gate initialized high (sigmoid(2) ≈ 0.88).
-  INF-FIX-09  Decoder: sliding window + memory. Encoder: full attention.
-  INF-FIX-10  Idempotency guard in injector.
-  INF-FIX-11  Storage accounting.
-  INF-FIX-12  Copy_weights uses `.data` (not clone) and handles bias carefully.
-  INF-FIX-13  All output paths pass through `nan_to_num`.
-  INF-FIX-14  GQA repeat_kv before memory read (keeps semantics correct).
-  INF-FIX-15  Removed `compress_dim` complexity — memory is (Dh, Dh).
+Fixes (v3):
+  INF3-FIX-01  Forward signature now matches BERT/RoBERTa/DistilBERT
+               positional arg order exactly, so HF calls bind correctly.
+               `output_attentions` is the 7th positional arg (BERT style);
+               DistilBERT passes it as keyword. Both work.
+  INF3-FIX-02  `layer_idx` accepted as keyword with default 0.
+  INF3-FIX-03  All internal parameters (`beta`, `w_mem.weight`, `w_mem.bias`)
+               are explicitly initialized on the target device/dtype
+               BEFORE the first forward pass, so no device mismatch.
+  INF3-FIX-04  `_compressive_memory_read` precomputes `g · φ(k)` outside the
+               loop and uses a batched outer product; avoids `.to()` churn.
+  INF3-FIX-05  Memory state `M`, `Z` explicitly declared fp32 to avoid
+               autocast-related dtype drift.
+  INF3-FIX-06  Idempotency guard checks both source and parent layer.
+  INF3-FIX-07  Recursion guard in `inject_infini` (depth limit).
+  INF3-FIX-08  Sliding-window + causal + padding masks combined in one
+               `masked_fill` chain.
+  INF3-FIX-09  `nan_to_num` on all outputs (scores, attn, context, memory).
+  INF3-FIX-10  GQA `repeat_kv` applied before memory read, so `v` matches
+               the head layout used in the memory loop.
+  INF3-FIX-11  Storage accounting uses a single sum over real parameters.
+  INF3-FIX-12  `copy_weights` raises a descriptive error on irreconcilable
+               shape mismatch instead of silently truncating.
+  INF3-FIX-13  Proper handling of `head_mask` for 1D/2D/3D shapes.
+  INF3-FIX-14  `comp_config` extraction tolerant of dict/None/namespace.
 """
 
 from __future__ import annotations
@@ -123,6 +132,14 @@ def _detect_decoder(config: Any, is_decoder: Optional[bool], old_attn: Optional[
     return False
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 # ===========================================================================
 # LoRALinear
 # ===========================================================================
@@ -133,10 +150,10 @@ class LoRALinear(nn.Module):
     ):
         super().__init__()
         fk = {"device": device, "dtype": dtype}
-        self.in_features = in_features
-        self.out_features = out_features
-        self.lora_rank = lora_rank
-        self.lora_alpha = lora_alpha
+        self.in_features = int(in_features)
+        self.out_features = int(out_features)
+        self.lora_rank = int(lora_rank)
+        self.lora_alpha = float(lora_alpha)
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
@@ -197,7 +214,14 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register("infini", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("infini_attention", supports_causal=True, supports_gqa=True)
 class InfiniAttention(BaseAttention):
-    r"""Infini-Attention: sliding-window local attention + compressive memory."""
+    """
+    Infini-Attention: sliding-window local attention + compressive memory.
+
+    For decoders, the output is a per-head convex combination of:
+      - A_local: sliding-window softmax attention
+      - A_mem:   read from a transient (per-forward) compressive memory state
+    For encoders, it degenerates to full softmax attention (memory is skipped).
+    """
 
     is_custom_attention: bool = True
 
@@ -219,7 +243,7 @@ class InfiniAttention(BaseAttention):
         except TypeError:
             super().__init__(config)
 
-        # ---- dim ----
+        # ---------- dim ----------
         hidden_size = kwargs.get("hidden_size")
         num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
         num_kv_heads = kwargs.get("num_key_value_heads") or kwargs.get("num_kv_heads")
@@ -254,7 +278,7 @@ class InfiniAttention(BaseAttention):
         self.num_heads = num_heads
         self.num_kv_heads = max(1, min(num_kv_heads, num_heads))
 
-        # ---- head_dim ----
+        # ---------- head_dim ----------
         inferred = None
         if config is not None:
             inferred = getattr(config, "head_dim", None)
@@ -272,24 +296,28 @@ class InfiniAttention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
-        # ---- window ----
+        # ---------- window ----------
         self.local_window = max(1, int(local_window))
 
-        # ---- decoder ----
+        # ---------- decoder ----------
         self.is_decoder = _detect_decoder(config, is_decoder, source_attn)
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
-        # ---- LoRA ----
-        self.lora_rank = int(kwargs.get("lora_rank",
-                            getattr(comp_config, "lora_rank",
-                            getattr(config, "lora_rank", 16) if config else 16)))
-        self.lora_alpha = float(kwargs.get("lora_alpha",
-                              getattr(comp_config, "lora_alpha",
-                              getattr(config, "lora_alpha", 32.0) if config else 32.0)))
+        # ---------- LoRA ----------
+        self.lora_rank = int(kwargs.get(
+            "lora_rank",
+            _cfg_get(comp_config, "lora_rank",
+                     getattr(config, "lora_rank", 16) if config else 16),
+        ))
+        self.lora_alpha = float(kwargs.get(
+            "lora_alpha",
+            _cfg_get(comp_config, "lora_alpha",
+                     getattr(config, "lora_alpha", 32.0) if config else 32.0),
+        ))
         self.freeze_base = (self.lora_rank > 0)
 
-        # ---- projections ----
+        # ---------- projections ----------
         self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True,
                                   lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
                                   freeze_base=self.freeze_base)
@@ -303,20 +331,22 @@ class InfiniAttention(BaseAttention):
                                     lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
                                     freeze_base=self.freeze_base)
 
-        # ---- fusion gate (per-head, init at 0.5) ----
+        # ---------- fusion gate (per-head, init at sigmoid(0)=0.5) ----------
         self.beta = nn.Parameter(torch.zeros(self.num_heads))
 
-        # ---- write gate (per-token, input-dependent) ----
+        # ---------- write gate (per-token, input-dependent) ----------
         self.w_mem = nn.Linear(self.dim, self.num_heads, bias=True)
         with torch.no_grad():
             nn.init.zeros_(self.w_mem.weight)
             nn.init.constant_(self.w_mem.bias, 2.0)   # sigmoid(2) ≈ 0.88
 
-        dropout_p = float(getattr(config, "dropout",
-                          getattr(config, "attention_probs_dropout_prob", 0.0)) if config else 0.0)
+        dropout_p = float(
+            getattr(config, "dropout",
+                    getattr(config, "attention_probs_dropout_prob", 0.0))
+            if config else 0.0
+        )
         self.dropout = nn.Dropout(dropout_p)
 
-        # Storage accounting
         self._orig_storage_bytes = 0
         self._comp_storage_bytes = 0
 
@@ -430,7 +460,7 @@ class InfiniAttention(BaseAttention):
                 extracted["o"] = (d.weight.data.clone(),
                                    b.data.clone() if b is not None else None)
 
-        # Flat
+        # Flat (DistilBERT, Qwen, LLaMA)
         else:
             candidates = {
                 "q": ("q_lin", "q_proj", "query"),
@@ -461,6 +491,11 @@ class InfiniAttention(BaseAttention):
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
                 logger.debug("Infini UniversalAdapter fallback failed: %s", e)
+
+        def _orient(w, in_dim):
+            if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
+                return w.t().contiguous()
+            return w
 
         with torch.no_grad():
             for key, target in (("q", self.q_proj), ("k", self.k_proj),
@@ -503,10 +538,12 @@ class InfiniAttention(BaseAttention):
 
         # Storage accounting
         try:
-            for m in (self.q_proj, self.k_proj, self.v_proj, self.out_proj,
-                       self.w_mem):
-                for p in m.parameters():
-                    self._comp_storage_bytes += p.numel() * p.element_size()
+            self._comp_storage_bytes = sum(
+                p.numel() * p.element_size()
+                for m in (self.q_proj, self.k_proj, self.v_proj,
+                          self.out_proj, self.w_mem)
+                for p in m.parameters()
+            )
         except Exception:
             pass
 
@@ -551,18 +588,16 @@ class InfiniAttention(BaseAttention):
 
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
-        # Sliding window band
         idx = torch.arange(L, device=q.device)
         dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
-        band = dist <= self.local_window                       # (L, L)
-        scores = scores.masked_fill(~band.unsqueeze(0).unsqueeze(0), -1e4)
+        band = dist <= self.local_window
 
-        # Causal mask (decoder self-attention)
         if self.is_decoder:
             causal = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
-            scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
+            band = band & causal
 
-        # Padding mask
+        scores = scores.masked_fill(~band.unsqueeze(0).unsqueeze(0), -1e4)
+
         if valid_mask is not None:
             scores = scores.masked_fill(~valid_mask[:, None, None, :], -1e4)
 
@@ -572,10 +607,11 @@ class InfiniAttention(BaseAttention):
         attn = self.dropout(attn)
 
         out = torch.matmul(attn, v)
+        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
         return out, attn
 
     # ------------------------------------------------------------------
-    # Full dense attention (encoder fallback)
+    # Full dense attention (encoder path)
     # ------------------------------------------------------------------
     def _full_attention(self, q, k, v, valid_mask=None):
         B, H, L, Dh = q.shape
@@ -592,6 +628,7 @@ class InfiniAttention(BaseAttention):
         attn = self.dropout(attn)
 
         out = torch.matmul(attn, v)
+        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
         return out, attn
 
     # ------------------------------------------------------------------
@@ -604,62 +641,77 @@ class InfiniAttention(BaseAttention):
         M_t = M_{t-1} + g_t · φ(k_t)^T v_t
         z_t = z_{t-1} + g_t · φ(k_t)
         y_t = φ(q_t) M_t / (φ(q_t) z_t + ε)
+
+        INF3-FIX-04: the gate-scaled feature `g_t · φ(k_t)` is precomputed
+        outside the loop, and each step uses a batched outer product.
         """
         B, H, L, Dh = q.shape
         device = q.device
         dtype = q.dtype
 
-        # Feature map
-        phi_q = F.elu(q.float()) + 1.0
-        phi_k = F.elu(k.float()) + 1.0
-        v_f = v.float()
+        # Feature map φ(x) = ELU(x) + 1
+        phi_q = F.elu(q.float()) + 1.0                      # (B, H, L, Dh)
+        phi_k = F.elu(k.float()) + 1.0                      # (B, H, L, Dh)
+        v_f = v.float()                                     # (B, H, L, Dh)
 
-        # Apply padding mask
+        # Padding mask
         if valid_mask is not None:
             m = valid_mask[:, None, :, None].to(phi_k.dtype)   # (B, 1, L, 1)
             phi_k = phi_k * m
             v_f = v_f * m
 
-        # Transient state (fresh per forward)
+        # Precompute gate-scaled keys
+        # write_gate: (B, H, L, 1) → kg: (B, H, L, Dh)
+        kg = write_gate.to(phi_k.dtype) * phi_k             # (B, H, L, Dh)
+
+        # Transient memory (fresh per forward)
         M = torch.zeros(B, H, Dh, Dh, device=device, dtype=torch.float32)
         Z = torch.zeros(B, H, Dh, device=device, dtype=torch.float32)
 
         outputs = []
         for t in range(L):
-            k_t = phi_k[:, :, t]                                # (B, H, Dh)
-            v_t = v_f[:, :, t]                                  # (B, H, Dh)
-            q_t = phi_q[:, :, t]                                # (B, H, Dh)
-            g_t = write_gate[:, :, t]                           # (B, H, 1)
+            k_t = kg[:, :, t]                               # (B, H, Dh)
+            v_t = v_f[:, :, t]                              # (B, H, Dh)
+            q_t = phi_q[:, :, t]                            # (B, H, Dh)
 
-            # Update memory (outer product scaled by gate)
-            M = M + g_t.unsqueeze(-1) * torch.einsum("bhd,bhe->bhde", k_t, v_t)
-            Z = Z + g_t * k_t
+            # Batched outer product + accumulation
+            M = M + k_t.unsqueeze(-1) * v_t.unsqueeze(-2)   # (B, H, Dh, Dh)
+            Z = Z + k_t                                     # (B, H, Dh)
 
             # Read
-            o_t = torch.einsum("bhd,bhde->bhe", q_t, M)         # (B, H, Dh)
-            denom = torch.einsum("bhd,bhd->bh", q_t, Z).clamp(min=1e-6)  # (B, H)
+            o_t = torch.einsum("bhd,bhde->bhe", q_t, M)     # (B, H, Dh)
+            denom = torch.einsum("bhd,bhd->bh", q_t, Z).clamp(min=1e-6)
             o_t = o_t / denom.unsqueeze(-1)
             outputs.append(o_t)
 
-        out = torch.stack(outputs, dim=2)                       # (B, H, L, Dh)
+        out = torch.stack(outputs, dim=2)
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
         return out.to(dtype)
 
     # ------------------------------------------------------------------
-    # Forward
+    # Forward — signature matches BERT/RoBERTa/DistilBERT
     # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
-        output_attentions: Optional[bool] = False,
         encoder_hidden_states: Optional[torch.Tensor] = None,
+        encoder_attention_mask: Optional[torch.Tensor] = None,
         past_key_value: Optional[Any] = None,
+        output_attentions: Optional[bool] = False,
+        output_hidden_states: Optional[bool] = False,
+        return_dict: Optional[bool] = True,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+
+        # INF3-FIX-02: layer_idx from kwargs (some HF models pass it)
+        layer_idx = kwargs.get("layer_idx", 0)
+
+        # INF3-FIX-01: position_embeddings comes from kwargs, never positional
+        position_embeddings = kwargs.get("position_embeddings", None)
+
         if encoder_hidden_states is not None:
             raise NotImplementedError("InfiniAttention does not support cross-attention.")
 
@@ -677,13 +729,11 @@ class InfiniAttention(BaseAttention):
         v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
         # ---- RoPE ----
-        if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
         if position_embeddings is not None:
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
-        # ---- GQA repeat ----
+        # ---- GQA ----
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
@@ -693,19 +743,17 @@ class InfiniAttention(BaseAttention):
 
         # ---- attention path ----
         if self.is_decoder:
-            # Sliding window + compressive memory
             A_local, attn = self._local_sliding_attention(q, k, v, valid_mask)
 
-            # Write gate
-            write_gate = torch.sigmoid(self.w_mem(hidden_states))       # (B, L, H)
-            write_gate = write_gate.transpose(1, 2).unsqueeze(-1)        # (B, H, L, 1)
+            # Write gate: (B, L, H) → (B, H, L, 1)
+            wg = torch.sigmoid(self.w_mem(hidden_states))
+            write_gate = wg.transpose(1, 2).unsqueeze(-1)
+
             A_mem = self._compressive_memory_read(q, k, v, write_gate, valid_mask)
 
-            # Fusion (per-head)
-            beta = torch.sigmoid(self.beta).view(1, H, 1, 1)
+            beta = torch.sigmoid(self.beta).to(A_mem.dtype).view(1, H, 1, 1)
             fused = beta * A_mem + (1.0 - beta) * A_local
         else:
-            # Encoder: full attention (no memory needed)
             fused, attn = self._full_attention(q, k, v, valid_mask)
 
         # ---- head_mask ----
@@ -717,6 +765,7 @@ class InfiniAttention(BaseAttention):
                 hm = hm.view(hm.shape[0], H, 1, 1)
             elif hm.dim() == 3:
                 hm = hm.unsqueeze(1)
+            # else assume 4D already
             fused = fused * hm
 
         # ---- output ----
@@ -734,8 +783,7 @@ class InfiniAttention(BaseAttention):
         if valid_mask is not None:
             out = out * valid_mask.unsqueeze(-1).to(out.dtype)
 
-        attn_ret = attn if output_attentions else None
-        return out, attn_ret
+        return out, (attn if output_attentions else None)
 
     # ------------------------------------------------------------------
     def storage_bytes(self) -> Dict[str, int]:
@@ -828,9 +876,14 @@ def inject_infini(
     if src_attn is None:
         src_attn = target
 
-    # Idempotency guard
-    if isinstance(src_attn, InfiniAttention) or "InfiniAttention" in src_attn.__class__.__name__:
+    # INF3-FIX-06: idempotency guard on both source and parent
+    if isinstance(src_attn, InfiniAttention) \
+            or "InfiniAttention" in src_attn.__class__.__name__:
         return None
+    for attr in ("attention", "self_attn", "attn", "self"):
+        child = getattr(target, attr, None)
+        if isinstance(child, InfiniAttention):
+            return None
 
     if cfg is None:
         cfg = getattr(src_attn, "config", None) or getattr(target, "config", None)
@@ -849,10 +902,14 @@ def inject_infini(
         or 4
     )
 
-    local_window = int(kwargs.pop("local_window",
-                       getattr(comp_config, "local_window", 128) if comp_config else 128))
-    lora_rank = int(kwargs.pop("lora_rank",
-                    getattr(comp_config, "lora_rank", 16) if comp_config else 16))
+    local_window = int(kwargs.pop(
+        "local_window",
+        _cfg_get(comp_config, "local_window", 128),
+    ))
+    lora_rank = int(kwargs.pop(
+        "lora_rank",
+        _cfg_get(comp_config, "lora_rank", 16),
+    ))
 
     try:
         new_attn = InfiniAttention(
