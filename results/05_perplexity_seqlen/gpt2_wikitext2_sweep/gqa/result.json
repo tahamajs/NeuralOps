@@ -1,0 +1,17 @@
+{
+  "module_name": "gqa",
+  "status": "PASS_DEGRADED",
+  "perplexity": 1369.1,
+  "baseline_ppl": 21.71,
+  "delta_ppl": 1347.39,
+  "compression_rate": 1.0843,
+  "compression_ratio_pct": 7.77,
+  "peak_vram_mb": 822.02,
+  "latency_ms_per_token": 0.203,
+  "throughput_tok_per_sec": 4930.2,
+  "elapsed_s": 20.28,
+  "total_params_before": 124439808,
+  "total_params_after": 114767616,
+  "error": "",
+  "timestamp": "2026-09-27T11:12:22"
+}

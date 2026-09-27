@@ -1,0 +1,24 @@
+module_name,status,perplexity,baseline_ppl,delta_ppl,compression_rate,compression_ratio_pct,peak_vram_mb,latency_ms_per_token,throughput_tok_per_sec,elapsed_s,total_params_before,total_params_after,error,timestamp
+full,PASS,21.71,21.71,0.0,1.0,0.0,916.17,0.089,11217.4,8.91,124439808,124439808,,2026-09-27T11:09:25
+adaptive_sparse,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,4.02,124439808,124439808,"mat1 and mat2 must have the same dtype, but got Half and Float",2026-09-27T11:09:30
+aegis_hybrid,PASS_DEGRADED,361.2,21.71,339.49,1.2057,17.06,797.03,0.456,2194.7,45.56,124439808,103206288,,2026-09-27T11:10:22
+aegis_v2,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,58.64,124439808,124439808,expected scalar type Half but found Float,2026-09-27T11:11:21
+block_transformer_hiba,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,3.23,124439808,124439808,"mat1 and mat2 must have the same dtype, but got Half and Float",2026-09-27T11:11:24
+cluster,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,3.27,124439808,124439808,"mat1 and mat2 must have the same dtype, but got Half and Float",2026-09-27T11:11:27
+compressed_attention,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,5.48,124439808,124439808,"expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",2026-09-27T11:11:33
+compressed_mha,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,5.41,124439808,124439808,"expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",2026-09-27T11:11:38
+expert_choice_moe,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,3.29,124439808,124439808,"mat1 and mat2 must have the same dtype, but got Half and Float",2026-09-27T11:11:41
+flash3,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,3.2,124439808,124439808,"mat1 and mat2 must have the same dtype, but got Half and Float",2026-09-27T11:11:45
+full_attention,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,3.22,124439808,124439808,"mat1 and mat2 must have the same dtype, but got Half and Float",2026-09-27T11:11:48
+fusion_attn,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,3.23,124439808,124439808,"mat1 and mat2 must have the same dtype, but got Half and Float",2026-09-27T11:11:51
+galerkin,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,3.24,124439808,124439808,"mat1 and mat2 must have the same dtype, but got Half and Float",2026-09-27T11:11:55
+gated_deltanet_block,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,3.41,124439808,124439808,"mat1 and mat2 must have the same dtype, but got Half and Float",2026-09-27T11:11:58
+gqa,PASS_DEGRADED,1369.1,21.71,1347.39,1.0843,7.77,822.02,0.203,4930.2,20.28,124439808,114767616,,2026-09-27T11:12:22
+grecodec,PASS_DEGRADED,3551.91,21.71,3530.2,2.5426,60.67,765.52,0.144,6964.6,14.36,124439808,48942336,,2026-09-27T11:12:46
+griffin_ssd,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,6.91,124439808,124439808,expected scalar type Half but found Float,2026-09-27T11:12:53
+hamming,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,6.36,124439808,124439808,"mat1 and mat2 must have the same dtype, but got Half and Float",2026-09-27T11:12:59
+hashed_net_class,PASS,21.71,21.71,0.0,1.0,0.0,917.9,0.132,7566.3,13.22,124439808,124439808,,2026-09-27T11:13:33
+hgrn2_gated_deltanet,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,10.44,124439808,124439808,expected scalar type Float but found Half,2026-09-27T11:13:44
+hla,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,6.78,124439808,124439808,"expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",2026-09-27T11:13:51
+hybrid_attention,PASS,21.71,21.71,0.0,0.9991,-0.09,842.06,0.638,1567.7,63.79,124439808,124550544,,2026-09-27T11:15:01
+hybridkv,PASS,21.71,21.71,0.0,1.0,0.0,917.57,0.085,11764.6,8.5,124439808,124439808,,2026-09-27T11:15:12

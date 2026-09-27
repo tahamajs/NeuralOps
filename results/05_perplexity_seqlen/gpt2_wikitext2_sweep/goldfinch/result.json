@@ -1,0 +1,17 @@
+{
+  "module_name": "goldfinch",
+  "status": "PASS_DEGRADED",
+  "perplexity": 1833.94,
+  "baseline_ppl": 21.71,
+  "delta_ppl": 1812.23,
+  "compression_rate": 0.8895,
+  "compression_ratio_pct": -12.43,
+  "peak_vram_mb": 877.96,
+  "latency_ms_per_token": 7.814,
+  "throughput_tok_per_sec": 128.0,
+  "elapsed_s": 781.4,
+  "total_params_before": 124439808,
+  "total_params_after": 139904412,
+  "error": "",
+  "timestamp": "2026-09-27T10:31:13"
+}

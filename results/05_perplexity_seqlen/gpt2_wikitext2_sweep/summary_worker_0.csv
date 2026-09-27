@@ -1,0 +1,5 @@
+module_name,status,perplexity,baseline_ppl,delta_ppl,compression_rate,compression_ratio_pct,peak_vram_mb,latency_ms_per_token,throughput_tok_per_sec,elapsed_s,total_params_before,total_params_after,error,timestamp
+full,PASS,21.71,21.71,0.0,1.0,0.0,916.17,0.078,12818.9,7.8,124439808,124439808,,2026-09-27T11:09:13
+adaptive_svd,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,42.42,124439808,124439808,"expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",2026-09-27T11:09:55
+aegis_spectron_fp8,PASS_DEGRADED,1814.89,21.71,1793.18,1.1278,11.33,837.64,1.475,678.1,147.46,124439808,110339508,,2026-09-27T11:12:31
+aegis_v5,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,139.64,124439808,124439808,expected scalar type Half but found Float,2026-09-27T11:14:51
