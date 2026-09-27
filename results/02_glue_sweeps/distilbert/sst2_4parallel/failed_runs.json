@@ -948,5 +948,25 @@
     "accuracy_pct": 90.71,
     "error": "note: zero compressed layers, zero injected layers, model unchanged",
     "timestamp": "2026-09-27T06:16:25.924952"
+  },
+  {
+    "module": "squeezing_heads",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.48,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:19:12.163922"
+  },
+  {
+    "module": "subspace_projection",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:21:23.638921"
   }
 ]
