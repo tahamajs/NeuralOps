@@ -230,6 +230,13 @@ A powerful architectural synergy combines low-rank spectral decomposition with e
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **83.60%** | -7.00% | 0.8457 | 1.20x | 0 | [svd-linear-attention-distilbert-sst2-svd-llm-v2](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-svd-llm-v2) | 2026-09-27 |
+
+
 The empirical evaluation of `svd_llm_v2_attention` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
 
 ### 8.1 Language Modeling Quality & Throughput
