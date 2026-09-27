@@ -47,8 +47,6 @@ import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
-from Codes.framework.tests.conftest import hidden_states
-
 logger = logging.getLogger(__name__)
 
 import torch
