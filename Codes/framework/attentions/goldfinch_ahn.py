@@ -858,6 +858,11 @@ def inject_goldfinch_ahn(
     )
 
     try:
+        kwargs.pop("d_model", None)
+        kwargs.pop("num_heads", None)
+        kwargs.pop("hidden_size", None)
+        kwargs.pop("num_attention_heads", None)
+        kwargs.pop("old_attn", None)
         new_attn = GoldFinchAHNBlock(
             config=cfg,
             comp_config=comp_config,

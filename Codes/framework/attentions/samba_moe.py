@@ -328,6 +328,10 @@ def inject_samba_moe(
         lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
         lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 32.0))
         n_experts = kwargs.pop("n_experts", _cfg_get(comp_config, "n_experts", 8))
+        kwargs.pop("d_model", None)
+        kwargs.pop("n_heads", None)
+        kwargs.pop("num_heads", None)
+        kwargs.pop("hidden_size", None)
 
         new_block = SambaMoEBlock(
             config=model_config,
@@ -339,6 +343,12 @@ def inject_samba_moe(
             pretrained_attn=src,
             **kwargs,
         )
+
+        if src is not None:
+            dev = next(src.parameters()).device if list(src.parameters()) else None
+            dt = next(src.parameters()).dtype if list(src.parameters()) else None
+            if dev is not None and dt is not None:
+                new_block = new_block.to(device=dev, dtype=dt)
 
         for attr in ("self_attn", "attn", "self"):
             if hasattr(layer, attr):
