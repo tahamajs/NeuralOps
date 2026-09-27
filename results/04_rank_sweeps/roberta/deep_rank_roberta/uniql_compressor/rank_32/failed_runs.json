@@ -1,0 +1,12 @@
+[
+  {
+    "module": "uniql_compressor",
+    "model": "models\\roberta_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 93.23,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T09:08:32.851801"
+  }
+]
