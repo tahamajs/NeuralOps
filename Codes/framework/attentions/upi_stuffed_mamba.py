@@ -545,7 +545,7 @@ class SelectiveMamba(BaseAttention):
             h_running = h_chunk[:, -1]
 
         y = torch.cat(y_chunks, dim=1)
-        y = y + self.D * x
+        y = (y + self.D.to(x.dtype) * x).to(x.dtype)
 
         if reverse:
             y = torch.flip(y, dims=[1])
@@ -603,10 +603,13 @@ class SelectiveMamba(BaseAttention):
                     logger.debug("get_token_valid_mask failed: %s", e)
                     mask_bool = None
 
+        target_dtype = hidden_states.dtype
         xz = self.in_proj(hidden_states)
         x_in, z = xz.chunk(2, dim=-1)
 
-        x_conv = self.conv1d(x_in.transpose(1, 2))[:, :, :L].transpose(1, 2).contiguous()
+        conv_w = self.conv1d.weight.to(x_in.dtype)
+        conv_b = self.conv1d.bias.to(x_in.dtype) if self.conv1d.bias is not None else None
+        x_conv = F.conv1d(x_in.transpose(1, 2), conv_w, conv_b, stride=self.conv1d.stride, padding=self.conv1d.padding, dilation=self.conv1d.dilation, groups=self.conv1d.groups)[:, :, :L].transpose(1, 2).contiguous()
         x_ssm = F.silu(x_conv)
 
         # Selective projections: dt_raw [dt_rank], B_t [d_state], C_t [d_state]
@@ -635,11 +638,11 @@ class SelectiveMamba(BaseAttention):
             y_bwd = self._selective_scan(x_ssm, dt, B_t, C_t, mask=mask_bool, reverse=True)
             y = 0.5 * (y_fwd + y_bwd)
 
-        gated = y * F.silu(z)
+        gated = (y.to(target_dtype) * F.silu(z.to(target_dtype))).to(target_dtype)
 
         # Inner SSM output is inner_dim; out_proj brings it back to dim.
         # Always apply out_proj.
-        out = self.out_proj(gated)
+        out = self.out_proj(gated).to(target_dtype)
 
         if mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
@@ -820,6 +823,10 @@ def inject_selective_mamba(
             pretrained_attn=src,
             **kwargs,
         )
+        if src is not None:
+            p = next(src.parameters(), None)
+            if p is not None:
+                new_block.to(device=p.device, dtype=p.dtype)
 
         if target is not None:
             if hasattr(target, "attention"):
