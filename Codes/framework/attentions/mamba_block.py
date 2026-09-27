@@ -331,26 +331,35 @@ class MambaBlock(nn.Module):
         device = self.in_proj.weight.device
 
         def _to_t(x: Optional[torch.Tensor], r: int, c: int) -> Optional[torch.Tensor]:
-            """Project W (any shape) to (r, c) via SVD + tile if needed."""
+            """Project W (any shape) to target shape (r, c) via SVD."""
             if x is None:
                 return None
             x = x.float()
             if x.ndim != 2:
                 return None
-            # SVD-based rank truncation if input is bigger
+            M, N = x.shape
             u, s, vh = torch.linalg.svd(x, full_matrices=False)
-            r_use = min(r, s.numel())
-            c_use = min(c, x.size(-1))
-            # Build (r, c) via low-rank reconstruction, tiling if r > s.numel()
-            proj = (u[:, :r_use] * s[:r_use].unsqueeze(0)) @ vh[:r_use, :c_use]
+            k = min(r, c, s.numel())
+            
+            u_r = u[:min(r, M), :k]
+            vh_c = vh[:k, :min(c, N)]
+            core = (u_r * s[:k].unsqueeze(0)) @ vh_c
+            
             out = torch.zeros(r, c, dtype=torch.float32, device=x.device)
-            out[:proj.size(0), :proj.size(1)] = proj
-            if r > proj.size(0):
-                # tile remaining rows
-                remaining = r - proj.size(0)
-                reps = (remaining + proj.size(0) - 1) // proj.size(0)
-                tiled = proj.repeat(reps, 1)[:remaining]
-                out[proj.size(0):, :tiled.size(1)] = tiled
+            out[:core.size(0), :core.size(1)] = core
+            
+            if r > core.size(0):
+                rem_r = r - core.size(0)
+                reps_r = (rem_r + core.size(0) - 1) // core.size(0)
+                tiled_r = core.repeat(reps_r, 1)[:rem_r, :]
+                out[core.size(0):, :core.size(1)] = tiled_r
+                
+            if c > core.size(1):
+                rem_c = c - core.size(1)
+                reps_c = (rem_c + core.size(1) - 1) // core.size(1)
+                tiled_c = out[:, :core.size(1)].repeat(1, reps_c)[:, :rem_c]
+                out[:, core.size(1):] = tiled_c
+                
             return out.to(device=device, dtype=dtype)
 
         with torch.no_grad():
@@ -575,8 +584,9 @@ class MambaBlock(nn.Module):
 
         if h_prev is None:
             y = self._parallel_scan(u_t, dt_t, A, B_t, C_t, self.D)
-            # Compute the new state for consistency (cheap, one extra pass)
-            _, h_next = self._recurrent_scan(u_t, dt_t, A, B_t, C_t, self.D, None)
+            h_next = None
+            if kwargs.get("use_cache", False):
+                _, h_next = self._recurrent_scan(u_t, dt_t, A, B_t, C_t, self.D, None)
         else:
             y, h_next = self._recurrent_scan(u_t, dt_t, A, B_t, C_t, self.D, h_prev)
 
@@ -632,10 +642,8 @@ class MambaBlock(nn.Module):
         attn_weights = None
 
         fmt = self._return_format
-        if fmt == "bert":
+        if fmt in ("bert", "gpt2"):
             return (out, attn_weights)
-        if fmt == "gpt2":
-            return (out, present_state, attn_weights)
         # llama
         return (out, attn_weights, present_state)
 
@@ -741,6 +749,10 @@ def inject_mamba(
 
     # ---- Build the block ----
     try:
+        kwargs.pop("d_model", None)
+        kwargs.pop("hidden_size", None)
+        kwargs.pop("source_attn", None)
+        kwargs.pop("old_attn", None)
         new_module = MambaBlock(
             config=cfg,
             d_model=d_model,
