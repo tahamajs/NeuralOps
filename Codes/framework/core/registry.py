@@ -226,6 +226,9 @@ class Registry:
     def __iter__(self):
         return iter(self._dict)
 
+    def __getitem__(self, key: str) -> Callable:
+        return self.resolve(key)
+
     def __contains__(self, key: str) -> bool:
         self._try_lazy_load(key)
         return key.lower() in self._dict

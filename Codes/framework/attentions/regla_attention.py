@@ -767,6 +767,9 @@ def inject_regla(
                 if val is not None:
                     attn_kwargs[key] = val
 
+        kwargs.pop("hidden_size", None)
+        kwargs.pop("num_heads", None)
+        kwargs.pop("d_model", None)
         new_attn = ReGLAAttention(
             config=cfg,
             pretrained_attn=src_attn if src_attn is not target else None,

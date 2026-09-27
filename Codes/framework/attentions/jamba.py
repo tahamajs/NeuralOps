@@ -47,6 +47,8 @@ import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
+from Codes.framework.tests.conftest import hidden_states
+
 logger = logging.getLogger(__name__)
 
 import torch
@@ -647,11 +649,14 @@ class Jamba2Block(BaseAttention):
         layer_idx = kwargs.get("layer_idx", 0)
         position_embeddings = kwargs.get("position_embeddings", None)
 
-        B, L, D = hidden_states.shape
+        target_dtype = hidden_states.dtype
 
         # ---------- Branch 1: SVD-Mamba ----------
         mamba_out, _ = self.mamba(hidden_states, attention_mask=attention_mask)
-        x1 = self.norm1(hidden_states + mamba_out)
+        norm1_dtype = self.norm1.weight.dtype if hasattr(self.norm1, 'weight') and self.norm1.weight is not None else target_dtype
+        x1 = self.norm1((hidden_states + mamba_out.to(target_dtype)).to(norm1_dtype)).to(target_dtype)
+        B, L, _ = hidden_states.shape
+        target_dtype = hidden_states.dtype
 
         # ---------- Branch 2: MHA ----------
         q = self.q_lin(x1).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
@@ -702,19 +707,21 @@ class Jamba2Block(BaseAttention):
                     is_causal=is_causal,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
-                attn_out = _sdpa_out.to(hidden_states.dtype)\
+                attn_out = _sdpa_out.to(target_dtype)\
                                      .transpose(1, 2).contiguous()\
                                      .view(B, L, self.all_head_size)
                 attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
                 attn_proj = attn_out if self.is_nested_encoder else self.out_lin(attn_out)
-                x2 = self.norm2(x1 + self.dropout(attn_proj))
+                norm2_dtype = self.norm2.weight.dtype if hasattr(self.norm2, 'weight') and self.norm2.weight is not None else target_dtype
+                x2 = self.norm2((x1 + self.dropout(attn_proj.to(target_dtype))).to(norm2_dtype)).to(target_dtype)
 
                 moe_out = self.moe(x2)
                 # JAMBA-FIX-10
                 if isinstance(moe_out, (tuple, list)):
                     moe_out = moe_out[0]
-                x3 = self.norm3(x2 + self.dropout(moe_out))
+                norm3_dtype = self.norm3.weight.dtype if hasattr(self.norm3, 'weight') and self.norm3.weight is not None else target_dtype
+                x3 = self.norm3((x2 + self.dropout(moe_out.to(target_dtype))).to(norm3_dtype)).to(target_dtype)
 
                 # JAMBA-FIX-03: store as float
                 aux = getattr(self.moe, "aux_loss", 0.0)
@@ -765,13 +772,15 @@ class Jamba2Block(BaseAttention):
         attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
         attn_proj = attn_out if self.is_nested_encoder else self.out_lin(attn_out)
-        x2 = self.norm2(x1 + self.dropout(attn_proj))
+        norm2_dtype = self.norm2.weight.dtype if hasattr(self.norm2, 'weight') and self.norm2.weight is not None else target_dtype
+        x2 = self.norm2((x1 + self.dropout(attn_proj.to(target_dtype))).to(norm2_dtype)).to(target_dtype)
 
         # ---------- Branch 3: MoE ----------
         moe_out = self.moe(x2)
         if isinstance(moe_out, (tuple, list)):
             moe_out = moe_out[0]
-        x3 = self.norm3(x2 + self.dropout(moe_out))
+        norm3_dtype = self.norm3.weight.dtype if hasattr(self.norm3, 'weight') and self.norm3.weight is not None else target_dtype
+        x3 = self.norm3((x2 + self.dropout(moe_out.to(target_dtype))).to(norm3_dtype)).to(target_dtype)
 
         aux = getattr(self.moe, "aux_loss", 0.0)
         self.aux_loss = float(aux.item()) if torch.is_tensor(aux) else float(aux)
@@ -911,6 +920,10 @@ def inject_jamba(
             num_attention_heads=num_heads,
             **kwargs,
         )
+        if src_attn is not None:
+            p = next(src_attn.parameters(), None)
+            if p is not None:
+                new_block.to(device=p.device, dtype=p.dtype)
     except Exception as e:
         logger.error("Jamba2Block injection failed: %s", e)
         return None
