@@ -515,7 +515,8 @@ class HGRN2OuterBlock(BaseAttention):
             i_idx = torch.arange(C + 1, device=q.device).view(C + 1, 1)
             j_idx = torch.arange(C, device=q.device).view(1, C)
             valid = (i_idx == 0) | (i_idx <= j_idx + 1)
-            log_decay = log_decay.masked_fill(~valid, -1e9)
+            fill_val = -1e4 if log_decay.dtype == torch.float16 else -1e9
+            log_decay = log_decay.masked_fill(~valid, fill_val)
             decay = torch.exp(log_decay)  # (B, H, C+1, C)
 
             # ---- within-chunk write contributions ----

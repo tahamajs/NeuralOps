@@ -908,6 +908,11 @@ def inject_jamba(
     )
 
     try:
+        kwargs.pop("d_model", None)
+        kwargs.pop("hidden_size", None)
+        kwargs.pop("num_heads", None)
+        kwargs.pop("num_attention_heads", None)
+        kwargs.pop("old_attn", None)
         new_block = Jamba2Block(
             d_model=hidden_size,
             config=cfg,
