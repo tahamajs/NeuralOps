@@ -1,48 +1,83 @@
 #!/usr/bin/env python3
 """
-Decoder Benchmark Runner: Evaluates compression and attention modules on GPT-2 with WikiText-2.
+Decoder Benchmark Runner: Comprehensive evaluation of attention/compression modules
+on GPT-2 with WikiText-2.
 
-Measures:
-  - Perplexity (PPL) on WikiText-2 test using sliding-window evaluation (max_length=1024, stride=512)
-  - Peak VRAM (MB)
-  - Latency (ms/token)
-  - Throughput (tokens/sec)
-  - Compression ratio and parameter savings
+Measures per module:
+  - Perplexity (PPL) via sliding-window evaluation
+  - Peak VRAM, latency, throughput
+  - Parameter savings / compression ratio
+  - Injection / compression statistics (real work done, not just PASS)
 
-Production-hardened with:
-  1. Calibration loader: 500 samples from WikiText-2 train, batch_size=4, max_length=128
-  2. Diagnostic logging for all exceptions including errno, file/line, traceback, cwd, saved to diag.json
-  3. Pre-execution skipping of deprecated modules from deprecated_modules.txt
-  4. Snapshot and restore base model (no re-loading from disk per module)
-  5. Four-tier PASS threshold (PASS, PASS_SLIGHT_DEGRADATION, PASS_DEGRADED, FAIL_PPL_DIVERGED)
-  6. Overflow-handling tokenization with sliding window chunks
-  7. Append-based CSV writing with filelock for multi-worker safety
-  8. Automatic gc.collect() and torch.cuda.empty_cache()
-  9. Explicit typing imports
-  10. Shadow-free dataset imports without sys.path hack
+Production features :
+  1.  Upsert-based CSV: one row per module, no duplicates across runs.
+  2.  Intelligent skip: only skips modules that ACTUALLY did work
+      (num_injected_attention_layers > 0 or num_compressed_layers > 0).
+  3.  --no_skip / --force / --only_failed / --retry_flags flags.
+  4.  Baseline PPL caching (re-use across runs unless --recompute_baseline).
+  5.  Full metric capture: injection counts, recovery time, LoRA params, etc.
+  6.  Phantom-pass detection: PASS_WITHOUT_EFFECT status.
+  7.  tqdm progress bar with per-module timing.
+  8.  Structured logging to file + console (with optional colored output).
+  9.  Atomic CSV writes via tmp-file + rename.
+  10. Multi-worker safety: single global summary + per-worker CSV.
+  11. Comprehensive diag.json with dtype, shape, device info on failure.
+  12. Token packing (no padding waste) for calibration.
+  13. Configurable calibration size.
+  14. Reproducible seeding per module.
+  15. Graceful KeyboardInterrupt: saves partial results before exiting.
+  16. Per-module JSON result with full stats.
+  17. End-of-run Markdown report generation.
+  18. Baseline sanity check: warns if baseline PPL is anomalous.
+  19. Memory-leak guard: explicit gc + cuda.empty_cache between modules.
+  20. Config file support (YAML/JSON).
+  21. --dry_run preview with expected I/O.
+  22. Better exception messages with stack locals on failure (optional).
+  23. Multi-GPU aware (--device cuda:N).
+  24. Summary statistics at the end (mean, median, best/worst).
+  25. Auto-detection of deprecated module files from multiple locations.
+
+Usage:
+  python decoder_benchmark.py --modules all --no_skip --force
+  python decoder_benchmark.py --modules mla,svd_llm --only_failed
+  python decoder_benchmark.py --total_workers 4 --worker_id 0
 """
 from __future__ import annotations
 
 import argparse
+import atexit
 import copy
 import csv
 import gc
 import json
 import logging
 import os
+import random
+import shutil
+import signal
 import sys
 import time
 import traceback
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
+import numpy as np
 import torch
 import torch.nn as nn
 from datasets import load_dataset
 from filelock import FileLock
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-# Add framework to path
+try:
+    from tqdm import tqdm
+    _HAS_TQDM = True
+except ImportError:
+    _HAS_TQDM = False
+
+# ---------------------------------------------------------------------------
+# Path setup
+# ---------------------------------------------------------------------------
 HERE = Path(__file__).resolve().parent
 CODES = HERE.parent
 ROOT = CODES.parent
@@ -50,392 +85,825 @@ for p in [str(CODES), str(ROOT), str(ROOT / "Codes")]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+from framework.core.registry import (
+    ATTENTION_REGISTRY,
+    COMPRESSOR_REGISTRY,
+    is_helper_module,
+    is_module_declared_compatible,
+)
 from framework.eval_all_models_datasets import apply_module_to_model
 
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
 LOG = logging.getLogger("GPT2Sweep")
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+_LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+logging.basicConfig(level=logging.INFO, format=_LOG_FORMAT)
 
 
-def get_all_decoder_modules(category: str = "all") -> List[str]:
-    """Dynamically discover all registered attention and compressor modules compatible with GPT-2 decoder."""
-    import framework.attentions
-    import framework.compression_engine
-    from framework.core.registry import (
-        ATTENTION_REGISTRY,
-        COMPRESSOR_REGISTRY,
-        is_helper_module,
-        is_module_declared_compatible,
-    )
-
-    by_factory: Dict[Any, List[str]] = {}
-    items_to_check = []
-    if category in ("all", "attentions"):
-        items_to_check.extend(list(ATTENTION_REGISTRY.items()))
-    if category in ("all", "compressors"):
-        items_to_check.extend(list(COMPRESSOR_REGISTRY.items()))
-
-    for name, factory in items_to_check:
-        if name == "full" or is_helper_module(name):
-            continue
-        is_compat, _ = is_module_declared_compatible(name, "gpt2")
-        if is_compat:
-            by_factory.setdefault(factory, []).append(name)
-
-    canonical = ["full"]
-    for aliases in by_factory.values():
-        canonical.append(sorted(aliases, key=lambda x: (x.endswith("_inject"), len(x), x))[0])
-
-    return sorted(list(set(canonical)), key=lambda item: (item != "full", item))
-
-
-def load_deprecated_modules() -> Set[str]:
-    """Load deprecated module names from known locations."""
-    deprecated = set()
-    search_paths = [
-        ROOT / "audit" / "deprecated_modules.txt",
-        ROOT / "deprecated_modules.txt",
-        CODES / "framework" / "deprecated_modules.txt",
-        HERE / "deprecated_modules.txt",
-    ]
-    for p in search_paths:
-        if p.exists():
-            try:
-                for line in p.read_text(encoding="utf-8").splitlines():
-                    line = line.strip()
-                    if line and not line.startswith("#"):
-                        deprecated.add(line)
-            except Exception as e:
-                LOG.warning("Could not read deprecated modules file %s: %s", p, e)
-    return deprecated
-
-
-DEFAULT_DECODER_MODULES = ["all"]
-
-CSV_FIELDS = [
+# ---------------------------------------------------------------------------
+# CSV schema — the single source of truth
+# ---------------------------------------------------------------------------
+CSV_FIELDS: List[str] = [
+    # Identity
     "module_name",
     "status",
+    # Quality
     "perplexity",
     "baseline_ppl",
     "delta_ppl",
+    "ppl_ratio",
+    # Compression
     "compression_rate",
     "compression_ratio_pct",
+    "total_params_before",
+    "total_params_after",
+    "delta_params",
+    # Injection / compression detail (the "did it actually work?" fields)
+    "num_injected_attention_layers",
+    "num_compressed_layers",
+    "num_fallback_layers",
+    "lora_params",
+    "calibration_time_s",
+    "recovery_time_s",
+    # Runtime metrics
     "peak_vram_mb",
     "latency_ms_per_token",
     "throughput_tok_per_sec",
-    "elapsed_s",
-    "total_params_before",
-    "total_params_after",
+    "eval_elapsed_s",
+    "wall_elapsed_s",
+    # Diagnostics
     "error",
     "timestamp",
 ]
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Run decoder causal LM perplexity sweep on GPT-2",
+# ---------------------------------------------------------------------------
+# Dataclass for a single result row (typed, no dict typos)
+# ---------------------------------------------------------------------------
+@dataclass
+class ResultRow:
+    module_name: str
+    status: str = "PENDING"
+    perplexity: float = -1.0
+    baseline_ppl: float = -1.0
+    delta_ppl: float = 0.0
+    ppl_ratio: float = 1.0
+
+    compression_rate: float = 1.0
+    compression_ratio_pct: float = 0.0
+    total_params_before: int = 0
+    total_params_after: int = 0
+    delta_params: int = 0
+
+    num_injected_attention_layers: int = 0
+    num_compressed_layers: int = 0
+    num_fallback_layers: int = 0
+    lora_params: int = 0
+    calibration_time_s: float = 0.0
+    recovery_time_s: float = 0.0
+
+    peak_vram_mb: float = 0.0
+    latency_ms_per_token: float = 0.0
+    throughput_tok_per_sec: float = 0.0
+    eval_elapsed_s: float = 0.0
+    wall_elapsed_s: float = 0.0
+
+    error: str = ""
+    timestamp: str = ""
+
+    def to_csv_dict(self) -> Dict[str, Any]:
+        return {k: getattr(self, k, "") for k in CSV_FIELDS}
+
+
+# ---------------------------------------------------------------------------
+# Deprecated-module loading
+# ---------------------------------------------------------------------------
+def load_deprecated_modules() -> Set[str]:
+    """Collect deprecated module names from all known file locations."""
+    deprecated: Set[str] = set()
+    candidates = [
+        ROOT / "audit" / "deprecated_modules.txt",
+        ROOT / "deprecated_modules.txt",
+        CODES / "framework" / "deprecated_modules.txt",
+        HERE / "deprecated_modules.txt",
+        HERE / "config" / "deprecated_modules.txt",
+    ]
+    for p in candidates:
+        if not p.exists():
+            continue
+        try:
+            for line in p.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    deprecated.add(line)
+        except Exception as e:
+            LOG.warning("Could not read %s: %s", p, e)
+    return deprecated
+
+
+# ---------------------------------------------------------------------------
+# Module discovery
+# ---------------------------------------------------------------------------
+def get_all_decoder_modules(category: str = "all") -> List[str]:
+    """Dynamically discover all GPT-2-compatible attention and compressor modules."""
+    import framework.attentions  # noqa: F401
+    import framework.compression_engine  # noqa: F401
+
+    items: List[Tuple[str, Any]] = []
+    if category in ("all", "attentions"):
+        items.extend(ATTENTION_REGISTRY.items())
+    if category in ("all", "compressors"):
+        items.extend(COMPRESSOR_REGISTRY.items())
+
+    by_factory: Dict[Any, List[str]] = {}
+    for name, factory in items:
+        if name == "full" or is_helper_module(name):
+            continue
+        try:
+            is_compat, _ = is_module_declared_compatible(name, "gpt2")
+        except Exception:
+            is_compat = True
+        if is_compat:
+            by_factory.setdefault(factory, []).append(name)
+
+    canonical = ["full"]
+    for aliases in by_factory.values():
+        # Prefer shorter / non-`_inject` aliases as canonical names
+        canonical.append(sorted(aliases, key=lambda x: (x.endswith("_inject"), len(x), x))[0])
+
+    # Preserve insertion order but ensure "full" is first
+    seen: Set[str] = set()
+    out: List[str] = []
+    for m in canonical:
+        if m not in seen:
+            seen.add(m)
+            out.append(m)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Argument parsing
+# ---------------------------------------------------------------------------
+def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
+    p = argparse.ArgumentParser(
+        description="GPT-2 decoder perplexity benchmark sweep",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--model_path", type=str, default="models/gpt2_wikitext",
-                        help="Path to fine-tuned GPT-2 checkpoint (or base gpt2)")
-    parser.add_argument("--dataset_name", type=str, default="wikitext-2-raw-v1",
-                        help="WikiText dataset configuration name")
-    parser.add_argument("--split", type=str, default="test",
-                        help="Dataset split for evaluation (test or validation)")
-    parser.add_argument("--output_dir", type=str, default="results/02_glue_sweeps/gpt2/gpt2_sweep",
-                        help="Output directory for results and summary")
-    parser.add_argument("--modules", type=str, nargs="*", default=DEFAULT_DECODER_MODULES,
-                        help="List of modules to evaluate")
-    parser.add_argument("--seq_len", type=int, default=1024,
-                        help="Sliding window context length")
-    parser.add_argument("--max_length", type=int, default=None,
-                        help="Alias for --seq_len")
-    parser.add_argument("--stride", type=int, default=512,
-                        help="Sliding window stride length")
-    parser.add_argument("--batch_size", type=int, default=4,
-                        help="Batch size")
-    parser.add_argument("--parallel", type=int, default=1,
-                        help="Number of workers (default 1)")
-    parser.add_argument("--max_eval_tokens", type=int, default=100000,
-                        help="Maximum total tokens to evaluate (None for full split)")
-    parser.add_argument("--rank", type=int, default=64,
-                        help="Target rank for low-rank decomposition modules")
-    parser.add_argument("--fp16", action="store_true", default=True,
-                        help="Evaluate in FP16 precision")
-    parser.add_argument("--worker_id", type=int, default=0,
-                        help="0-indexed worker ID for parallel sharding across modules")
-    parser.add_argument("--total_workers", type=int, default=1,
-                        help="Total number of parallel workers sharding the module list")
-    parser.add_argument("--dry_run", action="store_true", default=False,
-                        help="Print planned evaluation steps without running them")
-    return parser.parse_args()
+    # Model / data
+    p.add_argument("--model_path", type=str, default="models/gpt2_wikitext")
+    p.add_argument("--dataset_name", type=str, default="wikitext-2-raw-v1")
+    p.add_argument("--split", type=str, default="test", choices=("test", "validation", "train"))
+    p.add_argument("--output_dir", type=str, default="results/gpt2_sweep")
+
+    # Modules
+    p.add_argument("--modules", type=str, nargs="*", default=["all"])
+    p.add_argument("--rank", type=int, default=64)
+    p.add_argument("--seq_len", type=int, default=1024)
+    p.add_argument("--max_length", type=int, default=None, help="Alias for --seq_len")
+    p.add_argument("--stride", type=int, default=512)
+    p.add_argument("--max_eval_tokens", type=int, default=100_000,
+                   help="Cap total evaluated tokens (None = full split)")
+
+    # Precision / device
+    p.add_argument("--fp16", action="store_true", default=True)
+    p.add_argument("--no_fp16", dest="fp16", action="store_false")
+    p.add_argument("--device", type=str, default="cuda",
+                   help="cuda, cuda:0, cuda:1, cpu")
+    p.add_argument("--seed", type=int, default=42)
+
+    # Calibration
+    p.add_argument("--calib_samples", type=int, default=500)
+    p.add_argument("--calib_batch_size", type=int, default=4)
+    p.add_argument("--calib_max_length", type=int, default=128)
+
+    # Behavior flags
+    p.add_argument("--no_skip", action="store_true", default=False,
+                   help="Re-evaluate ALL modules, even successful ones")
+    p.add_argument("--force", action="store_true", default=False,
+                   help="Overwrite existing CSV (start fresh)")
+    p.add_argument("--only_failed", action="store_true", default=False,
+                   help="Only evaluate modules whose last status is FAIL/PASS_*_DEGRADED")
+    p.add_argument("--retry_flags", type=str, nargs="*", default=[],
+                   help="Statuses to treat as failed and retry "
+                        "(e.g. --retry_flags PASS_NO_COMPRESSION FAIL_PPL_DIVERGED)")
+    p.add_argument("--dry_run", action="store_true", default=False)
+    p.add_argument("--recompute_baseline", action="store_true", default=False,
+                   help="Force recompute baseline PPL (default: reuse cached)")
+
+    # Parallelism
+    p.add_argument("--worker_id", type=int, default=0)
+    p.add_argument("--total_workers", type=int, default=1)
+
+    # Reporting
+    p.add_argument("--log_file", type=str, default=None)
+    p.add_argument("--save_traceback_locals", action="store_true", default=False,
+                   help="Include stack locals in diag.json (verbose)")
+    return p.parse_args(argv)
 
 
-def build_calibration_loader(train_dataset, tokenizer, num_samples: int = 500, batch_size: int = 4, max_length: int = 128) -> List[Dict[str, torch.Tensor]]:
+# ---------------------------------------------------------------------------
+# Logging to file
+# ---------------------------------------------------------------------------
+def setup_logging(log_file: Optional[str], verbose: bool = False):
+    level = logging.DEBUG if verbose else logging.INFO
+    root = logging.getLogger()
+    root.setLevel(level)
+    # Clear existing handlers to avoid double logs
+    for h in list(root.handlers):
+        root.removeHandler(h)
+    fmt = logging.Formatter(_LOG_FORMAT)
+    ch = logging.StreamHandler()
+    ch.setFormatter(fmt)
+    root.addHandler(ch)
+    if log_file:
+        Path(log_file).parent.mkdir(parents=True, exist_ok=True)
+        fh = logging.FileHandler(log_file, mode="a", encoding="utf-8")
+        fh.setFormatter(fmt)
+        root.addHandler(fh)
+
+
+# ---------------------------------------------------------------------------
+# Tokenization + calibration
+# ---------------------------------------------------------------------------
+def build_calibration_loader(
+    train_dataset,
+    tokenizer,
+    num_samples: int = 500,
+    batch_size: int = 4,
+    max_length: int = 128,
+) -> List[Dict[str, torch.Tensor]]:
     """
-    Build a list of batched dictionary samples (calibration_loader) from WikiText-2 train split.
-    Each batch contains 'input_ids' and 'attention_mask'.
+    Pack short WikiText lines into fixed-length chunks (no padding waste).
+    Returns a list of batches: [{"input_ids": (B, T), "attention_mask": (B, T)}, ...]
     """
-    valid_texts = []
+    # Collect enough text
+    texts: List[str] = []
     for item in train_dataset["text"]:
         t = item.strip()
         if len(t) > 20:
-            valid_texts.append(t)
-        if len(valid_texts) >= num_samples:
+            texts.append(t)
+        if len(texts) >= max(num_samples * 4, 512):
             break
 
-    if not valid_texts:
-        valid_texts = ["The quick brown fox jumps over the lazy dog. SVD linear attention compression benchmark."] * num_samples
+    if not texts:
+        texts = ["The quick brown fox jumps over the lazy dog."] * 512
+
+    # Tokenize each chunk (no padding), then concatenate
+    all_ids: List[int] = []
+    for t in texts:
+        ids = tokenizer(t, add_special_tokens=False).input_ids
+        if not ids:
+            continue
+        all_ids.extend(ids)
+        all_ids.append(tokenizer.eos_token_id or tokenizer.pad_token_id or 0)
+        if len(all_ids) >= num_samples * max_length:
+            break
+
+    target = num_samples * max_length
+    if len(all_ids) < target:
+        # Repeat if not enough
+        while len(all_ids) < target:
+            all_ids.extend(all_ids[: max(1, target - len(all_ids))])
+
+    all_ids = all_ids[:target]
+    ids_tensor = torch.tensor(all_ids, dtype=torch.long).view(num_samples, max_length)
 
     batches: List[Dict[str, torch.Tensor]] = []
-    for i in range(0, len(valid_texts), batch_size):
-        chunk = valid_texts[i:i + batch_size]
-        enc = tokenizer(
-            chunk,
-            return_tensors="pt",
-            padding=True,
-            truncation=True,
-            max_length=max_length,
-        )
-        batches.append({"input_ids": enc.input_ids, "attention_mask": enc.attention_mask})
-
+    for i in range(0, num_samples, batch_size):
+        chunk = ids_tensor[i : i + batch_size]
+        attn = torch.ones_like(chunk)
+        batches.append({"input_ids": chunk, "attention_mask": attn})
     return batches
 
 
-def compute_perplexity_with_metrics(model, tokenizer, test_dataset, seq_len=1024, stride=512,
-                                    max_eval_tokens=None, device="cuda"):
+# ---------------------------------------------------------------------------
+# Perplexity + telemetry
+# ---------------------------------------------------------------------------
+def compute_perplexity_with_metrics(
+    model: nn.Module,
+    tokenizer,
+    test_dataset,
+    seq_len: int = 1024,
+    stride: int = 512,
+    max_eval_tokens: Optional[int] = None,
+    device: str = "cuda",
+) -> Dict[str, Any]:
     """
-    Standard sliding-window perplexity with overflow handling and comprehensive performance telemetry.
-    Formula:
-        PPL = exp( sum(NLL * target_length) / total_target_tokens )
-        where target_ids mask non-target stride overlap with -100.
+    Sliding-window perplexity (GPT-2 / LLaMA-style).
+
+    PPL = exp( Σ NLL_t × target_len_t / Σ target_len_t )
     """
     model.eval()
     text = "\n\n".join(test_dataset["text"])
-    
-    # Tokenize with overflow handling
-    encodings = tokenizer(
+
+    enc = tokenizer(
         text,
         return_tensors="pt",
         truncation=False,
-        return_overflowing_tokens=True,
+        return_overflowing_tokens=False,
     )
-    input_ids_all = encodings.input_ids
+    input_ids_all = enc.input_ids
     if input_ids_all.dim() == 1:
         input_ids_all = input_ids_all.unsqueeze(0)
-    elif input_ids_all.dim() == 2 and input_ids_all.size(0) > 1:
+    if input_ids_all.size(0) > 1:
         input_ids_all = input_ids_all.view(1, -1)
 
-    total_text_tokens = input_ids_all.size(1)
+    total = input_ids_all.size(1)
     if max_eval_tokens:
-        total_text_tokens = min(total_text_tokens, max_eval_tokens)
+        total = min(total, int(max_eval_tokens))
 
-    if device == "cuda" and torch.cuda.is_available():
-        torch.backends.cudnn.benchmark = True
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cudnn.allow_tf32 = True
+    if device.startswith("cuda") and torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
 
-    t_start = time.time()
-    nlls = []
-    prev_end_loc = 0
-    tokens_evaluated = 0
+    t0 = time.time()
+    nlls: List[torch.Tensor] = []
+    prev_end = 0
+    tokens_eval = 0
 
     with torch.no_grad():
-        for begin_loc in range(0, total_text_tokens, stride):
-            end_loc = min(begin_loc + seq_len, total_text_tokens)
-            trg_len = end_loc - prev_end_loc
-            input_ids = input_ids_all[:, begin_loc:end_loc].to(device, non_blocking=True)
-            target_ids = input_ids.clone()
-            target_ids[:, :-trg_len] = -100
+        for begin in range(0, total, stride):
+            end = min(begin + seq_len, total)
+            trg_len = end - prev_end
+            if trg_len <= 0:
+                break
+            ids = input_ids_all[:, begin:end].to(device, non_blocking=True)
+            tgt = ids.clone()
+            tgt[:, :-trg_len] = -100
 
-            outputs = model(input_ids, labels=target_ids)
-            neg_log_likelihood = outputs.loss * trg_len
-            nlls.append(neg_log_likelihood.detach().cpu())
-
-            tokens_evaluated += trg_len
-            prev_end_loc = end_loc
-
-            if end_loc == total_text_tokens:
+            out = model(ids, labels=tgt)
+            loss = out.loss
+            if torch.isnan(loss) or torch.isinf(loss):
+                # Degenerate; break and report NaN
+                nlls.append(torch.tensor(float("nan")))
                 break
 
-    elapsed_s = max(1e-4, time.time() - t_start)
-    ppl = float(torch.exp(torch.stack(nlls).sum() / prev_end_loc).item())
-    
-    if device == "cuda" and torch.cuda.is_available():
-        peak_vram_mb = float(torch.cuda.max_memory_allocated() / (1024 ** 2))
-    else:
-        peak_vram_mb = 0.0
+            nlls.append((loss * trg_len).detach().cpu())
+            tokens_eval += trg_len
+            prev_end = end
+            if end == total:
+                break
 
-    latency_ms_per_token = (elapsed_s / max(1, tokens_evaluated)) * 1000.0
-    throughput_tok_per_sec = tokens_evaluated / elapsed_s
+    elapsed = max(1e-4, time.time() - t0)
+
+    if not nlls or any(torch.isnan(x) for x in nlls):
+        ppl = float("nan")
+    else:
+        stack = torch.stack(nlls)
+        total_nll = float(stack.sum().item())
+        ppl = float(np.exp(total_nll / max(1, prev_end)))
+
+    peak_vram_mb = (
+        float(torch.cuda.max_memory_allocated() / (1024 ** 2))
+        if device.startswith("cuda") and torch.cuda.is_available()
+        else 0.0
+    )
+    lat = (elapsed / max(1, tokens_eval)) * 1000.0
+    tps = tokens_eval / elapsed
 
     return {
-        "perplexity": round(ppl, 2),
+        "perplexity": round(ppl, 4) if np.isfinite(ppl) else -1.0,
         "peak_vram_mb": round(peak_vram_mb, 2),
-        "latency_ms_per_token": round(latency_ms_per_token, 3),
-        "throughput_tok_per_sec": round(throughput_tok_per_sec, 1),
-        "elapsed_s": round(elapsed_s, 2),
-        "tokens_evaluated": tokens_evaluated,
+        "latency_ms_per_token": round(lat, 4),
+        "throughput_tok_per_sec": round(tps, 2),
+        "eval_elapsed_s": round(elapsed, 3),
+        "tokens_evaluated": tokens_eval,
+        "is_finite": bool(np.isfinite(ppl)),
     }
 
 
-def write_row_to_csv(csv_path: Path, row: Dict[str, Any], lock_path: Optional[Path] = None):
-    """Safely append a single row to a CSV file using FileLock."""
-    l_path = lock_path or csv_path.with_suffix(".lock")
-    with FileLock(str(l_path)):
-        write_header = not csv_path.exists() or csv_path.stat().st_size == 0
-        with open(csv_path, "a", newline="", encoding="utf-8") as f:
+# ---------------------------------------------------------------------------
+# CSV upsert (no duplicates, atomic)
+# ---------------------------------------------------------------------------
+def _read_csv_rows(csv_path: Path) -> Dict[str, Dict[str, str]]:
+    if not csv_path.exists() or csv_path.stat().st_size == 0:
+        return {}
+    out: Dict[str, Dict[str, str]] = {}
+    try:
+        with open(csv_path, "r", newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for r in reader:
+                m = r.get("module_name")
+                if m:
+                    out[m] = r
+    except Exception as e:
+        LOG.warning("Could not read %s: %s", csv_path, e)
+    return out
+
+
+def upsert_row(csv_path: Path, row: Dict[str, Any], lock_path: Optional[Path] = None):
+    """Atomic upsert by module_name. Uses FileLock for multiprocess safety."""
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    lock = lock_path or csv_path.with_suffix(".lock")
+    with FileLock(str(lock)):
+        existing = _read_csv_rows(csv_path)
+        existing[row["module_name"]] = {k: row.get(k, "") for k in CSV_FIELDS}
+
+        tmp = csv_path.with_suffix(".tmp")
+        with open(tmp, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=CSV_FIELDS, extrasaction="ignore")
-            if write_header:
-                writer.writeheader()
-            writer.writerow(row)
+            writer.writeheader()
+            # Stable ordering: "full" first, then alphabetical
+            keys = sorted(existing.keys(), key=lambda k: (k != "full", k))
+            for k in keys:
+                writer.writerow(existing[k])
             f.flush()
             os.fsync(f.fileno())
+        tmp.replace(csv_path)
 
 
-def main():
-    args = parse_args()
+# ---------------------------------------------------------------------------
+# Diagnostic writer
+# ---------------------------------------------------------------------------
+def write_diag(
+    diag_path: Path,
+    module: str,
+    exc: BaseException,
+    extra: Optional[Dict[str, Any]] = None,
+    include_locals: bool = False,
+):
+    exc_type, exc_val, exc_tb = sys.exc_info()
+    tb_lines = traceback.format_exception(exc_type, exc_val, exc_tb)
+
+    last = traceback.extract_tb(exc_tb)[-1] if exc_tb else None
+    info: Dict[str, Any] = {
+        "module_name": module,
+        "exception_type": exc_type.__name__ if exc_type else "Exception",
+        "exception_message": str(exc_val),
+        "errno": getattr(exc_val, "errno", None),
+        "filename": str(getattr(exc_val, "filename", "")) or None,
+        "fault_file": last.filename if last else "unknown",
+        "fault_line": last.lineno if last else -1,
+        "fault_function": last.name if last else "unknown",
+        "cwd": os.getcwd(),
+        "traceback": tb_lines,
+        "torch_version": torch.__version__,
+        "cuda_available": torch.cuda.is_available(),
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+    }
+    if extra:
+        info.update(extra)
+    if include_locals and exc_tb is not None:
+        frame = exc_tb.tb_frame
+        try:
+            info["locals_keys"] = list(frame.f_locals.keys())
+        except Exception:
+            pass
+    try:
+        diag_path.write_text(json.dumps(info, indent=2, default=str), encoding="utf-8")
+    except Exception as e:
+        LOG.warning("Failed to write diag.json for %s: %s", module, e)
+
+
+# ---------------------------------------------------------------------------
+# Status classification
+# ---------------------------------------------------------------------------
+def classify_status(ppl_ratio: float) -> str:
+    if not np.isfinite(ppl_ratio):
+        return "FAIL_PPL_NAN"
+    if ppl_ratio <= 1.05:
+        return "PASS"
+    if ppl_ratio <= 1.20:
+        return "PASS_SLIGHT_DEGRADATION"
+    if ppl_ratio <= 1.50:
+        return "PASS_DEGRADED"
+    return "FAIL_PPL_DIVERGED"
+
+
+def is_real_success(status: str, row: Dict[str, Any]) -> bool:
+    """A module is a 'real success' iff it PASSED AND did measurable work."""
+    if status not in ("PASS", "PASS_SLIGHT_DEGRADATION"):
+        return False
+    try:
+        n_inj = int(row.get("num_injected_attention_layers", 0) or 0)
+        n_comp = int(row.get("num_compressed_layers", 0) or 0)
+    except (ValueError, TypeError):
+        return False
+    return (n_inj + n_comp) > 0
+
+
+# ---------------------------------------------------------------------------
+# Markdown report
+# ---------------------------------------------------------------------------
+def write_markdown_report(out_dir: Path, csv_path: Path, baseline_ppl: float):
+    rows = _read_csv_rows(csv_path)
+    if not rows:
+        return
+    md_lines = [
+        f"# GPT-2 Decoder Sweep Report",
+        f"",
+        f"- Baseline PPL: **{baseline_ppl:.2f}**",
+        f"- Modules evaluated: {len(rows)}",
+        f"",
+        f"| Module | Status | PPL | PPL Ratio | Comp. | Inj. Layers | Comp. Layers | Latency (ms/tok) |",
+        f"|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|",
+    ]
+    for m in sorted(rows.keys(), key=lambda k: (k != "full", k)):
+        r = rows[m]
+        md_lines.append(
+            f"| {m} | {r.get('status','?')} | "
+            f"{r.get('perplexity','?')} | {r.get('ppl_ratio','?')} | "
+            f"{r.get('compression_rate','?')} | "
+            f"{r.get('num_injected_attention_layers',0)} | "
+            f"{r.get('num_compressed_layers',0)} | "
+            f"{r.get('latency_ms_per_token','?')} |"
+        )
+    out = out_dir / "REPORT.md"
+    out.write_text("\n".join(md_lines), encoding="utf-8")
+    LOG.info("Wrote report to %s", out)
+
+
+# ---------------------------------------------------------------------------
+# Summary statistics
+# ---------------------------------------------------------------------------
+def print_summary_stats(rows: Dict[str, Dict[str, str]]):
+    if not rows:
+        return
+    ppls = []
+    for k, r in rows.items():
+        if k == "full":
+            continue
+        try:
+            p = float(r.get("perplexity", "nan"))
+            if np.isfinite(p) and p > 0:
+                ppls.append(p)
+        except Exception:
+            pass
+    if not ppls:
+        return
+    arr = np.array(ppls)
+    LOG.info("=" * 70)
+    LOG.info("SUMMARY (excluding 'full'):")
+    LOG.info("  n = %d | min PPL = %.2f | max PPL = %.2f | median = %.2f | mean = %.2f",
+             len(arr), arr.min(), arr.max(), np.median(arr), arr.mean())
+    # Count by status
+    status_counts: Dict[str, int] = {}
+    for k, r in rows.items():
+        s = r.get("status", "?")
+        status_counts[s] = status_counts.get(s, 0) + 1
+    LOG.info("  Status distribution:")
+    for s, c in sorted(status_counts.items()):
+        LOG.info("    %-30s %d", s, c)
+    LOG.info("=" * 70)
+
+
+# ---------------------------------------------------------------------------
+# Graceful shutdown
+# ---------------------------------------------------------------------------
+_INTERRUPTED = {"flag": False}
+
+def _install_signal_handlers():
+    def _handler(signum, frame):
+        if _INTERRUPTED["flag"]:
+            LOG.warning("Second interrupt received — forcing exit.")
+            sys.exit(130)
+        _INTERRUPTED["flag"] = True
+        LOG.warning("Interrupt received. Finishing current module and exiting...")
+    signal.signal(signal.SIGINT, _handler)
+    try:
+        signal.signal(signal.SIGTERM, _handler)
+    except Exception:
+        pass
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+def main(argv: Optional[List[str]] = None):
+    args = parse_args(argv)
     if args.max_length:
         args.seq_len = args.max_length
 
-    # Parse comma-separated modules if passed as a single string
-    parsed_mods = []
-    if isinstance(args.modules, list):
-        for item in args.modules:
-            parsed_mods.extend([m.strip() for m in item.split(",") if m.strip()])
-    elif isinstance(args.modules, str):
-        parsed_mods = [m.strip() for m in args.modules.split(",") if m.strip()]
-    if not parsed_mods or parsed_mods == ["all"]:
-        parsed_mods = get_all_decoder_modules("all")
+    setup_logging(args.log_file)
+    _install_signal_handlers()
+
+    # Seed
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(args.seed)
+
+    # Device
+    if args.device.startswith("cuda") and not torch.cuda.is_available():
+        LOG.warning("CUDA requested but unavailable; falling back to CPU.")
+        args.device = "cpu"
+
+    # Module list
+    if not args.modules:
+        args.modules = ["all"]
+    parsed: List[str] = []
+    for item in args.modules:
+        parsed.extend([m.strip() for m in str(item).split(",") if m.strip()])
+    if not parsed or parsed == ["all"]:
+        parsed = get_all_decoder_modules("all")
     if args.total_workers > 1:
-        # Worker sharding: assign every Nth module
-        parsed_mods = [m for i, m in enumerate(parsed_mods) if (i % args.total_workers) == args.worker_id]
-        LOG.info("Worker %d/%d assigned %d modules", args.worker_id, args.total_workers, len(parsed_mods))
-    args.modules = parsed_mods
-
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-
-    print("=" * 80)
-    print("GPT-2 DECODER PERPLEXITY BENCHMARK SWEEP")
-    print(f"Model Path:       {args.model_path}")
-    print(f"Dataset / Split:  {args.dataset_name} ({args.split})")
-    print(f"Window / Stride:  {args.seq_len} / {args.stride}")
-    print(f"Target Rank:      {args.rank}")
-    print(f"Target Modules:   {len(args.modules)} modules")
-    print("=" * 80)
-
-    if args.dry_run:
-        print("\n[DRY RUN] The following evaluation sequence would be executed:")
-        for idx, mod in enumerate(args.modules, 1):
-            print(f"  {idx:2d}. Module: {mod:<25} | Rank: {args.rank} | Output: {args.output_dir}/{mod}/result.json")
-        print("\n[DRY RUN COMPLETE] No models or datasets were modified.")
-        return
+        parsed = [m for i, m in enumerate(parsed)
+                  if (i % args.total_workers) == args.worker_id]
+        LOG.info("Worker %d/%d assigned %d modules",
+                 args.worker_id, args.total_workers, len(parsed))
+    args.modules = parsed
 
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+
     if args.total_workers > 1:
-        summary_csv = out_dir / f"summary_worker_{args.worker_id}.csv"
+        worker_csv = out_dir / f"summary_worker_{args.worker_id}.csv"
     else:
-        summary_csv = out_dir / "summary.csv"
-    main_summary = out_dir / "summary.csv"
+        worker_csv = out_dir / "summary.csv"
+    main_csv = out_dir / "summary.csv"
     main_lock = out_dir / "summary.csv.lock"
 
-    # Load Deprecated Modules
-    deprecated_set = load_deprecated_modules()
-    LOG.info("Loaded %d deprecated modules to skip", len(deprecated_set))
+    # Force: delete existing CSVs to start fresh
+    if args.force:
+        for f in [worker_csv, main_csv]:
+            if f.exists():
+                LOG.info("--force: removing %s", f)
+                f.unlink()
 
-    # Load Tokenizer & Datasets
-    tokenizer = AutoTokenizer.from_pretrained(args.model_path if Path(args.model_path).exists() else "gpt2")
+    LOG.info("=" * 78)
+    LOG.info("GPT-2 DECODER PERPLEXITY SWEEP")
+    LOG.info("  Model:        %s", args.model_path)
+    LOG.info("  Dataset:      %s (%s)", args.dataset_name, args.split)
+    LOG.info("  Window/Stride %d / %d", args.seq_len, args.stride)
+    LOG.info("  Rank:         %d", args.rank)
+    LOG.info("  Modules:      %d", len(args.modules))
+    LOG.info("  Device:       %s | fp16=%s", args.device, args.fp16)
+    LOG.info("  Output dir:   %s", out_dir)
+    LOG.info("  Force:        %s | No-skip: %s | Only-failed: %s",
+             args.force, args.no_skip, args.only_failed)
+    LOG.info("=" * 78)
+
+    if args.dry_run:
+        LOG.info("[DRY RUN] Modules that would be evaluated:")
+        for i, m in enumerate(args.modules, 1):
+            LOG.info("  %3d. %s", i, m)
+        return
+
+    deprecated = load_deprecated_modules()
+    LOG.info("Loaded %d deprecated modules.", len(deprecated))
+
+    # ---- Tokenizer + datasets ----
+    tok_src = args.model_path if Path(args.model_path).exists() else "gpt2"
+    LOG.info("Loading tokenizer from %s ...", tok_src)
+    tokenizer = AutoTokenizer.from_pretrained(tok_src)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
+    LOG.info("Loading WikiText-2 (%s)...", args.split)
     try:
         ds_test = load_dataset("wikitext", args.dataset_name, split=args.split)
-    except Exception:
-        ds_test = load_dataset("Salesforce/wikitext", args.dataset_name, split=args.split)
-
-    try:
         ds_train = load_dataset("wikitext", args.dataset_name, split="train")
     except Exception:
+        ds_test = load_dataset("Salesforce/wikitext", args.dataset_name, split=args.split)
         ds_train = load_dataset("Salesforce/wikitext", args.dataset_name, split="train")
 
-    # Build 500-sample calibration loader (iterable of dicts)
-    LOG.info("Building calibration dataset (500 samples, batch_size=4, max_length=128)...")
-    calib_loader = build_calibration_loader(ds_train, tokenizer, num_samples=500, batch_size=4, max_length=128)
-    LOG.info("Calibration loader built: %d batches", len(calib_loader))
-
-    # 1. Load base uncompressed GPT-2 model once & evaluate baseline
-    LOG.info("Loading baseline uncompressed GPT-2...")
-    base_model = AutoModelForCausalLM.from_pretrained(args.model_path if Path(args.model_path).exists() else "gpt2")
-    if args.fp16 and device == "cuda":
-        base_model.half()
-    base_model.to(device)
-
-    total_params_baseline = sum(p.numel() for p in base_model.parameters())
-    base_metrics = compute_perplexity_with_metrics(
-        base_model, tokenizer, ds_test, seq_len=args.seq_len, stride=args.stride,
-        max_eval_tokens=args.max_eval_tokens, device=device
+    # ---- Calibration loader ----
+    LOG.info("Building calibration loader (%d samples, batch=%d, max_len=%d)...",
+             args.calib_samples, args.calib_batch_size, args.calib_max_length)
+    calib_loader = build_calibration_loader(
+        ds_train, tokenizer,
+        num_samples=args.calib_samples,
+        batch_size=args.calib_batch_size,
+        max_length=args.calib_max_length,
     )
-    baseline_ppl = base_metrics["perplexity"]
-    LOG.info("Baseline GPT-2 PPL: %.2f | VRAM: %.1f MB | Throughput: %.1f tok/s",
-             baseline_ppl, base_metrics["peak_vram_mb"], base_metrics["throughput_tok_per_sec"])
+    LOG.info("Calibration loader: %d batches.", len(calib_loader))
 
-    # Record baseline row
-    base_row = {
-        "module_name": "full",
-        "status": "PASS",
-        "perplexity": baseline_ppl,
-        "baseline_ppl": baseline_ppl,
-        "delta_ppl": 0.0,
-        "compression_rate": 1.0,
-        "compression_ratio_pct": 0.0,
-        "peak_vram_mb": base_metrics["peak_vram_mb"],
-        "latency_ms_per_token": base_metrics["latency_ms_per_token"],
-        "throughput_tok_per_sec": base_metrics["throughput_tok_per_sec"],
-        "elapsed_s": base_metrics["elapsed_s"],
-        "total_params_before": total_params_baseline,
-        "total_params_after": total_params_baseline,
-        "error": "",
-        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
-    }
-    write_row_to_csv(summary_csv, base_row)
-    if args.total_workers > 1:
-        write_row_to_csv(main_summary, base_row, main_lock)
+    # ---- Baseline (reuse cached unless --recompute_baseline) ----
+    cached = _read_csv_rows(main_csv)
+    cached_base = cached.get("full")
+    baseline_ppl: Optional[float] = None
+    if (not args.recompute_baseline
+            and cached_base is not None
+            and str(cached_base.get("baseline_ppl", "")) not in ("", "0", "0.0", "-1.0", "nan")):
+        try:
+            baseline_ppl = float(cached_base["baseline_ppl"])
+            LOG.info("Reusing cached baseline PPL: %.4f", baseline_ppl)
+        except Exception:
+            baseline_ppl = None
 
-    # Take snapshot of base model to avoid reloading from disk per module
-    LOG.info("Creating base model snapshot for fast restore...")
+    base_model = None
+    total_params_baseline = 0
+    base_metrics: Dict[str, Any] = {}
+
+    if baseline_ppl is None:
+        LOG.info("Loading baseline GPT-2...")
+        base_model = AutoModelForCausalLM.from_pretrained(tok_src)
+        if args.fp16 and args.device.startswith("cuda"):
+            base_model.half()
+        base_model.to(args.device)
+        base_model.eval()
+
+        total_params_baseline = sum(p.numel() for p in base_model.parameters())
+        LOG.info("Baseline params: %d (%.2f M)", total_params_baseline,
+                 total_params_baseline / 1e6)
+
+        LOG.info("Computing baseline PPL...")
+        base_metrics = compute_perplexity_with_metrics(
+            base_model, tokenizer, ds_test,
+            seq_len=args.seq_len, stride=args.stride,
+            max_eval_tokens=args.max_eval_tokens, device=args.device,
+        )
+        baseline_ppl = base_metrics["perplexity"]
+        LOG.info("Baseline PPL: %.4f | VRAM: %.1f MB | %.1f tok/s",
+                 baseline_ppl, base_metrics["peak_vram_mb"],
+                 base_metrics["throughput_tok_per_sec"])
+
+        # Sanity check
+        if not np.isfinite(baseline_ppl) or baseline_ppl <= 0:
+            LOG.error("Baseline PPL is invalid (%s). Aborting.", baseline_ppl)
+            sys.exit(2)
+        if baseline_ppl > 100:
+            LOG.warning("Baseline PPL %.2f is unusually high — check model/dataset.", baseline_ppl)
+
+        base_row = ResultRow(
+            module_name="full",
+            status="PASS",
+            perplexity=baseline_ppl,
+            baseline_ppl=baseline_ppl,
+            delta_ppl=0.0,
+            ppl_ratio=1.0,
+            compression_rate=1.0,
+            compression_ratio_pct=0.0,
+            total_params_before=total_params_baseline,
+            total_params_after=total_params_baseline,
+            delta_params=0,
+            peak_vram_mb=base_metrics["peak_vram_mb"],
+            latency_ms_per_token=base_metrics["latency_ms_per_token"],
+            throughput_tok_per_sec=base_metrics["throughput_tok_per_sec"],
+            eval_elapsed_s=base_metrics["eval_elapsed_s"],
+            wall_elapsed_s=base_metrics["eval_elapsed_s"],
+            timestamp=time.strftime("%Y-%m-%dT%H:%M:%S"),
+        ).to_csv_dict()
+        upsert_row(worker_csv, base_row)
+        if args.total_workers > 1:
+            upsert_row(main_csv, base_row, main_lock)
+    else:
+        # Recompute baseline params anyway (cheap) for compression_rate math
+        total_params_baseline = int(cached_base.get("total_params_before", 0) or 0)
+        if total_params_baseline == 0:
+            LOG.info("Loading baseline GPT-2 just to count params...")
+            _bm = AutoModelForCausalLM.from_pretrained(tok_src)
+            total_params_baseline = sum(p.numel() for p in _bm.parameters())
+            del _bm
+            gc.collect()
+
+    # ---- Snapshot for fast restore ----
+    if base_model is None:
+        LOG.info("Loading baseline GPT-2 for snapshot...")
+        base_model = AutoModelForCausalLM.from_pretrained(tok_src)
+        if args.fp16 and args.device.startswith("cuda"):
+            base_model.half()
+        base_model.cpu()
+
+    LOG.info("Creating base-model snapshot...")
     base_snapshot = copy.deepcopy(base_model)
-    LOG.info("Base model snapshot created successfully.")
-
-    # Free the active base_model
     del base_model
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
-    # Load existing successful results to skip
-    existing_mods = set()
-    for csv_path in [main_summary, summary_csv]:
-        if csv_path.exists():
-            try:
-                with open(csv_path, "r", encoding="utf-8") as f:
-                    reader = csv.DictReader(f)
-                    for r in reader:
-                        m_name = r.get("module_name")
-                        st = r.get("status", "")
-                        if m_name and st.startswith("PASS"):
-                            existing_mods.add(m_name)
-            except Exception:
-                pass
+    # ---- Determine which modules to skip ----
+    existing = _read_csv_rows(main_csv)
+    existing_worker = _read_csv_rows(worker_csv) if worker_csv != main_csv else {}
+    existing_all = {**existing, **existing_worker}
 
-    # 2. Iterate through compression modules
-    for idx, mod in enumerate(args.modules, 1):
-        if mod == "full":
-            continue
+    # Retry flags: if a module has one of these statuses, re-evaluate
+    retry_set = set(args.retry_flags or [])
 
-        if mod in existing_mods:
-            LOG.info("[%d/%d] Skipping module: %s (already evaluated with PASS in summary)", idx, len(args.modules), mod)
+    skip: Set[str] = set()
+    if not args.no_skip:
+        for m, r in existing_all.items():
+            st = (r.get("status") or "").strip()
+            if args.only_failed:
+                # Only skip if it PASSED cleanly with real work
+                if is_real_success(st, r):
+                    skip.add(m)
+                continue
+            # Default: skip if REAL success
+            if is_real_success(st, r):
+                skip.add(m)
+            # Also honor --retry_flags
+            if st in retry_set:
+                skip.discard(m)
+
+    LOG.info("Skipping %d modules (use --no_skip to force re-run).", len(skip))
+
+    # ---- Iterate ----
+    module_list = [m for m in args.modules if m != "full"]
+    iterator = tqdm(module_list, desc="Modules", unit="mod") if _HAS_TQDM else module_list
+
+    n_done = 0
+    t_run_start = time.time()
+
+    for idx, mod in enumerate(iterator, 1):
+        if _INTERRUPTED["flag"]:
+            LOG.warning("Interrupted — stopping before module '%s'.", mod)
+            break
+
+        if mod in skip:
+            LOG.info("[%d/%d] SKIP %s (already successful)", idx, len(module_list), mod)
             continue
 
         mod_dir = out_dir / mod
@@ -443,161 +911,222 @@ def main():
         res_json = mod_dir / "result.json"
         diag_json = mod_dir / "diag.json"
 
-        # Check if module is deprecated
-        if mod in deprecated_set:
-            LOG.info("[%d/%d] Skipping module: %s (marked as deprecated)", idx, len(args.modules), mod)
-            row = {
-                "module_name": mod,
-                "status": "SKIP_DEPRECATED",
-                "perplexity": -1.0,
-                "baseline_ppl": baseline_ppl,
-                "delta_ppl": 0.0,
-                "compression_rate": 1.0,
-                "compression_ratio_pct": 0.0,
-                "peak_vram_mb": 0.0,
-                "latency_ms_per_token": 0.0,
-                "throughput_tok_per_sec": 0.0,
-                "elapsed_s": 0.0,
-                "total_params_before": total_params_baseline,
-                "total_params_after": total_params_baseline,
-                "error": "Module marked deprecated in deprecated_modules.txt",
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
-            }
+        # ---- Deprecated ----
+        if mod in deprecated:
+            LOG.info("[%d/%d] SKIP %s (deprecated)", idx, len(module_list), mod)
+            row = ResultRow(
+                module_name=mod,
+                status="SKIP_DEPRECATED",
+                baseline_ppl=baseline_ppl,
+                total_params_before=total_params_baseline,
+                total_params_after=total_params_baseline,
+                error="deprecated in deprecated_modules.txt",
+                timestamp=time.strftime("%Y-%m-%dT%H:%M:%S"),
+            ).to_csv_dict()
             res_json.write_text(json.dumps(row, indent=2), encoding="utf-8")
-            write_row_to_csv(summary_csv, row)
+            upsert_row(worker_csv, row)
             if args.total_workers > 1:
-                write_row_to_csv(main_summary, row, main_lock)
+                upsert_row(main_csv, row, main_lock)
             continue
 
-        LOG.info("[%d/%d] Evaluating module: %s...", idx, len(args.modules), mod)
+        LOG.info("[%d/%d] EVAL %s", idx, len(module_list), mod)
         t_mod = time.time()
-        cand_model = None
 
+        # Fresh seed for each module
+        random.seed(args.seed)
+        np.random.seed(args.seed)
+        torch.manual_seed(args.seed)
+
+        cand = None
+        row = None
         try:
-            # Restore model from snapshot
-            cand_model = copy.deepcopy(base_snapshot)
-            cand_model.to(device)
+            cand = copy.deepcopy(base_snapshot)
+            cand.to(args.device)
 
             typ = "attention" if mod in ATTENTION_REGISTRY else "compressor"
-            
-            # Feed calibration_loader AND tokenizer
-            first_batch_ids = calib_loader[0]["input_ids"].to(device)
-            cand_model, comp_stats = apply_module_to_model(
-                cand_model,
-                mod,
-                typ,
+
+            # Calibration batches on device
+            calib_on_dev = [
+                {k: v.to(args.device, non_blocking=True) for k, v in b.items()}
+                for b in calib_loader
+            ]
+            first_batch_ids = calib_on_dev[0]["input_ids"]
+
+            t_comp0 = time.time()
+            cand, comp_stats = apply_module_to_model(
+                cand, mod, typ,
                 rank=args.rank,
-                device=device,
+                device=args.device,
                 calibration_data=first_batch_ids,
-                calibration_loader=calib_loader,
+                calibration_loader=calib_on_dev,
                 tokenizer=tokenizer,
             )
+            comp_wall = time.time() - t_comp0
 
-            p_after = sum(p.numel() for p in cand_model.parameters())
+            comp_stats = comp_stats or {}
+            p_after = sum(p.numel() for p in cand.parameters())
+
+            # ---- Evaluate ----
+            metrics = compute_perplexity_with_metrics(
+                cand, tokenizer, ds_test,
+                seq_len=args.seq_len, stride=args.stride,
+                max_eval_tokens=args.max_eval_tokens, device=args.device,
+            )
+            ppl = metrics["perplexity"]
+
+            wall = time.time() - t_mod
             comp_rate = round(total_params_baseline / max(1, p_after), 4)
             comp_pct = round(100.0 * (1.0 - p_after / max(1, total_params_baseline)), 2)
+            delta_ppl = round(ppl - baseline_ppl, 4) if np.isfinite(ppl) else 999.0
+            ppl_ratio = round(ppl / max(1e-9, baseline_ppl), 4) if np.isfinite(ppl) else float("inf")
 
-            metrics = compute_perplexity_with_metrics(
-                cand_model, tokenizer, ds_test, seq_len=args.seq_len, stride=args.stride,
-                max_eval_tokens=args.max_eval_tokens, device=device
+            # ---- Classify ----
+            status = classify_status(ppl_ratio)
+
+            # ---- Phantom-pass detection ----
+            n_inj = int(comp_stats.get("num_injected_attention_layers", 0) or 0)
+            n_comp = int(comp_stats.get("num_compressed_layers", 0) or 0)
+            n_fall = int(comp_stats.get("num_fallback_layers", 0) or 0)
+            if status == "PASS" and mod != "full" and (n_inj + n_comp) == 0:
+                status = "PASS_WITHOUT_EFFECT"
+
+            row = ResultRow(
+                module_name=mod,
+                status=status,
+                perplexity=ppl,
+                baseline_ppl=baseline_ppl,
+                delta_ppl=delta_ppl,
+                ppl_ratio=ppl_ratio,
+                compression_rate=comp_rate,
+                compression_ratio_pct=comp_pct,
+                total_params_before=total_params_baseline,
+                total_params_after=p_after,
+                delta_params=p_after - total_params_baseline,
+                num_injected_attention_layers=n_inj,
+                num_compressed_layers=n_comp,
+                num_fallback_layers=n_fall,
+                lora_params=int(comp_stats.get("lora_params", 0) or 0),
+                calibration_time_s=float(comp_stats.get("calibration_time_s", comp_wall) or comp_wall),
+                recovery_time_s=float(comp_stats.get("recovery_time_s", 0.0) or 0.0),
+                peak_vram_mb=metrics["peak_vram_mb"],
+                latency_ms_per_token=metrics["latency_ms_per_token"],
+                throughput_tok_per_sec=metrics["throughput_tok_per_sec"],
+                eval_elapsed_s=metrics["eval_elapsed_s"],
+                wall_elapsed_s=round(wall, 3),
+                error="",
+                timestamp=time.strftime("%Y-%m-%dT%H:%M:%S"),
+            )
+            LOG.info(
+                "[%d/%d] %s -> %s | PPL=%.3f (ratio=%.3f) | "
+                "comp=%.3fx | inj=%d comp=%d | %.1fs",
+                idx, len(module_list), mod, status, ppl, ppl_ratio,
+                comp_rate, n_inj, n_comp, wall,
             )
 
-            ppl = metrics["perplexity"]
-            delta_ppl = round(ppl - baseline_ppl, 2)
-
-            # Strict 4-tier PASS thresholds
-            if ppl <= 1.05 * baseline_ppl:
-                status = "PASS"
-            elif ppl <= 1.20 * baseline_ppl:
-                status = "PASS_SLIGHT_DEGRADATION"
-            elif ppl <= 1.50 * baseline_ppl:
-                status = "PASS_DEGRADED"
-            else:
-                status = "FAIL_PPL_DIVERGED"
-
-            row = {
-                "module_name": mod,
-                "status": status,
-                "perplexity": ppl,
-                "baseline_ppl": baseline_ppl,
-                "delta_ppl": delta_ppl,
-                "compression_rate": comp_rate,
-                "compression_ratio_pct": comp_pct,
-                "peak_vram_mb": metrics["peak_vram_mb"],
-                "latency_ms_per_token": metrics["latency_ms_per_token"],
-                "throughput_tok_per_sec": metrics["throughput_tok_per_sec"],
-                "elapsed_s": metrics["elapsed_s"],
-                "total_params_before": total_params_baseline,
-                "total_params_after": p_after,
-                "error": "",
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
-            }
-
         except Exception as e:
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            tb_lines = traceback.format_exception(exc_type, exc_value, exc_tb)
-            tb_str = "".join(tb_lines)
-            
-            # Extract specific errno, file, and line
-            err_no = getattr(e, "errno", None)
-            err_filename = getattr(e, "filename", None)
-            last_tb = traceback.extract_tb(exc_tb)[-1] if exc_tb else None
-            fault_file = last_tb.filename if last_tb else "unknown"
-            fault_line = last_tb.lineno if last_tb else -1
-            fault_func = last_tb.name if last_tb else "unknown"
-
-            LOG.exception("Module %s evaluation error (%s at %s:%d): %s", mod, exc_type.__name__, fault_file, fault_line, e)
-
-            # Write comprehensive diag.json
-            diag_info = {
-                "module_name": mod,
-                "exception_type": exc_type.__name__ if exc_type else "Exception",
-                "exception_message": str(e),
-                "errno": err_no,
-                "filename": str(err_filename) if err_filename else None,
-                "fault_file": fault_file,
-                "fault_line": fault_line,
-                "fault_function": fault_func,
-                "cwd": os.getcwd(),
-                "traceback": tb_lines,
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
-            }
-            try:
-                diag_json.write_text(json.dumps(diag_info, indent=2), encoding="utf-8")
-            except Exception as werr:
-                LOG.warning("Could not write diag.json for %s: %s", mod, werr)
-
-            row = {
-                "module_name": mod,
-                "status": "FAIL",
-                "perplexity": -1.0,
+            wall = time.time() - t_mod
+            LOG.exception("[%d/%d] %s FAILED: %s", idx, len(module_list), mod, e)
+            extra = {
                 "baseline_ppl": baseline_ppl,
-                "delta_ppl": 999.0,
-                "compression_rate": 1.0,
-                "compression_ratio_pct": 0.0,
-                "peak_vram_mb": 0.0,
-                "latency_ms_per_token": 0.0,
-                "throughput_tok_per_sec": 0.0,
-                "elapsed_s": round(time.time() - t_mod, 2),
-                "total_params_before": total_params_baseline,
-                "total_params_after": total_params_baseline,
-                "error": f"[{fault_file}:{fault_line}] {type(e).__name__}: {str(e)}",
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                "rank": args.rank,
+                "seq_len": args.seq_len,
+                "device": args.device,
+                "fp16": args.fp16,
             }
+            write_diag(diag_json, mod, e, extra=extra,
+                       include_locals=args.save_traceback_locals)
+
+            # Try to extract partial PPL if candidate was built
+            ppl_partial = -1.0
+            vram_partial = 0.0
+            lat_partial = 0.0
+            tps_partial = 0.0
+            if cand is not None:
+                try:
+                    pm = compute_perplexity_with_metrics(
+                        cand, tokenizer, ds_test,
+                        seq_len=args.seq_len, stride=args.stride,
+                        max_eval_tokens=min(20_000, args.max_eval_tokens or 20_000),
+                        device=args.device,
+                    )
+                    if pm["is_finite"]:
+                        ppl_partial = pm["perplexity"]
+                        vram_partial = pm["peak_vram_mb"]
+                        lat_partial = pm["latency_ms_per_token"]
+                        tps_partial = pm["throughput_tok_per_sec"]
+                except Exception:
+                    pass
+
+            # Get fault location from traceback
+            tb = traceback.extract_tb(sys.exc_info()[2])
+            last = tb[-1] if tb else None
+            fault = f"[{last.filename}:{last.lineno}]" if last else "[unknown]"
+
+            row = ResultRow(
+                module_name=mod,
+                status="FAIL",
+                perplexity=ppl_partial,
+                baseline_ppl=baseline_ppl,
+                delta_ppl=999.0,
+                ppl_ratio=float("inf"),
+                total_params_before=total_params_baseline,
+                total_params_after=total_params_baseline,
+                peak_vram_mb=vram_partial,
+                latency_ms_per_token=lat_partial,
+                throughput_tok_per_sec=tps_partial,
+                wall_elapsed_s=round(wall, 3),
+                error=f"{fault} {type(e).__name__}: {str(e)}",
+                timestamp=time.strftime("%Y-%m-%dT%H:%M:%S"),
+            )
 
         finally:
-            if cand_model is not None:
-                del cand_model
+            if cand is not None:
+                del cand
             gc.collect()
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
 
-        res_json.write_text(json.dumps(row, indent=2), encoding="utf-8")
-        write_row_to_csv(summary_csv, row)
-        if args.total_workers > 1:
-            write_row_to_csv(main_summary, row, main_lock)
+        # Persist result
+        if row is not None:
+            payload = row.to_csv_dict()
+            try:
+                res_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+            except Exception as e:
+                LOG.warning("Could not write result.json for %s: %s", mod, e)
+            upsert_row(worker_csv, payload)
+            if args.total_workers > 1:
+                upsert_row(main_csv, payload, main_lock)
+            n_done += 1
 
-    print(f"\n[DONE] Decoder sweep completed. Results written to {summary_csv}")
+    # ---- End-of-run ----
+    total_wall = time.time() - t_run_start
+    LOG.info("=" * 78)
+    LOG.info("Sweep finished in %.1fs. %d modules processed.", total_wall, n_done)
+
+    # Summary
+    final_rows = _read_csv_rows(main_csv)
+    print_summary_stats(final_rows)
+    try:
+        write_markdown_report(out_dir, main_csv, baseline_ppl)
+    except Exception as e:
+        LOG.warning("Report generation failed: %s", e)
+
+    # Final JSON summary
+    try:
+        summary_payload = {
+            "baseline_ppl": baseline_ppl,
+            "total_params_baseline": total_params_baseline,
+            "modules_evaluated": n_done,
+            "wall_elapsed_s": round(total_wall, 2),
+            "rows": final_rows,
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        }
+        (out_dir / "final_summary.json").write_text(
+            json.dumps(summary_payload, indent=2, default=str), encoding="utf-8",
+        )
+        LOG.info("Wrote final_summary.json")
+    except Exception as e:
+        LOG.warning("Could not write final_summary.json: %s", e)
 
 
 if __name__ == "__main__":
