@@ -219,7 +219,7 @@ A promising architectural synergy lies in the hybridization of Primal Attention 
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.83%** | -0.23% | 0.9113 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-primal](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-primal) | 2026-09-19 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **91.40%** | +0.80% | 0.9175 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-primal](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-primal) | 2026-09-27 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.20%** | -0.60% | 0.8117 | 1.00x | 6 | [svd-linear-attention-distilbert-mnli-full-primal](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-primal) | 2026-09-20 |
 
 
