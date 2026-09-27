@@ -310,7 +310,7 @@ def _local_window_attention(
 
     attn = F.softmax(scores.float(), dim=-1).to(Q.dtype) * any_valid
     attn = F.dropout(attn, p=dropout_p, training=training)
-    return torch.matmul(attn, V), attn
+    return torch.matmul(attn, V.to(attn.dtype)), attn
 
 
 # ===========================================================================
@@ -952,8 +952,10 @@ class AegisSpectronFP8Attention(BaseAttention):
         out_loc, attn_loc = self._local_branch(Q, K_full, V_full, token_valid, past_len)
         out_glob = self._global_branch(Q, K_full, V_full, token_valid)
         out_lin = self._linear_branch(hidden_states, token_valid_new)
-
-        fused = alpha_loc * out_loc + alpha_glob * out_glob + alpha_lin * out_lin
+        target_dt = hidden_states.dtype
+        fused = (alpha_loc.to(target_dt) * out_loc.to(target_dt)
+                 + alpha_glob.to(target_dt) * out_glob.to(target_dt)
+                 + alpha_lin.to(target_dt) * out_lin.to(target_dt))
 
         # head_mask (SP-FIX-03).
         if head_mask is not None:
