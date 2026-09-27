@@ -233,6 +233,53 @@ def compute_method_d_loss(
     return 0.5 * loss_kl + 0.4 * hidden_d + 0.1 * loss_ce
 
 
+def set_train_scope(model: nn.Module, train_scope: str = "all") -> int:
+    """
+    Configures trainable parameters based on train_scope:
+    - 'all': train all parameters
+    - 'mamba': freeze everything except Mamba / SSM branch parameters
+    """
+    scope = train_scope.lower()
+    trainable_count = 0
+
+    if scope == "all":
+        for p in model.parameters():
+            p.requires_grad = True
+            trainable_count += p.numel()
+        return trainable_count
+
+    if scope == "mamba":
+        # Target keywords for Mamba / SSM / adapter parameters
+        target_keywords = (
+            "mamba",
+            "ssm",
+            "lora_",
+            "adapter",
+            "gating",
+            "alpha",
+            "dt_scale",
+            "_wrapped_attention",  # Injected custom attention module wrapper
+        )
+
+        for name, p in model.named_parameters():
+            name_lower = name.lower()
+            is_target = any(k in name_lower for k in target_keywords)
+
+            # Ensure base transformer layers (mlp, ln_1, ln_2, ln_f, wte, wpe) are frozen
+            if any(base in name_lower for base in ("mlp", "ln_1", "ln_2", "ln_f", "wte", "wpe")):
+                is_target = False
+
+            if is_target:
+                p.requires_grad = True
+                trainable_count += p.numel()
+            else:
+                p.requires_grad = False
+
+        return trainable_count
+
+    raise ValueError(f"Unknown train_scope: {train_scope}")
+
+
 # -----------------------------------------------------------------------------
 # Single Method Runner
 # -----------------------------------------------------------------------------
@@ -278,6 +325,12 @@ def run_kd_method(
         seq_len=args.seq_len, stride=128, max_eval_tokens=args.eval_max_tokens, device=device
     )
     LOG.info("Pre-KD PPL for Method %s: %.2f", method_name, pre_ppl)
+
+    # Configure train scope (Fix 3)
+    n_trainable = set_train_scope(student, args.train_scope)
+    LOG.info(
+        f"Train scope: '{args.train_scope}' | Trainable parameters: {n_trainable:,} / {sum(p.numel() for p in student.parameters()):,}"
+    )
 
     # Optimizer & Scheduler
     trainable_params = [p for p in student.parameters() if p.requires_grad]
@@ -473,9 +526,14 @@ def run_kd_method(
 # Comparison Table & Recommendations
 # -----------------------------------------------------------------------------
 def print_comparison_table(results: List[Dict[str, Any]]):
-    header = "┌─────────┬──────────┬──────────┬──────────┬──────────┬──────────┐\n" \
-             "│ Method  │ Pre PPL  │ Post PPL │ Recovery │ Time (s) │ VRAM(MB) │\n" \
-             "├─────────┼──────────┼──────────┼──────────┼──────────┼──────────┤"
+    try:
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+    header = "+---------+----------+----------+----------+----------+----------+\n" \
+             "| Method  | Pre PPL  | Post PPL | Recovery | Time (s) | VRAM(MB) |\n" \
+             "+---------+----------+----------+----------+----------+----------+"
     print(header)
     for r in results:
         m = r["method"]
@@ -484,8 +542,8 @@ def print_comparison_table(results: List[Dict[str, Any]]):
         rec = f"{r['recovery_pct']:.1f}%" if isinstance(r["recovery_pct"], (int, float)) else str(r["recovery_pct"])
         t = f"{r['train_time_s']:.1f}" if isinstance(r["train_time_s"], (int, float)) else str(r["train_time_s"])
         vram = f"{r['peak_vram_mb']:.1f}" if isinstance(r["peak_vram_mb"], (int, float)) else str(r["peak_vram_mb"])
-        print(f"│ {m:<7} │ {pre:>8} │ {post:>8} │ {rec:>8} │ {t:>8} │ {vram:>8} │")
-    print("└─────────┴──────────┴──────────┴──────────┴──────────┴──────────┘")
+        print(f"| {m:<7} | {pre:>8} | {post:>8} | {rec:>8} | {t:>8} | {vram:>8} |")
+    print("+---------+----------+----------+----------+----------+----------+")
 
 
 # -----------------------------------------------------------------------------
