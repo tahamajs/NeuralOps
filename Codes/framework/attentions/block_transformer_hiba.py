@@ -767,6 +767,11 @@ def inject_block_transformer_hiba(
             )
             if res is not None:
                 num_injected += 1
+        if num_injected > 0:
+            if not hasattr(target, "compression_stats"):
+                target.compression_stats = {}
+            target.compression_stats["num_compressed"] = num_injected
+            target.compression_stats["num_fallback"] = 0
         return target if num_injected > 0 else None
 
     layer = target
