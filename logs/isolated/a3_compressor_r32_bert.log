@@ -1,80 +1,44 @@
-C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
-  warnings.warn(
 Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
-2026-09-27 06:59:58,834 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 20.0% (leaving 6.40 GB headroom)
-2026-09-27 06:59:58,834 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
-2026-09-27 06:59:58,836 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=8 (explicit_parallel=False, explicit_batch=True)
-D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+2026-09-27 06:56:58,492 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+/Users/tahamajs/Documents/uni/Project/Codes/framework/run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
   "started_at": datetime.utcnow().isoformat(),
-2026-09-27 06:59:58,836 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 20.0%
-2026-09-27 07:00:00,020 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
-2026-09-27 07:00:00,341 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/tokenizer_config.json "HTTP/1.1 200 OK"
-2026-09-27 07:00:00,664 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert-base-uncased-finetuned-sst-2-english/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
-2026-09-27 07:00:00,994 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert/distilbert-base-uncased-finetuned-sst-2-english/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
-2026-09-27 07:00:01,300 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert-base-uncased-finetuned-sst-2-english/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
-2026-09-27 07:00:01,623 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert/distilbert-base-uncased-finetuned-sst-2-english/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
-2026-09-27 07:00:01,868 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
-2026-09-27 07:00:02,178 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
-2026-09-27 07:00:02,484 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
-2026-09-27 07:00:02,789 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
-Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 2953.60it/s]
-2026-09-27 07:00:03,331 [INFO] QwenQualitySweep: model=distilbert-base-uncased-finetuned-sst-2-english qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
-2026-09-27 07:00:03,331 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'raw_family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-27 07:00:03,331 [INFO] QwenQualitySweep: ================================================================================
-2026-09-27 07:00:03,332 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-27 07:00:03,332 [INFO] QwenQualitySweep:   model:             distilbert-base-uncased-finetuned-sst-2-english
-2026-09-27 07:00:03,332 [INFO] QwenQualitySweep:   family:            bert
-2026-09-27 07:00:03,332 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-27 07:00:03,332 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-27 07:00:03,333 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-27 07:00:03,333 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-27 07:00:03,333 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-27 07:00:03,333 [INFO] QwenQualitySweep: ================================================================================
-2026-09-27 07:00:03,338 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\bert_sst2_baseline\finetuned_model.pt
-2026-09-27 07:00:03,345 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
-2026-09-27 07:00:04,603 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\04_rank_sweeps\distilbert\deep_rank_distilbert\a3_compressor\rank_32\batch_cache_sst2 (will be reused by subsequent module runs)
-2026-09-27 07:00:04,603 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-27 07:00:07,446 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.60%
-2026-09-27 07:00:07,631 [INFO] QwenQualitySweep: ================================================================================
-2026-09-27 07:00:07,631 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-27 07:00:07,631 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-27 07:00:07,631 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-27 07:00:07,631 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-27 07:00:07,631 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-27 07:00:07,632 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-27 07:00:07,632 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
-2026-09-27 07:00:07,632 [INFO] QwenQualitySweep: ================================================================================
-2026-09-27 07:00:07,632 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
-2026-09-27 07:00:07,758 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: a3_compressor (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-27 07:00:08,088 [INFO] QwenQualitySweep: Calling apply_module_to_model with rank=32 for module=a3_compressor (lora_rank=32)
-2026-09-27 07:00:11,026 [INFO] framework.compression_engine.a3_compressor: A3: LayerNorm recalibration succeeded.
-2026-09-27 07:00:11,036 [INFO] QwenQualitySweep: module=a3_compressor path=legacy_bert
-2026-09-27 07:00:11,037 [INFO] QwenQualitySweep: module=a3_compressor injection summary: 24 SVDLinear layers active
-2026-09-27 07:00:11,041 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for a3_compressor (lr=2.0e-04)
-2026-09-27 07:00:11,107 [INFO] framework.utils.compat: Recovery fine-tuning selected 589824 trainable parameters across 48 tensors.
-2026-09-27 07:00:11,107 [INFO] framework.utils.compat: Discovered 48 trainable tensors (589824 params)
-2026-09-27 07:00:11,110 [INFO] QwenQualitySweep: LoRA fine-tuning: 589824 trainable parameters across 48 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
-2026-09-27 07:00:11,385 [INFO] QwenQualitySweep: Step 1/50 took 0.27s (loss=0.0597, bs=8, micro=8)
-2026-09-27 07:00:11,748 [INFO] QwenQualitySweep: Step 5/50 took 0.09s (loss=0.0398, bs=8, micro=8)
-2026-09-27 07:00:12,176 [INFO] QwenQualitySweep: Step 10/50 took 0.08s (loss=0.0164, bs=8, micro=8)
-2026-09-27 07:00:12,604 [INFO] QwenQualitySweep: Step 15/50 took 0.09s (loss=0.0617, bs=8, micro=8)
-2026-09-27 07:00:13,027 [INFO] QwenQualitySweep: Step 20/50 took 0.08s (loss=0.0942, bs=8, micro=8)
-2026-09-27 07:00:13,492 [INFO] QwenQualitySweep: Step 25/50 took 0.09s (loss=0.0057, bs=8, micro=8)
-2026-09-27 07:00:13,970 [INFO] QwenQualitySweep: Step 30/50 took 0.09s (loss=0.0075, bs=8, micro=8)
-2026-09-27 07:00:14,405 [INFO] QwenQualitySweep: Step 35/50 took 0.09s (loss=0.0361, bs=8, micro=8)
-2026-09-27 07:00:14,858 [INFO] QwenQualitySweep: Step 40/50 took 0.09s (loss=0.2137, bs=8, micro=8)
-2026-09-27 07:00:15,308 [INFO] QwenQualitySweep: Step 45/50 took 0.09s (loss=0.0049, bs=8, micro=8)
-2026-09-27 07:00:15,790 [INFO] QwenQualitySweep: Step 50/50 took 0.11s (loss=0.0204, bs=8, micro=8)
-2026-09-27 07:00:20,304 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\distilbert\deep_rank_distilbert\a3_compressor\rank_32\distilbert-base-uncased-finetuned-sst-2-english_a3_compressor_full_metrics.json
-2026-09-27 07:00:20,479 [INFO] QwenQualitySweep: [1/1] a3_compressor -> PASS 89.91% (F1: 0.9037, Peak VRAM: 341.09 MB)
-2026-09-27 07:00:20,479 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\04_rank_sweeps\distilbert\deep_rank_distilbert\a3_compressor\rank_32\checkpoints\a3_compressor. Automated export will be handled post-sweep by orchestrator.
-2026-09-27 07:00:20,480 [INFO] QwenQualitySweep: [1/1] a3_compressor Timing: eval_time=12.72s
-2026-09-27 07:00:20,480 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
-2026-09-27 07:00:20,816 [INFO] QwenQualitySweep: ================================================================================
-2026-09-27 07:00:20,816 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert-base-uncased-finetuned-sst-2-english on sst2)
-2026-09-27 07:00:20,823 [INFO] QwenQualitySweep: 
-       Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-a3_compressor   PASS   89.91%    -0.69% 0.9037                 24            1.07x  341.1 MB               3.83              4.40
-2026-09-27 07:00:20,823 [INFO] QwenQualitySweep: ================================================================================
-D:\SVD_Project\Codes\framework\run_one_module_isolated.py:171: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
-  result["finished_at"] = datetime.utcnow().isoformat()
+2026-09-27 06:56:59,469 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-09-27 06:56:59,470 [WARNING] huggingface_hub.utils._http: Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-09-27 06:56:59,703 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-09-27 06:56:59,925 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert-base-uncased-finetuned-sst-2-english/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-09-27 06:57:00,171 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert/distilbert-base-uncased-finetuned-sst-2-english/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-09-27 06:57:00,390 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert-base-uncased-finetuned-sst-2-english/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-09-27 06:57:00,613 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert/distilbert-base-uncased-finetuned-sst-2-english/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-27 06:57:01,139 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+2026-09-27 06:57:01,385 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
+2026-09-27 06:57:01,623 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
+2026-09-27 06:57:01,841 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|██████████| 104/104 [00:00<00:00, 5188.87it/s]
+2026-09-27 06:57:06,086 [INFO] QwenQualitySweep: model=distilbert-base-uncased-finetuned-sst-2-english qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-27 06:57:06,171 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'raw_family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-27 06:57:06,175 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 06:57:06,176 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-27 06:57:06,176 [INFO] QwenQualitySweep:   model:             distilbert-base-uncased-finetuned-sst-2-english
+2026-09-27 06:57:06,274 [INFO] QwenQualitySweep:   family:            bert
+2026-09-27 06:57:06,274 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-27 06:57:06,274 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-27 06:57:06,288 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-27 06:57:06,288 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-27 06:57:06,294 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-27 06:57:06,294 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 06:57:06,315 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-27 06:57:19,918 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0001
+2026-09-27 06:57:25,139 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0004
+2026-09-27 06:57:30,626 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.4606
+2026-09-27 06:57:36,291 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0132
+2026-09-27 06:57:41,610 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0017
+2026-09-27 06:57:47,111 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0101
+2026-09-27 06:57:52,342 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0119
+2026-09-27 06:58:00,138 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.0019
+2026-09-27 06:58:00,368 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results/04_rank_sweeps/distilbert/deep_rank_distilbert/a3_compressor/rank_32/finetuned_model.pt
+2026-09-27 06:58:04,029 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results/04_rank_sweeps/distilbert/deep_rank_distilbert/a3_compressor/rank_32/batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-27 06:58:04,037 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+/AppleInternal/Library/BuildRoots/4~CXj-ugAeVSJQ3U0KY8UQ-uTCfsW1s0AIzmKRU3I/Library/Caches/com.apple.xbs/TemporaryDirectory.efI3E4/Sources/MetalPerformanceShaders/MPSNDArray/Kernels/MPSNDArrayMatrixMultiplication.mm:6941: failed assertion `Destination NDArray and Accumulator NDArray cannot have different datatype in MPSNDArrayMatrixMultiplication'
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/multiprocessing/resource_tracker.py:396: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown: {'/loky-625-31gkg0z7'}
+  warnings.warn(
