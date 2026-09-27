@@ -190,16 +190,6 @@
     "timestamp": "2026-09-27T03:29:25.563950"
   },
   {
-    "module": "gqa",
-    "model": "models/distilbert_sst2",
-    "dataset": "sst2",
-    "status": "FAIL_BELOW_CHANCE",
-    "perplexity": "",
-    "accuracy_pct": 48.51,
-    "error": "FAIL: accuracy (48.51%) below chance threshold (56.00%)",
-    "timestamp": "2026-09-27T03:29:48.039708"
-  },
-  {
     "module": "gfws",
     "model": "models/distilbert_sst2",
     "dataset": "sst2",
@@ -440,16 +430,6 @@
     "timestamp": "2026-09-27T04:11:26.262763"
   },
   {
-    "module": "erc",
-    "model": "models/distilbert_sst2",
-    "dataset": "sst2",
-    "status": "PASS_NO_COMPRESSION",
-    "perplexity": "",
-    "accuracy_pct": 90.6,
-    "error": "note: zero compressed layers, zero injected layers, model unchanged",
-    "timestamp": "2026-09-27T04:12:52.100881"
-  },
-  {
     "module": "decay_linear_attn",
     "model": "models/distilbert_sst2",
     "dataset": "sst2",
@@ -508,5 +488,45 @@
     "accuracy_pct": 88.76,
     "error": "base_before=66955010 base_after=215936306 delta=+222.5%",
     "timestamp": "2026-09-27T04:26:53.878172"
+  },
+  {
+    "module": "gqa",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL_BELOW_CHANCE",
+    "perplexity": "",
+    "accuracy_pct": 54.7,
+    "error": "FAIL: accuracy (54.70%) below chance threshold (56.00%)",
+    "timestamp": "2026-09-27T04:37:33.018450"
+  },
+  {
+    "module": "infini",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "base_before=66955010 base_after=67010450 delta=+0.08%",
+    "timestamp": "2026-09-27T04:38:04.554176"
+  },
+  {
+    "module": "jamba",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "OutOfMemoryError: CUDA out of memory. Tried to allocate 96.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 1.35 GiB is free. 5.60 GiB allowed; Of the allocated memory 5.50 GiB is allocated by PyTorch, and 8.97 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)",
+    "timestamp": "2026-09-27T04:40:36.026768"
+  },
+  {
+    "module": "erc",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T04:45:41.674816"
   }
 ]
