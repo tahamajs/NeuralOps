@@ -222,7 +222,7 @@ def inject_soa_attn(
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **85.55%** | -5.51% | 0.8639 | 1.14x | 6 | [svd-linear-attention-distilbert-sst2-soa-attn](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-soa-attn) | 2026-09-19 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **89.22%** | -1.38% | 0.8974 | 1.11x | 0 | [svd-linear-attention-distilbert-sst2-soa-attn](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-soa-attn) | 2026-09-27 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **73.00%** | -8.80% | 0.7286 | 1.11x | 0 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **93.90%** | -0.40% | 0.9355 | 1.11x | 0 | [svd-linear-attention-distilbert-agnews-full-soa-attn](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-soa-attn) | 2026-09-19 |
 
