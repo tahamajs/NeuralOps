@@ -115,7 +115,7 @@ def main():
     parser.add_argument("--dataset", default="sst2", help="GLUE dataset name")
     parser.add_argument("--dataset_dir", default="Codes/framework/data/glue_data/sst2", help="Path to tokenized dataset")
     parser.add_argument("--output_dir", default="results/02_glue_sweeps/distilbert/sst2_4parallel", help="Output directory")
-    parser.add_argument("--parallel", type=int, default=4, help="Number of parallel workers")
+    parser.add_argument("--parallel", type=int, default=2, help="Number of parallel workers (default: 2 for balanced VRAM)")
     parser.add_argument("--batch_size", type=int, default=16, help="Batch size per worker")
     parser.add_argument("--recovery_steps", type=int, default=50, help="Fine-tuning recovery steps")
     parser.add_argument("--timeout", type=int, default=1200, help="Per-module timeout in seconds")
@@ -168,11 +168,13 @@ def main():
                 else:
                     status_str = f"EXIT({res['returncode']})"
                     failed_count += 1
-                    print(f"[{completed_count}/{len(pending)}] {mod:35} | {status_str:10} | {res['elapsed_s']:6.1f}s | Output: {res['output'][-200:] if res['output'] else 'none'}", flush=True)
+                    raw_out = (res['output'][-200:] if res['output'] else 'none').encode("ascii", "replace").decode("ascii")
+                    print(f"[{completed_count}/{len(pending)}] {mod:35} | {status_str:10} | {res['elapsed_s']:6.1f}s | Output: {raw_out}", flush=True)
             except Exception as e:
                 completed_count += 1
                 failed_count += 1
-                print(f"[{completed_count}/{len(pending)}] {mod:35} | EXCEPTION: {e}", flush=True)
+                safe_err = str(e).encode("ascii", "replace").decode("ascii")
+                print(f"[{completed_count}/{len(pending)}] {mod:35} | EXCEPTION: {safe_err}", flush=True)
 
 
 if __name__ == "__main__":
