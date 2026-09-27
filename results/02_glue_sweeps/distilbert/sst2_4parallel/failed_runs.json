@@ -280,16 +280,6 @@
     "timestamp": "2026-09-27T03:53:44.762616"
   },
   {
-    "module": "huffman",
-    "model": "models/distilbert_sst2",
-    "dataset": "sst2",
-    "status": "PASS_NO_COMPRESSION",
-    "perplexity": "",
-    "accuracy_pct": 90.6,
-    "error": "note: zero compressed layers, zero injected layers, model unchanged",
-    "timestamp": "2026-09-27T03:53:47.607040"
-  },
-  {
     "module": "hybrid_attention",
     "model": "models/distilbert_sst2",
     "dataset": "sst2",
@@ -498,5 +488,25 @@
     "accuracy_pct": 65.83,
     "error": "base_before=66955010 base_after=70503170 delta=+5.30%",
     "timestamp": "2026-09-27T04:16:45.890300"
+  },
+  {
+    "module": "huffman",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T04:18:35.053587"
+  },
+  {
+    "module": "granite_hybrid",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "EXTREME_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 88.76,
+    "error": "base_before=66955010 base_after=215936306 delta=+222.5%",
+    "timestamp": "2026-09-27T04:26:53.878172"
   }
 ]
