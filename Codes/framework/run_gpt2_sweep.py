@@ -127,6 +127,10 @@ def parse_args():
                         help="Target rank for low-rank decomposition modules")
     parser.add_argument("--fp16", action="store_true", default=True,
                         help="Evaluate in FP16 precision")
+    parser.add_argument("--worker_id", type=int, default=0,
+                        help="0-indexed worker ID for parallel sharding across modules")
+    parser.add_argument("--total_workers", type=int, default=1,
+                        help="Total number of parallel workers sharding the module list")
     parser.add_argument("--dry_run", action="store_true", default=False,
                         help="Print planned evaluation steps without running them")
     return parser.parse_args()
