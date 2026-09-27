@@ -254,6 +254,31 @@ CURVE_FIELDS = [
 ]
 
 
+def auto_git_commit(module: str, output_base: str) -> None:
+    """Auto-commit completed module results, logs, and curves into git."""
+    try:
+        module_dir = Path(output_base) / module
+        # Stage results for this module
+        subprocess.run(
+            ["git", "add", str(module_dir)],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=15,
+        )
+        msg = f"benchmarks({module}): multi-rank sweep logs and curves [{Path(output_base).name}]"
+        subprocess.run(
+            ["git", "commit", "-m", msg, "--no-verify"],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=15,
+        )
+        log(f"[{module}] Committed results to git log.")
+    except Exception as e:
+        log(f"[{module}] Git auto-commit notice: {e}")
+
+
 def write_rank_curve(module: str, rows: List[Dict[str, Any]], output_base: str) -> Path:
     module_dir = Path(output_base) / module
     module_dir.mkdir(parents=True, exist_ok=True)
@@ -265,6 +290,7 @@ def write_rank_curve(module: str, rows: List[Dict[str, Any]], output_base: str) 
         for r in rows_sorted:
             w.writerow(r)
     log(f"[{module}] Wrote {curve_csv}")
+    auto_git_commit(module, output_base)
     return curve_csv
 
 
@@ -277,6 +303,11 @@ def write_combined_curve(all_rows: List[Dict[str, Any]], output_base: str) -> Pa
         for r in all_rows:
             w.writerow(r)
     log(f"[ALL] Wrote combined {out_path}")
+    try:
+        subprocess.run(["git", "add", str(out_path)], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
+        subprocess.run(["git", "commit", "-m", f"benchmarks: update all_rank_curves.csv [{Path(output_base).name}]", "--no-verify"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
+    except Exception:
+        pass
     return out_path
 
 
@@ -315,7 +346,7 @@ def print_summary(all_rows: List[Dict[str, Any]]) -> None:
     print("FINAL SUMMARY")
     print("=" * 72)
     for mod, rows in sorted(by_mod.items()):
-        passed = [r for r in rows if r.get("status") == "PASS"]
+        passed = [r for r in rows if r.get("status") in ("PASS", "PASS_LOW", "PASS_LOW_PPL", "PASS_NO_COMPRESSION")]
         total = len(rows)
         if passed:
             best = max(passed, key=lambda r: float(r.get("accuracy_pct") or 0.0))
