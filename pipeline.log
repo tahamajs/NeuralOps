@@ -1,0 +1,242 @@
+[2026-09-24 05:10:32,715] [INFO] ======================================================================
+[2026-09-24 05:10:32,715] [INFO] Auto Pipeline Daemon v2 starting
+[2026-09-24 05:10:32,715] [INFO] VRAM ceiling: 6.5 GB | Temp ceiling: 80.0C
+[2026-09-24 05:10:32,715] [INFO] Max parallel: 4 (GPU)
+[2026-09-24 05:10:32,715] [INFO] ======================================================================
+[2026-09-24 05:10:32,715] [INFO] Effective max_parallel = 4
+[2026-09-24 05:10:32,723] [INFO] Recovering 2 orphaned jobs
+[2026-09-24 05:10:32,927] [INFO] [LAUNCH][p3_gpt2_svd_llm_v2] pid=25632 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_llm --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_llm_v2'
+[2026-09-24 05:11:03,643] [INFO] [LAUNCH][p3_gpt2_a3_v2] pid=19512 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules a3 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_a3_v2'
+[2026-09-24 05:11:09,953] [INFO] [LAUNCH][p3_gpt2_roast_factory] pid=10664 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules roast_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_roast_factory'
+[2026-09-24 05:11:40,745] [INFO] [LAUNCH][p3_gpt2_direct_svd_encoder_factory] pid=16276 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules direct_svd_encoder_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_direct_svd_encoder_factory'
+[2026-09-24 05:12:20,722] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:12:20,751] [INFO] STATUS: uptime=0:01:48 | VRAM=0.16/8.0GB util=3% temp=54C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:13:09,836] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:13:09,858] [INFO] STATUS: uptime=0:02:37 | VRAM=3.02/8.0GB util=91% temp=63C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:13:41,406] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:13:41,432] [INFO] STATUS: uptime=0:03:08 | VRAM=3.81/8.0GB util=96% temp=63C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:14:12,126] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:14:12,152] [INFO] STATUS: uptime=0:03:39 | VRAM=3.81/8.0GB util=83% temp=64C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:14:45,126] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:14:45,156] [INFO] STATUS: uptime=0:04:12 | VRAM=7.61/8.0GB util=100% temp=60C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:15:17,248] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:15:17,273] [INFO] STATUS: uptime=0:04:44 | VRAM=7.61/8.0GB util=100% temp=59C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:15:49,608] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:15:49,636] [INFO] STATUS: uptime=0:05:16 | VRAM=7.61/8.0GB util=100% temp=59C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:16:23,117] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:16:23,144] [INFO] STATUS: uptime=0:05:50 | VRAM=7.61/8.0GB util=100% temp=60C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:16:57,142] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:16:57,169] [INFO] STATUS: uptime=0:06:24 | VRAM=7.63/8.0GB util=100% temp=60C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:17:27,089] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:17:27,114] [INFO] STATUS: uptime=0:06:54 | VRAM=7.63/8.0GB util=100% temp=60C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:17:56,187] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:17:56,221] [INFO] STATUS: uptime=0:07:23 | VRAM=7.66/8.0GB util=100% temp=60C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:18:27,316] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:18:27,357] [INFO] STATUS: uptime=0:07:54 | VRAM=7.61/8.0GB util=100% temp=60C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:19:04,917] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:19:04,953] [INFO] STATUS: uptime=0:08:32 | VRAM=7.53/8.0GB util=95% temp=61C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:19:38,577] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:19:38,610] [INFO] STATUS: uptime=0:09:05 | VRAM=7.38/8.0GB util=60% temp=60C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:20:09,085] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:20:09,122] [INFO] STATUS: uptime=0:09:36 | VRAM=7.49/8.0GB util=100% temp=58C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:20:43,632] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:20:43,652] [INFO] STATUS: uptime=0:10:10 | VRAM=7.38/8.0GB util=21% temp=59C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:21:18,359] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:21:18,382] [INFO] STATUS: uptime=0:10:45 | VRAM=7.34/8.0GB util=27% temp=59C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:21:55,522] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:21:55,554] [INFO] STATUS: uptime=0:11:22 | VRAM=7.36/8.0GB util=90% temp=59C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:22:31,455] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:22:31,500] [INFO] STATUS: uptime=0:11:58 | VRAM=7.53/8.0GB util=100% temp=59C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:23:13,323] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:23:13,415] [INFO] STATUS: uptime=0:12:40 | VRAM=7.41/8.0GB util=12% temp=61C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:23:57,819] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:23:57,907] [INFO] STATUS: uptime=0:13:25 | VRAM=7.52/8.0GB util=31% temp=61C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:24:44,189] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:24:44,268] [INFO] STATUS: uptime=0:14:11 | VRAM=7.43/8.0GB util=42% temp=60C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:25:27,161] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:25:27,187] [INFO] STATUS: uptime=0:14:54 | VRAM=7.62/8.0GB util=6% temp=61C | active=4/4 | queue: pending=1172 done=97 fail=0 block=0
+[2026-09-24 05:25:35,668] [INFO] [DONE][p3_gpt2_roast_factory] exit=0 elapsed=865.7s
+[2026-09-24 05:25:35,701] [INFO] Triggered background git commit & push for p3_gpt2_roast_factory
+[2026-09-24 05:26:00,135] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:26:00,165] [INFO] STATUS: uptime=0:15:27 | VRAM=7.49/8.0GB util=85% temp=61C | active=3/4 | queue: pending=1172 done=98 fail=0 block=0
+[2026-09-24 05:26:42,456] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:26:42,480] [INFO] STATUS: uptime=0:16:09 | VRAM=7.63/8.0GB util=5% temp=61C | active=3/4 | queue: pending=1172 done=98 fail=0 block=0
+[2026-09-24 05:27:20,091] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:27:20,194] [INFO] STATUS: uptime=0:16:47 | VRAM=7.61/8.0GB util=31% temp=60C | active=3/4 | queue: pending=1172 done=98 fail=0 block=0
+[2026-09-24 05:27:58,600] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:27:58,618] [INFO] STATUS: uptime=0:17:25 | VRAM=7.66/8.0GB util=37% temp=60C | active=3/4 | queue: pending=1172 done=98 fail=0 block=0
+[2026-09-24 05:28:43,782] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:28:43,883] [INFO] STATUS: uptime=0:18:11 | VRAM=7.62/8.0GB util=56% temp=62C | active=3/4 | queue: pending=1172 done=98 fail=0 block=0
+[2026-09-24 05:29:27,066] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:29:27,096] [INFO] STATUS: uptime=0:18:54 | VRAM=7.58/8.0GB util=54% temp=62C | active=3/4 | queue: pending=1172 done=98 fail=0 block=0
+[2026-09-24 05:29:35,177] [INFO] [DONE][p3_gpt2_direct_svd_encoder_factory] exit=0 elapsed=1074.4s
+[2026-09-24 05:29:35,207] [INFO] Triggered background git commit & push for p3_gpt2_direct_svd_encoder_factory
+[2026-09-24 05:29:54,416] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:29:54,424] [INFO] STATUS: uptime=0:19:21 | VRAM=7.55/8.0GB util=100% temp=60C | active=2/4 | queue: pending=1172 done=99 fail=0 block=0
+[2026-09-24 05:30:20,908] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:30:20,928] [INFO] STATUS: uptime=0:19:48 | VRAM=7.56/8.0GB util=99% temp=58C | active=2/4 | queue: pending=1172 done=99 fail=0 block=0
+[2026-09-24 05:30:48,657] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:30:48,703] [INFO] STATUS: uptime=0:20:15 | VRAM=7.54/8.0GB util=14% temp=58C | active=2/4 | queue: pending=1172 done=99 fail=0 block=0
+[2026-09-24 05:31:16,833] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:31:16,863] [INFO] STATUS: uptime=0:20:44 | VRAM=7.60/8.0GB util=40% temp=57C | active=2/4 | queue: pending=1172 done=99 fail=0 block=0
+[2026-09-24 05:31:39,769] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:31:39,805] [INFO] STATUS: uptime=0:21:07 | VRAM=7.60/8.0GB util=51% temp=57C | active=2/4 | queue: pending=1172 done=99 fail=0 block=0
+[2026-09-24 05:32:06,782] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:32:06,803] [INFO] STATUS: uptime=0:21:34 | VRAM=7.54/8.0GB util=15% temp=58C | active=2/4 | queue: pending=1172 done=99 fail=0 block=0
+[2026-09-24 05:32:14,863] [INFO] [DONE][p3_gpt2_a3_v2] exit=0 elapsed=1271.2s
+[2026-09-24 05:32:14,883] [INFO] Triggered background git commit & push for p3_gpt2_a3_v2
+[2026-09-24 05:32:31,408] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:32:31,428] [INFO] STATUS: uptime=0:21:58 | VRAM=6.82/8.0GB util=98% temp=57C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:32:55,341] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:32:55,363] [INFO] STATUS: uptime=0:22:22 | VRAM=6.88/8.0GB util=100% temp=57C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:33:18,828] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:33:18,852] [INFO] STATUS: uptime=0:22:46 | VRAM=7.43/8.0GB util=28% temp=58C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:33:41,787] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:33:41,805] [INFO] STATUS: uptime=0:23:09 | VRAM=7.43/8.0GB util=29% temp=59C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:34:05,048] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:34:05,072] [INFO] STATUS: uptime=0:23:32 | VRAM=7.43/8.0GB util=100% temp=59C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:34:27,866] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:34:27,884] [INFO] STATUS: uptime=0:23:55 | VRAM=7.43/8.0GB util=68% temp=60C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:34:50,673] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:34:50,700] [INFO] STATUS: uptime=0:24:17 | VRAM=7.43/8.0GB util=62% temp=60C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:35:13,522] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:35:13,543] [INFO] STATUS: uptime=0:24:40 | VRAM=7.43/8.0GB util=16% temp=60C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:35:36,541] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:35:36,562] [INFO] STATUS: uptime=0:25:03 | VRAM=7.43/8.0GB util=28% temp=59C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:35:59,554] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:35:59,574] [INFO] STATUS: uptime=0:25:26 | VRAM=7.43/8.0GB util=99% temp=58C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:36:22,338] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:36:22,359] [INFO] STATUS: uptime=0:25:49 | VRAM=7.43/8.0GB util=100% temp=59C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:36:49,330] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:36:49,374] [INFO] STATUS: uptime=0:26:16 | VRAM=7.43/8.0GB util=100% temp=58C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:37:15,051] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:37:15,075] [INFO] STATUS: uptime=0:26:42 | VRAM=7.43/8.0GB util=100% temp=60C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:37:38,782] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:37:38,802] [INFO] STATUS: uptime=0:27:06 | VRAM=7.43/8.0GB util=25% temp=59C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:38:01,616] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:38:01,649] [INFO] STATUS: uptime=0:27:28 | VRAM=7.43/8.0GB util=100% temp=58C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:38:24,592] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:38:24,611] [INFO] STATUS: uptime=0:27:51 | VRAM=7.43/8.0GB util=100% temp=59C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:38:48,129] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:38:48,153] [INFO] STATUS: uptime=0:28:15 | VRAM=7.48/8.0GB util=25% temp=55C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:39:11,242] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:39:11,263] [INFO] STATUS: uptime=0:28:38 | VRAM=7.48/8.0GB util=23% temp=52C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:39:35,061] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:39:35,082] [INFO] STATUS: uptime=0:29:02 | VRAM=7.48/8.0GB util=25% temp=53C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:39:57,919] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:39:57,942] [INFO] STATUS: uptime=0:29:25 | VRAM=7.48/8.0GB util=36% temp=52C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:40:21,104] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:40:21,123] [INFO] STATUS: uptime=0:29:48 | VRAM=7.48/8.0GB util=40% temp=52C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:40:45,254] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:40:45,277] [INFO] STATUS: uptime=0:30:12 | VRAM=7.01/8.0GB util=30% temp=51C | active=1/4 | queue: pending=1172 done=100 fail=0 block=0
+[2026-09-24 05:40:53,333] [WARNING] [TIMEOUT][p3_gpt2_svd_llm_v2] terminating (timeout 1820s)
+[2026-09-24 05:41:09,452] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:41:09,494] [INFO] STATUS: uptime=0:30:36 | VRAM=6.94/8.0GB util=39% temp=50C | active=0/4 | queue: pending=1172 done=100 fail=1 block=0
+[2026-09-24 05:41:32,607] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:41:32,627] [INFO] STATUS: uptime=0:30:59 | VRAM=6.94/8.0GB util=38% temp=50C | active=0/4 | queue: pending=1172 done=100 fail=1 block=0
+[2026-09-24 05:41:56,794] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:41:56,811] [INFO] STATUS: uptime=0:31:24 | VRAM=6.94/8.0GB util=39% temp=49C | active=0/4 | queue: pending=1172 done=100 fail=1 block=0
+[2026-09-24 05:42:20,590] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:42:20,611] [INFO] STATUS: uptime=0:31:47 | VRAM=6.97/8.0GB util=30% temp=52C | active=0/4 | queue: pending=1172 done=100 fail=1 block=0
+[2026-09-24 05:42:43,619] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:42:43,639] [INFO] STATUS: uptime=0:32:10 | VRAM=7.12/8.0GB util=19% temp=52C | active=0/4 | queue: pending=1172 done=100 fail=1 block=0
+[2026-09-24 05:43:07,554] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:43:07,575] [INFO] STATUS: uptime=0:32:34 | VRAM=6.99/8.0GB util=36% temp=50C | active=0/4 | queue: pending=1172 done=100 fail=1 block=0
+[2026-09-24 05:43:15,832] [INFO] [LAUNCH][p3_gpt2_tomoe_compressor_factory] pid=17380 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tomoe_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tomoe_compressor_factory'
+[2026-09-24 05:43:46,594] [INFO] [LAUNCH][p3_gpt2_compot_compressor_class] pid=14236 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compot_compressor_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compot_compressor_class'
+[2026-09-24 05:44:13,329] [INFO] [LAUNCH][p3_gpt2_svd_projection] pid=20292 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_projection --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_projection'
+[2026-09-24 05:44:40,062] [INFO] [LAUNCH][p3_gpt2_svd_linear] pid=14768 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_linear --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_linear'
+[2026-09-24 05:45:09,927] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:45:09,951] [INFO] STATUS: uptime=0:34:37 | VRAM=0.88/8.0GB util=0% temp=49C | active=4/4 | queue: pending=1168 done=100 fail=1 block=0
+[2026-09-24 05:45:41,460] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:45:41,480] [INFO] STATUS: uptime=0:35:08 | VRAM=2.88/8.0GB util=96% temp=62C | active=4/4 | queue: pending=1168 done=100 fail=1 block=0
+[2026-09-24 05:46:13,025] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:46:13,050] [INFO] STATUS: uptime=0:35:40 | VRAM=3.55/8.0GB util=98% temp=65C | active=4/4 | queue: pending=1168 done=100 fail=1 block=0
+[2026-09-24 05:46:44,337] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:46:44,359] [INFO] STATUS: uptime=0:36:11 | VRAM=3.55/8.0GB util=98% temp=67C | active=4/4 | queue: pending=1168 done=100 fail=1 block=0
+[2026-09-24 05:47:16,824] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:47:16,863] [INFO] STATUS: uptime=0:36:44 | VRAM=3.47/8.0GB util=89% temp=66C | active=4/4 | queue: pending=1168 done=100 fail=1 block=0
+[2026-09-24 05:47:50,660] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:47:50,688] [INFO] STATUS: uptime=0:37:17 | VRAM=3.51/8.0GB util=99% temp=69C | active=4/4 | queue: pending=1168 done=100 fail=1 block=0
+[2026-09-24 05:48:22,824] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:48:22,859] [INFO] STATUS: uptime=0:37:50 | VRAM=4.62/8.0GB util=97% temp=67C | active=4/4 | queue: pending=1168 done=100 fail=1 block=0
+[2026-09-24 05:48:56,310] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:48:56,339] [INFO] STATUS: uptime=0:38:23 | VRAM=5.67/8.0GB util=97% temp=65C | active=4/4 | queue: pending=1168 done=100 fail=1 block=0
+[2026-09-24 05:49:28,831] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:49:28,852] [INFO] STATUS: uptime=0:38:56 | VRAM=5.67/8.0GB util=96% temp=65C | active=4/4 | queue: pending=1168 done=100 fail=1 block=0
+[2026-09-24 05:49:55,666] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:49:55,684] [INFO] STATUS: uptime=0:39:22 | VRAM=4.87/8.0GB util=90% temp=63C | active=4/4 | queue: pending=1168 done=100 fail=1 block=0
+[2026-09-24 05:50:03,732] [INFO] [DONE][p3_gpt2_tomoe_compressor_factory] exit=0 elapsed=407.9s
+[2026-09-24 05:50:03,747] [INFO] Triggered background git commit & push for p3_gpt2_tomoe_compressor_factory
+[2026-09-24 05:50:03,747] [INFO] [DONE][p3_gpt2_compot_compressor_class] exit=0 elapsed=377.2s
+[2026-09-24 05:50:03,756] [INFO] Triggered background git commit & push for p3_gpt2_compot_compressor_class
+[2026-09-24 05:50:03,958] [INFO] [LAUNCH][p3_gpt2_dobi_svd_factory] pid=21908 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_svd_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_svd_factory'
+[2026-09-24 05:50:34,757] [INFO] [LAUNCH][p3_gpt2_compression_unified_rope] pid=15936 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compression_unified_rope --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compression_unified_rope'
+[2026-09-24 05:51:30,651] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:51:30,661] [INFO] STATUS: uptime=0:40:57 | VRAM=3.82/8.0GB util=88% temp=61C | active=4/4 | queue: pending=1166 done=102 fail=1 block=0
+[2026-09-24 05:52:04,998] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:52:05,009] [INFO] STATUS: uptime=0:41:32 | VRAM=5.52/8.0GB util=97% temp=64C | active=4/4 | queue: pending=1166 done=102 fail=1 block=0
+[2026-09-24 05:52:37,308] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:52:37,333] [INFO] STATUS: uptime=0:42:04 | VRAM=5.52/8.0GB util=97% temp=65C | active=4/4 | queue: pending=1166 done=102 fail=1 block=0
+[2026-09-24 05:53:09,306] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:53:09,326] [INFO] STATUS: uptime=0:42:36 | VRAM=5.52/8.0GB util=97% temp=65C | active=4/4 | queue: pending=1166 done=102 fail=1 block=0
+[2026-09-24 05:53:17,372] [INFO] [DONE][p3_gpt2_svd_linear] exit=0 elapsed=517.3s
+[2026-09-24 05:53:17,388] [INFO] Triggered background git commit & push for p3_gpt2_svd_linear
+[2026-09-24 05:53:17,581] [INFO] [LAUNCH][p3_gpt2_cur_moe_compressor_class] pid=4052 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_moe_compressor_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_moe_compressor_class'
+[2026-09-24 05:54:10,062] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:54:10,087] [INFO] STATUS: uptime=0:43:37 | VRAM=3.68/8.0GB util=97% temp=65C | active=4/4 | queue: pending=1165 done=103 fail=1 block=0
+[2026-09-24 05:54:18,139] [INFO] [DONE][p3_gpt2_svd_projection] exit=0 elapsed=604.8s
+[2026-09-24 05:54:18,155] [INFO] Triggered background git commit & push for p3_gpt2_svd_projection
+[2026-09-24 05:54:18,358] [INFO] [LAUNCH][p3_gpt2_erc_factory] pid=23636 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules erc_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_erc_factory'
+[2026-09-24 05:54:53,400] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:54:53,432] [INFO] STATUS: uptime=0:44:20 | VRAM=4.08/8.0GB util=97% temp=63C | active=4/4 | queue: pending=1164 done=104 fail=1 block=0
+[2026-09-24 05:55:33,803] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:55:33,815] [INFO] STATUS: uptime=0:45:01 | VRAM=4.75/8.0GB util=93% temp=65C | active=4/4 | queue: pending=1164 done=104 fail=1 block=0
+[2026-09-24 05:56:11,190] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:56:11,250] [INFO] STATUS: uptime=0:45:38 | VRAM=4.87/8.0GB util=96% temp=65C | active=4/4 | queue: pending=1164 done=104 fail=1 block=0
+[2026-09-24 05:56:19,310] [INFO] [DONE][p3_gpt2_dobi_svd_factory] exit=0 elapsed=375.4s
+[2026-09-24 05:56:19,327] [INFO] Triggered background git commit & push for p3_gpt2_dobi_svd_factory
+[2026-09-24 05:56:19,525] [INFO] [LAUNCH][p3_gpt2_kmeans] pid=804 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kmeans --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kmeans'
+[2026-09-24 05:57:06,418] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:57:06,425] [INFO] STATUS: uptime=0:46:33 | VRAM=3.91/8.0GB util=95% temp=65C | active=4/4 | queue: pending=1163 done=105 fail=1 block=0
+[2026-09-24 05:57:14,466] [WARNING] [FAIL][p3_gpt2_compression_unified_rope] exit=15 elapsed=399.7s
+[2026-09-24 05:57:14,468] [WARNING] [FAIL][p3_gpt2_compression_unified_rope] retry 1/2
+[2026-09-24 05:57:14,468] [INFO] [DONE][p3_gpt2_cur_moe_compressor_class] exit=0 elapsed=236.9s
+[2026-09-24 05:57:14,478] [INFO] Triggered background git commit & push for p3_gpt2_cur_moe_compressor_class
+[2026-09-24 05:57:14,478] [INFO] [DONE][p3_gpt2_erc_factory] exit=0 elapsed=176.1s
+[2026-09-24 05:57:14,488] [INFO] Triggered background git commit & push for p3_gpt2_erc_factory
+[2026-09-24 05:57:14,653] [INFO] [LAUNCH][p3_gpt2_compressed_mha_fn] pid=13448 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compressed_mha_fn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compressed_mha_fn'
+[2026-09-24 05:57:16,878] [INFO] [LAUNCH][p3_gpt2_adaptive_svd] pid=14264 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_svd'
+[2026-09-24 05:57:45,737] [INFO] [LAUNCH][p3_gpt2_saes_svd] pid=6380 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules saes_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_saes_svd'
+[2026-09-24 05:58:40,590] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:58:40,611] [INFO] STATUS: uptime=0:48:07 | VRAM=0.39/8.0GB util=0% temp=51C | active=4/4 | queue: pending=1161 done=107 fail=1 block=0
+[2026-09-24 05:58:48,656] [INFO] [DONE][p3_gpt2_kmeans] exit=0 elapsed=149.1s
+[2026-09-24 05:58:48,671] [INFO] Triggered background git commit & push for p3_gpt2_kmeans
+[2026-09-24 05:58:48,671] [WARNING] [FAIL][p3_gpt2_compressed_mha_fn] exit=15 elapsed=94.0s
+[2026-09-24 05:58:48,671] [WARNING] [FAIL][p3_gpt2_compressed_mha_fn] retry 1/2
+[2026-09-24 05:58:48,672] [WARNING] [FAIL][p3_gpt2_adaptive_svd] exit=15 elapsed=91.8s
+[2026-09-24 05:58:48,672] [WARNING] [FAIL][p3_gpt2_adaptive_svd] retry 1/2
+[2026-09-24 05:58:48,871] [INFO] [LAUNCH][p3_gpt2_hybridkv_factory] pid=21152 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hybridkv_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hybridkv_factory'
+[2026-09-24 05:58:57,193] [INFO] [LAUNCH][p3_gpt2_ast_pruner_factory] pid=13212 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules ast_pruner_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_ast_pruner_factory'
+[2026-09-24 05:59:27,996] [INFO] [LAUNCH][p3_gpt2_liftr_factory] pid=12804 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules liftr_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_liftr_factory'
+[2026-09-24 05:59:57,530] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 05:59:57,558] [INFO] STATUS: uptime=0:49:24 | VRAM=0.26/8.0GB util=0% temp=56C | active=4/4 | queue: pending=1160 done=108 fail=1 block=0
+[2026-09-24 06:00:05,608] [WARNING] [FAIL][p3_gpt2_saes_svd] exit=15 elapsed=139.9s
+[2026-09-24 06:00:05,608] [WARNING] [FAIL][p3_gpt2_saes_svd] retry 1/2
+[2026-09-24 06:00:05,795] [INFO] [LAUNCH][p3_gpt2_swift_svd_act] pid=22280 cmd='python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules swift_svd_act --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_swift_svd_act'
+[2026-09-24 06:00:55,168] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 06:00:55,197] [INFO] STATUS: uptime=0:50:22 | VRAM=2.09/8.0GB util=74% temp=60C | active=4/4 | queue: pending=1160 done=108 fail=1 block=0
+[2026-09-24 06:01:26,815] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 06:01:26,837] [INFO] STATUS: uptime=0:50:54 | VRAM=3.00/8.0GB util=92% temp=63C | active=4/4 | queue: pending=1160 done=108 fail=1 block=0
+[2026-09-24 06:01:58,670] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 06:01:58,697] [INFO] STATUS: uptime=0:51:25 | VRAM=3.80/8.0GB util=97% temp=65C | active=4/4 | queue: pending=1160 done=108 fail=1 block=0
+[2026-09-24 06:02:30,537] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 06:02:30,562] [INFO] STATUS: uptime=0:51:57 | VRAM=3.80/8.0GB util=98% temp=66C | active=4/4 | queue: pending=1160 done=108 fail=1 block=0
+[2026-09-24 06:03:02,563] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 06:03:02,594] [INFO] STATUS: uptime=0:52:29 | VRAM=4.59/8.0GB util=99% temp=69C | active=4/4 | queue: pending=1160 done=108 fail=1 block=0
+[2026-09-24 06:03:34,572] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 06:03:34,600] [INFO] STATUS: uptime=0:53:01 | VRAM=4.46/8.0GB util=92% temp=66C | active=4/4 | queue: pending=1160 done=108 fail=1 block=0
+[2026-09-24 06:04:06,688] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 06:04:06,752] [INFO] STATUS: uptime=0:53:33 | VRAM=4.59/8.0GB util=97% temp=67C | active=4/4 | queue: pending=1160 done=108 fail=1 block=0
+[2026-09-24 06:04:41,896] [INFO] Anomaly report written: D:\SVD_Project\paper\_ANOMALY_REPORT.md
+[2026-09-24 06:04:41,908] [INFO] STATUS: uptime=0:54:09 | VRAM=4.59/8.0GB util=99% temp=69C | active=4/4 | queue: pending=1160 done=108 fail=1 block=0

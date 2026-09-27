@@ -1,0 +1,14 @@
+[INIT] 721 tasks, parallel=1
+[1/721] zeroshot/aegis_hybrid/zero-shot | OK | 124.1s
+[2/721] zeroshot/aegis_spectron_fp8/zero-shot | OK | 317.7s
+[3/721] zeroshot/aegis_v2/zero-shot | OK | 140.3s
+[4/721] zeroshot/aegis_v5/zero-shot | OK | 113.1s
+[5/721] zeroshot/aegis_v6/zero-shot | OK | 304.4s
+[6/721] zeroshot/armor_pruner/zero-shot | OK | 123.5s
+[7/721] zeroshot/ast_pruner/zero-shot | OK | 120.4s
+[8/721] zeroshot/astro_quantizer/zero-shot | OK | 55.1s
+[9/721] zeroshot/asvd_attention/zero-shot | OK | 150.5s
+[10/721] zeroshot/bam_umoe/zero-shot | OK | 92.2s
+[PROGRESS] 10/721 | 0.4 tasks/min | ETA 1827 min
+[11/721] zeroshot/block_transformer_hiba/zero-shot | OK | 69.4s
+[12/721] zeroshot/bonsai_pruner/zero-shot | OK | 169.3s

@@ -1,0 +1,142 @@
+================================================================================
+STARTING UNIFIED 4-MODEL HARDENED SVD Linear BENCHMARK ON GPU SERVER
+Running models: ['distilbert']
+================================================================================
+
+============================== RUNNING MODEL: distilbert ==============================
+
+>>> FINISHED MODEL: distilbert in 35.6s (Exit: 0, Status: PASS, Compressed Layers: 0, Comp Rate: 1.25x)
+
+================================================================================
+4-MODEL BENCHMARK RESULTS SUMMARY (SVD Linear on GPU)
+================================================================================
+     Model  Exit Code Baseline Acc SVD Linear Acc Delta Acc     F1 Status Compressed Layers Comp Rate Peak VRAM Time (s)
+distilbert          0       90.71%         77.29%   -13.42% 0.7676   PASS                 0     1.25x  164.7 MB     35.6
+================================================================================
+
+Saved consolidated summaries to:
+- results\unified_svd_linear_4models_summary.csv
+- results\unified_svd_linear_4models_summary.json
+Generated and saved comparative visualization charts to results\unified_baseline
+
+================================================================================
+STAGE 2: QUALITY-GATED EXPORT TO HUGGING FACE & GITHUB (SVD Linear)
+================================================================================
+[Quality Gate: PASSED] distilbert passed criteria (status=PASS, acc=77.29% >= 56.0%). Packaging for export...
+  Successfully uploaded to https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-svd_linear
+
+[+] Updated documentation benchmark table in Docs\content\compressions\svd_linear.md
+Committing results directly to main...
+[main 7617f8b57] feat(benchmark): evaluation (1/1 passed on SST-2)
+ 3 files changed, 11 insertions(+), 41 deletions(-)
+Results committed to main.
+
+================================================================================
+ALL TASKS COMPLETED!
+Passed Models: 1 / 1
+Uploaded Repositories: 1
+  - https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-svd_linear
+================================================================================
+
+--- STDERR ---
+2026-09-15 07:51:17,397 [INFO] QwenQualitySweep: Parsed 6 module-specific extended arguments: ['--svd_linear_rank', '64', '--svd_linear_max_error', '0.50', '--svd_linear_target_attention_only', 'true']
+2026-09-15 07:51:17,458 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 104/104 [00:00<00:00, 2849.09it/s]
+2026-09-15 07:51:18,191 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-15 07:51:18,192 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 07:51:18,192 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 07:51:18,192 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 07:51:18,192 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
+2026-09-15 07:51:18,192 [INFO] QwenQualitySweep:   family:            bert
+2026-09-15 07:51:18,192 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 07:51:18,193 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 07:51:18,193 [INFO] QwenQualitySweep:   recovery_steps:    10
+2026-09-15 07:51:18,193 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 07:51:18,193 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 07:51:18,193 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 07:51:18,194 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\unified_asvd\distilbert\finetuned_model.pt' does not exist; attempting automatic fallback search.
+2026-09-15 07:51:18,197 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-15 07:51:19,540 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0001
+2026-09-15 07:51:20,232 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0005
+2026-09-15 07:51:20,937 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1861
+2026-09-15 07:51:21,637 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0247
+2026-09-15 07:51:22,344 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0038
+2026-09-15 07:51:23,034 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0151
+2026-09-15 07:51:23,728 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0045
+2026-09-15 07:51:24,425 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.0014
+2026-09-15 07:51:24,440 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_svd_linear\distilbert\finetuned_model.pt
+2026-09-15 07:51:24,507 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 07:51:25,235 [INFO] QwenQualitySweep: Prepared 109 eval batches and 10 train batches directly on GPU.
+2026-09-15 07:51:27,138 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.71%
+2026-09-15 07:51:27,187 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 07:51:27,188 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 07:51:27,188 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 07:51:27,188 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 07:51:27,188 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 07:51:27,188 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 07:51:27,188 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 07:51:27,188 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 07:51:27,190 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=10, batch_size=8, optimizer=adamw)
+2026-09-15 07:51:29,421 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_svd_linear\distilbert\distilbert_sst2_full_full_metrics.json
+2026-09-15 07:51:29,430 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_svd_linear\distilbert\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-15 07:51:29,572 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.71% (F1: 0.9099, Peak VRAM: 181.99 MB)
+2026-09-15 07:51:29,573 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_svd_linear\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 07:51:29,800 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: svd_linear (recovery_steps=10, batch_size=8, optimizer=adamw)
+2026-09-15 07:51:31,629 [INFO] QwenQualitySweep: module=svd_linear path=legacy_bert
+2026-09-15 07:51:31,629 [INFO] QwenQualitySweep: module=svd_linear injection summary: 24 SVDLinear layers active
+2026-09-15 07:51:31,629 [INFO] QwenQualitySweep: Running 10 recovery fine-tuning steps for svd_linear (lr=2.0e-04)
+2026-09-15 07:51:31,651 [INFO] framework.utils.compat: Recovery fine-tuning selected 645192 trainable parameters across 60 tensors.
+2026-09-15 07:51:31,651 [INFO] framework.utils.compat: Discovered 60 trainable tensors (645192 params)
+2026-09-15 07:51:31,652 [INFO] QwenQualitySweep: LoRA fine-tuning: 645192 trainable parameters across 60 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 07:51:31,733 [INFO] QwenQualitySweep: LoRA fine-tune step 1/10 loss=0.4914 (bs=8, micro_bs=8)
+2026-09-15 07:51:31,908 [INFO] QwenQualitySweep: LoRA fine-tune step 5/10 loss=0.6003 (bs=8, micro_bs=8)
+2026-09-15 07:51:32,455 [INFO] QwenQualitySweep: LoRA fine-tune step 10/10 loss=0.5445 (bs=8, micro_bs=8)
+2026-09-15 07:51:37,165 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_svd_linear\distilbert\distilbert_sst2_svd_linear_full_metrics.json
+2026-09-15 07:51:37,260 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_svd_linear\distilbert\checkpoints\svd_linear\weights.pt (module_params=120, lora_params=52)
+2026-09-15 07:51:37,468 [INFO] QwenQualitySweep: [2/2] svd_linear -> PASS 77.29% (F1: 0.7676, Peak VRAM: 164.65 MB)
+2026-09-15 07:51:37,469 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_svd_linear\distilbert\checkpoints\svd_linear. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 07:51:37,694 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 07:51:37,695 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-15 07:51:37,700 [INFO] QwenQualitySweep: 
+                     Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                       full   PASS   90.71% 0.00% (base) 0.9099                  0            1.00x  182.0 MB               1.72              1.97
+svd_linear (efficient-attn)   PASS   77.29%      -13.42% 0.7676                  0            1.25x  164.7 MB               4.60              5.27
+2026-09-15 07:51:37,700 [INFO] QwenQualitySweep: ================================================================================
+No files have been modified since last commit. Skipping to prevent empty commit.
+No files have been modified since last commit. Skipping to prevent empty commit.
+No files have been modified since last commit. Skipping to prevent empty commit.
+
+weights.pt:   0%|          | 0.00/7.22M [00:00<?, ?B/s]
+weights.pt:   1%|          | 65.5k/7.22M [00:00<00:41, 172kB/s]
+weights.pt:   3%|2         | 197k/7.22M [00:00<00:20, 342kB/s] 
+weights.pt:   4%|3         | 262k/7.22M [00:00<00:18, 385kB/s]
+weights.pt:   5%|4         | 328k/7.22M [00:00<00:15, 439kB/s]
+weights.pt:   7%|7         | 524k/7.22M [00:00<00:08, 774kB/s]
+weights.pt:  14%|#3        | 983k/7.22M [00:01<00:04, 1.28MB/s]
+weights.pt:  18%|#8        | 1.31M/7.22M [00:01<00:03, 1.58MB/s]
+weights.pt:  24%|##3       | 1.70M/7.22M [00:01<00:02, 2.02MB/s]
+weights.pt:  27%|##7       | 1.97M/7.22M [00:01<00:02, 2.09MB/s]
+weights.pt:  32%|###1      | 2.29M/7.22M [00:01<00:02, 2.18MB/s]
+weights.pt:  35%|###5      | 2.56M/7.22M [00:01<00:02, 2.24MB/s]
+weights.pt:  39%|###9      | 2.82M/7.22M [00:01<00:02, 2.13MB/s]
+weights.pt:  43%|####2     | 3.08M/7.22M [00:02<00:01, 2.08MB/s]
+weights.pt:  46%|####6     | 3.34M/7.22M [00:02<00:01, 2.13MB/s]
+weights.pt:  50%|####9     | 3.60M/7.22M [00:02<00:01, 2.22MB/s]
+weights.pt:  54%|#####3    | 3.87M/7.22M [00:02<00:01, 2.29MB/s]
+weights.pt:  58%|#####8    | 4.19M/7.22M [00:02<00:01, 2.38MB/s]
+weights.pt:  63%|######2   | 4.52M/7.22M [00:02<00:01, 2.46MB/s]
+weights.pt:  67%|######7   | 4.85M/7.22M [00:02<00:00, 2.54MB/s]
+weights.pt:  71%|#######   | 5.11M/7.22M [00:03<00:01, 1.81MB/s]
+weights.pt:  76%|#######6  | 5.51M/7.22M [00:03<00:00, 2.14MB/s]
+weights.pt:  80%|#######9  | 5.77M/7.22M [00:03<00:00, 1.91MB/s]
+weights.pt:  84%|########3 | 6.03M/7.22M [00:03<00:00, 1.84MB/s]
+weights.pt:  87%|########7 | 6.29M/7.22M [00:03<00:00, 1.59MB/s]
+weights.pt:  90%|########9 | 6.49M/7.22M [00:03<00:00, 1.56MB/s]
+weights.pt:  93%|#########2| 6.68M/7.22M [00:04<00:00, 1.55MB/s]
+weights.pt:  95%|#########5| 6.88M/7.22M [00:04<00:00, 1.49MB/s]
+weights.pt:  98%|#########8| 7.08M/7.22M [00:04<00:00, 1.42MB/s]
+weights.pt: 100%|##########| 7.22M/7.22M [00:05<00:00, 1.43MB/s]
+To https://github.com/tahamajs/SVD_linear_Attention.git
+   4ee83370d..7617f8b57  main -> main

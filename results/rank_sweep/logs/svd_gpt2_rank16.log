@@ -1,0 +1,105 @@
+
+========================================================
+Starting GPT2 Benchmark...
+Command: C:\Users\Hadi Schumacher\anaconda3\python.exe -u Codes\framework\run_quality_sweep.py --model models\gpt2 --model_family gpt --dataset sst2 --dataset_dir Codes\framework\data\glue_data\sst2 --output_dir results\unified_svd\gpt2 --parent_checkpoint results\gpt2_sst2_lora_baseline\finetuned_model.pt --modules full,svd --batch_size 8 --recovery_steps 10 --learning_rate 5e-5 --lora_rank 16 --rank 16 --precision fp16 --fresh --defer_export --timeout 180
+========================================================
+
+2026-09-15 07:45:56,149 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 148/148 [00:00<00:00, 3344.92it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-15 07:45:57,332 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-15 07:45:57,332 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 07:45:57,332 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 07:45:57,332 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 07:45:57,332 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-15 07:45:57,333 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-15 07:45:57,333 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 07:45:57,333 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 07:45:57,333 [INFO] QwenQualitySweep:   recovery_steps:    10
+2026-09-15 07:45:57,333 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=5.0e-05, weight_decay=1.0e-02)
+2026-09-15 07:45:57,334 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 07:45:57,334 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 07:45:57,666 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-15 07:45:58,253 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 07:45:58,861 [INFO] QwenQualitySweep: Prepared 109 eval batches and 10 train batches directly on GPU.
+2026-09-15 07:46:03,747 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 79.36%
+2026-09-15 07:46:03,796 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 07:46:03,796 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 07:46:03,796 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 07:46:03,797 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 07:46:03,797 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 07:46:03,797 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 07:46:03,797 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 07:46:03,797 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 07:46:03,798 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=10, batch_size=8, optimizer=adamw)
+2026-09-15 07:46:09,432 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_svd\gpt2\gpt2_full_full_metrics.json
+2026-09-15 07:46:09,446 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_svd\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
+2026-09-15 07:46:10,094 [INFO] QwenQualitySweep: [1/2] full -> PASS 79.36% (F1: 0.7978, Peak VRAM: 792.54 MB)
+2026-09-15 07:46:10,095 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_svd\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 07:46:10,339 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: svd (recovery_steps=10, batch_size=8, optimizer=adamw)
+2026-09-15 07:46:11,532 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 16]), rank=16
+2026-09-15 07:46:11,637 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 16]), rank=16
+2026-09-15 07:46:11,741 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 16]), rank=16
+2026-09-15 07:46:11,950 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 16]), rank=16
+2026-09-15 07:46:12,053 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 16]), rank=16
+2026-09-15 07:46:12,136 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 16]), rank=16
+2026-09-15 07:46:12,221 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 16]), rank=16
+2026-09-15 07:46:12,305 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 16]), rank=16
+2026-09-15 07:46:12,391 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 16]), rank=16
+2026-09-15 07:46:12,482 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 16]), rank=16
+2026-09-15 07:46:12,563 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 16]), rank=16
+2026-09-15 07:46:12,652 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 16]), rank=16
+2026-09-15 07:46:12,653 [INFO] framework.core.attention_utils: Successfully injected 'svd' into 12 transformer blocks.
+2026-09-15 07:46:12,668 [INFO] QwenQualitySweep: module=svd path=adapted_gpt
+2026-09-15 07:46:12,670 [INFO] QwenQualitySweep: module=svd injection summary: 0 SVDLinear layers active
+2026-09-15 07:46:12,670 [INFO] QwenQualitySweep: Running 10 recovery fine-tuning steps for svd (lr=5.0e-05)
+2026-09-15 07:46:12,851 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179648 trainable parameters across 96 tensors.
+2026-09-15 07:46:12,852 [INFO] framework.utils.compat: Discovered 96 trainable tensors (1179648 params)
+2026-09-15 07:46:12,858 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179648 trainable parameters across 96 tensors (lr=5.0e-05, optimizer=adamw)
+2026-09-15 07:46:13,255 [INFO] QwenQualitySweep: LoRA fine-tune step 1/10 loss=0.7706 (bs=8, micro_bs=8)
+2026-09-15 07:46:14,093 [INFO] QwenQualitySweep: LoRA fine-tune step 5/10 loss=0.7751 (bs=8, micro_bs=8)
+2026-09-15 07:46:15,197 [INFO] QwenQualitySweep: LoRA fine-tune step 10/10 loss=0.6394 (bs=8, micro_bs=8)
+2026-09-15 07:46:24,591 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_svd\gpt2\gpt2_svd_full_metrics.json
+2026-09-15 07:46:24,642 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_svd\gpt2\checkpoints\svd\weights.pt (module_params=0, lora_params=97)
+2026-09-15 07:46:25,428 [INFO] QwenQualitySweep: [2/2] svd -> PASS_NO_COMPRESSION 49.08% (F1: 0.0, Peak VRAM: 567.83 MB)
+2026-09-15 07:46:25,429 [WARNING] QwenQualitySweep: Module 'svd' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-15 07:46:25,429 [INFO] QwenQualitySweep: [Quality Guard] Module 'svd' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=49.08%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 07:46:25,729 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 07:46:25,730 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-15 07:46:25,737 [INFO] QwenQualitySweep: 
+              Module              Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                full                PASS   79.36% 0.00% (base) 0.7978                  0            1.00x  792.5 MB               4.40              5.05
+svd (efficient-attn) PASS_NO_COMPRESSION   49.08%      -30.28% 0.0000                  0            1.00x  567.8 MB               9.11             10.45
+2026-09-15 07:46:25,738 [INFO] QwenQualitySweep: ================================================================================
+
+[SUCCESS] Finished Benchmark for gpt2.
+
+========================================================
+All Requested Models Processed in 44.70s
+========================================================
+
+
+--- Summary Results ---
+
+Summary for gpt2:
+module_name              status  accuracy_pct  f1_score  f1_macro  precision  recall  val_loss  elapsed_s  peak_vram_mb  tokens_per_sec  total_params_before  total_params_after  trainable_recovery_params  compression_rate  compression_ratio_pct  flops_reduction_pct  num_compressed_layers  num_fallback_layers  avg_reconstruction_error  weighted_reconstruction_error  num_injected_attention_layers  lora_params                                                error        path                  timestamp
+       full                PASS         79.36    0.7978    0.7935     0.7935  0.7935    0.4875       6.30        792.54        25367.70            124441344           124441344                          0               1.0                    0.0                  0.0                      0                    0                       NaN                            NaN                              0            0                                                  NaN adapted_gpt 2026-09-15T07:46:10.094373
+        svd PASS_NO_COMPRESSION         49.08    0.0000    0.3292     0.2454  0.5000    0.7237      15.09        567.83        12254.57            124441344           125620992                    1179648               1.0                    0.0                  0.0                      0                    0                       NaN                            NaN                             12      1179648 note: zero compressed layers, model grew (LoRA only) adapted_gpt 2026-09-15T07:46:25.428065
+
+========================================================
+Starting Quality Gate & Automated Hugging Face Export...
+========================================================
+
+[Quality Gate: REJECTED] gpt2 did not meet criteria (status=PASS_NO_COMPRESSION, acc=49.08% < 56.0%).
+
+Export Complete: 0/1 passed quality gate.
+
+--- STDERR ---
