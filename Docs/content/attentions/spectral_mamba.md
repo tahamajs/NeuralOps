@@ -431,4 +431,4 @@ print(f"[PASS] spectral_mamba forward logits shape:", outputs.logits.shape)
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 20.49 ms | 1243.5 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 21.10 ms | 1253.4 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 21.11 ms | 1253.4 MB |
-
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.02%** | -0.58% | 0.9039 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-spectral-mamba](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-spectral-mamba) | 2026-09-27 |

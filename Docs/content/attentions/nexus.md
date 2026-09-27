@@ -698,4 +698,4 @@ print(f"[PASS] nexus forward logits shape:", outputs.logits.shape)
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 19.77 ms | 1283.7 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 20.12 ms | 1293.6 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 20.33 ms | 1293.6 MB |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.02%** | -0.58% | 0.9019 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-nexus](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-nexus) | 2026-09-25 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.71%** | +0.11% | 0.9111 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-nexus](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-nexus) | 2026-09-27 |
