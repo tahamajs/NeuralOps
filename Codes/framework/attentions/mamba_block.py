@@ -19,10 +19,11 @@ from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 try:
-    from framework.core.selective_scan import selective_scan
+    from framework.core.selective_scan import selective_scan, HAS_MAMBA_CUDA
 except Exception as e:  # pragma: no cover
     logging.getLogger(__name__).warning("selective_scan import failed: %s", e)
     selective_scan = None  # type: ignore
+    HAS_MAMBA_CUDA = False
 
 logger = logging.getLogger(__name__)
 
@@ -545,8 +546,8 @@ class MambaBlock(nn.Module):
         C_ssm: torch.Tensor,
         D: torch.Tensor,
     ) -> torch.Tensor:
-        """Prefill path: use the fast selective_scan if available."""
-        if selective_scan is not None:
+        """Prefill path: use the fast selective_scan if CUDA kernel available, else chunked recurrent."""
+        if HAS_MAMBA_CUDA and selective_scan is not None:
             try:
                 y = selective_scan(
                     u=u, delta=delta, A=A, B=B_ssm, C=C_ssm, D=D,
