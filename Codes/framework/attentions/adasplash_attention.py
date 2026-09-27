@@ -229,7 +229,7 @@ class AdaSplashAttention(BaseAttention):
             self.alpha = float(getattr(config, "alpha", kwargs.get("alpha", alpha)))
             self.n_iter = getattr(config, "n_iter", kwargs.get("n_iter", n_iter))
             self.splash_radius = int(getattr(config, "splash_radius", kwargs.get("splash_radius", splash_radius)))
-            lora_rank_cfg = getattr(config, "lora_rank", getattr(config, "residual_rank", getattr(config, "rank", kwargs.get("lora_rank", kwargs.get("rank", 16)))))
+            lora_rank_cfg = getattr(config, "lora_rank", getattr(config, "residual_rank", getattr(config, "rank", kwargs.get("lora_rank", kwargs.pop("rank", 16)))))
             self.lora_rank = int(lora_rank_cfg) if lora_rank_cfg is not None else 16
             self.num_heads = kwargs.get("num_heads", self.adapter.num_heads or 12)
             self.num_kv_heads = kwargs.get("num_kv_heads", self.adapter.num_key_value_heads or self.num_heads)
@@ -245,7 +245,7 @@ class AdaSplashAttention(BaseAttention):
             self.alpha = float(kwargs.get("alpha", alpha))
             self.n_iter = int(kwargs.get("n_iter", n_iter))
             self.splash_radius = int(kwargs.get("splash_radius", splash_radius))
-            self.lora_rank = int(kwargs.get("lora_rank", kwargs.get("rank", 16)))
+            self.lora_rank = int(kwargs.get("lora_rank", kwargs.pop("rank", 16)))
             self.hidden_size = kwargs.get("hidden_size", 768)
             self.num_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
             self.num_kv_heads = kwargs.get("num_kv_heads", kwargs.get("num_key_value_heads", self.num_heads))
@@ -731,8 +731,8 @@ def inject_adasplash(
                     getattr(
                         cfg,
                         "lora_rank",
-                        getattr(cfg, "rank", kwargs.get("lora_rank", kwargs.get("rank", 16))),
-                    ) if cfg is not None else kwargs.get("lora_rank", kwargs.get("rank", 16)),
+                        getattr(cfg, "rank", kwargs.get("lora_rank", kwargs.pop("rank", 16))),
+                    ) if cfg is not None else kwargs.get("lora_rank", kwargs.pop("rank", 16)),
                 ),
             ),
         )

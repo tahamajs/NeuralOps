@@ -1011,7 +1011,7 @@ def inject_spectron(
     h_size = _cfg_get(cfg, "hidden_size",
               _cfg_get(cfg, "dim", kwargs.get("hidden_size", 768)))
     rank = _cfg_get(comp_config, "svd_rank",
-            _cfg_get(comp_config, "rank", kwargs.get("rank", min(64, h_size))))
+            _cfg_get(comp_config, "rank", kwargs.pop("rank", min(64, h_size))))
     ranks = kwargs.pop("ranks", None)
     if ranks is None:
         ranks = {"q": rank, "k": rank, "v": rank, "o": rank}

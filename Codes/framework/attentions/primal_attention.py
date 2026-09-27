@@ -203,7 +203,7 @@ class PrimalAttention(BaseAttention):
         if comp_config is not None:
             _rank_candidate = getattr(comp_config, "rank", None)
         if _rank_candidate is None:
-            _rank_candidate = kwargs.get("rank", None)
+            _rank_candidate = kwargs.pop("rank", None)
         if _rank_candidate is None:
             _rank_candidate = rank
         self.rank = int(_rank_candidate) if _rank_candidate else 64

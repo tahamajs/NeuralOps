@@ -1071,7 +1071,8 @@ def inject_adaptive_span(
         or getattr(cfg, "num_attention_heads", getattr(cfg, "n_heads", 4))
     )
 
-    rank = getattr(comp_config, "adaptive_span_rank", kwargs.get("rank", 32))
+    rank = getattr(comp_config, "adaptive_span_rank", kwargs.pop("rank", 32))
+
     dropout = getattr(comp_config, "dropout", kwargs.get("dropout", 0.1))
     max_span = getattr(comp_config, "max_span", kwargs.get("max_span", 128))
 

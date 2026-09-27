@@ -1124,7 +1124,7 @@ def inject_svd_compressed(
             cfg = src_attn.config
 
         h_sz = getattr(cfg, "hidden_size", getattr(cfg, "dim", 768)) if cfg else 768
-        rank = _cfg_get(comp_config, "rank", _cfg_get(comp_config, "svd_rank", kwargs.get("rank", h_sz)))
+        rank = _cfg_get(comp_config, "rank", _cfg_get(comp_config, "svd_rank", kwargs.pop("rank", h_sz)))
         ranks = kwargs.pop("ranks", None)
         if ranks is None:
             ranks = {"q": rank, "k": rank, "v": rank, "o": rank}
