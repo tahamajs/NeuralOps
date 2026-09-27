@@ -154,11 +154,16 @@ class LoRALinear(nn.Module):
                 self.lora_B.requires_grad = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
+        target_dtype = x.dtype
+        w = self.weight.to(target_dtype) if self.weight.dtype != target_dtype else self.weight
+        b = self.bias.to(target_dtype) if (self.bias is not None and self.bias.dtype != target_dtype) else self.bias
+        out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            a = self.lora_A.to(target_dtype) if self.lora_A.dtype != target_dtype else self.lora_A
+            bb = self.lora_B.to(target_dtype) if self.lora_B.dtype != target_dtype else self.lora_B
+            lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
             out = out + lora_out
-        return out
+        return out.to(target_dtype)
 
 
 # ===========================================================================
@@ -614,22 +619,24 @@ class ReGLAAttention(BaseAttention):
         out = out.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size).to(dtype)
 
         # Depthwise 1D conv branch
-        x_in = (x * valid_mask.unsqueeze(-1).to(x.dtype)).permute(0, 2, 1)
+        x_in = (x * valid_mask.unsqueeze(-1).to(dtype)).permute(0, 2, 1)
+        conv_w = self.conv.weight.to(dtype)
+        conv_b = self.conv.bias.to(dtype) if self.conv.bias is not None else None
         if is_causal:
             x_pad = F.pad(x_in, (self.kernel_size - 1, 0))
-            loc = self.conv(x_pad).permute(0, 2, 1)
+            loc = F.conv1d(x_pad, conv_w, conv_b, stride=self.conv.stride, padding=self.conv.padding, dilation=self.conv.dilation, groups=self.conv.groups).permute(0, 2, 1)
         else:
             p = self.kernel_size // 2
             x_pad = F.pad(x_in, (p, p))
-            loc = self.conv(x_pad).permute(0, 2, 1)
+            loc = F.conv1d(x_pad, conv_w, conv_b, stride=self.conv.stride, padding=self.conv.padding, dilation=self.conv.dilation, groups=self.conv.groups).permute(0, 2, 1)
 
         if loc.shape[-1] != self.dim:
             raise RuntimeError(
                 f"ReGLAAttention: conv output dim {loc.shape[-1]} != hidden dim {self.dim}"
             )
 
-        fused = out + self.conv_scale.to(out.dtype) * loc
-        fused = fused * valid_mask.unsqueeze(-1).to(fused.dtype)
+        fused = (out.to(dtype) + self.conv_scale.to(dtype) * loc.to(dtype)).to(dtype)
+        fused = fused * valid_mask.unsqueeze(-1).to(dtype)
 
         if self.is_nested_encoder:
             output = fused
@@ -641,7 +648,7 @@ class ReGLAAttention(BaseAttention):
                 f"ReGLAAttention: output dim {output.shape[-1]} != input {D}"
             )
 
-        return output, None
+        return output.to(dtype), None
 
 
 # ===========================================================================
@@ -768,6 +775,10 @@ def inject_regla(
             **attn_kwargs,
             **kwargs,
         )
+
+        p = next(src_attn.parameters(), None)
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
 
         # RE-20: ensure out_proj is Identity when attaching to nested encoder
         if hasattr(target, "attention"):

@@ -152,16 +152,21 @@ class GatedRecurrentMemory(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: (B, L, D)
-        g = torch.sigmoid(self.gate_proj(x))
-        v = torch.tanh(self.value_proj(x))
+        target_dtype = x.dtype
+        gw = self.gate_proj.weight.to(target_dtype)
+        gb = self.gate_proj.bias.to(target_dtype) if self.gate_proj.bias is not None else None
+        vw = self.value_proj.weight.to(target_dtype)
+        vb = self.value_proj.bias.to(target_dtype) if self.value_proj.bias is not None else None
+        g = torch.sigmoid(F.linear(x, gw, gb))
+        v = torch.tanh(F.linear(x, vw, vb))
         # Parallel scan over sequence (small L → simple python loop)
         B, L, D = x.shape
-        h = torch.zeros(B, D, device=x.device, dtype=x.dtype)
+        h = torch.zeros(B, D, device=x.device, dtype=target_dtype)
         outs = []
         for t in range(L):
             h = (1.0 - g[:, t]) * h + g[:, t] * v[:, t]
             outs.append(h)
-        return torch.stack(outs, dim=1)
+        return torch.stack(outs, dim=1).to(target_dtype)
 
 
 # ===========================================================================
@@ -709,11 +714,13 @@ class GoldFinchAHNBlock(BaseAttention):
         short_out = torch.matmul(attn_weights, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
         # ---- Recurrent memory ----
-        long_out = self.delta_mem(x)   # (B, L, D)
+        long_out = self.delta_mem(x).to(dtype_in)   # (B, L, D)
 
         # ---- Gated fusion ----
         # gate: (B, L, H) → (B, L, 1) after mean
-        gate = torch.sigmoid(self.gate(x)).mean(dim=-1, keepdim=True)   # (B, L, 1)
+        gate_w = self.gate.weight.to(dtype_in)
+        gate_b = self.gate.bias.to(dtype_in) if self.gate.bias is not None else None
+        gate = torch.sigmoid(F.linear(x, gate_w, gate_b)).mean(dim=-1, keepdim=True).to(dtype_in)   # (B, L, 1)
 
         # Pad long_out to all_head_size if needed (should match since dim = all_head_size for MHA)
         if long_out.shape[-1] != self.all_head_size:
@@ -722,7 +729,7 @@ class GoldFinchAHNBlock(BaseAttention):
             else:
                 long_out = long_out[..., :self.all_head_size]
 
-        fused = gate * short_out + (1.0 - gate) * long_out
+        fused = (gate * short_out.to(dtype_in) + (1.0 - gate) * long_out).to(dtype_in)
 
         # Zero-out padded positions
         if valid_mask is not None:
@@ -734,9 +741,9 @@ class GoldFinchAHNBlock(BaseAttention):
         else:
             out = self.out_proj(fused)
             # GF-FIX-11: apply output_scale once
-            out = out * self.output_scale
+            out = (out * self.output_scale.to(out.dtype)).to(out.dtype)
 
-        return out, (attn_weights if output_attentions else None)
+        return out.to(dtype_in), (attn_weights if output_attentions else None)
 
     # ------------------------------------------------------------------
     def storage_bytes(self) -> Dict[str, int]:
@@ -861,6 +868,10 @@ def inject_goldfinch_ahn(
             num_attention_heads=num_heads,
             **kwargs,
         )
+        if src_attn is not None:
+            p = next(src_attn.parameters(), None)
+            if p is not None:
+                new_attn.to(device=p.device, dtype=p.dtype)
     except Exception as e:
         logger.error("GoldFinchAHN injection failed: %s", e)
         return None

@@ -170,11 +170,16 @@ class LoRALinear(nn.Module):
                 self.lora_B.requires_grad = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
+        target_dtype = x.dtype
+        w = self.weight.to(target_dtype) if self.weight.dtype != target_dtype else self.weight
+        b = self.bias.to(target_dtype) if (self.bias is not None and self.bias.dtype != target_dtype) else self.bias
+        out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            a = self.lora_A.to(target_dtype) if self.lora_A.dtype != target_dtype else self.lora_A
+            bb = self.lora_B.to(target_dtype) if self.lora_B.dtype != target_dtype else self.lora_B
+            lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
             out = out + lora_out
-        return out
+        return out.to(target_dtype)
 
 
 @ATTENTION_REGISTRY.register("halo_regla")
@@ -483,10 +488,14 @@ class HALOReGLAAttention(BaseAttention):
             linear_out = (num / den) * mask_4d
 
         # 3. Adaptive fusion
-        g = torch.sigmoid(self.gate(hidden_states)).unsqueeze(1).unsqueeze(-1)  # (B, 1, L, 1) or per-head (B, H, L, 1)
+        gate_w = self.gate.weight.to(hidden_states.dtype) if self.gate.weight.dtype != hidden_states.dtype else self.gate.weight
+        gate_b = self.gate.bias.to(hidden_states.dtype) if (self.gate.bias is not None and self.gate.bias.dtype != hidden_states.dtype) else self.gate.bias
+        gate_out = F.linear(hidden_states, gate_w, gate_b)
+        g = torch.sigmoid(gate_out).unsqueeze(1).unsqueeze(-1)  # (B, 1, L, 1) or per-head (B, H, L, 1)
         if g.shape[1] != self.num_heads:
-            g = torch.sigmoid(self.gate(hidden_states)).permute(0, 2, 1).unsqueeze(-1)  # (B, H, L, 1)
-        fused = g * dense_out + (1.0 - g) * linear_out
+            g = torch.sigmoid(gate_out).permute(0, 2, 1).unsqueeze(-1)  # (B, H, L, 1)
+        g = g.to(hidden_states.dtype)
+        fused = (g * dense_out.to(hidden_states.dtype) + (1.0 - g) * linear_out.to(hidden_states.dtype)).to(hidden_states.dtype)
 
         # head_mask handling
         if head_mask is not None:
@@ -597,6 +606,10 @@ def inject_halo_regla(
             lora_rank=lora_rank,
             **kwargs,
         )
+        if curr_attn is not None:
+            p = next(curr_attn.parameters(), None)
+            if p is not None:
+                new_layer.to(device=p.device, dtype=p.dtype)
     except Exception:
         return None
 

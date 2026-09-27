@@ -296,8 +296,8 @@ class UnifiedMoE(nn.Module):
         )
         out = torch.sum(topk_out * scores.unsqueeze(-1), dim=2)
         out = torch.clamp(torch.nan_to_num(out, nan=0.0), -65000.0, 65000.0)
-        gate = torch.sigmoid(self.gate_bias)
-        return out * gate
+        gate = torch.sigmoid(self.gate_bias).to(x.dtype)
+        return (out * gate).to(x.dtype)
 
     def get_aux_loss(self, device: torch.device) -> torch.Tensor:
         """BAM-FIX-04: return aux loss on the correct device."""
@@ -715,7 +715,7 @@ class BAMUMoEBlock(BaseAttention):
             moe_delta_v = moe_delta_v.transpose(1, 2).contiguous()
             if self.kv_repeat > 1:
                 moe_delta_v = repeat_kv(moe_delta_v, self.kv_repeat)
-            v = v + 0.1 * moe_delta_v
+            v = (v + 0.1 * moe_delta_v.to(v.dtype)).to(v.dtype)
 
         # ---- Dense attention (no SDPA shortcut when MoE enabled, to keep mask logic uniform) ----
         scale = 1.0 / math.sqrt(self.head_dim)
