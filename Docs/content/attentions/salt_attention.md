@@ -360,3 +360,9 @@ The `SALTAttention` architecture incorporates telemetry hooks for tracking singu
 - **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/salt_attention/`.
 - **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
 - **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
+
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **87.16%** | -3.44% | 0.8801 | 1.16x | 0 | [svd-linear-attention-distilbert-sst2-salt](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-salt) | 2026-09-27 |
