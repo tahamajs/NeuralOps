@@ -1,0 +1,7 @@
+{
+  "num_compressed": 0,
+  "num_fallback": 48,
+  "compression_method": "kronecker",
+  "effective_parameter_ratio": 1.0,
+  "avg_reconstruction_error": 0.0
+}

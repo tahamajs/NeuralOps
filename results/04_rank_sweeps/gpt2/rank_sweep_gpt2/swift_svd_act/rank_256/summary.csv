@@ -1,2 +1,2 @@
-module_name,status,accuracy_pct,perplexity,ppl_status,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
-swift_svd_act,PASS,0.0,45.981601,,0.0,0.0,0.0,0.0,3.828241344343061,101.57,1401.06396484375,10815.068014075863,124439808,123063552,5376,1.0112,1.11,33.33,7,29,0.3385,,0,0,,adapted_gpt2,2026-09-25T05:15:19.243549
+module_name,status,accuracy_pct,f1_score,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,compression_rate,num_compressed_layers,num_fallback_layers,error,timestamp
+,PASS,0.0,0.0,3.828241344343061,101.57,0.0,0.0,0,0,1.0,0,0,"",

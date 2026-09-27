@@ -1,2 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-384,saes_svd_compressor,ERROR_CODE_15,0.0,0.0,99.0,0.0,1.0,,0,0,47.7,,

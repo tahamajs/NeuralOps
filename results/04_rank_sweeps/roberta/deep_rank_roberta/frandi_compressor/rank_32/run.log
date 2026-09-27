@@ -6,3 +6,4 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-27 07:54:33,753 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=8 (explicit_parallel=True, explicit_batch=True)
 2026-09-27 07:54:33,778 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=1)
 [ISOLATED] Launching frandi_compressor (timeout=3600s) -> logs\isolated\frandi_compressor_r32_roberta.log
+[ISOLATED] frandi_compressor exited with code 0 in 72.8s

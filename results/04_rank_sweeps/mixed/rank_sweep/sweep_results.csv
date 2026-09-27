@@ -1,4 +1,0 @@
-module,model,requested_rank,actual_rank,status,accuracy_pct,f1_score,num_compressed_layers,num_fallback_layers,total_params_before,total_params_after,param_ratio,avg_reconstruction_error,elapsed_s,error
-svd,distilbert,8,8,PASS_LOW,49.31,0.0134,6,0,66955010,67544834,1.0088,,53.25,note: evaluated accuracy (49.31%) below chance threshold (56.00%)
-svd,distilbert,16,16,PASS_LOW,49.31,0.0134,6,0,66955010,67544834,1.0088,,71.65,note: evaluated accuracy (49.31%) below chance threshold (56.00%)
-svd,distilbert,32,32,PASS_LOW,49.31,0.0178,6,0,66955010,67544834,1.0088,,91.17,note: evaluated accuracy (49.31%) below chance threshold (56.00%)

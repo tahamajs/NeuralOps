@@ -1,5 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-16,adasvd_compressor,FAIL_PPL_DIVERGED,0.0,0.0,6.507856056397325,2084.55224609375,1.2735,21.47,23,1,141.2,124439808,97716480
-256,adasvd_compressor,ERROR_CODE_1,0.0,0.0,99.0,0.0,1.0,,0,0,0.1,,
-384,adasvd_compressor,ERROR_CODE_1,0.0,0.0,99.0,0.0,1.0,,0,0,0.1,,
-64,adasvd_compressor,FAIL_PPL_DIVERGED,0.0,0.0,6.203783673186847,2094.89990234375,1.245,19.68,24,0,143.9,124439808,99952896

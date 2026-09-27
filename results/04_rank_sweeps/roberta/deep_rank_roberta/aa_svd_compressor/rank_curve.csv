@@ -1,7 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-16,aa_svd_compressor,PASS,92.09,0.921,0.2143,343.48,1.0497,4.73,48,0,116.7,124647170,118748930
-32,aa_svd_compressor,PASS,92.09,0.921,0.2143,343.48,1.0497,4.73,48,0,116.8,124647170,118748930
-64,aa_svd_compressor,PASS,84.17,0.8592,0.4205,521.11,1.2099,17.35,48,0,43.53,124647170,103020290
-128,aa_svd_compressor,PASS,84.17,0.8592,0.4205,521.11,1.2099,17.35,48,0,43.41,124647170,103020290
-256,aa_svd_compressor,PASS,84.17,0.8592,0.4205,521.11,1.2099,17.35,48,0,41.31,124647170,103020290
-384,aa_svd_compressor,PASS,84.17,0.8592,0.4205,521.11,1.2099,17.35,48,0,44.07,124647170,103020290

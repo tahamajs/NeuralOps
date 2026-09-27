@@ -1,0 +1,7 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+16,tomoe,PASS,90.83,0.9119,0.6038,302.94,1.0,0.0,0,0,83.3,66955010,66955010
+32,tomoe,PASS,90.83,0.9119,0.6038,302.94,1.0,0.0,0,0,83.3,66955010,66955010
+64,tomoe,PASS,90.83,0.9119,0.6038,302.94,1.0,0.0,0,0,87.1,66955010,66955010
+128,tomoe,PASS,90.83,0.9119,0.6038,302.94,1.0,0.0,0,0,87.7,66955010,66955010
+256,tomoe,PASS,90.83,0.9119,0.6038,302.94,1.0,0.0,0,0,80.7,66955010,66955010
+384,tomoe,PASS,90.83,0.9119,0.6038,302.94,1.0,0.0,0,0,80.5,66955010,66955010

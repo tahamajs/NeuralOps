@@ -1,2 +1,2 @@
-module_name,status,accuracy_pct,perplexity,ppl_status,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
-rpca,PASS,92.66,0.0,,0.9281,0.9266,0.9266,0.9265,0.2112,54.4,511.22,101031.15,124647170,124573442,628994,1.0006,0.06,0.26,48,0,0.2466,,0,0,,adapted_roberta,2026-09-25T13:50:09.941436
+module_name,status,accuracy_pct,f1_score,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,compression_rate,num_compressed_layers,num_fallback_layers,error,timestamp
+,PASS,92.66,0.9281,0.2112,54.4,0.0,0.0,0,0,1.0,0,0,"",

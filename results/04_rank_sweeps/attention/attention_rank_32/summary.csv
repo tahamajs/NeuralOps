@@ -1,6 +1,2 @@
-module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,latency_ms_per_token,throughput_tok_per_sec,perplexity,long_context_accuracy,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
-performer_attention,PASS,78.33,0.7635,0.7817,0.7951,0.7851,0.4901,29.55,198.14,13677.18,9.36,13677.18,,,66955010,67544834,589824,1.0,0.0,0.0,6,0,,,6,589824,,legacy_bert,2026-09-22T11:01:35.691492
-cosformer,PASS,76.61,0.7879,0.7635,0.774,0.7644,0.5674,30.84,224.67,13219.09,9.68,13219.09,,,66955010,67544834,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-22T11:01:36.988873
-galerkin,PASS,64.56,0.663,0.6447,0.6459,0.6449,0.7268,34.15,214.57,11041.41,11.59,11041.41,,,66955010,67544834,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-22T11:01:40.060990
-primal_attention,PASS,90.37,0.9062,0.9036,0.9039,0.9035,0.3138,36.18,194.48,12422.09,10.3,12422.09,,,66955010,67544834,589824,1.0,0.0,0.0,6,0,,,6,589824,,legacy_bert,2026-09-22T11:01:43.399700
-hla_inject,PASS,73.62,0.7658,0.732,0.7476,0.7342,0.6351,23.76,322.98,17230.86,7.43,17230.86,,,66955010,67531088,589902,1.0,0.0,0.0,6,0,,,6,589824,,legacy_bert,2026-09-22T11:02:35.426831
+module_name,status,accuracy_pct,f1_score,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,compression_rate,num_compressed_layers,num_fallback_layers,error,timestamp
+,PASS,90.37,0.9062,0.3138,36.18,0.0,0.0,0,0,1.0,0,0,"",

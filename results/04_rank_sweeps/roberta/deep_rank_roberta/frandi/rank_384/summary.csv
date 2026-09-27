@@ -1,2 +1,2 @@
-module_name,status,accuracy_pct,perplexity,ppl_status,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
-frandi,FAIL_BELOW_CHANCE,50.69,0.0,,0.6728,0.3364,0.254,0.4977,0.7007,24.13,582.61,51048.59,124647170,103413506,592130,1.2053,17.04,0.0,0,0,,,0,0,FAIL: accuracy (50.69%) below chance threshold (56.00%),adapted_roberta,2026-09-25T11:03:31.065628
+module_name,status,accuracy_pct,f1_score,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,compression_rate,num_compressed_layers,num_fallback_layers,error,timestamp
+,FAIL_BELOW_CHANCE,50.69,0.6728,0.7007,24.13,0.0,0.0,0,0,1.0,0,0,"",

@@ -1,2 +1,2 @@
-module_name,status,accuracy_pct,perplexity,ppl_status,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
-adasvd_compressor,PASS,87.73,0.0,,0.8766,0.8773,0.8779,0.8777,0.3057,404.34,444.76,6942.22,124647170,104814338,9107714,1.1892,15.91,70.05,48,0,0.2058,,0,0,,adapted_roberta,2026-09-24T22:00:30.349199
+module_name,status,accuracy_pct,f1_score,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,compression_rate,num_compressed_layers,num_fallback_layers,error,timestamp
+,PASS,87.73,0.8766,0.3057,404.34,0.0,0.0,0,0,1.0,0,0,"",

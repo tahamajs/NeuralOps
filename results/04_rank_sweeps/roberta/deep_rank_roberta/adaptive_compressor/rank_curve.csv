@@ -1,7 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-16,adaptive_compressor,PASS,88.76,0.8874,0.2788,404.63,1.0602,5.68,0,0,111.4,124647170,117569282
-32,adaptive_compressor,PASS,88.76,0.8874,0.2788,404.63,1.0602,5.68,0,0,111.3,124647170,117569282
-64,adaptive_compressor,PASS,92.32,0.9246,0.2243,491.06,1.0497,4.73,0,0,42.09,124647170,118748930
-128,adaptive_compressor,PASS,92.32,0.9246,0.2243,491.06,1.0497,4.73,0,0,38.56,124647170,118748930
-256,adaptive_compressor,PASS,92.32,0.9246,0.2243,491.06,1.0497,4.73,0,0,42.3,124647170,118748930
-384,adaptive_compressor,PASS,92.32,0.9246,0.2243,491.06,1.0497,4.73,0,0,38.57,124647170,118748930

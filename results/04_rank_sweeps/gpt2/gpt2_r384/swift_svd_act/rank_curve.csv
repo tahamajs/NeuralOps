@@ -1,2 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-384,swift_svd_act,PASS_LOW_PPL,0.0,0.0,4.268373235148767,1611.40576171875,1.0345,3.33,19,17,136.5,124439808,120292608

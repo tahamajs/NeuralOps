@@ -1,3 +1,7 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-16,mlorq_compressor,PASS,90.83,0.9109,0.5136,334.5,1.2681,21.14,24,0,85.6,66955010,52799234
-32,mlorq_compressor,PASS,90.83,0.9109,0.5136,334.5,1.2681,21.14,24,0,86.1,66955010,52799234
+module_name,status,accuracy_pct,f1_score,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,compression_rate,num_compressed_layers,num_fallback_layers,error,timestamp,rank
+,PASS,90.6,0.9091,0.3436,11.91,0.0,0.0,0,0,1.0,0,0,,,128
+,PASS,90.83,0.9109,0.5136,14.56,0.0,0.0,0,0,1.0,0,0,,,16
+,PASS,90.6,0.9091,0.3436,13.35,0.0,0.0,0,0,1.0,0,0,,,256
+,PASS,90.83,0.9109,0.5136,14.65,0.0,0.0,0,0,1.0,0,0,,,32
+,PASS,90.6,0.9091,0.3436,11.42,0.0,0.0,0,0,1.0,0,0,,,384
+,PASS,90.6,0.9091,0.3436,12.21,0.0,0.0,0,0,1.0,0,0,,,64

@@ -1,6 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-384,a3_compressor,CRASH_NO_OUTPUT,0.0,0.0,0.0,0.0,1.0,0.0,0,0,126.8,0,0
-384,saes_svd_compressor,ERROR_CODE_15,0.0,0.0,99.0,0.0,1.0,,0,0,47.7,,
-384,slicegpt,PASS_NO_COMPRESSION,0.0,0.0,3.7219512404984787,1401.06396484375,1.0,0.0,0,0,129.7,124439808,124439808
-384,swift_svd_act,PASS_LOW_PPL,0.0,0.0,4.268373235148767,1611.40576171875,1.0345,3.33,19,17,136.5,124439808,120292608
-384,tt_compressor,SKIP_DEPRECATED,0.0,0.0,0.0,0.0,1.0,0.0,0,0,58.2,0,0
