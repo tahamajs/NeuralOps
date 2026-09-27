@@ -142,11 +142,18 @@ class LoRALinear(nn.Module):
             self.bias.requires_grad = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
-        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out
+        # dtype-safe: cast weight/bias to input dtype
+        w = self.weight if self.weight.dtype == x.dtype else self.weight.to(x.dtype)
+        b = None
+        if self.bias is not None:
+            b = self.bias if self.bias.dtype == x.dtype else self.bias.to(x.dtype)
+        out = F.linear(x, w, b)
 
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            a = self.lora_A if self.lora_A.dtype == x.dtype else self.lora_A.to(x.dtype)
+            bb = self.lora_B if self.lora_B.dtype == x.dtype else self.lora_B.to(x.dtype)
+            out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
+        return out
 
 @ATTENTION_REGISTRY.register("adaptive_sparse", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("adaptive_sparse_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
