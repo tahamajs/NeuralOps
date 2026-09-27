@@ -738,5 +738,15 @@
     "accuracy_pct": 0.0,
     "error": "NameError: name 'logger' is not defined",
     "timestamp": "2026-09-27T05:55:28.133240"
+  },
+  {
+    "module": "oha",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 90.14,
+    "error": "base_before=66955010 base_after=67305290 delta=+0.52%",
+    "timestamp": "2026-09-27T05:56:31.364750"
   }
 ]
