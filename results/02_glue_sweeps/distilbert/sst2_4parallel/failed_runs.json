@@ -868,5 +868,35 @@
     "accuracy_pct": 0.0,
     "error": "RuntimeError: scatter(): Expected self.dtype to be equal to src.dtype",
     "timestamp": "2026-09-27T06:03:33.915037"
+  },
+  {
+    "module": "rpca",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:04:49.535755"
+  },
+  {
+    "module": "salr",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:05:08.691526"
+  },
+  {
+    "module": "saes",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.71,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:05:08.979138"
   }
 ]
