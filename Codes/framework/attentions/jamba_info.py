@@ -191,11 +191,16 @@ class LoRALinear(nn.Module):
             self.bias.requires_grad = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
+        target_dtype = x.dtype
+        w = self.weight.to(target_dtype) if self.weight.dtype != target_dtype else self.weight
+        b = self.bias.to(target_dtype) if (self.bias is not None and self.bias.dtype != target_dtype) else self.bias
+        out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            a = self.lora_A.to(target_dtype) if self.lora_A.dtype != target_dtype else self.lora_A
+            bb = self.lora_B.to(target_dtype) if self.lora_B.dtype != target_dtype else self.lora_B
+            lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
             out = out + lora_out
-        return out
+        return out.to(target_dtype)
 
 
 # ===========================================================================
@@ -749,18 +754,19 @@ class JambaInfoBlock(BaseAttention):
             x_rev = torch.flip(bottleneck_x, dims=[1])
             ssm_fwd = self._run_ssm(bottleneck_x, attention_mask)
             ssm_bwd = self._run_ssm(x_rev, attention_mask)
-            ssm_branch = 0.5 * (ssm_fwd + torch.flip(ssm_bwd, dims=[1]))
+            ssm_branch = (0.5 * (ssm_fwd + torch.flip(ssm_bwd, dims=[1]))).to(x.dtype)
 
-        alpha = torch.sigmoid(self.alpha_raw)
-        combined = (1.0 - alpha) * attn_out + alpha * ssm_branch
+        target_dtype = x.dtype
+        alpha = torch.sigmoid(self.alpha_raw).to(target_dtype)
+        combined = ((1.0 - alpha) * attn_out.to(target_dtype) + alpha * ssm_branch.to(target_dtype)).to(target_dtype)
         combined = torch.nan_to_num(combined, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
             out = combined
         else:
-            out = self.out_proj(combined)
+            out = self.out_proj(combined).to(target_dtype)
 
-        return out, (diff_attn if output_attentions else None)
+        return out.to(target_dtype), (diff_attn if output_attentions else None)
 
 
 # ===========================================================================

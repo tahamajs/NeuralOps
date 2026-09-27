@@ -878,6 +878,9 @@ def inject_bam_umoe(
     svd_rank = kwargs.pop("svd_rank", None)
 
     try:
+        kwargs.pop("num_heads", None)
+        kwargs.pop("hidden_size", None)
+        kwargs.pop("d_model", None)
         new_attn = BAMUMoEBlock(
             config=cfg,
             old_attn=src_attn if src_attn is not layer else None,
