@@ -1,0 +1,6 @@
+[main e8f760ea2] feat(benchmark): record successful hamming_attention on distilbert-sst2 (Acc: 82.68%, F1: 0.835)
+ 4 files changed, 472 insertions(+), 411 deletions(-)
+ create mode 100644 results/all_modules/hamming_attention/distilbert_sst2_hamming_attention_full_metrics.json
+ create mode 100644 results/all_modules/hamming_attention/finetune_metadata.json
+ create mode 100644 results/all_modules/hamming_attention/summary.csv
+branch 'main' set up to track 'origin/main'.

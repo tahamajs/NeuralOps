@@ -55,3 +55,25 @@ D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning
 2026-09-27 09:22:25,704 [INFO] QwenQualitySweep: LoRA fine-tuning: 592130 trainable parameters across 4 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
 2026-09-27 09:22:26,144 [INFO] QwenQualitySweep: Step 1/50 took 0.43s (loss=0.0391, bs=8, micro=8)
 2026-09-27 09:22:26,409 [INFO] QwenQualitySweep: Step 5/50 took 0.06s (loss=0.0833, bs=8, micro=8)
+2026-09-27 09:22:26,798 [INFO] QwenQualitySweep: Step 10/50 took 0.08s (loss=0.2975, bs=8, micro=8)
+2026-09-27 09:22:27,217 [INFO] QwenQualitySweep: Step 15/50 took 0.08s (loss=0.0083, bs=8, micro=8)
+2026-09-27 09:22:27,556 [INFO] QwenQualitySweep: Step 20/50 took 0.06s (loss=0.0211, bs=8, micro=8)
+2026-09-27 09:22:27,869 [INFO] QwenQualitySweep: Step 25/50 took 0.06s (loss=0.0040, bs=8, micro=8)
+2026-09-27 09:22:28,189 [INFO] QwenQualitySweep: Step 30/50 took 0.06s (loss=0.0126, bs=8, micro=8)
+2026-09-27 09:22:28,526 [INFO] QwenQualitySweep: Step 35/50 took 0.07s (loss=0.0331, bs=8, micro=8)
+2026-09-27 09:22:28,842 [INFO] QwenQualitySweep: Step 40/50 took 0.06s (loss=0.2246, bs=8, micro=8)
+2026-09-27 09:22:29,193 [INFO] QwenQualitySweep: Step 45/50 took 0.07s (loss=0.0116, bs=8, micro=8)
+2026-09-27 09:22:29,605 [INFO] QwenQualitySweep: Step 50/50 took 0.08s (loss=0.0304, bs=8, micro=8)
+2026-09-27 09:22:36,965 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\distilbert\deep_rank_distilbert\zerokv_neo\rank_32\distilbert-base-uncased-finetuned-sst-2-english_zerokv_neo_full_metrics.json
+2026-09-27 09:22:37,465 [INFO] QwenQualitySweep: [1/1] zerokv_neo -> PASS 86.12% (F1: 0.862, Peak VRAM: 302.94 MB)
+2026-09-27 09:22:37,466 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\04_rank_sweeps\distilbert\deep_rank_distilbert\zerokv_neo\rank_32\checkpoints\zerokv_neo. Automated export will be handled post-sweep by orchestrator.
+2026-09-27 09:22:37,466 [INFO] QwenQualitySweep: [1/1] zerokv_neo Timing: eval_time=16.02s
+2026-09-27 09:22:37,466 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-27 09:22:38,280 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 09:22:38,280 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert-base-uncased-finetuned-sst-2-english on sst2)
+2026-09-27 09:22:38,338 [INFO] QwenQualitySweep: 
+    Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+zerokv_neo   PASS   86.12%    -4.48% 0.8620                 18            1.00x  302.9 MB               5.76              6.60
+2026-09-27 09:22:38,338 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:171: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

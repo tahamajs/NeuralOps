@@ -1,0 +1,7 @@
+  galerkin                            audit_acc=  33.3 | collapse=DENIED
+  kda_attention                       audit_acc=  34.7 | collapse=DENIED
+  simple_ssm                          audit_acc=  31.9 | collapse=CONFIRMED
+  mla_attention                       audit_acc=  31.9 | collapse=CONFIRMED
+  hgrn2_layer                         audit_acc=  33.5 | collapse=DENIED
+  aegis_spectron_fp8                  audit_acc=  31.9 | collapse=CONFIRMED
+  mamba                               audit_acc=  31.9 | collapse=CONFIRMED

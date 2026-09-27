@@ -1,0 +1,91 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-24 20:36:22,367 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 20:36:22,367 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=4 (explicit_parallel=True, explicit_batch=True)
+2026-09-24 20:36:22,390 [INFO] QwenQualitySweep: Running 1 attention modules in-memory sequentially
+2026-09-24 20:36:23,367 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-09-24 20:36:23,502 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md "HTTP/1.1 200 OK"
+2026-09-24 20:36:23,751 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-24 20:36:24,415 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-24 20:36:24,847 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-09-24 20:36:25,096 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-09-24 20:36:26,089 [INFO] httpx: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-09-24 20:36:27,019 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-24 20:36:27,801 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-24 20:36:28,078 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-09-24 20:36:28,342 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-24 20:36:28,971 [INFO] QwenQualitySweep: Configured dataset 'wikitext2' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 4126.17it/s]
+2026-09-24 20:36:29,851 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 20:36:29,851 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 20:36:29,851 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 20:36:29,851 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 20:36:29,851 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-24 20:36:29,852 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-24 20:36:29,852 [INFO] QwenQualitySweep:   dataset:           wikitext2
+2026-09-24 20:36:29,852 [INFO] QwenQualitySweep:   batch_size:        4
+2026-09-24 20:36:29,852 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 20:36:29,853 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 20:36:29,853 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 20:36:29,853 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 20:36:30,039 [INFO] QwenQualitySweep: Prepared 0 eval batches and 0 train batches directly on GPU.
+Token indices sequence length is longer than the specified maximum sequence length for this model (249749 > 1024). Running this sequence through the model will result in indexing errors
+`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+2026-09-24 20:39:28,913 [INFO] QwenQualitySweep: Baseline model benchmark perplexity on validation set: 41.346157 (loss=3.7220)
+2026-09-24 20:39:29,149 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 20:39:29,149 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-24 20:39:29,149 [INFO] QwenQualitySweep:   Validation Majority Count: 500 / 1000
+2026-09-24 20:39:29,150 [INFO] QwenQualitySweep:   True Majority Baseline:    50.00%
+2026-09-24 20:39:29,150 [INFO] QwenQualitySweep:   Standard Error (SE):       1.581%
+2026-09-24 20:39:29,150 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.74%
+2026-09-24 20:39:29,150 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  54.74%
+2026-09-24 20:39:29,150 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.00% (500/1000), SE=1.581%, 3*SE=4.740%
+2026-09-24 20:39:29,151 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 20:39:29,152 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 20:39:29,796 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: svd_sequence (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-24 20:39:31,391 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 64]), rank=64
+2026-09-24 20:39:31,722 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 64]), rank=64
+2026-09-24 20:39:32,065 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 64]), rank=64
+2026-09-24 20:39:32,414 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 64]), rank=64
+2026-09-24 20:39:32,756 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 64]), rank=64
+2026-09-24 20:39:33,094 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 64]), rank=64
+2026-09-24 20:39:33,474 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 64]), rank=64
+2026-09-24 20:39:33,823 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 64]), rank=64
+2026-09-24 20:39:34,168 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 64]), rank=64
+2026-09-24 20:39:34,525 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 64]), rank=64
+2026-09-24 20:39:34,865 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 64]), rank=64
+2026-09-24 20:39:35,204 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 64]), rank=64
+2026-09-24 20:39:35,321 [INFO] QwenQualitySweep: module=svd_sequence path=adapted_gpt
+2026-09-24 20:39:35,323 [INFO] QwenQualitySweep: module=svd_sequence injection summary: 0 SVDLinear layers active
+2026-09-24 20:39:35,323 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for svd_sequence (lr=2.0e-04)
+2026-09-24 20:39:35,529 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179648 trainable parameters across 96 tensors.
+2026-09-24 20:39:35,530 [INFO] framework.utils.compat: Discovered 96 trainable tensors (1179648 params)
+2026-09-24 20:39:35,534 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179648 trainable parameters across 96 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-24 20:39:36,560 [INFO] QwenQualitySweep: Step 1/50 took 1.02s (loss=9.5603, bs=4, micro=2)
+2026-09-24 20:39:39,222 [INFO] QwenQualitySweep: Step 5/50 took 0.58s (loss=9.1307, bs=4, micro=2)
+2026-09-24 20:39:42,259 [INFO] QwenQualitySweep: Step 10/50 took 0.62s (loss=8.8370, bs=4, micro=2)
+2026-09-24 20:39:45,310 [INFO] QwenQualitySweep: Step 15/50 took 0.60s (loss=9.4130, bs=4, micro=2)
+2026-09-24 20:39:48,374 [INFO] QwenQualitySweep: Step 20/50 took 0.59s (loss=9.9704, bs=4, micro=2)
+2026-09-24 20:39:51,430 [INFO] QwenQualitySweep: Step 25/50 took 0.64s (loss=10.0355, bs=4, micro=2)
+2026-09-24 20:39:54,652 [INFO] QwenQualitySweep: Step 30/50 took 0.63s (loss=9.1056, bs=4, micro=2)
+2026-09-24 20:39:57,717 [INFO] QwenQualitySweep: Step 35/50 took 0.65s (loss=9.5364, bs=4, micro=2)
+2026-09-24 20:40:00,758 [INFO] QwenQualitySweep: Step 40/50 took 0.62s (loss=9.6553, bs=4, micro=2)
+2026-09-24 20:40:03,940 [INFO] QwenQualitySweep: Step 45/50 took 0.65s (loss=9.0502, bs=4, micro=2)
+2026-09-24 20:40:07,203 [INFO] QwenQualitySweep: Step 50/50 took 0.63s (loss=9.5373, bs=4, micro=2)
+2026-09-24 20:48:08,163 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\gpt2_wikitext2_sweep\gpt2_svd_sequence_full_metrics.json
+2026-09-24 20:48:08,532 [INFO] QwenQualitySweep: [1/1] svd_sequence -> FAIL_PPL_DIVERGED 0.00% (F1: 0.0, Peak VRAM: 1273.271484375 MB)
+2026-09-24 20:48:08,533 [INFO] QwenQualitySweep: [Quality Guard] Module 'svd_sequence' did not pass quality criteria (status=FAIL_PPL_DIVERGED, acc=0.00%, pass_thresh=54.74%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-24 20:48:08,551 [INFO] QwenQualitySweep: [1/1] svd_sequence Timing: eval_time=518.75s
+2026-09-24 20:48:08,551 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 20:48:09,042 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 20:48:09,043 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on wikitext2)
+2026-09-24 20:48:09,067 [INFO] QwenQualitySweep: 
+                                Module            Status Accuracy    Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                                  full              PASS    0.00% 0.00% (base)    N/A                              1.00x  916.2 MB               7.88               N/A
+            swift_svd (efficient-attn)     PASS_DEGRADED    0.00%       +0.00%    N/A                              1.50x  838.8 MB               3.23               N/A
+      gated_delta_net (efficient-attn)   SKIP_DEPRECATED    0.00%       +0.00%    N/A                              1.00x       N/A               0.00               N/A
+                   flat_llm_compressor FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 6            1.00x  816.2 MB             181.14               N/A
+tt_compressor_factory (efficient-attn) FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 0            1.05x  816.2 MB             272.95               N/A
+   hybrid_svd_factory (efficient-attn) FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 0            1.08x 1241.0 MB             313.73               N/A
+         svd_sequence (efficient-attn) FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 0            1.00x 1273.3 MB             480.20              0.00
+2026-09-24 20:48:09,068 [INFO] QwenQualitySweep: ================================================================================

@@ -1,0 +1,74 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-23 13:34:34,982 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-23 13:34:34,982 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=16 (explicit_parallel=True, explicit_batch=True)
+2026-09-23 13:34:34,987 [INFO] QwenQualitySweep: Running 1 attention modules in-memory sequentially
+2026-09-23 13:34:35,145 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 15183.00it/s]
+2026-09-23 13:34:35,294 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-23 13:34:35,294 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-23 13:34:35,294 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 13:34:35,294 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-23 13:34:35,294 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-23 13:34:35,294 [INFO] QwenQualitySweep:   family:            bert
+2026-09-23 13:34:35,294 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-23 13:34:35,294 [INFO] QwenQualitySweep:   batch_size:        16
+2026-09-23 13:34:35,294 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-23 13:34:35,294 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-23 13:34:35,294 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-23 13:34:35,294 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 13:34:35,296 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\distilbert_sst2_sst2_sweep\finetuned_model.pt
+2026-09-23 13:34:35,299 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
+2026-09-23 13:34:35,356 [INFO] QwenQualitySweep: Loading pre-cached batches from results\distilbert_sst2_sst2_sweep\batch_cache_sst2 (skipping tokenization)
+2026-09-23 13:34:35,372 [INFO] QwenQualitySweep: Prepared 28 eval batches and 50 train batches directly on GPU.
+2026-09-23 13:34:36,864 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.60%
+2026-09-23 13:34:36,873 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 13:34:36,873 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-23 13:34:36,873 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-23 13:34:36,873 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-23 13:34:36,873 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-23 13:34:36,873 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-23 13:34:36,873 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-23 13:34:36,873 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-23 13:34:36,873 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 13:34:36,874 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-23 13:34:36,935 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: flash3_fp8 (recovery_steps=50, batch_size=16, optimizer=adamw)
+2026-09-23 13:34:37,227 [INFO] QwenQualitySweep: module=flash3_fp8 path=legacy_bert
+2026-09-23 13:34:37,227 [INFO] QwenQualitySweep: module=flash3_fp8 injection summary: 0 SVDLinear layers active
+2026-09-23 13:34:37,227 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for flash3_fp8 (lr=2.0e-04)
+2026-09-23 13:34:37,247 [INFO] framework.utils.compat: Recovery fine-tuning selected 589824 trainable parameters across 48 tensors.
+2026-09-23 13:34:37,247 [INFO] framework.utils.compat: Discovered 48 trainable tensors (589824 params)
+2026-09-23 13:34:37,248 [INFO] QwenQualitySweep: LoRA fine-tuning: 589824 trainable parameters across 48 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-23 13:34:37,409 [INFO] QwenQualitySweep: Step 1/50 took 0.16s (loss=0.2709, bs=32, micro=16)
+2026-09-23 13:34:37,860 [INFO] QwenQualitySweep: Step 5/50 took 0.12s (loss=0.2041, bs=32, micro=16)
+2026-09-23 13:34:38,424 [INFO] QwenQualitySweep: Step 10/50 took 0.12s (loss=0.1811, bs=32, micro=16)
+2026-09-23 13:34:38,994 [INFO] QwenQualitySweep: Step 15/50 took 0.11s (loss=0.2851, bs=32, micro=16)
+2026-09-23 13:34:39,559 [INFO] QwenQualitySweep: Step 20/50 took 0.11s (loss=0.1578, bs=32, micro=16)
+2026-09-23 13:34:40,127 [INFO] QwenQualitySweep: Step 25/50 took 0.12s (loss=0.0973, bs=32, micro=16)
+2026-09-23 13:34:40,702 [INFO] QwenQualitySweep: Step 30/50 took 0.12s (loss=0.0676, bs=32, micro=16)
+2026-09-23 13:34:41,273 [INFO] QwenQualitySweep: Step 35/50 took 0.11s (loss=0.0584, bs=32, micro=16)
+2026-09-23 13:34:41,847 [INFO] QwenQualitySweep: Step 40/50 took 0.12s (loss=0.1530, bs=32, micro=16)
+2026-09-23 13:34:42,413 [INFO] QwenQualitySweep: Step 45/50 took 0.11s (loss=0.1099, bs=32, micro=16)
+2026-09-23 13:34:42,973 [INFO] QwenQualitySweep: Step 50/50 took 0.11s (loss=0.0858, bs=32, micro=16)
+2026-09-23 13:34:44,457 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\distilbert_sst2_sst2_sweep\distilbert_sst2_flash3_fp8_full_metrics.json
+2026-09-23 13:34:44,465 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\distilbert_sst2_sst2_sweep\checkpoints\flash3_fp8\weights.pt (module_params=0, lora_params=52)
+2026-09-23 13:34:44,542 [INFO] QwenQualitySweep: [1/1] flash3_fp8 -> PASS 90.60% (F1: 0.9091, Peak VRAM: 425.1 MB)
+2026-09-23 13:34:44,554 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / flash3-fp8 is SUCCESSFUL (acc=90.60% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-flash3-fp8 and Git recording.
+2026-09-23 13:34:45,349 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 409 Conflict"
+2026-09-23 13:34:45,599 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-23 13:34:46,017 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-sst2-flash3-fp8/preupload/main "HTTP/1.1 200 OK"
+2026-09-23 13:35:00,968 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-sst2-flash3-fp8/commit/main "HTTP/1.1 200 OK"
+2026-09-23 13:35:00,969 [INFO] HFGitExporter: Successfully uploaded private model to Hugging Face: https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-flash3-fp8
+[main 385cd0a96] feat(benchmark): record successful flash3_fp8 on distilbert-sst2 (Acc: 90.60%, F1: 0.9091)
+ 2 files changed, 27 insertions(+), 27 deletions(-)
+2026-09-23 13:35:07,411 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: 385cd0a9
+2026-09-23 13:35:07,412 [INFO] QwenQualitySweep: [1/1] flash3_fp8 Timing: eval_time=30.48s
+2026-09-23 13:35:07,412 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-23 13:35:07,609 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 13:35:07,609 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-23 13:35:07,613 [INFO] QwenQualitySweep: 
+                     Module Status Accuracy    Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                       full   FAIL    0.00% 0.00% (base) 0.0000                 0            1.00x    0.0 MB               0.48               N/A
+                      aasvd   PASS   88.07%       -2.53% 0.8857                24            1.16x  413.8 MB              10.96               N/A
+flash3_fp8 (efficient-attn)   PASS   90.60%       +0.00% 0.9091                 0            1.00x  425.1 MB               1.44              1.65
+2026-09-23 13:35:07,613 [INFO] QwenQualitySweep: ================================================================================

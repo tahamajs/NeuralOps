@@ -1,0 +1,9 @@
+[main 9318bb53e] feat(benchmark): record successful gqa_attention on distilbert-sst2 (Acc: 90.60%, F1: 0.9091)
+ 7 files changed, 614 insertions(+), 498 deletions(-)
+ create mode 100644 results/all_modules/gated_linear_attn/distilbert_sst2_gated_linear_attn_full_metrics.json
+ create mode 100644 results/all_modules/gated_linear_attn/summary.csv
+ create mode 100644 results/all_modules/gqa_attention/distilbert_sst2_gqa_attention_full_metrics.json
+ create mode 100644 results/all_modules/gqa_attention/finetune_metadata.json
+ create mode 100644 results/all_modules/gqa_attention/summary.csv
+ create mode 100644 results/all_modules/granite_hybrid_block/finetune_metadata.json
+branch 'main' set up to track 'origin/main'.

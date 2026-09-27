@@ -1,0 +1,207 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'naive_svd' due to: 'Registry' object has no attribute 'register_inject'
+2026-09-20 03:01:22,999 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+>>> Skipping BLOCKED inject_mamba
+>>> Skipping BLOCKED kronecker_linear_class
+>>> Skipping BLOCKED mamba
+2026-09-20 03:01:23,001 [INFO] QwenQualitySweep: Running 52 modules with 3 parallel workers on GPU
+[ISOLATED] Launching a3 (timeout=3600s) -> logs\isolated\a3.log
+[ISOLATED] Launching aasvd (timeout=3600s) -> logs\isolated\aasvd.log
+[ISOLATED] Launching adaptive (timeout=3600s) -> logs\isolated\adaptive.log
+[ISOLATED] aasvd exited with code 1 in 38.2s
+[ISOLATED] adaptive exited with code 1 in 38.5s
+[ISOLATED] a3 exited with code 1 in 38.5s
+[ISOLATED] Launching adaptive_svd (timeout=3600s) -> logs\isolated\adaptive_svd.log
+[ISOLATED] Launching adasvd (timeout=3600s) -> logs\isolated\adasvd.log
+[ISOLATED] Launching aegis_hybrid (timeout=3600s) -> logs\isolated\aegis_hybrid.log
+[ISOLATED] adaptive_svd exited with code 1 in 27.6s
+[ISOLATED] adasvd exited with code 1 in 27.7s
+[ISOLATED] aegis_hybrid exited with code 1 in 27.7s
+[ISOLATED] Launching aegis_v3 (timeout=3600s) -> logs\isolated\aegis_v3.log
+[ISOLATED] Launching aegis_v4 (timeout=3600s) -> logs\isolated\aegis_v4.log
+[ISOLATED] Launching aegis_v5 (timeout=3600s) -> logs\isolated\aegis_v5.log
+[ISOLATED] aegis_v3 exited with code 1 in 27.1s
+[ISOLATED] aegis_v4 exited with code 1 in 27.2s
+[ISOLATED] aegis_v5 exited with code 1 in 27.4s
+[ISOLATED] Launching aegis_v6 (timeout=3600s) -> logs\isolated\aegis_v6.log
+[ISOLATED] Launching come (timeout=3600s) -> logs\isolated\come.log
+[ISOLATED] Launching compressed_attention_layer_energy (timeout=3600s) -> logs\isolated\compressed_attention_layer_energy.log
+[ISOLATED] aegis_v6 exited with code 1 in 27.7s
+[ISOLATED] come exited with code 1 in 27.7s
+[ISOLATED] compressed_attention_layer_energy exited with code 1 in 28.1s
+[ISOLATED] Launching cur_moe (timeout=3600s) -> logs\isolated\cur_moe.log
+[ISOLATED] Launching cur_moe_class (timeout=3600s) -> logs\isolated\cur_moe_class.log
+[ISOLATED] Launching fused_svd_kernel (timeout=3600s) -> logs\isolated\fused_svd_kernel.log
+[ISOLATED] cur_moe exited with code 1 in 27.6s
+[ISOLATED] cur_moe_class exited with code 1 in 27.6s
+[ISOLATED] fused_svd_kernel exited with code 1 in 28.6s
+[ISOLATED] Launching gqa (timeout=3600s) -> logs\isolated\gqa.log
+[ISOLATED] Launching hybrid_svd (timeout=3600s) -> logs\isolated\hybrid_svd.log
+[ISOLATED] Launching inject_aegis_hybrid (timeout=3600s) -> logs\isolated\inject_aegis_hybrid.log
+[ISOLATED] gqa exited with code 1 in 25.7s
+[ISOLATED] hybrid_svd exited with code 1 in 25.9s
+[ISOLATED] Launching inject_aegis_v6 (timeout=3600s) -> logs\isolated\inject_aegis_v6.log
+[ISOLATED] inject_aegis_hybrid exited with code 1 in 25.9s
+[ISOLATED] Launching inject_minimal_aurora (timeout=3600s) -> logs\isolated\inject_minimal_aurora.log
+[ISOLATED] Launching inject_minimal_svd (timeout=3600s) -> logs\isolated\inject_minimal_svd.log
+[ISOLATED] inject_aegis_v6 exited with code 1 in 26.5s
+[ISOLATED] inject_minimal_aurora exited with code 1 in 26.5s
+[ISOLATED] inject_minimal_svd exited with code 1 in 26.1s
+[ISOLATED] Launching inject_minimal_svd_v2 (timeout=3600s) -> logs\isolated\inject_minimal_svd_v2.log
+[ISOLATED] Launching inject_svd_proj_attn (timeout=3600s) -> logs\isolated\inject_svd_proj_attn.log
+[ISOLATED] Launching inject_swift_svd (timeout=3600s) -> logs\isolated\inject_swift_svd.log
+[ISOLATED] inject_minimal_svd_v2 exited with code 1 in 26.8s
+[ISOLATED] inject_svd_proj_attn exited with code 1 in 26.6s
+[ISOLATED] inject_swift_svd exited with code 1 in 26.9s
+[ISOLATED] Launching kmeans (timeout=3600s) -> logs\isolated\kmeans.log
+[ISOLATED] Launching kronecker (timeout=3600s) -> logs\isolated\kronecker.log
+[ISOLATED] Launching lola (timeout=3600s) -> logs\isolated\lola.log
+[ISOLATED] kronecker exited with code 1 in 26.6s
+[ISOLATED] kmeans exited with code 1 in 27.0s
+[ISOLATED] lola exited with code 1 in 26.4s
+[ISOLATED] Launching minimal_aurora (timeout=3600s) -> logs\isolated\minimal_aurora.log
+[ISOLATED] Launching minimal_nova (timeout=3600s) -> logs\isolated\minimal_nova.log
+[ISOLATED] Launching minimal_prism (timeout=3600s) -> logs\isolated\minimal_prism.log
+[ISOLATED] minimal_aurora exited with code 1 in 27.3s
+[ISOLATED] minimal_nova exited with code 1 in 27.5s
+[ISOLATED] minimal_prism exited with code 1 in 27.2s
+[ISOLATED] Launching minimal_svd (timeout=3600s) -> logs\isolated\minimal_svd.log
+[ISOLATED] Launching minimal_svd_v2 (timeout=3600s) -> logs\isolated\minimal_svd_v2.log
+[ISOLATED] Launching mla (timeout=3600s) -> logs\isolated\mla.log
+[ISOLATED] minimal_svd exited with code 1 in 28.1s
+[ISOLATED] minimal_svd_v2 exited with code 1 in 28.2s
+[ISOLATED] mla exited with code 1 in 27.8s
+[ISOLATED] Launching orion (timeout=3600s) -> logs\isolated\orion.log
+[ISOLATED] Launching phantom (timeout=3600s) -> logs\isolated\phantom.log
+[ISOLATED] Launching projection_factorized_attn (timeout=3600s) -> logs\isolated\projection_factorized_attn.log
+[ISOLATED] orion exited with code 1 in 27.9s
+[ISOLATED] phantom exited with code 1 in 27.6s
+[ISOLATED] projection_factorized_attn exited with code 1 in 27.5s
+[ISOLATED] Launching replaceme (timeout=3600s) -> logs\isolated\replaceme.log
+[ISOLATED] Launching res_svd (timeout=3600s) -> logs\isolated\res_svd.log
+[ISOLATED] Launching ressvd (timeout=3600s) -> logs\isolated\ressvd.log
+[ISOLATED] replaceme exited with code 1 in 27.4s
+[ISOLATED] res_svd exited with code 1 in 27.2s
+[ISOLATED] ressvd exited with code 1 in 27.6s
+[ISOLATED] Launching salt (timeout=3600s) -> logs\isolated\salt.log
+[ISOLATED] Launching soa_attn (timeout=3600s) -> logs\isolated\soa_attn.log
+[ISOLATED] Launching soa_fused_attention (timeout=3600s) -> logs\isolated\soa_fused_attention.log
+[ISOLATED] salt exited with code 1 in 28.7s
+[ISOLATED] soa_fused_attention exited with code 1 in 28.3s
+[ISOLATED] soa_attn exited with code 1 in 28.8s
+[ISOLATED] Launching spectral_residual_lora (timeout=3600s) -> logs\isolated\spectral_residual_lora.log
+[ISOLATED] Launching spectron (timeout=3600s) -> logs\isolated\spectron.log
+[ISOLATED] Launching svd_compressed (timeout=3600s) -> logs\isolated\svd_compressed.log
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'naive_svd' due to: 'Registry' object has no attribute 'register_inject'
+2026-09-20 03:27:39,884 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+>>> Skipping BLOCKED inject_mamba
+>>> Skipping BLOCKED kronecker_linear_class
+>>> Skipping BLOCKED mamba
+2026-09-20 03:27:39,884 [INFO] QwenQualitySweep: Running 52 modules with 3 parallel workers on GPU
+[ISOLATED] Launching a3 (timeout=3600s) -> logs\isolated\a3.log
+[ISOLATED] Launching aasvd (timeout=3600s) -> logs\isolated\aasvd.log
+[ISOLATED] Launching adaptive (timeout=3600s) -> logs\isolated\adaptive.log
+[ISOLATED] aasvd exited with code 0 in 57.1s
+[ISOLATED] a3 exited with code 0 in 59.1s
+[ISOLATED] Launching adaptive_svd (timeout=3600s) -> logs\isolated\adaptive_svd.log
+[ISOLATED] adaptive exited with code 0 in 61.2s
+[ISOLATED] Launching adasvd (timeout=3600s) -> logs\isolated\adasvd.log
+[ISOLATED] Launching aegis_hybrid (timeout=3600s) -> logs\isolated\aegis_hybrid.log
+[ISOLATED] adasvd exited with code 0 in 42.4s
+[ISOLATED] Launching aegis_v3 (timeout=3600s) -> logs\isolated\aegis_v3.log
+[ISOLATED] adaptive_svd exited with code 0 in 47.2s
+[ISOLATED] Launching aegis_v4 (timeout=3600s) -> logs\isolated\aegis_v4.log
+[ISOLATED] aegis_hybrid exited with code 0 in 52.1s
+[ISOLATED] Launching aegis_v5 (timeout=3600s) -> logs\isolated\aegis_v5.log
+[ISOLATED] aegis_v3 exited with code 0 in 51.3s
+[ISOLATED] aegis_v4 exited with code 0 in 49.6s
+[ISOLATED] Launching aegis_v6 (timeout=3600s) -> logs\isolated\aegis_v6.log
+[ISOLATED] Launching come (timeout=3600s) -> logs\isolated\come.log
+[ISOLATED] aegis_v5 exited with code 0 in 54.5s
+[ISOLATED] Launching compressed_attention_layer_energy (timeout=3600s) -> logs\isolated\compressed_attention_layer_energy.log
+[ISOLATED] come exited with code 0 in 31.2s
+[ISOLATED] Launching cur_moe (timeout=3600s) -> logs\isolated\cur_moe.log
+[ISOLATED] aegis_v6 exited with code 0 in 54.0s
+[ISOLATED] Launching cur_moe_class (timeout=3600s) -> logs\isolated\cur_moe_class.log
+[ISOLATED] compressed_attention_layer_energy exited with code 0 in 42.5s
+[ISOLATED] Launching fused_svd_kernel (timeout=3600s) -> logs\isolated\fused_svd_kernel.log
+[ISOLATED] cur_moe exited with code 0 in 36.8s
+[ISOLATED] Launching gqa (timeout=3600s) -> logs\isolated\gqa.log
+[ISOLATED] cur_moe_class exited with code 0 in 35.5s
+[ISOLATED] Launching hybrid_svd (timeout=3600s) -> logs\isolated\hybrid_svd.log
+[ISOLATED] gqa exited with code 0 in 42.1s
+[ISOLATED] Launching inject_aegis_hybrid (timeout=3600s) -> logs\isolated\inject_aegis_hybrid.log
+[ISOLATED] hybrid_svd exited with code 0 in 41.1s
+[ISOLATED] Launching inject_aegis_v6 (timeout=3600s) -> logs\isolated\inject_aegis_v6.log
+[ISOLATED] fused_svd_kernel exited with code 0 in 90.5s
+[ISOLATED] Launching inject_minimal_aurora (timeout=3600s) -> logs\isolated\inject_minimal_aurora.log
+[ISOLATED] inject_aegis_hybrid exited with code 0 in 54.8s
+[ISOLATED] Launching inject_minimal_svd (timeout=3600s) -> logs\isolated\inject_minimal_svd.log
+[ISOLATED] inject_aegis_v6 exited with code 0 in 57.6s
+[ISOLATED] inject_minimal_aurora exited with code 0 in 44.7s
+[ISOLATED] Launching inject_minimal_svd_v2 (timeout=3600s) -> logs\isolated\inject_minimal_svd_v2.log
+[ISOLATED] Launching inject_svd_proj_attn (timeout=3600s) -> logs\isolated\inject_svd_proj_attn.log
+[ISOLATED] inject_minimal_svd exited with code 0 in 43.8s
+[ISOLATED] Launching inject_swift_svd (timeout=3600s) -> logs\isolated\inject_swift_svd.log
+[ISOLATED] inject_minimal_svd_v2 exited with code 0 in 42.6s
+[ISOLATED] Launching kmeans (timeout=3600s) -> logs\isolated\kmeans.log
+[ISOLATED] inject_svd_proj_attn exited with code 0 in 43.4s
+[ISOLATED] Launching kronecker (timeout=3600s) -> logs\isolated\kronecker.log
+[ISOLATED] inject_swift_svd exited with code 0 in 39.7s
+[ISOLATED] Launching lola (timeout=3600s) -> logs\isolated\lola.log
+[ISOLATED] kmeans exited with code 0 in 40.0s
+[ISOLATED] Launching minimal_aurora (timeout=3600s) -> logs\isolated\minimal_aurora.log
+[ISOLATED] kronecker exited with code 0 in 50.0s
+[ISOLATED] Launching minimal_nova (timeout=3600s) -> logs\isolated\minimal_nova.log
+[ISOLATED] lola exited with code 0 in 49.0s
+[ISOLATED] Launching minimal_prism (timeout=3600s) -> logs\isolated\minimal_prism.log
+[ISOLATED] minimal_aurora exited with code 0 in 43.4s
+[ISOLATED] Launching minimal_svd (timeout=3600s) -> logs\isolated\minimal_svd.log
+[ISOLATED] minimal_nova exited with code 0 in 44.6s
+[ISOLATED] Launching minimal_svd_v2 (timeout=3600s) -> logs\isolated\minimal_svd_v2.log
+[ISOLATED] minimal_prism exited with code 0 in 43.5s
+[ISOLATED] Launching mla (timeout=3600s) -> logs\isolated\mla.log
+[ISOLATED] minimal_svd exited with code 0 in 43.7s
+[ISOLATED] Launching orion (timeout=3600s) -> logs\isolated\orion.log
+[ISOLATED] minimal_svd_v2 exited with code 0 in 42.1s
+[ISOLATED] Launching phantom (timeout=3600s) -> logs\isolated\phantom.log
+[ISOLATED] mla exited with code 0 in 39.0s
+[ISOLATED] Launching projection_factorized_attn (timeout=3600s) -> logs\isolated\projection_factorized_attn.log
+[ISOLATED] orion exited with code 0 in 53.0s
+[ISOLATED] Launching replaceme (timeout=3600s) -> logs\isolated\replaceme.log
+[ISOLATED] projection_factorized_attn exited with code 0 in 46.9s
+[ISOLATED] Launching res_svd (timeout=3600s) -> logs\isolated\res_svd.log
+[ISOLATED] phantom exited with code 0 in 69.2s
+[ISOLATED] Launching ressvd (timeout=3600s) -> logs\isolated\ressvd.log
+[ISOLATED] replaceme exited with code 0 in 34.7s
+[ISOLATED] Launching salt (timeout=3600s) -> logs\isolated\salt.log
+[ISOLATED] res_svd exited with code 0 in 54.9s
+[ISOLATED] Launching soa_attn (timeout=3600s) -> logs\isolated\soa_attn.log
+[ISOLATED] ressvd exited with code 0 in 60.3s
+[ISOLATED] Launching soa_fused_attention (timeout=3600s) -> logs\isolated\soa_fused_attention.log
+[ISOLATED] salt exited with code 0 in 63.3s
+[ISOLATED] Launching spectral_residual_lora (timeout=3600s) -> logs\isolated\spectral_residual_lora.log
+[ISOLATED] soa_attn exited with code 0 in 43.7s
+[ISOLATED] Launching spectron (timeout=3600s) -> logs\isolated\spectron.log
+[ISOLATED] soa_fused_attention exited with code 0 in 42.2s
+[ISOLATED] Launching svd_compressed (timeout=3600s) -> logs\isolated\svd_compressed.log
+[ISOLATED] spectral_residual_lora exited with code 0 in 46.5s
+[ISOLATED] Launching svd_linear (timeout=3600s) -> logs\isolated\svd_linear.log
+[ISOLATED] spectron exited with code 0 in 46.1s
+[ISOLATED] Launching svd_linear_decay (timeout=3600s) -> logs\isolated\svd_linear_decay.log
+[ISOLATED] svd_compressed exited with code 0 in 44.4s
+[ISOLATED] Launching svd_llm_v2 (timeout=3600s) -> logs\isolated\svd_llm_v2.log
+[ISOLATED] svd_linear exited with code 0 in 44.6s
+[ISOLATED] Launching svd_proj (timeout=3600s) -> logs\isolated\svd_proj.log
+[ISOLATED] svd_linear_decay exited with code 0 in 43.5s
+[ISOLATED] Launching swift_svd (timeout=3600s) -> logs\isolated\swift_svd.log
+[ISOLATED] svd_llm_v2 exited with code 0 in 45.8s
+[ISOLATED] Launching swift_svd_class (timeout=3600s) -> logs\isolated\swift_svd_class.log
+[ISOLATED] svd_proj exited with code 0 in 44.9s
+[ISOLATED] Launching vspec (timeout=3600s) -> logs\isolated\vspec.log
+[ISOLATED] swift_svd exited with code 0 in 39.6s
+[ISOLATED] swift_svd_class exited with code 0 in 39.1s
+[ISOLATED] vspec exited with code 0 in 53.9s

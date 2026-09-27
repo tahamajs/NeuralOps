@@ -1,0 +1,106 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from 'framework.eval_all_models_datasets' (consider renaming 'D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py' if it has the same name as a library you intended to import)
+2026-09-18 18:54:55,805 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 18:54:57,034 [INFO] QwenQualitySweep: Configured dataset 'ag_news' with num_labels=4
+Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]Loading weights: 100%|##########| 197/197 [00:00<00:00, 3473.58it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models/roberta-base
+Key                             | Status     | 
+--------------------------------+------------+-
+lm_head.layer_norm.weight       | UNEXPECTED | 
+lm_head.dense.bias              | UNEXPECTED | 
+roberta.embeddings.position_ids | UNEXPECTED | 
+lm_head.layer_norm.bias         | UNEXPECTED | 
+lm_head.bias                    | UNEXPECTED | 
+lm_head.dense.weight            | UNEXPECTED | 
+classifier.out_proj.bias        | MISSING    | 
+classifier.dense.weight         | MISSING    | 
+classifier.out_proj.weight      | MISSING    | 
+classifier.dense.bias           | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-18 18:54:58,706 [INFO] QwenQualitySweep: model=models/roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-18 18:54:58,707 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 18:54:58,707 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 18:54:58,707 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 18:54:58,707 [INFO] QwenQualitySweep:   model:             models/roberta-base
+2026-09-18 18:54:58,708 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-18 18:54:58,708 [INFO] QwenQualitySweep:   dataset:           ag_news
+2026-09-18 18:54:58,708 [INFO] QwenQualitySweep:   batch_size:        32
+2026-09-18 18:54:58,708 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 18:54:58,708 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 18:54:58,708 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 18:54:58,708 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 18:54:58,709 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-18 18:55:04,433 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=1.8012
+2026-09-18 18:55:08,872 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=1.2795
+2026-09-18 18:55:12,534 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=1.0905
+2026-09-18 18:55:16,732 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=1.0636
+2026-09-18 18:55:21,201 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.8146
+2026-09-18 18:55:25,214 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.7128
+2026-09-18 18:55:29,727 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.5348
+2026-09-18 18:55:34,051 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.6845
+2026-09-18 18:55:34,086 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\agnews_unified_admm_pruner\roberta\finetuned_model.pt
+2026-09-18 18:55:34,528 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 18:55:37,390 [INFO] QwenQualitySweep: Prepared 32 eval batches and 50 train batches directly on GPU.
+2026-09-18 18:55:41,505 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 74.50%
+2026-09-18 18:55:41,626 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 18:55:41,626 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-18 18:55:41,626 [INFO] QwenQualitySweep:   Validation Majority Count: 274 / 1000
+2026-09-18 18:55:41,627 [INFO] QwenQualitySweep:   True Majority Baseline:    27.40%
+2026-09-18 18:55:41,627 [INFO] QwenQualitySweep:   Standard Error (SE):       1.410%
+2026-09-18 18:55:41,627 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.23%
+2026-09-18 18:55:41,627 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  31.63%
+2026-09-18 18:55:41,627 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 18:55:41,628 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: admm_pruner (recovery_steps=50, batch_size=32, optimizer=adamw)
+2026-09-18 18:55:54,657 [INFO] QwenQualitySweep: module=admm_pruner path=adapted_roberta
+2026-09-18 18:55:54,661 [INFO] QwenQualitySweep: module=admm_pruner injection summary: 0 SVDLinear layers active
+2026-09-18 18:55:54,668 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for admm_pruner (lr=2.0e-04)
+2026-09-18 18:55:55,091 [INFO] framework.utils.compat: Recovery fine-tuning selected 593668 trainable parameters across 4 tensors.
+2026-09-18 18:55:55,092 [INFO] framework.utils.compat: Discovered 4 trainable tensors (593668 params)
+2026-09-18 18:55:55,097 [INFO] QwenQualitySweep: LoRA fine-tuning: 593668 trainable parameters across 4 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 18:55:55,241 [INFO] QwenQualitySweep: Step 1/50 took 0.14s (loss=0.5335, bs=32, micro=32)
+2026-09-18 18:55:55,775 [INFO] QwenQualitySweep: Step 5/50 took 0.14s (loss=2.6912, bs=32, micro=32)
+2026-09-18 18:55:56,441 [INFO] QwenQualitySweep: Step 10/50 took 0.13s (loss=1.4380, bs=32, micro=32)
+2026-09-18 18:55:57,049 [INFO] QwenQualitySweep: Step 15/50 took 0.14s (loss=2.6042, bs=32, micro=32)
+2026-09-18 18:55:57,765 [INFO] QwenQualitySweep: Step 20/50 took 0.16s (loss=2.9669, bs=32, micro=32)
+2026-09-18 18:55:58,454 [INFO] QwenQualitySweep: Step 25/50 took 0.14s (loss=1.3588, bs=32, micro=32)
+2026-09-18 18:55:59,166 [INFO] QwenQualitySweep: Step 30/50 took 0.14s (loss=1.3991, bs=32, micro=32)
+2026-09-18 18:55:59,906 [INFO] QwenQualitySweep: Step 35/50 took 0.16s (loss=1.6232, bs=32, micro=32)
+2026-09-18 18:56:00,609 [INFO] QwenQualitySweep: Step 40/50 took 0.14s (loss=1.1912, bs=32, micro=32)
+2026-09-18 18:56:01,315 [INFO] QwenQualitySweep: Step 45/50 took 0.15s (loss=1.4093, bs=32, micro=32)
+2026-09-18 18:56:02,043 [INFO] QwenQualitySweep: Step 50/50 took 0.15s (loss=1.1032, bs=32, micro=32)
+2026-09-18 18:56:06,145 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\agnews_unified_admm_pruner\roberta\roberta-base_admm_pruner_full_metrics.json
+2026-09-18 18:56:06,182 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\agnews_unified_admm_pruner\roberta\checkpoints\admm_pruner\weights.pt (module_params=0, lora_params=4)
+2026-09-18 18:56:08,218 [INFO] QwenQualitySweep: [1/1] admm_pruner -> PASS 69.40% (F1: 0.6925, Peak VRAM: 712.23 MB)
+2026-09-18 18:56:08,272 [INFO] HFGitExporter: [Automation] Run roberta-base / admm-pruner is SUCCESSFUL (acc=69.40% >= 31.63%). Starting automated HF export to tahamajs/svd-linear-attention-roberta-base-admm-pruner and Git recording.
+2026-09-18 18:56:10,311 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 403 Forbidden"
+2026-09-18 18:56:10,535 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/tahamajs/svd-linear-attention-roberta-base-admm-pruner "HTTP/1.1 404 Not Found"
+2026-09-18 18:56:10,536 [WARNING] HFGitExporter: Hugging Face upload failed for tahamajs/svd-linear-attention-roberta-base-admm-pruner: (Request ID: Root=1-6aad581c-77315185291829ef57243fc7;0bc632cd-f935-4475-8777-de9593089e53)
+
+403 Forbidden: You don't have the rights to create a model under the namespace "tahamajs".
+Cannot access content at: https://huggingface.co/api/repos/create.
+Make sure your token has the correct permissions.
+2026-09-18 18:56:10,550 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\compressions\admm_pruner.md
+[main 8be4f9704] feat(benchmark): record successful admm_pruner on roberta-base (Acc: 69.40%, F1: 0.6925)
+ 6 files changed, 454 insertions(+)
+ create mode 100644 results/agnews_unified_admm_compressor/gpt2/finetune_metadata.json
+ create mode 100644 results/agnews_unified_admm_pruner/roberta/admm_pruner_stats.json
+ create mode 100644 results/agnews_unified_admm_pruner/roberta/roberta-base_admm_pruner_full_metrics.json
+ create mode 100644 results/agnews_unified_admm_pruner/roberta/summary.csv
+ create mode 100644 results/wikitext2_asvd_attention/gpt2/ppl_result.json
+From https://github.com/tahamajs/SVD_linear_Attention
+ * branch                main       -> FETCH_HEAD
+Current branch main is up to date.
+To https://github.com/tahamajs/SVD_linear_Attention.git
+   b2f4093de..8be4f9704  main -> main
+branch 'main' set up to track 'origin/main'.
+2026-09-18 18:56:16,043 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: 8be4f970
+2026-09-18 18:56:16,509 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 18:56:16,510 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on ag_news)
+2026-09-18 18:56:16,529 [INFO] QwenQualitySweep: 
+     Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+admm_pruner   PASS   69.40%    -5.10% 0.6925                 72            1.00x  712.2 MB               3.72              3.72
+2026-09-18 18:56:16,529 [INFO] QwenQualitySweep: ================================================================================

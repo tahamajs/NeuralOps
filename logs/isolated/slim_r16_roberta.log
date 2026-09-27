@@ -36,3 +36,78 @@ Notes:
 2026-09-27 09:22:20,533 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1419
 2026-09-27 09:22:22,802 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0326
 2026-09-27 09:22:25,327 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0266
+2026-09-27 09:22:28,710 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0969
+2026-09-27 09:22:32,179 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0999
+2026-09-27 09:22:35,239 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.1602
+2026-09-27 09:22:35,350 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\04_rank_sweeps\roberta\deep_rank_roberta\slim\rank_16\finetuned_model.pt
+2026-09-27 09:22:38,593 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\04_rank_sweeps\roberta\deep_rank_roberta\slim\rank_16\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-27 09:22:38,593 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-27 09:22:47,316 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 94.38%
+2026-09-27 09:22:47,478 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 09:22:47,478 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-27 09:22:47,478 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-27 09:22:47,478 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-27 09:22:47,479 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-27 09:22:47,479 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-27 09:22:47,479 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-27 09:22:47,479 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-27 09:22:47,479 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 09:22:47,482 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-27 09:22:47,611 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: slim (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-27 09:22:49,985 [WARNING] framework.compression_engine.slim_compressor: SLiM reconstruction error 0.7219 on roberta.encoder.layer.0.attention.output.dense exceeded threshold 0.5000. Skipping (fallback to original).
+2026-09-27 09:22:49,986 [WARNING] framework.compression_engine.slim_compressor: Fallback triggered for roberta.encoder.layer.0.attention.output.dense. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-27 09:22:50,399 [WARNING] framework.compression_engine.slim_compressor: SLiM reconstruction error 0.7087 on roberta.encoder.layer.1.attention.output.dense exceeded threshold 0.5000. Skipping (fallback to original).
+2026-09-27 09:22:50,400 [WARNING] framework.compression_engine.slim_compressor: Fallback triggered for roberta.encoder.layer.1.attention.output.dense. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-27 09:22:50,713 [WARNING] framework.compression_engine.slim_compressor: SLiM reconstruction error 0.5045 on roberta.encoder.layer.2.attention.self.value exceeded threshold 0.5000. Skipping (fallback to original).
+2026-09-27 09:22:50,713 [WARNING] framework.compression_engine.slim_compressor: Fallback triggered for roberta.encoder.layer.2.attention.self.value. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-27 09:22:50,825 [WARNING] framework.compression_engine.slim_compressor: SLiM reconstruction error 0.5969 on roberta.encoder.layer.2.attention.output.dense exceeded threshold 0.5000. Skipping (fallback to original).
+2026-09-27 09:22:50,825 [WARNING] framework.compression_engine.slim_compressor: Fallback triggered for roberta.encoder.layer.2.attention.output.dense. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-27 09:22:51,238 [WARNING] framework.compression_engine.slim_compressor: SLiM reconstruction error 0.5560 on roberta.encoder.layer.3.attention.output.dense exceeded threshold 0.5000. Skipping (fallback to original).
+2026-09-27 09:22:51,239 [WARNING] framework.compression_engine.slim_compressor: Fallback triggered for roberta.encoder.layer.3.attention.output.dense. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-27 09:22:51,657 [WARNING] framework.compression_engine.slim_compressor: SLiM reconstruction error 0.5559 on roberta.encoder.layer.4.attention.output.dense exceeded threshold 0.5000. Skipping (fallback to original).
+2026-09-27 09:22:51,657 [WARNING] framework.compression_engine.slim_compressor: Fallback triggered for roberta.encoder.layer.4.attention.output.dense. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-27 09:22:52,066 [WARNING] framework.compression_engine.slim_compressor: SLiM reconstruction error 0.5337 on roberta.encoder.layer.5.attention.output.dense exceeded threshold 0.5000. Skipping (fallback to original).
+2026-09-27 09:22:52,066 [WARNING] framework.compression_engine.slim_compressor: Fallback triggered for roberta.encoder.layer.5.attention.output.dense. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-27 09:22:52,484 [WARNING] framework.compression_engine.slim_compressor: SLiM reconstruction error 0.5442 on roberta.encoder.layer.6.attention.output.dense exceeded threshold 0.5000. Skipping (fallback to original).
+2026-09-27 09:22:52,484 [WARNING] framework.compression_engine.slim_compressor: Fallback triggered for roberta.encoder.layer.6.attention.output.dense. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-27 09:22:52,766 [WARNING] framework.compression_engine.slim_compressor: SLiM reconstruction error 0.6061 on roberta.encoder.layer.7.attention.output.dense exceeded threshold 0.5000. Skipping (fallback to original).
+2026-09-27 09:22:52,766 [WARNING] framework.compression_engine.slim_compressor: Fallback triggered for roberta.encoder.layer.7.attention.output.dense. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-27 09:22:53,004 [WARNING] framework.compression_engine.slim_compressor: SLiM reconstruction error 0.5827 on roberta.encoder.layer.8.attention.output.dense exceeded threshold 0.5000. Skipping (fallback to original).
+2026-09-27 09:22:53,004 [WARNING] framework.compression_engine.slim_compressor: Fallback triggered for roberta.encoder.layer.8.attention.output.dense. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-27 09:22:53,328 [WARNING] framework.compression_engine.slim_compressor: SLiM reconstruction error 0.6267 on roberta.encoder.layer.9.attention.output.dense exceeded threshold 0.5000. Skipping (fallback to original).
+2026-09-27 09:22:53,329 [WARNING] framework.compression_engine.slim_compressor: Fallback triggered for roberta.encoder.layer.9.attention.output.dense. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-27 09:22:53,674 [WARNING] framework.compression_engine.slim_compressor: SLiM reconstruction error 0.6238 on roberta.encoder.layer.10.attention.output.dense exceeded threshold 0.5000. Skipping (fallback to original).
+2026-09-27 09:22:53,674 [WARNING] framework.compression_engine.slim_compressor: Fallback triggered for roberta.encoder.layer.10.attention.output.dense. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-27 09:22:53,991 [WARNING] framework.compression_engine.slim_compressor: SLiM reconstruction error 0.5846 on roberta.encoder.layer.11.attention.output.dense exceeded threshold 0.5000. Skipping (fallback to original).
+2026-09-27 09:22:53,992 [WARNING] framework.compression_engine.slim_compressor: Fallback triggered for roberta.encoder.layer.11.attention.output.dense. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-27 09:22:54,014 [INFO] QwenQualitySweep: module=slim path=adapted_roberta
+2026-09-27 09:22:54,017 [INFO] QwenQualitySweep: module=slim injection summary: 0 SVDLinear layers active
+2026-09-27 09:22:54,017 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for slim (lr=2.0e-04)
+2026-09-27 09:22:54,299 [INFO] framework.utils.compat: Recovery fine-tuning selected 592130 trainable parameters across 4 tensors.
+2026-09-27 09:22:54,300 [INFO] framework.utils.compat: Discovered 4 trainable tensors (592130 params)
+2026-09-27 09:22:54,306 [INFO] QwenQualitySweep: LoRA fine-tuning: 592130 trainable parameters across 4 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-27 09:22:54,434 [INFO] QwenQualitySweep: Step 1/50 took 0.12s (loss=0.3695, bs=8, micro=8)
+2026-09-27 09:22:54,799 [INFO] QwenQualitySweep: Step 5/50 took 0.07s (loss=0.4524, bs=8, micro=8)
+2026-09-27 09:22:55,168 [INFO] QwenQualitySweep: Step 10/50 took 0.07s (loss=0.5266, bs=8, micro=8)
+2026-09-27 09:22:55,491 [INFO] QwenQualitySweep: Step 15/50 took 0.06s (loss=0.2741, bs=8, micro=8)
+2026-09-27 09:22:55,863 [INFO] QwenQualitySweep: Step 20/50 took 0.09s (loss=0.5783, bs=8, micro=8)
+2026-09-27 09:22:56,252 [INFO] QwenQualitySweep: Step 25/50 took 0.07s (loss=0.2170, bs=8, micro=8)
+2026-09-27 09:22:56,638 [INFO] QwenQualitySweep: Step 30/50 took 0.11s (loss=0.0165, bs=8, micro=8)
+2026-09-27 09:22:57,084 [INFO] QwenQualitySweep: Step 35/50 took 0.06s (loss=0.1965, bs=8, micro=8)
+2026-09-27 09:22:57,522 [INFO] QwenQualitySweep: Step 40/50 took 0.06s (loss=0.4673, bs=8, micro=8)
+2026-09-27 09:22:57,866 [INFO] QwenQualitySweep: Step 45/50 took 0.08s (loss=0.2400, bs=8, micro=8)
+2026-09-27 09:22:58,366 [INFO] QwenQualitySweep: Step 50/50 took 0.08s (loss=0.2929, bs=8, micro=8)
+2026-09-27 09:23:06,384 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\roberta\deep_rank_roberta\slim\rank_16\roberta_sst2_slim_full_metrics.json
+2026-09-27 09:23:06,741 [INFO] QwenQualitySweep: [1/1] slim -> PASS_NO_COMPRESSION 87.04% (F1: 0.8781, Peak VRAM: 293.1 MB)
+2026-09-27 09:23:06,743 [WARNING] QwenQualitySweep: Module 'slim' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-27 09:23:06,743 [INFO] QwenQualitySweep: [Quality Guard] Module 'slim' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=87.04%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-27 09:23:06,752 [INFO] QwenQualitySweep: [1/1] slim Timing: eval_time=19.14s
+2026-09-27 09:23:06,753 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-27 09:23:07,287 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 09:23:07,287 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-27 09:23:07,318 [INFO] QwenQualitySweep: 
+               Module              Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+slim (efficient-attn) PASS_NO_COMPRESSION   87.04%    -7.34% 0.8781                  0            1.00x  293.1 MB               7.07              8.11
+2026-09-27 09:23:07,318 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:171: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

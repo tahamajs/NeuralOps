@@ -1,0 +1,103 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from 'framework.eval_all_models_datasets' (consider renaming 'D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py' if it has the same name as a library you intended to import)
+2026-09-18 09:01:25,443 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 09:01:25,597 [INFO] QwenQualitySweep: Configured dataset 'mnli' with num_labels=3
+You passed `num_labels=3` which is incompatible to the `id2label` map of length `2`.
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 5188.01it/s]
+[1mDistilBertForSequenceClassification LOAD REPORT[0m from: models/distilbert_sst2
+Key               | Status   |                                                                                       
+------------------+----------+---------------------------------------------------------------------------------------
+classifier.weight | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([2, 768]) vs model:torch.Size([3, 768])
+classifier.bias   | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([2]) vs model:torch.Size([3])          
+
+Notes:
+- MISMATCH:	ckpt weights were loaded, but they did not match the original empty weight shapes.
+2026-09-18 09:01:26,098 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-18 09:01:26,099 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 09:01:26,099 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 09:01:26,099 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 09:01:26,099 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-18 09:01:26,099 [INFO] QwenQualitySweep:   family:            bert
+2026-09-18 09:01:26,100 [INFO] QwenQualitySweep:   dataset:           mnli
+2026-09-18 09:01:26,100 [INFO] QwenQualitySweep:   batch_size:        32
+2026-09-18 09:01:26,100 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 09:01:26,100 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 09:01:26,100 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 09:01:26,101 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 09:01:26,102 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-18 09:01:27,742 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=1.1234
+2026-09-18 09:01:28,539 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=1.1855
+2026-09-18 09:01:29,549 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=1.1522
+2026-09-18 09:01:30,559 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=1.0722
+2026-09-18 09:01:31,544 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=1.2003
+2026-09-18 09:01:32,405 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=1.1516
+2026-09-18 09:01:33,612 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=1.2007
+2026-09-18 09:01:34,903 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=1.0526
+2026-09-18 09:01:34,918 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\mnli_unified_aasvd\distilbert\finetuned_model.pt
+2026-09-18 09:01:35,000 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 09:01:36,469 [INFO] QwenQualitySweep: Prepared 32 eval batches and 50 train batches directly on GPU.
+2026-09-18 09:01:37,472 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 44.10%
+2026-09-18 09:01:37,528 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 09:01:37,529 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-18 09:01:37,529 [INFO] QwenQualitySweep:   Validation Majority Count: 341 / 1000
+2026-09-18 09:01:37,529 [INFO] QwenQualitySweep:   True Majority Baseline:    34.10%
+2026-09-18 09:01:37,529 [INFO] QwenQualitySweep:   Standard Error (SE):       1.499%
+2026-09-18 09:01:37,529 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.50%
+2026-09-18 09:01:37,529 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  38.60%
+2026-09-18 09:01:37,530 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 09:01:37,530 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: aasvd (recovery_steps=50, batch_size=32, optimizer=adamw)
+2026-09-18 09:01:41,247 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8510 on distilbert.transformer.layer.1.attention.out_lin exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:01:43,403 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8709 on distilbert.transformer.layer.2.attention.out_lin exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:01:44,518 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8805 on distilbert.transformer.layer.3.attention.v_lin exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:01:44,719 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8845 on distilbert.transformer.layer.3.attention.out_lin exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:01:45,319 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8819 on distilbert.transformer.layer.4.attention.v_lin exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:01:45,466 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8905 on distilbert.transformer.layer.4.attention.out_lin exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:01:46,332 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8904 on distilbert.transformer.layer.5.attention.v_lin exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:01:46,466 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8973 on distilbert.transformer.layer.5.attention.out_lin exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:01:46,479 [INFO] framework.compression_engine.aa_svd_compressor: AASVD compression complete: 16 compressed, 8 fallback. Avg error: 0.8129.
+2026-09-18 09:01:46,487 [INFO] QwenQualitySweep: module=aasvd path=legacy_bert
+2026-09-18 09:01:46,488 [INFO] QwenQualitySweep: module=aasvd injection summary: 16 SVDLinear layers active
+2026-09-18 09:01:46,490 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for aasvd (lr=2.0e-04)
+2026-09-18 09:01:46,558 [INFO] framework.utils.compat: Recovery fine-tuning selected 1587459 trainable parameters across 50 tensors.
+2026-09-18 09:01:46,559 [INFO] framework.utils.compat: Discovered 50 trainable tensors (1587459 params)
+2026-09-18 09:01:46,563 [INFO] QwenQualitySweep: LoRA fine-tuning: 1587459 trainable parameters across 50 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 09:01:46,737 [INFO] QwenQualitySweep: Step 1/50 took 0.17s (loss=1.1330, bs=32, micro=32)
+2026-09-18 09:01:47,085 [INFO] QwenQualitySweep: Step 5/50 took 0.09s (loss=1.1315, bs=32, micro=32)
+2026-09-18 09:01:47,507 [INFO] QwenQualitySweep: Step 10/50 took 0.09s (loss=1.0940, bs=32, micro=32)
+2026-09-18 09:01:47,936 [INFO] QwenQualitySweep: Step 15/50 took 0.08s (loss=1.0721, bs=32, micro=32)
+2026-09-18 09:01:48,364 [INFO] QwenQualitySweep: Step 20/50 took 0.08s (loss=1.0421, bs=32, micro=32)
+2026-09-18 09:01:48,773 [INFO] QwenQualitySweep: Step 25/50 took 0.08s (loss=1.0074, bs=32, micro=32)
+2026-09-18 09:01:49,202 [INFO] QwenQualitySweep: Step 30/50 took 0.09s (loss=1.0062, bs=32, micro=32)
+2026-09-18 09:01:49,601 [INFO] QwenQualitySweep: Step 35/50 took 0.08s (loss=1.0074, bs=32, micro=32)
+2026-09-18 09:01:50,021 [INFO] QwenQualitySweep: Step 40/50 took 0.09s (loss=1.0391, bs=32, micro=32)
+2026-09-18 09:01:50,423 [INFO] QwenQualitySweep: Step 45/50 took 0.08s (loss=1.0279, bs=32, micro=32)
+2026-09-18 09:01:50,840 [INFO] QwenQualitySweep: Step 50/50 took 0.09s (loss=1.0098, bs=32, micro=32)
+2026-09-18 09:01:52,051 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\mnli_unified_aasvd\distilbert\distilbert_sst2_aasvd_full_metrics.json
+2026-09-18 09:01:52,086 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\mnli_unified_aasvd\distilbert\checkpoints\aasvd\weights.pt (module_params=48, lora_params=4)
+2026-09-18 09:01:52,261 [INFO] QwenQualitySweep: [1/1] aasvd -> PASS 46.40% (F1: 0.3658, Peak VRAM: 264.78 MB)
+2026-09-18 09:01:52,294 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / aasvd is SUCCESSFUL (acc=46.40% >= 38.60%). Starting automated HF export to tahamajs/svd-linear-attention-distilbert-sst2-aasvd and Git recording.
+2026-09-18 09:01:52,775 [WARNING] HFGitExporter: Hugging Face upload failed for tahamajs/svd-linear-attention-distilbert-sst2-aasvd: [Errno 11001] getaddrinfo failed
+2026-09-18 09:01:52,796 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\compressions\aasvd.md
+[main db243afdf] feat(benchmark): record successful aasvd on distilbert-sst2 (Acc: 46.40%, F1: 0.3658)
+ 12 files changed, 416 insertions(+)
+ create mode 100644 results/agnews_unified_adasplash_attention/distilbert/distilbert_sst2_adasplash_attention_full_metrics.json
+ create mode 100644 results/agnews_unified_adasplash_attention/distilbert/finetune_metadata.json
+ create mode 100644 results/agnews_unified_adasplash_attention/distilbert/summary.csv
+ create mode 100644 results/agnews_unified_adasplash_inject/distilbert/finetune_metadata.json
+ create mode 100644 results/mnli_unified_aasvd/distilbert/aasvd_stats.json
+ create mode 100644 results/mnli_unified_aasvd/distilbert/distilbert_sst2_aasvd_full_metrics.json
+ create mode 100644 results/mnli_unified_aasvd/distilbert/finetune_metadata.json
+ create mode 100644 results/mnli_unified_aasvd/distilbert/summary.csv
+ create mode 100644 results/mnli_unified_aasvd/roberta/aasvd_stats.json
+ create mode 100644 results/mnli_unified_aasvd/roberta/finetune_metadata.json
+ create mode 100644 results/mnli_unified_aasvd/roberta/summary.csv
+fatal: unable to access 'https://github.com/tahamajs/SVD_linear_Attention.git/': Could not resolve host: github.com
+fatal: unable to access 'https://github.com/tahamajs/SVD_linear_Attention.git/': Could not resolve host: github.com
+2026-09-18 09:02:00,134 [WARNING] HFGitExporter: Git commit/push failed: Command '['git', 'push', '-u', 'origin', 'main']' returned non-zero exit status 128.
+2026-09-18 09:02:00,357 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 09:02:00,357 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on mnli)
+2026-09-18 09:02:00,362 [INFO] QwenQualitySweep: 
+Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+ aasvd   PASS   46.40%    +2.30% 0.3658                 16            1.13x  264.8 MB               1.05              1.05
+2026-09-18 09:02:00,362 [INFO] QwenQualitySweep: ================================================================================

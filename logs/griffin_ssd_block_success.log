@@ -1,0 +1,6 @@
+[main 464ebc20c] feat(benchmark): record successful griffin_ssd_block on distilbert-sst2 (Acc: 88.19%, F1: 0.8874)
+ 3 files changed, 55 insertions(+)
+ create mode 100644 results/all_modules/griffin_ssd_block/distilbert_sst2_griffin_ssd_block_full_metrics.json
+ create mode 100644 results/all_modules/griffin_ssd_block/finetune_metadata.json
+ create mode 100644 results/all_modules/griffin_ssd_block/summary.csv
+branch 'main' set up to track 'origin/main'.

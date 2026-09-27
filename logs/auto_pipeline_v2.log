@@ -1,0 +1,602 @@
+[2026-09-21 06:14:31,314] [INFO] Starting Autonomous Pipeline Daemon (auto_pipeline.py)...
+[2026-09-21 06:14:31,357] [INFO] [GPU] vram=0.61 GB, util=0.0%, temp=53.0 C
+[2026-09-21 06:14:31,573] [INFO] [LAUNCH] [p3_gpt2_smart_weighted_ensemble_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module smart_weighted_ensemble_inject --output_suffix gpt2_wt2_smart_weighted_ensemble_inject'
+[2026-09-21 06:14:31,615] [INFO] [LAUNCH] [p3_gpt2_mgie] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module mgie --output_suffix gpt2_wt2_mgie'
+[2026-09-21 06:14:31,656] [INFO] [LAUNCH] [p3_gpt2_optimal_subspace_projection_factory] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module optimal_subspace_projection_factory --output_suffix gpt2_wt2_optimal_subspace_projection_factory'
+[2026-09-21 06:14:34,267] [INFO] STATUS: Uptime=0:00:02 | GPU VRAM=0.66/8.0GB, Util=0%, Temp=53C | Active=3/3 | Queue: Pending=1590, Done=146, Fail=0
+[2026-09-21 06:14:39,321] [INFO] [GPU] vram=0.57 GB, util=96.0%, temp=55.0 C
+[2026-09-21 06:14:54,238] [INFO] STATUS: Uptime=0:00:22 | GPU VRAM=0.57/8.0GB, Util=96%, Temp=55C | Active=3/3 | Queue: Pending=1590, Done=146, Fail=0
+[2026-09-21 06:14:59,271] [INFO] [GPU] vram=1.73 GB, util=98.0%, temp=62.0 C
+[2026-09-21 06:14:59,295] [INFO] [DONE] [p3_gpt2_smart_weighted_ensemble_inject] exit=0
+[2026-09-21 06:14:59,350] [INFO] [LAUNCH] [p3_gpt2_inject_replace_attention] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_replace_attention --output_suffix gpt2_wt2_inject_replace_attention'
+[2026-09-21 06:15:13,159] [INFO] STATUS: Uptime=0:00:41 | GPU VRAM=1.73/8.0GB, Util=98%, Temp=62C | Active=3/3 | Queue: Pending=1589, Done=147, Fail=0
+[2026-09-21 06:15:18,208] [INFO] [GPU] vram=0.30 GB, util=0.0%, temp=49.0 C
+[2026-09-21 06:15:18,227] [INFO] [DONE] [p3_gpt2_mgie] exit=0
+[2026-09-21 06:15:18,227] [INFO] [DONE] [p3_gpt2_optimal_subspace_projection_factory] exit=0
+[2026-09-21 06:15:18,278] [INFO] [LAUNCH] [p3_gpt2_armor_pruner_factory] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module armor_pruner_factory --output_suffix gpt2_wt2_armor_pruner_factory'
+[2026-09-21 06:15:18,324] [INFO] [LAUNCH] [p3_gpt2_leka_v3_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module leka_v3_inject --output_suffix gpt2_wt2_leka_v3_inject'
+[2026-09-21 06:15:32,160] [INFO] STATUS: Uptime=0:01:00 | GPU VRAM=0.30/8.0GB, Util=10%, Temp=49C | Active=3/3 | Queue: Pending=1587, Done=149, Fail=0
+[2026-09-21 06:15:37,211] [INFO] [GPU] vram=0.39 GB, util=17.0%, temp=50.0 C
+[2026-09-21 06:15:37,231] [INFO] [DONE] [p3_gpt2_inject_replace_attention] exit=0
+[2026-09-21 06:15:37,274] [INFO] [LAUNCH] [p3_gpt2_hybridkv_compressor_factory] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module hybridkv_compressor_factory --output_suffix gpt2_wt2_hybridkv_compressor_factory'
+[2026-09-21 06:15:51,077] [INFO] STATUS: Uptime=0:01:19 | GPU VRAM=0.39/8.0GB, Util=17%, Temp=50C | Active=3/3 | Queue: Pending=1586, Done=150, Fail=0
+[2026-09-21 06:15:56,123] [INFO] [GPU] vram=0.39 GB, util=0.0%, temp=50.0 C
+[2026-09-21 06:15:56,138] [INFO] [DONE] [p3_gpt2_armor_pruner_factory] exit=0
+[2026-09-21 06:15:56,138] [INFO] [DONE] [p3_gpt2_leka_v3_inject] exit=0
+[2026-09-21 06:15:56,193] [INFO] [LAUNCH] [p3_gpt2_entropy_budget_allocation] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module entropy_budget_allocation --output_suffix gpt2_wt2_entropy_budget_allocation'
+[2026-09-21 06:15:56,243] [INFO] [LAUNCH] [p3_gpt2_inject_fasa] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_fasa --output_suffix gpt2_wt2_inject_fasa'
+[2026-09-21 06:16:09,734] [INFO] STATUS: Uptime=0:01:38 | GPU VRAM=0.39/8.0GB, Util=0%, Temp=50C | Active=3/3 | Queue: Pending=1584, Done=152, Fail=0
+[2026-09-21 06:16:14,774] [INFO] [GPU] vram=0.43 GB, util=72.0%, temp=53.0 C
+[2026-09-21 06:16:14,794] [INFO] [DONE] [p3_gpt2_hybridkv_compressor_factory] exit=0
+[2026-09-21 06:16:14,842] [INFO] [LAUNCH] [p3_gpt2_hla_attention] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module hla_attention --output_suffix gpt2_wt2_hla_attention'
+[2026-09-21 06:16:29,207] [INFO] STATUS: Uptime=0:01:57 | GPU VRAM=0.43/8.0GB, Util=72%, Temp=53C | Active=3/3 | Queue: Pending=1583, Done=153, Fail=0
+[2026-09-21 06:16:34,269] [INFO] [GPU] vram=0.45 GB, util=0.0%, temp=51.0 C
+[2026-09-21 06:16:34,284] [INFO] [DONE] [p3_gpt2_entropy_budget_allocation] exit=0
+[2026-09-21 06:16:34,284] [INFO] [DONE] [p3_gpt2_inject_fasa] exit=0
+[2026-09-21 06:16:34,339] [INFO] [LAUNCH] [p3_gpt2_nsa_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module nsa_inject --output_suffix gpt2_wt2_nsa_inject'
+[2026-09-21 06:16:34,384] [INFO] [LAUNCH] [p3_gpt2_frandi_factory] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module frandi_factory --output_suffix gpt2_wt2_frandi_factory'
+[2026-09-21 06:16:48,869] [INFO] STATUS: Uptime=0:02:17 | GPU VRAM=0.45/8.0GB, Util=0%, Temp=51C | Active=3/3 | Queue: Pending=1581, Done=155, Fail=0
+[2026-09-21 06:16:53,917] [INFO] [GPU] vram=0.42 GB, util=35.0%, temp=53.0 C
+[2026-09-21 06:16:53,936] [INFO] [DONE] [p3_gpt2_hla_attention] exit=0
+[2026-09-21 06:16:53,986] [INFO] [LAUNCH] [p3_gpt2_padre] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module padre --output_suffix gpt2_wt2_padre'
+[2026-09-21 06:17:08,160] [INFO] STATUS: Uptime=0:02:36 | GPU VRAM=0.42/8.0GB, Util=35%, Temp=54C | Active=3/3 | Queue: Pending=1580, Done=156, Fail=0
+[2026-09-21 06:17:13,195] [INFO] [GPU] vram=0.56 GB, util=1.0%, temp=53.0 C
+[2026-09-21 06:17:13,215] [INFO] [DONE] [p3_gpt2_nsa_inject] exit=0
+[2026-09-21 06:17:13,215] [INFO] [DONE] [p3_gpt2_frandi_factory] exit=0
+[2026-09-21 06:17:13,264] [INFO] [LAUNCH] [p3_gpt2_inject_svd_sequence] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_svd_sequence --output_suffix gpt2_wt2_inject_svd_sequence'
+[2026-09-21 06:17:13,305] [INFO] [LAUNCH] [p3_gpt2_hybridkv_class] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module hybridkv_class --output_suffix gpt2_wt2_hybridkv_class'
+[2026-09-21 06:17:27,334] [INFO] STATUS: Uptime=0:02:56 | GPU VRAM=0.56/8.0GB, Util=1%, Temp=53C | Active=3/3 | Queue: Pending=1578, Done=158, Fail=0
+[2026-09-21 06:17:32,383] [INFO] [GPU] vram=0.67 GB, util=0.0%, temp=53.0 C
+[2026-09-21 06:17:32,401] [INFO] [DONE] [p3_gpt2_padre] exit=0
+[2026-09-21 06:17:32,450] [INFO] [LAUNCH] [p3_gpt2_gated_linear_attn] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module gated_linear_attn --output_suffix gpt2_wt2_gated_linear_attn'
+[2026-09-21 06:17:49,063] [INFO] STATUS: Uptime=0:03:17 | GPU VRAM=0.67/8.0GB, Util=0%, Temp=53C | Active=3/3 | Queue: Pending=1577, Done=159, Fail=0
+[2026-09-21 06:17:54,106] [INFO] [GPU] vram=0.54 GB, util=0.0%, temp=50.0 C
+[2026-09-21 06:17:54,126] [INFO] [DONE] [p3_gpt2_inject_svd_sequence] exit=0
+[2026-09-21 06:17:54,127] [INFO] [DONE] [p3_gpt2_hybridkv_class] exit=0
+[2026-09-21 06:17:54,180] [INFO] [LAUNCH] [p3_gpt2_replaceme_compressor] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module replaceme_compressor --output_suffix gpt2_wt2_replaceme_compressor'
+[2026-09-21 06:17:54,225] [INFO] [LAUNCH] [p3_gpt2_cure] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module cure --output_suffix gpt2_wt2_cure'
+[2026-09-21 06:18:07,995] [INFO] STATUS: Uptime=0:03:36 | GPU VRAM=0.54/8.0GB, Util=0%, Temp=50C | Active=3/3 | Queue: Pending=1575, Done=161, Fail=0
+[2026-09-21 06:18:13,036] [INFO] [GPU] vram=0.67 GB, util=0.0%, temp=52.0 C
+[2026-09-21 06:18:13,055] [INFO] [DONE] [p3_gpt2_gated_linear_attn] exit=0
+[2026-09-21 06:18:13,104] [INFO] [LAUNCH] [p3_gpt2_halo_regla_attention] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module halo_regla_attention --output_suffix gpt2_wt2_halo_regla_attention'
+[2026-09-21 06:18:26,875] [INFO] STATUS: Uptime=0:03:55 | GPU VRAM=0.67/8.0GB, Util=0%, Temp=52C | Active=3/3 | Queue: Pending=1574, Done=162, Fail=0
+[2026-09-21 06:18:31,913] [INFO] [GPU] vram=0.67 GB, util=88.0%, temp=56.0 C
+[2026-09-21 06:18:31,934] [INFO] [DONE] [p3_gpt2_replaceme_compressor] exit=0
+[2026-09-21 06:18:31,934] [INFO] [DONE] [p3_gpt2_cure] exit=0
+[2026-09-21 06:18:31,985] [INFO] [LAUNCH] [p3_gpt2_cachenotes_compressor] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module cachenotes_compressor --output_suffix gpt2_wt2_cachenotes_compressor'
+[2026-09-21 06:18:32,045] [INFO] [LAUNCH] [p3_gpt2_salt_attention_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module salt_attention_inject --output_suffix gpt2_wt2_salt_attention_inject'
+[2026-09-21 06:18:46,047] [INFO] STATUS: Uptime=0:04:14 | GPU VRAM=0.67/8.0GB, Util=86%, Temp=56C | Active=3/3 | Queue: Pending=1572, Done=164, Fail=0
+[2026-09-21 06:18:51,103] [INFO] [GPU] vram=0.67 GB, util=100.0%, temp=53.0 C
+[2026-09-21 06:18:51,128] [INFO] [DONE] [p3_gpt2_halo_regla_attention] exit=0
+[2026-09-21 06:18:51,188] [INFO] [LAUNCH] [p3_gpt2_inject_adaptive_sparse_attention] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_adaptive_sparse_attention --output_suffix gpt2_wt2_inject_adaptive_sparse_attention'
+[2026-09-21 06:19:14,702] [INFO] STATUS: Uptime=0:04:43 | GPU VRAM=0.67/8.0GB, Util=100%, Temp=53C | Active=3/3 | Queue: Pending=1571, Done=165, Fail=0
+[2026-09-21 06:19:19,746] [INFO] [GPU] vram=1.12 GB, util=68.0%, temp=56.0 C
+[2026-09-21 06:19:19,772] [WARNING] [FAIL] [p3_gpt2_cachenotes_compressor] exit=15 (scheduling retry 1/1)
+[2026-09-21 06:19:19,828] [INFO] [LAUNCH] [p3_gpt2_dobi_svd_factory] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module dobi_svd_factory --output_suffix gpt2_wt2_dobi_svd_factory'
+[2026-09-21 06:19:34,444] [INFO] STATUS: Uptime=0:05:03 | GPU VRAM=1.12/8.0GB, Util=32%, Temp=56C | Active=3/3 | Queue: Pending=1571, Done=165, Fail=0
+[2026-09-21 06:19:39,479] [INFO] [GPU] vram=0.54 GB, util=0.0%, temp=50.0 C
+[2026-09-21 06:19:39,498] [INFO] [DONE] [p3_gpt2_salt_attention_inject] exit=0
+[2026-09-21 06:19:39,498] [INFO] [DONE] [p3_gpt2_inject_adaptive_sparse_attention] exit=0
+[2026-09-21 06:19:39,539] [INFO] [LAUNCH] [p3_gpt2_liftr] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module liftr --output_suffix gpt2_wt2_liftr'
+[2026-09-21 06:19:39,589] [INFO] [LAUNCH] [p3_gpt2_hashed_net_class] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module hashed_net_class --output_suffix gpt2_wt2_hashed_net_class'
+[2026-09-21 06:19:53,610] [INFO] STATUS: Uptime=0:05:22 | GPU VRAM=0.54/8.0GB, Util=0%, Temp=50C | Active=3/3 | Queue: Pending=1569, Done=167, Fail=0
+[2026-09-21 06:19:58,648] [INFO] [GPU] vram=0.54 GB, util=65.0%, temp=54.0 C
+[2026-09-21 06:19:58,669] [INFO] [DONE] [p3_gpt2_dobi_svd_factory] exit=0
+[2026-09-21 06:19:58,720] [INFO] [LAUNCH] [p3_gpt2_bonsai_pruner] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module bonsai_pruner --output_suffix gpt2_wt2_bonsai_pruner'
+[2026-09-21 06:20:12,840] [INFO] STATUS: Uptime=0:05:41 | GPU VRAM=0.54/8.0GB, Util=65%, Temp=54C | Active=3/3 | Queue: Pending=1568, Done=168, Fail=0
+[2026-09-21 06:20:17,875] [INFO] [GPU] vram=0.81 GB, util=0.0%, temp=52.0 C
+[2026-09-21 06:20:17,893] [INFO] [DONE] [p3_gpt2_liftr] exit=0
+[2026-09-21 06:20:17,893] [INFO] [DONE] [p3_gpt2_hashed_net_class] exit=0
+[2026-09-21 06:20:17,945] [INFO] [LAUNCH] [p3_gpt2_rpc_attention] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module rpc_attention --output_suffix gpt2_wt2_rpc_attention'
+[2026-09-21 06:20:17,997] [INFO] [LAUNCH] [p3_gpt2_inject_nsa] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_nsa --output_suffix gpt2_wt2_inject_nsa'
+[2026-09-21 06:20:32,324] [INFO] STATUS: Uptime=0:06:01 | GPU VRAM=0.81/8.0GB, Util=0%, Temp=52C | Active=3/3 | Queue: Pending=1566, Done=170, Fail=0
+[2026-09-21 06:20:37,368] [INFO] [GPU] vram=0.67 GB, util=21.0%, temp=55.0 C
+[2026-09-21 06:20:37,388] [INFO] [DONE] [p3_gpt2_bonsai_pruner] exit=0
+[2026-09-21 06:20:37,430] [INFO] [LAUNCH] [p3_gpt2_adaptive] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module adaptive --output_suffix gpt2_wt2_adaptive'
+[2026-09-21 06:20:52,217] [INFO] STATUS: Uptime=0:06:20 | GPU VRAM=0.67/8.0GB, Util=99%, Temp=55C | Active=3/3 | Queue: Pending=1565, Done=171, Fail=0
+[2026-09-21 06:20:57,258] [INFO] [GPU] vram=1.31 GB, util=46.0%, temp=51.0 C
+[2026-09-21 06:20:57,276] [INFO] [DONE] [p3_gpt2_rpc_attention] exit=0
+[2026-09-21 06:20:57,277] [INFO] [DONE] [p3_gpt2_inject_nsa] exit=0
+[2026-09-21 06:20:57,346] [INFO] [LAUNCH] [p3_gpt2_asvd_attention] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module asvd_attention --output_suffix gpt2_wt2_asvd_attention'
+[2026-09-21 06:20:57,392] [INFO] [LAUNCH] [p3_gpt2_tomoe] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module tomoe --output_suffix gpt2_wt2_tomoe'
+[2026-09-21 06:21:18,066] [INFO] STATUS: Uptime=0:06:46 | GPU VRAM=1.35/8.0GB, Util=46%, Temp=51C | Active=3/3 | Queue: Pending=1563, Done=173, Fail=0
+[2026-09-21 06:21:23,118] [INFO] [GPU] vram=1.18 GB, util=7.0%, temp=54.0 C
+[2026-09-21 06:21:49,091] [INFO] STATUS: Uptime=0:07:17 | GPU VRAM=1.18/8.0GB, Util=7%, Temp=54C | Active=3/3 | Queue: Pending=1563, Done=173, Fail=0
+[2026-09-21 06:21:54,141] [INFO] [GPU] vram=1.18 GB, util=83.0%, temp=50.0 C
+[2026-09-21 06:22:21,409] [INFO] STATUS: Uptime=0:07:50 | GPU VRAM=1.18/8.0GB, Util=83%, Temp=50C | Active=3/3 | Queue: Pending=1563, Done=173, Fail=0
+[2026-09-21 06:22:26,482] [INFO] [GPU] vram=1.50 GB, util=0.0%, temp=54.0 C
+[2026-09-21 06:22:26,513] [INFO] [DONE] [p3_gpt2_asvd_attention] exit=0
+[2026-09-21 06:22:26,571] [INFO] [LAUNCH] [p3_gpt2_aegis_v1] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module aegis_v1 --output_suffix gpt2_wt2_aegis_v1'
+[2026-09-21 06:22:50,301] [INFO] STATUS: Uptime=0:08:18 | GPU VRAM=1.50/8.0GB, Util=60%, Temp=54C | Active=3/3 | Queue: Pending=1562, Done=174, Fail=0
+[2026-09-21 06:22:55,353] [INFO] [GPU] vram=1.05 GB, util=93.0%, temp=55.0 C
+[2026-09-21 06:22:55,382] [INFO] [DONE] [p3_gpt2_tomoe] exit=0
+[2026-09-21 06:22:55,443] [INFO] [LAUNCH] [p3_gpt2_span_expanded] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module span_expanded --output_suffix gpt2_wt2_span_expanded'
+[2026-09-21 06:23:19,917] [INFO] STATUS: Uptime=0:08:48 | GPU VRAM=1.05/8.0GB, Util=93%, Temp=55C | Active=3/3 | Queue: Pending=1561, Done=175, Fail=0
+[2026-09-21 06:23:24,970] [INFO] [GPU] vram=1.19 GB, util=0.0%, temp=51.0 C
+[2026-09-21 06:24:05,698] [INFO] STATUS: Uptime=0:09:34 | GPU VRAM=1.19/8.0GB, Util=0%, Temp=51C | Active=3/3 | Queue: Pending=1561, Done=175, Fail=0
+[2026-09-21 06:24:10,770] [INFO] [GPU] vram=1.69 GB, util=0.0%, temp=53.0 C
+[2026-09-21 06:24:10,808] [INFO] [DONE] [p3_gpt2_span_expanded] exit=0
+[2026-09-21 06:24:10,909] [INFO] [LAUNCH] [p3_gpt2_mamba_module_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module mamba_module_inject --output_suffix gpt2_wt2_mamba_module_inject'
+[2026-09-21 06:24:35,062] [INFO] STATUS: Uptime=0:10:03 | GPU VRAM=1.69/8.0GB, Util=0%, Temp=53C | Active=3/3 | Queue: Pending=1560, Done=176, Fail=0
+[2026-09-21 06:24:40,096] [INFO] [GPU] vram=1.19 GB, util=98.0%, temp=53.0 C
+[2026-09-21 06:24:40,118] [INFO] [DONE] [p3_gpt2_aegis_v1] exit=0
+[2026-09-21 06:24:40,167] [INFO] [LAUNCH] [p3_gpt2_gfws_factory] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module gfws_factory --output_suffix gpt2_wt2_gfws_factory'
+[2026-09-21 06:25:03,942] [INFO] STATUS: Uptime=0:10:32 | GPU VRAM=1.19/8.0GB, Util=98%, Temp=53C | Active=3/3 | Queue: Pending=1559, Done=177, Fail=0
+[2026-09-21 06:25:08,990] [INFO] [GPU] vram=1.44 GB, util=35.0%, temp=50.0 C
+[2026-09-21 06:25:30,353] [INFO] STATUS: Uptime=0:10:59 | GPU VRAM=1.44/8.0GB, Util=35%, Temp=50C | Active=3/3 | Queue: Pending=1559, Done=177, Fail=0
+[2026-09-21 06:25:35,401] [INFO] [GPU] vram=2.10 GB, util=84.0%, temp=61.0 C
+[2026-09-21 06:25:35,420] [INFO] [DONE] [p3_gpt2_adaptive] exit=0
+[2026-09-21 06:25:35,420] [INFO] [DONE] [p3_gpt2_mamba_module_inject] exit=0
+[2026-09-21 06:25:35,471] [INFO] [LAUNCH] [p3_gpt2_kmeans_quantize] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module kmeans_quantize --output_suffix gpt2_wt2_kmeans_quantize'
+[2026-09-21 06:25:35,522] [INFO] [LAUNCH] [p3_gpt2_optimized_hybrid_attention] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module optimized_hybrid_attention --output_suffix gpt2_wt2_optimized_hybrid_attention'
+[2026-09-21 06:25:49,847] [INFO] STATUS: Uptime=0:11:18 | GPU VRAM=2.12/8.0GB, Util=91%, Temp=61C | Active=3/3 | Queue: Pending=1557, Done=179, Fail=0
+[2026-09-21 06:25:54,895] [INFO] [GPU] vram=0.55 GB, util=0.0%, temp=56.0 C
+[2026-09-21 06:25:54,920] [INFO] [DONE] [p3_gpt2_gfws_factory] exit=0
+[2026-09-21 06:25:54,965] [INFO] [LAUNCH] [p3_gpt2_inject_lsh] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_lsh --output_suffix gpt2_wt2_inject_lsh'
+[2026-09-21 06:26:09,111] [INFO] STATUS: Uptime=0:11:37 | GPU VRAM=0.55/8.0GB, Util=0%, Temp=56C | Active=3/3 | Queue: Pending=1556, Done=180, Fail=0
+[2026-09-21 06:26:14,146] [INFO] [GPU] vram=0.68 GB, util=0.0%, temp=56.0 C
+[2026-09-21 06:26:14,157] [INFO] [DONE] [p3_gpt2_kmeans_quantize] exit=0
+[2026-09-21 06:26:14,157] [INFO] [DONE] [p3_gpt2_optimized_hybrid_attention] exit=0
+[2026-09-21 06:26:14,193] [INFO] [LAUNCH] [p3_gpt2_entropy_budget] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module entropy_budget --output_suffix gpt2_wt2_entropy_budget'
+[2026-09-21 06:26:14,235] [INFO] [LAUNCH] [p3_gpt2_minimal_svd_v2] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module minimal_svd_v2 --output_suffix gpt2_wt2_minimal_svd_v2'
+[2026-09-21 06:26:28,962] [INFO] STATUS: Uptime=0:11:57 | GPU VRAM=0.68/8.0GB, Util=0%, Temp=56C | Active=3/3 | Queue: Pending=1554, Done=182, Fail=0
+[2026-09-21 06:26:33,999] [INFO] [GPU] vram=0.68 GB, util=0.0%, temp=56.0 C
+[2026-09-21 06:26:34,017] [INFO] [DONE] [p3_gpt2_inject_lsh] exit=0
+[2026-09-21 06:26:34,058] [INFO] [LAUNCH] [p3_gpt2_eat_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module eat_inject --output_suffix gpt2_wt2_eat_inject'
+[2026-09-21 06:26:51,734] [INFO] STATUS: Uptime=0:12:20 | GPU VRAM=0.68/8.0GB, Util=0%, Temp=56C | Active=3/3 | Queue: Pending=1553, Done=183, Fail=0
+[2026-09-21 06:26:56,778] [INFO] [GPU] vram=1.05 GB, util=2.0%, temp=52.0 C
+[2026-09-21 06:26:56,801] [INFO] [DONE] [p3_gpt2_entropy_budget] exit=0
+[2026-09-21 06:26:56,859] [INFO] [LAUNCH] [p3_gpt2_inject_samba_m3] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_samba_m3 --output_suffix gpt2_wt2_inject_samba_m3'
+[2026-09-21 06:27:16,186] [INFO] STATUS: Uptime=0:12:44 | GPU VRAM=1.05/8.0GB, Util=2%, Temp=52C | Active=3/3 | Queue: Pending=1552, Done=184, Fail=0
+[2026-09-21 06:27:21,240] [INFO] [GPU] vram=1.58 GB, util=68.0%, temp=57.0 C
+[2026-09-21 06:27:21,262] [INFO] [DONE] [p3_gpt2_eat_inject] exit=0
+[2026-09-21 06:27:21,317] [INFO] [LAUNCH] [p3_gpt2_x_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module x_inject --output_suffix gpt2_wt2_x_inject'
+[2026-09-21 06:27:38,602] [INFO] STATUS: Uptime=0:13:07 | GPU VRAM=1.58/8.0GB, Util=68%, Temp=57C | Active=3/3 | Queue: Pending=1551, Done=185, Fail=0
+[2026-09-21 06:27:43,646] [INFO] [GPU] vram=0.80 GB, util=37.0%, temp=52.0 C
+[2026-09-21 06:27:43,667] [INFO] [DONE] [p3_gpt2_minimal_svd_v2] exit=0
+[2026-09-21 06:27:43,667] [INFO] [DONE] [p3_gpt2_inject_samba_m3] exit=0
+[2026-09-21 06:27:43,715] [INFO] [LAUNCH] [p3_gpt2_inject_galerkin] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_galerkin --output_suffix gpt2_wt2_inject_galerkin'
+[2026-09-21 06:27:43,755] [INFO] [LAUNCH] [p3_gpt2_eat_fn] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module eat_fn --output_suffix gpt2_wt2_eat_fn'
+[2026-09-21 06:33:16,403] [INFO] Starting Autonomous Pipeline Daemon (auto_pipeline.py)...
+[2026-09-21 06:33:16,436] [INFO] [GPU] vram=0.29 GB, util=0.0%, temp=49.0 C
+[2026-09-21 06:33:16,471] [INFO] [LAUNCH] [p3_gpt2_inject_vspec_attn] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_vspec_attn --output_suffix gpt2_wt2_inject_vspec_attn'
+[2026-09-21 06:33:16,514] [INFO] [LAUNCH] [p3_gpt2_adaptive_sparse_attn] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module adaptive_sparse_attn --output_suffix gpt2_wt2_adaptive_sparse_attn'
+[2026-09-21 06:33:16,553] [INFO] [LAUNCH] [p3_gpt2_compressed_attention_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module compressed_attention_inject --output_suffix gpt2_wt2_compressed_attention_inject'
+[2026-09-21 06:33:19,117] [INFO] STATUS: Uptime=0:00:02 | GPU VRAM=0.29/8.0GB, Util=0%, Temp=49C | Active=3/3 | Queue: Pending=1546, Done=187, Fail=0
+[2026-09-21 06:33:24,158] [INFO] [GPU] vram=0.30 GB, util=0.0%, temp=53.0 C
+[2026-09-21 06:33:38,492] [INFO] STATUS: Uptime=0:00:22 | GPU VRAM=0.30/8.0GB, Util=0%, Temp=53C | Active=3/3 | Queue: Pending=1546, Done=187, Fail=0
+[2026-09-21 06:33:43,533] [INFO] [GPU] vram=1.27 GB, util=42.0%, temp=55.0 C
+[2026-09-21 06:33:43,555] [INFO] [DONE] [p3_gpt2_adaptive_sparse_attn] exit=0
+[2026-09-21 06:33:43,602] [INFO] [LAUNCH] [p3_gpt2_aegis_v5_module] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module aegis_v5_module --output_suffix gpt2_wt2_aegis_v5_module'
+[2026-09-21 06:33:56,794] [INFO] STATUS: Uptime=0:00:40 | GPU VRAM=1.27/8.0GB, Util=41%, Temp=55C | Active=3/3 | Queue: Pending=1545, Done=188, Fail=0
+[2026-09-21 06:34:01,843] [INFO] [GPU] vram=0.31 GB, util=0.0%, temp=50.0 C
+[2026-09-21 06:34:01,864] [INFO] [DONE] [p3_gpt2_inject_vspec_attn] exit=0
+[2026-09-21 06:34:01,864] [INFO] [DONE] [p3_gpt2_compressed_attention_inject] exit=0
+[2026-09-21 06:34:01,911] [INFO] [LAUNCH] [p3_gpt2_hgrn2_layer_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module hgrn2_layer_inject --output_suffix gpt2_wt2_hgrn2_layer_inject'
+[2026-09-21 06:34:01,962] [INFO] [LAUNCH] [p3_gpt2_squeezing_heads_module] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module squeezing_heads_module --output_suffix gpt2_wt2_squeezing_heads_module'
+[2026-09-21 06:34:16,393] [INFO] STATUS: Uptime=0:00:59 | GPU VRAM=0.31/8.0GB, Util=0%, Temp=50C | Active=3/3 | Queue: Pending=1543, Done=190, Fail=0
+[2026-09-21 06:34:21,440] [INFO] [GPU] vram=1.49 GB, util=18.0%, temp=54.0 C
+[2026-09-21 06:34:35,463] [INFO] STATUS: Uptime=0:01:19 | GPU VRAM=1.49/8.0GB, Util=18%, Temp=54C | Active=3/3 | Queue: Pending=1543, Done=190, Fail=0
+[2026-09-21 06:34:43,624] [INFO] [GPU] vram=2.69 GB, util=89.0%, temp=66.0 C
+[2026-09-21 06:34:43,642] [INFO] [DONE] [p3_gpt2_hgrn2_layer_inject] exit=0
+[2026-09-21 06:34:43,698] [INFO] [LAUNCH] [p3_gpt2_vspec_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module vspec_inject --output_suffix gpt2_wt2_vspec_inject'
+[2026-09-21 06:34:58,613] [INFO] STATUS: Uptime=0:01:42 | GPU VRAM=2.70/8.0GB, Util=93%, Temp=65C | Active=3/3 | Queue: Pending=1542, Done=191, Fail=0
+[2026-09-21 06:35:03,676] [INFO] [GPU] vram=0.30 GB, util=0.0%, temp=54.0 C
+[2026-09-21 06:35:03,692] [INFO] [DONE] [p3_gpt2_aegis_v5_module] exit=0
+[2026-09-21 06:35:03,692] [INFO] [DONE] [p3_gpt2_squeezing_heads_module] exit=0
+[2026-09-21 06:35:03,739] [INFO] [LAUNCH] [p3_gpt2_hashed_net_compressor] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module hashed_net_compressor --output_suffix gpt2_wt2_hashed_net_compressor'
+[2026-09-21 06:35:03,793] [INFO] [LAUNCH] [p3_gpt2_svd_linear_compressor_factory] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module svd_linear_compressor_factory --output_suffix gpt2_wt2_svd_linear_compressor_factory'
+[2026-09-21 06:35:16,190] [INFO] STATUS: Uptime=0:01:59 | GPU VRAM=0.30/8.0GB, Util=29%, Temp=54C | Active=3/3 | Queue: Pending=1540, Done=193, Fail=0
+[2026-09-21 06:35:21,224] [INFO] [GPU] vram=0.30 GB, util=0.0%, temp=52.0 C
+[2026-09-21 06:35:21,240] [INFO] [DONE] [p3_gpt2_vspec_inject] exit=0
+[2026-09-21 06:35:21,292] [INFO] [LAUNCH] [p3_gpt2_svd_projection_attention] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module svd_projection_attention --output_suffix gpt2_wt2_svd_projection_attention'
+[2026-09-21 06:35:34,825] [INFO] STATUS: Uptime=0:02:18 | GPU VRAM=0.30/8.0GB, Util=0%, Temp=52C | Active=3/3 | Queue: Pending=1539, Done=194, Fail=0
+[2026-09-21 06:35:39,873] [INFO] [GPU] vram=2.15 GB, util=98.0%, temp=66.0 C
+[2026-09-21 06:35:54,498] [INFO] STATUS: Uptime=0:02:38 | GPU VRAM=2.15/8.0GB, Util=98%, Temp=66C | Active=3/3 | Queue: Pending=1539, Done=194, Fail=0
+[2026-09-21 06:35:59,545] [INFO] [GPU] vram=2.09 GB, util=99.0%, temp=68.0 C
+[2026-09-21 06:35:59,563] [INFO] [DONE] [p3_gpt2_svd_linear_compressor_factory] exit=0
+[2026-09-21 06:35:59,611] [INFO] [LAUNCH] [p3_gpt2_swift_svd_class] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module swift_svd_class --output_suffix gpt2_wt2_swift_svd_class'
+[2026-09-21 06:36:13,138] [INFO] STATUS: Uptime=0:02:56 | GPU VRAM=2.09/8.0GB, Util=99%, Temp=68C | Active=3/3 | Queue: Pending=1538, Done=195, Fail=0
+[2026-09-21 06:36:18,173] [INFO] [GPU] vram=0.28 GB, util=0.0%, temp=53.0 C
+[2026-09-21 06:36:18,190] [INFO] [DONE] [p3_gpt2_hashed_net_compressor] exit=0
+[2026-09-21 06:36:18,190] [INFO] [DONE] [p3_gpt2_svd_projection_attention] exit=0
+[2026-09-21 06:36:18,231] [INFO] [LAUNCH] [p3_gpt2_replace_attention_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module replace_attention_inject --output_suffix gpt2_wt2_replace_attention_inject'
+[2026-09-21 06:36:18,282] [INFO] [LAUNCH] [p3_gpt2_xattention] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module xattention --output_suffix gpt2_wt2_xattention'
+[2026-09-21 06:36:39,890] [INFO] STATUS: Uptime=0:03:23 | GPU VRAM=0.28/8.0GB, Util=27%, Temp=53C | Active=3/3 | Queue: Pending=1536, Done=197, Fail=0
+[2026-09-21 06:36:44,932] [INFO] [GPU] vram=0.80 GB, util=0.0%, temp=52.0 C
+[2026-09-21 06:37:11,300] [INFO] STATUS: Uptime=0:03:54 | GPU VRAM=0.80/8.0GB, Util=0%, Temp=52C | Active=3/3 | Queue: Pending=1536, Done=197, Fail=0
+[2026-09-21 06:37:19,848] [INFO] [GPU] vram=1.70 GB, util=27.0%, temp=50.0 C
+[2026-09-21 06:37:45,942] [INFO] STATUS: Uptime=0:04:29 | GPU VRAM=1.70/8.0GB, Util=27%, Temp=50C | Active=3/3 | Queue: Pending=1536, Done=197, Fail=0
+[2026-09-21 06:37:50,987] [INFO] [GPU] vram=2.19 GB, util=38.0%, temp=57.0 C
+[2026-09-21 06:37:51,011] [INFO] [DONE] [p3_gpt2_replace_attention_inject] exit=0
+[2026-09-21 06:37:51,067] [INFO] [LAUNCH] [p3_gpt2_dynamic_rank_factory] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module dynamic_rank_factory --output_suffix gpt2_wt2_dynamic_rank_factory'
+[2026-09-21 06:38:12,885] [INFO] STATUS: Uptime=0:04:56 | GPU VRAM=2.19/8.0GB, Util=38%, Temp=57C | Active=3/3 | Queue: Pending=1535, Done=198, Fail=0
+[2026-09-21 06:38:17,939] [INFO] [GPU] vram=2.20 GB, util=24.0%, temp=56.0 C
+[2026-09-21 06:38:41,740] [INFO] STATUS: Uptime=0:05:25 | GPU VRAM=2.20/8.0GB, Util=24%, Temp=56C | Active=3/3 | Queue: Pending=1535, Done=198, Fail=0
+[2026-09-21 06:38:46,793] [INFO] [GPU] vram=2.71 GB, util=66.0%, temp=62.0 C
+[2026-09-21 06:39:11,182] [INFO] STATUS: Uptime=0:05:54 | GPU VRAM=2.71/8.0GB, Util=66%, Temp=62C | Active=3/3 | Queue: Pending=1535, Done=198, Fail=0
+[2026-09-21 06:39:16,234] [INFO] [GPU] vram=2.11 GB, util=36.0%, temp=60.0 C
+[2026-09-21 06:39:16,254] [INFO] [DONE] [p3_gpt2_xattention] exit=0
+[2026-09-21 06:39:16,317] [INFO] [LAUNCH] [p3_gpt2_frandi_compressor] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module frandi_compressor --output_suffix gpt2_wt2_frandi_compressor'
+[2026-09-21 06:39:39,090] [INFO] STATUS: Uptime=0:06:22 | GPU VRAM=2.11/8.0GB, Util=36%, Temp=58C | Active=3/3 | Queue: Pending=1534, Done=199, Fail=0
+[2026-09-21 06:39:44,133] [INFO] [GPU] vram=0.92 GB, util=99.0%, temp=54.0 C
+[2026-09-21 06:39:44,152] [INFO] [DONE] [p3_gpt2_dynamic_rank_factory] exit=0
+[2026-09-21 06:39:44,207] [INFO] [LAUNCH] [p3_gpt2_primal] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module primal --output_suffix gpt2_wt2_primal'
+[2026-09-21 06:40:08,562] [INFO] STATUS: Uptime=0:06:52 | GPU VRAM=0.92/8.0GB, Util=99%, Temp=54C | Active=3/3 | Queue: Pending=1533, Done=200, Fail=0
+[2026-09-21 06:40:13,624] [INFO] [GPU] vram=1.46 GB, util=50.0%, temp=57.0 C
+[2026-09-21 06:40:33,601] [INFO] STATUS: Uptime=0:07:17 | GPU VRAM=1.46/8.0GB, Util=50%, Temp=57C | Active=3/3 | Queue: Pending=1533, Done=200, Fail=0
+[2026-09-21 06:40:38,647] [INFO] [GPU] vram=4.19 GB, util=100.0%, temp=67.0 C
+[2026-09-21 06:40:56,173] [INFO] STATUS: Uptime=0:07:39 | GPU VRAM=4.19/8.0GB, Util=100%, Temp=67C | Active=3/3 | Queue: Pending=1533, Done=200, Fail=0
+[2026-09-21 06:41:01,209] [INFO] [GPU] vram=2.85 GB, util=95.0%, temp=66.0 C
+[2026-09-21 06:41:01,227] [INFO] [DONE] [p3_gpt2_swift_svd_class] exit=0
+[2026-09-21 06:41:01,228] [INFO] [DONE] [p3_gpt2_frandi_compressor] exit=0
+[2026-09-21 06:41:01,271] [INFO] [LAUNCH] [p3_gpt2_kvtc] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module kvtc --output_suffix gpt2_wt2_kvtc'
+[2026-09-21 06:41:01,317] [INFO] [LAUNCH] [p3_gpt2_bam_umoe] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module bam_umoe --output_suffix gpt2_wt2_bam_umoe'
+[2026-09-21 06:41:18,029] [INFO] STATUS: Uptime=0:08:01 | GPU VRAM=2.85/8.0GB, Util=95%, Temp=66C | Active=3/3 | Queue: Pending=1531, Done=202, Fail=0
+[2026-09-21 06:41:24,783] [INFO] [GPU] vram=2.85 GB, util=89.0%, temp=66.0 C
+[2026-09-21 06:41:43,940] [INFO] STATUS: Uptime=0:08:27 | GPU VRAM=2.85/8.0GB, Util=89%, Temp=66C | Active=3/3 | Queue: Pending=1531, Done=202, Fail=0
+[2026-09-21 06:41:48,979] [INFO] [GPU] vram=5.26 GB, util=100.0%, temp=67.0 C
+[2026-09-21 06:42:06,842] [INFO] STATUS: Uptime=0:08:50 | GPU VRAM=5.26/8.0GB, Util=100%, Temp=67C | Active=3/3 | Queue: Pending=1531, Done=202, Fail=0
+[2026-09-21 06:42:11,895] [INFO] [GPU] vram=3.94 GB, util=91.0%, temp=70.0 C
+[2026-09-21 06:42:11,909] [INFO] [DONE] [p3_gpt2_primal] exit=0
+[2026-09-21 06:42:11,986] [INFO] [LAUNCH] [p3_gpt2_inject_lola_attention] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_lola_attention --output_suffix gpt2_wt2_inject_lola_attention'
+[2026-09-21 06:42:26,683] [INFO] STATUS: Uptime=0:09:10 | GPU VRAM=3.94/8.0GB, Util=91%, Temp=70C | Active=3/3 | Queue: Pending=1530, Done=203, Fail=0
+[2026-09-21 06:42:31,730] [INFO] [GPU] vram=2.66 GB, util=89.0%, temp=67.0 C
+[2026-09-21 06:42:31,749] [INFO] [DONE] [p3_gpt2_kvtc] exit=0
+[2026-09-21 06:42:31,797] [INFO] [LAUNCH] [p3_gpt2_roast_compressor_factory] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module roast_compressor_factory --output_suffix gpt2_wt2_roast_compressor_factory'
+[2026-09-21 06:42:47,018] [INFO] STATUS: Uptime=0:09:30 | GPU VRAM=2.66/8.0GB, Util=89%, Temp=67C | Active=3/3 | Queue: Pending=1529, Done=204, Fail=0
+[2026-09-21 06:42:53,291] [INFO] [GPU] vram=2.77 GB, util=96.0%, temp=70.0 C
+[2026-09-21 06:42:53,314] [INFO] [DONE] [p3_gpt2_bam_umoe] exit=0
+[2026-09-21 06:42:53,366] [INFO] [LAUNCH] [p3_gpt2_compression_unified_rope] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module compression_unified_rope --output_suffix gpt2_wt2_compression_unified_rope'
+[2026-09-21 06:43:09,700] [INFO] STATUS: Uptime=0:09:53 | GPU VRAM=2.77/8.0GB, Util=99%, Temp=71C | Active=3/3 | Queue: Pending=1528, Done=205, Fail=0
+[2026-09-21 06:43:14,734] [INFO] [GPU] vram=3.93 GB, util=99.0%, temp=72.0 C
+[2026-09-21 06:43:33,224] [INFO] STATUS: Uptime=0:10:16 | GPU VRAM=3.93/8.0GB, Util=99%, Temp=72C | Active=3/3 | Queue: Pending=1528, Done=205, Fail=0
+[2026-09-21 06:43:38,266] [INFO] [GPU] vram=4.08 GB, util=100.0%, temp=71.0 C
+[2026-09-21 06:43:38,286] [INFO] [DONE] [p3_gpt2_roast_compressor_factory] exit=0
+[2026-09-21 06:43:38,338] [INFO] [LAUNCH] [p3_gpt2_inject_tlinformer] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_tlinformer --output_suffix gpt2_wt2_inject_tlinformer'
+[2026-09-21 06:43:53,759] [INFO] STATUS: Uptime=0:10:37 | GPU VRAM=4.08/8.0GB, Util=100%, Temp=71C | Active=3/3 | Queue: Pending=1527, Done=206, Fail=0
+[2026-09-21 06:43:58,803] [INFO] [GPU] vram=2.80 GB, util=96.0%, temp=70.0 C
+[2026-09-21 06:43:58,822] [INFO] [DONE] [p3_gpt2_inject_lola_attention] exit=0
+[2026-09-21 06:43:58,872] [INFO] [LAUNCH] [p3_gpt2_inject_res_svd_attention] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_res_svd_attention --output_suffix gpt2_wt2_inject_res_svd_attention'
+[2026-09-21 06:44:14,855] [INFO] STATUS: Uptime=0:10:58 | GPU VRAM=2.80/8.0GB, Util=96%, Temp=70C | Active=3/3 | Queue: Pending=1526, Done=207, Fail=0
+[2026-09-21 06:44:19,900] [INFO] [GPU] vram=2.79 GB, util=97.0%, temp=69.0 C
+[2026-09-21 06:44:19,919] [INFO] [DONE] [p3_gpt2_inject_tlinformer] exit=0
+[2026-09-21 06:44:19,977] [INFO] [LAUNCH] [p3_gpt2_tomoe_class] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module tomoe_class --output_suffix gpt2_wt2_tomoe_class'
+[2026-09-21 06:44:47,149] [INFO] STATUS: Uptime=0:11:30 | GPU VRAM=2.79/8.0GB, Util=99%, Temp=69C | Active=3/3 | Queue: Pending=1525, Done=208, Fail=0
+[2026-09-21 06:44:52,188] [INFO] [GPU] vram=2.61 GB, util=93.0%, temp=62.0 C
+[2026-09-21 06:44:52,210] [INFO] [DONE] [p3_gpt2_compression_unified_rope] exit=0
+[2026-09-21 06:44:52,259] [INFO] [LAUNCH] [p3_gpt2_inject_samba_moe] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_samba_moe --output_suffix gpt2_wt2_inject_samba_moe'
+[2026-09-21 06:45:11,180] [INFO] STATUS: Uptime=0:11:54 | GPU VRAM=2.61/8.0GB, Util=93%, Temp=62C | Active=3/3 | Queue: Pending=1524, Done=209, Fail=0
+[2026-09-21 06:45:16,234] [INFO] [GPU] vram=2.64 GB, util=95.0%, temp=69.0 C
+[2026-09-21 06:45:30,750] [INFO] STATUS: Uptime=0:12:14 | GPU VRAM=2.64/8.0GB, Util=95%, Temp=69C | Active=3/3 | Queue: Pending=1524, Done=209, Fail=0
+[2026-09-21 06:45:35,786] [INFO] [GPU] vram=2.83 GB, util=80.0%, temp=64.0 C
+[2026-09-21 06:45:35,807] [INFO] [DONE] [p3_gpt2_inject_res_svd_attention] exit=0
+[2026-09-21 06:45:35,861] [INFO] [LAUNCH] [p3_gpt2_naive_svd] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module naive_svd --output_suffix gpt2_wt2_naive_svd'
+[2026-09-21 06:45:49,894] [INFO] STATUS: Uptime=0:12:33 | GPU VRAM=2.83/8.0GB, Util=80%, Temp=64C | Active=3/3 | Queue: Pending=1523, Done=210, Fail=0
+[2026-09-21 06:45:54,930] [INFO] [GPU] vram=1.63 GB, util=6.0%, temp=61.0 C
+[2026-09-21 06:45:54,948] [INFO] [DONE] [p3_gpt2_tomoe_class] exit=0
+[2026-09-21 06:45:54,991] [INFO] [LAUNCH] [p3_gpt2_nystrom_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module nystrom_inject --output_suffix gpt2_wt2_nystrom_inject'
+[2026-09-21 06:46:09,333] [INFO] STATUS: Uptime=0:12:52 | GPU VRAM=1.63/8.0GB, Util=52%, Temp=61C | Active=3/3 | Queue: Pending=1522, Done=211, Fail=0
+[2026-09-21 06:46:14,382] [INFO] [GPU] vram=2.81 GB, util=90.0%, temp=65.0 C
+[2026-09-21 06:46:28,801] [INFO] STATUS: Uptime=0:13:12 | GPU VRAM=2.81/8.0GB, Util=90%, Temp=65C | Active=3/3 | Queue: Pending=1522, Done=211, Fail=0
+[2026-09-21 06:46:33,848] [INFO] [GPU] vram=4.07 GB, util=99.0%, temp=67.0 C
+[2026-09-21 06:46:48,622] [INFO] STATUS: Uptime=0:13:32 | GPU VRAM=4.07/8.0GB, Util=99%, Temp=67C | Active=3/3 | Queue: Pending=1522, Done=211, Fail=0
+[2026-09-21 06:46:53,662] [INFO] [GPU] vram=2.89 GB, util=99.0%, temp=68.0 C
+[2026-09-21 06:46:53,683] [INFO] [DONE] [p3_gpt2_naive_svd] exit=0
+[2026-09-21 06:46:53,730] [INFO] [LAUNCH] [p3_gpt2_tomoe_compressor_class] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module tomoe_compressor_class --output_suffix gpt2_wt2_tomoe_compressor_class'
+[2026-09-21 06:47:08,440] [INFO] STATUS: Uptime=0:13:52 | GPU VRAM=2.89/8.0GB, Util=99%, Temp=68C | Active=3/3 | Queue: Pending=1521, Done=212, Fail=0
+[2026-09-21 06:47:13,919] [INFO] [GPU] vram=2.93 GB, util=5.0%, temp=65.0 C
+[2026-09-21 06:47:28,913] [INFO] STATUS: Uptime=0:14:12 | GPU VRAM=2.93/8.0GB, Util=5%, Temp=65C | Active=3/3 | Queue: Pending=1521, Done=212, Fail=0
+[2026-09-21 06:47:33,953] [INFO] [GPU] vram=2.83 GB, util=90.0%, temp=67.0 C
+[2026-09-21 06:47:33,971] [INFO] [DONE] [p3_gpt2_nystrom_inject] exit=0
+[2026-09-21 06:47:34,012] [INFO] [LAUNCH] [p3_gpt2_fasa_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module fasa_inject --output_suffix gpt2_wt2_fasa_inject'
+[2026-09-21 06:47:44,402] [INFO] STATUS: Uptime=0:14:27 | GPU VRAM=2.83/8.0GB, Util=90%, Temp=67C | Active=3/3 | Queue: Pending=1520, Done=213, Fail=0
+[2026-09-21 06:47:55,885] [INFO] [GPU] vram=0.00 GB, util=0.0%, temp=0.0 C
+[2026-09-21 06:48:09,085] [INFO] STATUS: Uptime=0:14:52 | GPU VRAM=0.00/8.0GB, Util=0%, Temp=0C | Active=3/3 | Queue: Pending=1520, Done=213, Fail=0
+[2026-09-21 06:48:14,132] [INFO] [GPU] vram=1.64 GB, util=62.0%, temp=57.0 C
+[2026-09-21 06:48:14,152] [INFO] [DONE] [p3_gpt2_tomoe_compressor_class] exit=0
+[2026-09-21 06:48:14,203] [INFO] [LAUNCH] [p3_gpt2_zerokv_neo_compressor] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module zerokv_neo_compressor --output_suffix gpt2_wt2_zerokv_neo_compressor'
+[2026-09-21 06:48:29,264] [INFO] STATUS: Uptime=0:15:12 | GPU VRAM=1.64/8.0GB, Util=62%, Temp=57C | Active=3/3 | Queue: Pending=1519, Done=214, Fail=0
+[2026-09-21 06:48:35,438] [INFO] [GPU] vram=2.79 GB, util=84.0%, temp=62.0 C
+[2026-09-21 06:48:50,039] [INFO] STATUS: Uptime=0:15:33 | GPU VRAM=2.79/8.0GB, Util=84%, Temp=62C | Active=3/3 | Queue: Pending=1519, Done=214, Fail=0
+[2026-09-21 06:48:58,083] [INFO] [GPU] vram=3.94 GB, util=99.0%, temp=70.0 C
+[2026-09-21 06:49:11,244] [INFO] STATUS: Uptime=0:15:54 | GPU VRAM=3.94/8.0GB, Util=99%, Temp=70C | Active=3/3 | Queue: Pending=1519, Done=214, Fail=0
+[2026-09-21 06:49:16,284] [INFO] [GPU] vram=1.64 GB, util=13.0%, temp=59.0 C
+[2026-09-21 06:49:16,301] [INFO] [DONE] [p3_gpt2_fasa_inject] exit=0
+[2026-09-21 06:49:16,302] [INFO] [DONE] [p3_gpt2_zerokv_neo_compressor] exit=0
+[2026-09-21 06:49:16,366] [INFO] [LAUNCH] [p3_gpt2_compressed_mha_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module compressed_mha_inject --output_suffix gpt2_wt2_compressed_mha_inject'
+[2026-09-21 06:49:16,405] [INFO] [LAUNCH] [p3_gpt2_swift_svd_factory] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module swift_svd_factory --output_suffix gpt2_wt2_swift_svd_factory'
+[2026-09-21 06:49:30,916] [INFO] STATUS: Uptime=0:16:14 | GPU VRAM=1.64/8.0GB, Util=6%, Temp=59C | Active=3/3 | Queue: Pending=1517, Done=216, Fail=0
+[2026-09-21 06:49:36,158] [INFO] [GPU] vram=1.66 GB, util=20.0%, temp=54.0 C
+[2026-09-21 06:49:56,603] [INFO] STATUS: Uptime=0:16:40 | GPU VRAM=1.66/8.0GB, Util=20%, Temp=54C | Active=3/3 | Queue: Pending=1517, Done=216, Fail=0
+[2026-09-21 06:50:02,526] [INFO] [GPU] vram=3.52 GB, util=77.0%, temp=63.0 C
+[2026-09-21 06:50:25,809] [INFO] STATUS: Uptime=0:17:09 | GPU VRAM=3.52/8.0GB, Util=77%, Temp=63C | Active=3/3 | Queue: Pending=1517, Done=216, Fail=0
+[2026-09-21 06:50:30,852] [INFO] [GPU] vram=3.48 GB, util=94.0%, temp=65.0 C
+[2026-09-21 06:50:54,353] [INFO] STATUS: Uptime=0:17:37 | GPU VRAM=3.48/8.0GB, Util=94%, Temp=65C | Active=3/3 | Queue: Pending=1517, Done=216, Fail=0
+[2026-09-21 06:50:59,401] [INFO] [GPU] vram=2.17 GB, util=10.0%, temp=57.0 C
+[2026-09-21 06:50:59,426] [INFO] [DONE] [p3_gpt2_compressed_mha_inject] exit=0
+[2026-09-21 06:50:59,475] [INFO] [LAUNCH] [p3_gpt2_grecodec_compressor] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module grecodec_compressor --output_suffix gpt2_wt2_grecodec_compressor'
+[2026-09-21 06:51:21,144] [INFO] STATUS: Uptime=0:18:04 | GPU VRAM=2.17/8.0GB, Util=10%, Temp=57C | Active=3/3 | Queue: Pending=1516, Done=217, Fail=0
+[2026-09-21 06:51:26,197] [INFO] [GPU] vram=2.21 GB, util=15.0%, temp=56.0 C
+[2026-09-21 06:51:50,145] [INFO] STATUS: Uptime=0:18:33 | GPU VRAM=2.21/8.0GB, Util=15%, Temp=56C | Active=3/3 | Queue: Pending=1516, Done=217, Fail=0
+[2026-09-21 06:51:55,195] [INFO] [GPU] vram=2.87 GB, util=22.0%, temp=58.0 C
+[2026-09-21 06:52:20,354] [INFO] STATUS: Uptime=0:19:03 | GPU VRAM=2.87/8.0GB, Util=22%, Temp=58C | Active=3/3 | Queue: Pending=1516, Done=217, Fail=0
+[2026-09-21 06:52:25,413] [INFO] [GPU] vram=3.69 GB, util=86.0%, temp=62.0 C
+[2026-09-21 06:52:48,191] [INFO] STATUS: Uptime=0:19:31 | GPU VRAM=3.69/8.0GB, Util=86%, Temp=62C | Active=3/3 | Queue: Pending=1516, Done=217, Fail=0
+[2026-09-21 06:52:53,228] [INFO] [GPU] vram=1.23 GB, util=1.0%, temp=59.0 C
+[2026-09-21 06:52:53,251] [INFO] [DONE] [p3_gpt2_inject_samba_moe] exit=0
+[2026-09-21 06:52:53,251] [INFO] [DONE] [p3_gpt2_grecodec_compressor] exit=0
+[2026-09-21 06:52:53,312] [INFO] [LAUNCH] [p3_gpt2_galerkin] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module galerkin --output_suffix gpt2_wt2_galerkin'
+[2026-09-21 06:52:53,365] [INFO] [LAUNCH] [p3_gpt2_inject_regla] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_regla --output_suffix gpt2_wt2_inject_regla'
+[2026-09-21 06:53:14,618] [INFO] STATUS: Uptime=0:19:58 | GPU VRAM=1.23/8.0GB, Util=0%, Temp=55C | Active=3/3 | Queue: Pending=1514, Done=219, Fail=0
+[2026-09-21 06:53:19,686] [INFO] [GPU] vram=1.16 GB, util=23.0%, temp=53.0 C
+[2026-09-21 06:53:35,418] [INFO] STATUS: Uptime=0:20:19 | GPU VRAM=1.16/8.0GB, Util=23%, Temp=53C | Active=3/3 | Queue: Pending=1514, Done=219, Fail=0
+[2026-09-21 06:53:40,535] [INFO] [GPU] vram=4.16 GB, util=100.0%, temp=64.0 C
+[2026-09-21 06:53:53,577] [INFO] STATUS: Uptime=0:20:37 | GPU VRAM=4.16/8.0GB, Util=100%, Temp=64C | Active=3/3 | Queue: Pending=1514, Done=219, Fail=0
+[2026-09-21 06:53:58,621] [INFO] [GPU] vram=4.15 GB, util=100.0%, temp=65.0 C
+[2026-09-21 06:54:12,098] [INFO] STATUS: Uptime=0:20:55 | GPU VRAM=4.15/8.0GB, Util=100%, Temp=65C | Active=3/3 | Queue: Pending=1514, Done=219, Fail=0
+[2026-09-21 06:54:17,151] [INFO] [GPU] vram=2.88 GB, util=97.0%, temp=67.0 C
+[2026-09-21 06:54:17,169] [INFO] [DONE] [p3_gpt2_swift_svd_factory] exit=0
+[2026-09-21 06:54:17,279] [INFO] [LAUNCH] [p3_gpt2_flash3] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module flash3 --output_suffix gpt2_wt2_flash3'
+[2026-09-21 06:54:31,009] [INFO] STATUS: Uptime=0:21:14 | GPU VRAM=2.88/8.0GB, Util=97%, Temp=67C | Active=3/3 | Queue: Pending=1513, Done=220, Fail=0
+[2026-09-21 06:54:36,050] [INFO] [GPU] vram=1.75 GB, util=14.0%, temp=62.0 C
+[2026-09-21 06:54:36,072] [INFO] [DONE] [p3_gpt2_galerkin] exit=0
+[2026-09-21 06:54:36,118] [INFO] [LAUNCH] [p3_gpt2_come_compressor] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module come_compressor --output_suffix gpt2_wt2_come_compressor'
+[2026-09-21 06:54:52,261] [INFO] STATUS: Uptime=0:21:35 | GPU VRAM=1.75/8.0GB, Util=14%, Temp=62C | Active=3/3 | Queue: Pending=1512, Done=221, Fail=0
+[2026-09-21 06:54:57,345] [INFO] [GPU] vram=2.90 GB, util=94.0%, temp=67.0 C
+[2026-09-21 06:55:11,544] [INFO] STATUS: Uptime=0:21:55 | GPU VRAM=2.90/8.0GB, Util=94%, Temp=67C | Active=3/3 | Queue: Pending=1512, Done=221, Fail=0
+[2026-09-21 06:55:16,621] [INFO] [GPU] vram=4.08 GB, util=100.0%, temp=72.0 C
+[2026-09-21 06:55:30,291] [INFO] STATUS: Uptime=0:22:13 | GPU VRAM=4.08/8.0GB, Util=100%, Temp=72C | Active=3/3 | Queue: Pending=1512, Done=221, Fail=0
+[2026-09-21 06:55:35,335] [INFO] [GPU] vram=2.07 GB, util=100.0%, temp=64.0 C
+[2026-09-21 06:55:35,355] [INFO] [DONE] [p3_gpt2_flash3] exit=0
+[2026-09-21 06:55:35,355] [INFO] [DONE] [p3_gpt2_come_compressor] exit=0
+[2026-09-21 06:55:35,421] [INFO] [LAUNCH] [p3_gpt2_reap_moe_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module reap_moe_inject --output_suffix gpt2_wt2_reap_moe_inject'
+[2026-09-21 06:55:35,462] [INFO] [LAUNCH] [p3_gpt2_rpc] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module rpc --output_suffix gpt2_wt2_rpc'
+[2026-09-21 06:55:49,427] [INFO] STATUS: Uptime=0:22:33 | GPU VRAM=1.94/8.0GB, Util=99%, Temp=64C | Active=3/3 | Queue: Pending=1510, Done=223, Fail=0
+[2026-09-21 06:55:54,466] [INFO] [GPU] vram=1.77 GB, util=18.0%, temp=63.0 C
+[2026-09-21 06:56:09,514] [INFO] STATUS: Uptime=0:22:53 | GPU VRAM=1.77/8.0GB, Util=18%, Temp=63C | Active=3/3 | Queue: Pending=1510, Done=223, Fail=0
+[2026-09-21 06:56:14,550] [INFO] [GPU] vram=4.18 GB, util=100.0%, temp=70.0 C
+[2026-09-21 06:56:27,527] [INFO] STATUS: Uptime=0:23:11 | GPU VRAM=4.18/8.0GB, Util=100%, Temp=70C | Active=3/3 | Queue: Pending=1510, Done=223, Fail=0
+[2026-09-21 06:56:32,566] [INFO] [GPU] vram=4.18 GB, util=100.0%, temp=71.0 C
+[2026-09-21 06:56:46,082] [INFO] STATUS: Uptime=0:23:29 | GPU VRAM=4.18/8.0GB, Util=100%, Temp=71C | Active=3/3 | Queue: Pending=1510, Done=223, Fail=0
+[2026-09-21 06:56:51,123] [INFO] [GPU] vram=4.04 GB, util=100.0%, temp=71.0 C
+[2026-09-21 06:57:05,895] [INFO] STATUS: Uptime=0:23:49 | GPU VRAM=4.04/8.0GB, Util=100%, Temp=71C | Active=3/3 | Queue: Pending=1510, Done=223, Fail=0
+[2026-09-21 06:57:10,936] [INFO] [GPU] vram=4.06 GB, util=100.0%, temp=71.0 C
+[2026-09-21 06:57:23,895] [INFO] STATUS: Uptime=0:24:07 | GPU VRAM=4.06/8.0GB, Util=100%, Temp=71C | Active=3/3 | Queue: Pending=1510, Done=223, Fail=0
+[2026-09-21 06:57:28,943] [INFO] [GPU] vram=1.62 GB, util=24.0%, temp=60.0 C
+[2026-09-21 06:57:28,960] [INFO] [DONE] [p3_gpt2_reap_moe_inject] exit=0
+[2026-09-21 06:57:28,961] [INFO] [DONE] [p3_gpt2_rpc] exit=0
+[2026-09-21 06:57:29,007] [INFO] [LAUNCH] [p3_gpt2_hashed_net_factory] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module hashed_net_factory --output_suffix gpt2_wt2_hashed_net_factory'
+[2026-09-21 06:57:29,050] [INFO] [LAUNCH] [p3_gpt2_inject_svd_projection_attention] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_svd_projection_attention --output_suffix gpt2_wt2_inject_svd_projection_attention'
+[2026-09-21 06:57:43,170] [INFO] STATUS: Uptime=0:24:26 | GPU VRAM=1.62/8.0GB, Util=24%, Temp=60C | Active=3/3 | Queue: Pending=1508, Done=225, Fail=0
+[2026-09-21 06:57:48,209] [INFO] [GPU] vram=0.47 GB, util=1.0%, temp=59.0 C
+[2026-09-21 06:57:48,228] [INFO] [DONE] [p3_gpt2_inject_regla] exit=0
+[2026-09-21 06:57:48,268] [INFO] [LAUNCH] [p3_gpt2_samba_m3_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module samba_m3_inject --output_suffix gpt2_wt2_samba_m3_inject'
+[2026-09-21 06:58:01,815] [INFO] STATUS: Uptime=0:24:45 | GPU VRAM=0.47/8.0GB, Util=1%, Temp=59C | Active=3/3 | Queue: Pending=1507, Done=226, Fail=0
+[2026-09-21 06:58:06,857] [INFO] [GPU] vram=2.35 GB, util=99.0%, temp=65.0 C
+[2026-09-21 06:58:17,831] [INFO] STATUS: Uptime=0:25:01 | GPU VRAM=2.35/8.0GB, Util=99%, Temp=65C | Active=3/3 | Queue: Pending=1507, Done=226, Fail=0
+[2026-09-21 06:58:22,870] [INFO] [GPU] vram=3.62 GB, util=99.0%, temp=68.0 C
+[2026-09-21 06:58:37,196] [INFO] STATUS: Uptime=0:25:20 | GPU VRAM=3.62/8.0GB, Util=99%, Temp=68C | Active=3/3 | Queue: Pending=1507, Done=226, Fail=0
+[2026-09-21 06:58:42,248] [INFO] [GPU] vram=4.31 GB, util=100.0%, temp=70.0 C
+[2026-09-21 06:58:55,656] [INFO] STATUS: Uptime=0:25:39 | GPU VRAM=4.31/8.0GB, Util=100%, Temp=70C | Active=3/3 | Queue: Pending=1507, Done=226, Fail=0
+[2026-09-21 06:59:00,690] [INFO] [GPU] vram=2.98 GB, util=99.0%, temp=69.0 C
+[2026-09-21 06:59:00,709] [INFO] [DONE] [p3_gpt2_hashed_net_factory] exit=0
+[2026-09-21 06:59:00,770] [INFO] [LAUNCH] [p3_gpt2_svd_proj] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module svd_proj --output_suffix gpt2_wt2_svd_proj'
+[2026-09-21 06:59:15,014] [INFO] STATUS: Uptime=0:25:58 | GPU VRAM=2.98/8.0GB, Util=94%, Temp=69C | Active=3/3 | Queue: Pending=1506, Done=227, Fail=0
+[2026-09-21 06:59:20,053] [INFO] [GPU] vram=1.60 GB, util=18.0%, temp=58.0 C
+[2026-09-21 06:59:20,072] [INFO] [DONE] [p3_gpt2_inject_svd_projection_attention] exit=0
+[2026-09-21 06:59:20,122] [INFO] [LAUNCH] [p3_gpt2_sparsegpt] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module sparsegpt --output_suffix gpt2_wt2_sparsegpt'
+[2026-09-21 06:59:34,770] [INFO] STATUS: Uptime=0:26:18 | GPU VRAM=1.60/8.0GB, Util=18%, Temp=58C | Active=3/3 | Queue: Pending=1505, Done=228, Fail=0
+[2026-09-21 06:59:39,806] [INFO] [GPU] vram=3.02 GB, util=94.0%, temp=66.0 C
+[2026-09-21 06:59:54,540] [INFO] STATUS: Uptime=0:26:38 | GPU VRAM=3.02/8.0GB, Util=94%, Temp=66C | Active=3/3 | Queue: Pending=1505, Done=228, Fail=0
+[2026-09-21 06:59:59,581] [INFO] [GPU] vram=3.71 GB, util=99.0%, temp=67.0 C
+[2026-09-21 07:00:13,659] [INFO] STATUS: Uptime=0:26:57 | GPU VRAM=3.71/8.0GB, Util=99%, Temp=67C | Active=3/3 | Queue: Pending=1505, Done=228, Fail=0
+[2026-09-21 07:00:18,701] [INFO] [GPU] vram=3.71 GB, util=99.0%, temp=68.0 C
+[2026-09-21 07:00:32,009] [INFO] STATUS: Uptime=0:27:15 | GPU VRAM=3.71/8.0GB, Util=99%, Temp=68C | Active=3/3 | Queue: Pending=1505, Done=228, Fail=0
+[2026-09-21 07:00:37,042] [INFO] [GPU] vram=2.42 GB, util=84.0%, temp=62.0 C
+[2026-09-21 07:00:37,062] [INFO] [DONE] [p3_gpt2_svd_proj] exit=0
+[2026-09-21 07:00:37,113] [INFO] [LAUNCH] [p3_gpt2_inject_custom_attn] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_custom_attn --output_suffix gpt2_wt2_inject_custom_attn'
+[2026-09-21 07:00:51,591] [INFO] STATUS: Uptime=0:27:35 | GPU VRAM=2.42/8.0GB, Util=84%, Temp=62C | Active=3/3 | Queue: Pending=1504, Done=229, Fail=0
+[2026-09-21 07:00:56,631] [INFO] [GPU] vram=3.03 GB, util=85.0%, temp=66.0 C
+[2026-09-21 07:01:11,107] [INFO] STATUS: Uptime=0:27:54 | GPU VRAM=3.03/8.0GB, Util=85%, Temp=66C | Active=3/3 | Queue: Pending=1504, Done=229, Fail=0
+[2026-09-21 07:01:16,147] [INFO] [GPU] vram=2.93 GB, util=99.0%, temp=68.0 C
+[2026-09-21 07:01:16,169] [INFO] [DONE] [p3_gpt2_sparsegpt] exit=0
+[2026-09-21 07:01:16,221] [INFO] [LAUNCH] [p3_gpt2_weighted_ensemble_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module weighted_ensemble_inject --output_suffix gpt2_wt2_weighted_ensemble_inject'
+[2026-09-21 07:01:30,866] [INFO] STATUS: Uptime=0:28:14 | GPU VRAM=2.93/8.0GB, Util=99%, Temp=68C | Active=3/3 | Queue: Pending=1503, Done=230, Fail=0
+[2026-09-21 07:01:35,911] [INFO] [GPU] vram=2.93 GB, util=69.0%, temp=69.0 C
+[2026-09-21 07:01:52,022] [INFO] STATUS: Uptime=0:28:35 | GPU VRAM=2.93/8.0GB, Util=69%, Temp=69C | Active=3/3 | Queue: Pending=1503, Done=230, Fail=0
+[2026-09-21 07:01:57,065] [INFO] [GPU] vram=3.08 GB, util=99.0%, temp=69.0 C
+[2026-09-21 07:01:57,089] [INFO] [DONE] [p3_gpt2_inject_custom_attn] exit=0
+[2026-09-21 07:01:57,135] [INFO] [LAUNCH] [p3_gpt2_lsh_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module lsh_inject --output_suffix gpt2_wt2_lsh_inject'
+[2026-09-21 07:02:11,850] [INFO] STATUS: Uptime=0:28:55 | GPU VRAM=3.08/8.0GB, Util=99%, Temp=69C | Active=3/3 | Queue: Pending=1502, Done=231, Fail=0
+[2026-09-21 07:02:16,886] [INFO] [GPU] vram=3.03 GB, util=99.0%, temp=71.0 C
+[2026-09-21 07:02:30,643] [INFO] STATUS: Uptime=0:29:14 | GPU VRAM=3.03/8.0GB, Util=99%, Temp=71C | Active=3/3 | Queue: Pending=1502, Done=231, Fail=0
+[2026-09-21 07:02:35,688] [INFO] [GPU] vram=4.36 GB, util=100.0%, temp=69.0 C
+[2026-09-21 07:02:49,030] [INFO] STATUS: Uptime=0:29:32 | GPU VRAM=4.36/8.0GB, Util=100%, Temp=69C | Active=3/3 | Queue: Pending=1502, Done=231, Fail=0
+[2026-09-21 07:02:54,079] [INFO] [GPU] vram=4.36 GB, util=100.0%, temp=71.0 C
+[2026-09-21 07:03:07,558] [INFO] STATUS: Uptime=0:29:51 | GPU VRAM=4.36/8.0GB, Util=100%, Temp=71C | Active=3/3 | Queue: Pending=1502, Done=231, Fail=0
+[2026-09-21 07:03:12,607] [INFO] [GPU] vram=2.93 GB, util=97.0%, temp=71.0 C
+[2026-09-21 07:03:12,627] [INFO] [DONE] [p3_gpt2_weighted_ensemble_inject] exit=0
+[2026-09-21 07:03:12,670] [INFO] [LAUNCH] [p3_gpt2_lsh_attention_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module lsh_attention_inject --output_suffix gpt2_wt2_lsh_attention_inject'
+[2026-09-21 07:03:26,571] [INFO] STATUS: Uptime=0:30:10 | GPU VRAM=2.93/8.0GB, Util=97%, Temp=71C | Active=3/3 | Queue: Pending=1501, Done=232, Fail=0
+[2026-09-21 07:03:31,625] [INFO] [GPU] vram=0.38 GB, util=5.0%, temp=59.0 C
+[2026-09-21 07:03:31,644] [INFO] [DONE] [p3_gpt2_samba_m3_inject] exit=0
+[2026-09-21 07:03:31,644] [INFO] [DONE] [p3_gpt2_lsh_inject] exit=0
+[2026-09-21 07:03:31,693] [INFO] [LAUNCH] [p3_gpt2_kronecker_tt_lora] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module kronecker_tt_lora --output_suffix gpt2_wt2_kronecker_tt_lora'
+[2026-09-21 07:03:31,740] [INFO] [LAUNCH] [p3_gpt2_hamming_attention_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module hamming_attention_inject --output_suffix gpt2_wt2_hamming_attention_inject'
+[2026-09-21 07:03:46,358] [INFO] STATUS: Uptime=0:30:29 | GPU VRAM=0.38/8.0GB, Util=3%, Temp=59C | Active=3/3 | Queue: Pending=1499, Done=234, Fail=0
+[2026-09-21 07:03:51,405] [INFO] [GPU] vram=1.66 GB, util=55.0%, temp=66.0 C
+[2026-09-21 07:04:09,365] [INFO] STATUS: Uptime=0:30:52 | GPU VRAM=1.66/8.0GB, Util=55%, Temp=66C | Active=3/3 | Queue: Pending=1499, Done=234, Fail=0
+[2026-09-21 07:04:14,423] [INFO] [GPU] vram=4.35 GB, util=99.0%, temp=70.0 C
+[2026-09-21 07:04:43,136] [INFO] STATUS: Uptime=0:31:26 | GPU VRAM=4.35/8.0GB, Util=99%, Temp=70C | Active=3/3 | Queue: Pending=1499, Done=234, Fail=0
+[2026-09-21 07:04:48,202] [INFO] [GPU] vram=3.07 GB, util=86.0%, temp=67.0 C
+[2026-09-21 07:04:48,253] [INFO] [DONE] [p3_gpt2_lsh_attention_inject] exit=0
+[2026-09-21 07:04:48,326] [INFO] [LAUNCH] [p3_gpt2_inject_infini] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_infini --output_suffix gpt2_wt2_inject_infini'
+[2026-09-21 07:05:15,619] [INFO] STATUS: Uptime=0:31:59 | GPU VRAM=3.07/8.0GB, Util=58%, Temp=66C | Active=3/3 | Queue: Pending=1498, Done=235, Fail=0
+[2026-09-21 07:05:20,658] [INFO] [GPU] vram=2.98 GB, util=99.0%, temp=70.0 C
+[2026-09-21 07:05:35,216] [INFO] STATUS: Uptime=0:32:18 | GPU VRAM=2.98/8.0GB, Util=99%, Temp=70C | Active=3/3 | Queue: Pending=1498, Done=235, Fail=0
+[2026-09-21 07:05:40,252] [INFO] [GPU] vram=1.62 GB, util=27.0%, temp=64.0 C
+[2026-09-21 07:05:40,272] [INFO] [DONE] [p3_gpt2_kronecker_tt_lora] exit=0
+[2026-09-21 07:05:40,272] [INFO] [DONE] [p3_gpt2_hamming_attention_inject] exit=0
+[2026-09-21 07:05:40,322] [INFO] [LAUNCH] [p3_gpt2_inject_reap_moe] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_reap_moe --output_suffix gpt2_wt2_inject_reap_moe'
+[2026-09-21 07:05:40,370] [INFO] [LAUNCH] [p3_gpt2_flap] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module flap --output_suffix gpt2_wt2_flap'
+[2026-09-21 07:05:54,965] [INFO] STATUS: Uptime=0:32:38 | GPU VRAM=1.62/8.0GB, Util=27%, Temp=64C | Active=3/3 | Queue: Pending=1496, Done=237, Fail=0
+[2026-09-21 07:06:00,004] [INFO] [GPU] vram=1.62 GB, util=38.0%, temp=58.0 C
+[2026-09-21 07:06:16,550] [INFO] STATUS: Uptime=0:33:00 | GPU VRAM=1.62/8.0GB, Util=38%, Temp=58C | Active=3/3 | Queue: Pending=1496, Done=237, Fail=0
+[2026-09-21 07:06:21,605] [INFO] [GPU] vram=2.78 GB, util=46.0%, temp=62.0 C
+[2026-09-21 07:06:21,646] [INFO] [DONE] [p3_gpt2_inject_infini] exit=0
+[2026-09-21 07:06:21,707] [INFO] [LAUNCH] [p3_gpt2_dynamic_entropy_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module dynamic_entropy_inject --output_suffix gpt2_wt2_dynamic_entropy_inject'
+[2026-09-21 07:06:52,929] [INFO] STATUS: Uptime=0:33:36 | GPU VRAM=2.78/8.0GB, Util=46%, Temp=62C | Active=3/3 | Queue: Pending=1495, Done=238, Fail=0
+[2026-09-21 07:06:57,989] [INFO] [GPU] vram=1.56 GB, util=67.0%, temp=54.0 C
+[2026-09-21 07:06:58,025] [INFO] [DONE] [p3_gpt2_flap] exit=0
+[2026-09-21 07:06:58,104] [INFO] [LAUNCH] [p3_gpt2_gfws] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module gfws --output_suffix gpt2_wt2_gfws'
+[2026-09-21 07:07:32,369] [INFO] STATUS: Uptime=0:34:15 | GPU VRAM=1.56/8.0GB, Util=19%, Temp=54C | Active=3/3 | Queue: Pending=1494, Done=239, Fail=0
+[2026-09-21 07:07:37,434] [INFO] [GPU] vram=2.13 GB, util=38.0%, temp=58.0 C
+[2026-09-21 07:08:09,880] [INFO] STATUS: Uptime=0:34:53 | GPU VRAM=2.13/8.0GB, Util=38%, Temp=58C | Active=3/3 | Queue: Pending=1494, Done=239, Fail=0
+[2026-09-21 07:08:14,956] [INFO] [GPU] vram=2.81 GB, util=20.0%, temp=56.0 C
+[2026-09-21 07:08:45,310] [INFO] STATUS: Uptime=0:35:28 | GPU VRAM=2.81/8.0GB, Util=20%, Temp=56C | Active=3/3 | Queue: Pending=1494, Done=239, Fail=0
+[2026-09-21 07:08:50,356] [INFO] [GPU] vram=1.82 GB, util=33.0%, temp=63.0 C
+[2026-09-21 07:08:50,371] [INFO] [DONE] [p3_gpt2_inject_reap_moe] exit=0
+[2026-09-21 07:08:50,371] [INFO] [DONE] [p3_gpt2_dynamic_entropy_inject] exit=0
+[2026-09-21 07:08:50,415] [INFO] [LAUNCH] [p3_gpt2_leka_v3_attention] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module leka_v3_attention --output_suffix gpt2_wt2_leka_v3_attention'
+[2026-09-21 07:08:50,467] [INFO] [LAUNCH] [p3_gpt2_nasc] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module nasc --output_suffix gpt2_wt2_nasc'
+[2026-09-21 07:09:17,565] [INFO] STATUS: Uptime=0:36:01 | GPU VRAM=1.82/8.0GB, Util=33%, Temp=62C | Active=3/3 | Queue: Pending=1492, Done=241, Fail=0
+[2026-09-21 07:09:22,608] [INFO] [GPU] vram=1.12 GB, util=0.0%, temp=56.0 C
+[2026-09-21 07:09:22,626] [INFO] [DONE] [p3_gpt2_gfws] exit=0
+[2026-09-21 07:09:22,679] [INFO] [LAUNCH] [p3_gpt2_inject_soa_attn] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_soa_attn --output_suffix gpt2_wt2_inject_soa_attn'
+[2026-09-21 07:09:45,814] [INFO] STATUS: Uptime=0:36:29 | GPU VRAM=1.12/8.0GB, Util=1%, Temp=56C | Active=3/3 | Queue: Pending=1491, Done=242, Fail=0
+[2026-09-21 07:09:50,862] [INFO] [GPU] vram=0.99 GB, util=2.0%, temp=51.0 C
+[2026-09-21 07:10:13,373] [INFO] STATUS: Uptime=0:36:56 | GPU VRAM=0.99/8.0GB, Util=2%, Temp=51C | Active=3/3 | Queue: Pending=1491, Done=242, Fail=0
+[2026-09-21 07:10:18,437] [INFO] [GPU] vram=5.27 GB, util=100.0%, temp=68.0 C
+[2026-09-21 07:10:46,625] [INFO] STATUS: Uptime=0:37:30 | GPU VRAM=5.27/8.0GB, Util=100%, Temp=68C | Active=3/3 | Queue: Pending=1491, Done=242, Fail=0
+[2026-09-21 07:10:51,702] [INFO] [GPU] vram=5.48 GB, util=98.0%, temp=67.0 C
+[2026-09-21 07:11:17,450] [INFO] STATUS: Uptime=0:38:01 | GPU VRAM=5.48/8.0GB, Util=98%, Temp=67C | Active=3/3 | Queue: Pending=1491, Done=242, Fail=0
+[2026-09-21 07:11:22,494] [INFO] [GPU] vram=5.58 GB, util=100.0%, temp=68.0 C
+[2026-09-21 07:11:50,323] [INFO] STATUS: Uptime=0:38:33 | GPU VRAM=5.58/8.0GB, Util=100%, Temp=68C | Active=3/3 | Queue: Pending=1491, Done=242, Fail=0
+[2026-09-21 07:11:55,361] [INFO] [GPU] vram=6.21 GB, util=100.0%, temp=70.0 C
+[2026-09-21 07:12:10,734] [INFO] STATUS: Uptime=0:38:54 | GPU VRAM=6.21/8.0GB, Util=100%, Temp=70C | Active=3/3 | Queue: Pending=1491, Done=242, Fail=0
+[2026-09-21 07:12:15,783] [INFO] [GPU] vram=4.79 GB, util=100.0%, temp=72.0 C
+[2026-09-21 07:12:15,800] [INFO] [DONE] [p3_gpt2_inject_soa_attn] exit=0
+[2026-09-21 07:12:15,859] [INFO] [LAUNCH] [p3_gpt2_expert_choice_moe] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module expert_choice_moe --output_suffix gpt2_wt2_expert_choice_moe'
+[2026-09-21 07:12:32,686] [INFO] STATUS: Uptime=0:39:16 | GPU VRAM=4.79/8.0GB, Util=100%, Temp=72C | Active=3/3 | Queue: Pending=1490, Done=243, Fail=0
+[2026-09-21 07:12:37,727] [INFO] [GPU] vram=3.60 GB, util=99.0%, temp=69.0 C
+[2026-09-21 07:12:52,214] [INFO] STATUS: Uptime=0:39:35 | GPU VRAM=3.60/8.0GB, Util=99%, Temp=69C | Active=3/3 | Queue: Pending=1490, Done=243, Fail=0
+[2026-09-21 07:12:57,261] [INFO] [GPU] vram=3.29 GB, util=84.0%, temp=67.0 C
+[2026-09-21 07:12:57,290] [INFO] [DONE] [p3_gpt2_leka_v3_attention] exit=0
+[2026-09-21 07:12:57,340] [INFO] [LAUNCH] [p3_gpt2_faq] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module faq --output_suffix gpt2_wt2_faq'
+[2026-09-21 07:13:12,251] [INFO] STATUS: Uptime=0:39:55 | GPU VRAM=3.29/8.0GB, Util=84%, Temp=67C | Active=3/3 | Queue: Pending=1489, Done=244, Fail=0
+[2026-09-21 07:13:17,292] [INFO] [GPU] vram=3.29 GB, util=90.0%, temp=66.0 C
+[2026-09-21 07:13:31,480] [INFO] STATUS: Uptime=0:40:15 | GPU VRAM=3.29/8.0GB, Util=90%, Temp=66C | Active=3/3 | Queue: Pending=1489, Done=244, Fail=0
+[2026-09-21 07:13:36,519] [INFO] [GPU] vram=3.34 GB, util=10.0%, temp=63.0 C
+[2026-09-21 07:13:36,537] [INFO] [DONE] [p3_gpt2_faq] exit=0
+[2026-09-21 07:13:36,589] [INFO] [LAUNCH] [p3_gpt2_flap_compressor] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module flap_compressor --output_suffix gpt2_wt2_flap_compressor'
+[2026-09-21 07:13:50,176] [INFO] STATUS: Uptime=0:40:33 | GPU VRAM=3.34/8.0GB, Util=10%, Temp=63C | Active=3/3 | Queue: Pending=1488, Done=245, Fail=0
+[2026-09-21 07:13:55,222] [INFO] [GPU] vram=2.17 GB, util=15.0%, temp=57.0 C
+[2026-09-21 07:13:55,239] [INFO] [DONE] [p3_gpt2_expert_choice_moe] exit=0
+[2026-09-21 07:13:55,290] [INFO] [LAUNCH] [p3_gpt2_hgrn2_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module hgrn2_inject --output_suffix gpt2_wt2_hgrn2_inject'
+[2026-09-21 07:14:10,000] [INFO] STATUS: Uptime=0:40:53 | GPU VRAM=2.17/8.0GB, Util=26%, Temp=57C | Active=3/3 | Queue: Pending=1487, Done=246, Fail=0
+[2026-09-21 07:14:15,042] [INFO] [GPU] vram=3.34 GB, util=85.0%, temp=67.0 C
+[2026-09-21 07:14:30,855] [INFO] STATUS: Uptime=0:41:14 | GPU VRAM=3.34/8.0GB, Util=85%, Temp=67C | Active=3/3 | Queue: Pending=1487, Done=246, Fail=0
+[2026-09-21 07:14:35,927] [INFO] [GPU] vram=2.73 GB, util=75.0%, temp=62.0 C
+[2026-09-21 07:14:35,948] [INFO] [DONE] [p3_gpt2_flap_compressor] exit=0
+[2026-09-21 07:14:35,998] [INFO] [LAUNCH] [p3_gpt2_dynamic_rank_class] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module dynamic_rank_class --output_suffix gpt2_wt2_dynamic_rank_class'
+[2026-09-21 07:14:53,646] [INFO] STATUS: Uptime=0:41:37 | GPU VRAM=2.73/8.0GB, Util=75%, Temp=62C | Active=3/3 | Queue: Pending=1486, Done=247, Fail=0
+[2026-09-21 07:14:58,685] [INFO] [GPU] vram=3.34 GB, util=82.0%, temp=61.0 C
+[2026-09-21 07:15:16,416] [INFO] STATUS: Uptime=0:42:00 | GPU VRAM=3.34/8.0GB, Util=82%, Temp=61C | Active=3/3 | Queue: Pending=1486, Done=247, Fail=0
+[2026-09-21 07:15:21,462] [INFO] [GPU] vram=4.65 GB, util=98.0%, temp=66.0 C
+[2026-09-21 07:15:41,198] [INFO] STATUS: Uptime=0:42:24 | GPU VRAM=4.65/8.0GB, Util=98%, Temp=66C | Active=3/3 | Queue: Pending=1486, Done=247, Fail=0
+[2026-09-21 07:15:46,243] [INFO] [GPU] vram=3.68 GB, util=79.0%, temp=64.0 C
+[2026-09-21 07:15:46,261] [INFO] [DONE] [p3_gpt2_dynamic_rank_class] exit=0
+[2026-09-21 07:15:46,314] [INFO] [LAUNCH] [p3_gpt2_inject_minimal_svd_v2] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module inject_minimal_svd_v2 --output_suffix gpt2_wt2_inject_minimal_svd_v2'
+[2026-09-21 07:16:02,839] [INFO] STATUS: Uptime=0:42:46 | GPU VRAM=3.68/8.0GB, Util=77%, Temp=64C | Active=3/3 | Queue: Pending=1485, Done=248, Fail=0
+[2026-09-21 07:16:07,890] [INFO] [GPU] vram=3.45 GB, util=77.0%, temp=63.0 C
+[2026-09-21 07:16:29,456] [INFO] STATUS: Uptime=0:43:13 | GPU VRAM=3.45/8.0GB, Util=77%, Temp=63C | Active=3/3 | Queue: Pending=1485, Done=248, Fail=0
+[2026-09-21 07:16:34,500] [INFO] [GPU] vram=3.82 GB, util=56.0%, temp=61.0 C
+[2026-09-21 07:16:56,190] [INFO] STATUS: Uptime=0:43:39 | GPU VRAM=3.82/8.0GB, Util=56%, Temp=61C | Active=3/3 | Queue: Pending=1485, Done=248, Fail=0
+[2026-09-21 07:17:01,239] [INFO] [GPU] vram=3.91 GB, util=58.0%, temp=60.0 C
+[2026-09-21 07:17:23,793] [INFO] STATUS: Uptime=0:44:07 | GPU VRAM=3.91/8.0GB, Util=58%, Temp=60C | Active=3/3 | Queue: Pending=1485, Done=248, Fail=0
+[2026-09-21 07:17:28,841] [INFO] [GPU] vram=4.40 GB, util=95.0%, temp=62.0 C
+[2026-09-21 07:17:48,285] [INFO] STATUS: Uptime=0:44:31 | GPU VRAM=4.40/8.0GB, Util=95%, Temp=62C | Active=3/3 | Queue: Pending=1485, Done=248, Fail=0
+[2026-09-21 07:17:53,328] [INFO] [GPU] vram=4.57 GB, util=99.0%, temp=67.0 C
+[2026-09-21 07:18:10,325] [INFO] STATUS: Uptime=0:44:53 | GPU VRAM=4.57/8.0GB, Util=99%, Temp=67C | Active=3/3 | Queue: Pending=1485, Done=248, Fail=0
+[2026-09-21 07:18:15,367] [INFO] [GPU] vram=3.45 GB, util=75.0%, temp=62.0 C
+[2026-09-21 07:18:15,389] [INFO] [DONE] [p3_gpt2_inject_minimal_svd_v2] exit=0
+[2026-09-21 07:18:15,438] [INFO] [LAUNCH] [p3_gpt2_sdrm_factory] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module sdrm_factory --output_suffix gpt2_wt2_sdrm_factory'
+[2026-09-21 07:18:32,621] [INFO] STATUS: Uptime=0:45:16 | GPU VRAM=3.45/8.0GB, Util=75%, Temp=62C | Active=3/3 | Queue: Pending=1484, Done=249, Fail=0
+[2026-09-21 07:18:37,664] [INFO] [GPU] vram=4.03 GB, util=96.0%, temp=63.0 C
+[2026-09-21 07:19:03,513] [INFO] STATUS: Uptime=0:45:47 | GPU VRAM=4.03/8.0GB, Util=96%, Temp=63C | Active=3/3 | Queue: Pending=1484, Done=249, Fail=0
+[2026-09-21 07:19:08,553] [INFO] [GPU] vram=3.96 GB, util=36.0%, temp=59.0 C
+[2026-09-21 07:19:37,888] [INFO] STATUS: Uptime=0:46:21 | GPU VRAM=3.96/8.0GB, Util=36%, Temp=59C | Active=3/3 | Queue: Pending=1484, Done=249, Fail=0
+[2026-09-21 07:19:42,948] [INFO] [GPU] vram=3.94 GB, util=15.0%, temp=56.0 C
+[2026-09-21 07:20:12,996] [INFO] STATUS: Uptime=0:46:56 | GPU VRAM=3.94/8.0GB, Util=15%, Temp=56C | Active=3/3 | Queue: Pending=1484, Done=249, Fail=0
+[2026-09-21 07:20:18,048] [INFO] [GPU] vram=4.38 GB, util=36.0%, temp=58.0 C
+[2026-09-21 07:20:49,911] [INFO] STATUS: Uptime=0:47:33 | GPU VRAM=4.38/8.0GB, Util=36%, Temp=58C | Active=3/3 | Queue: Pending=1484, Done=249, Fail=0
+[2026-09-21 07:20:54,966] [INFO] [GPU] vram=3.95 GB, util=42.0%, temp=53.0 C
+[2026-09-21 07:21:14,496] [INFO] STATUS: Uptime=0:47:58 | GPU VRAM=3.95/8.0GB, Util=42%, Temp=53C | Active=3/3 | Queue: Pending=1484, Done=249, Fail=0
+[2026-09-21 07:21:19,587] [INFO] [GPU] vram=5.31 GB, util=99.0%, temp=62.0 C
+[2026-09-21 07:21:37,210] [INFO] STATUS: Uptime=0:48:20 | GPU VRAM=5.31/8.0GB, Util=99%, Temp=62C | Active=3/3 | Queue: Pending=1484, Done=249, Fail=0
+[2026-09-21 07:21:42,252] [INFO] [GPU] vram=3.42 GB, util=81.0%, temp=61.0 C
+[2026-09-21 07:21:42,271] [INFO] [DONE] [p3_gpt2_sdrm_factory] exit=0
+[2026-09-21 07:21:42,317] [INFO] [LAUNCH] [p3_gpt2_squeezing_heads_distiller_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module squeezing_heads_distiller_inject --output_suffix gpt2_wt2_squeezing_heads_distiller_inject'
+[2026-09-21 07:21:59,526] [INFO] STATUS: Uptime=0:48:43 | GPU VRAM=3.42/8.0GB, Util=81%, Temp=61C | Active=3/3 | Queue: Pending=1483, Done=250, Fail=0
+[2026-09-21 07:22:04,567] [INFO] [GPU] vram=3.42 GB, util=72.0%, temp=60.0 C
+[2026-09-21 07:22:22,519] [INFO] STATUS: Uptime=0:49:06 | GPU VRAM=3.42/8.0GB, Util=72%, Temp=60C | Active=3/3 | Queue: Pending=1483, Done=250, Fail=0
+[2026-09-21 07:22:27,562] [INFO] [GPU] vram=4.69 GB, util=87.0%, temp=64.0 C
+[2026-09-21 07:22:47,062] [INFO] STATUS: Uptime=0:49:30 | GPU VRAM=4.69/8.0GB, Util=87%, Temp=64C | Active=3/3 | Queue: Pending=1483, Done=250, Fail=0
+[2026-09-21 07:22:52,142] [INFO] [GPU] vram=3.42 GB, util=68.0%, temp=62.0 C
+[2026-09-21 07:22:52,162] [INFO] [DONE] [p3_gpt2_squeezing_heads_distiller_inject] exit=0
+[2026-09-21 07:22:52,213] [INFO] [LAUNCH] [p3_gpt2_replaceme_compressor_factory] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module replaceme_compressor_factory --output_suffix gpt2_wt2_replaceme_compressor_factory'
+[2026-09-21 07:23:08,655] [INFO] STATUS: Uptime=0:49:52 | GPU VRAM=3.42/8.0GB, Util=80%, Temp=62C | Active=3/3 | Queue: Pending=1482, Done=251, Fail=0
+[2026-09-21 07:23:13,698] [INFO] [GPU] vram=3.42 GB, util=74.0%, temp=61.0 C
+[2026-09-21 07:23:32,032] [INFO] STATUS: Uptime=0:50:15 | GPU VRAM=3.42/8.0GB, Util=74%, Temp=61C | Active=3/3 | Queue: Pending=1482, Done=251, Fail=0
+[2026-09-21 07:23:37,076] [INFO] [GPU] vram=4.84 GB, util=100.0%, temp=65.0 C
+[2026-09-21 07:23:53,668] [INFO] STATUS: Uptime=0:50:37 | GPU VRAM=4.84/8.0GB, Util=100%, Temp=65C | Active=3/3 | Queue: Pending=1482, Done=251, Fail=0
+[2026-09-21 07:23:58,709] [INFO] [GPU] vram=3.50 GB, util=83.0%, temp=62.0 C
+[2026-09-21 07:23:58,733] [INFO] [DONE] [p3_gpt2_replaceme_compressor_factory] exit=0
+[2026-09-21 07:23:58,779] [INFO] [LAUNCH] [p3_gpt2_astro_factory] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module astro_factory --output_suffix gpt2_wt2_astro_factory'
+[2026-09-21 07:24:16,416] [INFO] STATUS: Uptime=0:51:00 | GPU VRAM=3.50/8.0GB, Util=83%, Temp=62C | Active=3/3 | Queue: Pending=1481, Done=252, Fail=0
+[2026-09-21 07:24:21,458] [INFO] [GPU] vram=3.34 GB, util=79.0%, temp=62.0 C
+[2026-09-21 07:24:37,630] [INFO] STATUS: Uptime=0:51:21 | GPU VRAM=3.34/8.0GB, Util=79%, Temp=62C | Active=3/3 | Queue: Pending=1481, Done=252, Fail=0
+[2026-09-21 07:24:42,670] [INFO] [GPU] vram=4.50 GB, util=98.0%, temp=68.0 C
+[2026-09-21 07:25:00,952] [INFO] STATUS: Uptime=0:51:44 | GPU VRAM=4.50/8.0GB, Util=98%, Temp=68C | Active=3/3 | Queue: Pending=1481, Done=252, Fail=0
+[2026-09-21 07:25:05,994] [INFO] [GPU] vram=3.34 GB, util=81.0%, temp=62.0 C
+[2026-09-21 07:25:06,013] [INFO] [DONE] [p3_gpt2_astro_factory] exit=0
+[2026-09-21 07:25:06,063] [INFO] [LAUNCH] [p3_gpt2_jamba_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module jamba_inject --output_suffix gpt2_wt2_jamba_inject'
+[2026-09-21 07:25:23,514] [INFO] STATUS: Uptime=0:52:07 | GPU VRAM=3.34/8.0GB, Util=79%, Temp=62C | Active=3/3 | Queue: Pending=1480, Done=253, Fail=0
+[2026-09-21 07:25:28,556] [INFO] [GPU] vram=3.50 GB, util=75.0%, temp=62.0 C
+[2026-09-21 07:25:47,515] [INFO] STATUS: Uptime=0:52:31 | GPU VRAM=3.50/8.0GB, Util=75%, Temp=62C | Active=3/3 | Queue: Pending=1480, Done=253, Fail=0
+[2026-09-21 07:25:52,596] [INFO] [GPU] vram=6.27 GB, util=99.0%, temp=67.0 C
+[2026-09-21 07:26:10,787] [INFO] STATUS: Uptime=0:52:54 | GPU VRAM=6.27/8.0GB, Util=99%, Temp=67C | Active=3/3 | Queue: Pending=1480, Done=253, Fail=0
+[2026-09-21 07:26:15,832] [INFO] [GPU] vram=4.99 GB, util=96.0%, temp=63.0 C
+[2026-09-21 07:26:35,272] [INFO] STATUS: Uptime=0:53:18 | GPU VRAM=4.99/8.0GB, Util=96%, Temp=63C | Active=3/3 | Queue: Pending=1480, Done=253, Fail=0
+[2026-09-21 07:26:40,320] [INFO] [GPU] vram=6.17 GB, util=99.0%, temp=67.0 C
+[2026-09-21 07:26:57,780] [INFO] STATUS: Uptime=0:53:41 | GPU VRAM=6.17/8.0GB, Util=99%, Temp=67C | Active=3/3 | Queue: Pending=1480, Done=253, Fail=0
+[2026-09-21 07:27:02,820] [INFO] [GPU] vram=4.87 GB, util=94.0%, temp=63.0 C
+[2026-09-21 07:27:22,141] [INFO] STATUS: Uptime=0:54:05 | GPU VRAM=4.87/8.0GB, Util=94%, Temp=63C | Active=3/3 | Queue: Pending=1480, Done=253, Fail=0
+[2026-09-21 07:27:27,191] [INFO] [GPU] vram=6.23 GB, util=91.0%, temp=68.0 C
+[2026-09-21 07:27:46,650] [INFO] STATUS: Uptime=0:54:30 | GPU VRAM=6.23/8.0GB, Util=91%, Temp=68C | Active=3/3 | Queue: Pending=1480, Done=253, Fail=0
+[2026-09-21 07:27:51,696] [INFO] [GPU] vram=4.94 GB, util=96.0%, temp=63.0 C
+[2026-09-21 07:28:09,053] [INFO] STATUS: Uptime=0:54:52 | GPU VRAM=4.94/8.0GB, Util=96%, Temp=63C | Active=3/3 | Queue: Pending=1480, Done=253, Fail=0
+[2026-09-21 07:28:14,100] [INFO] [GPU] vram=4.86 GB, util=96.0%, temp=64.0 C
+[2026-09-21 07:28:31,263] [INFO] STATUS: Uptime=0:55:14 | GPU VRAM=4.86/8.0GB, Util=96%, Temp=64C | Active=3/3 | Queue: Pending=1480, Done=253, Fail=0
+[2026-09-21 07:28:36,299] [INFO] [GPU] vram=3.29 GB, util=58.0%, temp=62.0 C
+[2026-09-21 07:28:36,319] [INFO] [DONE] [p3_gpt2_nasc] exit=0
+[2026-09-21 07:28:36,366] [INFO] [LAUNCH] [p3_gpt2_leka_v1_inject] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module leka_v1_inject --output_suffix gpt2_wt2_leka_v1_inject'
+[2026-09-21 07:28:54,950] [INFO] STATUS: Uptime=0:55:38 | GPU VRAM=3.29/8.0GB, Util=58%, Temp=62C | Active=3/3 | Queue: Pending=1479, Done=254, Fail=0
+[2026-09-21 07:28:59,987] [INFO] [GPU] vram=2.09 GB, util=3.0%, temp=61.0 C
+[2026-09-21 07:29:00,010] [INFO] [DONE] [p3_gpt2_jamba_inject] exit=0
+[2026-09-21 07:29:00,077] [INFO] [LAUNCH] [p3_gpt2_tt_compressor_factory] cmd='python -u Codes/framework/run_gpt2_lm_sweep.py --module tt_compressor_factory --output_suffix gpt2_wt2_tt_compressor_factory'
+[2026-09-21 07:29:16,645] [INFO] STATUS: Uptime=0:56:00 | GPU VRAM=2.09/8.0GB, Util=3%, Temp=61C | Active=3/3 | Queue: Pending=1478, Done=255, Fail=0
+[2026-09-21 07:29:21,699] [INFO] [GPU] vram=6.76 GB, util=100.0%, temp=65.0 C
+[2026-09-21 07:29:37,568] [INFO] STATUS: Uptime=0:56:21 | GPU VRAM=6.76/8.0GB, Util=100%, Temp=65C | Active=3/3 | Queue: Pending=1478, Done=255, Fail=0
+[2026-09-21 07:29:42,619] [INFO] [GPU] vram=7.62 GB, util=100.0%, temp=60.0 C
+[2026-09-21 07:29:55,583] [INFO] STATUS: Uptime=0:56:39 | GPU VRAM=7.62/8.0GB, Util=100%, Temp=60C | Active=3/3 | Queue: Pending=1478, Done=255, Fail=0
+[2026-09-21 07:30:00,634] [INFO] [GPU] vram=7.60 GB, util=100.0%, temp=59.0 C
+[2026-09-21 07:30:13,456] [INFO] STATUS: Uptime=0:56:57 | GPU VRAM=7.60/8.0GB, Util=100%, Temp=59C | Active=3/3 | Queue: Pending=1478, Done=255, Fail=0
+[2026-09-21 07:30:18,498] [INFO] [GPU] vram=7.59 GB, util=100.0%, temp=58.0 C
+[2026-09-21 07:30:31,073] [INFO] STATUS: Uptime=0:57:14 | GPU VRAM=7.59/8.0GB, Util=100%, Temp=58C | Active=3/3 | Queue: Pending=1478, Done=255, Fail=0
+[2026-09-21 07:30:36,123] [INFO] [GPU] vram=7.59 GB, util=100.0%, temp=58.0 C
+[2026-09-21 07:30:48,807] [INFO] STATUS: Uptime=0:57:32 | GPU VRAM=7.59/8.0GB, Util=100%, Temp=58C | Active=3/3 | Queue: Pending=1478, Done=255, Fail=0
+[2026-09-21 07:30:53,859] [INFO] [GPU] vram=7.59 GB, util=100.0%, temp=58.0 C
+[2026-09-21 07:31:07,023] [INFO] STATUS: Uptime=0:57:50 | GPU VRAM=7.59/8.0GB, Util=100%, Temp=58C | Active=3/3 | Queue: Pending=1478, Done=255, Fail=0
+[2026-09-21 07:31:12,067] [INFO] [GPU] vram=7.59 GB, util=100.0%, temp=58.0 C

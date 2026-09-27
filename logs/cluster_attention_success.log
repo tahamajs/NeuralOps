@@ -1,0 +1,9 @@
+[main 9dc04c6ec] feat(benchmark): record successful cluster_attention on distilbert-sst2 (Acc: 90.25%, F1: 0.9067)
+ 9 files changed, 125 insertions(+), 14 deletions(-)
+ create mode 100644 results/all_modules/cluster_attention/distilbert_sst2_cluster_attention_full_metrics.json
+ create mode 100644 results/all_modules/cluster_attention/finetune_metadata.json
+ create mode 100644 results/all_modules/cluster_attention/summary.csv
+ create mode 100644 results/all_modules/cosformer_attention/distilbert_sst2_cosformer_attention_full_metrics.json
+ create mode 100644 results/all_modules/cosformer_attention/finetune_metadata.json
+ create mode 100644 results/all_modules/cosformer_attention/summary.csv
+branch 'main' set up to track 'origin/main'.

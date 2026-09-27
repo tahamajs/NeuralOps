@@ -1,0 +1,78 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from 'framework.eval_all_models_datasets' (consider renaming 'D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py' if it has the same name as a library you intended to import)
+2026-09-18 08:59:11,694 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 08:59:12,272 [INFO] QwenQualitySweep: Configured dataset 'mnli' with num_labels=3
+Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]Loading weights: 100%|##########| 197/197 [00:00<00:00, 3076.42it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models/roberta-base
+Key                             | Status     | 
+--------------------------------+------------+-
+lm_head.dense.bias              | UNEXPECTED | 
+lm_head.bias                    | UNEXPECTED | 
+roberta.embeddings.position_ids | UNEXPECTED | 
+lm_head.dense.weight            | UNEXPECTED | 
+lm_head.layer_norm.weight       | UNEXPECTED | 
+lm_head.layer_norm.bias         | UNEXPECTED | 
+classifier.out_proj.bias        | MISSING    | 
+classifier.dense.weight         | MISSING    | 
+classifier.dense.bias           | MISSING    | 
+classifier.out_proj.weight      | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-18 08:59:13,208 [INFO] QwenQualitySweep: model=models/roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-18 08:59:13,208 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 08:59:13,208 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:59:13,208 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 08:59:13,208 [INFO] QwenQualitySweep:   model:             models/roberta-base
+2026-09-18 08:59:13,208 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-18 08:59:13,208 [INFO] QwenQualitySweep:   dataset:           mnli
+2026-09-18 08:59:13,208 [INFO] QwenQualitySweep:   batch_size:        32
+2026-09-18 08:59:13,209 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 08:59:13,209 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 08:59:13,209 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 08:59:13,209 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:59:13,703 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\roberta_mnli_baseline\finetuned_model.pt
+2026-09-18 08:59:14,556 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 08:59:15,781 [INFO] QwenQualitySweep: Prepared 32 eval batches and 50 train batches directly on GPU.
+2026-09-18 08:59:18,289 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 35.60%
+2026-09-18 08:59:18,353 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:59:18,354 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-18 08:59:18,354 [INFO] QwenQualitySweep:   Validation Majority Count: 341 / 1000
+2026-09-18 08:59:18,354 [INFO] QwenQualitySweep:   True Majority Baseline:    34.10%
+2026-09-18 08:59:18,354 [INFO] QwenQualitySweep:   Standard Error (SE):       1.499%
+2026-09-18 08:59:18,354 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.50%
+2026-09-18 08:59:18,355 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  38.60%
+2026-09-18 08:59:18,355 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:59:18,355 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: a3_compressor (recovery_steps=50, batch_size=32, optimizer=adamw)
+2026-09-18 08:59:25,510 [INFO] QwenQualitySweep: module=a3_compressor path=adapted_roberta
+2026-09-18 08:59:25,512 [INFO] QwenQualitySweep: module=a3_compressor injection summary: 0 SVDLinear layers active
+2026-09-18 08:59:25,512 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for a3_compressor (lr=2.0e-04)
+2026-09-18 08:59:25,839 [INFO] framework.utils.compat: Recovery fine-tuning selected 111751683 trainable parameters across 148 tensors.
+2026-09-18 08:59:25,840 [WARNING] framework.utils.compat: Total trainable parameters (111751683) exceeds 10000000 threshold for recovery. Pruning heavy base weights to prevent OOM.
+2026-09-18 08:59:25,843 [INFO] framework.utils.compat: Reduced recovery parameters to 592899 trainable parameters across 4 tensors.
+2026-09-18 08:59:25,844 [INFO] framework.utils.compat: Discovered 4 trainable tensors (592899 params)
+2026-09-18 08:59:25,847 [INFO] QwenQualitySweep: LoRA fine-tuning: 592899 trainable parameters across 4 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 08:59:26,049 [INFO] QwenQualitySweep: Step 1/50 took 0.20s (loss=1.1008, bs=32, micro=32)
+2026-09-18 08:59:26,369 [INFO] QwenQualitySweep: Step 5/50 took 0.08s (loss=1.0643, bs=32, micro=32)
+2026-09-18 08:59:26,769 [INFO] QwenQualitySweep: Step 10/50 took 0.09s (loss=1.0840, bs=32, micro=32)
+2026-09-18 08:59:27,169 [INFO] QwenQualitySweep: Step 15/50 took 0.07s (loss=1.1032, bs=32, micro=32)
+2026-09-18 08:59:27,569 [INFO] QwenQualitySweep: Step 20/50 took 0.07s (loss=1.0670, bs=32, micro=32)
+2026-09-18 08:59:27,936 [INFO] QwenQualitySweep: Step 25/50 took 0.07s (loss=1.0803, bs=32, micro=32)
+2026-09-18 08:59:28,307 [INFO] QwenQualitySweep: Step 30/50 took 0.08s (loss=1.0710, bs=32, micro=32)
+2026-09-18 08:59:28,953 [INFO] QwenQualitySweep: Step 35/50 took 0.18s (loss=1.0568, bs=32, micro=32)
+2026-09-18 08:59:30,667 [INFO] QwenQualitySweep: Step 40/50 took 0.17s (loss=1.0608, bs=32, micro=32)
+2026-09-18 08:59:31,481 [INFO] QwenQualitySweep: Step 45/50 took 0.09s (loss=1.1062, bs=32, micro=32)
+2026-09-18 08:59:32,884 [INFO] QwenQualitySweep: Step 50/50 took 0.16s (loss=1.1212, bs=32, micro=32)
+2026-09-18 08:59:38,065 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\mnli_unified_a3_compressor\roberta\roberta-base_a3_compressor_full_metrics.json
+2026-09-18 08:59:39,154 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\mnli_unified_a3_compressor\roberta\checkpoints\a3_compressor\weights.pt (module_params=216, lora_params=4)
+2026-09-18 08:59:40,884 [INFO] QwenQualitySweep: [1/1] a3_compressor -> PASS_NO_COMPRESSION 34.20% (F1: 0.1733, Peak VRAM: 1100.93 MB)
+2026-09-18 08:59:40,885 [WARNING] QwenQualitySweep: Module 'a3_compressor' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-18 08:59:40,885 [INFO] QwenQualitySweep: [Quality Guard] Module 'a3_compressor' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=34.20%, pass_thresh=38.60%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-18 08:59:41,448 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:59:41,448 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on mnli)
+2026-09-18 08:59:41,460 [INFO] QwenQualitySweep: 
+                        Module              Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+a3_compressor (efficient-attn) PASS_NO_COMPRESSION   34.20%    -1.40% 0.1733                  0            0.83x 1100.9 MB               4.94              4.94
+2026-09-18 08:59:41,460 [INFO] QwenQualitySweep: ================================================================================

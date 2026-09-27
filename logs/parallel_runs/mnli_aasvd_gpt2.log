@@ -1,0 +1,91 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from 'framework.eval_all_models_datasets' (consider renaming 'D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py' if it has the same name as a library you intended to import)
+2026-09-18 09:02:08,765 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 09:02:09,150 [INFO] QwenQualitySweep: Configured dataset 'mnli' with num_labels=3
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3455.77it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models/gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-18 09:02:09,978 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-18 09:02:09,979 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 09:02:09,979 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 09:02:09,979 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 09:02:09,979 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-18 09:02:09,979 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-18 09:02:09,980 [INFO] QwenQualitySweep:   dataset:           mnli
+2026-09-18 09:02:09,980 [INFO] QwenQualitySweep:   batch_size:        32
+2026-09-18 09:02:09,980 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 09:02:09,980 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 09:02:09,980 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 09:02:09,980 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 09:02:09,981 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-18 09:02:12,808 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=1.1007
+2026-09-18 09:02:15,005 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=1.2665
+2026-09-18 09:02:17,286 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=1.1722
+2026-09-18 09:02:19,592 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=1.1884
+2026-09-18 09:02:21,832 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=1.2933
+2026-09-18 09:02:24,052 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=1.2980
+2026-09-18 09:02:26,257 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=1.0525
+2026-09-18 09:02:29,482 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=1.0419
+2026-09-18 09:02:29,489 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\mnli_unified_aasvd\gpt2\finetuned_model.pt
+2026-09-18 09:02:29,601 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 09:02:30,528 [INFO] QwenQualitySweep: Prepared 32 eval batches and 50 train batches directly on GPU.
+2026-09-18 09:02:35,308 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 41.70%
+2026-09-18 09:02:35,368 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 09:02:35,369 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-18 09:02:35,369 [INFO] QwenQualitySweep:   Validation Majority Count: 341 / 1000
+2026-09-18 09:02:35,369 [INFO] QwenQualitySweep:   True Majority Baseline:    34.10%
+2026-09-18 09:02:35,369 [INFO] QwenQualitySweep:   Standard Error (SE):       1.499%
+2026-09-18 09:02:35,369 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.50%
+2026-09-18 09:02:35,370 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  38.60%
+2026-09-18 09:02:35,370 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 09:02:35,370 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: aasvd (recovery_steps=50, batch_size=32, optimizer=adamw)
+2026-09-18 09:02:37,467 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8609 on transformer.h.1.attn.c_attn exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:37,657 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8835 on transformer.h.2.attn.c_attn exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:37,753 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8670 on transformer.h.2.attn.c_proj exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:37,842 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8891 on transformer.h.3.attn.c_attn exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:37,917 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8719 on transformer.h.3.attn.c_proj exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:38,029 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8802 on transformer.h.4.attn.c_attn exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:38,113 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8780 on transformer.h.4.attn.c_proj exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:38,211 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8818 on transformer.h.5.attn.c_attn exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:38,304 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8788 on transformer.h.5.attn.c_proj exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:38,389 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.9062 on transformer.h.6.attn.c_attn exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:38,480 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8749 on transformer.h.6.attn.c_proj exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:38,571 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.9004 on transformer.h.7.attn.c_attn exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:38,668 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8770 on transformer.h.7.attn.c_proj exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:39,021 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.9128 on transformer.h.8.attn.c_attn exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:39,449 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8697 on transformer.h.8.attn.c_proj exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:39,801 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.9213 on transformer.h.9.attn.c_attn exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:40,098 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8926 on transformer.h.9.attn.c_proj exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:40,537 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.9088 on transformer.h.10.attn.c_attn exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:41,001 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8833 on transformer.h.10.attn.c_proj exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:41,549 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.9068 on transformer.h.11.attn.c_attn exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 09:02:42,134 [INFO] framework.compression_engine.aa_svd_compressor: AASVD compression complete: 4 compressed, 20 fallback. Avg error: 0.7742.
+2026-09-18 09:02:42,146 [INFO] QwenQualitySweep: module=aasvd path=adapted_gpt
+2026-09-18 09:02:42,147 [INFO] QwenQualitySweep: module=aasvd injection summary: 4 SVDLinear layers active
+2026-09-18 09:02:42,149 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for aasvd (lr=2.0e-04)
+2026-09-18 09:02:42,241 [INFO] framework.utils.compat: Recovery fine-tuning selected 498432 trainable parameters across 13 tensors.
+2026-09-18 09:02:42,242 [INFO] framework.utils.compat: Discovered 13 trainable tensors (498432 params)
+2026-09-18 09:02:42,243 [INFO] QwenQualitySweep: LoRA fine-tuning: 498432 trainable parameters across 13 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 09:02:42,577 [INFO] QwenQualitySweep: Step 1/50 took 0.33s (loss=1.0471, bs=32, micro=32)
+2026-09-18 09:02:43,750 [INFO] QwenQualitySweep: Step 5/50 took 0.27s (loss=1.1648, bs=32, micro=32)
+2026-09-18 09:02:45,177 [INFO] QwenQualitySweep: Step 10/50 took 0.25s (loss=1.0906, bs=32, micro=32)
+2026-09-18 09:02:46,571 [INFO] QwenQualitySweep: Step 15/50 took 0.24s (loss=1.1345, bs=32, micro=32)
+2026-09-18 09:02:48,024 [INFO] QwenQualitySweep: Step 20/50 took 0.33s (loss=1.0538, bs=32, micro=32)
+2026-09-18 09:02:49,473 [INFO] QwenQualitySweep: Step 25/50 took 0.35s (loss=1.0600, bs=32, micro=32)
+2026-09-18 09:02:50,926 [INFO] QwenQualitySweep: Step 30/50 took 0.36s (loss=1.0416, bs=32, micro=32)
+2026-09-18 09:02:52,949 [INFO] QwenQualitySweep: Step 35/50 took 0.47s (loss=0.9506, bs=32, micro=32)
+2026-09-18 09:02:54,986 [INFO] QwenQualitySweep: Step 40/50 took 0.20s (loss=0.9911, bs=32, micro=32)
+2026-09-18 09:02:55,954 [INFO] QwenQualitySweep: Step 45/50 took 0.19s (loss=0.8997, bs=32, micro=32)
+2026-09-18 09:02:56,917 [INFO] QwenQualitySweep: Step 50/50 took 0.19s (loss=1.0812, bs=32, micro=32)
+2026-09-18 09:02:59,651 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\mnli_unified_aasvd\gpt2\gpt2_aasvd_full_metrics.json
+2026-09-18 09:02:59,669 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\mnli_unified_aasvd\gpt2\checkpoints\aasvd\weights.pt (module_params=12, lora_params=1)
+2026-09-18 09:03:00,232 [INFO] QwenQualitySweep: [1/1] aasvd -> PASS 46.20% (F1: 0.4437, Peak VRAM: 787.23 MB)
+2026-09-18 09:03:00,324 [INFO] HFGitExporter: [Automation] Run gpt2 / aasvd is SUCCESSFUL (acc=46.20% >= 38.60%). Starting automated HF export to tahamajs/svd-linear-attention-gpt2-aasvd and Git recording.
+2026-09-18 09:03:00,727 [WARNING] HFGitExporter: Hugging Face upload failed for tahamajs/svd-linear-attention-gpt2-aasvd: [Errno 11001] getaddrinfo failed
+2026-09-18 09:03:00,757 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\compressions\aasvd.md

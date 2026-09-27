@@ -1,0 +1,958 @@
+2026-09-11 17:55:52,706 [INFO] Remaining (no results): 166 | To run this session: 61
+2026-09-11 17:58:58,079 [INFO] Remaining (no results): 166 | To run this session: 61
+2026-09-11 17:58:58,080 [INFO] [HF-ASYNC] Background uploader worker thread started.
+2026-09-11 17:58:58,080 [INFO] ============================================================
+2026-09-11 17:58:58,080 [INFO] [1/61] Running: hamming
+2026-09-11 17:58:58,080 [INFO] [hamming] Launching runner: run_all_4_hamming.py
+2026-09-11 17:59:28,087 [INFO] STATUS | Module: hamming | Done: 0/61 | UploadQueue: 0 | Elapsed: 0:00:30 | ETA: 0:30:30
+2026-09-11 17:59:58,096 [INFO] STATUS | Module: hamming | Done: 0/61 | UploadQueue: 0 | Elapsed: 0:01:00 | ETA: 1:01:00
+2026-09-11 18:00:12,262 [INFO] [hamming] Accuracies: {'distilbert': ('PASS', 77.06), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 55.5)} | exit=0 | elapsed=74.2s
+2026-09-11 18:00:12,262 [INFO] [hamming] Overall: PASS
+2026-09-11 18:00:12,262 [INFO] [hamming] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 18:00:12,263 [INFO] ============================================================
+2026-09-11 18:00:12,263 [INFO] [2/61] Running: hgrn2
+2026-09-11 18:00:12,263 [INFO] [hgrn2] Launching runner: run_all_4_hgrn2.py
+2026-09-11 18:00:13,040 [INFO] HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 409 Conflict"
+2026-09-11 18:00:13,254 [INFO] HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-11 18:00:13,557 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-hamming/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 18:00:14,665 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-hamming/commit/main "HTTP/1.1 200 OK"
+2026-09-11 18:00:14,666 [INFO] [HF-ASYNC] Uploading weights.pt -> Hooshaai/svd-linear-attention-distilbert-hamming
+2026-09-11 18:00:14,977 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-hamming/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 18:00:28,109 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:01:30 | ETA: 1:30:01
+2026-09-11 18:00:58,110 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:02:00 | ETA: 2:00:01
+2026-09-11 18:01:28,122 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:02:30 | ETA: 2:30:02
+2026-09-11 18:01:58,126 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:03:00 | ETA: 3:00:02
+2026-09-11 18:02:28,137 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:03:30 | ETA: 3:30:03
+2026-09-11 18:02:35,922 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-hamming/commit/main "HTTP/1.1 200 OK"
+2026-09-11 18:02:36,169 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-hamming/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 18:02:36,858 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-hamming/commit/main "HTTP/1.1 200 OK"
+2026-09-11 18:02:36,858 [INFO] [HF-ASYNC] Upload done: Hooshaai/svd-linear-attention-distilbert-hamming
+2026-09-11 18:02:58,138 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:04:00 | ETA: 4:00:03
+2026-09-11 18:03:28,145 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:04:30 | ETA: 4:30:03
+2026-09-11 18:03:58,147 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:05:00 | ETA: 5:00:04
+2026-09-11 18:04:28,158 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:05:30 | ETA: 5:30:04
+2026-09-11 18:04:58,167 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:06:00 | ETA: 6:00:05
+2026-09-11 18:05:28,169 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:06:30 | ETA: 6:30:05
+2026-09-11 18:05:58,175 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:07:00 | ETA: 7:00:05
+2026-09-11 18:06:28,178 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:07:30 | ETA: 7:30:05
+2026-09-11 18:06:58,180 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:08:00 | ETA: 8:00:06
+2026-09-11 18:07:28,190 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:08:30 | ETA: 8:30:06
+2026-09-11 18:07:58,192 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:09:00 | ETA: 9:00:06
+2026-09-11 18:08:28,200 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:09:30 | ETA: 9:30:07
+2026-09-11 18:08:58,201 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:10:00 | ETA: 10:00:07
+2026-09-11 18:09:28,209 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:10:30 | ETA: 10:30:07
+2026-09-11 18:09:58,211 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:11:00 | ETA: 11:00:07
+2026-09-11 18:10:28,212 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:11:30 | ETA: 11:30:07
+2026-09-11 18:10:58,213 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:12:00 | ETA: 12:00:08
+2026-09-11 18:11:28,222 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:12:30 | ETA: 12:30:08
+2026-09-11 18:11:58,223 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:13:00 | ETA: 13:00:08
+2026-09-11 18:12:28,229 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:13:30 | ETA: 13:30:08
+2026-09-11 18:12:58,238 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:14:00 | ETA: 14:00:09
+2026-09-11 18:13:28,248 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:14:30 | ETA: 14:30:10
+2026-09-11 18:13:58,258 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:15:00 | ETA: 15:00:10
+2026-09-11 18:14:28,262 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:15:30 | ETA: 15:30:10
+2026-09-11 18:14:58,268 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:16:00 | ETA: 16:00:11
+2026-09-11 18:15:28,277 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:16:30 | ETA: 16:30:11
+2026-09-11 18:15:58,284 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:17:00 | ETA: 17:00:12
+2026-09-11 18:16:28,287 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:17:30 | ETA: 17:30:12
+2026-09-11 18:16:58,294 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:18:00 | ETA: 18:00:12
+2026-09-11 18:17:28,298 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:18:30 | ETA: 18:30:13
+2026-09-11 18:17:58,306 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:19:00 | ETA: 19:00:13
+2026-09-11 18:18:28,308 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:19:30 | ETA: 19:30:13
+2026-09-11 18:18:58,318 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:20:00 | ETA: 20:00:14
+2026-09-11 18:19:28,323 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:20:30 | ETA: 20:30:14
+2026-09-11 18:19:58,352 [INFO] STATUS | Module: hgrn2 | Done: 1/61 | UploadQueue: 0 | Elapsed: 0:21:00 | ETA: 21:00:16
+2026-09-11 18:20:12,305 [WARNING] [hgrn2] TIMEOUT after 1200s — terminating process tree PID 5692.
+2026-09-11 18:20:12,591 [INFO] [hgrn2] Accuracies: {'distilbert': ('PASS_LOW', 51.26), 'roberta': ('PASS_LOW', 52.98), 'gpt2': ('PASS_LOW', 51.03)} | exit=-999 | elapsed=1200.3s
+2026-09-11 18:20:12,591 [INFO] [hgrn2] Overall: TIMEOUT
+2026-09-11 18:20:12,595 [INFO] ============================================================
+2026-09-11 18:20:12,595 [INFO] [3/61] Running: hgrn2_gated_deltanet
+2026-09-11 18:20:12,596 [INFO] [hgrn2_gated_deltanet] Launching runner: run_all_4_hgrn2_gated_deltanet.py
+2026-09-11 18:20:28,358 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:21:30 | ETA: 10:34:23
+2026-09-11 18:20:58,362 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:22:00 | ETA: 10:49:08
+2026-09-11 18:21:28,363 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:22:30 | ETA: 11:03:53
+2026-09-11 18:21:58,371 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:23:00 | ETA: 11:18:38
+2026-09-11 18:22:28,378 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:23:30 | ETA: 11:33:23
+2026-09-11 18:22:58,383 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:24:00 | ETA: 11:48:08
+2026-09-11 18:23:28,393 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:24:30 | ETA: 12:02:54
+2026-09-11 18:23:58,399 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:25:00 | ETA: 12:17:39
+2026-09-11 18:24:28,409 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:25:30 | ETA: 12:32:24
+2026-09-11 18:24:58,415 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:26:00 | ETA: 12:47:09
+2026-09-11 18:25:28,415 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:26:30 | ETA: 13:01:54
+2026-09-11 18:25:58,425 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:27:00 | ETA: 13:16:40
+2026-09-11 18:26:28,426 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:27:30 | ETA: 13:31:25
+2026-09-11 18:26:58,430 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:28:00 | ETA: 13:46:10
+2026-09-11 18:27:28,438 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:28:30 | ETA: 14:00:55
+2026-09-11 18:27:58,442 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:29:00 | ETA: 14:15:40
+2026-09-11 18:28:28,446 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:29:30 | ETA: 14:30:25
+2026-09-11 18:28:58,450 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:30:00 | ETA: 14:45:10
+2026-09-11 18:29:28,457 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:30:30 | ETA: 14:59:56
+2026-09-11 18:29:58,467 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:31:00 | ETA: 15:14:41
+2026-09-11 18:30:28,469 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:31:30 | ETA: 15:29:26
+2026-09-11 18:30:58,476 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:32:00 | ETA: 15:44:11
+2026-09-11 18:31:28,484 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:32:30 | ETA: 15:58:56
+2026-09-11 18:31:58,489 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:33:00 | ETA: 16:13:42
+2026-09-11 18:32:28,494 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:33:30 | ETA: 16:28:27
+2026-09-11 18:32:58,495 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:34:00 | ETA: 16:43:12
+2026-09-11 18:33:28,497 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:34:30 | ETA: 16:57:57
+2026-09-11 18:33:58,498 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:35:00 | ETA: 17:12:42
+2026-09-11 18:34:28,506 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:35:30 | ETA: 17:27:27
+2026-09-11 18:34:58,510 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:36:00 | ETA: 17:42:12
+2026-09-11 18:35:28,512 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:36:30 | ETA: 17:56:57
+2026-09-11 18:35:58,514 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:37:00 | ETA: 18:11:42
+2026-09-11 18:36:28,517 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:37:30 | ETA: 18:26:27
+2026-09-11 18:36:58,526 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:38:00 | ETA: 18:41:13
+2026-09-11 18:37:28,534 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:38:30 | ETA: 18:55:58
+2026-09-11 18:37:58,543 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:39:00 | ETA: 19:10:43
+2026-09-11 18:38:28,552 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:39:30 | ETA: 19:25:28
+2026-09-11 18:38:58,557 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:40:00 | ETA: 19:40:14
+2026-09-11 18:39:28,559 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:40:30 | ETA: 19:54:59
+2026-09-11 18:39:58,560 [INFO] STATUS | Module: hgrn2_gated_deltanet | Done: 2/61 | UploadQueue: 0 | Elapsed: 0:41:00 | ETA: 20:09:44
+2026-09-11 18:40:12,632 [WARNING] [hgrn2_gated_deltanet] TIMEOUT after 1200s — terminating process tree PID 25212.
+2026-09-11 18:40:12,793 [INFO] [hgrn2_gated_deltanet] Accuracies: {'distilbert': ('PASS_LOW', 54.7), 'roberta': ('PASS_LOW', 52.98), 'gpt2': ('PASS_LOW', 51.03)} | exit=-999 | elapsed=1200.2s
+2026-09-11 18:40:12,793 [INFO] [hgrn2_gated_deltanet] Overall: TIMEOUT
+2026-09-11 18:40:12,795 [INFO] ============================================================
+2026-09-11 18:40:12,795 [INFO] [4/61] Running: hgrn2_layer
+2026-09-11 18:40:12,796 [INFO] [hgrn2_layer] Launching runner: run_all_4_hgrn2_layer.py
+2026-09-11 18:40:28,563 [INFO] STATUS | Module: hgrn2_layer | Done: 3/61 | UploadQueue: 0 | Elapsed: 0:41:30 | ETA: 13:22:29
+2026-09-11 18:40:58,571 [INFO] STATUS | Module: hgrn2_layer | Done: 3/61 | UploadQueue: 0 | Elapsed: 0:42:00 | ETA: 13:32:09
+2026-09-11 18:41:28,580 [INFO] STATUS | Module: hgrn2_layer | Done: 3/61 | UploadQueue: 0 | Elapsed: 0:42:30 | ETA: 13:41:49
+2026-09-11 18:41:58,587 [INFO] STATUS | Module: hgrn2_layer | Done: 3/61 | UploadQueue: 0 | Elapsed: 0:43:00 | ETA: 13:51:29
+2026-09-11 18:42:28,589 [INFO] STATUS | Module: hgrn2_layer | Done: 3/61 | UploadQueue: 0 | Elapsed: 0:43:30 | ETA: 14:01:09
+2026-09-11 18:42:58,598 [INFO] STATUS | Module: hgrn2_layer | Done: 3/61 | UploadQueue: 0 | Elapsed: 0:44:00 | ETA: 14:10:50
+2026-09-11 18:43:07,990 [INFO] [hgrn2_layer] Accuracies: {'distilbert': ('PASS', 62.04), 'roberta': ('PASS_LOW', 50.8), 'gpt2': ('PASS_LOW', 53.21)} | exit=0 | elapsed=175.2s
+2026-09-11 18:43:07,990 [INFO] [hgrn2_layer] Overall: PASS
+2026-09-11 18:43:07,991 [INFO] [hgrn2_layer] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 18:43:08,005 [INFO] ============================================================
+2026-09-11 18:43:08,005 [INFO] [5/61] Running: hgrn2_outer
+2026-09-11 18:43:08,007 [INFO] [hgrn2_outer] Launching runner: run_all_4_hgrn2_outer.py
+2026-09-11 18:43:08,500 [INFO] HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 409 Conflict"
+2026-09-11 18:43:08,729 [INFO] HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-11 18:43:09,100 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-hgrn2_layer/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 18:43:09,753 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-hgrn2_layer/commit/main "HTTP/1.1 200 OK"
+2026-09-11 18:43:09,753 [INFO] [HF-ASYNC] Uploading weights.pt -> Hooshaai/svd-linear-attention-distilbert-hgrn2_layer
+2026-09-11 18:43:10,343 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-hgrn2_layer/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 18:43:28,601 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:44:30 | ETA: 10:34:14
+2026-09-11 18:43:58,606 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:45:00 | ETA: 10:41:22
+2026-09-11 18:44:28,608 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:45:30 | ETA: 10:48:30
+2026-09-11 18:44:34,109 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-hgrn2_layer/commit/main "HTTP/1.1 200 OK"
+2026-09-11 18:44:34,372 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-hgrn2_layer/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 18:44:34,980 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-hgrn2_layer/commit/main "HTTP/1.1 200 OK"
+2026-09-11 18:44:34,980 [INFO] [HF-ASYNC] Upload done: Hooshaai/svd-linear-attention-distilbert-hgrn2_layer
+2026-09-11 18:44:58,616 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:46:00 | ETA: 10:55:37
+2026-09-11 18:45:28,627 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:46:30 | ETA: 11:02:45
+2026-09-11 18:45:58,634 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:47:00 | ETA: 11:09:52
+2026-09-11 18:46:28,648 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:47:30 | ETA: 11:17:00
+2026-09-11 18:46:58,657 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:48:00 | ETA: 11:24:08
+2026-09-11 18:47:28,661 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:48:30 | ETA: 11:31:15
+2026-09-11 18:47:58,666 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:49:00 | ETA: 11:38:23
+2026-09-11 18:48:28,668 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:49:30 | ETA: 11:45:30
+2026-09-11 18:48:58,674 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:50:00 | ETA: 11:52:38
+2026-09-11 18:49:28,682 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:50:30 | ETA: 11:59:46
+2026-09-11 18:49:58,692 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:51:00 | ETA: 12:06:53
+2026-09-11 18:50:28,700 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:51:30 | ETA: 12:14:01
+2026-09-11 18:50:58,702 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:52:00 | ETA: 12:21:08
+2026-09-11 18:51:28,709 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:52:30 | ETA: 12:28:16
+2026-09-11 18:51:58,710 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:53:00 | ETA: 12:35:23
+2026-09-11 18:52:28,715 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:53:30 | ETA: 12:42:31
+2026-09-11 18:52:58,719 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:54:00 | ETA: 12:49:39
+2026-09-11 18:53:28,724 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:54:30 | ETA: 12:56:46
+2026-09-11 18:53:58,728 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:55:00 | ETA: 13:03:54
+2026-09-11 18:54:28,737 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:55:30 | ETA: 13:11:01
+2026-09-11 18:54:58,746 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:56:00 | ETA: 13:18:09
+2026-09-11 18:55:28,747 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:56:30 | ETA: 13:25:17
+2026-09-11 18:55:58,755 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:57:00 | ETA: 13:32:24
+2026-09-11 18:56:28,760 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:57:30 | ETA: 13:39:32
+2026-09-11 18:56:58,765 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:58:00 | ETA: 13:46:39
+2026-09-11 18:57:28,775 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:58:30 | ETA: 13:53:47
+2026-09-11 18:57:58,781 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:59:00 | ETA: 14:00:54
+2026-09-11 18:58:28,788 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 0:59:30 | ETA: 14:08:02
+2026-09-11 18:58:58,797 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 1:00:00 | ETA: 14:15:10
+2026-09-11 18:59:28,803 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 1:00:30 | ETA: 14:22:17
+2026-09-11 18:59:58,806 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 1:01:00 | ETA: 14:29:25
+2026-09-11 19:00:28,807 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 1:01:30 | ETA: 14:36:32
+2026-09-11 19:00:58,808 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 1:02:00 | ETA: 14:43:40
+2026-09-11 19:01:28,818 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 1:02:30 | ETA: 14:50:48
+2026-09-11 19:01:58,824 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 1:03:00 | ETA: 14:57:55
+2026-09-11 19:02:28,831 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 1:03:30 | ETA: 15:05:03
+2026-09-11 19:02:58,841 [INFO] STATUS | Module: hgrn2_outer | Done: 4/61 | UploadQueue: 0 | Elapsed: 1:04:00 | ETA: 15:12:10
+2026-09-11 19:03:08,044 [WARNING] [hgrn2_outer] TIMEOUT after 1200s — terminating process tree PID 6692.
+2026-09-11 19:03:08,242 [INFO] [hgrn2_outer] Accuracies: {'distilbert': ('PASS', 68.46), 'roberta': ('PASS_LOW', 50.34), 'gpt2': ('PASS_LOW', 48.62)} | exit=-999 | elapsed=1200.2s
+2026-09-11 19:03:08,242 [INFO] [hgrn2_outer] Overall: TIMEOUT
+2026-09-11 19:03:08,244 [INFO] ============================================================
+2026-09-11 19:03:08,244 [INFO] [6/61] Running: hla
+2026-09-11 19:03:08,245 [INFO] [hla] Launching runner: run_all_4_hla.py
+2026-09-11 19:03:28,850 [INFO] STATUS | Module: hla | Done: 5/61 | UploadQueue: 0 | Elapsed: 1:04:30 | ETA: 12:02:32
+2026-09-11 19:03:58,855 [INFO] STATUS | Module: hla | Done: 5/61 | UploadQueue: 0 | Elapsed: 1:05:00 | ETA: 12:08:08
+2026-09-11 19:04:17,190 [INFO] [hla] Accuracies: {'distilbert': ('PASS_LOW', 49.08), 'roberta': ('PASS_LOW', 49.08), 'gpt2': ('PASS_LOW', 49.08)} | exit=0 | elapsed=68.9s
+2026-09-11 19:04:17,190 [INFO] [hla] Overall: PASS_LOW
+2026-09-11 19:04:17,191 [INFO] ============================================================
+2026-09-11 19:04:17,191 [INFO] [7/61] Running: hla_attention
+2026-09-11 19:04:17,191 [INFO] [hla_attention] Launching runner: run_all_4_hla_attention.py
+2026-09-11 19:04:28,865 [INFO] STATUS | Module: hla_attention | Done: 6/61 | UploadQueue: 0 | Elapsed: 1:05:30 | ETA: 10:00:32
+2026-09-11 19:04:58,874 [INFO] STATUS | Module: hla_attention | Done: 6/61 | UploadQueue: 0 | Elapsed: 1:06:00 | ETA: 10:05:07
+2026-09-11 19:05:19,495 [INFO] [hla_attention] Accuracies: {'distilbert': ('PASS_LOW', 49.08), 'roberta': ('PASS_LOW', 49.08), 'gpt2': ('PASS_LOW', 49.08)} | exit=0 | elapsed=62.3s
+2026-09-11 19:05:19,495 [INFO] [hla_attention] Overall: PASS_LOW
+2026-09-11 19:05:19,495 [INFO] ============================================================
+2026-09-11 19:05:19,495 [INFO] [8/61] Running: huffman_coder
+2026-09-11 19:05:19,495 [INFO] [huffman_coder] Launching runner: run_all_4_huffman_coder.py
+2026-09-11 19:05:28,883 [INFO] STATUS | Module: huffman_coder | Done: 7/61 | UploadQueue: 0 | Elapsed: 1:06:30 | ETA: 8:33:06
+2026-09-11 19:05:58,885 [INFO] STATUS | Module: huffman_coder | Done: 7/61 | UploadQueue: 0 | Elapsed: 1:07:00 | ETA: 8:36:57
+2026-09-11 19:06:28,896 [INFO] STATUS | Module: huffman_coder | Done: 7/61 | UploadQueue: 0 | Elapsed: 1:07:30 | ETA: 8:40:49
+2026-09-11 19:06:58,906 [INFO] STATUS | Module: huffman_coder | Done: 7/61 | UploadQueue: 0 | Elapsed: 1:08:00 | ETA: 8:44:40
+2026-09-11 19:07:28,908 [INFO] STATUS | Module: huffman_coder | Done: 7/61 | UploadQueue: 0 | Elapsed: 1:08:30 | ETA: 8:48:32
+2026-09-11 19:07:58,915 [INFO] STATUS | Module: huffman_coder | Done: 7/61 | UploadQueue: 0 | Elapsed: 1:09:00 | ETA: 8:52:23
+2026-09-11 19:08:28,925 [INFO] STATUS | Module: huffman_coder | Done: 7/61 | UploadQueue: 0 | Elapsed: 1:09:30 | ETA: 8:56:15
+2026-09-11 19:08:44,992 [INFO] [huffman_coder] Accuracies: {'distilbert': ('PASS', 90.6), 'roberta': ('PASS_LOW', 51.38), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=205.5s
+2026-09-11 19:08:44,992 [INFO] [huffman_coder] Overall: PASS
+2026-09-11 19:08:44,992 [INFO] [huffman_coder] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 19:08:44,993 [INFO] ============================================================
+2026-09-11 19:08:44,993 [INFO] [9/61] Running: hybrid_svd_layer
+2026-09-11 19:08:44,993 [INFO] [hybrid_svd_layer] Launching runner: run_all_4_hybrid_svd_layer.py
+2026-09-11 19:08:45,973 [INFO] HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 409 Conflict"
+2026-09-11 19:08:46,190 [INFO] HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-11 19:08:46,453 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-huffman_coder/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 19:08:46,988 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-huffman_coder/commit/main "HTTP/1.1 200 OK"
+2026-09-11 19:08:46,992 [INFO] [HF-ASYNC] Uploading weights.pt -> Hooshaai/svd-linear-attention-distilbert-huffman_coder
+2026-09-11 19:08:47,378 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-huffman_coder/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 19:08:58,928 [INFO] STATUS | Module: hybrid_svd_layer | Done: 8/61 | UploadQueue: 0 | Elapsed: 1:10:00 | ETA: 7:43:50
+2026-09-11 19:09:28,934 [INFO] STATUS | Module: hybrid_svd_layer | Done: 8/61 | UploadQueue: 0 | Elapsed: 1:10:30 | ETA: 7:47:09
+2026-09-11 19:09:58,943 [INFO] STATUS | Module: hybrid_svd_layer | Done: 8/61 | UploadQueue: 0 | Elapsed: 1:11:00 | ETA: 7:50:28
+2026-09-11 19:10:09,386 [INFO] [hybrid_svd_layer] Accuracies: {'distilbert': ('PASS', 77.18), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 51.15)} | exit=0 | elapsed=84.4s
+2026-09-11 19:10:09,386 [INFO] [hybrid_svd_layer] Overall: PASS
+2026-09-11 19:10:09,386 [INFO] [hybrid_svd_layer] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 19:10:09,387 [INFO] ============================================================
+2026-09-11 19:10:09,387 [INFO] [10/61] Running: jamba
+2026-09-11 19:10:09,387 [INFO] [jamba] Launching runner: run_all_4_jamba.py
+2026-09-11 19:10:28,952 [INFO] STATUS | Module: jamba | Done: 9/61 | UploadQueue: 1 | Elapsed: 1:11:30 | ETA: 6:53:11
+2026-09-11 19:10:58,962 [INFO] STATUS | Module: jamba | Done: 9/61 | UploadQueue: 1 | Elapsed: 1:12:00 | ETA: 6:56:05
+2026-09-11 19:11:28,971 [INFO] STATUS | Module: jamba | Done: 9/61 | UploadQueue: 1 | Elapsed: 1:12:30 | ETA: 6:58:58
+2026-09-11 19:11:47,761 [INFO] [jamba] Accuracies: {'distilbert': ('PASS', 87.16), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 52.29)} | exit=0 | elapsed=98.4s
+2026-09-11 19:11:47,761 [INFO] [jamba] Overall: PASS
+2026-09-11 19:11:47,761 [INFO] [jamba] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 19:11:47,762 [INFO] ============================================================
+2026-09-11 19:11:47,762 [INFO] [11/61] Running: kda
+2026-09-11 19:11:47,762 [INFO] [kda] Launching runner: run_all_4_kda.py
+2026-09-11 19:11:48,784 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-huffman_coder/commit/main "HTTP/1.1 200 OK"
+2026-09-11 19:11:49,096 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-huffman_coder/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 19:11:49,677 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-huffman_coder/commit/main "HTTP/1.1 200 OK"
+2026-09-11 19:11:49,677 [INFO] [HF-ASYNC] Upload done: Hooshaai/svd-linear-attention-distilbert-huffman_coder
+2026-09-11 19:11:49,939 [INFO] HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 409 Conflict"
+2026-09-11 19:11:50,197 [INFO] HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-11 19:11:50,482 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-hybrid_svd_layer/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 19:11:51,133 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-hybrid_svd_layer/commit/main "HTTP/1.1 200 OK"
+2026-09-11 19:11:51,134 [INFO] [HF-ASYNC] Uploading weights.pt -> Hooshaai/svd-linear-attention-distilbert-hybrid_svd_layer
+2026-09-11 19:11:51,435 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-hybrid_svd_layer/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 19:11:58,971 [INFO] STATUS | Module: kda | Done: 10/61 | UploadQueue: 1 | Elapsed: 1:13:00 | ETA: 6:12:22
+2026-09-11 19:12:28,981 [INFO] STATUS | Module: kda | Done: 10/61 | UploadQueue: 1 | Elapsed: 1:13:30 | ETA: 6:14:55
+2026-09-11 19:12:58,642 [INFO] [kda] Accuracies: {'distilbert': ('PASS', 76.72), 'roberta': ('PASS_LOW', 52.52), 'gpt2': ('PASS', 58.49)} | exit=0 | elapsed=70.9s
+2026-09-11 19:12:58,642 [INFO] [kda] Overall: PASS
+2026-09-11 19:12:58,642 [INFO] [kda] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 19:12:58,642 [INFO] [kda] Enqueued background HF upload for gpt2 (non-blocking)
+2026-09-11 19:12:58,643 [INFO] ============================================================
+2026-09-11 19:12:58,643 [INFO] [12/61] Running: kronecker_linear
+2026-09-11 19:12:58,643 [INFO] [kronecker_linear] Launching runner: run_all_4_kronecker_linear.py
+2026-09-11 19:12:58,993 [INFO] STATUS | Module: kronecker_linear | Done: 11/61 | UploadQueue: 3 | Elapsed: 1:14:00 | ETA: 5:36:25
+2026-09-11 19:13:29,000 [INFO] STATUS | Module: kronecker_linear | Done: 11/61 | UploadQueue: 3 | Elapsed: 1:14:30 | ETA: 5:38:42
+2026-09-11 19:13:59,007 [INFO] STATUS | Module: kronecker_linear | Done: 11/61 | UploadQueue: 3 | Elapsed: 1:15:00 | ETA: 5:40:58
+2026-09-11 19:14:20,721 [INFO] [kronecker_linear] Accuracies: {'distilbert': ('PASS', 90.94), 'roberta': ('PASS_LOW', 51.38), 'gpt2': ('PASS_LOW', 51.26)} | exit=0 | elapsed=82.1s
+2026-09-11 19:14:20,721 [INFO] [kronecker_linear] Overall: PASS
+2026-09-11 19:14:20,721 [INFO] [kronecker_linear] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 19:14:20,722 [INFO] ============================================================
+2026-09-11 19:14:20,722 [INFO] [13/61] Running: leka_v1
+2026-09-11 19:14:20,722 [INFO] [leka_v1] Launching runner: run_all_4_leka_v1.py
+2026-09-11 19:14:29,021 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:15:30 | ETA: 5:08:21
+2026-09-11 19:14:59,022 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:16:00 | ETA: 5:10:23
+2026-09-11 19:15:29,029 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:16:30 | ETA: 5:12:26
+2026-09-11 19:15:59,046 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:17:00 | ETA: 5:14:28
+2026-09-11 19:16:29,048 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:17:30 | ETA: 5:16:31
+2026-09-11 19:16:59,058 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:18:00 | ETA: 5:18:33
+2026-09-11 19:17:29,064 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:18:30 | ETA: 5:20:36
+2026-09-11 19:17:59,071 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:19:00 | ETA: 5:22:39
+2026-09-11 19:18:29,080 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:19:31 | ETA: 5:24:41
+2026-09-11 19:18:59,087 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:20:01 | ETA: 5:26:44
+2026-09-11 19:19:29,093 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:20:31 | ETA: 5:28:46
+2026-09-11 19:19:59,096 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:21:01 | ETA: 5:30:49
+2026-09-11 19:20:29,100 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:21:31 | ETA: 5:32:51
+2026-09-11 19:20:59,110 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:22:01 | ETA: 5:34:54
+2026-09-11 19:21:29,117 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:22:31 | ETA: 5:36:56
+2026-09-11 19:21:59,122 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:23:01 | ETA: 5:38:59
+2026-09-11 19:22:29,126 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:23:31 | ETA: 5:41:01
+2026-09-11 19:22:59,132 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:24:01 | ETA: 5:43:04
+2026-09-11 19:23:29,144 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:24:31 | ETA: 5:45:06
+2026-09-11 19:23:59,151 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:25:01 | ETA: 5:47:09
+2026-09-11 19:24:29,162 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:25:31 | ETA: 5:49:11
+2026-09-11 19:24:59,170 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:26:01 | ETA: 5:51:14
+2026-09-11 19:25:29,179 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:26:31 | ETA: 5:53:16
+2026-09-11 19:25:59,185 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:27:01 | ETA: 5:55:19
+2026-09-11 19:26:29,194 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:27:31 | ETA: 5:57:22
+2026-09-11 19:26:59,205 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:28:01 | ETA: 5:59:24
+2026-09-11 19:27:29,212 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:28:31 | ETA: 6:01:27
+2026-09-11 19:27:59,219 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:29:01 | ETA: 6:03:29
+2026-09-11 19:28:29,226 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:29:31 | ETA: 6:05:32
+2026-09-11 19:28:59,229 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:30:01 | ETA: 6:07:34
+2026-09-11 19:29:29,236 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:30:31 | ETA: 6:09:37
+2026-09-11 19:29:59,239 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:31:01 | ETA: 6:11:39
+2026-09-11 19:30:29,240 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:31:31 | ETA: 6:13:42
+2026-09-11 19:30:59,249 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:32:01 | ETA: 6:15:44
+2026-09-11 19:31:29,255 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:32:31 | ETA: 6:17:47
+2026-09-11 19:31:59,260 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:33:01 | ETA: 6:19:49
+2026-09-11 19:32:29,264 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:33:31 | ETA: 6:21:52
+2026-09-11 19:32:59,268 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:34:01 | ETA: 6:23:54
+2026-09-11 19:33:29,272 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:34:31 | ETA: 6:25:57
+2026-09-11 19:33:59,280 [INFO] STATUS | Module: leka_v1 | Done: 12/61 | UploadQueue: 4 | Elapsed: 1:35:01 | ETA: 6:27:59
+2026-09-11 19:34:20,746 [WARNING] [leka_v1] TIMEOUT after 1200s — terminating process tree PID 23044.
+2026-09-11 19:34:20,980 [INFO] [leka_v1] Accuracies: {'distilbert': ('PASS_LOW', 51.03), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('FAIL', 0.0)} | exit=-999 | elapsed=1200.2s
+2026-09-11 19:34:20,980 [INFO] [leka_v1] Overall: TIMEOUT
+2026-09-11 19:34:20,982 [INFO] ============================================================
+2026-09-11 19:34:20,983 [INFO] [14/61] Running: linformer
+2026-09-11 19:34:20,984 [INFO] [linformer] Launching runner: run_all_4_linformer.py
+2026-09-11 19:34:29,288 [INFO] STATUS | Module: linformer | Done: 13/61 | UploadQueue: 4 | Elapsed: 1:35:31 | ETA: 5:52:41
+2026-09-11 19:34:59,293 [INFO] STATUS | Module: linformer | Done: 13/61 | UploadQueue: 4 | Elapsed: 1:36:01 | ETA: 5:54:32
+2026-09-11 19:35:29,294 [INFO] STATUS | Module: linformer | Done: 13/61 | UploadQueue: 4 | Elapsed: 1:36:31 | ETA: 5:56:22
+2026-09-11 19:35:34,511 [INFO] [linformer] Accuracies: {'distilbert': ('PASS', 90.83), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 51.03)} | exit=0 | elapsed=73.5s
+2026-09-11 19:35:34,511 [INFO] [linformer] Overall: PASS
+2026-09-11 19:35:34,511 [INFO] [linformer] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 19:35:34,512 [INFO] ============================================================
+2026-09-11 19:35:34,512 [INFO] [15/61] Running: mamba
+2026-09-11 19:35:34,513 [INFO] [mamba] Launching runner: run_all_4_mamba.py
+2026-09-11 19:35:59,296 [INFO] STATUS | Module: mamba | Done: 14/61 | UploadQueue: 5 | Elapsed: 1:37:01 | ETA: 5:25:42
+2026-09-11 19:36:29,299 [INFO] STATUS | Module: mamba | Done: 14/61 | UploadQueue: 5 | Elapsed: 1:37:31 | ETA: 5:27:23
+2026-09-11 19:36:59,308 [INFO] STATUS | Module: mamba | Done: 14/61 | UploadQueue: 5 | Elapsed: 1:38:01 | ETA: 5:29:04
+2026-09-11 19:37:02,854 [INFO] [mamba] Accuracies: {'distilbert': ('PASS_LOW', 50.92), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 49.54)} | exit=0 | elapsed=88.3s
+2026-09-11 19:37:02,854 [INFO] [mamba] Overall: PASS_LOW
+2026-09-11 19:37:02,855 [INFO] ============================================================
+2026-09-11 19:37:02,855 [INFO] [16/61] Running: mamba_inject
+2026-09-11 19:37:02,855 [INFO] [mamba_inject] Launching runner: run_all_4_mamba_inject.py
+2026-09-11 19:37:29,313 [INFO] STATUS | Module: mamba_inject | Done: 15/61 | UploadQueue: 5 | Elapsed: 1:38:31 | ETA: 5:02:07
+2026-09-11 19:37:53,230 [INFO] [mamba_inject] Accuracies: {'distilbert': ('FAIL', 0.0), 'roberta': ('FAIL', 0.0), 'gpt2': ('FAIL', 0.0)} | exit=0 | elapsed=50.4s
+2026-09-11 19:37:53,230 [INFO] [mamba_inject] Overall: FAILED_LOW
+2026-09-11 19:37:53,231 [INFO] ============================================================
+2026-09-11 19:37:53,231 [INFO] [17/61] Running: mamba_svd_flash
+2026-09-11 19:37:53,232 [INFO] [mamba_svd_flash] Launching runner: run_all_4_mamba_svd_flash.py
+2026-09-11 19:37:59,326 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 5 | Elapsed: 1:39:01 | ETA: 4:38:29
+2026-09-11 19:38:29,337 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 5 | Elapsed: 1:39:31 | ETA: 4:39:54
+2026-09-11 19:38:59,339 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 5 | Elapsed: 1:40:01 | ETA: 4:41:18
+2026-09-11 19:39:29,344 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 5 | Elapsed: 1:40:31 | ETA: 4:42:42
+2026-09-11 19:39:59,350 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 5 | Elapsed: 1:41:01 | ETA: 4:44:07
+2026-09-11 19:40:29,351 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 5 | Elapsed: 1:41:31 | ETA: 4:45:31
+2026-09-11 19:40:59,356 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 5 | Elapsed: 1:42:01 | ETA: 4:46:56
+2026-09-11 19:41:06,925 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-hybrid_svd_layer/commit/main "HTTP/1.1 200 OK"
+2026-09-11 19:41:07,349 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-hybrid_svd_layer/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 19:41:07,977 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-hybrid_svd_layer/commit/main "HTTP/1.1 200 OK"
+2026-09-11 19:41:07,977 [INFO] [HF-ASYNC] Upload done: Hooshaai/svd-linear-attention-distilbert-hybrid_svd_layer
+2026-09-11 19:41:08,214 [INFO] HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 409 Conflict"
+2026-09-11 19:41:08,431 [INFO] HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-11 19:41:08,685 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-jamba/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 19:41:09,277 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-jamba/commit/main "HTTP/1.1 200 OK"
+2026-09-11 19:41:09,278 [INFO] [HF-ASYNC] Uploading weights.pt -> Hooshaai/svd-linear-attention-distilbert-jamba
+2026-09-11 19:41:09,657 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-jamba/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 19:41:29,357 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 4 | Elapsed: 1:42:31 | ETA: 4:48:20
+2026-09-11 19:41:59,358 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 4 | Elapsed: 1:43:01 | ETA: 4:49:44
+2026-09-11 19:42:29,372 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 4 | Elapsed: 1:43:31 | ETA: 4:51:09
+2026-09-11 19:42:59,379 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 4 | Elapsed: 1:44:01 | ETA: 4:52:33
+2026-09-11 19:43:29,380 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 4 | Elapsed: 1:44:31 | ETA: 4:53:58
+2026-09-11 19:43:59,393 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 4 | Elapsed: 1:45:01 | ETA: 4:55:22
+2026-09-11 19:44:29,395 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 4 | Elapsed: 1:45:31 | ETA: 4:56:46
+2026-09-11 19:44:59,405 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 4 | Elapsed: 1:46:01 | ETA: 4:58:11
+2026-09-11 19:45:29,407 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 4 | Elapsed: 1:46:31 | ETA: 4:59:35
+2026-09-11 19:45:59,416 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 4 | Elapsed: 1:47:01 | ETA: 5:01:00
+2026-09-11 19:46:29,421 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 4 | Elapsed: 1:47:31 | ETA: 5:02:24
+2026-09-11 19:46:59,432 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 4 | Elapsed: 1:48:01 | ETA: 5:03:48
+2026-09-11 19:47:29,436 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 4 | Elapsed: 1:48:31 | ETA: 5:05:13
+2026-09-11 19:47:59,444 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 4 | Elapsed: 1:49:01 | ETA: 5:06:37
+2026-09-11 19:48:29,452 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 4 | Elapsed: 1:49:31 | ETA: 5:08:01
+2026-09-11 19:48:59,460 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 4 | Elapsed: 1:50:01 | ETA: 5:09:26
+2026-09-11 19:49:29,462 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 4 | Elapsed: 1:50:31 | ETA: 5:10:50
+2026-09-11 19:49:58,445 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-jamba/commit/main "HTTP/1.1 200 OK"
+2026-09-11 19:49:58,851 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-jamba/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 19:49:59,325 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-jamba/commit/main "HTTP/1.1 200 OK"
+2026-09-11 19:49:59,325 [INFO] [HF-ASYNC] Upload done: Hooshaai/svd-linear-attention-distilbert-jamba
+2026-09-11 19:49:59,469 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 3 | Elapsed: 1:51:01 | ETA: 5:12:15
+2026-09-11 19:49:59,722 [INFO] HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 409 Conflict"
+2026-09-11 19:50:00,010 [INFO] HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-11 19:50:01,570 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-kda/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 19:50:02,253 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-kda/commit/main "HTTP/1.1 200 OK"
+2026-09-11 19:50:02,256 [INFO] [HF-ASYNC] Uploading weights.pt -> Hooshaai/svd-linear-attention-distilbert-kda
+2026-09-11 19:50:02,630 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-kda/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 19:50:29,477 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 3 | Elapsed: 1:51:31 | ETA: 5:13:39
+2026-09-11 19:50:59,482 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 3 | Elapsed: 1:52:01 | ETA: 5:15:03
+2026-09-11 19:51:29,488 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 3 | Elapsed: 1:52:31 | ETA: 5:16:28
+2026-09-11 19:51:59,491 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 3 | Elapsed: 1:53:01 | ETA: 5:17:52
+2026-09-11 19:52:29,494 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 3 | Elapsed: 1:53:31 | ETA: 5:19:17
+2026-09-11 19:52:59,502 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 3 | Elapsed: 1:54:01 | ETA: 5:20:41
+2026-09-11 19:53:29,511 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 3 | Elapsed: 1:54:31 | ETA: 5:22:05
+2026-09-11 19:53:55,809 [WARNING] [HF-ASYNC] Upload failed kda/distilbert: [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond
+2026-09-11 19:53:59,521 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 2 | Elapsed: 1:55:01 | ETA: 5:23:30
+2026-09-11 19:54:29,524 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 2 | Elapsed: 1:55:31 | ETA: 5:24:54
+2026-09-11 19:54:59,529 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 2 | Elapsed: 1:56:01 | ETA: 5:26:19
+2026-09-11 19:55:29,542 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 2 | Elapsed: 1:56:31 | ETA: 5:27:43
+2026-09-11 19:55:59,551 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 2 | Elapsed: 1:57:01 | ETA: 5:29:07
+2026-09-11 19:56:29,560 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 2 | Elapsed: 1:57:31 | ETA: 5:30:32
+2026-09-11 19:56:59,565 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 2 | Elapsed: 1:58:01 | ETA: 5:31:56
+2026-09-11 19:57:29,570 [INFO] STATUS | Module: mamba_svd_flash | Done: 16/61 | UploadQueue: 2 | Elapsed: 1:58:31 | ETA: 5:33:21
+2026-09-11 19:57:53,267 [WARNING] [mamba_svd_flash] TIMEOUT after 1200s — terminating process tree PID 7156.
+2026-09-11 19:57:53,606 [INFO] [mamba_svd_flash] Accuracies: {'distilbert': ('PASS', 90.02), 'roberta': ('FAIL', 0.0), 'gpt2': ('FAIL', 0.0)} | exit=-999 | elapsed=1200.3s
+2026-09-11 19:57:53,606 [INFO] [mamba_svd_flash] Overall: TIMEOUT
+2026-09-11 19:57:53,617 [INFO] ============================================================
+2026-09-11 19:57:53,617 [INFO] [18/61] Running: mla
+2026-09-11 19:57:53,619 [INFO] [mla] Launching runner: run_all_4_mla.py
+2026-09-11 19:57:59,573 [INFO] STATUS | Module: mla | Done: 17/61 | UploadQueue: 2 | Elapsed: 1:59:01 | ETA: 5:08:03
+2026-09-11 19:58:29,579 [INFO] STATUS | Module: mla | Done: 17/61 | UploadQueue: 2 | Elapsed: 1:59:31 | ETA: 5:09:21
+2026-09-11 19:58:59,587 [INFO] STATUS | Module: mla | Done: 17/61 | UploadQueue: 2 | Elapsed: 2:00:01 | ETA: 5:10:39
+2026-09-11 19:59:29,590 [INFO] STATUS | Module: mla | Done: 17/61 | UploadQueue: 2 | Elapsed: 2:00:31 | ETA: 5:11:56
+2026-09-11 19:59:30,931 [INFO] [mla] Accuracies: {'distilbert': ('PASS_LOW', 50.92), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS', 57.22)} | exit=0 | elapsed=97.3s
+2026-09-11 19:59:30,931 [INFO] [mla] Overall: PASS
+2026-09-11 19:59:30,931 [INFO] [mla] Enqueued background HF upload for gpt2 (non-blocking)
+2026-09-11 19:59:30,932 [INFO] ============================================================
+2026-09-11 19:59:30,932 [INFO] [19/61] Running: nexus
+2026-09-11 19:59:30,932 [INFO] [nexus] Launching runner: run_all_4_nexus.py
+2026-09-11 19:59:59,604 [INFO] STATUS | Module: nexus | Done: 18/61 | UploadQueue: 3 | Elapsed: 2:01:01 | ETA: 4:49:06
+2026-09-11 20:00:29,606 [INFO] STATUS | Module: nexus | Done: 18/61 | UploadQueue: 3 | Elapsed: 2:01:31 | ETA: 4:50:18
+2026-09-11 20:00:50,691 [INFO] [nexus] Accuracies: {'distilbert': ('PASS_LOW', 50.92), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 51.61)} | exit=0 | elapsed=79.8s
+2026-09-11 20:00:50,691 [INFO] [nexus] Overall: PASS_LOW
+2026-09-11 20:00:50,693 [INFO] ============================================================
+2026-09-11 20:00:50,693 [INFO] [20/61] Running: nha
+2026-09-11 20:00:50,693 [INFO] [nha] Launching runner: run_all_4_nha.py
+2026-09-11 20:00:59,613 [INFO] STATUS | Module: nha | Done: 19/61 | UploadQueue: 3 | Elapsed: 2:02:01 | ETA: 4:29:44
+2026-09-11 20:01:29,615 [INFO] STATUS | Module: nha | Done: 19/61 | UploadQueue: 3 | Elapsed: 2:02:31 | ETA: 4:30:50
+2026-09-11 20:01:48,425 [INFO] [nha] Accuracies: {'distilbert': ('FAIL', 0.0), 'roberta': ('FAIL', 0.0), 'gpt2': ('FAIL', 0.0)} | exit=0 | elapsed=57.7s
+2026-09-11 20:01:48,425 [INFO] [nha] Overall: FAILED_LOW
+2026-09-11 20:01:48,426 [INFO] ============================================================
+2026-09-11 20:01:48,426 [INFO] [21/61] Running: nha_compressor
+2026-09-11 20:01:48,426 [INFO] [nha_compressor] Launching runner: run_all_4_nha_compressor.py
+2026-09-11 20:01:59,624 [INFO] STATUS | Module: nha_compressor | Done: 20/61 | UploadQueue: 3 | Elapsed: 2:03:01 | ETA: 4:12:12
+2026-09-11 20:02:29,639 [INFO] STATUS | Module: nha_compressor | Done: 20/61 | UploadQueue: 3 | Elapsed: 2:03:31 | ETA: 4:13:13
+2026-09-11 20:02:45,532 [INFO] [nha_compressor] Accuracies: {'distilbert': ('FAIL', 0.0), 'roberta': ('FAIL', 0.0), 'gpt2': ('FAIL', 0.0)} | exit=0 | elapsed=57.1s
+2026-09-11 20:02:45,532 [INFO] [nha_compressor] Overall: FAILED_LOW
+2026-09-11 20:02:45,534 [INFO] ============================================================
+2026-09-11 20:02:45,534 [INFO] [22/61] Running: nsa
+2026-09-11 20:02:45,534 [INFO] [nsa] Launching runner: run_all_4_nsa.py
+2026-09-11 20:02:59,654 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:04:01 | ETA: 3:56:14
+2026-09-11 20:03:29,660 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:04:31 | ETA: 3:57:11
+2026-09-11 20:03:59,664 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:05:01 | ETA: 3:58:08
+2026-09-11 20:04:29,668 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:05:31 | ETA: 3:59:05
+2026-09-11 20:04:59,673 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:06:01 | ETA: 4:00:03
+2026-09-11 20:05:29,688 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:06:31 | ETA: 4:01:00
+2026-09-11 20:05:59,701 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:07:01 | ETA: 4:01:57
+2026-09-11 20:06:29,712 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:07:31 | ETA: 4:02:54
+2026-09-11 20:06:59,724 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:08:01 | ETA: 4:03:51
+2026-09-11 20:07:29,727 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:08:31 | ETA: 4:04:48
+2026-09-11 20:07:59,737 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:09:01 | ETA: 4:05:46
+2026-09-11 20:08:29,753 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:09:31 | ETA: 4:06:43
+2026-09-11 20:08:59,767 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:10:01 | ETA: 4:07:40
+2026-09-11 20:09:29,770 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:10:31 | ETA: 4:08:37
+2026-09-11 20:09:59,784 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:11:01 | ETA: 4:09:34
+2026-09-11 20:10:29,785 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:11:31 | ETA: 4:10:31
+2026-09-11 20:10:59,788 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:12:01 | ETA: 4:11:28
+2026-09-11 20:11:29,801 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:12:31 | ETA: 4:12:26
+2026-09-11 20:11:59,806 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:13:01 | ETA: 4:13:23
+2026-09-11 20:12:29,806 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:13:31 | ETA: 4:14:20
+2026-09-11 20:12:59,817 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:14:01 | ETA: 4:15:17
+2026-09-11 20:13:29,827 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:14:31 | ETA: 4:16:14
+2026-09-11 20:13:59,839 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:15:01 | ETA: 4:17:11
+2026-09-11 20:14:29,851 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:15:31 | ETA: 4:18:09
+2026-09-11 20:14:59,862 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:16:01 | ETA: 4:19:06
+2026-09-11 20:15:29,876 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:16:31 | ETA: 4:20:03
+2026-09-11 20:15:59,885 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:17:01 | ETA: 4:21:00
+2026-09-11 20:16:29,886 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:17:31 | ETA: 4:21:57
+2026-09-11 20:16:59,894 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:18:01 | ETA: 4:22:54
+2026-09-11 20:17:29,906 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:18:31 | ETA: 4:23:52
+2026-09-11 20:17:59,912 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:19:01 | ETA: 4:24:49
+2026-09-11 20:18:29,917 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:19:31 | ETA: 4:25:46
+2026-09-11 20:18:59,930 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:20:01 | ETA: 4:26:43
+2026-09-11 20:19:29,939 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:20:31 | ETA: 4:27:40
+2026-09-11 20:19:59,954 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:21:01 | ETA: 4:28:37
+2026-09-11 20:20:29,965 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:21:31 | ETA: 4:29:35
+2026-09-11 20:20:59,968 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:22:01 | ETA: 4:30:32
+2026-09-11 20:21:29,971 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:22:31 | ETA: 4:31:29
+2026-09-11 20:21:59,985 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:23:01 | ETA: 4:32:26
+2026-09-11 20:22:29,990 [INFO] STATUS | Module: nsa | Done: 21/61 | UploadQueue: 3 | Elapsed: 2:23:31 | ETA: 4:33:23
+2026-09-11 20:22:45,559 [WARNING] [nsa] TIMEOUT after 1200s — terminating process tree PID 25536.
+2026-09-11 20:22:45,725 [INFO] [nsa] Accuracies: {'distilbert': ('PASS', 90.83), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 51.03)} | exit=-999 | elapsed=1200.2s
+2026-09-11 20:22:45,725 [INFO] [nsa] Overall: TIMEOUT
+2026-09-11 20:22:45,726 [INFO] ============================================================
+2026-09-11 20:22:45,726 [INFO] [23/61] Running: nsa_attention
+2026-09-11 20:22:45,727 [INFO] [nsa_attention] Launching runner: run_all_4_nsa_attention.py
+2026-09-11 20:23:00,003 [INFO] STATUS | Module: nsa_attention | Done: 22/61 | UploadQueue: 3 | Elapsed: 2:24:01 | ETA: 4:15:19
+2026-09-11 20:23:30,011 [INFO] STATUS | Module: nsa_attention | Done: 22/61 | UploadQueue: 3 | Elapsed: 2:24:31 | ETA: 4:16:12
+2026-09-11 20:24:00,014 [INFO] STATUS | Module: nsa_attention | Done: 22/61 | UploadQueue: 3 | Elapsed: 2:25:01 | ETA: 4:17:06
+2026-09-11 20:24:09,672 [INFO] [nsa_attention] Accuracies: {'distilbert': ('PASS', 90.83), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 51.03)} | exit=0 | elapsed=83.9s
+2026-09-11 20:24:09,672 [INFO] [nsa_attention] Overall: PASS
+2026-09-11 20:24:09,672 [INFO] [nsa_attention] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 20:24:09,674 [INFO] ============================================================
+2026-09-11 20:24:09,674 [INFO] [24/61] Running: nystrom
+2026-09-11 20:24:09,675 [INFO] [nystrom] Launching runner: run_all_4_nystrom.py
+2026-09-11 20:24:30,029 [INFO] STATUS | Module: nystrom | Done: 23/61 | UploadQueue: 4 | Elapsed: 2:25:31 | ETA: 4:00:26
+2026-09-11 20:25:00,038 [INFO] STATUS | Module: nystrom | Done: 23/61 | UploadQueue: 4 | Elapsed: 2:26:01 | ETA: 4:01:16
+2026-09-11 20:25:30,044 [INFO] STATUS | Module: nystrom | Done: 23/61 | UploadQueue: 4 | Elapsed: 2:26:31 | ETA: 4:02:05
+2026-09-11 20:25:38,928 [INFO] [nystrom] Accuracies: {'distilbert': ('PASS', 88.07), 'roberta': ('PASS_LOW', 52.18), 'gpt2': ('PASS_LOW', 51.03)} | exit=0 | elapsed=89.3s
+2026-09-11 20:25:38,929 [INFO] [nystrom] Overall: PASS
+2026-09-11 20:25:38,929 [INFO] [nystrom] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 20:25:38,930 [INFO] ============================================================
+2026-09-11 20:25:38,930 [INFO] [25/61] Running: oha
+2026-09-11 20:25:38,930 [INFO] [oha] Launching runner: run_all_4_oha.py
+2026-09-11 20:26:00,058 [INFO] STATUS | Module: oha | Done: 24/61 | UploadQueue: 5 | Elapsed: 2:27:01 | ETA: 3:46:40
+2026-09-11 20:26:30,064 [INFO] STATUS | Module: oha | Done: 24/61 | UploadQueue: 5 | Elapsed: 2:27:31 | ETA: 3:47:26
+2026-09-11 20:27:00,072 [INFO] STATUS | Module: oha | Done: 24/61 | UploadQueue: 5 | Elapsed: 2:28:01 | ETA: 3:48:13
+2026-09-11 20:27:09,530 [INFO] [oha] Accuracies: {'distilbert': ('PASS', 90.14), 'roberta': ('PASS_LOW', 55.39), 'gpt2': ('PASS_LOW', 51.26)} | exit=0 | elapsed=90.6s
+2026-09-11 20:27:09,530 [INFO] [oha] Overall: PASS
+2026-09-11 20:27:09,530 [INFO] [oha] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 20:27:09,531 [INFO] ============================================================
+2026-09-11 20:27:09,531 [INFO] [26/61] Running: optimized_hybrid_attention
+2026-09-11 20:27:09,531 [INFO] [optimized_hybrid_attention] Launching runner: run_all_4_optimized_hybrid_attention.py
+2026-09-11 20:27:30,072 [INFO] STATUS | Module: optimized_hybrid_attention | Done: 25/61 | UploadQueue: 6 | Elapsed: 2:28:31 | ETA: 3:33:53
+2026-09-11 20:28:00,081 [INFO] STATUS | Module: optimized_hybrid_attention | Done: 25/61 | UploadQueue: 6 | Elapsed: 2:29:02 | ETA: 3:34:36
+2026-09-11 20:28:30,092 [INFO] STATUS | Module: optimized_hybrid_attention | Done: 25/61 | UploadQueue: 6 | Elapsed: 2:29:32 | ETA: 3:35:19
+2026-09-11 20:28:53,572 [INFO] [optimized_hybrid_attention] Accuracies: {'distilbert': ('PASS', 90.14), 'roberta': ('PASS_LOW', 55.39), 'gpt2': ('PASS_LOW', 51.26)} | exit=0 | elapsed=104.0s
+2026-09-11 20:28:53,572 [INFO] [optimized_hybrid_attention] Overall: PASS
+2026-09-11 20:28:53,572 [INFO] [optimized_hybrid_attention] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 20:28:53,573 [INFO] ============================================================
+2026-09-11 20:28:53,573 [INFO] [27/61] Running: orion
+2026-09-11 20:28:53,573 [INFO] [orion] Launching runner: run_all_4_orion.py
+2026-09-11 20:29:00,101 [INFO] STATUS | Module: orion | Done: 26/61 | UploadQueue: 7 | Elapsed: 2:30:02 | ETA: 3:21:58
+2026-09-11 20:29:30,108 [INFO] STATUS | Module: orion | Done: 26/61 | UploadQueue: 7 | Elapsed: 2:30:32 | ETA: 3:22:38
+2026-09-11 20:30:00,115 [INFO] STATUS | Module: orion | Done: 26/61 | UploadQueue: 7 | Elapsed: 2:31:02 | ETA: 3:23:18
+2026-09-11 20:30:30,121 [INFO] STATUS | Module: orion | Done: 26/61 | UploadQueue: 7 | Elapsed: 2:31:32 | ETA: 3:23:59
+2026-09-11 20:30:41,449 [INFO] [orion] Accuracies: {'distilbert': ('PASS_LOW', 55.85), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.8)} | exit=0 | elapsed=107.9s
+2026-09-11 20:30:41,449 [INFO] [orion] Overall: PASS_LOW
+2026-09-11 20:30:41,450 [INFO] ============================================================
+2026-09-11 20:30:41,450 [INFO] [28/61] Running: orion_module
+2026-09-11 20:30:41,451 [INFO] [orion_module] Launching runner: run_all_4_orion_module.py
+2026-09-11 20:31:00,128 [INFO] STATUS | Module: orion_module | Done: 27/61 | UploadQueue: 7 | Elapsed: 2:32:02 | ETA: 3:11:27
+2026-09-11 20:31:30,145 [INFO] STATUS | Module: orion_module | Done: 27/61 | UploadQueue: 7 | Elapsed: 2:32:32 | ETA: 3:12:04
+2026-09-11 20:32:00,154 [INFO] STATUS | Module: orion_module | Done: 27/61 | UploadQueue: 7 | Elapsed: 2:33:02 | ETA: 3:12:42
+2026-09-11 20:32:30,162 [INFO] STATUS | Module: orion_module | Done: 27/61 | UploadQueue: 7 | Elapsed: 2:33:32 | ETA: 3:13:20
+2026-09-11 20:32:30,245 [INFO] [orion_module] Accuracies: {'distilbert': ('PASS_LOW', 55.85), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.8)} | exit=0 | elapsed=108.8s
+2026-09-11 20:32:30,245 [INFO] [orion_module] Overall: PASS_LOW
+2026-09-11 20:32:30,246 [INFO] ============================================================
+2026-09-11 20:32:30,246 [INFO] [29/61] Running: performer
+2026-09-11 20:32:30,246 [INFO] [performer] Launching runner: run_all_4_performer.py
+2026-09-11 20:33:00,169 [INFO] STATUS | Module: performer | Done: 28/61 | UploadQueue: 7 | Elapsed: 2:34:02 | ETA: 3:01:32
+2026-09-11 20:33:30,182 [INFO] STATUS | Module: performer | Done: 28/61 | UploadQueue: 7 | Elapsed: 2:34:32 | ETA: 3:02:07
+2026-09-11 20:34:00,192 [INFO] STATUS | Module: performer | Done: 28/61 | UploadQueue: 7 | Elapsed: 2:35:02 | ETA: 3:02:43
+2026-09-11 20:34:30,200 [INFO] STATUS | Module: performer | Done: 28/61 | UploadQueue: 7 | Elapsed: 2:35:32 | ETA: 3:03:18
+2026-09-11 20:34:40,417 [INFO] [performer] Accuracies: {'distilbert': ('PASS', 74.08), 'roberta': ('PASS', 60.32), 'gpt2': ('PASS_LOW', 50.8)} | exit=0 | elapsed=130.2s
+2026-09-11 20:34:40,417 [INFO] [performer] Overall: PASS
+2026-09-11 20:34:40,417 [INFO] [performer] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 20:34:40,417 [INFO] [performer] Enqueued background HF upload for roberta (non-blocking)
+2026-09-11 20:34:40,418 [INFO] ============================================================
+2026-09-11 20:34:40,418 [INFO] [30/61] Running: rala
+2026-09-11 20:34:40,418 [INFO] [rala] Launching runner: run_all_4_rala.py
+2026-09-11 20:35:00,204 [INFO] STATUS | Module: rala | Done: 29/61 | UploadQueue: 9 | Elapsed: 2:36:02 | ETA: 2:52:10
+2026-09-11 20:35:30,217 [INFO] STATUS | Module: rala | Done: 29/61 | UploadQueue: 9 | Elapsed: 2:36:32 | ETA: 2:52:43
+2026-09-11 20:36:00,232 [INFO] STATUS | Module: rala | Done: 29/61 | UploadQueue: 9 | Elapsed: 2:37:02 | ETA: 2:53:16
+2026-09-11 20:36:30,236 [INFO] STATUS | Module: rala | Done: 29/61 | UploadQueue: 9 | Elapsed: 2:37:32 | ETA: 2:53:49
+2026-09-11 20:37:00,237 [INFO] STATUS | Module: rala | Done: 29/61 | UploadQueue: 9 | Elapsed: 2:38:02 | ETA: 2:54:23
+2026-09-11 20:37:30,246 [INFO] STATUS | Module: rala | Done: 29/61 | UploadQueue: 9 | Elapsed: 2:38:32 | ETA: 2:54:56
+2026-09-11 20:38:00,260 [INFO] STATUS | Module: rala | Done: 29/61 | UploadQueue: 9 | Elapsed: 2:39:02 | ETA: 2:55:29
+2026-09-11 20:38:30,269 [INFO] STATUS | Module: rala | Done: 29/61 | UploadQueue: 9 | Elapsed: 2:39:32 | ETA: 2:56:02
+2026-09-11 20:38:52,478 [INFO] [rala] Accuracies: {'distilbert': ('PASS', 60.09), 'roberta': ('PASS_LOW', 50.8), 'gpt2': ('PASS', 58.03)} | exit=0 | elapsed=252.1s
+2026-09-11 20:38:52,478 [INFO] [rala] Overall: PASS
+2026-09-11 20:38:52,478 [INFO] [rala] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 20:38:52,478 [INFO] [rala] Enqueued background HF upload for gpt2 (non-blocking)
+2026-09-11 20:38:52,479 [INFO] ============================================================
+2026-09-11 20:38:52,479 [INFO] [31/61] Running: rala_compressor
+2026-09-11 20:38:52,481 [INFO] [rala_compressor] Launching runner: run_all_4_rala_compressor.py
+2026-09-11 20:39:00,279 [INFO] STATUS | Module: rala_compressor | Done: 30/61 | UploadQueue: 11 | Elapsed: 2:40:02 | ETA: 2:45:22
+2026-09-11 20:39:30,293 [INFO] STATUS | Module: rala_compressor | Done: 30/61 | UploadQueue: 11 | Elapsed: 2:40:32 | ETA: 2:45:53
+2026-09-11 20:40:00,298 [INFO] STATUS | Module: rala_compressor | Done: 30/61 | UploadQueue: 11 | Elapsed: 2:41:02 | ETA: 2:46:24
+2026-09-11 20:40:30,311 [INFO] STATUS | Module: rala_compressor | Done: 30/61 | UploadQueue: 11 | Elapsed: 2:41:32 | ETA: 2:46:55
+2026-09-11 20:41:00,327 [INFO] STATUS | Module: rala_compressor | Done: 30/61 | UploadQueue: 11 | Elapsed: 2:42:02 | ETA: 2:47:26
+2026-09-11 20:41:30,342 [INFO] STATUS | Module: rala_compressor | Done: 30/61 | UploadQueue: 11 | Elapsed: 2:42:32 | ETA: 2:47:57
+2026-09-11 20:42:00,357 [INFO] STATUS | Module: rala_compressor | Done: 30/61 | UploadQueue: 11 | Elapsed: 2:43:02 | ETA: 2:48:28
+2026-09-11 20:42:30,366 [INFO] STATUS | Module: rala_compressor | Done: 30/61 | UploadQueue: 11 | Elapsed: 2:43:32 | ETA: 2:48:59
+2026-09-11 20:43:00,373 [INFO] STATUS | Module: rala_compressor | Done: 30/61 | UploadQueue: 11 | Elapsed: 2:44:02 | ETA: 2:49:30
+2026-09-11 20:43:11,446 [INFO] [rala_compressor] Accuracies: {'distilbert': ('PASS', 60.09), 'roberta': ('PASS_LOW', 50.8), 'gpt2': ('PASS', 58.03)} | exit=0 | elapsed=259.0s
+2026-09-11 20:43:11,446 [INFO] [rala_compressor] Overall: PASS
+2026-09-11 20:43:11,446 [INFO] [rala_compressor] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 20:43:11,446 [INFO] [rala_compressor] Enqueued background HF upload for gpt2 (non-blocking)
+2026-09-11 20:43:11,447 [INFO] ============================================================
+2026-09-11 20:43:11,447 [INFO] [32/61] Running: reap_moe
+2026-09-11 20:43:11,447 [INFO] [reap_moe] Launching runner: run_all_4_reap_moe.py
+2026-09-11 20:43:30,379 [INFO] STATUS | Module: reap_moe | Done: 31/61 | UploadQueue: 13 | Elapsed: 2:44:32 | ETA: 2:39:13
+2026-09-11 20:44:00,380 [INFO] STATUS | Module: reap_moe | Done: 31/61 | UploadQueue: 13 | Elapsed: 2:45:02 | ETA: 2:39:42
+2026-09-11 20:44:30,393 [INFO] STATUS | Module: reap_moe | Done: 31/61 | UploadQueue: 13 | Elapsed: 2:45:32 | ETA: 2:40:11
+2026-09-11 20:45:00,404 [INFO] STATUS | Module: reap_moe | Done: 31/61 | UploadQueue: 13 | Elapsed: 2:46:02 | ETA: 2:40:40
+2026-09-11 20:45:10,167 [INFO] [reap_moe] Accuracies: {'distilbert': ('PASS', 90.02), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 52.41)} | exit=0 | elapsed=118.7s
+2026-09-11 20:45:10,167 [INFO] [reap_moe] Overall: PASS
+2026-09-11 20:45:10,167 [INFO] [reap_moe] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 20:45:10,168 [INFO] ============================================================
+2026-09-11 20:45:10,168 [INFO] [33/61] Running: regla
+2026-09-11 20:45:10,169 [INFO] [regla] Launching runner: run_all_4_regla.py
+2026-09-11 20:45:30,419 [INFO] STATUS | Module: regla | Done: 32/61 | UploadQueue: 14 | Elapsed: 2:46:32 | ETA: 2:30:55
+2026-09-11 20:46:00,426 [INFO] STATUS | Module: regla | Done: 32/61 | UploadQueue: 14 | Elapsed: 2:47:02 | ETA: 2:31:22
+2026-09-11 20:46:30,431 [INFO] STATUS | Module: regla | Done: 32/61 | UploadQueue: 14 | Elapsed: 2:47:32 | ETA: 2:31:49
+2026-09-11 20:47:00,432 [INFO] STATUS | Module: regla | Done: 32/61 | UploadQueue: 14 | Elapsed: 2:48:02 | ETA: 2:32:17
+2026-09-11 20:47:05,344 [INFO] [regla] Accuracies: {'distilbert': ('PASS', 74.89), 'roberta': ('PASS_LOW', 51.26), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=115.2s
+2026-09-11 20:47:05,344 [INFO] [regla] Overall: PASS
+2026-09-11 20:47:05,344 [INFO] [regla] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 20:47:05,345 [INFO] ============================================================
+2026-09-11 20:47:05,345 [INFO] [34/61] Running: roast_hashed_linear
+2026-09-11 20:47:05,346 [INFO] [roast_hashed_linear] Launching runner: run_all_4_roast_hashed_linear.py
+2026-09-11 20:47:30,437 [INFO] STATUS | Module: roast_hashed_linear | Done: 33/61 | UploadQueue: 15 | Elapsed: 2:48:32 | ETA: 2:23:00
+2026-09-11 20:48:00,443 [INFO] STATUS | Module: roast_hashed_linear | Done: 33/61 | UploadQueue: 15 | Elapsed: 2:49:02 | ETA: 2:23:25
+2026-09-11 20:48:30,454 [INFO] STATUS | Module: roast_hashed_linear | Done: 33/61 | UploadQueue: 15 | Elapsed: 2:49:32 | ETA: 2:23:51
+2026-09-11 20:48:31,332 [INFO] [roast_hashed_linear] Accuracies: {'distilbert': ('PASS', 91.06), 'roberta': ('PASS_LOW', 51.26), 'gpt2': ('PASS_LOW', 51.72)} | exit=0 | elapsed=86.0s
+2026-09-11 20:48:31,332 [INFO] [roast_hashed_linear] Overall: PASS
+2026-09-11 20:48:31,332 [INFO] [roast_hashed_linear] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 20:48:31,333 [INFO] ============================================================
+2026-09-11 20:48:31,333 [INFO] [35/61] Running: routing
+2026-09-11 20:48:31,334 [INFO] [routing] Launching runner: run_all_4_routing.py
+2026-09-11 20:49:00,454 [INFO] STATUS | Module: routing | Done: 34/61 | UploadQueue: 16 | Elapsed: 2:50:02 | ETA: 2:15:01
+2026-09-11 20:49:30,460 [INFO] STATUS | Module: routing | Done: 34/61 | UploadQueue: 16 | Elapsed: 2:50:32 | ETA: 2:15:25
+2026-09-11 20:50:00,464 [INFO] STATUS | Module: routing | Done: 34/61 | UploadQueue: 16 | Elapsed: 2:51:02 | ETA: 2:15:49
+2026-09-11 20:50:30,471 [INFO] STATUS | Module: routing | Done: 34/61 | UploadQueue: 16 | Elapsed: 2:51:32 | ETA: 2:16:13
+2026-09-11 20:50:59,878 [INFO] [routing] Accuracies: {'distilbert': ('PASS_LOW', 51.72), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 51.72)} | exit=0 | elapsed=148.5s
+2026-09-11 20:50:59,878 [INFO] [routing] Overall: PASS_LOW
+2026-09-11 20:50:59,879 [INFO] ============================================================
+2026-09-11 20:50:59,879 [INFO] [36/61] Running: saes_svd_compressor
+2026-09-11 20:50:59,879 [INFO] [saes_svd_compressor] Launching runner: run_all_4_saes_svd_compressor.py
+2026-09-11 20:51:00,473 [INFO] STATUS | Module: saes_svd_compressor | Done: 35/61 | UploadQueue: 16 | Elapsed: 2:52:02 | ETA: 2:07:48
+2026-09-11 20:51:30,481 [INFO] STATUS | Module: saes_svd_compressor | Done: 35/61 | UploadQueue: 16 | Elapsed: 2:52:32 | ETA: 2:08:10
+2026-09-11 20:52:00,491 [INFO] STATUS | Module: saes_svd_compressor | Done: 35/61 | UploadQueue: 16 | Elapsed: 2:53:02 | ETA: 2:08:32
+2026-09-11 20:52:17,151 [INFO] [saes_svd_compressor] Accuracies: {'distilbert': ('PASS', 90.83), 'roberta': ('PASS_LOW', 51.49), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=77.3s
+2026-09-11 20:52:17,151 [INFO] [saes_svd_compressor] Overall: PASS
+2026-09-11 20:52:17,151 [INFO] [saes_svd_compressor] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 20:52:17,152 [INFO] ============================================================
+2026-09-11 20:52:17,152 [INFO] [37/61] Running: samba_m3
+2026-09-11 20:52:17,153 [INFO] [samba_m3] Launching runner: run_all_4_samba_m3.py
+2026-09-11 20:52:30,500 [INFO] STATUS | Module: samba_m3 | Done: 36/61 | UploadQueue: 17 | Elapsed: 2:53:32 | ETA: 2:00:30
+2026-09-11 20:53:00,501 [INFO] STATUS | Module: samba_m3 | Done: 36/61 | UploadQueue: 17 | Elapsed: 2:54:02 | ETA: 2:00:51
+2026-09-11 20:53:30,512 [INFO] STATUS | Module: samba_m3 | Done: 36/61 | UploadQueue: 17 | Elapsed: 2:54:32 | ETA: 2:01:12
+2026-09-11 20:54:00,517 [INFO] STATUS | Module: samba_m3 | Done: 36/61 | UploadQueue: 17 | Elapsed: 2:55:02 | ETA: 2:01:33
+2026-09-11 20:54:18,389 [INFO] [samba_m3] Accuracies: {'distilbert': ('PASS', 89.45), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=121.2s
+2026-09-11 20:54:18,389 [INFO] [samba_m3] Overall: PASS
+2026-09-11 20:54:18,389 [INFO] [samba_m3] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 20:54:18,391 [INFO] ============================================================
+2026-09-11 20:54:18,391 [INFO] [38/61] Running: samba_moe
+2026-09-11 20:54:18,391 [INFO] [samba_moe] Launching runner: run_all_4_samba_moe.py
+2026-09-11 20:54:30,517 [INFO] STATUS | Module: samba_moe | Done: 37/61 | UploadQueue: 18 | Elapsed: 2:55:32 | ETA: 1:53:51
+2026-09-11 20:55:00,533 [INFO] STATUS | Module: samba_moe | Done: 37/61 | UploadQueue: 18 | Elapsed: 2:56:02 | ETA: 1:54:11
+2026-09-11 20:55:30,538 [INFO] STATUS | Module: samba_moe | Done: 37/61 | UploadQueue: 18 | Elapsed: 2:56:32 | ETA: 1:54:30
+2026-09-11 20:56:00,550 [INFO] STATUS | Module: samba_moe | Done: 37/61 | UploadQueue: 18 | Elapsed: 2:57:02 | ETA: 1:54:50
+2026-09-11 20:56:30,565 [INFO] STATUS | Module: samba_moe | Done: 37/61 | UploadQueue: 18 | Elapsed: 2:57:32 | ETA: 1:55:09
+2026-09-11 20:56:49,543 [INFO] [samba_moe] Accuracies: {'distilbert': ('PASS', 76.72), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=151.1s
+2026-09-11 20:56:49,543 [INFO] [samba_moe] Overall: PASS
+2026-09-11 20:56:49,543 [INFO] [samba_moe] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 20:56:49,544 [INFO] ============================================================
+2026-09-11 20:56:49,544 [INFO] [39/61] Running: sambam3
+2026-09-11 20:56:49,544 [INFO] [sambam3] Launching runner: run_all_4_sambam3.py
+2026-09-11 20:57:00,570 [INFO] STATUS | Module: sambam3 | Done: 38/61 | UploadQueue: 19 | Elapsed: 2:58:02 | ETA: 1:47:45
+2026-09-11 20:57:30,581 [INFO] STATUS | Module: sambam3 | Done: 38/61 | UploadQueue: 19 | Elapsed: 2:58:32 | ETA: 1:48:03
+2026-09-11 20:58:00,587 [INFO] STATUS | Module: sambam3 | Done: 38/61 | UploadQueue: 19 | Elapsed: 2:59:02 | ETA: 1:48:22
+2026-09-11 20:58:30,592 [INFO] STATUS | Module: sambam3 | Done: 38/61 | UploadQueue: 19 | Elapsed: 2:59:32 | ETA: 1:48:40
+2026-09-11 20:58:42,475 [INFO] [sambam3] Accuracies: {'distilbert': ('PASS', 89.45), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=112.9s
+2026-09-11 20:58:42,475 [INFO] [sambam3] Overall: PASS
+2026-09-11 20:58:42,475 [INFO] [sambam3] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 20:58:42,476 [INFO] ============================================================
+2026-09-11 20:58:42,476 [INFO] [40/61] Running: sambamoe
+2026-09-11 20:58:42,476 [INFO] [sambamoe] Launching runner: run_all_4_sambamoe.py
+2026-09-11 20:59:00,606 [INFO] STATUS | Module: sambamoe | Done: 39/61 | UploadQueue: 20 | Elapsed: 3:00:02 | ETA: 1:41:33
+2026-09-11 20:59:30,615 [INFO] STATUS | Module: sambamoe | Done: 39/61 | UploadQueue: 20 | Elapsed: 3:00:32 | ETA: 1:41:50
+2026-09-11 21:00:00,619 [INFO] STATUS | Module: sambamoe | Done: 39/61 | UploadQueue: 20 | Elapsed: 3:01:02 | ETA: 1:42:07
+2026-09-11 21:00:30,628 [INFO] STATUS | Module: sambamoe | Done: 39/61 | UploadQueue: 20 | Elapsed: 3:01:32 | ETA: 1:42:24
+2026-09-11 21:01:00,635 [INFO] STATUS | Module: sambamoe | Done: 39/61 | UploadQueue: 20 | Elapsed: 3:02:02 | ETA: 1:42:41
+2026-09-11 21:01:20,670 [INFO] [sambamoe] Accuracies: {'distilbert': ('PASS', 76.72), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=158.2s
+2026-09-11 21:01:20,670 [INFO] [sambamoe] Overall: PASS
+2026-09-11 21:01:20,670 [INFO] [sambamoe] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 21:01:20,671 [INFO] ============================================================
+2026-09-11 21:01:20,671 [INFO] [41/61] Running: simple_ssm
+2026-09-11 21:01:20,671 [INFO] [simple_ssm] Launching runner: run_all_4_simple_ssm.py
+2026-09-11 21:01:30,647 [INFO] STATUS | Module: simple_ssm | Done: 40/61 | UploadQueue: 21 | Elapsed: 3:02:32 | ETA: 1:35:50
+2026-09-11 21:02:00,651 [INFO] STATUS | Module: simple_ssm | Done: 40/61 | UploadQueue: 21 | Elapsed: 3:03:02 | ETA: 1:36:05
+2026-09-11 21:02:30,661 [INFO] STATUS | Module: simple_ssm | Done: 40/61 | UploadQueue: 21 | Elapsed: 3:03:32 | ETA: 1:36:21
+2026-09-11 21:02:42,417 [INFO] [simple_ssm] Accuracies: {'distilbert': ('PASS_LOW', 50.92), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 49.43)} | exit=0 | elapsed=81.7s
+2026-09-11 21:02:42,418 [INFO] [simple_ssm] Overall: PASS_LOW
+2026-09-11 21:02:42,418 [INFO] ============================================================
+2026-09-11 21:02:42,418 [INFO] [42/61] Running: spectral_mamba
+2026-09-11 21:02:42,418 [INFO] [spectral_mamba] Launching runner: run_all_4_spectral_mamba.py
+2026-09-11 21:03:00,671 [INFO] STATUS | Module: spectral_mamba | Done: 41/61 | UploadQueue: 21 | Elapsed: 3:04:02 | ETA: 1:29:46
+2026-09-11 21:03:30,675 [INFO] STATUS | Module: spectral_mamba | Done: 41/61 | UploadQueue: 21 | Elapsed: 3:04:32 | ETA: 1:30:01
+2026-09-11 21:04:00,688 [INFO] STATUS | Module: spectral_mamba | Done: 41/61 | UploadQueue: 21 | Elapsed: 3:05:02 | ETA: 1:30:15
+2026-09-11 21:04:22,207 [INFO] [spectral_mamba] Accuracies: {'distilbert': ('PASS', 90.71), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 51.03)} | exit=0 | elapsed=99.8s
+2026-09-11 21:04:22,207 [INFO] [spectral_mamba] Overall: PASS
+2026-09-11 21:04:22,207 [INFO] [spectral_mamba] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 21:04:22,208 [INFO] ============================================================
+2026-09-11 21:04:22,209 [INFO] [43/61] Running: spectron
+2026-09-11 21:04:22,209 [INFO] [spectron] Launching runner: run_all_4_spectron.py
+2026-09-11 21:04:30,699 [INFO] STATUS | Module: spectron | Done: 42/61 | UploadQueue: 22 | Elapsed: 3:05:32 | ETA: 1:23:56
+2026-09-11 21:05:00,713 [INFO] STATUS | Module: spectron | Done: 42/61 | UploadQueue: 22 | Elapsed: 3:06:02 | ETA: 1:24:09
+2026-09-11 21:05:30,723 [INFO] STATUS | Module: spectron | Done: 42/61 | UploadQueue: 22 | Elapsed: 3:06:32 | ETA: 1:24:23
+2026-09-11 21:05:59,674 [INFO] [spectron] Accuracies: {'distilbert': ('PASS', 86.58), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 51.26)} | exit=0 | elapsed=97.5s
+2026-09-11 21:05:59,674 [INFO] [spectron] Overall: PASS
+2026-09-11 21:05:59,674 [INFO] [spectron] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 21:05:59,675 [INFO] ============================================================
+2026-09-11 21:05:59,675 [INFO] [44/61] Running: svd-mamba
+2026-09-11 21:05:59,675 [INFO] [svd-mamba] Launching runner: run_all_4_svd-mamba.py
+2026-09-11 21:06:00,733 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:07:02 | ETA: 1:18:17
+2026-09-11 21:06:30,748 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:07:32 | ETA: 1:18:30
+2026-09-11 21:07:00,758 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:08:02 | ETA: 1:18:42
+2026-09-11 21:07:30,765 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:08:32 | ETA: 1:18:55
+2026-09-11 21:08:00,771 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:09:02 | ETA: 1:19:08
+2026-09-11 21:08:30,784 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:09:32 | ETA: 1:19:20
+2026-09-11 21:09:00,792 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:10:02 | ETA: 1:19:33
+2026-09-11 21:09:30,792 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:10:32 | ETA: 1:19:45
+2026-09-11 21:10:00,795 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:11:02 | ETA: 1:19:58
+2026-09-11 21:10:30,798 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:11:32 | ETA: 1:20:10
+2026-09-11 21:11:00,804 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:12:02 | ETA: 1:20:23
+2026-09-11 21:11:30,811 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:12:32 | ETA: 1:20:36
+2026-09-11 21:12:00,815 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:13:02 | ETA: 1:20:48
+2026-09-11 21:12:30,816 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:13:32 | ETA: 1:21:01
+2026-09-11 21:13:00,829 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:14:02 | ETA: 1:21:13
+2026-09-11 21:13:30,836 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:14:32 | ETA: 1:21:26
+2026-09-11 21:14:00,839 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:15:02 | ETA: 1:21:38
+2026-09-11 21:14:30,852 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:15:32 | ETA: 1:21:51
+2026-09-11 21:15:00,856 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:16:02 | ETA: 1:22:03
+2026-09-11 21:15:30,860 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:16:32 | ETA: 1:22:16
+2026-09-11 21:16:00,871 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:17:02 | ETA: 1:22:29
+2026-09-11 21:16:30,875 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:17:32 | ETA: 1:22:41
+2026-09-11 21:17:00,881 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:18:02 | ETA: 1:22:54
+2026-09-11 21:17:30,886 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:18:32 | ETA: 1:23:06
+2026-09-11 21:18:00,888 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:19:02 | ETA: 1:23:19
+2026-09-11 21:18:30,903 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:19:32 | ETA: 1:23:31
+2026-09-11 21:19:00,904 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:20:02 | ETA: 1:23:44
+2026-09-11 21:19:30,909 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:20:32 | ETA: 1:23:56
+2026-09-11 21:20:00,921 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:21:02 | ETA: 1:24:09
+2026-09-11 21:20:30,926 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:21:32 | ETA: 1:24:22
+2026-09-11 21:21:00,929 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:22:02 | ETA: 1:24:34
+2026-09-11 21:21:30,936 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:22:32 | ETA: 1:24:47
+2026-09-11 21:22:00,940 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:23:02 | ETA: 1:24:59
+2026-09-11 21:22:30,952 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:23:32 | ETA: 1:25:12
+2026-09-11 21:23:00,958 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:24:02 | ETA: 1:25:24
+2026-09-11 21:23:30,968 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:24:32 | ETA: 1:25:37
+2026-09-11 21:24:00,974 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:25:02 | ETA: 1:25:50
+2026-09-11 21:24:30,980 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:25:32 | ETA: 1:26:02
+2026-09-11 21:25:00,986 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:26:02 | ETA: 1:26:15
+2026-09-11 21:25:30,994 [INFO] STATUS | Module: svd-mamba | Done: 43/61 | UploadQueue: 23 | Elapsed: 3:26:32 | ETA: 1:26:27
+2026-09-11 21:25:59,703 [WARNING] [svd-mamba] TIMEOUT after 1200s — terminating process tree PID 16184.
+2026-09-11 21:25:59,928 [INFO] [svd-mamba] Accuracies: {'distilbert': ('PASS_LOW', 50.92), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.23)} | exit=-999 | elapsed=1200.2s
+2026-09-11 21:25:59,928 [INFO] [svd-mamba] Overall: TIMEOUT
+2026-09-11 21:25:59,930 [INFO] ============================================================
+2026-09-11 21:25:59,930 [INFO] [45/61] Running: svd
+2026-09-11 21:25:59,931 [INFO] [svd] Launching runner: run_all_4_svd.py
+2026-09-11 21:26:01,008 [INFO] STATUS | Module: svd | Done: 44/61 | UploadQueue: 23 | Elapsed: 3:27:02 | ETA: 1:19:59
+2026-09-11 21:26:31,019 [INFO] STATUS | Module: svd | Done: 44/61 | UploadQueue: 23 | Elapsed: 3:27:32 | ETA: 1:20:11
+2026-09-11 21:27:01,029 [INFO] STATUS | Module: svd | Done: 44/61 | UploadQueue: 23 | Elapsed: 3:28:02 | ETA: 1:20:22
+2026-09-11 21:27:26,188 [INFO] [svd] Accuracies: {'distilbert': ('PASS_LOW', 51.26), 'roberta': ('PASS_LOW', 50.0), 'gpt2': ('PASS_LOW', 53.1)} | exit=0 | elapsed=86.3s
+2026-09-11 21:27:26,188 [INFO] [svd] Overall: PASS_LOW
+2026-09-11 21:27:26,190 [INFO] ============================================================
+2026-09-11 21:27:26,190 [INFO] [46/61] Running: svd_linear_decay
+2026-09-11 21:27:26,191 [INFO] [svd_linear_decay] Launching runner: run_all_4_svd_linear_decay.py
+2026-09-11 21:27:31,038 [INFO] STATUS | Module: svd_linear_decay | Done: 45/61 | UploadQueue: 23 | Elapsed: 3:28:32 | ETA: 1:14:09
+2026-09-11 21:28:01,041 [INFO] STATUS | Module: svd_linear_decay | Done: 45/61 | UploadQueue: 23 | Elapsed: 3:29:02 | ETA: 1:14:19
+2026-09-11 21:28:20,706 [INFO] [svd_linear_decay] Accuracies: {'distilbert': ('FAIL', 0.0), 'roberta': ('FAIL', 0.0), 'gpt2': ('FAIL', 0.0)} | exit=0 | elapsed=54.5s
+2026-09-11 21:28:20,706 [INFO] [svd_linear_decay] Overall: FAILED_LOW
+2026-09-11 21:28:20,707 [INFO] ============================================================
+2026-09-11 21:28:20,707 [INFO] [47/61] Running: svd_mamba
+2026-09-11 21:28:20,707 [INFO] [svd_mamba] Launching runner: run_all_4_svd_mamba.py
+2026-09-11 21:28:31,046 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:29:32 | ETA: 1:08:19
+2026-09-11 21:29:01,049 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:30:02 | ETA: 1:08:29
+2026-09-11 21:29:31,051 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:30:32 | ETA: 1:08:39
+2026-09-11 21:30:01,051 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:31:02 | ETA: 1:08:49
+2026-09-11 21:30:31,056 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:31:32 | ETA: 1:08:59
+2026-09-11 21:31:01,066 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:32:02 | ETA: 1:09:08
+2026-09-11 21:31:31,071 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:32:32 | ETA: 1:09:18
+2026-09-11 21:32:01,085 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:33:03 | ETA: 1:09:28
+2026-09-11 21:32:31,101 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:33:33 | ETA: 1:09:38
+2026-09-11 21:33:01,116 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:34:03 | ETA: 1:09:47
+2026-09-11 21:33:31,129 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:34:33 | ETA: 1:09:57
+2026-09-11 21:34:01,142 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:35:03 | ETA: 1:10:07
+2026-09-11 21:34:31,157 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:35:33 | ETA: 1:10:17
+2026-09-11 21:35:01,162 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:36:03 | ETA: 1:10:27
+2026-09-11 21:35:31,164 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:36:33 | ETA: 1:10:36
+2026-09-11 21:36:01,166 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:37:03 | ETA: 1:10:46
+2026-09-11 21:36:31,175 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:37:33 | ETA: 1:10:56
+2026-09-11 21:37:01,184 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:38:03 | ETA: 1:11:06
+2026-09-11 21:37:31,186 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:38:33 | ETA: 1:11:16
+2026-09-11 21:38:01,188 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:39:03 | ETA: 1:11:25
+2026-09-11 21:38:31,201 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:39:33 | ETA: 1:11:35
+2026-09-11 21:39:01,209 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:40:03 | ETA: 1:11:45
+2026-09-11 21:39:31,210 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:40:33 | ETA: 1:11:55
+2026-09-11 21:40:01,216 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:41:03 | ETA: 1:12:04
+2026-09-11 21:40:31,221 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:41:33 | ETA: 1:12:14
+2026-09-11 21:41:01,231 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:42:03 | ETA: 1:12:24
+2026-09-11 21:41:31,236 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:42:33 | ETA: 1:12:34
+2026-09-11 21:42:01,241 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:43:03 | ETA: 1:12:44
+2026-09-11 21:42:31,257 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:43:33 | ETA: 1:12:53
+2026-09-11 21:43:01,260 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:44:03 | ETA: 1:13:03
+2026-09-11 21:43:31,265 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:44:33 | ETA: 1:13:13
+2026-09-11 21:44:01,279 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:45:03 | ETA: 1:13:23
+2026-09-11 21:44:31,285 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:45:33 | ETA: 1:13:33
+2026-09-11 21:45:01,290 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:46:03 | ETA: 1:13:42
+2026-09-11 21:45:31,299 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:46:33 | ETA: 1:13:52
+2026-09-11 21:46:01,307 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:47:03 | ETA: 1:14:02
+2026-09-11 21:46:31,322 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:47:33 | ETA: 1:14:12
+2026-09-11 21:47:01,324 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:48:03 | ETA: 1:14:21
+2026-09-11 21:47:31,328 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:48:33 | ETA: 1:14:31
+2026-09-11 21:48:01,334 [INFO] STATUS | Module: svd_mamba | Done: 46/61 | UploadQueue: 23 | Elapsed: 3:49:03 | ETA: 1:14:41
+2026-09-11 21:48:20,737 [WARNING] [svd_mamba] TIMEOUT after 1200s — terminating process tree PID 22944.
+2026-09-11 21:48:20,928 [INFO] [svd_mamba] Accuracies: {'distilbert': ('PASS_LOW', 50.92), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.23)} | exit=-999 | elapsed=1200.2s
+2026-09-11 21:48:20,928 [INFO] [svd_mamba] Overall: TIMEOUT
+2026-09-11 21:48:20,930 [INFO] ============================================================
+2026-09-11 21:48:20,930 [INFO] [48/61] Running: svd_sequence
+2026-09-11 21:48:20,931 [INFO] [svd_sequence] Launching runner: run_all_4_svd_sequence.py
+2026-09-11 21:48:31,344 [INFO] STATUS | Module: svd_sequence | Done: 47/61 | UploadQueue: 23 | Elapsed: 3:49:33 | ETA: 1:08:22
+2026-09-11 21:49:01,357 [INFO] STATUS | Module: svd_sequence | Done: 47/61 | UploadQueue: 23 | Elapsed: 3:50:03 | ETA: 1:08:31
+2026-09-11 21:49:31,360 [INFO] STATUS | Module: svd_sequence | Done: 47/61 | UploadQueue: 23 | Elapsed: 3:50:33 | ETA: 1:08:40
+2026-09-11 21:49:48,004 [INFO] [svd_sequence] Accuracies: {'distilbert': ('PASS_LOW', 51.26), 'roberta': ('PASS_LOW', 50.0), 'gpt2': ('PASS_LOW', 53.1)} | exit=0 | elapsed=87.1s
+2026-09-11 21:49:48,004 [INFO] [svd_sequence] Overall: PASS_LOW
+2026-09-11 21:49:48,006 [INFO] ============================================================
+2026-09-11 21:49:48,006 [INFO] [49/61] Running: svd_sequence_attention
+2026-09-11 21:49:48,007 [INFO] [svd_sequence_attention] Launching runner: run_all_4_svd_sequence_attention.py
+2026-09-11 21:50:01,373 [INFO] STATUS | Module: svd_sequence_attention | Done: 48/61 | UploadQueue: 23 | Elapsed: 3:51:03 | ETA: 1:02:34
+2026-09-11 21:50:31,374 [INFO] STATUS | Module: svd_sequence_attention | Done: 48/61 | UploadQueue: 23 | Elapsed: 3:51:33 | ETA: 1:02:42
+2026-09-11 21:51:01,380 [INFO] STATUS | Module: svd_sequence_attention | Done: 48/61 | UploadQueue: 23 | Elapsed: 3:52:03 | ETA: 1:02:50
+2026-09-11 21:51:07,961 [INFO] [svd_sequence_attention] Accuracies: {'distilbert': ('PASS_LOW', 51.26), 'roberta': ('PASS_LOW', 50.0), 'gpt2': ('PASS_LOW', 53.1)} | exit=0 | elapsed=80.0s
+2026-09-11 21:51:07,961 [INFO] [svd_sequence_attention] Overall: PASS_LOW
+2026-09-11 21:51:07,962 [INFO] ============================================================
+2026-09-11 21:51:07,962 [INFO] [50/61] Running: tlinformer
+2026-09-11 21:51:07,964 [INFO] [tlinformer] Launching runner: run_all_4_tlinformer.py
+2026-09-11 21:51:31,395 [INFO] STATUS | Module: tlinformer | Done: 49/61 | UploadQueue: 23 | Elapsed: 3:52:33 | ETA: 0:56:57
+2026-09-11 21:52:01,397 [INFO] STATUS | Module: tlinformer | Done: 49/61 | UploadQueue: 23 | Elapsed: 3:53:03 | ETA: 0:57:04
+2026-09-11 21:52:25,701 [INFO] [tlinformer] Accuracies: {'distilbert': ('PASS', 90.83), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 51.03)} | exit=0 | elapsed=77.7s
+2026-09-11 21:52:25,701 [INFO] [tlinformer] Overall: PASS
+2026-09-11 21:52:25,702 [INFO] [tlinformer] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 21:52:25,706 [INFO] ============================================================
+2026-09-11 21:52:25,707 [INFO] [51/61] Running: tlinformer_attention
+2026-09-11 21:52:25,707 [INFO] [tlinformer_attention] Launching runner: run_all_4_tlinformer_attention.py
+2026-09-11 21:52:31,405 [INFO] STATUS | Module: tlinformer_attention | Done: 50/61 | UploadQueue: 24 | Elapsed: 3:53:33 | ETA: 0:51:22
+2026-09-11 21:53:01,412 [INFO] STATUS | Module: tlinformer_attention | Done: 50/61 | UploadQueue: 24 | Elapsed: 3:54:03 | ETA: 0:51:29
+2026-09-11 21:53:31,415 [INFO] STATUS | Module: tlinformer_attention | Done: 50/61 | UploadQueue: 24 | Elapsed: 3:54:33 | ETA: 0:51:36
+2026-09-11 21:53:41,175 [INFO] [tlinformer_attention] Accuracies: {'distilbert': ('PASS', 90.25), 'roberta': ('PASS_LOW', 53.56), 'gpt2': ('PASS_LOW', 51.03)} | exit=0 | elapsed=75.5s
+2026-09-11 21:53:41,175 [INFO] [tlinformer_attention] Overall: PASS
+2026-09-11 21:53:41,175 [INFO] [tlinformer_attention] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 21:53:41,176 [INFO] ============================================================
+2026-09-11 21:53:41,176 [INFO] [52/61] Running: token_compressed
+2026-09-11 21:53:41,176 [INFO] [token_compressed] Launching runner: run_all_4_token_compressed.py
+2026-09-11 21:54:01,422 [INFO] STATUS | Module: token_compressed | Done: 51/61 | UploadQueue: 25 | Elapsed: 3:55:03 | ETA: 0:46:05
+2026-09-11 21:54:31,425 [INFO] STATUS | Module: token_compressed | Done: 51/61 | UploadQueue: 25 | Elapsed: 3:55:33 | ETA: 0:46:11
+2026-09-11 21:54:58,273 [INFO] [token_compressed] Accuracies: {'distilbert': ('PASS', 78.21), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 51.38)} | exit=0 | elapsed=77.1s
+2026-09-11 21:54:58,273 [INFO] [token_compressed] Overall: PASS
+2026-09-11 21:54:58,273 [INFO] [token_compressed] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 21:54:58,274 [INFO] ============================================================
+2026-09-11 21:54:58,274 [INFO] [53/61] Running: tpa
+2026-09-11 21:54:58,274 [INFO] [tpa] Launching runner: run_all_4_tpa.py
+2026-09-11 21:55:01,436 [INFO] STATUS | Module: tpa | Done: 52/61 | UploadQueue: 26 | Elapsed: 3:56:03 | ETA: 0:40:51
+2026-09-11 21:55:31,447 [INFO] STATUS | Module: tpa | Done: 52/61 | UploadQueue: 26 | Elapsed: 3:56:33 | ETA: 0:40:56
+2026-09-11 21:56:01,454 [INFO] STATUS | Module: tpa | Done: 52/61 | UploadQueue: 26 | Elapsed: 3:57:03 | ETA: 0:41:01
+2026-09-11 21:56:31,459 [INFO] STATUS | Module: tpa | Done: 52/61 | UploadQueue: 26 | Elapsed: 3:57:33 | ETA: 0:41:06
+2026-09-11 21:57:01,467 [INFO] STATUS | Module: tpa | Done: 52/61 | UploadQueue: 26 | Elapsed: 3:58:03 | ETA: 0:41:12
+2026-09-11 21:57:31,479 [INFO] STATUS | Module: tpa | Done: 52/61 | UploadQueue: 26 | Elapsed: 3:58:33 | ETA: 0:41:17
+2026-09-11 21:58:01,489 [INFO] STATUS | Module: tpa | Done: 52/61 | UploadQueue: 26 | Elapsed: 3:59:03 | ETA: 0:41:22
+2026-09-11 21:58:18,685 [INFO] [tpa] Accuracies: {'distilbert': ('PASS', 75.46), 'roberta': ('PASS', 59.75), 'gpt2': ('FAIL', 0.0)} | exit=0 | elapsed=200.4s
+2026-09-11 21:58:18,685 [INFO] [tpa] Overall: PASS
+2026-09-11 21:58:18,685 [INFO] [tpa] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 21:58:18,685 [INFO] [tpa] Enqueued background HF upload for roberta (non-blocking)
+2026-09-11 21:58:18,686 [INFO] ============================================================
+2026-09-11 21:58:18,686 [INFO] [54/61] Running: tt_linear
+2026-09-11 21:58:18,686 [INFO] [tt_linear] Launching runner: run_all_4_tt_linear.py
+2026-09-11 21:58:31,497 [INFO] STATUS | Module: tt_linear | Done: 53/61 | UploadQueue: 28 | Elapsed: 3:59:33 | ETA: 0:36:09
+2026-09-11 21:59:01,506 [INFO] STATUS | Module: tt_linear | Done: 53/61 | UploadQueue: 28 | Elapsed: 4:00:03 | ETA: 0:36:14
+2026-09-11 21:59:31,510 [INFO] STATUS | Module: tt_linear | Done: 53/61 | UploadQueue: 28 | Elapsed: 4:00:33 | ETA: 0:36:18
+2026-09-11 21:59:58,555 [INFO] [tt_linear] Accuracies: {'distilbert': ('PASS_LOW', 55.73), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=99.9s
+2026-09-11 21:59:58,555 [INFO] [tt_linear] Overall: PASS_LOW
+2026-09-11 21:59:58,556 [INFO] ============================================================
+2026-09-11 21:59:58,556 [INFO] [55/61] Running: upi_mamba
+2026-09-11 21:59:58,558 [INFO] [upi_mamba] Launching runner: run_all_4_upi_mamba.py
+2026-09-11 22:00:01,523 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:01:03 | ETA: 0:31:14
+2026-09-11 22:00:31,531 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:01:33 | ETA: 0:31:18
+2026-09-11 22:01:01,534 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:02:03 | ETA: 0:31:22
+2026-09-11 22:01:31,549 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:02:33 | ETA: 0:31:26
+2026-09-11 22:02:01,558 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:03:03 | ETA: 0:31:30
+2026-09-11 22:02:31,559 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:03:33 | ETA: 0:31:34
+2026-09-11 22:03:01,568 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:04:03 | ETA: 0:31:38
+2026-09-11 22:03:31,580 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:04:33 | ETA: 0:31:42
+2026-09-11 22:04:01,584 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:05:03 | ETA: 0:31:46
+2026-09-11 22:04:31,586 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:05:33 | ETA: 0:31:49
+2026-09-11 22:05:01,589 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:06:03 | ETA: 0:31:53
+2026-09-11 22:05:31,590 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:06:33 | ETA: 0:31:57
+2026-09-11 22:06:01,601 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:07:03 | ETA: 0:32:01
+2026-09-11 22:06:31,605 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:07:33 | ETA: 0:32:05
+2026-09-11 22:07:01,620 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:08:03 | ETA: 0:32:09
+2026-09-11 22:07:31,632 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:08:33 | ETA: 0:32:13
+2026-09-11 22:08:01,647 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:09:03 | ETA: 0:32:17
+2026-09-11 22:08:31,652 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:09:33 | ETA: 0:32:21
+2026-09-11 22:09:01,665 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:10:03 | ETA: 0:32:24
+2026-09-11 22:09:31,680 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:10:33 | ETA: 0:32:28
+2026-09-11 22:10:01,695 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:11:03 | ETA: 0:32:32
+2026-09-11 22:10:31,707 [INFO] STATUS | Module: upi_mamba | Done: 54/61 | UploadQueue: 28 | Elapsed: 4:11:33 | ETA: 0:32:36
+2026-09-11 22:10:40,805 [INFO] [upi_mamba] Accuracies: {'distilbert': ('PASS_LOW', 50.92), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 51.03)} | exit=0 | elapsed=642.2s
+2026-09-11 22:10:40,805 [INFO] [upi_mamba] Overall: PASS_LOW
+2026-09-11 22:10:40,806 [INFO] ============================================================
+2026-09-11 22:10:40,806 [INFO] [56/61] Running: upi_stuffed_mamba
+2026-09-11 22:10:40,806 [INFO] [upi_stuffed_mamba] Launching runner: run_all_4_upi_stuffed_mamba.py
+2026-09-11 22:11:01,712 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:12:03 | ETA: 0:27:29
+2026-09-11 22:11:31,726 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:12:33 | ETA: 0:27:33
+2026-09-11 22:12:01,732 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:13:03 | ETA: 0:27:36
+2026-09-11 22:12:31,739 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:13:33 | ETA: 0:27:39
+2026-09-11 22:13:01,762 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:14:03 | ETA: 0:27:42
+2026-09-11 22:13:31,768 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:14:33 | ETA: 0:27:46
+2026-09-11 22:14:01,773 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:15:03 | ETA: 0:27:49
+2026-09-11 22:14:31,774 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:15:33 | ETA: 0:27:52
+2026-09-11 22:15:01,783 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:16:03 | ETA: 0:27:56
+2026-09-11 22:15:31,785 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:16:33 | ETA: 0:27:59
+2026-09-11 22:16:01,797 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:17:03 | ETA: 0:28:02
+2026-09-11 22:16:31,806 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:17:33 | ETA: 0:28:05
+2026-09-11 22:17:01,807 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:18:03 | ETA: 0:28:09
+2026-09-11 22:17:31,815 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:18:33 | ETA: 0:28:12
+2026-09-11 22:18:01,824 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:19:03 | ETA: 0:28:15
+2026-09-11 22:18:31,838 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:19:33 | ETA: 0:28:18
+2026-09-11 22:19:01,847 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:20:03 | ETA: 0:28:22
+2026-09-11 22:19:31,857 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:20:33 | ETA: 0:28:25
+2026-09-11 22:20:01,871 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:21:03 | ETA: 0:28:28
+2026-09-11 22:20:31,876 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:21:33 | ETA: 0:28:32
+2026-09-11 22:21:01,892 [INFO] STATUS | Module: upi_stuffed_mamba | Done: 55/61 | UploadQueue: 28 | Elapsed: 4:22:03 | ETA: 0:28:35
+2026-09-11 22:21:10,389 [INFO] [upi_stuffed_mamba] Accuracies: {'distilbert': ('PASS_LOW', 50.92), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 51.03)} | exit=0 | elapsed=629.6s
+2026-09-11 22:21:10,390 [INFO] [upi_stuffed_mamba] Overall: PASS_LOW
+2026-09-11 22:21:10,390 [INFO] ============================================================
+2026-09-11 22:21:10,391 [INFO] [57/61] Running: vig
+2026-09-11 22:21:10,392 [INFO] [vig] Launching runner: run_all_4_vig.py
+2026-09-11 22:21:31,895 [INFO] STATUS | Module: vig | Done: 56/61 | UploadQueue: 28 | Elapsed: 4:22:33 | ETA: 0:23:26
+2026-09-11 22:22:01,896 [INFO] STATUS | Module: vig | Done: 56/61 | UploadQueue: 28 | Elapsed: 4:23:03 | ETA: 0:23:29
+2026-09-11 22:22:31,904 [INFO] STATUS | Module: vig | Done: 56/61 | UploadQueue: 28 | Elapsed: 4:23:33 | ETA: 0:23:31
+2026-09-11 22:22:35,694 [INFO] [vig] Accuracies: {'distilbert': ('PASS', 88.3), 'roberta': ('PASS', 61.24), 'gpt2': ('PASS', 61.35)} | exit=0 | elapsed=85.3s
+2026-09-11 22:22:35,694 [INFO] [vig] Overall: PASS
+2026-09-11 22:22:35,694 [INFO] [vig] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 22:22:35,694 [INFO] [vig] Enqueued background HF upload for roberta (non-blocking)
+2026-09-11 22:22:35,694 [INFO] [vig] Enqueued background HF upload for gpt2 (non-blocking)
+2026-09-11 22:22:35,695 [INFO] ============================================================
+2026-09-11 22:22:35,695 [INFO] [58/61] Running: vspec
+2026-09-11 22:22:35,696 [INFO] [vspec] Launching runner: run_all_4_vspec.py
+2026-09-11 22:23:01,914 [INFO] STATUS | Module: vspec | Done: 57/61 | UploadQueue: 31 | Elapsed: 4:24:03 | ETA: 0:18:31
+2026-09-11 22:23:31,923 [INFO] STATUS | Module: vspec | Done: 57/61 | UploadQueue: 31 | Elapsed: 4:24:33 | ETA: 0:18:33
+2026-09-11 22:24:01,924 [INFO] STATUS | Module: vspec | Done: 57/61 | UploadQueue: 31 | Elapsed: 4:25:03 | ETA: 0:18:36
+2026-09-11 22:24:19,338 [INFO] [vspec] Accuracies: {'distilbert': ('PASS', 75.34), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=103.6s
+2026-09-11 22:24:19,338 [INFO] [vspec] Overall: PASS
+2026-09-11 22:24:19,338 [INFO] [vspec] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 22:24:19,339 [INFO] ============================================================
+2026-09-11 22:24:19,339 [INFO] [59/61] Running: wgqa
+2026-09-11 22:24:19,340 [INFO] [wgqa] Launching runner: run_all_4_wgqa.py
+2026-09-11 22:24:31,931 [INFO] STATUS | Module: wgqa | Done: 58/61 | UploadQueue: 32 | Elapsed: 4:25:33 | ETA: 0:13:44
+2026-09-11 22:25:01,947 [INFO] STATUS | Module: wgqa | Done: 58/61 | UploadQueue: 32 | Elapsed: 4:26:03 | ETA: 0:13:45
+2026-09-11 22:25:31,954 [INFO] STATUS | Module: wgqa | Done: 58/61 | UploadQueue: 32 | Elapsed: 4:26:33 | ETA: 0:13:47
+2026-09-11 22:25:34,177 [INFO] [wgqa] Accuracies: {'distilbert': ('PASS', 90.71), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 51.03)} | exit=0 | elapsed=74.8s
+2026-09-11 22:25:34,177 [INFO] [wgqa] Overall: PASS
+2026-09-11 22:25:34,177 [INFO] [wgqa] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 22:25:34,178 [INFO] ============================================================
+2026-09-11 22:25:34,178 [INFO] [60/61] Running: xattention
+2026-09-11 22:25:34,179 [INFO] [xattention] Launching runner: run_all_4_xattention.py
+2026-09-11 22:26:01,955 [INFO] STATUS | Module: xattention | Done: 59/61 | UploadQueue: 33 | Elapsed: 4:27:03 | ETA: 0:09:03
+2026-09-11 22:26:31,955 [INFO] STATUS | Module: xattention | Done: 59/61 | UploadQueue: 33 | Elapsed: 4:27:33 | ETA: 0:09:04
+2026-09-11 22:26:52,699 [INFO] [xattention] Accuracies: {'distilbert': ('PASS', 83.14), 'roberta': ('PASS_LOW', 51.03), 'gpt2': ('PASS_LOW', 53.21)} | exit=0 | elapsed=78.5s
+2026-09-11 22:26:52,699 [INFO] [xattention] Overall: PASS
+2026-09-11 22:26:52,699 [INFO] [xattention] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 22:26:52,701 [INFO] ============================================================
+2026-09-11 22:26:52,701 [INFO] [61/61] Running: zeros
+2026-09-11 22:26:52,702 [INFO] [zeros] Launching runner: run_all_4_zeros.py
+2026-09-11 22:27:01,970 [INFO] STATUS | Module: zeros | Done: 60/61 | UploadQueue: 34 | Elapsed: 4:28:03 | ETA: 0:04:28
+2026-09-11 22:27:31,973 [INFO] STATUS | Module: zeros | Done: 60/61 | UploadQueue: 34 | Elapsed: 4:28:33 | ETA: 0:04:28
+2026-09-11 22:28:01,985 [INFO] STATUS | Module: zeros | Done: 60/61 | UploadQueue: 34 | Elapsed: 4:29:03 | ETA: 0:04:29
+2026-09-11 22:28:26,457 [INFO] [zeros] Accuracies: {'distilbert': ('PASS_LOW', 51.83), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS', 59.75)} | exit=0 | elapsed=93.8s
+2026-09-11 22:28:26,457 [INFO] [zeros] Overall: PASS
+2026-09-11 22:28:26,457 [INFO] [zeros] Enqueued background HF upload for gpt2 (non-blocking)
+2026-09-11 22:28:26,470 [INFO] Master CSV written: D:\SVD_Project\results\master_aggregated_results.csv
+2026-09-11 22:28:26,479 [INFO] ============================================================
+2026-09-11 22:28:26,479 [INFO] FINAL | PASS=35 | PASS_LOW=14 | FAIL/CRASH=4 | TIMEOUT=8 | Time=4:29:28
+2026-09-11 22:28:26,479 [INFO] Git push...
+2026-09-11 22:28:27,766 [INFO] Done!

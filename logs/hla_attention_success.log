@@ -1,0 +1,7 @@
+[main 84725f96a] feat(benchmark): record successful hla_attention on distilbert-sst2 (Acc: 75.92%, F1: 0.7702)
+ 5 files changed, 406 insertions(+), 345 deletions(-)
+ create mode 100644 results/all_modules/hgrn2/finetune_metadata.json
+ create mode 100644 results/all_modules/hla_attention/distilbert_sst2_hla_attention_full_metrics.json
+ create mode 100644 results/all_modules/hla_attention/finetune_metadata.json
+ create mode 100644 results/all_modules/hla_attention/summary.csv
+branch 'main' set up to track 'origin/main'.

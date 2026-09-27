@@ -1,0 +1,68 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from 'framework.eval_all_models_datasets' (consider renaming 'D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py' if it has the same name as a library you intended to import)
+2026-09-18 21:23:45,249 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 21:23:45,877 [INFO] QwenQualitySweep: Configured dataset 'ag_news' with num_labels=4
+You passed `num_labels=4` which is incompatible to the `id2label` map of length `2`.
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 2261.80it/s]
+[1mDistilBertForSequenceClassification LOAD REPORT[0m from: models/distilbert_sst2
+Key               | Status   |                                                                                       
+------------------+----------+---------------------------------------------------------------------------------------
+classifier.weight | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([2, 768]) vs model:torch.Size([4, 768])
+classifier.bias   | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([2]) vs model:torch.Size([4])          
+
+Notes:
+- MISMATCH:	ckpt weights were loaded, but they did not match the original empty weight shapes.
+2026-09-18 21:23:48,008 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-18 21:23:48,008 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 21:23:48,008 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 21:23:48,008 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 21:23:48,008 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-18 21:23:48,009 [INFO] QwenQualitySweep:   family:            bert
+2026-09-18 21:23:48,009 [INFO] QwenQualitySweep:   dataset:           ag_news
+2026-09-18 21:23:48,009 [INFO] QwenQualitySweep:   batch_size:        32
+2026-09-18 21:23:48,009 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 21:23:48,010 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 21:23:48,010 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 21:23:48,010 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 21:23:48,043 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\agnews_unified_aegis_v4\distilbert\finetuned_model.pt
+2026-09-18 21:23:48,298 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 21:23:50,799 [INFO] QwenQualitySweep: Prepared 32 eval batches and 50 train batches directly on GPU.
+2026-09-18 21:23:55,584 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 51.00%
+2026-09-18 21:23:55,676 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 21:23:55,676 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-18 21:23:55,676 [INFO] QwenQualitySweep:   Validation Majority Count: 274 / 1000
+2026-09-18 21:23:55,678 [INFO] QwenQualitySweep:   True Majority Baseline:    27.40%
+2026-09-18 21:23:55,679 [INFO] QwenQualitySweep:   Standard Error (SE):       1.410%
+2026-09-18 21:23:55,679 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.23%
+2026-09-18 21:23:55,679 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  31.63%
+2026-09-18 21:23:55,679 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 21:23:55,680 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: aegis_v4 (recovery_steps=50, batch_size=32, optimizer=adamw)
+2026-09-18 21:24:08,243 [INFO] QwenQualitySweep: module=aegis_v4 path=legacy_bert
+2026-09-18 21:24:08,246 [INFO] QwenQualitySweep: module=aegis_v4 injection summary: 24 SVDLinear layers active
+2026-09-18 21:24:08,246 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for aegis_v4 (lr=2.0e-04)
+2026-09-18 21:24:08,387 [INFO] framework.utils.compat: Recovery fine-tuning selected 589824 trainable parameters across 48 tensors.
+2026-09-18 21:24:08,387 [INFO] framework.utils.compat: Discovered 48 trainable tensors (589824 params)
+2026-09-18 21:24:08,390 [INFO] QwenQualitySweep: LoRA fine-tuning: 589824 trainable parameters across 48 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 21:24:09,285 [INFO] QwenQualitySweep: Step 1/50 took 0.89s (loss=1.1741, bs=32, micro=32)
+2026-09-18 21:24:10,623 [INFO] QwenQualitySweep: Step 5/50 took 0.22s (loss=1.6822, bs=32, micro=32)
+2026-09-18 21:24:12,077 [INFO] QwenQualitySweep: Step 10/50 took 0.32s (loss=1.5157, bs=32, micro=32)
+2026-09-18 21:24:13,512 [INFO] QwenQualitySweep: Step 15/50 took 0.29s (loss=1.1905, bs=32, micro=32)
+2026-09-18 21:24:15,173 [INFO] QwenQualitySweep: Step 20/50 took 0.28s (loss=1.2145, bs=32, micro=32)
+2026-09-18 21:24:17,177 [INFO] QwenQualitySweep: Step 25/50 took 0.43s (loss=1.1456, bs=32, micro=32)
+2026-09-18 21:24:18,850 [INFO] QwenQualitySweep: Step 30/50 took 0.31s (loss=1.0870, bs=32, micro=32)
+2026-09-18 21:24:20,413 [INFO] QwenQualitySweep: Step 35/50 took 0.35s (loss=0.8164, bs=32, micro=32)
+2026-09-18 21:24:21,799 [INFO] QwenQualitySweep: Step 40/50 took 0.26s (loss=0.7759, bs=32, micro=32)
+2026-09-18 21:24:23,220 [INFO] QwenQualitySweep: Step 45/50 took 0.28s (loss=0.9588, bs=32, micro=32)
+2026-09-18 21:24:24,691 [INFO] QwenQualitySweep: Step 50/50 took 0.34s (loss=0.8410, bs=32, micro=32)
+2026-09-18 21:24:28,493 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\agnews_unified_aegis_v4\distilbert\distilbert_sst2_aegis_v4_full_metrics.json
+2026-09-18 21:24:28,548 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\agnews_unified_aegis_v4\distilbert\checkpoints\aegis_v4\weights.pt (module_params=0, lora_params=52)
+2026-09-18 21:24:29,034 [INFO] QwenQualitySweep: [1/1] aegis_v4 -> PASS_NO_COMPRESSION 82.30% (F1: 0.8142, Peak VRAM: 407.22 MB)
+2026-09-18 21:24:29,034 [WARNING] QwenQualitySweep: Module 'aegis_v4' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-18 21:24:29,035 [INFO] QwenQualitySweep: [Quality Guard] Module 'aegis_v4' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=82.30%, pass_thresh=31.63%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-18 21:24:29,338 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 21:24:29,338 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on ag_news)
+2026-09-18 21:24:29,346 [INFO] QwenQualitySweep: 
+                   Module              Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+aegis_v4 (efficient-attn) PASS_NO_COMPRESSION   82.30%   +31.30% 0.8142                  0            1.00x  407.2 MB               3.44              3.44
+2026-09-18 21:24:29,346 [INFO] QwenQualitySweep: ================================================================================

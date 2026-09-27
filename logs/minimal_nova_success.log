@@ -1,0 +1,6 @@
+[main 97abee442] feat(benchmark): record successful minimal_nova on distilbert-sst2 (Acc: 88.76%, F1: 0.8904)
+ 4 files changed, 597 insertions(+), 511 deletions(-)
+ create mode 100644 results/all_modules/minimal_nova/distilbert_sst2_minimal_nova_full_metrics.json
+ create mode 100644 results/all_modules/minimal_nova/finetune_metadata.json
+ create mode 100644 results/all_modules/minimal_nova/summary.csv
+branch 'main' set up to track 'origin/main'.

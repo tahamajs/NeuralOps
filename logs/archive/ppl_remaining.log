@@ -1,0 +1,58 @@
+=== [1/12] Evaluating gqa ===
+[PPL] gqa: 27.3239
+
+=== [2/12] Evaluating full_attention ===
+[PPL] full_attention: 27.3236
+
+=== [3/12] Evaluating reap_moe ===
+CUDA OOM/Error during PPL eval: CUDA out of memory. Tried to allocate 198.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 5.81 GiB is free. Of the allocated memory 1.01 GiB is allocated by PyTorch, and 39.29 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables). Falling back to CPU...
+
+ERROR in reap_moe: ile "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1329, in convert
+    return t.to(
+           ~~~~^
+        device,
+        ^^^^^^^
+        dtype if t.is_floating_point() or t.is_complex() else None,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        non_blocking,
+        ^^^^^^^^^^^^^
+    )
+    ^
+RuntimeError: [enforce fail at alloc_cpu.cpp:115] data. DefaultCPUAllocator: not enough memory: you tried to allocate 1179648 bytes.
+
+=== [4/12] Evaluating halo_regla ===
+[PPL] halo_regla: 29.0198
+
+=== [5/12] Evaluating performer_attention ===
+[PPL] performer_attention: 2542.3538
+
+=== [6/12] Evaluating samba_m3 ===
+
+ERROR in samba_m3: esolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-09-18 11:36:28,797 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+Token indices sequence length is longer than the specified maximum sequence length for this model (287644 > 1024). Running this sequence through the model will result in indexing errors
+
+=== [7/12] Evaluating mamba ===
+
+ERROR in mamba: esolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-09-18 11:37:14,048 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+Token indices sequence length is longer than the specified maximum sequence length for this model (287644 > 1024). Running this sequence through the model will result in indexing errors
+
+=== [8/12] Evaluating hla_inject ===
+[PPL] hla_inject: nan
+
+=== [9/12] Evaluating gated_deltanet_block ===
+FAILED gated_deltanet_block: Command '['C:\\Users\\Hadi Schumacher\\anaconda3\\python.exe', 'D:/SVD_Project/Codes/framework/eval_perplexity.py', '--model', 'D:/SVD_Project/models/gpt2', '--module', 'gated_deltanet_block', '--output_dir', 'D:/SVD_Project/results/wikitext2_ppl/gated_deltanet_block']' timed out after 300 seconds
+=== [10/12] Evaluating phantom ===
+[PPL] phantom: 277178496.0000
+
+=== [11/12] Evaluating jamba ===
+
+ERROR in jamba: esolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-09-18 11:46:34,101 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+Token indices sequence length is longer than the specified maximum sequence length for this model (287644 > 1024). Running this sequence through the model will result in indexing errors
+
+=== [12/12] Evaluating unified_rope ===
+[PPL] unified_rope: 3799.2700
+
+All remaining PPL modules finished!

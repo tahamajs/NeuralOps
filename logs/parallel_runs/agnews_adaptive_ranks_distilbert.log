@@ -1,0 +1,102 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from 'framework.eval_all_models_datasets' (consider renaming 'D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py' if it has the same name as a library you intended to import)
+2026-09-18 08:54:25,626 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 08:54:25,780 [INFO] QwenQualitySweep: Configured dataset 'ag_news' with num_labels=4
+You passed `num_labels=4` which is incompatible to the `id2label` map of length `2`.
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3210.81it/s]
+[1mDistilBertForSequenceClassification LOAD REPORT[0m from: models/distilbert_sst2
+Key               | Status   |                                                                                       
+------------------+----------+---------------------------------------------------------------------------------------
+classifier.weight | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([2, 768]) vs model:torch.Size([4, 768])
+classifier.bias   | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([2]) vs model:torch.Size([4])          
+
+Notes:
+- MISMATCH:	ckpt weights were loaded, but they did not match the original empty weight shapes.
+2026-09-18 08:54:26,274 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-18 08:54:26,274 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 08:54:26,274 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:54:26,274 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 08:54:26,275 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-18 08:54:26,275 [INFO] QwenQualitySweep:   family:            bert
+2026-09-18 08:54:26,275 [INFO] QwenQualitySweep:   dataset:           ag_news
+2026-09-18 08:54:26,275 [INFO] QwenQualitySweep:   batch_size:        32
+2026-09-18 08:54:26,276 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 08:54:26,276 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 08:54:26,276 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 08:54:26,276 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:54:26,277 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-18 08:54:28,153 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=1.9543
+2026-09-18 08:54:29,232 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=1.3232
+2026-09-18 08:54:30,774 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=1.1958
+2026-09-18 08:54:32,369 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=1.0847
+2026-09-18 08:54:34,864 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=1.0580
+2026-09-18 08:54:35,880 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=1.3266
+2026-09-18 08:54:36,863 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.9905
+2026-09-18 08:54:37,795 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=1.1220
+2026-09-18 08:54:37,809 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\agnews_unified_adaptive_ranks\distilbert\finetuned_model.pt
+2026-09-18 08:54:37,876 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 08:54:38,922 [INFO] QwenQualitySweep: Prepared 32 eval batches and 50 train batches directly on GPU.
+2026-09-18 08:54:39,976 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 51.00%
+2026-09-18 08:54:40,035 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:54:40,035 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-18 08:54:40,036 [INFO] QwenQualitySweep:   Validation Majority Count: 274 / 1000
+2026-09-18 08:54:40,036 [INFO] QwenQualitySweep:   True Majority Baseline:    27.40%
+2026-09-18 08:54:40,036 [INFO] QwenQualitySweep:   Standard Error (SE):       1.410%
+2026-09-18 08:54:40,036 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.23%
+2026-09-18 08:54:40,036 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  31.63%
+2026-09-18 08:54:40,037 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:54:40,037 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: adaptive_ranks (recovery_steps=50, batch_size=32, optimizer=adamw)
+2026-09-18 08:54:41,054 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.3329 on distilbert.transformer.layer.0.attention.q_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:41,216 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.3265 on distilbert.transformer.layer.0.attention.k_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:41,379 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.3560 on distilbert.transformer.layer.0.attention.v_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:41,543 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.3353 on distilbert.transformer.layer.0.attention.out_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:41,703 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.3120 on distilbert.transformer.layer.1.attention.q_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:41,889 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.2890 on distilbert.transformer.layer.1.attention.k_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:42,106 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.3490 on distilbert.transformer.layer.1.attention.v_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:42,267 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.3480 on distilbert.transformer.layer.1.attention.out_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:42,432 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.3489 on distilbert.transformer.layer.2.attention.q_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:42,594 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.3538 on distilbert.transformer.layer.2.attention.k_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:42,758 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.3518 on distilbert.transformer.layer.2.attention.v_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:42,923 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.3687 on distilbert.transformer.layer.2.attention.out_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:43,089 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.3082 on distilbert.transformer.layer.3.attention.q_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:43,249 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.3103 on distilbert.transformer.layer.3.attention.k_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:43,428 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.4036 on distilbert.transformer.layer.3.attention.v_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:43,587 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.4110 on distilbert.transformer.layer.3.attention.out_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:43,749 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.3504 on distilbert.transformer.layer.4.attention.q_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:43,924 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.3486 on distilbert.transformer.layer.4.attention.k_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:44,411 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.4108 on distilbert.transformer.layer.4.attention.v_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:44,578 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.4340 on distilbert.transformer.layer.4.attention.out_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:44,751 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.3565 on distilbert.transformer.layer.5.attention.q_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:44,912 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.3672 on distilbert.transformer.layer.5.attention.k_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:45,092 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.3866 on distilbert.transformer.layer.5.attention.v_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:45,255 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.4223 on distilbert.transformer.layer.5.attention.out_lin exceeded threshold 0.2000. Falling back to original layer.
+2026-09-18 08:54:45,256 [INFO] framework.compression_engine.adaptive_ranks: AdaptiveRanks compression complete: 0 compressed, 24 fallback. Avg error: 0.0000.
+2026-09-18 08:54:45,277 [INFO] QwenQualitySweep: module=adaptive_ranks path=legacy_bert
+2026-09-18 08:54:45,278 [INFO] QwenQualitySweep: module=adaptive_ranks injection summary: 0 SVDLinear layers active
+2026-09-18 08:54:45,278 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for adaptive_ranks (lr=2.0e-04)
+2026-09-18 08:54:45,330 [INFO] framework.utils.compat: Recovery fine-tuning selected 3076 trainable parameters across 2 tensors.
+2026-09-18 08:54:45,330 [INFO] framework.utils.compat: Discovered 2 trainable tensors (3076 params)
+2026-09-18 08:54:45,332 [INFO] QwenQualitySweep: LoRA fine-tuning: 3076 trainable parameters across 2 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 08:54:45,377 [INFO] QwenQualitySweep: Step 1/50 took 0.04s (loss=1.1781, bs=32, micro=32)
+2026-09-18 08:54:45,485 [INFO] QwenQualitySweep: Step 5/50 took 0.03s (loss=1.8942, bs=32, micro=32)
+2026-09-18 08:54:45,614 [INFO] QwenQualitySweep: Step 10/50 took 0.03s (loss=1.5812, bs=32, micro=32)
+2026-09-18 08:54:45,744 [INFO] QwenQualitySweep: Step 15/50 took 0.03s (loss=0.8440, bs=32, micro=32)
+2026-09-18 08:54:45,874 [INFO] QwenQualitySweep: Step 20/50 took 0.03s (loss=1.0285, bs=32, micro=32)
+2026-09-18 08:54:46,006 [INFO] QwenQualitySweep: Step 25/50 took 0.03s (loss=1.2021, bs=32, micro=32)
+2026-09-18 08:54:46,139 [INFO] QwenQualitySweep: Step 30/50 took 0.03s (loss=1.1941, bs=32, micro=32)
+2026-09-18 08:54:46,269 [INFO] QwenQualitySweep: Step 35/50 took 0.03s (loss=1.0847, bs=32, micro=32)
+2026-09-18 08:54:46,404 [INFO] QwenQualitySweep: Step 40/50 took 0.03s (loss=1.1159, bs=32, micro=32)
+2026-09-18 08:54:46,543 [INFO] QwenQualitySweep: Step 45/50 took 0.03s (loss=1.1441, bs=32, micro=32)
+2026-09-18 08:54:46,677 [INFO] QwenQualitySweep: Step 50/50 took 0.03s (loss=1.1533, bs=32, micro=32)
+2026-09-18 08:54:47,344 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\agnews_unified_adaptive_ranks\distilbert\distilbert_sst2_adaptive_ranks_full_metrics.json
+2026-09-18 08:54:47,365 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\agnews_unified_adaptive_ranks\distilbert\checkpoints\adaptive_ranks\weights.pt (module_params=0, lora_params=4)
+2026-09-18 08:54:47,549 [INFO] QwenQualitySweep: [1/1] adaptive_ranks -> PASS_NO_COMPRESSION 55.50% (F1: 0.5241, Peak VRAM: 249.69 MB)
+2026-09-18 08:54:47,549 [WARNING] QwenQualitySweep: Module 'adaptive_ranks' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-18 08:54:47,549 [INFO] QwenQualitySweep: [Quality Guard] Module 'adaptive_ranks' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=55.50%, pass_thresh=31.63%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-18 08:54:47,803 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:54:47,804 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on ag_news)
+2026-09-18 08:54:47,808 [INFO] QwenQualitySweep: 
+                         Module              Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+adaptive_ranks (efficient-attn) PASS_NO_COMPRESSION   55.50%    +4.50% 0.5241                  0            1.00x  249.7 MB               0.59              0.59
+2026-09-18 08:54:47,808 [INFO] QwenQualitySweep: ================================================================================

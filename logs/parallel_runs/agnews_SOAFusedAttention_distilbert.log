@@ -1,0 +1,96 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from 'framework.eval_all_models_datasets' (consider renaming 'D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py' if it has the same name as a library you intended to import)
+2026-09-18 08:39:45,852 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 08:39:46,029 [INFO] QwenQualitySweep: Configured dataset 'ag_news' with num_labels=4
+You passed `num_labels=4` which is incompatible to the `id2label` map of length `2`.
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3350.80it/s]
+[1mDistilBertForSequenceClassification LOAD REPORT[0m from: models/distilbert_sst2
+Key               | Status   |                                                                                       
+------------------+----------+---------------------------------------------------------------------------------------
+classifier.weight | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([2, 768]) vs model:torch.Size([4, 768])
+classifier.bias   | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([2]) vs model:torch.Size([4])          
+
+Notes:
+- MISMATCH:	ckpt weights were loaded, but they did not match the original empty weight shapes.
+2026-09-18 08:39:46,468 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-18 08:39:46,468 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 08:39:46,468 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:39:46,468 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 08:39:46,468 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-18 08:39:46,469 [INFO] QwenQualitySweep:   family:            bert
+2026-09-18 08:39:46,469 [INFO] QwenQualitySweep:   dataset:           ag_news
+2026-09-18 08:39:46,469 [INFO] QwenQualitySweep:   batch_size:        32
+2026-09-18 08:39:46,469 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 08:39:46,469 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 08:39:46,469 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 08:39:46,470 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:39:46,470 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-18 08:39:48,046 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=1.9543
+2026-09-18 08:39:48,937 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=1.3232
+2026-09-18 08:39:49,863 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=1.1958
+2026-09-18 08:39:50,758 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=1.0847
+2026-09-18 08:39:51,656 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=1.0580
+2026-09-18 08:39:52,564 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=1.3266
+2026-09-18 08:39:53,480 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.9905
+2026-09-18 08:39:54,403 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=1.1220
+2026-09-18 08:39:54,415 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\agnews_unified_SOAFusedAttention\distilbert\finetuned_model.pt
+2026-09-18 08:39:54,485 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 08:39:55,536 [INFO] QwenQualitySweep: Prepared 32 eval batches and 50 train batches directly on GPU.
+2026-09-18 08:39:56,266 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 51.00%
+2026-09-18 08:39:56,324 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:39:56,324 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-18 08:39:56,324 [INFO] QwenQualitySweep:   Validation Majority Count: 274 / 1000
+2026-09-18 08:39:56,325 [INFO] QwenQualitySweep:   True Majority Baseline:    27.40%
+2026-09-18 08:39:56,325 [INFO] QwenQualitySweep:   Standard Error (SE):       1.410%
+2026-09-18 08:39:56,325 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.23%
+2026-09-18 08:39:56,325 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  31.63%
+2026-09-18 08:39:56,325 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:39:56,341 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: SOAFusedAttention (recovery_steps=50, batch_size=32, optimizer=adamw)
+2026-09-18 08:39:58,749 [INFO] framework.core.attention_utils: Successfully injected 'SOAFusedAttention' into 6 transformer blocks.
+2026-09-18 08:39:58,758 [INFO] QwenQualitySweep: module=SOAFusedAttention path=legacy_bert
+2026-09-18 08:39:58,760 [INFO] QwenQualitySweep: module=SOAFusedAttention injection summary: 12 SVDLinear layers active
+2026-09-18 08:39:58,760 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for SOAFusedAttention (lr=2.0e-04)
+2026-09-18 08:39:58,836 [INFO] framework.utils.compat: Recovery fine-tuning selected 387072 trainable parameters across 48 tensors.
+2026-09-18 08:39:58,836 [INFO] framework.utils.compat: Discovered 48 trainable tensors (387072 params)
+2026-09-18 08:39:58,842 [INFO] QwenQualitySweep: LoRA fine-tuning: 387072 trainable parameters across 48 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 08:39:59,010 [INFO] QwenQualitySweep: Step 1/50 took 0.17s (loss=1.3796, bs=32, micro=32)
+2026-09-18 08:39:59,398 [INFO] QwenQualitySweep: Step 5/50 took 0.10s (loss=1.6836, bs=32, micro=32)
+2026-09-18 08:39:59,901 [INFO] QwenQualitySweep: Step 10/50 took 0.11s (loss=1.5520, bs=32, micro=32)
+2026-09-18 08:40:00,402 [INFO] QwenQualitySweep: Step 15/50 took 0.10s (loss=1.1868, bs=32, micro=32)
+2026-09-18 08:40:00,900 [INFO] QwenQualitySweep: Step 20/50 took 0.10s (loss=1.1215, bs=32, micro=32)
+2026-09-18 08:40:01,408 [INFO] QwenQualitySweep: Step 25/50 took 0.10s (loss=1.2085, bs=32, micro=32)
+2026-09-18 08:40:01,896 [INFO] QwenQualitySweep: Step 30/50 took 0.09s (loss=1.2228, bs=32, micro=32)
+2026-09-18 08:40:02,384 [INFO] QwenQualitySweep: Step 35/50 took 0.10s (loss=1.0164, bs=32, micro=32)
+2026-09-18 08:40:02,888 [INFO] QwenQualitySweep: Step 40/50 took 0.09s (loss=1.0309, bs=32, micro=32)
+2026-09-18 08:40:03,372 [INFO] QwenQualitySweep: Step 45/50 took 0.10s (loss=1.1355, bs=32, micro=32)
+2026-09-18 08:40:03,859 [INFO] QwenQualitySweep: Step 50/50 took 0.10s (loss=1.0061, bs=32, micro=32)
+2026-09-18 08:40:05,136 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\agnews_unified_SOAFusedAttention\distilbert\distilbert_sst2_SOAFusedAttention_full_metrics.json
+2026-09-18 08:40:05,156 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\agnews_unified_SOAFusedAttention\distilbert\checkpoints\SOAFusedAttention\weights.pt (module_params=0, lora_params=52)
+2026-09-18 08:40:05,347 [INFO] QwenQualitySweep: [1/1] SOAFusedAttention -> PASS 76.30% (F1: 0.7317, Peak VRAM: 255.29 MB)
+2026-09-18 08:40:05,388 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / soafusedattention is SUCCESSFUL (acc=76.30% >= 31.63%). Starting automated HF export to tahamajs/svd-linear-attention-distilbert-sst2-soafusedattention and Git recording.
+2026-09-18 08:40:06,591 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 403 Forbidden"
+2026-09-18 08:40:06,819 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/tahamajs/svd-linear-attention-distilbert-sst2-soafusedattention "HTTP/1.1 404 Not Found"
+2026-09-18 08:40:06,819 [WARNING] HFGitExporter: Hugging Face upload failed for tahamajs/svd-linear-attention-distilbert-sst2-soafusedattention: (Request ID: Root=1-6aacc7b7-292f234c7b7712b60dccd45e;d1bbc7fd-86bd-467b-a56c-cc4c7f8124a9)
+
+403 Forbidden: You don't have the rights to create a model under the namespace "tahamajs".
+Cannot access content at: https://huggingface.co/api/repos/create.
+Make sure your token has the correct permissions.
+2026-09-18 08:40:06,830 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\soafusedattention.md
+[main c5697e37c] feat(benchmark): record successful SOAFusedAttention on distilbert-sst2 (Acc: 76.30%, F1: 0.7317)
+ 3 files changed, 375 insertions(+), 368 deletions(-)
+From https://github.com/tahamajs/SVD_linear_Attention
+ * branch                main       -> FETCH_HEAD
+   9a28192f9..91174b0cf  main       -> origin/main
+Rebasing (1/1)Successfully rebased and updated refs/heads/main.
+To https://github.com/tahamajs/SVD_linear_Attention.git
+   91174b0cf..7a3b288fd  main -> main
+branch 'main' set up to track 'origin/main'.
+2026-09-18 08:40:12,680 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: 7a3b288f
+2026-09-18 08:40:12,857 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:40:12,858 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on ag_news)
+2026-09-18 08:40:12,862 [INFO] QwenQualitySweep: 
+                            Module Status Accuracy Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+soafusedattention (efficient-attn)   PASS   67.10%   +16.10% 0.6265                 0            1.14x  465.9 MB               7.67               N/A
+                 SOAFusedAttention   PASS   76.30%   +25.30% 0.7317                 6            1.14x  255.3 MB               1.14              1.14
+2026-09-18 08:40:12,863 [INFO] QwenQualitySweep: ================================================================================

@@ -1,0 +1,9 @@
+[main 19c78ad29] feat(benchmark): record successful minimal_aurora on distilbert-sst2 (Acc: 88.30%, F1: 0.8844)
+ 7 files changed, 671 insertions(+), 530 deletions(-)
+ create mode 100644 results/all_modules/mamba/distilbert_sst2_mamba_full_metrics.json
+ create mode 100644 results/all_modules/mamba/summary.csv
+ create mode 100644 results/all_modules/mamba_svd_flash/finetune_metadata.json
+ create mode 100644 results/all_modules/minimal_aurora/distilbert_sst2_minimal_aurora_full_metrics.json
+ create mode 100644 results/all_modules/minimal_aurora/finetune_metadata.json
+ create mode 100644 results/all_modules/minimal_aurora/summary.csv
+branch 'main' set up to track 'origin/main'.

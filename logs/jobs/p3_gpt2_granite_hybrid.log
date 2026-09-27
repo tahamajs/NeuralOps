@@ -1,0 +1,73 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-24 01:30:26,487 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 01:30:26,487 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=4 (explicit_parallel=True, explicit_batch=True)
+2026-09-24 01:30:26,491 [INFO] QwenQualitySweep: Running 1 attention modules in-memory sequentially
+2026-09-24 01:30:26,819 [INFO] QwenQualitySweep: Configured dataset 'wikitext2' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 2414.40it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models/gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-24 01:30:27,849 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 01:30:27,850 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 01:30:27,850 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 01:30:27,850 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 01:30:27,850 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-24 01:30:27,850 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-24 01:30:27,850 [INFO] QwenQualitySweep:   dataset:           wikitext2
+2026-09-24 01:30:27,850 [INFO] QwenQualitySweep:   batch_size:        4
+2026-09-24 01:30:27,850 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 01:30:27,851 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 01:30:27,851 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 01:30:27,851 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 01:30:27,855 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\gpt2_wikitext2_sweep\finetuned_model.pt
+2026-09-24 01:30:27,859 [WARNING] QwenQualitySweep: Missing keys during load: ['transformer.wte.weight', 'transformer.wpe.weight', 'transformer.h.0.ln_1.weight', 'transformer.h.0.ln_1.bias', 'transformer.h.0.attn.c_attn.weight', 'transformer.h.0.attn.c_attn.bias', 'transformer.h.0.attn.c_proj.weight', 'transformer.h.0.attn.c_proj.bias', 'transformer.h.0.ln_2.weight', 'transformer.h.0.ln_2.bias']
+2026-09-24 01:30:28,034 [INFO] QwenQualitySweep: Loading pre-cached batches from results\gpt2_wikitext2_sweep\batch_cache_wikitext2 (skipping tokenization)
+2026-09-24 01:30:28,305 [INFO] QwenQualitySweep: Prepared 616 eval batches and 50 train batches directly on GPU.
+2026-09-24 01:30:55,730 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 99.72%
+2026-09-24 01:30:55,787 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 01:30:55,787 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-24 01:30:55,787 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-24 01:30:55,787 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-24 01:30:55,787 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-24 01:30:55,788 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-24 01:30:55,788 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-24 01:30:55,788 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-24 01:30:55,788 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 01:30:55,789 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 01:30:56,243 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: granite_hybrid (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-24 01:31:00,765 [INFO] QwenQualitySweep: module=granite_hybrid path=adapted_gpt
+2026-09-24 01:31:00,769 [INFO] QwenQualitySweep: module=granite_hybrid injection summary: 0 SVDLinear layers active
+2026-09-24 01:31:00,769 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for granite_hybrid (lr=2.0e-04)
+2026-09-24 01:31:01,998 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179684 trainable parameters across 132 tensors.
+2026-09-24 01:31:02,001 [INFO] framework.utils.compat: Discovered 132 trainable tensors (1179684 params)
+2026-09-24 01:31:02,010 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179684 trainable parameters across 132 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-24 01:31:09,616 [INFO] QwenQualitySweep: Step 1/50 took 7.60s (loss=0.0000, bs=4, micro=4)
+2026-09-24 01:31:27,633 [INFO] QwenQualitySweep: Step 5/50 took 5.25s (loss=0.0000, bs=4, micro=4)
+2026-09-24 01:31:51,252 [INFO] QwenQualitySweep: Step 10/50 took 4.61s (loss=0.0000, bs=4, micro=4)
+2026-09-24 01:32:07,612 [INFO] QwenQualitySweep: Step 15/50 took 2.98s (loss=0.0000, bs=4, micro=4)
+2026-09-24 01:32:22,599 [INFO] QwenQualitySweep: Step 20/50 took 2.98s (loss=0.0000, bs=4, micro=4)
+2026-09-24 01:32:37,534 [INFO] QwenQualitySweep: Step 25/50 took 3.01s (loss=0.0000, bs=4, micro=4)
+2026-09-24 01:32:53,359 [INFO] QwenQualitySweep: Step 30/50 took 3.74s (loss=0.0000, bs=4, micro=4)
+2026-09-24 01:33:08,299 [INFO] QwenQualitySweep: Step 35/50 took 2.98s (loss=0.0000, bs=4, micro=4)
+2026-09-24 01:33:23,316 [INFO] QwenQualitySweep: Step 40/50 took 3.01s (loss=0.0000, bs=4, micro=4)
+2026-09-24 01:33:38,268 [INFO] QwenQualitySweep: Step 45/50 took 2.97s (loss=0.0000, bs=4, micro=4)
+2026-09-24 01:33:53,329 [INFO] QwenQualitySweep: Step 50/50 took 3.02s (loss=0.0000, bs=4, micro=4)
+2026-09-24 01:39:31,379 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\gpt2_wikitext2_sweep\gpt2_granite_hybrid_full_metrics.json
+2026-09-24 01:39:31,526 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\gpt2_wikitext2_sweep\checkpoints\granite_hybrid\weights.pt (module_params=36, lora_params=97)
+2026-09-24 01:39:32,458 [INFO] QwenQualitySweep: [1/1] granite_hybrid -> EXTREME_EXPANSION 99.76% (F1: 0.0, Peak VRAM: 1992.71 MB)
+2026-09-24 01:39:32,458 [INFO] QwenQualitySweep: [Quality Guard] Module 'granite_hybrid' did not pass quality criteria (status=EXTREME_EXPANSION, acc=99.76%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-24 01:39:32,464 [INFO] QwenQualitySweep: [1/1] granite_hybrid Timing: eval_time=516.22s
+2026-09-24 01:39:32,464 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 01:39:32,869 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 01:39:32,869 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on wikitext2)
+2026-09-24 01:39:32,877 [INFO] QwenQualitySweep: 
+                         Module            Status Accuracy    Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                           full              PASS    0.00% 0.00% (base)    N/A                 0            1.00x  916.2 MB               7.88               N/A
+     swift_svd (efficient-attn)     PASS_DEGRADED    0.00%      -99.72%    N/A                 0            1.50x  838.8 MB               3.23               N/A
+granite_hybrid (efficient-attn) EXTREME_EXPANSION   99.76%       +0.04% 0.0000                 0            1.00x 1992.7 MB             333.52            135.52
+2026-09-24 01:39:32,877 [INFO] QwenQualitySweep: ================================================================================

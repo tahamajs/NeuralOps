@@ -46,3 +46,48 @@ D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning
 2026-09-27 09:22:22,938 [INFO] QwenQualitySweep: ================================================================================
 2026-09-27 09:22:22,941 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
 2026-09-27 09:22:23,459 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: dynamic_rank (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-27 09:22:26,671 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD: no real calibration data available (calibration_loader=None, calibration_texts=None/empty). Activation-aware whitening DISABLED. Using weight-only SVD for all layers. Expected reconstruction error at rank=64: ~0.15-0.25.
+2026-09-27 09:22:27,991 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.5867 on distilbert.transformer.layer.0.attention.q_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:28,226 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.5780 on distilbert.transformer.layer.0.attention.k_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:28,420 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.6191 on distilbert.transformer.layer.0.attention.v_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:28,640 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.5854 on distilbert.transformer.layer.0.attention.out_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:28,855 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.5431 on distilbert.transformer.layer.1.attention.q_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:29,044 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.5195 on distilbert.transformer.layer.1.attention.k_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:29,236 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.6033 on distilbert.transformer.layer.1.attention.v_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:29,421 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.6141 on distilbert.transformer.layer.1.attention.out_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:29,604 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.6102 on distilbert.transformer.layer.2.attention.q_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:29,788 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.6151 on distilbert.transformer.layer.2.attention.k_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:29,981 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.6113 on distilbert.transformer.layer.2.attention.v_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:30,195 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.6433 on distilbert.transformer.layer.2.attention.out_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:30,422 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.5676 on distilbert.transformer.layer.3.attention.q_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:30,635 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.5630 on distilbert.transformer.layer.3.attention.k_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:30,860 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.6827 on distilbert.transformer.layer.3.attention.v_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:31,072 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.6961 on distilbert.transformer.layer.3.attention.out_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:31,304 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.6129 on distilbert.transformer.layer.4.attention.q_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:31,534 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.6093 on distilbert.transformer.layer.4.attention.k_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:31,734 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.6847 on distilbert.transformer.layer.4.attention.v_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:31,918 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.6975 on distilbert.transformer.layer.4.attention.out_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:32,056 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.6124 on distilbert.transformer.layer.5.attention.q_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:32,202 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.6294 on distilbert.transformer.layer.5.attention.k_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:32,343 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.6745 on distilbert.transformer.layer.5.attention.v_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:32,496 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.7010 on distilbert.transformer.layer.5.attention.out_lin exceeded threshold 0.5000; falling back to original.
+2026-09-27 09:22:32,666 [INFO] framework.compression_engine.dynamic_rank: Compressor dynamic_rank finished: 0 compressed, 24 fallback, avg_err=0.0000, max_err_threshold=0.5000
+2026-09-27 09:22:32,683 [INFO] QwenQualitySweep: module=dynamic_rank path=legacy_bert
+2026-09-27 09:22:32,685 [INFO] QwenQualitySweep: module=dynamic_rank injection summary: 0 SVDLinear layers active
+2026-09-27 09:22:32,690 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for dynamic_rank (lr=2.0e-04)
+2026-09-27 09:22:32,804 [INFO] framework.utils.compat: Recovery fine-tuning selected 0 trainable parameters across 0 tensors.
+2026-09-27 09:22:32,805 [INFO] framework.utils.compat: Discovered 0 trainable tensors (0 params)
+2026-09-27 09:22:39,534 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\distilbert\deep_rank_distilbert\dynamic_rank\rank_384\distilbert-base-uncased-finetuned-sst-2-english_dynamic_rank_full_metrics.json
+2026-09-27 09:22:39,952 [INFO] QwenQualitySweep: [1/1] dynamic_rank -> PASS_NO_COMPRESSION 90.60% (F1: 0.9099, Peak VRAM: 291.93 MB)
+2026-09-27 09:22:39,953 [WARNING] QwenQualitySweep: Module 'dynamic_rank' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-27 09:22:39,953 [INFO] QwenQualitySweep: [Quality Guard] Module 'dynamic_rank' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=90.60%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-27 09:22:39,973 [INFO] QwenQualitySweep: [1/1] dynamic_rank Timing: eval_time=16.51s
+2026-09-27 09:22:39,973 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-27 09:22:40,773 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 09:22:40,773 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert-base-uncased-finetuned-sst-2-english on sst2)
+2026-09-27 09:22:40,836 [INFO] QwenQualitySweep: 
+                       Module              Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+dynamic_rank (efficient-attn) PASS_NO_COMPRESSION   90.60%    +0.00% 0.9099                  0            1.00x  291.9 MB               5.61              6.43
+2026-09-27 09:22:40,836 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:171: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

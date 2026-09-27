@@ -1,0 +1,22 @@
+2026-09-18 16:13:18,008 [INFO] LRA15Suite: =================================================================
+2026-09-18 16:13:18,008 [INFO] LRA15Suite: \U0001f31f LRA 15-MODULE BENCHMARK SUITE
+2026-09-18 16:13:18,008 [INFO] LRA15Suite: Tasks: ['listops', 'imdb'] | Batch Size: 1 | Seq Len: 2048 | Epochs: 20
+2026-09-18 16:13:18,008 [INFO] LRA15Suite: =================================================================
+2026-09-18 16:13:18,008 [INFO] LRA15Suite: 
+>>> Running LRA: Task=LISTOPS | Module=asvd_attention <<<
+2026-09-18 16:15:29,440 [INFO] LRA15Suite: [listops/asvd_attention] SUCCESS | Best Acc: 14.00% (in 131.4s)
+2026-09-18 16:15:29,459 [INFO] LRA15Suite: 
+>>> Running LRA: Task=LISTOPS | Module=svd_llm_v2_attention <<<
+2026-09-18 16:17:12,136 [WARNING] LRA15Suite: [listops/svd_llm_v2_attention] FAILED (code 1): 5:53,749 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/listops-1000/resolve/main/README.md "HTTP/1.1 404 Not Found"
+2026-09-18 16:15:53,981 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/bert-base-uncased/resolve/main/config.json "HTTP/1.1 200 OK"
+2026-09-18 16:15:54,341 [INFO] framework.core.attention_utils: Successfully injected 'svd_llm_v2_attention' into 4 transformer blocks.
+`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+
+2026-09-18 16:17:12,140 [INFO] LRA15Suite: 
+>>> Running LRA: Task=LISTOPS | Module=adaptive_svd_attention <<<
+2026-09-18 16:19:19,614 [INFO] LRA15Suite: [listops/adaptive_svd_attention] SUCCESS | Best Acc: 10.20% (in 127.5s)
+2026-09-18 16:19:19,617 [INFO] LRA15Suite: 
+>>> Running LRA: Task=LISTOPS | Module=squeezing_heads <<<
+2026-09-18 16:21:14,999 [INFO] LRA15Suite: [listops/squeezing_heads] SUCCESS | Best Acc: 12.20% (in 115.4s)
+2026-09-18 16:21:15,002 [INFO] LRA15Suite: 
+>>> Running LRA: Task=LISTOPS | Module=gqa_attention <<<

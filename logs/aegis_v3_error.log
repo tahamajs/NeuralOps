@@ -1,0 +1,19 @@
+
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from 'framework.eval_all_models_datasets' (consider renaming 'D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py' if it has the same name as a library you intended to import)
+2026-09-18 22:06:19,443 [INFO] QwenQualitySweep: Parsed 3 module-specific extended arguments: ['--hf_org', 'Hooshaai', '--upload_to_hf']
+2026-09-18 22:06:19,548 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 2907, in <module>
+    if __name__ == "__main__": main()
+                               ~~~~^^
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 1298, in main
+    ds = load_from_disk(args.dataset_dir); train, val = ds["train"], ds["validation"]
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\datasets\load.py", line 1469, in load_from_disk
+    fs, *_ = url_to_fs(dataset_path, **(storage_options or {}))
+             ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\fsspec\core.py", line 403, in url_to_fs
+    chain = _un_chain(url, kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\fsspec\core.py", line 335, in _un_chain
+    if "::" in path:
+       ^^^^^^^^^^^^
+TypeError: argument of type 'NoneType' is not iterable

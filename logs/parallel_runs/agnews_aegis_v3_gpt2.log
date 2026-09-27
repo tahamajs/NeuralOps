@@ -1,0 +1,136 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from 'framework.eval_all_models_datasets' (consider renaming 'D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py' if it has the same name as a library you intended to import)
+2026-09-18 20:55:07,478 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 20:55:08,863 [INFO] QwenQualitySweep: Configured dataset 'ag_news' with num_labels=4
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 5255.44it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models/gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-18 20:55:10,136 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-18 20:55:10,137 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 20:55:10,137 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:55:10,137 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 20:55:10,138 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-18 20:55:10,138 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-18 20:55:10,138 [INFO] QwenQualitySweep:   dataset:           ag_news
+2026-09-18 20:55:10,138 [INFO] QwenQualitySweep:   batch_size:        32
+2026-09-18 20:55:10,139 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 20:55:10,139 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 20:55:10,139 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 20:55:10,141 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:55:10,188 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\agnews_unified_aegis_v3\gpt2\finetuned_model.pt
+2026-09-18 20:55:10,774 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 20:55:13,213 [INFO] QwenQualitySweep: Prepared 32 eval batches and 50 train batches directly on GPU.
+2026-09-18 20:55:30,308 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 79.80%
+2026-09-18 20:55:32,328 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:55:32,329 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-18 20:55:32,329 [INFO] QwenQualitySweep:   Validation Majority Count: 274 / 1000
+2026-09-18 20:55:32,329 [INFO] QwenQualitySweep:   True Majority Baseline:    27.40%
+2026-09-18 20:55:32,330 [INFO] QwenQualitySweep:   Standard Error (SE):       1.410%
+2026-09-18 20:55:32,330 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.23%
+2026-09-18 20:55:32,330 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  31.63%
+2026-09-18 20:55:32,333 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:55:32,382 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: aegis_v3 (recovery_steps=50, batch_size=32, optimizer=adamw)
+2026-09-18 20:56:26,544 [INFO] QwenQualitySweep: module=aegis_v3 path=adapted_gpt
+2026-09-18 20:56:26,595 [INFO] QwenQualitySweep: module=aegis_v3 injection summary: 48 SVDLinear layers active
+2026-09-18 20:56:26,596 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for aegis_v3 (lr=2.0e-04)
+2026-09-18 20:56:27,492 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179648 trainable parameters across 96 tensors.
+2026-09-18 20:56:27,496 [INFO] framework.utils.compat: Discovered 96 trainable tensors (1179648 params)
+2026-09-18 20:56:27,510 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179648 trainable parameters across 96 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 20:56:30,742 [ERROR] QwenQualitySweep: Module aegis_v3 execution failure:
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 2551, in main
+    pipe_res = future.result(timeout=effective_timeout)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 2450, in _run_candidate_pipeline
+    had_nan = finetune_lora(
+        model, tokenizer, train, args.dataset, rec_steps, args.seq_len, effective_batch_size, device,
+    ...<2 lines>...
+        weight_decay=args.weight_decay, timeout=effective_timeout,
+    )
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 730, in finetune_lora
+    out = model(**cx, labels=cy)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\generic.py", line 876, in wrapper
+    output = func(self, *args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\gpt2\modeling_gpt2.py", line 909, in forward
+    transformer_outputs: BaseModelOutputWithPastAndCrossAttentions = self.transformer(
+                                                                     ~~~~~~~~~~~~~~~~^
+        input_ids,
+        ^^^^^^^^^^
+    ...<6 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\generic.py", line 952, in wrapper
+    output = func(self, *args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\output_capturing.py", line 248, in wrapper
+    outputs = func(self, *args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\gpt2\modeling_gpt2.py", line 617, in forward
+    hidden_states = block(
+        hidden_states,
+    ...<6 lines>...
+        **kwargs,
+    )
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\modeling_layers.py", line 93, in __call__
+    return super().__call__(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\gpt2\modeling_gpt2.py", line 274, in forward
+    attn_output, _ = self.attn(
+                     ~~~~~~~~~^
+        hidden_states,
+        ^^^^^^^^^^^^^^
+    ...<3 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "D:\SVD_Project\Codes\framework\attentions\aegis_v3.py", line 628, in forward
+    attn = softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature)
+  File "D:\SVD_Project\Codes\framework\attentions\aegis_v3.py", line 239, in softpick
+    m = x_f.max(dim=dim, keepdim=True).values
+        ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+2026-09-18 20:56:33,978 [INFO] QwenQualitySweep: [1/1] aegis_v3 -> FAIL 0.00% (F1: 0.0, Peak VRAM: 0.0 MB)
+2026-09-18 20:56:33,979 [INFO] QwenQualitySweep: [Quality Guard] Module 'aegis_v3' did not pass quality criteria (status=FAIL, acc=0.00%, pass_thresh=31.63%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-18 20:56:37,350 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:56:37,350 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on ag_news)
+2026-09-18 20:56:37,432 [INFO] QwenQualitySweep: 
+                   Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+aegis_v3 (efficient-attn)   FAIL    0.00%   -79.80% 0.0000                  0            1.00x    0.0 MB              61.57               N/A
+2026-09-18 20:56:37,433 [INFO] QwenQualitySweep: ================================================================================

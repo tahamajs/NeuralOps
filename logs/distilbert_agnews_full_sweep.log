@@ -1,0 +1,425 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-19 20:26:28,700 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+>>> Skipping full (already PASS)
+>>> Skipping a3 (already PASS)
+>>> Skipping aasvd (already PASS)
+>>> Skipping adaptive (already PASS)
+>>> Skipping adaptive_span (already PASS)
+>>> Skipping BLOCKED adaptive_sparse
+>>> Skipping adaptive_svd (already PASS)
+>>> Skipping adasplash (already PASS)
+>>> Skipping adasvd (already PASS)
+>>> Skipping admm (already PASS)
+>>> Skipping admm_pruner (already PASS)
+>>> Skipping aegis_hybrid (already PASS)
+>>> Skipping aegis_v1 (already PASS)
+>>> Skipping aegis_v2 (already PASS)
+>>> Skipping aegis_v3 (already PASS)
+>>> Skipping aegis_v4 (already PASS)
+>>> Skipping aegis_v5 (already PASS)
+>>> Skipping aegis_v6 (already PASS)
+>>> Skipping armor (already PASS)
+>>> Skipping ast (already PASS)
+>>> Skipping astro (already PASS)
+>>> Skipping asvd (already PASS)
+>>> Skipping BLOCKED bam_umoe
+>>> Skipping block_transformer_hiba (already PASS)
+>>> Skipping bonsai (already PASS)
+>>> Skipping cachenotes (already PASS)
+>>> Skipping chela_slay (already PASS)
+>>> Skipping cluster (already PASS)
+>>> Skipping come (already PASS)
+>>> Skipping compot (already PASS)
+>>> Skipping compot_compressor_class (already PASS)
+>>> Skipping compressed_attention_layer_energy (already PASS)
+>>> Skipping coopq (already PASS)
+>>> Skipping cosformer (already PASS)
+>>> Skipping cr (already PASS)
+>>> Skipping cur (already PASS)
+>>> Skipping cur_moe (already PASS)
+>>> Skipping cur_moe_class (already PASS)
+>>> Skipping custom_attn (already PASS)
+>>> Skipping decay_linear_attn (already PASS)
+>>> Skipping delta_kv (already PASS)
+>>> Skipping direct_svd (already PASS)
+>>> Skipping dobi (already PASS)
+>>> Skipping dobi_class (already PASS)
+>>> Skipping dynamic_rank (already PASS)
+>>> Skipping dynamic_rank_class (already PASS)
+>>> Skipping eat (already PASS)
+>>> Skipping enlighten (already PASS)
+>>> Skipping entropy_budget (already PASS)
+>>> Skipping entropy_rank_allocator_class (already PASS)
+>>> Skipping erc (already PASS)
+>>> Skipping BLOCKED expert_choice_moe
+>>> Skipping faq (already PASS)
+>>> Skipping fasa (already PASS)
+>>> Skipping flap (already PASS)
+>>> Skipping flash3 (already PASS)
+>>> Skipping flash3_fp8 (already PASS)
+>>> Skipping flat_llm (already PASS)
+>>> Skipping fms (already PASS)
+>>> Skipping frandi (already PASS)
+>>> Skipping frandi_compressor_class (already PASS)
+>>> Skipping full_attention (already PASS)
+>>> Skipping fused_svd_kernel (already PASS)
+>>> Skipping fusion_attn (already PASS)
+>>> Skipping galerkin (already PASS)
+>>> Skipping gated_linear_attn (already PASS)
+>>> Skipping gfws (already PASS)
+>>> Skipping goldfinch (already PASS)
+>>> Skipping gqa (already PASS)
+>>> Skipping BLOCKED granite_hybrid
+>>> Skipping grecodec (already PASS)
+>>> Skipping grecodec_compressor_class (already PASS)
+>>> Skipping griffin_ssd (already PASS)
+>>> Skipping halo_regla (already PASS)
+>>> Skipping hamming (already PASS)
+>>> Skipping hashed_net (already PASS)
+>>> Skipping hashed_net_class (already PASS)
+>>> Skipping BLOCKED hgrn2
+>>> Skipping hla (already PASS)
+>>> Skipping huffman (already PASS)
+>>> Skipping hybridkv (already PASS)
+>>> Skipping hybridkv_quantizer (already PASS)
+>>> Skipping hymba_transx (already PASS)
+>>> Skipping infini (already PASS)
+>>> Skipping jamba (already PASS)
+>>> Skipping kda (already PASS)
+2026-09-19 20:26:28,706 [INFO] QwenQualitySweep: Running 120 modules with 2 parallel workers on GPU
+[ISOLATED] Launching aegis_spectron_fp8 (timeout=3600s) -> logs\isolated\aegis_spectron_fp8.log
+[ISOLATED] Launching compressed_attention (timeout=3600s) -> logs\isolated\compressed_attention.log
+[ISOLATED] compressed_attention exited with code 0 in 38.3s
+[ISOLATED] Launching compressed_mha (timeout=3600s) -> logs\isolated\compressed_mha.log
+[ISOLATED] aegis_spectron_fp8 exited with code 0 in 69.7s
+[ISOLATED] Launching gated_delta_net (timeout=3600s) -> logs\isolated\gated_delta_net.log
+[ISOLATED] compressed_mha exited with code 0 in 46.6s
+[ISOLATED] Launching gated_deltanet_block (timeout=3600s) -> logs\isolated\gated_deltanet_block.log
+[ISOLATED] gated_delta_net exited with code 0 in 23.5s
+[ISOLATED] Launching hgrn2_gated_deltanet (timeout=3600s) -> logs\isolated\hgrn2_gated_deltanet.log
+[ISOLATED] gated_deltanet_block exited with code 0 in 16.7s
+[ISOLATED] Launching hgrn2_outer (timeout=3600s) -> logs\isolated\hgrn2_outer.log
+[ISOLATED] hgrn2_gated_deltanet exited with code 0 in 17.5s
+[ISOLATED] Launching hybrid_svd (timeout=3600s) -> logs\isolated\hybrid_svd.log
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-19 20:38:22,816 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+>>> Skipping full (already PASS)
+>>> Skipping a3 (already PASS)
+>>> Skipping aasvd (already PASS)
+>>> Skipping adaptive (already PASS)
+>>> Skipping adaptive_span (already PASS)
+>>> Skipping adaptive_svd (already PASS)
+>>> Skipping adasplash (already PASS)
+>>> Skipping adasvd (already PASS)
+>>> Skipping admm (already PASS)
+>>> Skipping admm_pruner (already PASS)
+>>> Skipping aegis_hybrid (already PASS)
+>>> Skipping aegis_spectron_fp8 (already PASS)
+>>> Skipping aegis_v1 (already PASS)
+>>> Skipping aegis_v2 (already PASS)
+>>> Skipping aegis_v3 (already PASS)
+>>> Skipping aegis_v4 (already PASS)
+>>> Skipping aegis_v5 (already PASS)
+>>> Skipping aegis_v6 (already PASS)
+>>> Skipping armor (already PASS)
+>>> Skipping ast (already PASS)
+>>> Skipping astro (already PASS)
+>>> Skipping asvd (already PASS)
+>>> Skipping block_transformer_hiba (already PASS)
+>>> Skipping bonsai (already PASS)
+>>> Skipping cachenotes (already PASS)
+>>> Skipping chela_slay (already PASS)
+>>> Skipping cluster (already PASS)
+>>> Skipping come (already PASS)
+>>> Skipping compot (already PASS)
+>>> Skipping compot_compressor_class (already PASS)
+>>> Skipping compressed_attention (already PASS)
+>>> Skipping compressed_attention_layer_energy (already PASS)
+>>> Skipping compressed_mha (already PASS)
+>>> Skipping coopq (already PASS)
+>>> Skipping cosformer (already PASS)
+>>> Skipping cr (already PASS)
+>>> Skipping cur (already PASS)
+>>> Skipping cur_moe (already PASS)
+>>> Skipping cur_moe_class (already PASS)
+>>> Skipping custom_attn (already PASS)
+>>> Skipping decay_linear_attn (already PASS)
+>>> Skipping delta_kv (already PASS)
+>>> Skipping direct_svd (already PASS)
+>>> Skipping dobi (already PASS)
+>>> Skipping dobi_class (already PASS)
+>>> Skipping dynamic_rank (already PASS)
+>>> Skipping dynamic_rank_class (already PASS)
+>>> Skipping eat (already PASS)
+>>> Skipping enlighten (already PASS)
+>>> Skipping entropy_budget (already PASS)
+>>> Skipping entropy_rank_allocator_class (already PASS)
+>>> Skipping erc (already PASS)
+>>> Skipping faq (already PASS)
+>>> Skipping fasa (already PASS)
+>>> Skipping flap (already PASS)
+>>> Skipping flash3 (already PASS)
+>>> Skipping flash3_fp8 (already PASS)
+>>> Skipping flat_llm (already PASS)
+>>> Skipping fms (already PASS)
+>>> Skipping frandi (already PASS)
+>>> Skipping frandi_compressor_class (already PASS)
+>>> Skipping full_attention (already PASS)
+>>> Skipping fused_svd_kernel (already PASS)
+>>> Skipping fusion_attn (already PASS)
+>>> Skipping galerkin (already PASS)
+>>> Skipping gated_linear_attn (already PASS)
+>>> Skipping gfws (already PASS)
+>>> Skipping goldfinch (already PASS)
+>>> Skipping gqa (already PASS)
+>>> Skipping grecodec (already PASS)
+>>> Skipping grecodec_compressor_class (already PASS)
+>>> Skipping griffin_ssd (already PASS)
+>>> Skipping halo_regla (already PASS)
+>>> Skipping hamming (already PASS)
+>>> Skipping hashed_net (already PASS)
+>>> Skipping hashed_net_class (already PASS)
+>>> Skipping hla (already PASS)
+>>> Skipping huffman (already PASS)
+>>> Skipping hybridkv (already PASS)
+>>> Skipping hybridkv_quantizer (already PASS)
+>>> Skipping hymba_transx (already PASS)
+>>> Skipping infini (already PASS)
+>>> Skipping jamba (already PASS)
+>>> Skipping kda (already PASS)
+2026-09-19 20:38:22,822 [INFO] QwenQualitySweep: Running 122 modules with 3 parallel workers on GPU
+[ISOLATED] Launching adaptive_sparse (timeout=3600s) -> logs\isolated\adaptive_sparse.log
+[ISOLATED] Launching bam_umoe (timeout=3600s) -> logs\isolated\bam_umoe.log
+[ISOLATED] Launching expert_choice_moe (timeout=3600s) -> logs\isolated\expert_choice_moe.log
+[ISOLATED] bam_umoe exited with code 0 in 45.0s
+[ISOLATED] Launching gated_delta_net (timeout=3600s) -> logs\isolated\gated_delta_net.log
+[ISOLATED] adaptive_sparse exited with code 0 in 51.1s
+[ISOLATED] Launching gated_deltanet_block (timeout=3600s) -> logs\isolated\gated_deltanet_block.log
+[ISOLATED] expert_choice_moe exited with code 0 in 73.5s
+[ISOLATED] gated_delta_net exited with code 0 in 27.6s
+[ISOLATED] Launching granite_hybrid (timeout=3600s) -> logs\isolated\granite_hybrid.log
+[ISOLATED] Launching hgrn2 (timeout=3600s) -> logs\isolated\hgrn2.log
+[ISOLATED] gated_deltanet_block exited with code 0 in 24.4s
+[ISOLATED] Launching hgrn2_gated_deltanet (timeout=3600s) -> logs\isolated\hgrn2_gated_deltanet.log
+[ISOLATED] hgrn2_gated_deltanet exited with code 0 in 26.9s
+[ISOLATED] granite_hybrid exited with code 0 in 32.2s
+[ISOLATED] hgrn2 exited with code 0 in 31.8s
+[ISOLATED] Launching hgrn2_outer (timeout=3600s) -> logs\isolated\hgrn2_outer.log
+[ISOLATED] Launching hybrid_svd (timeout=3600s) -> logs\isolated\hybrid_svd.log
+[ISOLATED] Launching jamba_info (timeout=3600s) -> logs\isolated\jamba_info.log
+[ISOLATED] jamba_info exited with code 0 in 527.6s
+[ISOLATED] Launching kmeans (timeout=3600s) -> logs\isolated\kmeans.log
+[ISOLATED] kmeans exited with code 0 in 79.3s
+[ISOLATED] Launching kronecker (timeout=3600s) -> logs\isolated\kronecker.log
+[ISOLATED] hybrid_svd exited with code 0 in 1459.7s
+[ISOLATED] Launching kronecker_linear_class (timeout=3600s) -> logs\isolated\kronecker_linear_class.log
+[ISOLATED] kronecker_linear_class exited with code 0 in 31.2s
+[ISOLATED] Launching kronecker_tt_lora (timeout=3600s) -> logs\isolated\kronecker_tt_lora.log
+[ISOLATED] kronecker_tt_lora exited with code 0 in 66.9s
+[ISOLATED] Launching kvtc (timeout=3600s) -> logs\isolated\kvtc.log
+[ISOLATED] kvtc exited with code 0 in 66.1s
+[ISOLATED] Launching leka_v1 (timeout=3600s) -> logs\isolated\leka_v1.log
+[ISOLATED] leka_v1 exited with code 0 in 63.5s
+[ISOLATED] Launching leka_v2 (timeout=3600s) -> logs\isolated\leka_v2.log
+[ISOLATED] leka_v2 exited with code 0 in 65.5s
+[ISOLATED] Launching leka_v3 (timeout=3600s) -> logs\isolated\leka_v3.log
+[ISOLATED] leka_v3 exited with code 0 in 72.3s
+[ISOLATED] Launching liftr (timeout=3600s) -> logs\isolated\liftr.log
+[ISOLATED] liftr exited with code 0 in 86.8s
+[ISOLATED] Launching lillama (timeout=3600s) -> logs\isolated\lillama.log
+[ISOLATED] lillama exited with code 0 in 66.9s
+[ISOLATED] Launching linformer (timeout=3600s) -> logs\isolated\linformer.log
+[ISOLATED] linformer exited with code 0 in 49.5s
+[ISOLATED] Launching lola (timeout=3600s) -> logs\isolated\lola.log
+[ISOLATED] lola exited with code 0 in 230.3s
+[ISOLATED] Launching lora_attn (timeout=3600s) -> logs\isolated\lora_attn.log
+[ISOLATED] lora_attn exited with code 0 in 52.9s
+[ISOLATED] Launching lsc (timeout=3600s) -> logs\isolated\lsc.log
+[ISOLATED] lsc exited with code 0 in 104.3s
+[ISOLATED] Launching lsh (timeout=3600s) -> logs\isolated\lsh.log
+[ISOLATED] lsh exited with code 0 in 70.0s
+[ISOLATED] Launching mamba (timeout=3600s) -> logs\isolated\mamba.log
+[ISOLATED] mamba exited with code 0 in 27.4s
+[ISOLATED] Launching mamba_shedder (timeout=3600s) -> logs\isolated\mamba_shedder.log
+[ISOLATED] mamba_shedder exited with code 0 in 148.8s
+[ISOLATED] Launching mamba_svd_flash (timeout=3600s) -> logs\isolated\mamba_svd_flash.log
+[ISOLATED] mamba_svd_flash exited with code 1 in 203.7s
+[ISOLATED] Launching mgie (timeout=3600s) -> logs\isolated\mgie.log
+[ISOLATED] mgie exited with code 0 in 76.3s
+[ISOLATED] Launching mgie_budget (timeout=3600s) -> logs\isolated\mgie_budget.log
+[ISOLATED] hgrn2_outer exited with code 0 in 2990.2s
+[ISOLATED] Launching minimal_aurora (timeout=3600s) -> logs\isolated\minimal_aurora.log
+[ISOLATED] mgie_budget exited with code 0 in 56.0s
+[ISOLATED] Launching minimal_nova (timeout=3600s) -> logs\isolated\minimal_nova.log
+[ISOLATED] minimal_aurora exited with code 0 in 99.2s
+[ISOLATED] Launching minimal_prism (timeout=3600s) -> logs\isolated\minimal_prism.log
+[ISOLATED] minimal_nova exited with code 0 in 96.9s
+[ISOLATED] Launching minimal_svd (timeout=3600s) -> logs\isolated\minimal_svd.log
+[ISOLATED] minimal_svd exited with code 0 in 70.6s
+[ISOLATED] Launching minimal_svd_v2 (timeout=3600s) -> logs\isolated\minimal_svd_v2.log
+[ISOLATED] minimal_prism exited with code 0 in 156.2s
+[ISOLATED] Launching mla (timeout=3600s) -> logs\isolated\mla.log
+[ISOLATED] mla exited with code 0 in 57.8s
+[ISOLATED] Launching mlorq (timeout=3600s) -> logs\isolated\mlorq.log
+[ISOLATED] minimal_svd_v2 exited with code 0 in 142.0s
+[ISOLATED] Launching moba (timeout=3600s) -> logs\isolated\moba.log
+[ISOLATED] mlorq exited with code 0 in 76.0s
+[ISOLATED] Launching modegpt (timeout=3600s) -> logs\isolated\modegpt.log
+[ISOLATED] moba exited with code 0 in 60.2s
+[ISOLATED] Launching moe_deltakv_paged (timeout=3600s) -> logs\isolated\moe_deltakv_paged.log
+[ISOLATED] modegpt exited with code 0 in 83.1s
+[ISOLATED] Launching nasc (timeout=3600s) -> logs\isolated\nasc.log
+[ISOLATED] moe_deltakv_paged exited with code 0 in 64.5s
+[ISOLATED] Launching nexus (timeout=3600s) -> logs\isolated\nexus.log
+[ISOLATED] kronecker exited with code 0 in 2892.7s
+[ISOLATED] Launching nha (timeout=3600s) -> logs\isolated\nha.log
+[ISOLATED] nha exited with code 0 in 71.8s
+[ISOLATED] Launching nli_softmax (timeout=3600s) -> logs\isolated\nli_softmax.log
+[ISOLATED] nasc exited with code 0 in 112.0s
+[ISOLATED] Launching nmf (timeout=3600s) -> logs\isolated\nmf.log
+[ISOLATED] nexus exited with code 0 in 136.9s
+[ISOLATED] Launching nsa (timeout=3600s) -> logs\isolated\nsa.log
+[ISOLATED] nli_softmax exited with code 0 in 50.2s
+[ISOLATED] Launching nystrom (timeout=3600s) -> logs\isolated\nystrom.log
+[ISOLATED] nsa exited with code 0 in 49.8s
+[ISOLATED] Launching oats (timeout=3600s) -> logs\isolated\oats.log
+[ISOLATED] nystrom exited with code 0 in 53.2s
+[ISOLATED] Launching oha (timeout=3600s) -> logs\isolated\oha.log
+[ISOLATED] nmf exited with code 0 in 117.8s
+[ISOLATED] Launching optimal_subspace_projection (timeout=3600s) -> logs\isolated\optimal_subspace_projection.log
+[ISOLATED] oha exited with code 0 in 71.8s
+[ISOLATED] Launching orion (timeout=3600s) -> logs\isolated\orion.log
+[ISOLATED] oats exited with code 0 in 156.3s
+[ISOLATED] Launching padre (timeout=3600s) -> logs\isolated\padre.log
+[ISOLATED] padre exited with code 0 in 45.1s
+[ISOLATED] Launching performer (timeout=3600s) -> logs\isolated\performer.log
+[ISOLATED] performer exited with code 0 in 51.9s
+[ISOLATED] Launching phantom (timeout=3600s) -> logs\isolated\phantom.log
+[ISOLATED] orion exited with code 0 in 184.2s
+[ISOLATED] Launching primal (timeout=3600s) -> logs\isolated\primal.log
+[ISOLATED] optimal_subspace_projection exited with code 0 in 272.8s
+[ISOLATED] Launching projection_factorized_attn (timeout=3600s) -> logs\isolated\projection_factorized_attn.log
+[ISOLATED] phantom exited with code 0 in 87.9s
+[ISOLATED] Launching proxsparse (timeout=3600s) -> logs\isolated\proxsparse.log
+[ISOLATED] proxsparse exited with code 0 in 113.8s
+[ISOLATED] Launching ptp (timeout=3600s) -> logs\isolated\ptp.log
+[ISOLATED] ptp exited with code 0 in 58.2s
+[ISOLATED] Launching qcqa (timeout=3600s) -> logs\isolated\qcqa.log
+[ISOLATED] primal exited with code 0 in 260.0s
+[ISOLATED] Launching rala (timeout=3600s) -> logs\isolated\rala.log
+[ISOLATED] projection_factorized_attn exited with code 0 in 231.7s
+[ISOLATED] Launching reap_moe (timeout=3600s) -> logs\isolated\reap_moe.log
+[ISOLATED] reap_moe exited with code 0 in 26.1s
+[ISOLATED] Launching regla (timeout=3600s) -> logs\isolated\regla.log
+[ISOLATED] qcqa exited with code 0 in 52.1s
+[ISOLATED] Launching replace (timeout=3600s) -> logs\isolated\replace.log
+[ISOLATED] rala exited with code 0 in 56.8s
+[ISOLATED] Launching replaceme (timeout=3600s) -> logs\isolated\replaceme.log
+[ISOLATED] regla exited with code 0 in 63.9s
+[ISOLATED] Launching res_svd (timeout=3600s) -> logs\isolated\res_svd.log
+[ISOLATED] replace exited with code 0 in 100.0s
+[ISOLATED] Launching ressvd (timeout=3600s) -> logs\isolated\ressvd.log
+[ISOLATED] replaceme exited with code 0 in 135.8s
+[ISOLATED] Launching roast (timeout=3600s) -> logs\isolated\roast.log
+[ISOLATED] res_svd exited with code 0 in 115.5s
+[ISOLATED] Launching rotational_slicegpt (timeout=3600s) -> logs\isolated\rotational_slicegpt.log
+[ISOLATED] ressvd exited with code 0 in 98.0s
+[ISOLATED] Launching routing (timeout=3600s) -> logs\isolated\routing.log
+[ISOLATED] roast exited with code 0 in 78.7s
+[ISOLATED] Launching rpc (timeout=3600s) -> logs\isolated\rpc.log
+[ISOLATED] rotational_slicegpt exited with code 0 in 104.6s
+[ISOLATED] Launching rpca (timeout=3600s) -> logs\isolated\rpca.log
+[ISOLATED] rpc exited with code 0 in 52.7s
+[ISOLATED] Launching saes (timeout=3600s) -> logs\isolated\saes.log
+[ISOLATED] saes exited with code 0 in 57.8s
+[ISOLATED] Launching salr (timeout=3600s) -> logs\isolated\salr.log
+[ISOLATED] routing exited with code 0 in 186.9s
+[ISOLATED] Launching salt (timeout=3600s) -> logs\isolated\salt.log
+[ISOLATED] rpca exited with code 0 in 115.5s
+[ISOLATED] Launching samba_m3 (timeout=3600s) -> logs\isolated\samba_m3.log
+[ISOLATED] samba_m3 exited with code 0 in 35.4s
+[ISOLATED] Launching samba_moe (timeout=3600s) -> logs\isolated\samba_moe.log
+[ISOLATED] salr exited with code 0 in 115.7s
+[ISOLATED] Launching sdrm (timeout=3600s) -> logs\isolated\sdrm.log
+[ISOLATED] samba_moe exited with code 0 in 39.4s
+[ISOLATED] Launching sdrm_class (timeout=3600s) -> logs\isolated\sdrm_class.log
+[ISOLATED] salt exited with code 0 in 241.4s
+[ISOLATED] Launching simple_ssm (timeout=3600s) -> logs\isolated\simple_ssm.log
+[ISOLATED] simple_ssm exited with code 0 in 85.7s
+[ISOLATED] Launching slicegpt (timeout=3600s) -> logs\isolated\slicegpt.log
+[ISOLATED] slicegpt exited with code 0 in 133.5s
+[ISOLATED] Launching slicegpt_pca (timeout=3600s) -> logs\isolated\slicegpt_pca.log
+[ISOLATED] slicegpt_pca exited with code 0 in 96.5s
+[ISOLATED] Launching slim (timeout=3600s) -> logs\isolated\slim.log
+[ISOLATED] slim exited with code 0 in 68.6s
+[ISOLATED] Launching soa_attn (timeout=3600s) -> logs\isolated\soa_attn.log
+[ISOLATED] soa_attn exited with code 0 in 119.4s
+[ISOLATED] Launching soa_fused_attention (timeout=3600s) -> logs\isolated\soa_fused_attention.log
+[ISOLATED] sdrm_class exited with code 0 in 848.0s
+[ISOLATED] Launching soka (timeout=3600s) -> logs\isolated\soka.log
+[ISOLATED] sdrm exited with code 0 in 873.6s
+[ISOLATED] soa_fused_attention exited with code 0 in 186.5s
+[ISOLATED] Launching span_expanded (timeout=3600s) -> logs\isolated\span_expanded.log
+[ISOLATED] Launching sparsegpt (timeout=3600s) -> logs\isolated\sparsegpt.log
+[ISOLATED] soka exited with code 0 in 143.3s
+[ISOLATED] Launching spectra_v2 (timeout=3600s) -> logs\isolated\spectra_v2.log
+[ISOLATED] span_expanded exited with code 0 in 206.1s
+[ISOLATED] Launching spectraformer (timeout=3600s) -> logs\isolated\spectraformer.log
+[ISOLATED] sparsegpt exited with code 0 in 232.6s
+[ISOLATED] Launching spectral_mamba (timeout=3600s) -> logs\isolated\spectral_mamba.log
+[ISOLATED] spectra_v2 exited with code 0 in 105.6s
+[ISOLATED] Launching spectral_residual_lora (timeout=3600s) -> logs\isolated\spectral_residual_lora.log
+[ISOLATED] spectraformer exited with code 0 in 76.4s
+[ISOLATED] Launching spectron (timeout=3600s) -> logs\isolated\spectron.log
+[ISOLATED] spectral_mamba exited with code 0 in 75.5s
+[ISOLATED] Launching squeezing_heads (timeout=3600s) -> logs\isolated\squeezing_heads.log
+[ISOLATED] spectral_residual_lora exited with code 0 in 150.8s
+[ISOLATED] Launching subspace_projection (timeout=3600s) -> logs\isolated\subspace_projection.log
+[ISOLATED] squeezing_heads exited with code 0 in 152.8s
+[ISOLATED] Launching svd (timeout=3600s) -> logs\isolated\svd.log
+[ISOLATED] spectron exited with code 0 in 219.6s
+[ISOLATED] Launching svd-mamba (timeout=3600s) -> logs\isolated\svd-mamba.log
+[ISOLATED] subspace_projection exited with code 0 in 151.4s
+[ISOLATED] Launching svd_compressed (timeout=3600s) -> logs\isolated\svd_compressed.log
+[ISOLATED] svd-mamba exited with code 0 in 65.7s
+[ISOLATED] Launching svd_linear (timeout=3600s) -> logs\isolated\svd_linear.log
+[ISOLATED] svd exited with code 0 in 119.4s
+[ISOLATED] Launching svd_linear_decay (timeout=3600s) -> logs\isolated\svd_linear_decay.log
+[ISOLATED] svd_compressed exited with code 0 in 130.1s
+[ISOLATED] Launching svd_llm_v2 (timeout=3600s) -> logs\isolated\svd_llm_v2.log
+[ISOLATED] svd_linear exited with code 0 in 163.0s
+[ISOLATED] Launching svd_proj (timeout=3600s) -> logs\isolated\svd_proj.log
+[ISOLATED] svd_linear_decay exited with code 0 in 227.0s
+[ISOLATED] Launching swift_svd (timeout=3600s) -> logs\isolated\swift_svd.log
+[ISOLATED] svd_proj exited with code 0 in 156.2s
+[ISOLATED] Launching swift_svd_act (timeout=3600s) -> logs\isolated\swift_svd_act.log
+[ISOLATED] svd_llm_v2 exited with code 0 in 319.3s
+[ISOLATED] Launching swift_svd_class (timeout=3600s) -> logs\isolated\swift_svd_class.log
+[ISOLATED] swift_svd exited with code 0 in 644.1s
+[ISOLATED] Launching template_attention (timeout=3600s) -> logs\isolated\template_attention.log
+[ISOLATED] swift_svd_act exited with code 0 in 1015.5s
+[ISOLATED] Launching tlinformer (timeout=3600s) -> logs\isolated\tlinformer.log
+[ISOLATED] template_attention exited with code 0 in 495.0s
+[ISOLATED] Launching token_compressed (timeout=3600s) -> logs\isolated\token_compressed.log
+[ISOLATED] swift_svd_class exited with code 0 in 985.0s
+[ISOLATED] Launching tomoe (timeout=3600s) -> logs\isolated\tomoe.log
+[ISOLATED] tlinformer exited with code 0 in 93.9s
+[ISOLATED] Launching tomoe_class (timeout=3600s) -> logs\isolated\tomoe_class.log
+[ISOLATED] token_compressed exited with code 0 in 90.2s
+[ISOLATED] Launching tpa (timeout=3600s) -> logs\isolated\tpa.log
+[ISOLATED] tomoe exited with code 0 in 205.2s
+[ISOLATED] Launching tt (timeout=3600s) -> logs\isolated\tt.log
+[ISOLATED] tpa exited with code 0 in 150.0s
+[ISOLATED] Launching unified_rope (timeout=3600s) -> logs\isolated\unified_rope.log
+[ISOLATED] unified_rope exited with code 0 in 105.6s
+[ISOLATED] tomoe_class exited with code 0 in 293.1s
+[ISOLATED] Launching uniql (timeout=3600s) -> logs\isolated\uniql.log
+[ISOLATED] Launching upi_mamba (timeout=3600s) -> logs\isolated\upi_mamba.log
+[ISOLATED] tt exited with code 0 in 187.5s
+[ISOLATED] Launching vig (timeout=3600s) -> logs\isolated\vig.log
+[ISOLATED] uniql exited with code 0 in 154.5s
+[ISOLATED] Launching vspec (timeout=3600s) -> logs\isolated\vspec.log
+[ISOLATED] vig exited with code 0 in 120.1s
+[ISOLATED] Launching weighted_ensemble (timeout=3600s) -> logs\isolated\weighted_ensemble.log

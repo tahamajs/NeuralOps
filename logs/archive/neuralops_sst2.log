@@ -1,0 +1,141 @@
+2026-09-18 15:52:17,381 [INFO] NeuralOpsServerPipeline: =================================================================
+2026-09-18 15:52:17,382 [INFO] NeuralOpsServerPipeline: \U0001f31f NEURALOPS PIPELINE: SST2 ON GPU
+2026-09-18 15:52:17,382 [INFO] NeuralOpsServerPipeline: Base Checkpoint: D:/SVD_Project/models/distilbert_sst2
+2026-09-18 15:52:17,382 [INFO] NeuralOpsServerPipeline: Recovery Steps: 50 (lr=1e-4) | Target Rank: 16
+2026-09-18 15:52:17,382 [INFO] NeuralOpsServerPipeline: =================================================================
+2026-09-18 15:52:19,095 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/glue/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-09-18 15:52:19,348 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/nyu-mll/glue/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-09-18 15:52:19,484 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/nyu-mll/glue/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/README.md "HTTP/1.1 200 OK"
+2026-09-18 15:52:19,725 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/glue/resolve/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/glue.py "HTTP/1.1 307 Temporary Redirect"
+2026-09-18 15:52:19,963 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/nyu-mll/glue/resolve/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/glue.py "HTTP/1.1 404 Not Found"
+2026-09-18 15:52:20,626 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/glue/glue.py "HTTP/1.1 200 OK"
+Using the latest cached version of the dataset since glue couldn't be found on the Hugging Face Hub
+2026-09-18 15:52:20,670 [WARNING] datasets.load: Using the latest cached version of the dataset since glue couldn't be found on the Hugging Face Hub
+Found the latest cached dataset configuration 'sst2' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\glue\sst2\0.0.0\bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c (last modified on Sun Sep  6 01:57:45 2026).
+2026-09-18 15:52:20,700 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'sst2' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\glue\sst2\0.0.0\bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c (last modified on Sun Sep  6 01:57:45 2026).
+2026-09-18 15:52:21,351 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/glue/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-09-18 15:52:21,589 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/nyu-mll/glue/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-09-18 15:52:21,707 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/nyu-mll/glue/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/README.md "HTTP/1.1 200 OK"
+2026-09-18 15:52:21,945 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/glue/resolve/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/glue.py "HTTP/1.1 307 Temporary Redirect"
+2026-09-18 15:52:22,518 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/nyu-mll/glue/resolve/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/glue.py "HTTP/1.1 404 Not Found"
+2026-09-18 15:52:22,729 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/glue/glue.py "HTTP/1.1 200 OK"
+Using the latest cached version of the dataset since glue couldn't be found on the Hugging Face Hub
+2026-09-18 15:52:22,758 [WARNING] datasets.load: Using the latest cached version of the dataset since glue couldn't be found on the Hugging Face Hub
+Found the latest cached dataset configuration 'sst2' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\glue\sst2\0.0.0\bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c (last modified on Sun Sep  6 01:57:45 2026).
+2026-09-18 15:52:22,761 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'sst2' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\glue\sst2\0.0.0\bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c (last modified on Sun Sep  6 01:57:45 2026).
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3304.88it/s]
+2026-09-18 15:52:26,512 [INFO] NeuralOpsServerPipeline: Verified Base Model Accuracy on sst2: 91.2% | F1: 0.9185
+2026-09-18 15:52:26,537 [INFO] NeuralOpsServerPipeline: 
+--- Testing Module: asvd_attention ---
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3034.13it/s]
+2026-09-18 15:52:33,536 [INFO] framework.core.attention_utils: Successfully injected 'asvd_attention' into 6 transformer blocks.
+2026-09-18 15:52:33,537 [INFO] NeuralOpsServerPipeline: Successfully injected asvd_attention with rank=16 and copy_weights=True
+2026-09-18 15:52:34,826 [INFO] NeuralOpsServerPipeline: [asvd_attention] Zero-Shot Accuracy: 91.0% | F1: 0.9168
+2026-09-18 15:52:40,376 [INFO] NeuralOpsServerPipeline: [asvd_attention] Post-Recovery Accuracy: 91.0% | F1: 0.9171 (Tuned in 4.3s)
+2026-09-18 15:52:40,459 [INFO] NeuralOpsServerPipeline: 
+--- Testing Module: svd_llm_v2_attention ---
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3090.06it/s]
+2026-09-18 15:52:42,745 [INFO] framework.core.attention_utils: Successfully injected 'svd_llm_v2_attention' into 6 transformer blocks.
+2026-09-18 15:52:42,746 [INFO] NeuralOpsServerPipeline: Successfully injected svd_llm_v2_attention with rank=16 and copy_weights=True
+2026-09-18 15:52:43,834 [INFO] NeuralOpsServerPipeline: [svd_llm_v2_attention] Zero-Shot Accuracy: 75.8% | F1: 0.7888
+2026-09-18 15:52:49,546 [INFO] NeuralOpsServerPipeline: [svd_llm_v2_attention] Post-Recovery Accuracy: 79.8% | F1: 0.7984 (Tuned in 4.7s)
+2026-09-18 15:52:49,575 [INFO] NeuralOpsServerPipeline: 
+--- Testing Module: adaptive_svd_attention ---
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 2925.47it/s]
+2026-09-18 15:53:08,247 [INFO] framework.core.attention_utils: Successfully injected 'adaptive_svd_attention' into 6 transformer blocks.
+2026-09-18 15:53:08,248 [INFO] NeuralOpsServerPipeline: Successfully injected adaptive_svd_attention with rank=16 and copy_weights=True
+2026-09-18 15:53:09,234 [INFO] NeuralOpsServerPipeline: [adaptive_svd_attention] Zero-Shot Accuracy: 79.2% | F1: 0.8143
+2026-09-18 15:53:14,382 [INFO] NeuralOpsServerPipeline: [adaptive_svd_attention] Post-Recovery Accuracy: 82.4% | F1: 0.8327 (Tuned in 4.2s)
+2026-09-18 15:53:14,418 [INFO] NeuralOpsServerPipeline: 
+--- Testing Module: squeezing_heads ---
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3609.68it/s]
+2026-09-18 15:53:15,057 [INFO] framework.core.attention_utils: Successfully injected 'squeezing_heads' into 6 transformer blocks.
+2026-09-18 15:53:15,058 [INFO] NeuralOpsServerPipeline: Successfully injected squeezing_heads with rank=16 and copy_weights=True
+2026-09-18 15:53:16,537 [INFO] NeuralOpsServerPipeline: [squeezing_heads] Zero-Shot Accuracy: 89.8% | F1: 0.8998
+2026-09-18 15:53:21,885 [INFO] NeuralOpsServerPipeline: [squeezing_heads] Post-Recovery Accuracy: 90.4% | F1: 0.9101 (Tuned in 4.2s)
+2026-09-18 15:53:21,909 [INFO] NeuralOpsServerPipeline: 
+--- Testing Module: gqa_attention ---
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3361.11it/s]
+2026-09-18 15:53:22,540 [INFO] framework.core.attention_utils: Successfully injected 'gqa_attention' into 6 transformer blocks.
+2026-09-18 15:53:22,541 [INFO] NeuralOpsServerPipeline: Successfully injected gqa_attention with rank=16 and copy_weights=True
+2026-09-18 15:53:23,669 [INFO] NeuralOpsServerPipeline: [gqa_attention] Zero-Shot Accuracy: 89.8% | F1: 0.8998
+2026-09-18 15:53:28,432 [INFO] NeuralOpsServerPipeline: [gqa_attention] Post-Recovery Accuracy: 90.2% | F1: 0.9088 (Tuned in 3.6s)
+2026-09-18 15:53:28,503 [INFO] NeuralOpsServerPipeline: 
+--- Testing Module: primal_attention ---
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3029.37it/s]
+2026-09-18 15:53:29,128 [INFO] framework.core.attention_utils: Successfully injected 'primal_attention' into 6 transformer blocks.
+2026-09-18 15:53:29,129 [INFO] NeuralOpsServerPipeline: Successfully injected primal_attention with rank=16 and copy_weights=True
+2026-09-18 15:53:30,757 [INFO] NeuralOpsServerPipeline: [primal_attention] Zero-Shot Accuracy: 87.6% | F1: 0.8798
+2026-09-18 15:53:35,729 [INFO] NeuralOpsServerPipeline: [primal_attention] Post-Recovery Accuracy: 86.0% | F1: 0.8638 (Tuned in 3.4s)
+2026-09-18 15:53:35,796 [INFO] NeuralOpsServerPipeline: 
+--- Testing Module: svd_linear_attention ---
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3076.02it/s]
+2026-09-18 15:53:51,462 [INFO] framework.core.attention_utils: Successfully injected 'svd_linear_attention' into 6 transformer blocks.
+2026-09-18 15:53:51,463 [INFO] NeuralOpsServerPipeline: Successfully injected svd_linear_attention with rank=32 and copy_weights=True
+2026-09-18 15:53:52,470 [INFO] NeuralOpsServerPipeline: [svd_linear_attention] Zero-Shot Accuracy: 79.2% | F1: 0.8143
+2026-09-18 15:53:57,612 [INFO] NeuralOpsServerPipeline: [svd_linear_attention] Post-Recovery Accuracy: 81.4% | F1: 0.8158 (Tuned in 4.1s)
+2026-09-18 15:53:57,660 [INFO] NeuralOpsServerPipeline: 
+--- Testing Module: mamba_svd_flash ---
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3537.40it/s]
+2026-09-18 15:53:59,641 [INFO] framework.core.attention_utils: Successfully injected 'mamba_svd_flash' into 6 transformer blocks.
+2026-09-18 15:53:59,642 [INFO] NeuralOpsServerPipeline: Successfully injected mamba_svd_flash with rank=16 and copy_weights=True
+2026-09-18 15:54:17,579 [INFO] NeuralOpsServerPipeline: [mamba_svd_flash] Zero-Shot Accuracy: 89.0% | F1: 0.8902
+2026-09-18 15:54:17,579 [INFO] NeuralOpsServerPipeline: [mamba_svd_flash] Skipping scan fine-tuning to prevent OOM; adopting zero-shot accuracy.
+2026-09-18 15:54:17,579 [INFO] NeuralOpsServerPipeline: [mamba_svd_flash] Post-Recovery Accuracy: 89.0% | F1: 0.8902 (Tuned in 0.0s)
+2026-09-18 15:54:17,654 [INFO] NeuralOpsServerPipeline: 
+--- Testing Module: res_svd ---
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3982.43it/s]
+2026-09-18 15:54:20,687 [INFO] framework.attentions.res_svd: ResSVDAttention initialized: hidden=768, heads=12, head_dim=64, all_head_size=768, is_decoder=False, is_nested=False, base_rank=16, residual_rank=4
+2026-09-18 15:54:23,232 [INFO] framework.attentions.res_svd: ResSVDAttention initialized: hidden=768, heads=12, head_dim=64, all_head_size=768, is_decoder=False, is_nested=False, base_rank=16, residual_rank=4
+2026-09-18 15:54:25,707 [INFO] framework.attentions.res_svd: ResSVDAttention initialized: hidden=768, heads=12, head_dim=64, all_head_size=768, is_decoder=False, is_nested=False, base_rank=16, residual_rank=4
+2026-09-18 15:54:28,255 [INFO] framework.attentions.res_svd: ResSVDAttention initialized: hidden=768, heads=12, head_dim=64, all_head_size=768, is_decoder=False, is_nested=False, base_rank=16, residual_rank=4
+2026-09-18 15:54:30,640 [INFO] framework.attentions.res_svd: ResSVDAttention initialized: hidden=768, heads=12, head_dim=64, all_head_size=768, is_decoder=False, is_nested=False, base_rank=16, residual_rank=4
+2026-09-18 15:54:33,185 [INFO] framework.attentions.res_svd: ResSVDAttention initialized: hidden=768, heads=12, head_dim=64, all_head_size=768, is_decoder=False, is_nested=False, base_rank=16, residual_rank=4
+2026-09-18 15:54:33,684 [INFO] framework.core.attention_utils: Successfully injected 'res_svd' into 6 transformer blocks.
+2026-09-18 15:54:33,685 [INFO] NeuralOpsServerPipeline: Successfully injected res_svd with rank=16 and copy_weights=True
+2026-09-18 15:54:35,434 [INFO] NeuralOpsServerPipeline: [res_svd] Zero-Shot Accuracy: 78.8% | F1: 0.8059
+2026-09-18 15:54:41,352 [INFO] NeuralOpsServerPipeline: [res_svd] Post-Recovery Accuracy: 79.8% | F1: 0.8112 (Tuned in 4.9s)
+2026-09-18 15:54:41,376 [INFO] NeuralOpsServerPipeline: 
+--- Testing Module: lora_attention ---
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3136.42it/s]
+2026-09-18 15:54:42,025 [INFO] framework.core.attention_utils: Successfully injected 'lora_attention' into 6 transformer blocks.
+2026-09-18 15:54:42,027 [INFO] NeuralOpsServerPipeline: Successfully injected lora_attention with rank=16 and copy_weights=True
+2026-09-18 15:54:43,123 [INFO] NeuralOpsServerPipeline: [lora_attention] Zero-Shot Accuracy: 89.8% | F1: 0.8998
+2026-09-18 15:54:48,156 [INFO] NeuralOpsServerPipeline: [lora_attention] Post-Recovery Accuracy: 90.4% | F1: 0.9104 (Tuned in 3.9s)
+2026-09-18 15:54:48,207 [INFO] NeuralOpsServerPipeline: 
+--- Testing Module: squeezing_heads_distill ---
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 2850.23it/s]
+2026-09-18 15:54:48,853 [INFO] framework.core.attention_utils: Successfully injected 'squeezing_heads_distill' into 6 transformer blocks.
+2026-09-18 15:54:48,854 [INFO] NeuralOpsServerPipeline: Successfully injected squeezing_heads_distill with rank=16 and copy_weights=True
+2026-09-18 15:54:49,977 [INFO] NeuralOpsServerPipeline: [squeezing_heads_distill] Zero-Shot Accuracy: 89.8% | F1: 0.8998
+2026-09-18 15:54:54,858 [INFO] NeuralOpsServerPipeline: [squeezing_heads_distill] Post-Recovery Accuracy: 90.8% | F1: 0.9135 (Tuned in 3.8s)
+2026-09-18 15:54:54,894 [INFO] NeuralOpsServerPipeline: 
+--- Testing Module: fusion_attn ---
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3019.66it/s]
+2026-09-18 15:54:55,567 [INFO] framework.core.attention_utils: Successfully injected 'fusion_attn' into 6 transformer blocks.
+2026-09-18 15:54:55,568 [INFO] NeuralOpsServerPipeline: Successfully injected fusion_attn with rank=16 and copy_weights=True
+2026-09-18 15:54:56,699 [INFO] NeuralOpsServerPipeline: [fusion_attn] Zero-Shot Accuracy: 89.8% | F1: 0.8998
+2026-09-18 15:55:01,560 [INFO] NeuralOpsServerPipeline: [fusion_attn] Post-Recovery Accuracy: 90.6% | F1: 0.9112 (Tuned in 3.7s)
+2026-09-18 15:55:01,595 [INFO] NeuralOpsServerPipeline: 
+--- Testing Module: fused_svd_kernel ---
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3177.71it/s]
+2026-09-18 15:55:05,643 [INFO] framework.core.attention_utils: Successfully injected 'fused_svd_kernel' into 6 transformer blocks.
+2026-09-18 15:55:05,645 [INFO] NeuralOpsServerPipeline: Successfully injected fused_svd_kernel with rank=16 and copy_weights=True
+2026-09-18 15:55:07,498 [INFO] NeuralOpsServerPipeline: [fused_svd_kernel] Zero-Shot Accuracy: 52.8% | F1: 0.2027
+2026-09-18 15:55:10,665 [INFO] NeuralOpsServerPipeline: [fused_svd_kernel] Post-Recovery Accuracy: 60.4% | F1: 0.7219 (Tuned in 2.3s)
+2026-09-18 15:55:10,678 [INFO] NeuralOpsServerPipeline: 
+--- Testing Module: flash_attention3 ---
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 2913.76it/s]
+2026-09-18 15:55:11,399 [INFO] framework.core.attention_utils: Successfully injected 'flash_attention3' into 6 transformer blocks.
+2026-09-18 15:55:11,402 [INFO] NeuralOpsServerPipeline: Successfully injected flash_attention3 with rank=16 and copy_weights=True
+2026-09-18 15:55:12,259 [INFO] NeuralOpsServerPipeline: [flash_attention3] Zero-Shot Accuracy: 89.8% | F1: 0.8998
+2026-09-18 15:55:17,036 [INFO] NeuralOpsServerPipeline: [flash_attention3] Post-Recovery Accuracy: 90.4% | F1: 0.9087 (Tuned in 3.9s)
+2026-09-18 15:55:17,076 [INFO] NeuralOpsServerPipeline: 
+--- Testing Module: spectron ---
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 2809.11it/s]
+2026-09-18 15:56:00,615 [INFO] framework.core.attention_utils: Successfully injected 'spectron' into 6 transformer blocks.
+2026-09-18 15:56:00,617 [INFO] NeuralOpsServerPipeline: Successfully injected spectron with rank=16 and copy_weights=True
+2026-09-18 15:56:01,658 [INFO] NeuralOpsServerPipeline: [spectron] Zero-Shot Accuracy: 79.6% | F1: 0.7773
+2026-09-18 15:56:06,700 [INFO] NeuralOpsServerPipeline: [spectron] Post-Recovery Accuracy: 82.4% | F1: 0.8423 (Tuned in 4.0s)
+2026-09-18 15:56:06,725 [INFO] NeuralOpsServerPipeline: 
+Completed all 15 modules on sst2! Results saved to: D:\SVD_Project\results\neuralops_suite\neuralops_sst2_results.csv

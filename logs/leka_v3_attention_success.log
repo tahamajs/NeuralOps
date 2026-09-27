@@ -1,0 +1,6 @@
+[main 6076e0f49] feat(benchmark): record successful leka_v3_attention on distilbert-sst2 (Acc: 76.15%, F1: 0.7806)
+ 4 files changed, 534 insertions(+), 474 deletions(-)
+ create mode 100644 results/all_modules/lora_attention/distilbert_sst2_lora_attention_full_metrics.json
+ create mode 100644 results/all_modules/lora_attention/finetune_metadata.json
+ create mode 100644 results/all_modules/lora_attention/summary.csv
+branch 'main' set up to track 'origin/main'.

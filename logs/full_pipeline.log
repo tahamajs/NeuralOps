@@ -1,0 +1,335 @@
+=== Starting Full Remaining Module Pipeline with Hooshaai & Batch Size 128 ===
+>>> Executing aegis_v2 on sst2 (models/distilbert_sst2)
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from partially initialized module 'framework.eval_all_models_datasets' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\eval_all_models_datasets.py)
+2026-09-18 21:53:46,147 [INFO] QwenQualitySweep: Parsed 3 module-specific extended arguments: ['--hf_org', 'Hooshaai', '--upload_to_hf']
+2026-09-18 21:53:46,229 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 21:53:46,421 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 4039.74it/s]
+2026-09-18 21:53:46,935 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-18 21:53:46,935 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 21:53:46,935 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 21:53:46,935 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 21:53:46,936 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-18 21:53:46,936 [INFO] QwenQualitySweep:   family:            bert
+2026-09-18 21:53:46,936 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-18 21:53:46,936 [INFO] QwenQualitySweep:   batch_size:        128
+2026-09-18 21:53:46,937 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 21:53:46,937 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 21:53:46,937 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 21:53:46,937 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 21:53:46,960 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\fixed_aegis\aegis_v2_sst2\finetuned_model.pt
+2026-09-18 21:53:47,086 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 21:53:49,483 [INFO] QwenQualitySweep: Prepared 7 eval batches and 50 train batches directly on GPU.
+2026-09-18 21:53:51,425 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 91.06%
+2026-09-18 21:53:51,478 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 21:53:51,478 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-18 21:53:51,478 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-18 21:53:51,478 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-18 21:53:51,478 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-18 21:53:51,479 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-18 21:53:51,479 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-18 21:53:51,479 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 21:53:51,488 [INFO] QwenQualitySweep: >>> Skipping already PASSED module [1/1]: aegis_v2 (PASS, 75.69%)
+2026-09-18 21:53:51,490 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 21:53:51,491 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-18 21:53:51,498 [INFO] QwenQualitySweep: 
+                   Module Status Accuracy Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+aegis_v2 (efficient-attn)   PASS   75.69%   -15.37% 0.7211                 0            1.00x 1526.8 MB             100.69               N/A
+2026-09-18 21:53:51,498 [INFO] QwenQualitySweep: ================================================================================
+>>> Executing aegis_v2 on mnli (models/roberta-base)
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from partially initialized module 'framework.eval_all_models_datasets' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\eval_all_models_datasets.py)
+2026-09-18 21:54:16,167 [INFO] QwenQualitySweep: Parsed 3 module-specific extended arguments: ['--hf_org', 'Hooshaai', '--upload_to_hf']
+2026-09-18 21:54:16,240 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 21:54:16,871 [INFO] QwenQualitySweep: Configured dataset 'mnli' with num_labels=3
+Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]Loading weights: 100%|##########| 197/197 [00:00<00:00, 3010.24it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models/roberta-base
+Key                             | Status     | 
+--------------------------------+------------+-
+lm_head.dense.bias              | UNEXPECTED | 
+lm_head.bias                    | UNEXPECTED | 
+roberta.embeddings.position_ids | UNEXPECTED | 
+lm_head.layer_norm.weight       | UNEXPECTED | 
+lm_head.dense.weight            | UNEXPECTED | 
+lm_head.layer_norm.bias         | UNEXPECTED | 
+classifier.out_proj.weight      | MISSING    | 
+classifier.dense.bias           | MISSING    | 
+classifier.dense.weight         | MISSING    | 
+classifier.out_proj.bias        | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-18 21:54:17,755 [INFO] QwenQualitySweep: model=models/roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-18 21:54:17,755 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 21:54:17,755 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 21:54:17,755 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 21:54:17,755 [INFO] QwenQualitySweep:   model:             models/roberta-base
+2026-09-18 21:54:17,756 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-18 21:54:17,756 [INFO] QwenQualitySweep:   dataset:           mnli
+2026-09-18 21:54:17,756 [INFO] QwenQualitySweep:   batch_size:        128
+2026-09-18 21:54:17,756 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 21:54:17,757 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 21:54:17,757 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 21:54:17,757 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 21:54:17,779 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\fixed_aegis\aegis_v2_mnli\finetuned_model.pt
+2026-09-18 21:54:17,983 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 21:54:20,151 [INFO] QwenQualitySweep: Prepared 8 eval batches and 50 train batches directly on GPU.
+2026-09-18 21:54:23,353 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 38.10%
+2026-09-18 21:54:23,414 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 21:54:23,415 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-18 21:54:23,415 [INFO] QwenQualitySweep:   Validation Majority Count: 341 / 1000
+2026-09-18 21:54:23,415 [INFO] QwenQualitySweep:   True Majority Baseline:    34.10%
+2026-09-18 21:54:23,415 [INFO] QwenQualitySweep:   Standard Error (SE):       1.499%
+2026-09-18 21:54:23,415 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.50%
+2026-09-18 21:54:23,415 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  38.60%
+2026-09-18 21:54:23,416 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 21:54:23,416 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: aegis_v2 (recovery_steps=50, batch_size=128, optimizer=adamw)
+2026-09-18 21:54:33,949 [INFO] QwenQualitySweep: module=aegis_v2 path=adapted_roberta
+2026-09-18 21:54:33,952 [INFO] QwenQualitySweep: module=aegis_v2 injection summary: 48 SVDLinear layers active
+2026-09-18 21:54:33,953 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for aegis_v2 (lr=2.0e-04)
+2026-09-18 21:54:34,625 [INFO] framework.utils.compat: Recovery fine-tuning selected 3089952 trainable parameters across 168 tensors.
+2026-09-18 21:54:34,626 [INFO] framework.utils.compat: Discovered 168 trainable tensors (3089952 params)
+2026-09-18 21:54:34,632 [INFO] QwenQualitySweep: LoRA fine-tuning: 3089952 trainable parameters across 168 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 21:59:27,150 [WARNING] QwenQualitySweep: CUDA OOM during LoRA training; reducing micro-batch size to 64 (effective bs=128)
+>>> Executing aegis_v3 on agnews (models/gpt2)
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from partially initialized module 'framework.eval_all_models_datasets' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\eval_all_models_datasets.py)
+2026-09-18 22:04:09,314 [INFO] QwenQualitySweep: Parsed 3 module-specific extended arguments: ['--hf_org', 'Hooshaai', '--upload_to_hf']
+2026-09-18 22:04:09,381 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+Traceback (most recent call last):
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2907, in <module>
+    if __name__ == "__main__": main()
+                               ~~~~^^
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 1298, in main
+    ds = load_from_disk(args.dataset_dir); train, val = ds["train"], ds["validation"]
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\datasets\load.py", line 1469, in load_from_disk
+    fs, *_ = url_to_fs(dataset_path, **(storage_options or {}))
+             ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\fsspec\core.py", line 403, in url_to_fs
+    chain = _un_chain(url, kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\fsspec\core.py", line 335, in _un_chain
+    if "::" in path:
+       ^^^^^^^^^^^^
+TypeError: argument of type 'NoneType' is not iterable
+>>> Executing aegis_v4 on agnews (models/gpt2)
+>>> Executing aegis_v5 on sst2 (models/distilbert_sst2)
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from partially initialized module 'framework.eval_all_models_datasets' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\eval_all_models_datasets.py)
+2026-09-18 22:04:45,496 [INFO] QwenQualitySweep: Parsed 3 module-specific extended arguments: ['--hf_org', 'Hooshaai', '--upload_to_hf']
+2026-09-18 22:04:45,548 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 22:04:45,740 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3526.93it/s]
+2026-09-18 22:04:46,367 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-18 22:04:46,367 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 22:04:46,367 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:04:46,368 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 22:04:46,368 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-18 22:04:46,368 [INFO] QwenQualitySweep:   family:            bert
+2026-09-18 22:04:46,368 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-18 22:04:46,368 [INFO] QwenQualitySweep:   batch_size:        128
+2026-09-18 22:04:46,369 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 22:04:46,369 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 22:04:46,369 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 22:04:46,369 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:04:46,388 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\fixed_aegis\aegis_v5_sst2\finetuned_model.pt
+2026-09-18 22:04:46,504 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 22:04:49,026 [INFO] QwenQualitySweep: Prepared 7 eval batches and 50 train batches directly on GPU.
+2026-09-18 22:04:50,829 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 91.06%
+2026-09-18 22:04:50,881 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:04:50,881 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-18 22:04:50,881 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-18 22:04:50,882 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-18 22:04:50,882 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-18 22:04:50,882 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-18 22:04:50,882 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-18 22:04:50,882 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:04:50,896 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: aegis_v5 (recovery_steps=50, batch_size=128, optimizer=adamw)
+2026-09-18 22:04:53,370 [INFO] QwenQualitySweep: module=aegis_v5 path=legacy_bert
+2026-09-18 22:04:53,372 [INFO] QwenQualitySweep: module=aegis_v5 injection summary: 24 SVDLinear layers active
+2026-09-18 22:04:53,372 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for aegis_v5 (lr=2.0e-04)
+2026-09-18 22:04:53,480 [INFO] framework.utils.compat: Recovery fine-tuning selected 589824 trainable parameters across 48 tensors.
+2026-09-18 22:04:53,480 [INFO] framework.utils.compat: Discovered 48 trainable tensors (589824 params)
+2026-09-18 22:04:53,483 [INFO] QwenQualitySweep: LoRA fine-tuning: 589824 trainable parameters across 48 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 22:04:54,213 [INFO] QwenQualitySweep: Step 1/50 took 0.73s (loss=0.4760, bs=128, micro=128)
+2026-09-18 22:04:55,845 [INFO] QwenQualitySweep: Step 5/50 took 0.41s (loss=0.2805, bs=128, micro=128)
+2026-09-18 22:04:57,960 [INFO] QwenQualitySweep: Step 10/50 took 0.41s (loss=0.3272, bs=128, micro=128)
+2026-09-18 22:04:59,997 [INFO] QwenQualitySweep: Step 15/50 took 0.41s (loss=0.2590, bs=128, micro=128)
+2026-09-18 22:05:02,048 [INFO] QwenQualitySweep: Step 20/50 took 0.41s (loss=0.2515, bs=128, micro=128)
+2026-09-18 22:05:04,085 [INFO] QwenQualitySweep: Step 25/50 took 0.41s (loss=0.2450, bs=128, micro=128)
+2026-09-18 22:05:06,848 [INFO] QwenQualitySweep: Step 30/50 took 0.93s (loss=0.3184, bs=128, micro=128)
+2026-09-18 22:05:11,278 [INFO] QwenQualitySweep: Step 35/50 took 0.85s (loss=0.2277, bs=128, micro=128)
+2026-09-18 22:05:15,555 [INFO] QwenQualitySweep: Step 40/50 took 0.87s (loss=0.2965, bs=128, micro=128)
+2026-09-18 22:05:19,015 [INFO] QwenQualitySweep: Step 45/50 took 0.46s (loss=0.2840, bs=128, micro=128)
+2026-09-18 22:05:42,084 [INFO] QwenQualitySweep: Step 50/50 took 6.75s (loss=0.2586, bs=128, micro=128)
+>>> Starting queue of all remaining verified & patched attention modules
+>>> Queue processing module: adaptive_span_attention on distilbert_sst2
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from partially initialized module 'framework.eval_all_models_datasets' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\eval_all_models_datasets.py)
+2026-09-18 22:06:19,443 [INFO] QwenQualitySweep: Parsed 3 module-specific extended arguments: ['--hf_org', 'Hooshaai', '--upload_to_hf']
+2026-09-18 22:06:19,546 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 22:06:19,755 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 2672.69it/s]
+2026-09-18 22:06:20,561 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-18 22:06:20,561 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 22:06:20,561 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:06:20,561 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 22:06:20,561 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-18 22:06:20,562 [INFO] QwenQualitySweep:   family:            bert
+2026-09-18 22:06:20,562 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-18 22:06:20,562 [INFO] QwenQualitySweep:   batch_size:        128
+2026-09-18 22:06:20,562 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 22:06:20,563 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 22:06:20,563 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 22:06:20,563 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:06:20,565 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-18 22:06:24,855 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0367
+2026-09-18 22:06:28,769 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0312
+2026-09-18 22:06:32,684 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.0591
+2026-09-18 22:06:36,602 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0854
+2026-09-18 22:06:40,323 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0582
+2026-09-18 22:06:46,091 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.1628
+2026-09-18 22:06:51,853 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0678
+2026-09-18 22:06:58,152 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.0441
+2026-09-18 22:06:58,167 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\all_modules\adaptive_span_attention\finetuned_model.pt
+2026-09-18 22:06:58,255 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 22:07:00,715 [INFO] QwenQualitySweep: Prepared 7 eval batches and 50 train batches directly on GPU.
+2026-09-18 22:07:02,158 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.83%
+2026-09-18 22:07:02,223 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:07:02,224 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-18 22:07:02,224 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-18 22:07:02,224 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-18 22:07:02,224 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-18 22:07:02,225 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-18 22:07:02,225 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-18 22:07:02,225 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:07:02,225 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: adaptive_span_attention (recovery_steps=50, batch_size=128, optimizer=adamw)
+2026-09-18 22:07:03,140 [INFO] framework.core.attention_utils: Successfully injected 'adaptive_span_attention' into 6 transformer blocks.
+2026-09-18 22:07:03,152 [INFO] QwenQualitySweep: module=adaptive_span_attention path=legacy_bert
+2026-09-18 22:07:03,153 [INFO] QwenQualitySweep: module=adaptive_span_attention injection summary: 0 SVDLinear layers active
+2026-09-18 22:07:03,154 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for adaptive_span_attention (lr=2.0e-04)
+2026-09-18 22:07:03,228 [INFO] framework.utils.compat: Recovery fine-tuning selected 589896 trainable parameters across 54 tensors.
+2026-09-18 22:07:03,228 [INFO] framework.utils.compat: Discovered 54 trainable tensors (589896 params)
+2026-09-18 22:07:03,234 [INFO] QwenQualitySweep: LoRA fine-tuning: 589896 trainable parameters across 54 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 22:07:04,011 [INFO] QwenQualitySweep: Step 1/50 took 0.78s (loss=0.0545, bs=128, micro=128)
+2026-09-18 22:07:14,633 [INFO] QwenQualitySweep: Step 5/50 took 0.33s (loss=0.0056, bs=128, micro=128)
+>>> Queue processing module: adaptive_sparse_attention on distilbert_sst2
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from partially initialized module 'framework.eval_all_models_datasets' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\eval_all_models_datasets.py)
+2026-09-18 22:09:17,183 [INFO] QwenQualitySweep: Parsed 3 module-specific extended arguments: ['--hf_org', 'Hooshaai', '--upload_to_hf']
+2026-09-18 22:09:17,252 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 22:09:17,442 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3270.71it/s]
+2026-09-18 22:09:17,988 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-18 22:09:17,988 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 22:09:17,989 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:09:17,989 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 22:09:17,990 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-18 22:09:17,990 [INFO] QwenQualitySweep:   family:            bert
+2026-09-18 22:09:17,990 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-18 22:09:17,990 [INFO] QwenQualitySweep:   batch_size:        128
+2026-09-18 22:09:17,991 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 22:09:17,991 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 22:09:17,991 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 22:09:17,991 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:09:17,993 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-18 22:09:22,203 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0367
+2026-09-18 22:09:28,767 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0312
+2026-09-18 22:09:37,967 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.0591
+2026-09-18 22:09:46,116 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0854
+2026-09-18 22:09:54,326 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0582
+2026-09-18 22:10:03,884 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.1628
+2026-09-18 22:10:15,180 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0678
+2026-09-18 22:10:26,156 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.0441
+2026-09-18 22:10:26,171 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\all_modules\adaptive_sparse_attention\finetuned_model.pt
+2026-09-18 22:10:26,364 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 22:10:29,288 [INFO] QwenQualitySweep: Prepared 7 eval batches and 50 train batches directly on GPU.
+2026-09-18 22:10:31,980 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.83%
+2026-09-18 22:10:32,042 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:10:32,043 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-18 22:10:32,043 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-18 22:10:32,043 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-18 22:10:32,043 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-18 22:10:32,043 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-18 22:10:32,043 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-18 22:10:32,044 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:10:32,045 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: adaptive_sparse_attention (recovery_steps=50, batch_size=128, optimizer=adamw)
+2026-09-18 22:10:33,163 [INFO] QwenQualitySweep: module=adaptive_sparse_attention path=legacy_bert
+2026-09-18 22:10:33,164 [INFO] QwenQualitySweep: module=adaptive_sparse_attention injection summary: 0 SVDLinear layers active
+2026-09-18 22:10:33,164 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for adaptive_sparse_attention (lr=2.0e-04)
+2026-09-18 22:10:33,300 [INFO] framework.utils.compat: Recovery fine-tuning selected 589830 trainable parameters across 54 tensors.
+2026-09-18 22:10:33,300 [INFO] framework.utils.compat: Discovered 54 trainable tensors (589830 params)
+2026-09-18 22:10:33,304 [INFO] QwenQualitySweep: LoRA fine-tuning: 589830 trainable parameters across 54 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 22:10:54,663 [WARNING] QwenQualitySweep: CUDA OOM during LoRA training; reducing micro-batch size to 64 (effective bs=128)
+2026-09-18 22:11:02,515 [WARNING] QwenQualitySweep: CUDA OOM during LoRA training; reducing micro-batch size to 32 (effective bs=128)
+2026-09-18 22:11:07,288 [ERROR] QwenQualitySweep: Module adaptive_sparse_attention execution failure:
+Traceback (most recent call last):
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2551, in main
+    pipe_res = future.result(timeout=effective_timeout)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2450, in _run_candidate_pipeline
+    had_nan = finetune_lora(
+        model, tokenizer, train, args.dataset, rec_steps, args.seq_len, effective_batch_size, device,
+    ...<2 lines>...
+        weight_decay=args.weight_decay, timeout=effective_timeout,
+    )
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 736, in finetune_lora
+    scaler.scale(loss_chunk).backward()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\_tensor.py", line 626, in backward
+    torch.autograd.backward(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        self, gradient, retain_graph, create_graph, inputs=inputs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\autograd\__init__.py", line 347, in backward
+    _engine_run_backward(
+    ~~~~~~~~~~~~~~~~~~~~^
+        tensors,
+        ^^^^^^^^
+    ...<5 lines>...
+        accumulate_grad=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\autograd\graph.py", line 823, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        t_outputs, *args, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )  # Calls into the C++ engine to run the backward pass
+    ^
+RuntimeError: bad allocation
+2026-09-18 22:11:07,375 [INFO] QwenQualitySweep: [1/1] adaptive_sparse_attention -> FAIL 0.00% (F1: 0.0, Peak VRAM: 0.0 MB)
+2026-09-18 22:11:07,375 [INFO] QwenQualitySweep: [Quality Guard] Module 'adaptive_sparse_attention' did not pass quality criteria (status=FAIL, acc=0.00%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-18 22:11:13,219 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:11:13,219 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-18 22:11:13,240 [INFO] QwenQualitySweep: 
+                                    Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+adaptive_sparse_attention (efficient-attn)   FAIL    0.00%   -90.83% 0.0000                  0            1.00x    0.0 MB              35.33               N/A
+2026-09-18 22:11:13,241 [INFO] QwenQualitySweep: ================================================================================
+>>> Queue processing module: adaptive_svd_attention on distilbert_sst2
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from partially initialized module 'framework.eval_all_models_datasets' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\eval_all_models_datasets.py)
+2026-09-18 22:11:43,817 [INFO] QwenQualitySweep: Parsed 3 module-specific extended arguments: ['--hf_org', 'Hooshaai', '--upload_to_hf']
+2026-09-18 22:11:43,920 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 22:11:44,121 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3279.07it/s]
+2026-09-18 22:11:44,786 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-18 22:11:44,786 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 22:11:44,787 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:11:44,787 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 22:11:44,787 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-18 22:11:44,787 [INFO] QwenQualitySweep:   family:            bert
+2026-09-18 22:11:44,787 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-18 22:11:44,787 [INFO] QwenQualitySweep:   batch_size:        128
+2026-09-18 22:11:44,788 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 22:11:44,788 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 22:11:44,788 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 22:11:44,788 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:11:44,790 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-18 22:11:50,383 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0367
+2026-09-18 22:11:55,909 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0312
+2026-09-18 22:12:01,448 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.0591
+2026-09-18 22:12:07,115 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0854

@@ -1,0 +1,21 @@
+[2026-09-24T23:21:59Z] Starting Job 1: SSM Scaling Benchmark...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 02:52:20,798 [INFO] SeqLenScaling: Using device: cuda (NVIDIA GeForce RTX 4070 Laptop GPU)
+2026-09-25 02:52:20,798 [INFO] SeqLenScaling: Loading base model 'models/gpt2' in fp16...
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights:  55%|#####5    | 82/148 [00:00<00:00, 680.14it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 518.53it/s]
+2026-09-25 02:52:21,492 [INFO] SeqLenScaling: Taking base model snapshot for in-memory module swapping...
+2026-09-25 02:52:21,558 [INFO] SeqLenScaling: ======================================================================
+2026-09-25 02:52:21,558 [INFO] SeqLenScaling: Evaluating module 'mamba' (Group: auto) across seq_lens: [128, 256, 512, 1024]
+2026-09-25 02:52:21,558 [INFO] SeqLenScaling: ======================================================================
+2026-09-25 02:52:21,558 [INFO] SeqLenScaling: Restoring clean base model snapshot...
+2026-09-25 02:52:21,785 [INFO] SeqLenScaling: Injecting module 'mamba' into base model...
+2026-09-25 02:52:22,352 [INFO] SeqLenScaling: --- Testing 'mamba' at seq_len=128, batch_size=16 (3 trials) ---
+2026-09-25 02:58:30,729 [INFO] SeqLenScaling: Result: seq_len=128 -> Forward: 4018.31 ± 711.55 ms (med: 3673.93 ms), Throughput: 557.4 ± 84.3 tok/s, Latency: 1.7939 ms/tok, Peak VRAM: 2448.14 MB [PASS]
+2026-09-25 02:58:30,730 [INFO] SeqLenScaling: --- Testing 'mamba' at seq_len=256, batch_size=16 (3 trials) ---
+2026-09-25 04:08:12,004 [INFO] SeqLenScaling: Result: seq_len=256 -> Forward: 22343.77 ± 19982.79 ms (med: 8871.80 ms), Throughput: 461.7 ± 200.9 tok/s, Latency: 2.1660 ms/tok, Peak VRAM: 2907.79 MB [PASS]
+2026-09-25 04:08:12,023 [INFO] SeqLenScaling: --- Testing 'mamba' at seq_len=512, batch_size=16 (3 trials) ---
+2026-09-25 04:34:30,239 [INFO] SeqLenScaling: Result: seq_len=512 -> Forward: 18707.03 ± 8297.70 ms (med: 16576.69 ms), Throughput: 494.2 ± 231.5 tok/s, Latency: 2.0235 ms/tok, Peak VRAM: 3826.70 MB [PASS]
+2026-09-25 04:34:30,257 [INFO] SeqLenScaling: --- Testing 'mamba' at seq_len=1024, batch_size=16 (3 trials) ---
+[2026-09-25T03:01:01Z] Finished Job 1: SSM Scaling Benchmark.

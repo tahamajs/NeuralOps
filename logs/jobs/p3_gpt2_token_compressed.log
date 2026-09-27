@@ -1,0 +1,77 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-24 06:44:51,464 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 06:44:51,464 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=4 (explicit_parallel=True, explicit_batch=True)
+2026-09-24 06:44:51,470 [INFO] QwenQualitySweep: Running 1 attention modules in-memory sequentially
+2026-09-24 06:44:52,384 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-09-24 06:44:52,504 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md "HTTP/1.1 200 OK"
+2026-09-24 06:44:52,726 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-24 06:44:53,340 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-24 06:44:53,569 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-09-24 06:44:53,793 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-09-24 06:44:54,283 [INFO] httpx: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-09-24 06:44:54,512 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-24 06:44:54,740 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-24 06:44:54,971 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-09-24 06:44:55,198 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-24 06:44:55,862 [INFO] QwenQualitySweep: Configured dataset 'wikitext2' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3550.12it/s]
+2026-09-24 06:44:56,721 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 06:44:56,721 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 06:44:56,721 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 06:44:56,721 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 06:44:56,721 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-24 06:44:56,722 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-24 06:44:56,722 [INFO] QwenQualitySweep:   dataset:           wikitext2
+2026-09-24 06:44:56,722 [INFO] QwenQualitySweep:   batch_size:        4
+2026-09-24 06:44:56,722 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 06:44:56,722 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 06:44:56,723 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 06:44:56,723 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 06:44:56,946 [INFO] QwenQualitySweep: Prepared 0 eval batches and 0 train batches directly on GPU.
+Token indices sequence length is longer than the specified maximum sequence length for this model (249749 > 1024). Running this sequence through the model will result in indexing errors
+`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+2026-09-24 06:47:53,126 [INFO] QwenQualitySweep: Baseline model benchmark perplexity on validation set: 41.346157 (loss=3.7220)
+2026-09-24 06:47:53,354 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 06:47:53,354 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-24 06:47:53,354 [INFO] QwenQualitySweep:   Validation Majority Count: 500 / 1000
+2026-09-24 06:47:53,355 [INFO] QwenQualitySweep:   True Majority Baseline:    50.00%
+2026-09-24 06:47:53,355 [INFO] QwenQualitySweep:   Standard Error (SE):       1.581%
+2026-09-24 06:47:53,355 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.74%
+2026-09-24 06:47:53,355 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  54.74%
+2026-09-24 06:47:53,356 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.00% (500/1000), SE=1.581%, 3*SE=4.740%
+2026-09-24 06:47:53,356 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 06:47:53,356 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 06:47:53,697 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: token_compressed (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-24 06:47:54,334 [INFO] QwenQualitySweep: module=token_compressed path=adapted_gpt
+2026-09-24 06:47:54,337 [INFO] QwenQualitySweep: module=token_compressed injection summary: 0 SVDLinear layers active
+2026-09-24 06:47:54,337 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for token_compressed (lr=2.0e-04)
+2026-09-24 06:47:54,722 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179648 trainable parameters across 96 tensors.
+2026-09-24 06:47:54,724 [INFO] framework.utils.compat: Discovered 96 trainable tensors (1179648 params)
+2026-09-24 06:47:54,729 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179648 trainable parameters across 96 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-24 06:47:55,432 [INFO] QwenQualitySweep: Step 1/50 took 0.70s (loss=6.5201, bs=4, micro=4)
+2026-09-24 06:47:56,887 [INFO] QwenQualitySweep: Step 5/50 took 0.30s (loss=7.0925, bs=4, micro=4)
+2026-09-24 06:47:58,373 [INFO] QwenQualitySweep: Step 10/50 took 0.29s (loss=7.6674, bs=4, micro=4)
+2026-09-24 06:47:59,860 [INFO] QwenQualitySweep: Step 15/50 took 0.29s (loss=6.3768, bs=4, micro=4)
+2026-09-24 06:48:01,341 [INFO] QwenQualitySweep: Step 20/50 took 0.30s (loss=6.0306, bs=4, micro=4)
+2026-09-24 06:48:02,809 [INFO] QwenQualitySweep: Step 25/50 took 0.29s (loss=6.0899, bs=4, micro=4)
+2026-09-24 06:48:04,286 [INFO] QwenQualitySweep: Step 30/50 took 0.29s (loss=6.8989, bs=4, micro=4)
+2026-09-24 06:48:05,783 [INFO] QwenQualitySweep: Step 35/50 took 0.30s (loss=6.6697, bs=4, micro=4)
+2026-09-24 06:48:07,280 [INFO] QwenQualitySweep: Step 40/50 took 0.29s (loss=6.1974, bs=4, micro=4)
+2026-09-24 06:48:08,753 [INFO] QwenQualitySweep: Step 45/50 took 0.29s (loss=6.8004, bs=4, micro=4)
+2026-09-24 06:48:10,236 [INFO] QwenQualitySweep: Step 50/50 took 0.30s (loss=5.4842, bs=4, micro=4)
+2026-09-24 06:55:22,048 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\gpt2_wikitext2_sweep\gpt2_token_compressed_full_metrics.json
+2026-09-24 06:55:22,161 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\gpt2_wikitext2_sweep\checkpoints\token_compressed\weights.pt (module_params=0, lora_params=264)
+2026-09-24 06:55:22,459 [INFO] QwenQualitySweep: [1/1] token_compressed -> MODERATE_EXPANSION 0.00% (F1: 0.0, Peak VRAM: 1640.28857421875 MB)
+2026-09-24 06:55:22,459 [INFO] QwenQualitySweep: [Quality Guard] Module 'token_compressed' did not pass quality criteria (status=MODERATE_EXPANSION, acc=0.00%, pass_thresh=54.74%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-24 06:55:22,483 [INFO] QwenQualitySweep: [1/1] token_compressed Timing: eval_time=448.79s
+2026-09-24 06:55:22,483 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 06:55:22,973 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 06:55:22,974 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on wikitext2)
+2026-09-24 06:55:22,982 [INFO] QwenQualitySweep: 
+                           Module             Status Accuracy    Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                             full               PASS    0.00% 0.00% (base)    N/A                              1.00x  916.2 MB               7.88               N/A
+       swift_svd (efficient-attn)      PASS_DEGRADED    0.00%       +0.00%    N/A                              1.50x  838.8 MB               3.23               N/A
+ gated_delta_net (efficient-attn)    SKIP_DEPRECATED    0.00%       +0.00%    N/A                              1.00x       N/A               0.00               N/A
+token_compressed (efficient-attn) MODERATE_EXPANSION    0.00%       +0.00% 0.0000                 0            1.00x 1640.3 MB             431.05              0.00
+2026-09-24 06:55:22,982 [INFO] QwenQualitySweep: ================================================================================
