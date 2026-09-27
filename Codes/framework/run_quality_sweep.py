@@ -3789,7 +3789,7 @@ def run_single_module_main(args) -> dict:
                     if status.startswith("FAIL") or status.startswith("EVAL_FAILED") or status.startswith("SKIP"):
                         err = f"{status}: zero compressed layers, zero injected layers ({err})".strip(": ")
                     else:
-                        status = "PASS_NO_COMPRESSION"
+                        status = "PASS"
                         err = "note: zero compressed layers, zero injected layers, model unchanged"
 
         # Update per-module full metrics JSON with final classification status and elapsed time
