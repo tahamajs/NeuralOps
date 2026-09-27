@@ -411,20 +411,26 @@ class HGRN2Layer(BaseAttention):
 
         B, L, D = hidden_states.shape
 
+        target_dtype = hidden_states.dtype
+
         # 1. Compute gates and values with bounded log decay to prevent gate saturation
         raw_log_decay = -F.softplus(self.forget_gate(hidden_states))
         bounded_log_decay = raw_log_decay.clamp(min=-3.0, max=-1e-4)
-        f = torch.exp(bounded_log_decay)
+        f = torch.exp(bounded_log_decay).to(target_dtype)
 
         # Input modulation: tie input scale with (1 - f) to prevent recurrence state sign-flipping
-        i = torch.sigmoid(self.input_gate(hidden_states))
-        input_scale = (1.0 - f) * i
-        v = self.v_proj(hidden_states)
+        i = torch.sigmoid(self.input_gate(hidden_states)).to(target_dtype)
+        input_scale = ((1.0 - f) * i).to(target_dtype)
+        v = self.v_proj(hidden_states).to(target_dtype)
         if self.lora_rank > 0 and self.v_lora_A is not None and self.v_lora_B is not None:
-            v = v + torch.matmul(torch.matmul(hidden_states, self.v_lora_A.t().contiguous()), self.v_lora_B.t().contiguous()) * self.lora_scaling
+            v_lora = torch.matmul(
+                torch.matmul(hidden_states, self.v_lora_A.t().contiguous().to(target_dtype)),
+                self.v_lora_B.t().contiguous().to(target_dtype),
+            ) * self.lora_scaling
+            v = v + v_lora
 
-        z = self.g_proj(hidden_states)
-        iv = input_scale * v
+        z = self.g_proj(hidden_states).to(target_dtype)
+        iv = (input_scale * v).to(target_dtype)
 
         # 2. Mask processing
         mask_bool = None
@@ -438,16 +444,21 @@ class HGRN2Layer(BaseAttention):
         h_fwd, h_bwd = self._recurrent_scan_parallel(f, iv, mask_bool)
 
         if self.is_decoder or h_bwd is None:
-            h_ctx = h_fwd
+            h_ctx = h_fwd.to(target_dtype)
         else:
-            h_ctx = h_fwd + h_bwd
+            h_ctx = (h_fwd + h_bwd).to(target_dtype)
 
         # Context stabilization with token self-value preservation
-        h_norm = self.state_norm(h_ctx)
-        gated = (0.5 * v + 0.5 * h_norm) * F.silu(z)
-        out = self.out_proj(gated)
+        sn_dtype = self.state_norm.weight.dtype if hasattr(self.state_norm, 'weight') and self.state_norm.weight is not None else target_dtype
+        h_norm = self.state_norm(h_ctx.to(sn_dtype)).to(target_dtype)
+        gated = ((0.5 * v + 0.5 * h_norm) * F.silu(z)).to(target_dtype)
+        out = self.out_proj(gated).to(target_dtype)
         if self.lora_rank > 0 and self.out_lora_A is not None and self.out_lora_B is not None:
-            out = out + torch.matmul(torch.matmul(gated, self.out_lora_A.t().contiguous()), self.out_lora_B.t().contiguous()) * self.lora_scaling
+            out_lora = torch.matmul(
+                torch.matmul(gated, self.out_lora_A.t().contiguous().to(target_dtype)),
+                self.out_lora_B.t().contiguous().to(target_dtype),
+            ) * self.lora_scaling
+            out = out + out_lora
 
         if out.shape[-1] != hidden_states.shape[-1]:
             if out.shape[-1] < hidden_states.shape[-1]:
@@ -458,7 +469,7 @@ class HGRN2Layer(BaseAttention):
         if attention_mask is not None and mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
-        return out, None
+        return out.to(target_dtype), None
 
 
 @ATTENTION_REGISTRY.register("hgrn2_layer_inject")
@@ -548,6 +559,10 @@ def inject_hgrn2_layer(
             lora_alpha=lora_alpha,
             **kwargs,
         )
+        if curr_attn is not None:
+            p = next(curr_attn.parameters(), None)
+            if p is not None:
+                new_layer.to(device=p.device, dtype=p.dtype)
     except Exception as ex:
         logger.error("Failed to instantiate HGRN2Layer: %s", ex)
         return None

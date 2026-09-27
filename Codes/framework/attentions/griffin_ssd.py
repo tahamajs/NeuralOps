@@ -355,35 +355,41 @@ class GriffinSSDBlock(BaseAttention):
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """State-Space Duality (SSD) matrix scan supporting forward causal and bidirectional mode."""
         B, H, L, d = q.shape
+        target_dtype = q.dtype
 
-        log_decay = torch.log(decay.clamp(min=1e-4, max=1.0 - 1e-4))  # [1, H, 1, 1]
-        pos = torch.arange(L, device=q.device, dtype=q.dtype)
+        decay_typed = decay.to(target_dtype)
+        log_decay = torch.log(decay_typed.clamp(min=1e-4, max=1.0 - 1e-4))  # [1, H, 1, 1]
+        pos = torch.arange(L, device=q.device, dtype=target_dtype)
         pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)  # [L, L]
 
-        attn_scores = (q @ k.transpose(-1, -2).contiguous())  # [B, H, L, L]
+        attn_scores = (q @ k.transpose(-1, -2).contiguous()).to(target_dtype)  # [B, H, L, L]
 
         if mask is not None:
-            mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
-            mask_2d = mask_float.unsqueeze(1).unsqueeze(-1) * mask_float.unsqueeze(1).unsqueeze(-2)
+            mask_typed = mask.to(target_dtype) if mask.dim() == 2 else mask[:, 0, 0, :].to(target_dtype)
+            mask_2d = mask_typed.unsqueeze(1).unsqueeze(-1) * mask_typed.unsqueeze(1).unsqueeze(-2)
         else:
             mask_2d = None
 
         if self.is_decoder:
             # Forward causal decay matrix
-            tril_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
-            D_causal = torch.exp((pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-40.0, max=0.0)) * tril_mask.float()
+            tril_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=target_dtype))
+            D_causal = torch.exp((pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-40.0, max=0.0)).to(target_dtype) * tril_mask
             if mask_2d is not None:
                 D_causal = D_causal * mask_2d
-            y_fwd = (attn_scores * D_causal) @ v  # [B, H, L, d]
-            return y_fwd, None
+            D_causal = D_causal.to(target_dtype)
+            v_typed = v.to(target_dtype)
+            y_fwd = (attn_scores * D_causal) @ v_typed  # [B, H, L, d]
+            return y_fwd.to(target_dtype), None
         else:
             # Symmetric distance decay for bidirectional encoders: D_sym(i, j) = exp(|i - j| * log_decay)
             dist = torch.abs(pos_diff).unsqueeze(0).unsqueeze(0)
-            D_sym = torch.exp((dist * log_decay).clamp(min=-40.0, max=0.0))
+            D_sym = torch.exp((dist * log_decay).clamp(min=-40.0, max=0.0)).to(target_dtype)
             if mask_2d is not None:
                 D_sym = D_sym * mask_2d
-            y_sym = (attn_scores * D_sym) @ v  # [B, H, L, d]
-            return y_sym, None
+            D_sym = D_sym.to(target_dtype)
+            v_typed = v.to(target_dtype)
+            y_sym = (attn_scores * D_sym) @ v_typed  # [B, H, L, d]
+            return y_sym.to(target_dtype), None
 
     def forward(
         self,
@@ -414,14 +420,15 @@ class GriffinSSDBlock(BaseAttention):
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
+        target_dtype = hidden_states.dtype
         B, L, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
 
         # 1. Multi-head Projections
-        q = self.W_q(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
-        k = self.W_k(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        v = self.W_v(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        q_ssd = self.ssd_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
+        q = self.W_q(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous().to(target_dtype)
+        k = self.W_k(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous().to(target_dtype)
+        v = self.W_v(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous().to(target_dtype)
+        q_ssd = self.ssd_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous().to(target_dtype)
 
         # Apply RoPE if provided or probe from rotary_emb
         pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)
@@ -477,30 +484,30 @@ class GriffinSSDBlock(BaseAttention):
                 pad_mask = (attention_mask == 0).view(B, 1, 1, L)
                 scores = scores.masked_fill(pad_mask, mask_val)
             elif attention_mask.dim() == 4:
-                scores = scores + attention_mask
+                scores = scores + attention_mask.to(scores.dtype)
 
-        local_attn = F.softmax(scores, dim=-1)
+        local_attn = F.softmax(scores, dim=-1).to(target_dtype)
         local_attn = torch.nan_to_num(local_attn, nan=0.0)
-        local_out = torch.matmul(local_attn, v)  # [B, H, L, d]
+        local_out = torch.matmul(local_attn, v).to(target_dtype)  # [B, H, L, d]
 
         # 3. Global SSD Recurrence
-        q_norm = F.normalize(q_ssd, p=2, dim=-1)
-        k_norm = F.normalize(k, p=2, dim=-1) / (d ** 0.5)
-        decay = torch.sigmoid(self.decay_param).view(1, H, 1, 1)
+        q_norm = F.normalize(q_ssd, p=2, dim=-1).to(target_dtype)
+        k_norm = (F.normalize(k, p=2, dim=-1) / (d ** 0.5)).to(target_dtype)
+        decay = torch.sigmoid(self.decay_param.to(target_dtype)).view(1, H, 1, 1)
 
         ssd_fwd, ssd_bwd = self._ssd_scan_parallel(q_norm, k_norm, v, decay, mask_bool)
 
         if self.is_decoder or ssd_bwd is None:
-            global_out = ssd_fwd
+            global_out = ssd_fwd.to(target_dtype)
         else:
-            global_out = 0.5 * (ssd_fwd + ssd_bwd)
+            global_out = (0.5 * (ssd_fwd + ssd_bwd)).to(target_dtype)
 
         # 4. Fused Output
-        fused = (local_out + global_out).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+        fused = (local_out + global_out).transpose(1, 2).contiguous().view(B, L, self.all_head_size).to(target_dtype)
         if self.is_nested_encoder:
             out = fused
         else:
-            out = self.out_proj(fused)
+            out = self.out_proj(fused).to(target_dtype)
 
         if out.shape[-1] != hidden_states.shape[-1]:
             if out.shape[-1] < hidden_states.shape[-1]:
@@ -511,7 +518,7 @@ class GriffinSSDBlock(BaseAttention):
         if attention_mask is not None and mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
-        return out, None
+        return out.to(target_dtype), None
 
 
 @ATTENTION_REGISTRY.register("griffin_ssd_inject")

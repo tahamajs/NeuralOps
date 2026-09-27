@@ -182,7 +182,8 @@ class SelectiveSSM(BaseAttention):
         y = y.transpose(1, 2)  # (B, L, d_inner)
 
         # Gating
-        y = y * F.silu(z)
+        target_dtype = x_ssm.dtype
+        y = (y.to(target_dtype) * F.silu(z.to(target_dtype))).to(target_dtype)
         return y
 
     def forward(
@@ -202,10 +203,11 @@ class SelectiveSSM(BaseAttention):
         if encoder_hidden_states is not None:
             raise NotImplementedError("SelectiveSSM does not support cross-attention.")
 
+        target_dtype = hidden_states.dtype
         B, L, D = hidden_states.shape
 
         # Project directly into SSM and gating paths without duplicating LayerNorm
-        x_proj = self.in_proj(hidden_states)
+        x_proj = self.in_proj(hidden_states).to(target_dtype)
         x_ssm, z = x_proj.chunk(2, dim=-1)
 
         y_fwd = self._forward_core(
@@ -217,7 +219,7 @@ class SelectiveSSM(BaseAttention):
             A_log_param=self.A_log,
             D_param=self.D,
         )
-        out = self.out_proj(y_fwd)
+        out = self.out_proj(y_fwd.to(target_dtype)).to(target_dtype)
 
         if self.bidirectional:
             x_ssm_bwd = torch.flip(x_ssm, [1])
@@ -232,13 +234,32 @@ class SelectiveSSM(BaseAttention):
                 D_param=self.D_bwd,
             )
             y_bwd = torch.flip(y_bwd, [1])
-            out = out + self.out_proj_bwd(y_bwd)
+            out = (out + self.out_proj_bwd(y_bwd.to(target_dtype))).to(target_dtype)
 
-        return (out, None)
+        return (out.to(target_dtype), None)
 
 
 SimpleSSM = SelectiveSSM
 ATTENTION_REGISTRY.register("simple_ssm")(SimpleSSM)
 ATTENTION_REGISTRY.register("simplessm")(SimpleSSM)
 
-__all__ = ["SelectiveSSM", "SimpleSSM"]
+
+@ATTENTION_REGISTRY.register("selective_ssm_inject")
+@ATTENTION_REGISTRY.register("inject_selective_ssm")
+@ATTENTION_REGISTRY.register("inject_simple_ssm")
+@ATTENTION_REGISTRY.register("inject_simple_ssm_attention")
+def inject_selective_ssm(layer=None, model=None, model_config=None, old_attn=None, **kwargs):
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+    for attr in ("attention", "self_attn", "attn", "self"):
+        if hasattr(target, attr):
+            new_block = SelectiveSSM(config=model_config, **kwargs)
+            setattr(target, attr, new_block)
+            return new_block
+    return None
+
+inject_simple_ssm = inject_selective_ssm
+inject_simple_ssm_attention = inject_selective_ssm
+
+__all__ = ["SelectiveSSM", "SimpleSSM", "inject_simple_ssm", "inject_simple_ssm_attention", "inject_selective_ssm"]

@@ -167,11 +167,16 @@ class LoRALinear(nn.Module):
                 self.lora_B.requires_grad = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
+        target_dtype = x.dtype
+        w = self.weight.to(target_dtype) if self.weight.dtype != target_dtype else self.weight
+        b = self.bias.to(target_dtype) if (self.bias is not None and self.bias.dtype != target_dtype) else self.bias
+        out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            a = self.lora_A.to(target_dtype) if self.lora_A.dtype != target_dtype else self.lora_A
+            bb = self.lora_B.to(target_dtype) if self.lora_B.dtype != target_dtype else self.lora_B
+            lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
             out = out + lora_out
-        return out
+        return out.to(target_dtype)
 
 
 # ===========================================================================
@@ -211,7 +216,15 @@ class SVDLinear(nn.Module):
         return (self.U * self.S.unsqueeze(0)) @ self.V.t().contiguous()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return (x @ self.V) * self.S @ self.U.t().contiguous() + self.bias
+        target_dtype = x.dtype
+        V = self.V.to(target_dtype) if self.V.dtype != target_dtype else self.V
+        S = self.S.to(target_dtype) if self.S.dtype != target_dtype else self.S
+        U = self.U.to(target_dtype) if self.U.dtype != target_dtype else self.U
+        b = self.bias.to(target_dtype) if (self.bias is not None and self.bias.dtype != target_dtype) else self.bias
+        out = (x @ V) * S @ U.t().contiguous()
+        if b is not None:
+            out = out + b
+        return out.to(target_dtype)
 
 
 # ===========================================================================
@@ -282,19 +295,23 @@ class REAPMoE(nn.Module):
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         B, L, D = x.shape
+        target_dtype = x.dtype
 
-        logits = self.router(self.router_ln(x))
+        r_dtype = self.router_ln.weight.dtype if hasattr(self.router_ln, 'weight') and self.router_ln.weight is not None else target_dtype
+        normed_x = self.router_ln(x.to(r_dtype)).to(target_dtype)
+        rw_dtype = self.router.weight.dtype if hasattr(self.router, 'weight') and self.router.weight is not None else target_dtype
+        logits = self.router(normed_x.to(rw_dtype)).to(target_dtype)
         if self.training and self.noise_std > 0:
             noise = torch.randn_like(logits) * self.noise_std
             scores = logits + noise
         else:
             scores = logits
 
-        full_probs = F.softmax(scores, dim=-1)
+        full_probs = F.softmax(scores.float(), dim=-1).to(target_dtype)
         topk_weights, topk_indices = torch.topk(full_probs, self.top_k, dim=-1)
-        topk_weights = topk_weights / topk_weights.sum(dim=-1, keepdim=True).clamp(min=1e-9)
+        topk_weights = (topk_weights / topk_weights.sum(dim=-1, keepdim=True).clamp(min=1e-9)).to(target_dtype)
 
-        router_probs = F.softmax(logits, dim=-1).view(-1, self.n_experts)
+        router_probs = F.softmax(logits.float(), dim=-1).view(-1, self.n_experts)
         expert_mask = F.one_hot(topk_indices, num_classes=self.n_experts).float()
         expert_assignment = expert_mask.sum(dim=2).clamp(max=1.0)
         density = expert_assignment.view(-1, self.n_experts).mean(dim=0)
@@ -302,10 +319,10 @@ class REAPMoE(nn.Module):
         aux_loss = self.n_experts * torch.sum(density * prob_mean)
         self._aux_loss = aux_loss.detach()
 
-        experts_stack = torch.stack([exp(x) for exp in self.experts], dim=2)
+        experts_stack = torch.stack([exp(x).to(target_dtype) for exp in self.experts], dim=2)
         topk_expanded = topk_indices.unsqueeze(-1).expand(-1, -1, -1, D)
         gathered = torch.gather(experts_stack, 2, topk_expanded)
-        out = torch.sum(gathered * topk_weights.unsqueeze(-1), dim=2)
+        out = torch.sum(gathered * topk_weights.unsqueeze(-1), dim=2).to(target_dtype)
 
         return out, aux_loss
 
@@ -708,9 +725,12 @@ class REAPMoEAttention(BaseAttention):
         B, L, _ = hidden_states.shape
         device = hidden_states.device
 
+        target_dtype = hidden_states.dtype
+
         # Pre-LN: apply norm before attention (RP-FIX-17)
         if self.pre_ln:
-            h_norm = self.norm1(hidden_states)
+            n1_dtype = self.norm1.weight.dtype if hasattr(self.norm1, 'weight') and self.norm1.weight is not None else target_dtype
+            h_norm = self.norm1(hidden_states.to(n1_dtype)).to(target_dtype)
             attn_input = h_norm
             residual = hidden_states
         else:
@@ -847,21 +867,23 @@ class REAPMoEAttention(BaseAttention):
         proj = torch.nan_to_num(proj, nan=0.0, posinf=1e4, neginf=-1e4)
 
         # Residual + MoE (RP-FIX-17)
+        n2_dtype = self.norm2.weight.dtype if hasattr(self.norm2, 'weight') and self.norm2.weight is not None else target_dtype
         if self.pre_ln:
-            h1 = residual + self.dropout(proj)
-            h1_norm = self.norm2(h1)
+            h1 = (residual + self.dropout(proj.to(target_dtype))).to(target_dtype)
+            h1_norm = self.norm2(h1.to(n2_dtype)).to(target_dtype)
             moe_out, _ = self.moe(h1_norm)
-            out = h1 + self.dropout(moe_out)
+            out = (h1 + self.dropout(moe_out.to(target_dtype))).to(target_dtype)
         else:
             # Post-LN: norm after residual
-            h1 = residual + self.dropout(proj)
-            h1 = self.norm1(h1)
+            n1_dtype = self.norm1.weight.dtype if hasattr(self.norm1, 'weight') and self.norm1.weight is not None else target_dtype
+            h1 = (residual + self.dropout(proj.to(target_dtype))).to(target_dtype)
+            h1 = self.norm1(h1.to(n1_dtype)).to(target_dtype)
             moe_out, _ = self.moe(h1)
-            out = h1 + self.dropout(moe_out)
-            out = self.norm2(out)
+            out = (h1 + self.dropout(moe_out.to(target_dtype))).to(target_dtype)
+            out = self.norm2(out.to(n2_dtype)).to(target_dtype)
 
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
-        return out, attn_ret
+        return out.to(target_dtype), attn_ret
 
 
 # ===========================================================================
@@ -976,6 +998,10 @@ def inject_reap_moe(
             **extra_kwargs,
             **kwargs,
         )
+
+        p = next(src_attn.parameters(), None)
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
 
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):

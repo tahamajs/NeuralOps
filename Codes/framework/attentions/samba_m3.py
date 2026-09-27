@@ -534,17 +534,20 @@ class SAMBAM3Block(nn.Module):
         )
         attn_out = attn_out.transpose(1, 2).contiguous().view(B, L, self.q_head_size)
 
+        target_dtype = hidden_states.dtype
+        attn_out = attn_out.to(target_dtype)
         mamba_out, _ = self.mamba(hidden_states, attention_mask=attention_mask, **kwargs)
-        alpha = torch.sigmoid(self.alpha)
+        mamba_out = mamba_out.to(target_dtype)
+        alpha = torch.sigmoid(self.alpha).to(target_dtype)
 
         # Remove internal double residual and norm
         if self.is_nested_encoder:
             out = alpha * attn_out + (1.0 - alpha) * mamba_out
         else:
-            attn_proj = self.out_lin(attn_out)
+            attn_proj = self.out_lin(attn_out).to(target_dtype)
             out = alpha * attn_proj + (1.0 - alpha) * mamba_out
 
-        out = torch.nan_to_num(out, nan=0.0)
+        out = torch.nan_to_num(out.to(target_dtype), nan=0.0)
 
         if attention_mask is not None and attention_mask.dim() == 2:
             out = out * attention_mask.unsqueeze(-1).to(out.dtype)
@@ -552,7 +555,7 @@ class SAMBAM3Block(nn.Module):
         if out.shape[-1] != D:
             out = F.pad(out, (0, D - out.shape[-1])) if out.shape[-1] < D else out[..., :D]
 
-        return (out, None)
+        return (out.to(target_dtype), None)
 
 
 @ATTENTION_REGISTRY.register("samba_m3_inject")

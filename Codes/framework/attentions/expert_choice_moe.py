@@ -153,11 +153,16 @@ class LoRALinear(nn.Module):
             self.bias.requires_grad = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
+        target_dtype = x.dtype
+        w = self.weight.to(target_dtype) if self.weight.dtype != target_dtype else self.weight
+        b = self.bias.to(target_dtype) if (self.bias is not None and self.bias.dtype != target_dtype) else self.bias
+        out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            a = self.lora_A.to(target_dtype) if self.lora_A.dtype != target_dtype else self.lora_A
+            bb = self.lora_B.to(target_dtype) if self.lora_B.dtype != target_dtype else self.lora_B
+            lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
             out = out + lora_out
-        return out
+        return out.to(target_dtype)
 
 
 class ExpertChoiceMoE(nn.Module):
@@ -239,7 +244,7 @@ class ExpertChoiceMoE(nn.Module):
                 proj_out = getattr(self, f"_expert_out_proj_{e}")
                 expert_out = proj_out(self.experts[e](proj_in(selected_x)))
 
-            update_val = (expert_out * topk_vals.unsqueeze(-1)).to(dtype=out_flat.dtype)
+            update_val = (expert_out.to(out_flat.dtype) * topk_vals.unsqueeze(-1).to(out_flat.dtype)).to(dtype=out_flat.dtype)
             out_flat.index_add_(0, topk_indices, update_val)
 
         # Auxiliary load balancing loss
@@ -586,8 +591,8 @@ class ExpertChoiceMoEAttention(BaseAttention):
             attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
             moe_out = self.moe(attn_out)
             self.aux_loss = self.moe.aux_loss
-            moe_weight = torch.sigmoid(self.moe_gate)
-            enriched_attn = attn_out + moe_weight * moe_out
+            moe_weight = torch.sigmoid(self.moe_gate).to(attn_out.dtype)
+            enriched_attn = (attn_out + moe_weight * moe_out.to(attn_out.dtype)).to(attn_out.dtype)
             if self.is_nested_encoder and enriched_attn.shape[-1] == self.dim:
                 out = enriched_attn
             else:
@@ -633,8 +638,8 @@ class ExpertChoiceMoEAttention(BaseAttention):
         # 6. MoE feedforward enrichment with gate blending
         moe_out = self.moe(attn_out)
         self.aux_loss = self.moe.aux_loss
-        moe_weight = torch.sigmoid(self.moe_gate)
-        enriched_attn = attn_out + moe_weight * moe_out
+        moe_weight = torch.sigmoid(self.moe_gate).to(attn_out.dtype)
+        enriched_attn = (attn_out + moe_weight * moe_out.to(attn_out.dtype)).to(attn_out.dtype)
 
         # 7. Output projection with nested encoder bypass
         if self.is_nested_encoder:
@@ -729,6 +734,10 @@ def inject_expert_choice_moe(
             old_attn=src_attn,
             **kwargs,
         )
+        if src_attn is not None:
+            p = next(src_attn.parameters(), None)
+            if p is not None:
+                new_attn.to(device=p.device, dtype=p.dtype)
         if hasattr(layer, "attention"):
             if hasattr(layer.attention, "self"):
                 layer.attention.self = new_attn
