@@ -210,7 +210,9 @@ def main():
             parsed_mods.extend([m.strip() for m in item.split(",") if m.strip()])
     elif isinstance(args.modules, str):
         parsed_mods = [m.strip() for m in args.modules.split(",") if m.strip()]
-    args.modules = parsed_mods or DEFAULT_DECODER_MODULES
+    if not parsed_mods or parsed_mods == ["all"]:
+        parsed_mods = get_all_decoder_modules("all")
+    args.modules = parsed_mods
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -382,7 +384,7 @@ def main():
 
         # Update summary CSV incrementally
         with open(summary_csv, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=CSV_FIELDS)
+            writer = csv.DictWriter(f, fieldnames=CSV_FIELDS, extrasaction="ignore")
             writer.writeheader()
             for r in results:
                 writer.writerow(r)
