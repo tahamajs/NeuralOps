@@ -18,6 +18,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.core.pruning_utils import adaptive_max_error
 from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
@@ -188,6 +189,9 @@ class DobiSVDCompressor(BaseCompressor):
         self.init_rank_ratio = float(init_rank_ratio)
         self.rank = rank
         self.init_gate_val = float(init_gate_val)
+        if max_error is None or max_error == 0.35:
+            max_error = adaptive_max_error(self.rank, 768, 768, "distilbert")
+
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
         self.target_attention_only = bool(target_attention_only)
@@ -492,10 +496,11 @@ class DobiSVDCompressor(BaseCompressor):
             "num_fallback": len(self.fallback_layers),
         })
         logger.info(
-            "Dobi-SVD compression complete: %d compressed, %d fallback. Avg error: %.4f.",
+            "Compressor dobi finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
             len(self.compressed_layers),
             len(self.fallback_layers),
             avg_err,
+            self.max_error,
         )
         return self.model, stats
 
@@ -532,6 +537,10 @@ def dobi_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
             **kwargs,
         )
         compressed_model, stats = compressor.compress()
+        try:
+            compressed_model.compression_stats = stats
+        except Exception:
+            pass
         if return_stats:
             return compressed_model, stats
         return compressed_model

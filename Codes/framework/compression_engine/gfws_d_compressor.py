@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.core.pruning_utils import get_calibration_tensors
+from framework.core.pruning_utils import get_calibration_tensors, adaptive_max_error
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
@@ -162,10 +162,13 @@ class GFWSCompressor(BaseCompressor):
             )
             lora_r = getattr(cfg, "lora_r", getattr(cfg, "lora_rank", lora_r))
             lora_alpha = getattr(cfg, "lora_alpha", lora_alpha)
-            skip_attention_qkv = getattr(cfg, "skip_attention_qkv", skip_attention_qkv)
+            skip_attention_qkv = getattr(cfg, "skip_attention_qkv", False)
 
         self.rank = int(rank)
         self.damping = float(damping)
+        if max_error is None or max_error == 0.20:
+            max_error = adaptive_max_error(self.rank, 768, 768, "distilbert")
+
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
         self.lora_r = int(lora_r)
@@ -478,10 +481,11 @@ class GFWSCompressor(BaseCompressor):
             "method": "covariance_weighted_svd",
         })
         logger.info(
-            "GFWS compression complete: %d compressed, %d fallback. Avg error: %.4f.",
+            "Compressor gfws finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
             len(self.compressed_layers),
             len(self.fallback_layers),
             avg_err,
+            self.max_error,
         )
         return self.model, stats
 

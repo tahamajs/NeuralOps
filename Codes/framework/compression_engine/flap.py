@@ -21,6 +21,7 @@ from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import (
     apply_24_structured_mask,
     get_calibration_tensors,
+    adaptive_max_error,
 )
 from framework.utils.compat import should_compress_linear
 
@@ -85,8 +86,12 @@ class FLAPCompressor(BaseCompressor):
                                         _cfg_get(cfg, "metric_type", metric_type))).upper()
         self.structured_24 = bool(_cfg_get(cfg, "flap_structured_24",
                                            _cfg_get(cfg, "structured_24", structured_24)))
-        self.max_error = float(_cfg_get(cfg, "flap_max_error",
-                                        _cfg_get(cfg, "max_error", max_error)))
+        c_max_error = _cfg_get(cfg, "flap_max_error", _cfg_get(cfg, "max_error", max_error))
+        if c_max_error is None or c_max_error == 0.35:
+            c_max_error = adaptive_max_error(int((1.0 - self.sparsity) * 768), 768, 768, "distilbert")
+            c_max_error = max(c_max_error, 0.60)
+
+        self.max_error = float(c_max_error)
         self.target_attention_only = bool(
             _cfg_get(cfg, "flap_target_attention_only",
                      _cfg_get(cfg, "target_attention_only", target_attention_only))
@@ -445,10 +450,11 @@ class FLAPCompressor(BaseCompressor):
             "method": "flap_fluctuation_pruning",
         })
         logger.info(
-            "FLAP compression complete: %d compressed, %d fallback. "
-            "Avg error: %.4f, Effective Param Ratio: %.2fx",
-            len(self.compressed_layers), len(self.fallback_layers),
-            avg_err, effective_ratio,
+            "Compressor flap finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
         )
         return self.model, stats
 

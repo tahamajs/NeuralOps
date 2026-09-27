@@ -15,6 +15,7 @@ from framework.compression_engine.aa_svd_compressor import SVDLinear
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.core.pruning_utils import adaptive_max_error
 from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
@@ -78,7 +79,11 @@ class EntropyBudgetCompressor(BaseCompressor):
         if self.rank is not None:
             self.rank = int(self.rank)
         self.eps = float(eps)
-        self.max_error = float(_cfg_get(cfg, "entropy_budget_max_error", _cfg_get(cfg, "max_error", max_error)))
+        c_max_error = _cfg_get(cfg, "entropy_budget_max_error", _cfg_get(cfg, "max_error", max_error))
+        if c_max_error is None or c_max_error == 0.35:
+            c_max_error = adaptive_max_error(self.rank or 64, 768, 768, "distilbert")
+
+        self.max_error = float(c_max_error)
         self.target_attention_only = bool(
             _cfg_get(cfg, "entropy_budget_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
         )
@@ -426,6 +431,13 @@ class EntropyBudgetCompressor(BaseCompressor):
             "target_attention_only": self.target_attention_only,
             "forward_check_success": forward_check_success,
         })
+        logger.info(
+            "Compressor entropy_budget finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
+        )
         return self.model, stats
 
 

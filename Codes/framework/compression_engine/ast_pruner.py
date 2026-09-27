@@ -34,6 +34,7 @@ from framework.core.pruning_utils import (
     apply_24_structured_mask,
     get_calibration_tensors,
     recalibrate_layernorms,
+    adaptive_max_error,
 )
 
 
@@ -227,7 +228,7 @@ class ASTPruner(BaseCompressor):
             protect_critical = _cfg_get(conf, "protect_critical", protect_critical)
             lora_r = _cfg_get(conf, "lora_r", _cfg_get(conf, "lora_rank", lora_r))
             lora_alpha = _cfg_get(conf, "lora_alpha", lora_alpha)
-            skip_attention_qkv = _cfg_get(conf, "skip_attention_qkv", skip_attention_qkv)
+            skip_attention_qkv = _cfg_get(conf, "skip_attention_qkv", False)
 
         self.block_size = max(2, int(block_size))
         self.n_keep = max(1, min(int(n_keep), self.block_size - 1))
@@ -235,6 +236,9 @@ class ASTPruner(BaseCompressor):
         self.use_pca = bool(use_pca)
         self.use_fisher = bool(use_fisher)
         self.recalibrate_ln = bool(recalibrate_ln)
+        if max_error is None or max_error == 0.20:
+            max_error = adaptive_max_error(int(768 * (self.n_keep / self.block_size)), 768, 768, "distilbert")
+
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
         self.protect_critical = bool(protect_critical)
@@ -702,6 +706,13 @@ class ASTPruner(BaseCompressor):
             "method": "ast_jacobian_pca_2_4_pruning",
         })
         self.stats = stats
+        logger.info(
+            "Compressor ast finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
+        )
         return self.model, stats
 
 
