@@ -281,9 +281,25 @@ def main():
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
+    # Load existing results if summary.csv exists
+    existing_mods = set()
+    if summary_csv.exists():
+        try:
+            with open(summary_csv, "r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for r in reader:
+                    results.append(r)
+                    existing_mods.add(r.get("module_name"))
+        except Exception:
+            pass
+
     # 2. Iterate through compression modules
     for idx, mod in enumerate(args.modules, 1):
         if mod == "full":
+            continue
+
+        if mod in existing_mods:
+            LOG.info("[%d/%d] Skipping module: %s (already evaluated in %s)", idx, len(args.modules), mod, summary_csv)
             continue
 
         LOG.info("[%d/%d] Evaluating module: %s...", idx, len(args.modules), mod)
