@@ -138,11 +138,16 @@ class LoRALinear(nn.Module):
                 self.bias.requires_grad = False
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
+        orig_dtype = x.dtype
+        w = self.weight.to(orig_dtype) if self.weight.dtype != orig_dtype else self.weight
+        b = self.bias.to(orig_dtype) if (self.bias is not None and self.bias.dtype != orig_dtype) else self.bias
+        out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
+            a = self.lora_A.to(orig_dtype) if self.lora_A.dtype != orig_dtype else self.lora_A
+            bb = self.lora_B.to(orig_dtype) if self.lora_B.dtype != orig_dtype else self.lora_B
+            lora_out = F.linear(F.linear(x, a), bb) * self.scaling
             out = out + lora_out
-        return out
+        return out.to(orig_dtype)
 
 
 @ATTENTION_REGISTRY.register("compression_unified_rope", supports_causal=True, supports_gqa=True)
@@ -581,7 +586,7 @@ class UnifiedRoPE(BaseAttention):
         if output.shape[-1] != hidden_states.shape[-1]:
             output = F.pad(output, (0, hidden_states.shape[-1] - output.shape[-1])) if output.shape[-1] < hidden_states.shape[-1] else output[..., :hidden_states.shape[-1]]
 
-        return (output, (attn_weights if output_attentions else None))
+        return (output.to(hidden_states.dtype), (attn_weights if output_attentions else None))
 
 
 @ATTENTION_REGISTRY.register("unified_rope_inject")
