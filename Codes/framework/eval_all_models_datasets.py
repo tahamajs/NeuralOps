@@ -447,6 +447,7 @@ def apply_module_to_model(
     module_type: str = "auto",
     rank: int = 16,
     device: torch.device = torch.device("cpu"),
+    calibration_data: Optional[Any] = None,
 ) -> Tuple[nn.Module, float]:
     """
     Injects or compresses the given model using the specified module.
@@ -557,17 +558,17 @@ def apply_module_to_model(
         comp_cls = COMPRESSOR_REGISTRY.get(module_name)
         if comp_cls is not None:
             def _invoke_compressor_instance(instance: Any) -> Optional[nn.Module]:
-                dummy_input = torch.randint(0, 1000, (2, 32), device=device)
+                eff_calib = calibration_data if calibration_data is not None else torch.randint(0, 1000, (2, 32), device=device)
                 for method_name in ["compress", "apply", "prune"]:
                     if hasattr(instance, method_name):
                         m = getattr(instance, method_name)
                         if callable(m):
                             for fn in [
                                 lambda: m(),
-                                lambda: m(calibration_data=dummy_input),
+                                lambda: m(calibration_data=eff_calib),
                                 lambda: m(model),
-                                lambda: m(model, calibration_data=dummy_input),
-                                lambda: m(dummy_input),
+                                lambda: m(model, calibration_data=eff_calib),
+                                lambda: m(eff_calib),
                             ]:
                                 try:
                                     res = fn()
@@ -599,6 +600,9 @@ def apply_module_to_model(
                 for k in ("rank_ratio", "max_error", "lora_rank", "target_attention_only", "use_jg_svd", "use_cholesky_jg", "energy_threshold", "group_size", "strict_rank"):
                     if hasattr(cfg, k):
                         c_kwargs[k] = getattr(cfg, k)
+            if calibration_data is not None:
+                c_kwargs["calibration_data"] = calibration_data
+                c_kwargs["calib_loader"] = calibration_data
             try:
                 candidate = comp_cls(model, rank=rank, tokenizer=tok, **c_kwargs)
             except (TypeError, ValueError):
