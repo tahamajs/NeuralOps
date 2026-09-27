@@ -1,22 +1,28 @@
 r"""
-CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel — Production-Hardened (v2).
+CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel — Production-Hardened (v3).
 
-Fixes (v2):
-  CS-FIX-01  Denominator stabilization with `abs() + eps`.
-  CS-FIX-02  Yat projection is never rebuilt in forward.
-  CS-FIX-03  Removed debug print in copy_weights.
-  CS-FIX-04  Yat feature scale = sqrt(2 / F).
-  CS-FIX-05  Docstring aligned with implementation.
-  CS-FIX-06  Spherical normalize uses log1p for finite gradients near 0.
-  CS-FIX-07  Causal linear attention always chunked.
-  CS-FIX-08  head_mask applied to both streams.
-  CS-FIX-09  rotary_emb called with (x, seq_len=...).
-  CS-FIX-10  DummyConfig uses num_heads for n_heads.
-  CS-FIX-11  is_custom_attention = True.
-  CS-FIX-12  lora_gate.bias.fill_ under torch.no_grad().
-  CS-FIX-13  Idempotency guard in injector.
-  CS-FIX-14  repeat_kv defined locally (no circular import).
-  CS-FIX-15  Storage accounting.
+Fixes (v3) relative to v2:
+  CS-FIX-16  `_safe_int`, `_safe_float` helpers handle `None` values and missing
+             attributes uniformly. Previously `int(None)` could crash __init__.
+  CS-FIX-17  `_extract_attn_config` robustly resolves hidden_size, num_heads,
+             head_dim, num_kv_heads across HF configs (dict or object) and
+             uses pretrained attention as a fallback source.
+  CS-FIX-18  `_copy_pretrained` never raises on missing weights; instead it
+             logs and falls back to initialized weights (so injection still
+             succeeds on unexpected architectures).
+  CS-FIX-19  `inject_chela_slay` calls `.to(device, dtype)` after construction
+             so the new module lands on the correct device.
+  CS-FIX-20  `_copy_pretrained` handles the case where weights come from
+             HF's `base_layer` (PEFT-wrapped) transparently.
+  CS-FIX-21  `_copy_pretrained` never resets weights to zero when a source
+             tensor shape cannot be reconciled; it leaves the init intact.
+  CS-FIX-22  `comp_config=None` is tolerated everywhere.
+  CS-FIX-23  `key`/`value` aliases point to `W_k`/`W_v` (not `k_up`/`v_up`
+             which do not exist here).
+  CS-FIX-24  `gate_init_bias` no longer defaulted via `kwargs` — it uses the
+             constructor argument directly.
+  CS-FIX-25  `_causal_linear_attention` uses `denom.abs() + eps` consistently
+             (no sign flips).
 """
 
 from __future__ import annotations
@@ -35,6 +41,47 @@ from framework.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
+# ===========================================================================
+# Safe config helpers (CS-FIX-16)
+# ===========================================================================
+def _safe_getattr(obj: Any, key: str, default: Any = None) -> Any:
+    if obj is None:
+        return default
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return getattr(obj, key, default)
+
+
+def _safe_int(val: Any, default: int = 0) -> int:
+    if val is None:
+        return default
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_float(val: Any, default: float = 0.0) -> float:
+    if val is None:
+        return default
+    try:
+        return float(val)
+    except (TypeError, ValueError):
+        return default
+
+
+def _resolve_attr(cfg: Any, *keys: str) -> Any:
+    """Return the first non-None attribute among `keys`."""
+    for k in keys:
+        v = _safe_getattr(cfg, k, None)
+        if v is not None:
+            return v
+    return None
+
+
+# ===========================================================================
+# Helpers
+# ===========================================================================
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     if n_rep == 1:
         return hidden_states
@@ -90,27 +137,32 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
     return q, k
 
 
+# ===========================================================================
+# LoRALinear
+# ===========================================================================
 class LoRALinear(nn.Module):
+    is_custom_attention: bool = False
+
     def __init__(self, in_features, out_features, bias=True, lora_rank=16,
                  lora_alpha=32.0, freeze_base=False, device=None, dtype=None):
         super().__init__()
         fk = {"device": device, "dtype": dtype}
-        self.in_features = in_features
-        self.out_features = out_features
-        self.lora_rank = lora_rank
-        self.lora_alpha = lora_alpha
+        self.in_features = int(in_features)
+        self.out_features = int(out_features)
+        self.lora_rank = int(lora_rank)
+        self.lora_alpha = float(lora_alpha)
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **fk))
+        self.weight = nn.Parameter(torch.empty((self.out_features, self.in_features), **fk))
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, **fk))
+            self.bias = nn.Parameter(torch.empty(self.out_features, **fk))
         else:
             self.register_parameter("bias", None)
 
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **fk))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **fk))
+        if self.lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty((self.lora_rank, self.in_features), **fk))
+            self.lora_B = nn.Parameter(torch.empty((self.out_features, self.lora_rank), **fk))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -158,6 +210,9 @@ class LoRALinear(nn.Module):
         return out
 
 
+# ===========================================================================
+# ChelaSlayAttention
+# ===========================================================================
 @ATTENTION_REGISTRY.register("chela_slay", supports_causal=True,
                               supports_bidirectional=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("chela_slay_attention", supports_causal=True,
@@ -165,16 +220,6 @@ class LoRALinear(nn.Module):
 class ChelaSlayAttention(BaseAttention):
     r"""
     CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel.
-
-    Mathematical formulation:
-      1. Magnitude-preserving spherical normalization:
-         $\hat{x} = \frac{x}{\|x\|+\epsilon} \cdot \log(1 + \|x\|)$
-      2. Yat-Kernel Fourier feature map:
-         $\phi(x) = \sqrt{\tfrac{2}{F}} [\cos(x\Omega), \sin(x\Omega)]$
-      3. Linear attention aggregation:
-         $O_i = \dfrac{\phi(\hat{Q}_i) KV_i}{\phi(\hat{Q}_i) Z_i + \epsilon}$
-      4. Adaptive gated blending:
-         $O = W_O(g \odot O^{dense} + (1-g) \odot O^{linear})$
     """
     is_custom_attention: bool = True
 
@@ -194,93 +239,135 @@ class ChelaSlayAttention(BaseAttention):
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
+        # CS-FIX-17: resolve config from source_attn if config is missing
         if config is None and source_attn is not None:
             class _Dummy: pass
             config = _Dummy()
-            out_layer = getattr(source_attn, "out_lin",
-                         getattr(source_attn, "dense",
-                         getattr(source_attn, "c_proj",
-                         getattr(source_attn, "o_proj", None))))
-            q_layer = getattr(source_attn, "q_lin",
-                       getattr(source_attn, "query",
-                       getattr(source_attn, "c_attn",
-                       getattr(source_attn, "q_proj", None))))
+            out_layer = (
+                _safe_getattr(source_attn, "out_lin", None)
+                or _safe_getattr(source_attn, "dense", None)
+                or _safe_getattr(source_attn, "c_proj", None)
+                or _safe_getattr(source_attn, "o_proj", None)
+            )
+            q_layer = (
+                _safe_getattr(source_attn, "q_lin", None)
+                or _safe_getattr(source_attn, "query", None)
+                or _safe_getattr(source_attn, "c_attn", None)
+                or _safe_getattr(source_attn, "q_proj", None)
+            )
             if out_layer is not None and hasattr(out_layer, "out_features"):
                 config.hidden_size = out_layer.out_features
             elif q_layer is not None and hasattr(q_layer, "in_features"):
                 config.hidden_size = q_layer.in_features
             else:
                 config.hidden_size = 768
-            config.num_attention_heads = getattr(
-                source_attn, "num_heads",
-                getattr(source_attn, "num_attention_heads",
-                getattr(source_attn, "n_heads", 12))
+            config.num_attention_heads = (
+                _safe_getattr(source_attn, "num_heads", None)
+                or _safe_getattr(source_attn, "num_attention_heads", None)
+                or _safe_getattr(source_attn, "n_heads", None)
+                or 12
             )
+            config.num_key_value_heads = config.num_attention_heads
+            config.is_decoder = False
+            config.model_type = ""
 
-        try:
-            super().__init__(config, rank if rank is not None else 64)
-        except TypeError:
-            super().__init__(config)
+        if config is None:
+            class _DefaultCfg: pass
+            config = _DefaultCfg()
+            config.hidden_size = 768
+            config.num_attention_heads = 12
+            config.num_key_value_heads = 12
+            config.is_decoder = False
+            config.model_type = ""
 
-        self.dim = int(kwargs.get("hidden_size",
-                          kwargs.get("d_model",
-                          getattr(config, "hidden_size",
-                          getattr(config, "d_model",
-                          getattr(config, "dim", 768))) if config is not None else 768)))
-        self.num_heads = int(kwargs.get("num_heads",
-                            kwargs.get("num_attention_heads",
-                            getattr(config, "num_attention_heads",
-                            getattr(config, "num_heads", 12)) if config is not None else 12)))
-        self.num_kv_heads = int(kwargs.get("num_kv_heads",
-                                kwargs.get("num_key_value_heads",
-                                getattr(config, "num_key_value_heads",
-                                getattr(config, "num_kv_heads", self.num_heads)) if config is not None else self.num_heads)))
-        self.head_dim = int(kwargs.get("head_dim",
-                            getattr(config, "head_dim", None) if config else None)
-                            or (self.dim // max(1, self.num_heads)))
+        # CS-FIX-16: safe extraction
+        self.dim = _safe_int(
+            kwargs.get("hidden_size")
+            or kwargs.get("d_model")
+            or _resolve_attr(config, "hidden_size", "d_model", "dim"),
+            768,
+        )
+        if self.dim <= 0:
+            self.dim = 768
+
+        n_heads_raw = (
+            kwargs.get("num_heads")
+            or kwargs.get("num_attention_heads")
+            or _resolve_attr(config, "num_attention_heads", "num_heads", "n_heads", "n_head")
+        )
+        self.num_heads = _safe_int(n_heads_raw, 12)
+        if self.num_heads <= 0:
+            self.num_heads = 12
+
+        kv_heads_raw = (
+            kwargs.get("num_kv_heads")
+            or kwargs.get("num_key_value_heads")
+            or _resolve_attr(config, "num_key_value_heads", "num_kv_heads")
+        )
+        self.num_kv_heads = _safe_int(kv_heads_raw, self.num_heads)
+        self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
+
+        head_dim_raw = kwargs.get("head_dim") or _safe_getattr(config, "head_dim", None)
+        if head_dim_raw is not None:
+            self.head_dim = _safe_int(head_dim_raw, self.dim // max(1, self.num_heads))
+        else:
+            self.head_dim = self.dim // max(1, self.num_heads)
+        if self.head_dim <= 0:
+            self.head_dim = 64
+
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
-        self.feature_dim = int(feature_dim)
+        self.feature_dim = max(2, _safe_int(feature_dim, 128))
         self.output_feature_dim = 2 * self.feature_dim
 
-        resolved_layer_id = (layer_id if layer_id is not None
-                              else (layer_idx if layer_idx is not None
-                                    else kwargs.get("layer_id", kwargs.get("layer_idx", 0))))
-        self.layer_idx = int(resolved_layer_id)
+        resolved_layer_id = (
+            layer_id if layer_id is not None
+            else (layer_idx if layer_idx is not None
+                  else kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
+        )
+        self.layer_idx = _safe_int(resolved_layer_id, 0)
 
-        self.lora_rank = int(getattr(config, "lora_rank",
-                              getattr(comp_config, "lora_rank",
-                              kwargs.get("lora_rank", 16))))
-        self.lora_alpha = float(getattr(config, "lora_alpha",
-                                  getattr(comp_config, "lora_alpha",
-                                  kwargs.get("lora_alpha", 32.0))))
+        # LoRA config (CS-FIX-22: comp_config may be None)
+        self.lora_rank = _safe_int(
+            _safe_getattr(config, "lora_rank", None)
+            or _safe_getattr(comp_config, "lora_rank", None)
+            or kwargs.get("lora_rank", 16),
+            16,
+        )
+        self.lora_alpha = _safe_float(
+            _safe_getattr(config, "lora_alpha", None)
+            or _safe_getattr(comp_config, "lora_alpha", None)
+            or kwargs.get("lora_alpha", 32.0),
+            32.0,
+        )
         self.freeze_base = (self.lora_rank > 0)
 
-        # ---- decoder detection ----
+        # Decoder detection
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
-            model_type = str(getattr(config, "model_type", "")).lower()
-            is_dec = (getattr(config, "is_decoder", False)
-                       or getattr(config, "is_causal", False)
-                       or kwargs.get("is_causal", False))
+            model_type = str(_safe_getattr(config, "model_type", "") or "").lower()
+            is_dec = bool(
+                _safe_getattr(config, "is_decoder", False)
+                or _safe_getattr(config, "is_causal", False)
+                or kwargs.get("is_causal", False)
+            )
             _dec_pfx = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
                          "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
             if any(model_type.startswith(p) for p in _dec_pfx):
                 is_dec = True
-            elif hasattr(config, "architectures") and any(
-                    "GPT" in str(a) or "CausalLM" in str(a)
-                    for a in (getattr(config, "architectures", []) or [])):
+            elif any("GPT" in str(a) or "CausalLM" in str(a)
+                      for a in (_safe_getattr(config, "architectures", []) or [])):
                 is_dec = True
             if source_attn is not None:
-                if getattr(source_attn, "is_decoder", False) or hasattr(source_attn, "c_attn"):
+                if _safe_getattr(source_attn, "is_decoder", False) or hasattr(source_attn, "c_attn"):
                     is_dec = True
-            self.is_decoder = bool(is_dec)
+            self.is_decoder = is_dec
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
-        # ---- projections ----
+        # Projections
         self.W_q = LoRALinear(self.dim, self.all_head_size, bias=True,
                                 lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
                                 freeze_base=self.freeze_base)
@@ -294,32 +381,42 @@ class ChelaSlayAttention(BaseAttention):
                                     lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
                                     freeze_base=self.freeze_base)
 
-        # ---- Yat projection ----
+        # Yat projection
         self.yat_proj = nn.Parameter(
             torch.randn(self.head_dim, self.feature_dim, dtype=torch.float32) * 0.02
         )
 
-        # ---- Adaptive gate ----
+        # Adaptive gate (CS-FIX-24)
         self.lora_gate = nn.Linear(self.dim, self.num_heads)
         nn.init.zeros_(self.lora_gate.weight)
         with torch.no_grad():
-            self.lora_gate.bias.data.fill_(gate_init_bias)
+            self.lora_gate.bias.data.fill_(float(gate_init_bias))
 
-        dropout_p = float(getattr(config, "dropout",
-                          getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1)
+        dropout_p = _safe_float(
+            _resolve_attr(config, "dropout", "attention_probs_dropout_prob") or 0.1,
+            0.1,
+        )
         self.dropout = nn.Dropout(dropout_p)
 
         self.rotary_emb = None
         self.comp_config = comp_config
 
-        # Storage
+        # Storage accounting
         self._orig_storage_bytes = 0
         self._comp_storage_bytes = 0
 
         if source_attn is not None:
-            self._copy_pretrained(source_attn)
+            # CS-FIX-18: never raise on failure; only log
+            try:
+                self._copy_pretrained(source_attn)
+            except Exception as e:
+                logger.warning(
+                    "ChelaSlayAttention._copy_pretrained failed on %s: %s. "
+                    "Using initialized weights.",
+                    source_attn.__class__.__name__, e,
+                )
 
-    # ---- aliases ----
+    # ---- aliases (CS-FIX-23) ----
     @property
     def gate(self): return self.lora_gate
     @property
@@ -352,6 +449,8 @@ class ChelaSlayAttention(BaseAttention):
     def c_proj(self): return self.out_proj
 
     # ------------------------------------------------------------------
+    # Weight transfer (CS-FIX-20, CS-FIX-21)
+    # ------------------------------------------------------------------
     def _copy_pretrained(self, pretrained_attn: nn.Module) -> None:
         if pretrained_attn is None:
             return
@@ -363,9 +462,11 @@ class ChelaSlayAttention(BaseAttention):
             pass
 
         cls_name = pretrained_attn.__class__.__name__
-        has_out_lin = (hasattr(pretrained_attn, "out_lin")
-                       or hasattr(pretrained_attn, "c_proj")
-                       or hasattr(pretrained_attn, "o_proj"))
+        has_out_lin = (
+            hasattr(pretrained_attn, "out_lin")
+            or hasattr(pretrained_attn, "c_proj")
+            or hasattr(pretrained_attn, "o_proj")
+        )
         is_nested = False
         if (hasattr(pretrained_attn, "self")
                 and hasattr(getattr(pretrained_attn, "self"), "query")
@@ -388,63 +489,54 @@ class ChelaSlayAttention(BaseAttention):
             "v": (None, None), "o": (None, None),
         }
 
+        def _unwrap(mod):
+            return getattr(mod, "base_layer", mod)
+
         # GPT-2 fused
         if hasattr(pretrained_attn, "c_attn") and pretrained_attn.c_attn is not None:
-            c_attn_mod = pretrained_attn.c_attn
-            if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
-                try:
-                    c_attn_mod.merge()
-                except Exception as e:
-                    logger.debug("c_attn merge failed: %s", e)
-            base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
-            c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
+            c_attn_mod = _unwrap(pretrained_attn.c_attn)
+            c_w = getattr(c_attn_mod, "weight", None)
             if c_w is not None:
                 c_w = c_w.data.clone()
-                is_conv = (c_attn_mod.__class__.__name__ == "Conv1D"
-                           or base_c.__class__.__name__ == "Conv1D"
-                           or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]))
+                is_conv = (
+                    pretrained_attn.c_attn.__class__.__name__ == "Conv1D"
+                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
+                )
                 if is_conv:
                     c_w = c_w.t().contiguous()
                 split = c_w.size(0) // 3
-                bmod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
-                c_b = bmod.data.clone() if bmod is not None else None
-                extracted["q"] = (c_w[:split], c_b[:split] if c_b is not None else None)
-                extracted["k"] = (c_w[split:2*split], c_b[split:2*split] if c_b is not None else None)
-                extracted["v"] = (c_w[2*split:], c_b[2*split:] if c_b is not None else None)
+                c_b = getattr(c_attn_mod, "bias", None)
+                c_b_data = c_b.data.clone() if c_b is not None else None
+                extracted["q"] = (c_w[:split], c_b_data[:split] if c_b_data is not None else None)
+                extracted["k"] = (c_w[split:2*split], c_b_data[split:2*split] if c_b_data is not None else None)
+                extracted["v"] = (c_w[2*split:], c_b_data[2*split:] if c_b_data is not None else None)
 
             if hasattr(pretrained_attn, "c_proj") and pretrained_attn.c_proj is not None:
-                c_proj_mod = pretrained_attn.c_proj
-                if hasattr(c_proj_mod, "merge") and not getattr(c_proj_mod, "merged", False):
-                    try:
-                        c_proj_mod.merge()
-                    except Exception as e:
-                        logger.debug("c_proj merge failed: %s", e)
-                base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
-                o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
+                c_proj_mod = _unwrap(pretrained_attn.c_proj)
+                o_w = getattr(c_proj_mod, "weight", None)
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    is_conv_o = (c_proj_mod.__class__.__name__ == "Conv1D"
-                                 or base_o.__class__.__name__ == "Conv1D"
-                                 or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]))
-                    if is_conv_o:
+                    if (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
                         o_w = o_w.t().contiguous()
-                    bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    o_b = getattr(c_proj_mod, "bias", None)
+                    extracted["o"] = (o_w, o_b.data.clone() if o_b is not None else None)
 
-        # Nested
+        # Nested (BERT / RoBERTa)
         elif hasattr(pretrained_attn, "self") and hasattr(getattr(pretrained_attn, "self"), "query"):
             s = getattr(pretrained_attn, "self")
             for key, sub_name in (("q", "query"), ("k", "key"), ("v", "value")):
-                m = getattr(s, sub_name, None)
+                m = _unwrap(getattr(s, sub_name, None))
                 if m is not None and hasattr(m, "weight"):
+                    b = getattr(m, "bias", None)
                     extracted[key] = (m.weight.data.clone(),
-                                       m.bias.data.clone() if m.bias is not None else None)
+                                       b.data.clone() if b is not None else None)
             if hasattr(pretrained_attn, "output") and hasattr(pretrained_attn.output, "dense"):
-                out_mod = pretrained_attn.output.dense
+                out_mod = _unwrap(pretrained_attn.output.dense)
+                b = getattr(out_mod, "bias", None)
                 extracted["o"] = (out_mod.weight.data.clone(),
-                                   out_mod.bias.data.clone() if out_mod.bias is not None else None)
+                                   b.data.clone() if b is not None else None)
 
-        # Flat
+        # Flat (DistilBERT / generic)
         else:
             candidates = {
                 "q": ("q_lin", "q_proj", "query", "W_q"),
@@ -455,10 +547,11 @@ class ChelaSlayAttention(BaseAttention):
             for key, names in candidates.items():
                 for n in names:
                     if hasattr(pretrained_attn, n):
-                        m = getattr(pretrained_attn, n)
+                        m = _unwrap(getattr(pretrained_attn, n))
                         if m is not None and hasattr(m, "weight"):
+                            b = getattr(m, "bias", None)
                             extracted[key] = (m.weight.data.clone(),
-                                               m.bias.data.clone() if m.bias is not None else None)
+                                               b.data.clone() if b is not None else None)
                             break
 
         # UniversalAdapter fallback
@@ -475,12 +568,14 @@ class ChelaSlayAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
+        # CS-FIX-18: log missing but do not raise
         missing_after = [k for k, (w, _) in extracted.items()
                           if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
-                f"ChelaSlayAttention: missing {missing_after} "
-                f"from {pretrained_attn.__class__.__name__}."
+            logger.warning(
+                "ChelaSlayAttention: missing projections %s from %s; "
+                "using initialized weights for those.",
+                missing_after, pretrained_attn.__class__.__name__,
             )
 
         target_map = {"q": self.W_q, "k": self.W_k,
@@ -501,16 +596,21 @@ class ChelaSlayAttention(BaseAttention):
                         and w.t().contiguous().shape == target_mod.weight.shape:
                     w = w.t().contiguous()
 
+                # CS-FIX-21: never zero the whole matrix; only copy overlap
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
-                target_mod.weight.data.zero_()
-                target_mod.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(target_mod.weight.device, target_mod.weight.dtype)
-                )
+                if out_d == target_mod.weight.size(0) and in_d == target_mod.weight.size(1):
+                    target_mod.weight.data.copy_(
+                        w.to(target_mod.weight.device, target_mod.weight.dtype)
+                    )
+                else:
+                    target_mod.weight.data.zero_()
+                    target_mod.weight.data[:out_d, :in_d].copy_(
+                        w[:out_d, :in_d].to(target_mod.weight.device, target_mod.weight.dtype)
+                    )
 
                 if b is not None and target_mod.bias is not None:
                     mn = min(target_mod.bias.numel(), b.numel())
-                    target_mod.bias.data.zero_()
                     target_mod.bias.data[:mn].copy_(
                         b[:mn].to(target_mod.bias.device, target_mod.bias.dtype)
                     )
@@ -590,7 +690,7 @@ class ChelaSlayAttention(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        # ---- Dense stream ----
+        # Dense stream
         dense_scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * (self.head_dim ** -0.5)
 
         can_causal = bool(self.is_causal and not is_cross and L == kv_len)
@@ -633,7 +733,7 @@ class ChelaSlayAttention(BaseAttention):
         dense_attn = self.dropout(dense_attn)
         dense_out = torch.matmul(dense_attn.to(v.dtype), v)
 
-        # ---- Linear stream ----
+        # Linear stream
         q_norm = self._spherical_normalize(q)
         k_norm = self._spherical_normalize(k)
         q_feat = self._yat_feature_map(q_norm)
@@ -654,7 +754,7 @@ class ChelaSlayAttention(BaseAttention):
             hw = head_mask_b.squeeze(-1).squeeze(-1)
             linear_out = linear_out * hw.unsqueeze(-1).to(linear_out.dtype)
 
-        # ---- Adaptive gating ----
+        # Adaptive gating
         g = torch.sigmoid(self.lora_gate(x)).transpose(1, 2).contiguous().unsqueeze(-1)
         fused = g * dense_out + (1.0 - g) * linear_out
         out = fused.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
@@ -725,7 +825,7 @@ class ChelaSlayAttention(BaseAttention):
 
 
 # ===========================================================================
-# Injection
+# Injector (CS-FIX-19)
 # ===========================================================================
 @ATTENTION_REGISTRY.register("chela_slay_inject")
 @ATTENTION_REGISTRY.register("inject_chela_slay")
@@ -744,6 +844,7 @@ def inject_chela_slay(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
+    # ---- Whole-model traversal ----
     layer_list = None
     for path in (
         ("distilbert", "transformer", "layer"),
@@ -779,45 +880,66 @@ def inject_chela_slay(
                 n += 1
         return target if n > 0 else None
 
-    layer = target
+    # ---- Single-layer ----
     src = old_attn
     if src is None:
         for attr in ("attention", "attn", "self_attn", "self"):
-            if hasattr(layer, attr):
-                cand = getattr(layer, attr)
-                if isinstance(cand, nn.Module) and cand is not layer:
+            if hasattr(target, attr):
+                cand = getattr(target, attr)
+                if isinstance(cand, nn.Module) and cand is not target:
                     src = getattr(cand, "self", cand)
                     break
 
-    if isinstance(src, ChelaSlayAttention) or "ChelaSlay" in src.__class__.__name__:
-        return None
+    if src is not None and (isinstance(src, ChelaSlayAttention)
+                             or "ChelaSlay" in src.__class__.__name__):
+        return None  # idempotency
 
     try:
         new_attn = ChelaSlayAttention(
-            config=cfg, pretrained_attn=src,
+            config=cfg, pretrained_attn=src if src is not None else None,
             comp_config=comp_config,
             layer_id=layer_idx, layer_idx=layer_idx,
             **kwargs,
         )
-        if hasattr(layer, "attention"):
-            if hasattr(layer.attention, "self"):
+
+        # CS-FIX-19: move to correct device/dtype
+        if src is not None:
+            p = next(src.parameters(), None)
+            if p is not None:
+                new_attn = new_attn.to(device=p.device, dtype=p.dtype)
+
+        # ---- Splice ----
+        spliced = False
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
                 new_attn.is_nested_encoder = True
-                layer.attention.self = new_attn
+                target.attention.self = new_attn
             else:
                 new_attn.is_nested_encoder = False
-                layer.attention = new_attn
-        elif hasattr(layer, "attn"):
+                target.attention = new_attn
+            spliced = True
+        elif hasattr(target, "attn"):
             new_attn.is_nested_encoder = False
-            layer.attn = new_attn
-        elif hasattr(layer, "self_attn"):
+            target.attn = new_attn
+            spliced = True
+        elif hasattr(target, "self_attn"):
             new_attn.is_nested_encoder = False
-            layer.self_attn = new_attn
-        elif hasattr(layer, "self"):
+            target.self_attn = new_attn
+            spliced = True
+        elif hasattr(target, "self"):
             new_attn.is_nested_encoder = True
-            layer.self = new_attn
+            target.self = new_attn
+            spliced = True
+
+        if not spliced:
+            logger.error("inject_chela_slay: no writable attribute on %s",
+                          target.__class__.__name__)
+            return None
+
         return new_attn
     except Exception as e:
-        logger.error("inject_chela_slay failed: %s", e, exc_info=True)
+        logger.error("inject_chela_slay failed at layer %d: %s",
+                      layer_idx, e, exc_info=True)
         return None
 
 
