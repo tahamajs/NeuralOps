@@ -707,11 +707,18 @@ def run_kd_method(
 
                 # Loss computation based on Method
                 if method_name == "A":
-                    loss_kl = compute_kl_divergence(student_out.logits, teacher_out.logits, temperature=2.0)
+                    kl_temp = getattr(args, "kl_temperature", 2.0)
+                    loss_kl = compute_kl_divergence(student_out.logits, teacher_out.logits, temperature=kl_temp)
                     shift_logits = student_out.logits[..., :-1, :].contiguous()
                     shift_labels = batch_ids[..., 1:].contiguous()
                     loss_ce = F.cross_entropy(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
-                    loss = 0.9 * loss_kl + 0.1 * loss_ce
+                    
+                    kl_warmup = getattr(args, "kl_warmup_steps", 0)
+                    if kl_warmup > 0:
+                        kl_weight = 0.9 * min(1.0, float(step + 1) / float(max(1, kl_warmup)))
+                    else:
+                        kl_weight = 0.9
+                    loss = kl_weight * loss_kl + 0.1 * loss_ce
                 elif method_name == "B":
                     loss_hidden = compute_hidden_mse(student_out.hidden_states, teacher_out.hidden_states)
                     shift_logits = student_out.logits[..., :-1, :].contiguous()
@@ -741,13 +748,14 @@ def run_kd_method(
             accum_count += 1
 
             if accum_count % args.grad_accum_steps == 0:
+                max_norm = getattr(args, "max_grad_norm", 1.0)
                 if use_scaler:
                     scaler.unscale_(optimizer)
-                    torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
+                    torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=max_norm)
                     scaler.step(optimizer)
                     scaler.update()
                 else:
-                    torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
+                    torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=max_norm)
                     optimizer.step()
                 optimizer.zero_grad()
                 scheduler.step()
