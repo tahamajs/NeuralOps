@@ -257,7 +257,7 @@ class SpectronSpectralEntropyRouter(nn.Module):
                 entropy = entropy * token_valid.float()
                 entropy = entropy / entropy.amax(dim=-1, keepdim=True).clamp(min=1e-6)
 
-        h = self.h_proj(X)  # (B, N, 3)
+        h = self.h_proj(X.to(self.h_proj.weight.dtype))  # (B, N, 3)
         h = h * entropy.unsqueeze(-1).to(h.dtype)
 
         c = self.costs.to(h.dtype)
@@ -975,7 +975,7 @@ class AegisSpectronFP8Attention(BaseAttention):
         final = torch.nan_to_num(final, nan=0.0, posinf=1e4, neginf=-1e4)
 
         attn_ret = attn_loc if output_attentions else None
-        return final, attn_ret
+        return final.to(hidden_states.dtype), attn_ret
 
     # ------------------------------------------------------------------
     @staticmethod

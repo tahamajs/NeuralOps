@@ -867,7 +867,7 @@ class AegisHybridAttention(BaseAttention):
 
         final = torch.nan_to_num(final, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        return final, (attn_local if output_attentions else None)
+        return final.to(hidden_states.dtype), (attn_local if output_attentions else None)
 
     # ------------------------------------------------------------------
     def storage_bytes(self) -> Dict[str, int]:
