@@ -11,3 +11,9 @@ tt_linear_factory
 
 lillama_compressor
 mamba_svd_flash
+
+# Extreme expansion & collapse modules confirmed on DistilBERT SST-2
+eat
+granite_hybrid
+jamba_info
+tpa
