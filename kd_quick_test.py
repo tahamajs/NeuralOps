@@ -233,6 +233,48 @@ def compute_method_d_loss(
     return 0.5 * loss_kl + 0.4 * hidden_d + 0.1 * loss_ce
 
 
+def set_train_scope(model, train_scope="all"):
+    """
+    Configure trainable parameters.
+
+    - 'all'                 : train everything
+    - 'mamba'/'attention'/'module' : train ONLY parameters inside
+                                    the attention submodule, EXCEPT the
+                                    original GPT-2 c_attn/c_proj fused
+                                    projections. This works for ANY
+                                    injected attention module, whether it
+                                    uses UniversalAttentionWrapper or
+                                    injects directly (q_proj, k_proj, ...).
+    """
+    if train_scope == "all":
+        for p in model.parameters():
+            p.requires_grad = True
+    elif train_scope in ("mamba", "attention", "module"):
+        for name, p in model.named_parameters():
+            # Must be inside a transformer block's attention submodule
+            if ".attn." not in name:
+                p.requires_grad = False
+                continue
+
+            # Within .attn., inspect the immediate submodule name
+            sub = name.split(".attn.", 1)[-1]
+
+            # Skip original GPT-2 fused projections
+            if sub.startswith(("c_attn", "c_proj")):
+                p.requires_grad = False
+            else:
+                p.requires_grad = True
+    else:
+        raise ValueError(f"Unknown train_scope: {train_scope}")
+
+    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    total = sum(p.numel() for p in model.parameters())
+    LOG.info("Train scope '%s': %d/%d trainable (%.2f%%)",
+             train_scope, trainable, total,
+             100.0 * trainable / max(1, total))
+    return trainable
+
+
 # -----------------------------------------------------------------------------
 # Single Method Runner
 # -----------------------------------------------------------------------------
@@ -279,6 +321,12 @@ def run_kd_method(
     )
     LOG.info("Pre-KD PPL for Method %s: %.2f", method_name, pre_ppl)
 
+    # Configure train scope (Fix 3)
+    n_trainable = set_train_scope(student, args.train_scope)
+    LOG.info(
+        f"Train scope: '{args.train_scope}' | Trainable parameters: {n_trainable:,} / {sum(p.numel() for p in student.parameters()):,}"
+    )
+
     # Optimizer & Scheduler
     trainable_params = [p for p in student.parameters() if p.requires_grad]
     optimizer = torch.optim.AdamW(trainable_params, lr=args.learning_rate, weight_decay=0.01)
@@ -293,7 +341,8 @@ def run_kd_method(
         return max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
 
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
-    scaler = torch.cuda.amp.GradScaler(enabled=args.fp16 and device.startswith("cuda"))
+    use_scaler = bool(args.fp16 and device.startswith("cuda") and not any(p.dtype == torch.float16 for p in trainable_params))
+    scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
 
     # Training state
     ppl_history: Dict[int, float] = {}
@@ -364,14 +413,21 @@ def run_kd_method(
                 loss_scaled = loss / args.grad_accum_steps
                 final_loss = float(loss.item())
 
-            scaler.scale(loss_scaled).backward()
+            if use_scaler:
+                scaler.scale(loss_scaled).backward()
+            else:
+                loss_scaled.backward()
             accum_count += 1
 
             if accum_count % args.grad_accum_steps == 0:
-                scaler.unscale_(optimizer)
-                torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
-                scaler.step(optimizer)
-                scaler.update()
+                if use_scaler:
+                    scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
+                    torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
+                    optimizer.step()
                 optimizer.zero_grad()
                 scheduler.step()
                 step += 1
@@ -473,9 +529,14 @@ def run_kd_method(
 # Comparison Table & Recommendations
 # -----------------------------------------------------------------------------
 def print_comparison_table(results: List[Dict[str, Any]]):
-    header = "┌─────────┬──────────┬──────────┬──────────┬──────────┬──────────┐\n" \
-             "│ Method  │ Pre PPL  │ Post PPL │ Recovery │ Time (s) │ VRAM(MB) │\n" \
-             "├─────────┼──────────┼──────────┼──────────┼──────────┼──────────┤"
+    try:
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+    header = "+---------+----------+----------+----------+----------+----------+\n" \
+             "| Method  | Pre PPL  | Post PPL | Recovery | Time (s) | VRAM(MB) |\n" \
+             "+---------+----------+----------+----------+----------+----------+"
     print(header)
     for r in results:
         m = r["method"]
@@ -484,8 +545,8 @@ def print_comparison_table(results: List[Dict[str, Any]]):
         rec = f"{r['recovery_pct']:.1f}%" if isinstance(r["recovery_pct"], (int, float)) else str(r["recovery_pct"])
         t = f"{r['train_time_s']:.1f}" if isinstance(r["train_time_s"], (int, float)) else str(r["train_time_s"])
         vram = f"{r['peak_vram_mb']:.1f}" if isinstance(r["peak_vram_mb"], (int, float)) else str(r["peak_vram_mb"])
-        print(f"│ {m:<7} │ {pre:>8} │ {post:>8} │ {rec:>8} │ {t:>8} │ {vram:>8} │")
-    print("└─────────┴──────────┴──────────┴──────────┴──────────┴──────────┘")
+        print(f"| {m:<7} | {pre:>8} | {post:>8} | {rec:>8} | {t:>8} | {vram:>8} |")
+    print("+---------+----------+----------+----------+----------+----------+")
 
 
 # -----------------------------------------------------------------------------
