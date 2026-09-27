@@ -448,6 +448,8 @@ def apply_module_to_model(
     rank: int = 16,
     device: torch.device = torch.device("cpu"),
     calibration_data: Optional[Any] = None,
+    calibration_loader: Optional[Any] = None,
+    tokenizer: Optional[Any] = None,
 ) -> Tuple[nn.Module, float]:
     """
     Injects or compresses the given model using the specified module.
@@ -557,16 +559,22 @@ def apply_module_to_model(
 
         comp_cls = COMPRESSOR_REGISTRY.get(module_name)
         if comp_cls is not None:
+            eff_loader = calibration_loader if calibration_loader is not None else calibration_data
+            eff_calib = calibration_data if calibration_data is not None else eff_loader
+            if eff_calib is None:
+                eff_calib = torch.randint(0, 1000, (2, 32), device=device)
+
             def _invoke_compressor_instance(instance: Any) -> Optional[nn.Module]:
-                eff_calib = calibration_data if calibration_data is not None else torch.randint(0, 1000, (2, 32), device=device)
                 for method_name in ["compress", "apply", "prune"]:
                     if hasattr(instance, method_name):
                         m = getattr(instance, method_name)
                         if callable(m):
                             for fn in [
                                 lambda: m(),
+                                lambda: m(calibration_loader=eff_loader),
                                 lambda: m(calibration_data=eff_calib),
                                 lambda: m(model),
+                                lambda: m(model, calibration_loader=eff_loader),
                                 lambda: m(model, calibration_data=eff_calib),
                                 lambda: m(eff_calib),
                             ]:
@@ -593,29 +601,33 @@ def apply_module_to_model(
 
             # Strategy 1: Instantiate with model passed to constructor
             candidate = None
-            tok = getattr(model, "tokenizer", None) or getattr(getattr(model, "config", None), "tokenizer", None)
+            tok = tokenizer or getattr(model, "tokenizer", None) or getattr(getattr(model, "config", None), "tokenizer", None)
             cfg = getattr(model, "config", None)
             c_kwargs = {}
             if cfg is not None:
                 for k in ("rank_ratio", "max_error", "lora_rank", "target_attention_only", "use_jg_svd", "use_cholesky_jg", "energy_threshold", "group_size", "strict_rank"):
                     if hasattr(cfg, k):
                         c_kwargs[k] = getattr(cfg, k)
-            if calibration_data is not None:
-                c_kwargs["calibration_data"] = calibration_data
-                c_kwargs["calib_loader"] = calibration_data
-            try:
-                candidate = comp_cls(model, rank=rank, tokenizer=tok, **c_kwargs)
-            except (TypeError, ValueError):
+            if eff_loader is not None:
+                c_kwargs["calibration_loader"] = eff_loader
+                c_kwargs["calib_loader"] = eff_loader
+            if eff_calib is not None:
+                c_kwargs["calibration_data"] = eff_calib
+
+            for init_fn in [
+                lambda: comp_cls(model, rank=rank, tokenizer=tok, **c_kwargs),
+                lambda: comp_cls(model, rank=rank, calibration_loader=eff_loader, tokenizer=tok),
+                lambda: comp_cls(model, rank=rank, tokenizer=tok),
+                lambda: comp_cls(model, rank=rank, **c_kwargs),
+                lambda: comp_cls(model, rank=rank),
+                lambda: comp_cls(model),
+            ]:
                 try:
-                    candidate = comp_cls(model, rank=rank, tokenizer=tok)
+                    candidate = init_fn()
+                    if candidate is not None:
+                        break
                 except (TypeError, ValueError):
-                    try:
-                        candidate = comp_cls(model, rank=rank)
-                    except (TypeError, ValueError):
-                        try:
-                            candidate = comp_cls(model)
-                        except (TypeError, ValueError):
-                            candidate = None
+                    continue
 
             if candidate is not None:
                 if isinstance(candidate, tuple) and len(candidate) > 0 and isinstance(candidate[0], nn.Module):
@@ -634,15 +646,18 @@ def apply_module_to_model(
 
             # Strategy 2: Instantiate without model, call compress(model)
             else:
-                try:
-                    candidate = comp_cls(rank=rank)
-                except (TypeError, ValueError):
+                for init_fn in [
+                    lambda: comp_cls(rank=rank, tokenizer=tok, **c_kwargs),
+                    lambda: comp_cls(rank=rank),
+                    lambda: comp_cls(),
+                    lambda: comp_cls(target_ratio=0.5),
+                ]:
                     try:
-                        candidate = comp_cls()
+                        candidate = init_fn()
+                        if candidate is not None:
+                            break
                     except (TypeError, ValueError):
-                        try:
-                            candidate = comp_cls(target_ratio=0.5)
-                        except (TypeError, ValueError):
+                        continue
                             candidate = None
 
                 if candidate is not None:

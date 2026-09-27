@@ -385,7 +385,7 @@ def local_window_attention(
     attn = temperature_softmax(scores, dim=-1, temperature=softpick_temperature)
     attn = attn * any_valid.to(attn.dtype)
 
-    return torch.matmul(attn, V)
+    return torch.matmul(attn, V.to(attn.dtype))
 
 
 def kernel_linear_attention(
@@ -1009,7 +1009,7 @@ class AegisAttention(BaseAttention):
             output = self.out_proj(out)
         output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        return output, attn_weights_out
+        return output.to(hidden_states.dtype), attn_weights_out
 
     def get_ortho_loss(self) -> torch.Tensor:
         return torch.zeros((), device=self.out_proj.up.weight.device)

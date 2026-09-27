@@ -258,10 +258,16 @@ class FactorisedLinear(nn.Module):
         return self.up.bias
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = self.up(self.down(x))
+        orig_dtype = x.dtype
+        x_down = x.to(self.down.weight.dtype)
+        latent = self.down(x_down)
+        latent_up = latent.to(self.up.weight.dtype)
+        out = self.up(latent_up)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out
+            a = self.lora_A.to(orig_dtype) if self.lora_A.dtype != orig_dtype else self.lora_A
+            b = self.lora_B.to(orig_dtype) if self.lora_B.dtype != orig_dtype else self.lora_B
+            out = out.to(orig_dtype) + F.linear(F.linear(x, a), b) * self.lora_scaling
+        return out.to(orig_dtype)
 
 
 # ===========================================================================
@@ -316,7 +322,7 @@ def _local_window_attention_v2(
     any_valid = combined_valid.any(dim=-1, keepdim=True).to(scores.dtype)
 
     attn = F.softmax(scores, dim=-1).to(Q.dtype) * any_valid
-    return torch.matmul(attn, V)
+    return torch.matmul(attn, V.to(attn.dtype))
 
 
 def _phi_elu(x: torch.Tensor) -> torch.Tensor:
@@ -875,9 +881,7 @@ class AegisAttentionV2(BaseAttention):
             output = self.out_proj(out)
             output = self.dropout(output)
         output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
-        # V2-FIX-09: no artificial clamp.
-
-        return output, None
+        return output.to(hidden_states.dtype), None
 
     def get_ortho_loss(self) -> torch.Tensor:
         return torch.zeros((), device=self.out_proj.up.weight.device)
