@@ -828,5 +828,45 @@
     "accuracy_pct": 81.77,
     "error": "base_before=66955010 base_after=70517000 delta=+5.32%",
     "timestamp": "2026-09-27T06:00:38.697672"
+  },
+  {
+    "module": "roast",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.71,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:02:43.295517"
+  },
+  {
+    "module": "routing",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "SKIP_BERT_ARCHITECTURAL",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "note: architecture unsupported by module (Could not instantiate attention class inject_routing)",
+    "timestamp": "2026-09-27T06:02:49.434519"
+  },
+  {
+    "module": "rotational_slicegpt",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.71,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:02:52.259153"
+  },
+  {
+    "module": "routing_class",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "RuntimeError: scatter(): Expected self.dtype to be equal to src.dtype",
+    "timestamp": "2026-09-27T06:03:33.915037"
   }
 ]
