@@ -791,8 +791,8 @@ class AegisSpectronFP8Attention(BaseAttention):
         V_flat = V.transpose(1, 2).contiguous().view(B, N, D)
 
         # Low-rank projection → (B, N, rank)
-        Q_lr = torch.matmul(Q_flat, self.svd_U_q)
-        K_lr = torch.matmul(K_flat, self.svd_U_k)
+        Q_lr = torch.matmul(Q_flat, self.svd_U_q.to(Q_flat.dtype))
+        K_lr = torch.matmul(K_flat, self.svd_U_k.to(K_flat.dtype))
 
         # Non-negative kernel feature map φ(x) = ELU(x) + 1
         phi_Q = F.elu(Q_lr) + 1.0    # (B, N, rank)
@@ -838,8 +838,8 @@ class AegisSpectronFP8Attention(BaseAttention):
         if token_valid is not None:
             X = X * token_valid.unsqueeze(-1).to(X.dtype)
 
-        u = X * self.linear_B.view(1, 1, D)
-        gamma = torch.sigmoid(self.decay_param).clamp(min=1e-4, max=1.0 - 1e-4)
+        u = X * self.linear_B.view(1, 1, D).to(X.dtype)
+        gamma = torch.sigmoid(self.decay_param.to(X.dtype)).clamp(min=1e-4, max=1.0 - 1e-4)
 
         out_fwd = _state_recurrence_jit(u, gamma, reverse=False)
 
@@ -847,12 +847,12 @@ class AegisSpectronFP8Attention(BaseAttention):
             out_h = out_fwd.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
         else:
             out_bwd = _state_recurrence_jit(u, gamma, reverse=True)
-            gate = torch.sigmoid(self.bidir_gate).view(1, self.num_heads, 1, 1)
+            gate = torch.sigmoid(self.bidir_gate.to(X.dtype)).view(1, self.num_heads, 1, 1)
             out_fwd_h = out_fwd.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
             out_bwd_h = out_bwd.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
             out_h = gate * out_fwd_h + (1.0 - gate) * out_bwd_h
 
-        out_h = out_h * self.linear_C.view(1, self.num_heads, 1, self.head_dim)
+        out_h = out_h * self.linear_C.view(1, self.num_heads, 1, self.head_dim).to(X.dtype)
         return out_h.contiguous()
 
     # ------------------------------------------------------------------
