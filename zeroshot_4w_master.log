@@ -1,0 +1,238 @@
+[RESUME] Skipped 2 completed modules. 181 remaining.
+[INIT] 181 modules to evaluate
+[INIT] parallel = 4
+[INIT] ETA = 5430 seconds (~2 min/module)
+
+[1/181] adaptive_sparse_attention | OK | 362.0s
+[2/181] adaptive_span_attention | OK | 365.7s
+[3/181] aa_svd_compressor | OK | 414.0s
+[4/181] adaptive_ranks | OK | 683.5s
+[5/181] admm_compressor | OK | 292.5s
+[6/181] adaptive_svd_attention | OK | 470.8s
+[7/181] admm_pruner | OK | 206.6s
+[8/181] aegis_hybrid | OK | 374.2s
+[9/181] adasplash_attention | OK | 719.0s
+[10/181] aegis_spectron_fp8 | OK | 440.4s
+[AGG] Updating audit/ at 10 modules...
+[1] zeroshot_summary.csv: 17 modules
+[2] zeroshot_per_class.csv: 222 rows
+[3] zeroshot_per_sample.parquet: 35000 rows
+[4] zeroshot_missing.csv: 25 missing
+[DONE]
+[11/181] aegis_v2 | OK | 435.6s
+[12/181] aegis_v5 | OK | 371.3s
+[13/181] aegis_v6 | OK | 469.8s
+[14/181] armor_pruner | OK | 328.6s
+[15/181] ast_pruner | OK | 286.6s
+[16/181] astro_quantizer | OK | 209.4s
+[17/181] block_transformer_hiba | OK | 316.3s
+[18/181] bam_umoe | OK | 373.2s
+[19/181] bonsai_pruner | OK | 337.0s
+[20/181] asvd_attention | OK | 478.2s
+[AGG] Updating audit/ at 20 modules...
+[1] zeroshot_summary.csv: 27 modules
+[2] zeroshot_per_class.csv: 368 rows
+[3] zeroshot_per_sample.parquet: 57500 rows
+[4] zeroshot_missing.csv: 25 missing
+[DONE]
+[21/181] cluster_attention | OK | 326.1s
+[22/181] chela_slay | OK | 404.5s
+[23/181] cachenotes_compressor | OK | 604.1s
+[24/181] compot_compressor | OK | 518.8s
+[25/181] compressed_attention | OK | 280.1s
+[GIT] Committing at 25 modules...
+fatal: pathspec 'audit/zeroshot_*.parquet' did not match any files
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	deleted:    Codes/framework/compat.py
+	deleted:    Codes/framework/continuous_hf_uploader.py
+	deleted:    Codes/framework/cosformer.py
+	deleted:    Codes/framework/run_a3_sweep.py
+	deleted:    Codes/framework/run_ablation.py
+	deleted:    Codes/framework/run_baseline_comparison.py
+	deleted:    Codes/framework/run_gpt2_sweep.py
+	deleted:    Codes/framework/run_phase2.py
+	modified:   results/zeroshot_parallel/cachenotes_compressor/run.log
+	modified:   results/zeroshot_parallel/compot_compressor/run.log
+	modified:   results/zeroshot_parallel/compressed_attention/run.log
+	modified:   results/zeroshot_parallel/compressed_mha_attention/run.log
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	audit/master_queue.csv
+	results/_archive_partial/
+	results/bert_baselines/
+	results/rank_sweep_mnli/
+	results/test_batch/
+	results/test_c4_a3/
+	results/test_c4_a3_r128/
+	results/test_c4_adasvd/gpt2_adasvd_compressor_full_metrics.json
+	results/test_c4_adasvd/summary.csv
+	results/test_c4_adasvd_r128/
+	results/test_c4_adasvd_r384/
+	results/test_c4_slicegpt/
+	results/test_memory_safe/
+	results/test_perf/
+	results/test_zeroshot/
+	results/zeroshot/
+	results/zeroshot_parallel/cachenotes_compressor/arc_challenge.json
+	results/zeroshot_parallel/cachenotes_compressor/arc_easy.json
+	results/zeroshot_parallel/cachenotes_compressor/cachenotes_compressor_zeroshot.json
+	results/zeroshot_parallel/cachenotes_compressor/hellaswag.json
+	results/zeroshot_parallel/cachenotes_compressor/piqa.json
+	results/zeroshot_parallel/cachenotes_compressor/run_metadata.json
+	results/zeroshot_parallel/cachenotes_compressor/winogrande.json
+	results/zeroshot_parallel/cachenotes_compressor/winogrande_detailed.json
+	results/zeroshot_parallel/compot_compressor/arc_challenge.json
+	results/zeroshot_parallel/compot_compressor/arc_easy.json
+	results/zeroshot_parallel/compot_compressor/compot_compressor_zeroshot.json
+	results/zeroshot_parallel/compot_compressor/hellaswag.json
+	results/zeroshot_parallel/compot_compressor/hellaswag_detailed.json
+	results/zeroshot_parallel/compot_compressor/piqa.json
+	results/zeroshot_parallel/compot_compressor/run_metadata.json
+	results/zeroshot_parallel/compot_compressor/winogrande.json
+	results/zeroshot_parallel/compot_compressor/winogrande_detailed.json
+	results/zeroshot_parallel/compressed_attention/arc_challenge.json
+	results/zeroshot_parallel/compressed_attention/arc_challenge_detailed.json
+	results/zeroshot_parallel/compressed_attention/arc_easy.json
+	results/zeroshot_parallel/compressed_attention/compressed_attention_zeroshot.json
+	results/zeroshot_parallel/compressed_attention/hellaswag.json
+	results/zeroshot_parallel/compressed_attention/hellaswag_detailed.json
+	results/zeroshot_parallel/compressed_attention/piqa.json
+	results/zeroshot_parallel/compressed_attention/run_metadata.json
+	results/zeroshot_parallel/compressed_attention/winogrande.json
+	results/zeroshot_parallel/compressed_attention/winogrande_detailed.json
+	results/zeroshot_parallel/compressed_mha_attention/arc_challenge_detailed.json
+	results/zeroshot_parallel/compressed_mha_attention/arc_easy_detailed.json
+	results/zeroshot_parallel/compressed_mha_attention/piqa_detailed.json
+	results/zeroshot_parallel/coopq_quantizer/
+	results/zeroshot_parallel/cosformer/
+	results/zeroshot_parallel/cr_compressor/
+	scripts/audit_gpt2_ascii.py
+	scripts/audit_gpt2_injection.py
+
+no changes added to commit (use "git add" and/or "git commit -a")
+Everything up-to-date
+[26/181] compressed_mha_attention | OK | 305.3s
+[27/181] coopq_quantizer | OK | 291.1s
+[28/181] cr_compressor | OK | 222.3s
+[29/181] cosformer | OK | 433.4s
+[30/181] decay_linear_attention | OK | 473.9s
+[AGG] Updating audit/ at 30 modules...
+[1] zeroshot_summary.csv: 37 modules
+[2] zeroshot_per_class.csv: 534 rows
+[3] zeroshot_per_sample.parquet: 83500 rows
+[4] zeroshot_missing.csv: 25 missing
+[DONE]
+[31/181] cur_moe_compressor | OK | 609.4s
+[32/181] dobi_svd | FAIL(15) | 1180.8s
+[33/181] cur_compressor | FAIL(15) | 1825.8s
+[34/181] eat | FAIL(4294967295) | 94.3s
+[35/181] dynamic_rank | FAIL(4294967295) | 123.3s
+[36/181] delta_kv | FAIL(4294967295) | 1651.9s
+[37/181] drone_compressor | FAIL(4294967295) | 1203.7s
+[38/181] enlighten_compressor | FAIL(4294967295) | 97.4s
+[39/181] expert_choice_moe | FAIL(4294967295) | 65.5s
+[40/181] entropy_budget_allocation | FAIL(4294967295) | 97.4s
+[AGG] Updating audit/ at 40 modules...
+[1] zeroshot_summary.csv: 48 modules
+[2] zeroshot_per_class.csv: 566 rows
+[3] zeroshot_per_sample.parquet: 88500 rows
+[4] zeroshot_missing.csv: 85 missing
+[DONE]
+[41/181] erc_svd | FAIL(4294967295) | 65.5s
+[42/181] factorised_matrix_state | FAIL(4294967295) | 41.7s
+[43/181] flap | FAIL(4294967295) | 41.7s
+[44/181] flash_attention3 | FAIL(4294967295) | 41.7s
+[45/181] faq_quantizer | FAIL(4294967295) | 41.8s
+[46/181] flash_attention3_fp8 | FAIL(4294967295) | 16.2s
+[47/181] full_attention | FAIL(4294967295) | 16.1s
+[48/181] frandi_compressor | FAIL(4294967295) | 16.1s
+[49/181] flat_llm | FAIL(4294967295) | 16.2s
+[50/181] fwsvd_compressor | FAIL(4294967295) | 15.1s
+[AGG] Updating audit/ at 50 modules...
+[1] zeroshot_summary.csv: 60 modules
+[2] zeroshot_per_class.csv: 566 rows
+[3] zeroshot_per_sample.parquet: 88500 rows
+[4] zeroshot_missing.csv: 157 missing
+[DONE]
+[GIT] Committing at 50 modules...
+fatal: pathspec 'audit/zeroshot_*.parquet' did not match any files
+On branch main
+Your branch is up to date with 'origin/main'.
+
+You are currently rebasing.
+  (all conflicts fixed: run "git rebase --continue")
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   audit/zeroshot_failures.csv
+	modified:   audit/zeroshot_missing.csv
+	modified:   audit/zeroshot_per_class.csv
+	modified:   audit/zeroshot_summary.csv
+	modified:   results/rank_sweep_agnews/block_transformer_hiba/rank_256/run.log
+	modified:   results/rank_sweep_mnli/cluster_attention/rank_256/run.log
+	modified:   results/zeroshot_parallel/drone_compressor/run.log
+	modified:   results/zeroshot_parallel/dynamic_rank/run.log
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	audit/master_queue.csv
+	results/c4_baselines/summary.csv
+	results/rank_sweep_agnews/aatc_xkv_compressor/
+	results/rank_sweep_agnews/ast_pruner/
+	results/rank_sweep_agnews/block_transformer_hiba/rank_384/
+	results/rank_sweep_agnews/block_transformer_hiba/rank_curve.csv
+	results/rank_sweep_mnli/ast_pruner/
+	results/rank_sweep_mnli/block_transformer_hiba/
+	results/rank_sweep_mnli/cluster_attention/rank_384/
+	results/rank_sweep_mnli/cluster_attention/rank_curve.csv
+	results/zeroshot_parallel/enlighten_compressor/
+	results/zeroshot_parallel/entropy_budget_allocation/
+	results/zeroshot_parallel/erc_svd/
+	results/zeroshot_parallel/expert_choice_moe/
+	results/zeroshot_parallel/factorised_matrix_state/
+	results/zeroshot_parallel/faq_quantizer/
+	results/zeroshot_parallel/flap/
+	results/zeroshot_parallel/flash_attention3/
+	results/zeroshot_parallel/flash_attention3_fp8/
+	results/zeroshot_parallel/flat_llm/
+	results/zeroshot_parallel/frandi_compressor/
+	results/zeroshot_parallel/full_attention/
+	results/zeroshot_parallel/fused_svd_kernel/
+	results/zeroshot_parallel/fusion_attn/
+	results/zeroshot_parallel/fwsvd_compressor/
+	results/zeroshot_parallel/galerkin_attention/
+	results/zeroshot_parallel/gated_delta_net/
+	results/zeroshot_parallel/gated_deltanet_block/
+	results/zeroshot_parallel/gated_linear_attention/
+	results/zeroshot_parallel/gfws_d_compressor/
+	scripts/audit_gpt2_ascii.py
+	scripts/audit_gpt2_injection.py
+
+no changes added to commit (use "git add" and/or "git commit -a")
+Everything up-to-date
+[HF] Uploading at 50 modules...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+[33mWarning: `huggingface-cli` is deprecated and no longer works. Use `hf` instead.
+[0m
+[90mHint: `hf` is already installed! Use it directly.
+[0m
+[90mHint: Examples:
+  hf auth login
+  hf download unsloth/gemma-4-31B-it-GGUF
+  hf upload my-cool-model . .
+  hf models ls --search "gemma"
+  hf repos ls --format json
+  hf jobs run python:3.12 python -c 'print("Hello!")'
+  hf --help
+[0m
+[51/181] galerkin_attention | FAIL(4294967295) | 15.1s
+[52/181] fused_svd_kernel | FAIL(4294967295) | 15.1s
+[53/181] fusion_attn | FAIL(4294967295) | 15.2s

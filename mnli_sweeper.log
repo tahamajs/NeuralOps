@@ -1,0 +1,21 @@
+[AUTO] parent_checkpoint = models\base_checkpoints\distilbert_mnli\finetuned_model.pt
+[VRAM] 2 parallel ranks -> 0.35 fraction each
+========================================================================
+RANK SWEEP RUNNER
+  modules         : ['adasvd_compressor', 'svd_llm_compressor', 'direct_svd', 'a3_compressor']
+  ranks           : [128, 256, 384]
+  model           : models/base_checkpoints/distilbert_mnli  (family=bert)
+  dataset         : mnli
+  parallel_ranks  : 2
+  max_vram_frac   : 0.35
+  batch_size      : 32
+  recovery_steps  : 50
+  output_base     : results/rank_sweep_mnli
+  fresh           : False
+========================================================================
+
+========================================================================
+Module: adasvd_compressor  |  3 ranks  |  parallel=2
+========================================================================
+[adasvd_compressor | r128] LAUNCH
+[adasvd_compressor | r256] LAUNCH
