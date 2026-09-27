@@ -467,23 +467,25 @@ class MambaBlock(nn.Module):
         B, d_inner, L = u.shape
         d_state = A.shape[1]
 
-        h = state if state is not None else torch.zeros(
-            B, d_inner, d_state, device=u.device, dtype=torch.float32
+        target_dtype = u.dtype
+        h = state.to(target_dtype) if state is not None else torch.zeros(
+            B, d_inner, d_state, device=u.device, dtype=target_dtype
         )
 
-        delta = F.softplus(delta)
-        delta_a = delta.unsqueeze(-1) * A.view(1, d_inner, 1, d_state)  # (B, d_inner, L, d_state)
-        delta_a = torch.exp(delta_a)
-        delta_b_u = delta.unsqueeze(-1) * B_ssm.permute(0, 2, 1).unsqueeze(1) \
-                    * u.unsqueeze(-1)  # (B, d_inner, L, d_state)
+        delta = F.softplus(delta).to(target_dtype)
+        delta_a = delta.unsqueeze(-1) * A.view(1, d_inner, 1, d_state).to(target_dtype)
+        delta_a = torch.exp(delta_a).to(target_dtype)
+        delta_b_u = (delta.unsqueeze(-1) * B_ssm.permute(0, 2, 1).unsqueeze(1).to(target_dtype)
+                     * u.unsqueeze(-1)).to(target_dtype)
 
         ys = []
+        C_in = C_ssm.to(target_dtype)
         for t in range(L):
             h = delta_a[:, :, t, :] * h + delta_b_u[:, :, t, :]
-            y_t = torch.einsum("bhd,bd->bh", h, C_ssm[:, :, t])
+            y_t = torch.einsum("bhd,bd->bh", h, C_in[:, :, t])
             ys.append(y_t)
         y = torch.stack(ys, dim=-1)  # (B, d_inner, L)
-        y = y + u * D.view(1, d_inner, 1)
+        y = y + u * D.view(1, d_inner, 1).to(target_dtype)
         return y, h
 
     def _parallel_scan(
@@ -585,8 +587,6 @@ class MambaBlock(nn.Module):
         if h_prev is None:
             y = self._parallel_scan(u_t, dt_t, A, B_t, C_t, self.D)
             h_next = None
-            if kwargs.get("use_cache", False):
-                _, h_next = self._recurrent_scan(u_t, dt_t, A, B_t, C_t, self.D, None)
         else:
             y, h_next = self._recurrent_scan(u_t, dt_t, A, B_t, C_t, self.D, h_prev)
 
