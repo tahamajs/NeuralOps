@@ -6,3 +6,4 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-27 09:28:18,668 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=8 (explicit_parallel=True, explicit_batch=True)
 2026-09-27 09:28:18,696 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=1)
 [ISOLATED] Launching tomoe (timeout=3600s) -> logs\isolated\tomoe_r16_roberta.log
+[ISOLATED] tomoe exited with code 0 in 90.5s
