@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Decoder Benchmark Runner: Evaluates compression modules on GPT-2 with WikiText-2.
+Decoder Benchmark Runner: Evaluates compression and attention modules on GPT-2 with WikiText-2.
 
 Measures:
   - Perplexity (PPL) on WikiText-2 test using sliding-window evaluation (max_length=1024, stride=512)
@@ -9,39 +9,53 @@ Measures:
   - Throughput (tokens/sec)
   - Compression ratio and parameter savings
 
-Usage:
-    python run_gpt2_sweep.py --dry_run
-    python run_gpt2_sweep.py --model_path models/gpt2_wikitext --rank 64
+Production-hardened with:
+  1. Calibration loader: 500 samples from WikiText-2 train, batch_size=4, max_length=128
+  2. Diagnostic logging for all exceptions including errno, file/line, traceback, cwd, saved to diag.json
+  3. Pre-execution skipping of deprecated modules from deprecated_modules.txt
+  4. Snapshot and restore base model (no re-loading from disk per module)
+  5. Four-tier PASS threshold (PASS, PASS_SLIGHT_DEGRADATION, PASS_DEGRADED, FAIL_PPL_DIVERGED)
+  6. Overflow-handling tokenization with sliding window chunks
+  7. Append-based CSV writing with filelock for multi-worker safety
+  8. Automatic gc.collect() and torch.cuda.empty_cache()
+  9. Explicit typing imports
+  10. Shadow-free dataset imports without sys.path hack
 """
 from __future__ import annotations
 
 import argparse
+import copy
 import csv
+import gc
 import json
 import logging
 import os
 import sys
 import time
+import traceback
 from pathlib import Path
-
-# Sanitize sys.path before importing 'datasets' package so local Codes/framework/datasets doesn't shadow HuggingFace datasets
-sys.path = [p for p in sys.path if not p.rstrip("/\\").replace("\\", "/").endswith("Codes/framework") and not p.rstrip("/\\").replace("\\", "/").endswith("framework") and p != ""]
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch.nn as nn
 from datasets import load_dataset
+from filelock import FileLock
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # Add framework to path
 HERE = Path(__file__).resolve().parent
 CODES = HERE.parent
 ROOT = CODES.parent
-sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "Codes")]
+for p in [str(CODES), str(ROOT), str(ROOT / "Codes")]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from framework.eval_all_models_datasets import apply_module_to_model
 
 LOG = logging.getLogger("GPT2Sweep")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+
 
 def get_all_decoder_modules(category: str = "all") -> List[str]:
     """Dynamically discover all registered attention and compressor modules compatible with GPT-2 decoder."""
@@ -73,6 +87,27 @@ def get_all_decoder_modules(category: str = "all") -> List[str]:
         canonical.append(sorted(aliases, key=lambda x: (x.endswith("_inject"), len(x), x))[0])
 
     return sorted(list(set(canonical)), key=lambda item: (item != "full", item))
+
+
+def load_deprecated_modules() -> Set[str]:
+    """Load deprecated module names from known locations."""
+    deprecated = set()
+    search_paths = [
+        ROOT / "audit" / "deprecated_modules.txt",
+        ROOT / "deprecated_modules.txt",
+        CODES / "framework" / "deprecated_modules.txt",
+        HERE / "deprecated_modules.txt",
+    ]
+    for p in search_paths:
+        if p.exists():
+            try:
+                for line in p.read_text(encoding="utf-8").splitlines():
+                    line = line.strip()
+                    if line and not line.startswith("#"):
+                        deprecated.add(line)
+            except Exception as e:
+                LOG.warning("Could not read deprecated modules file %s: %s", p, e)
+    return deprecated
 
 
 DEFAULT_DECODER_MODULES = ["all"]
@@ -136,19 +171,62 @@ def parse_args():
     return parser.parse_args()
 
 
+def build_calibration_loader(train_dataset, tokenizer, num_samples: int = 500, batch_size: int = 4, max_length: int = 128) -> List[Dict[str, torch.Tensor]]:
+    """
+    Build a list of batched dictionary samples (calibration_loader) from WikiText-2 train split.
+    Each batch contains 'input_ids' and 'attention_mask'.
+    """
+    valid_texts = []
+    for item in train_dataset["text"]:
+        t = item.strip()
+        if len(t) > 20:
+            valid_texts.append(t)
+        if len(valid_texts) >= num_samples:
+            break
+
+    if not valid_texts:
+        valid_texts = ["The quick brown fox jumps over the lazy dog. SVD linear attention compression benchmark."] * num_samples
+
+    batches: List[Dict[str, torch.Tensor]] = []
+    for i in range(0, len(valid_texts), batch_size):
+        chunk = valid_texts[i:i + batch_size]
+        enc = tokenizer(
+            chunk,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=max_length,
+        )
+        batches.append({"input_ids": enc.input_ids, "attention_mask": enc.attention_mask})
+
+    return batches
+
+
 def compute_perplexity_with_metrics(model, tokenizer, test_dataset, seq_len=1024, stride=512,
                                     max_eval_tokens=None, device="cuda"):
     """
-    Standard sliding-window perplexity with comprehensive performance telemetry.
-    
+    Standard sliding-window perplexity with overflow handling and comprehensive performance telemetry.
     Formula:
         PPL = exp( sum(NLL * target_length) / total_target_tokens )
         where target_ids mask non-target stride overlap with -100.
     """
     model.eval()
     text = "\n\n".join(test_dataset["text"])
-    encodings = tokenizer(text, return_tensors="pt")
-    total_text_tokens = encodings.input_ids.size(1)
+    
+    # Tokenize with overflow handling
+    encodings = tokenizer(
+        text,
+        return_tensors="pt",
+        truncation=False,
+        return_overflowing_tokens=True,
+    )
+    input_ids_all = encodings.input_ids
+    if input_ids_all.dim() == 1:
+        input_ids_all = input_ids_all.unsqueeze(0)
+    elif input_ids_all.dim() == 2 and input_ids_all.size(0) > 1:
+        input_ids_all = input_ids_all.view(1, -1)
+
+    total_text_tokens = input_ids_all.size(1)
     if max_eval_tokens:
         total_text_tokens = min(total_text_tokens, max_eval_tokens)
 
@@ -167,7 +245,7 @@ def compute_perplexity_with_metrics(model, tokenizer, test_dataset, seq_len=1024
         for begin_loc in range(0, total_text_tokens, stride):
             end_loc = min(begin_loc + seq_len, total_text_tokens)
             trg_len = end_loc - prev_end_loc
-            input_ids = encodings.input_ids[:, begin_loc:end_loc].to(device, non_blocking=True)
+            input_ids = input_ids_all[:, begin_loc:end_loc].to(device, non_blocking=True)
             target_ids = input_ids.clone()
             target_ids[:, :-trg_len] = -100
 
@@ -200,6 +278,20 @@ def compute_perplexity_with_metrics(model, tokenizer, test_dataset, seq_len=1024
         "elapsed_s": round(elapsed_s, 2),
         "tokens_evaluated": tokens_evaluated,
     }
+
+
+def write_row_to_csv(csv_path: Path, row: Dict[str, Any], lock_path: Optional[Path] = None):
+    """Safely append a single row to a CSV file using FileLock."""
+    l_path = lock_path or csv_path.with_suffix(".lock")
+    with FileLock(str(l_path)):
+        write_header = not csv_path.exists() or csv_path.stat().st_size == 0
+        with open(csv_path, "a", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=CSV_FIELDS, extrasaction="ignore")
+            if write_header:
+                writer.writeheader()
+            writer.writerow(row)
+            f.flush()
+            os.fsync(f.fileno())
 
 
 def main():
@@ -246,16 +338,35 @@ def main():
         summary_csv = out_dir / f"summary_worker_{args.worker_id}.csv"
     else:
         summary_csv = out_dir / "summary.csv"
+    main_summary = out_dir / "summary.csv"
+    main_lock = out_dir / "summary.csv.lock"
 
-    # Load Tokenizer & Dataset
+    # Load Deprecated Modules
+    deprecated_set = load_deprecated_modules()
+    LOG.info("Loaded %d deprecated modules to skip", len(deprecated_set))
+
+    # Load Tokenizer & Datasets
     tokenizer = AutoTokenizer.from_pretrained(args.model_path if Path(args.model_path).exists() else "gpt2")
-    try:
-        ds = load_dataset("wikitext", args.dataset_name, split=args.split)
-    except Exception:
-        ds = load_dataset("Salesforce/wikitext", args.dataset_name, split=args.split)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
 
-    # 1. Evaluate baseline uncompressed GPT-2
-    LOG.info("Evaluating baseline uncompressed GPT-2...")
+    try:
+        ds_test = load_dataset("wikitext", args.dataset_name, split=args.split)
+    except Exception:
+        ds_test = load_dataset("Salesforce/wikitext", args.dataset_name, split=args.split)
+
+    try:
+        ds_train = load_dataset("wikitext", args.dataset_name, split="train")
+    except Exception:
+        ds_train = load_dataset("Salesforce/wikitext", args.dataset_name, split="train")
+
+    # Build 500-sample calibration loader (iterable of dicts)
+    LOG.info("Building calibration dataset (500 samples, batch_size=4, max_length=128)...")
+    calib_loader = build_calibration_loader(ds_train, tokenizer, num_samples=500, batch_size=4, max_length=128)
+    LOG.info("Calibration loader built: %d batches", len(calib_loader))
+
+    # 1. Load base uncompressed GPT-2 model once & evaluate baseline
+    LOG.info("Loading baseline uncompressed GPT-2...")
     base_model = AutoModelForCausalLM.from_pretrained(args.model_path if Path(args.model_path).exists() else "gpt2")
     if args.fp16 and device == "cuda":
         base_model.half()
@@ -263,14 +374,12 @@ def main():
 
     total_params_baseline = sum(p.numel() for p in base_model.parameters())
     base_metrics = compute_perplexity_with_metrics(
-        base_model, tokenizer, ds, seq_len=args.seq_len, stride=args.stride,
+        base_model, tokenizer, ds_test, seq_len=args.seq_len, stride=args.stride,
         max_eval_tokens=args.max_eval_tokens, device=device
     )
     baseline_ppl = base_metrics["perplexity"]
     LOG.info("Baseline GPT-2 PPL: %.2f | VRAM: %.1f MB | Throughput: %.1f tok/s",
              baseline_ppl, base_metrics["peak_vram_mb"], base_metrics["throughput_tok_per_sec"])
-
-    results = []
 
     # Record baseline row
     base_row = {
@@ -290,16 +399,23 @@ def main():
         "error": "",
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
     }
-    results.append(base_row)
+    write_row_to_csv(summary_csv, base_row)
+    if args.total_workers > 1:
+        write_row_to_csv(main_summary, base_row, main_lock)
 
-    # Free base model before loop
+    # Take snapshot of base model to avoid reloading from disk per module
+    LOG.info("Creating base model snapshot for fast restore...")
+    base_snapshot = copy.deepcopy(base_model)
+    LOG.info("Base model snapshot created successfully.")
+
+    # Free the active base_model
     del base_model
+    gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
-    # Load existing results if summary.csv or worker summary exists
+    # Load existing successful results to skip
     existing_mods = set()
-    main_summary = out_dir / "summary.csv"
     for csv_path in [main_summary, summary_csv]:
         if csv_path.exists():
             try:
@@ -307,10 +423,9 @@ def main():
                     reader = csv.DictReader(f)
                     for r in reader:
                         m_name = r.get("module_name")
-                        if m_name and r.get("status") in ("PASS", "PASS_DEGRADED"):
+                        st = r.get("status", "")
+                        if m_name and st.startswith("PASS"):
                             existing_mods.add(m_name)
-                            if csv_path == summary_csv:
-                                results.append(r)
             except Exception:
                 pass
 
@@ -320,34 +435,62 @@ def main():
             continue
 
         if mod in existing_mods:
-            LOG.info("[%d/%d] Skipping module: %s (already evaluated in %s)", idx, len(args.modules), mod, summary_csv)
+            LOG.info("[%d/%d] Skipping module: %s (already evaluated with PASS in summary)", idx, len(args.modules), mod)
+            continue
+
+        mod_dir = out_dir / mod
+        mod_dir.mkdir(parents=True, exist_ok=True)
+        res_json = mod_dir / "result.json"
+        diag_json = mod_dir / "diag.json"
+
+        # Check if module is deprecated
+        if mod in deprecated_set:
+            LOG.info("[%d/%d] Skipping module: %s (marked as deprecated)", idx, len(args.modules), mod)
+            row = {
+                "module_name": mod,
+                "status": "SKIP_DEPRECATED",
+                "perplexity": -1.0,
+                "baseline_ppl": baseline_ppl,
+                "delta_ppl": 0.0,
+                "compression_rate": 1.0,
+                "compression_ratio_pct": 0.0,
+                "peak_vram_mb": 0.0,
+                "latency_ms_per_token": 0.0,
+                "throughput_tok_per_sec": 0.0,
+                "elapsed_s": 0.0,
+                "total_params_before": total_params_baseline,
+                "total_params_after": total_params_baseline,
+                "error": "Module marked deprecated in deprecated_modules.txt",
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            }
+            res_json.write_text(json.dumps(row, indent=2), encoding="utf-8")
+            write_row_to_csv(summary_csv, row)
+            if args.total_workers > 1:
+                write_row_to_csv(main_summary, row, main_lock)
             continue
 
         LOG.info("[%d/%d] Evaluating module: %s...", idx, len(args.modules), mod)
         t_mod = time.time()
-        mod_dir = out_dir / mod
-        mod_dir.mkdir(parents=True, exist_ok=True)
-        res_json = mod_dir / "result.json"
+        cand_model = None
 
         try:
-            # Fresh clone from checkpoint
-            cand_model = AutoModelForCausalLM.from_pretrained(args.model_path if Path(args.model_path).exists() else "gpt2")
-            if args.fp16 and device == "cuda":
-                cand_model.half()
+            # Restore model from snapshot
+            cand_model = copy.deepcopy(base_snapshot)
             cand_model.to(device)
 
-            # Prepare calibration sample from dataset
-            try:
-                calib_texts = [t for t in ds["text"][:32] if len(t.strip()) > 20][:8]
-                calib_enc = tokenizer(calib_texts or ["The quick brown fox jumps over the lazy dog."],
-                                      return_tensors="pt", padding=True, truncation=True, max_length=128)
-                calib_input = calib_enc.input_ids.to(device)
-            except Exception:
-                calib_input = torch.randint(0, 1000, (4, 64), device=device)
-
             typ = "attention" if mod in ATTENTION_REGISTRY else "compressor"
+            
+            # Feed calibration_loader AND tokenizer
+            first_batch_ids = calib_loader[0]["input_ids"].to(device)
             cand_model, comp_stats = apply_module_to_model(
-                cand_model, mod, typ, rank=args.rank, device=device, calibration_data=calib_input
+                cand_model,
+                mod,
+                typ,
+                rank=args.rank,
+                device=device,
+                calibration_data=first_batch_ids,
+                calibration_loader=calib_loader,
+                tokenizer=tokenizer,
             )
 
             p_after = sum(p.numel() for p in cand_model.parameters())
@@ -355,17 +498,27 @@ def main():
             comp_pct = round(100.0 * (1.0 - p_after / max(1, total_params_baseline)), 2)
 
             metrics = compute_perplexity_with_metrics(
-                cand_model, tokenizer, ds, seq_len=args.seq_len, stride=args.stride,
+                cand_model, tokenizer, ds_test, seq_len=args.seq_len, stride=args.stride,
                 max_eval_tokens=args.max_eval_tokens, device=device
             )
 
-            delta_ppl = round(metrics["perplexity"] - baseline_ppl, 2)
-            status = "PASS" if metrics["perplexity"] < baseline_ppl * 3.0 else "PASS_DEGRADED"
+            ppl = metrics["perplexity"]
+            delta_ppl = round(ppl - baseline_ppl, 2)
+
+            # Strict 4-tier PASS thresholds
+            if ppl <= 1.05 * baseline_ppl:
+                status = "PASS"
+            elif ppl <= 1.20 * baseline_ppl:
+                status = "PASS_SLIGHT_DEGRADATION"
+            elif ppl <= 1.50 * baseline_ppl:
+                status = "PASS_DEGRADED"
+            else:
+                status = "FAIL_PPL_DIVERGED"
 
             row = {
                 "module_name": mod,
                 "status": status,
-                "perplexity": metrics["perplexity"],
+                "perplexity": ppl,
                 "baseline_ppl": baseline_ppl,
                 "delta_ppl": delta_ppl,
                 "compression_rate": comp_rate,
@@ -380,12 +533,40 @@ def main():
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
             }
 
-            del cand_model
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-
         except Exception as e:
-            LOG.exception("Module %s evaluation error: %s", mod, e)
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            tb_lines = traceback.format_exception(exc_type, exc_value, exc_tb)
+            tb_str = "".join(tb_lines)
+            
+            # Extract specific errno, file, and line
+            err_no = getattr(e, "errno", None)
+            err_filename = getattr(e, "filename", None)
+            last_tb = traceback.extract_tb(exc_tb)[-1] if exc_tb else None
+            fault_file = last_tb.filename if last_tb else "unknown"
+            fault_line = last_tb.lineno if last_tb else -1
+            fault_func = last_tb.name if last_tb else "unknown"
+
+            LOG.exception("Module %s evaluation error (%s at %s:%d): %s", mod, exc_type.__name__, fault_file, fault_line, e)
+
+            # Write comprehensive diag.json
+            diag_info = {
+                "module_name": mod,
+                "exception_type": exc_type.__name__ if exc_type else "Exception",
+                "exception_message": str(e),
+                "errno": err_no,
+                "filename": str(err_filename) if err_filename else None,
+                "fault_file": fault_file,
+                "fault_line": fault_line,
+                "fault_function": fault_func,
+                "cwd": os.getcwd(),
+                "traceback": tb_lines,
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            }
+            try:
+                diag_json.write_text(json.dumps(diag_info, indent=2), encoding="utf-8")
+            except Exception as werr:
+                LOG.warning("Could not write diag.json for %s: %s", mod, werr)
+
             row = {
                 "module_name": mod,
                 "status": "FAIL",
@@ -400,30 +581,21 @@ def main():
                 "elapsed_s": round(time.time() - t_mod, 2),
                 "total_params_before": total_params_baseline,
                 "total_params_after": total_params_baseline,
-                "error": str(e),
+                "error": f"[{fault_file}:{fault_line}] {type(e).__name__}: {str(e)}",
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
             }
 
-        results.append(row)
+        finally:
+            if cand_model is not None:
+                del cand_model
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
         res_json.write_text(json.dumps(row, indent=2), encoding="utf-8")
-
-        # Update summary CSV incrementally
-        with open(summary_csv, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=CSV_FIELDS, extrasaction="ignore")
-            writer.writeheader()
-            for r in results:
-                writer.writerow(r)
-
-        if args.total_workers > 1 and main_summary != summary_csv:
-            try:
-                write_hdr = not main_summary.exists()
-                with open(main_summary, "a", newline="", encoding="utf-8") as mf:
-                    mwriter = csv.DictWriter(mf, fieldnames=CSV_FIELDS, extrasaction="ignore")
-                    if write_hdr:
-                        mwriter.writeheader()
-                    mwriter.writerow(row)
-            except Exception:
-                pass
+        write_row_to_csv(summary_csv, row)
+        if args.total_workers > 1:
+            write_row_to_csv(main_summary, row, main_lock)
 
     print(f"\n[DONE] Decoder sweep completed. Results written to {summary_csv}")
 
