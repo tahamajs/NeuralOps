@@ -1,0 +1,17 @@
+{
+  "module_name": "adasplash",
+  "status": "PASS",
+  "perplexity": 36.55,
+  "baseline_ppl": 21.71,
+  "delta_ppl": 14.84,
+  "compression_rate": 0.9635,
+  "compression_ratio_pct": -3.79,
+  "peak_vram_mb": 861.21,
+  "latency_ms_per_token": 0.989,
+  "throughput_tok_per_sec": 1011.6,
+  "elapsed_s": 98.85,
+  "total_params_before": 124439808,
+  "total_params_after": 129158400,
+  "error": "",
+  "timestamp": "2026-09-27T09:46:05"
+}

@@ -1,0 +1,17 @@
+{
+  "module_name": "compot_compressor_class",
+  "status": "PASS_DEGRADED",
+  "perplexity": 5208.93,
+  "baseline_ppl": 21.71,
+  "delta_ppl": 5187.22,
+  "compression_rate": 1.6747,
+  "compression_ratio_pct": 40.29,
+  "peak_vram_mb": 824.64,
+  "latency_ms_per_token": 0.119,
+  "throughput_tok_per_sec": 8413.5,
+  "elapsed_s": 11.89,
+  "total_params_before": 124439808,
+  "total_params_after": 74304768,
+  "error": "",
+  "timestamp": "2026-09-27T09:58:22"
+}

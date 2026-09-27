@@ -1,0 +1,17 @@
+{
+  "module_name": "erc",
+  "status": "PASS_DEGRADED",
+  "perplexity": 3138.89,
+  "baseline_ppl": 21.71,
+  "delta_ppl": 3117.18,
+  "compression_rate": 3.0303,
+  "compression_ratio_pct": 67.0,
+  "peak_vram_mb": 759.27,
+  "latency_ms_per_token": 0.087,
+  "throughput_tok_per_sec": 11530.8,
+  "elapsed_s": 8.67,
+  "total_params_before": 124439808,
+  "total_params_after": 41064960,
+  "error": "",
+  "timestamp": "2026-09-27T10:14:36"
+}

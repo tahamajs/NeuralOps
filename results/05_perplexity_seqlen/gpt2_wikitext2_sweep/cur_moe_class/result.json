@@ -1,0 +1,17 @@
+{
+  "module_name": "cur_moe_class",
+  "status": "PASS_DEGRADED",
+  "perplexity": 3021.58,
+  "baseline_ppl": 21.71,
+  "delta_ppl": 2999.87,
+  "compression_rate": 1.5651,
+  "compression_ratio_pct": 36.11,
+  "peak_vram_mb": 838.69,
+  "latency_ms_per_token": 0.132,
+  "throughput_tok_per_sec": 7571.6,
+  "elapsed_s": 13.21,
+  "total_params_before": 124439808,
+  "total_params_after": 79506688,
+  "error": "",
+  "timestamp": "2026-09-27T10:03:49"
+}

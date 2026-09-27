@@ -1,0 +1,17 @@
+{
+  "module_name": "enlighten",
+  "status": "PASS_DEGRADED",
+  "perplexity": 117.11,
+  "baseline_ppl": 21.71,
+  "delta_ppl": 95.4,
+  "compression_rate": 1.0,
+  "compression_ratio_pct": 0.0,
+  "peak_vram_mb": 926.89,
+  "latency_ms_per_token": 0.073,
+  "throughput_tok_per_sec": 13654.9,
+  "elapsed_s": 7.32,
+  "total_params_before": 124439808,
+  "total_params_after": 124439808,
+  "error": "",
+  "timestamp": "2026-09-27T10:13:31"
+}

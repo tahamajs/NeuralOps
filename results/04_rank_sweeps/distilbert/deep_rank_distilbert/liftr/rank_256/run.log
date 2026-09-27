@@ -6,4 +6,4 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-27 10:11:26,931 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=8 (explicit_parallel=True, explicit_batch=True)
 2026-09-27 10:11:26,955 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=1)
 [ISOLATED] Launching liftr (timeout=3600s) -> logs\isolated\liftr_r256_bert.log
-[ISOLATED] liftr exited with code 0 in 63.1s
+[ISOLATED] liftr exited with code 0 in 54.4s

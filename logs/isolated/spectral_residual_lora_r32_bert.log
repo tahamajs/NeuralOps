@@ -63,3 +63,16 @@ D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning
 2026-09-27 09:28:24,667 [INFO] QwenQualitySweep: Step 40/50 took 0.21s (loss=0.4091, bs=8, micro=8)
 2026-09-27 09:28:25,715 [INFO] QwenQualitySweep: Step 45/50 took 0.17s (loss=0.4419, bs=8, micro=8)
 2026-09-27 09:28:26,627 [INFO] QwenQualitySweep: Step 50/50 took 0.17s (loss=0.6501, bs=8, micro=8)
+2026-09-27 09:28:35,192 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\distilbert\deep_rank_distilbert\spectral_residual_lora\rank_32\distilbert-base-uncased-finetuned-sst-2-english_spectral_residual_lora_full_metrics.json
+2026-09-27 09:28:35,380 [INFO] QwenQualitySweep: [1/1] spectral_residual_lora -> PASS 61.12% (F1: 0.7149, Peak VRAM: 225.1 MB)
+2026-09-27 09:28:35,382 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\04_rank_sweeps\distilbert\deep_rank_distilbert\spectral_residual_lora\rank_32\checkpoints\spectral_residual_lora. Automated export will be handled post-sweep by orchestrator.
+2026-09-27 09:28:35,382 [INFO] QwenQualitySweep: [1/1] spectral_residual_lora Timing: eval_time=24.30s
+2026-09-27 09:28:35,383 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-27 09:28:35,716 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 09:28:35,716 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert-base-uncased-finetuned-sst-2-english on sst2)
+2026-09-27 09:28:35,730 [INFO] QwenQualitySweep: 
+                                 Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+spectral_residual_lora (efficient-attn)   PASS   61.12%   -29.48% 0.7149                  0            2.41x  225.1 MB               7.66              8.79
+2026-09-27 09:28:35,730 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:171: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

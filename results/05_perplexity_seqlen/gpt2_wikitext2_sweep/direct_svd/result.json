@@ -1,0 +1,17 @@
+{
+  "module_name": "direct_svd",
+  "status": "PASS_DEGRADED",
+  "perplexity": 3550.51,
+  "baseline_ppl": 21.71,
+  "delta_ppl": 3528.8,
+  "compression_rate": 2.5426,
+  "compression_ratio_pct": 60.67,
+  "peak_vram_mb": 774.3,
+  "latency_ms_per_token": 0.126,
+  "throughput_tok_per_sec": 7959.4,
+  "elapsed_s": 12.56,
+  "total_params_before": 124439808,
+  "total_params_after": 48942336,
+  "error": "",
+  "timestamp": "2026-09-27T10:09:46"
+}

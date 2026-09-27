@@ -1,0 +1,17 @@
+{
+  "module_name": "dobi_class",
+  "status": "PASS_DEGRADED",
+  "perplexity": 3295.78,
+  "baseline_ppl": 21.71,
+  "delta_ppl": 3274.07,
+  "compression_rate": 1.6747,
+  "compression_ratio_pct": 40.29,
+  "peak_vram_mb": 825.28,
+  "latency_ms_per_token": 0.135,
+  "throughput_tok_per_sec": 7393.8,
+  "elapsed_s": 13.52,
+  "total_params_before": 124439808,
+  "total_params_after": 74307072,
+  "error": "",
+  "timestamp": "2026-09-27T10:11:54"
+}

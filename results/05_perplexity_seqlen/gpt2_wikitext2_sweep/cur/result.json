@@ -1,0 +1,17 @@
+{
+  "module_name": "cur",
+  "status": "PASS_DEGRADED",
+  "perplexity": 3792.29,
+  "baseline_ppl": 21.71,
+  "delta_ppl": 3770.58,
+  "compression_rate": 2.176,
+  "compression_ratio_pct": 54.05,
+  "peak_vram_mb": 789.68,
+  "latency_ms_per_token": 0.122,
+  "throughput_tok_per_sec": 8201.1,
+  "elapsed_s": 12.19,
+  "total_params_before": 124439808,
+  "total_params_after": 57186304,
+  "error": "",
+  "timestamp": "2026-09-27T10:03:11"
+}

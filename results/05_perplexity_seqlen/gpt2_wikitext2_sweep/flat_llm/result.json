@@ -1,0 +1,17 @@
+{
+  "module_name": "flat_llm",
+  "status": "PASS_DEGRADED",
+  "perplexity": 4015.21,
+  "baseline_ppl": 21.71,
+  "delta_ppl": 3993.5,
+  "compression_rate": 1.2576,
+  "compression_ratio_pct": 20.48,
+  "peak_vram_mb": 876.89,
+  "latency_ms_per_token": 0.09,
+  "throughput_tok_per_sec": 11106.1,
+  "elapsed_s": 9.0,
+  "total_params_before": 124439808,
+  "total_params_after": 98951124,
+  "error": "",
+  "timestamp": "2026-09-27T10:15:57"
+}
