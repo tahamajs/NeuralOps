@@ -658,7 +658,6 @@ def apply_module_to_model(
                             break
                     except (TypeError, ValueError):
                         continue
-                            candidate = None
 
                 if candidate is not None:
                     res_mod = _invoke_compressor_instance(candidate)
