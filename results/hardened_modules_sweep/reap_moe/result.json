@@ -1,0 +1,17 @@
+{
+  "module_name": "reap_moe",
+  "status": "FAIL_PPL_DIVERGED",
+  "perplexity": 28759.26,
+  "baseline_ppl": 21.71,
+  "delta_ppl": 28737.55,
+  "compression_rate": 0.937,
+  "compression_ratio_pct": -6.73,
+  "peak_vram_mb": 1587.42,
+  "latency_ms_per_token": 0.23,
+  "throughput_tok_per_sec": 4343.1,
+  "elapsed_s": 23.03,
+  "total_params_before": 124439808,
+  "total_params_after": 132812544,
+  "error": "",
+  "timestamp": "2026-09-27T13:40:57"
+}
