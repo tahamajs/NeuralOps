@@ -788,5 +788,45 @@
     "accuracy_pct": 90.6,
     "error": "base_before=66955010 base_after=67250696 delta=+0.44%",
     "timestamp": "2026-09-27T05:59:02.205893"
+  },
+  {
+    "module": "reap_moe",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 86.81,
+    "error": "base_before=66955010 base_after=70551554 delta=+5.37%",
+    "timestamp": "2026-09-27T05:59:45.433222"
+  },
+  {
+    "module": "regla",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 81.77,
+    "error": "base_before=66955010 base_after=70517000 delta=+5.32%",
+    "timestamp": "2026-09-27T05:59:58.536480"
+  },
+  {
+    "module": "replace",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.94,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T06:00:22.527523"
+  },
+  {
+    "module": "regla_class",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 81.77,
+    "error": "base_before=66955010 base_after=70517000 delta=+5.32%",
+    "timestamp": "2026-09-27T06:00:38.697672"
   }
 ]
