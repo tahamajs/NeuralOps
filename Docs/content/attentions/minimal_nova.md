@@ -153,7 +153,7 @@ To mitigate the quadratic memory overhead associated with attention logit materi
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **86.24%** | -4.82% | 0.8732 | 1.15x | 6 | [svd-linear-attention-distilbert-sst2-minimal-nova](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-minimal-nova) | 2026-09-19 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **86.70%** | -3.90% | 0.8753 | 1.15x | 0 | [svd-linear-attention-distilbert-sst2-minimal-nova](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-minimal-nova) | 2026-09-27 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **55.20%** | -26.60% | 0.5450 | 1.15x | 0 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **92.00%** | -2.30% | 0.9171 | 1.15x | 0 | [svd-linear-attention-distilbert-agnews-full-minimal-nova](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-minimal-nova) | 2026-09-19 |
 
