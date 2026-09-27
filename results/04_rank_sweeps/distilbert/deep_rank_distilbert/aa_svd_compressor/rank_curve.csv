@@ -1,0 +1,3 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+16,aa_svd_compressor,PASS,90.71,0.9093,0.3047,345.83,1.0461,4.4,24,0,71.4,66955010,64005890
+32,aa_svd_compressor,PASS,90.71,0.9093,0.3047,345.83,1.0461,4.4,24,0,71.4,66955010,64005890

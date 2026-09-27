@@ -1,0 +1,3 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+16,rpca,PASS_NO_COMPRESSION,90.94,0.9127,0.5575,302.94,1.0,0.0,0,24,107.6,66955010,66955010
+32,rpca,PASS_NO_COMPRESSION,90.94,0.9127,0.5575,302.94,1.0,0.0,0,24,107.5,66955010,66955010

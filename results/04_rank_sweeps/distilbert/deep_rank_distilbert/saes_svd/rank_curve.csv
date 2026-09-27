@@ -1,0 +1,3 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+16,saes_svd,PASS_NO_COMPRESSION,90.71,0.9109,0.6691,302.94,1.0,0.0,0,0,86.0,66955010,66955010
+32,saes_svd,PASS_NO_COMPRESSION,90.71,0.9109,0.6691,302.94,1.0,0.0,0,0,86.5,66955010,66955010

@@ -1,0 +1,9 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+2026-09-27 07:51:10,784 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0% (leaving 5.20 GB headroom)
+2026-09-27 07:51:10,784 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-27 07:51:10,786 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=8 (explicit_parallel=True, explicit_batch=True)
+2026-09-27 07:51:10,812 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=1)
+[ISOLATED] Launching erc_svd (timeout=3600s) -> logs\isolated\erc_svd_r16_roberta.log
+[ISOLATED] erc_svd exited with code 0 in 66.7s

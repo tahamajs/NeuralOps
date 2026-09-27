@@ -1,0 +1,3 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+16,frandi_compressor,PASS,72.82,0.7334,0.5657,211.86,2.2896,56.32,33,3,67.6,66955010,29243138
+32,frandi_compressor,PASS,68.92,0.7441,0.5709,210.51,2.4669,59.46,36,0,67.6,66955010,27141890

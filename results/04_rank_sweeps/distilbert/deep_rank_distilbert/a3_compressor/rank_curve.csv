@@ -1,0 +1,3 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+16,a3_compressor,PASS,89.91,0.9037,0.3238,341.09,1.0716,6.68,24,0,12.86,66955010,62482178
+32,a3_compressor,PASS,89.91,0.9037,0.3238,341.09,1.0716,6.68,24,0,12.72,66955010,62482178
