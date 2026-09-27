@@ -1391,7 +1391,7 @@ def _auto_parallel_and_batch(
             parallel = 1
 
     if free_gb < 3.0 and torch.cuda.is_available():
-        logger.info("Free VRAM < 3.0 GB (%.2f GB) — sleeping 10s for VRAM to settle...", free_gb)
+        LOG.info("Free VRAM < 3.0 GB (%.2f GB) — sleeping 10s for VRAM to settle...", free_gb)
         time.sleep(10)
 
     return parallel, batch
