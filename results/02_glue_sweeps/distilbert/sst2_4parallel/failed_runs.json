@@ -718,5 +718,25 @@
     "accuracy_pct": 90.6,
     "error": "note: zero compressed layers, zero injected layers, model unchanged",
     "timestamp": "2026-09-27T05:54:30.239138"
+  },
+  {
+    "module": "nli_softmax_class",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.94,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T05:55:08.420084"
+  },
+  {
+    "module": "nmf",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "NameError: name 'logger' is not defined",
+    "timestamp": "2026-09-27T05:55:28.133240"
   }
 ]
