@@ -1,5 +1,10 @@
-module_name,status,perplexity,baseline_ppl,delta_ppl,compression_rate,compression_ratio_pct,peak_vram_mb,latency_ms_per_token,throughput_tok_per_sec,elapsed_s,total_params_before,total_params_after,error,timestamp
-full,PASS,21.71,21.71,0.0,1.0,0.0,916.17,0.078,12818.9,7.8,124439808,124439808,,2026-09-27T11:09:13
-adaptive_svd,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,42.42,124439808,124439808,"expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",2026-09-27T11:09:55
-aegis_spectron_fp8,PASS_DEGRADED,1814.89,21.71,1793.18,1.1278,11.33,837.64,1.475,678.1,147.46,124439808,110339508,,2026-09-27T11:12:31
-aegis_v5,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,139.64,124439808,124439808,expected scalar type Half but found Float,2026-09-27T11:14:51
+module_name,status,perplexity,baseline_ppl,delta_ppl,ppl_ratio,compression_rate,compression_ratio_pct,total_params_before,total_params_after,delta_params,num_injected_attention_layers,num_compressed_layers,num_fallback_layers,lora_params,calibration_time_s,recovery_time_s,peak_vram_mb,latency_ms_per_token,throughput_tok_per_sec,eval_elapsed_s,wall_elapsed_s,error,timestamp
+full,PASS,21.71,21.71,0.0,,1.0,0.0,124439808,124439808,,,,,,,,916.17,0.078,12818.9,,,,2026-09-27T11:09:13
+adaptive_sparse,PASS,21.7077,21.71,-0.0023,0.9999,0.9906,-0.95,124439808,125619612,1179804,12,0,0,0,0.379,0.0,847.94,0.7581,1319.03,75.813,78.661,,2026-09-27T15:23:01
+adaptive_svd,FAIL_PPL_DIVERGED,403.945,21.71,382.235,18.6064,1.2197,18.01,124439808,102026496,-22413312,12,0,0,0,36.138,0.0,810.63,0.2261,4422.19,22.613,61.251,,2026-09-27T16:04:55
+adasplash,FAIL_PPL_DIVERGED,36.5547,21.71,14.8447,1.6838,0.9635,-3.79,124439808,129158400,4718592,12,0,0,0,0.17,0.0,854.43,1.3663,731.89,136.632,138.825,,2026-09-27T15:43:51
+aegis_spectron_fp8,FAIL_PPL_DIVERGED,1813.579,21.71,1791.869,83.5366,1.1278,11.33,124439808,110339508,-14100300,12,0,0,0,5.424,0.0,812.93,1.2661,789.8,126.614,134.496,,2026-09-27T16:00:00
+aegis_v5,FAIL_PPL_DIVERGED,306.2755,21.71,284.5655,14.1076,1.1164,10.43,124439808,111463776,-12976032,12,0,0,0,52.21,0.0,816.81,0.747,1338.6,74.705,129.473,,2026-09-27T15:48:39
+asvd,FAIL_PPL_DIVERGED,34.1304,21.71,12.4204,1.5721,0.9885,-1.17,124439808,125893799,1453991,12,0,0,0,43.2,0.0,843.66,0.2031,4923.76,20.31,66.115,,2026-09-27T15:49:46
+block_transformer_hiba,FAIL_PPL_DIVERGED,1107.7577,21.71,1086.0477,51.0252,0.9906,-0.95,124439808,125619456,1179648,12,0,0,0,0.468,0.0,850.37,1.1835,844.97,118.347,121.298,,2026-09-27T15:51:47
+compressed_attention_layer_energy,FAIL_PPL_DIVERGED,945.5796,21.71,923.8696,43.555,1.2375,19.2,124439808,100553472,-23886336,12,0,0,0,25.937,0.0,792.76,1.0773,928.22,107.733,136.897,,2026-09-27T14:59:40

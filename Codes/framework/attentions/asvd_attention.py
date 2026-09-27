@@ -296,7 +296,7 @@ class ASVDAttention(BaseAttention):
         self.lora_rank: int = getattr(config, "lora_rank", kwargs.get("lora_rank", 32))
         self.freeze_base: bool = getattr(config, "freeze_base", kwargs.get("freeze_base", self.lora_rank > 0))
         self.energy_threshold: float = getattr(config, "asvd_energy_threshold", kwargs.get("energy_threshold", 0.95))
-        self.error_threshold: Optional[float] = getattr(config, "asvd_error_threshold", kwargs.get("error_threshold", 0.20))
+        self.error_threshold: Optional[float] = getattr(config, "asvd_error_threshold", kwargs.get("error_threshold", 0.40))
         self.dynamic_rank: bool = getattr(config, "asvd_dynamic_rank", kwargs.get("dynamic_rank", True))
 
         # Flags & metadata

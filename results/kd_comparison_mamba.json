@@ -1,0 +1,55 @@
+{
+  "module": "aegis_hybrid",
+  "pre_ppl": 3730.84,
+  "baseline_ppl": 27.89,
+  "results": {
+    "A": {
+      "method": "A",
+      "pre_ppl": 3730.84,
+      "post_ppl": NaN,
+      "ppl_ratio": Infinity,
+      "recovery_pct": 0.0,
+      "peak_vram_mb": 0.0,
+      "train_time_s": 0.0,
+      "loss_final": NaN,
+      "error": "CUDA error: an illegal memory access was encountered\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n"
+    },
+    "B": {
+      "method": "B",
+      "pre_ppl": 3730.84,
+      "post_ppl": NaN,
+      "ppl_ratio": Infinity,
+      "recovery_pct": 0.0,
+      "peak_vram_mb": 0.0,
+      "train_time_s": 0.0,
+      "loss_final": NaN,
+      "error": "CUDA error: an illegal memory access was encountered\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n"
+    },
+    "C": {
+      "method": "C",
+      "pre_ppl": 3730.84,
+      "post_ppl": NaN,
+      "ppl_ratio": Infinity,
+      "recovery_pct": 0.0,
+      "peak_vram_mb": 0.0,
+      "train_time_s": 0.0,
+      "loss_final": NaN,
+      "error": "CUDA error: an illegal memory access was encountered\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n"
+    },
+    "D": {
+      "method": "D",
+      "pre_ppl": 3730.84,
+      "post_ppl": NaN,
+      "ppl_ratio": Infinity,
+      "recovery_pct": 0.0,
+      "peak_vram_mb": 0.0,
+      "train_time_s": 0.0,
+      "loss_final": NaN,
+      "error": "CUDA error: an illegal memory access was encountered\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n"
+    }
+  },
+  "best_method": "None",
+  "best_post_ppl": Infinity,
+  "is_ssm_recoverable": false,
+  "recommendation": "NO: Fundamental mathematical incompatibility between SSM recurrence and pre-trained attention representations."
+}

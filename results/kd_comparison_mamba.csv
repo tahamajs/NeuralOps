@@ -1,0 +1,5 @@
+method,pre_ppl,post_ppl,ppl_ratio,recovery_pct,peak_vram_mb,train_time_s,loss_final,ppl_at_step_250,ppl_at_step_500,ppl_at_step_750,ppl_at_step_1000,ppl_at_step_1250,ppl_at_step_1500
+A,3730.84,nan,inf,0.0,0.0,0.0,nan,,,,,,
+B,3730.84,nan,inf,0.0,0.0,0.0,nan,,,,,,
+C,3730.84,nan,inf,0.0,0.0,0.0,nan,,,,,,
+D,3730.84,nan,inf,0.0,0.0,0.0,nan,,,,,,

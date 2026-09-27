@@ -20,6 +20,11 @@ from typing import Any, Optional
 import torch
 
 LOG = logging.getLogger("HFGitExporter")
+import os
+os.environ["HF_XET_HIGH_PERFORMANCE"] = "1"   # قبل از import
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning, module="huggingface_hub")
+
 
 
 def sanitize_slug(text: str) -> str:

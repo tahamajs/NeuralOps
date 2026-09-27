@@ -19,10 +19,11 @@ from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 try:
-    from framework.core.selective_scan import selective_scan
+    from framework.core.selective_scan import selective_scan, HAS_MAMBA_CUDA
 except Exception as e:  # pragma: no cover
     logging.getLogger(__name__).warning("selective_scan import failed: %s", e)
     selective_scan = None  # type: ignore
+    HAS_MAMBA_CUDA = False
 
 logger = logging.getLogger(__name__)
 
@@ -462,8 +463,16 @@ class MambaBlock(nn.Module):
         C_ssm: torch.Tensor,   # (B, d_state, L)
         D: torch.Tensor,       # (d_inner,)
         state: Optional[torch.Tensor],  # (B, d_inner, d_state)
+        chunk_size: int = 32,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Recurrent selective scan with state. For the cached path only."""
+        """
+        Recurrent selective scan with chunked activation checkpointing and bmm.
+        
+        Fix 1: Split L into chunks of size chunk_size and checkpoint each chunk
+               during training to bound autograd memory to O(chunk_size).
+        Fix 2: Use torch.bmm instead of torch.einsum inside the loop for cuBLAS
+               acceleration and shared autograd backward kernels.
+        """
         B, d_inner, L = u.shape
         d_state = A.shape[1]
 
@@ -477,14 +486,54 @@ class MambaBlock(nn.Module):
         delta_a = torch.exp(delta_a).to(target_dtype)
         delta_b_u = (delta.unsqueeze(-1) * B_ssm.permute(0, 2, 1).unsqueeze(1).to(target_dtype)
                      * u.unsqueeze(-1)).to(target_dtype)
-
-        ys = []
         C_in = C_ssm.to(target_dtype)
-        for t in range(L):
-            h = delta_a[:, :, t, :] * h + delta_b_u[:, :, t, :]
-            y_t = torch.einsum("bhd,bd->bh", h, C_in[:, :, t])
-            ys.append(y_t)
-        y = torch.stack(ys, dim=-1)  # (B, d_inner, L)
+
+        def _scan_chunk(
+            h_init: torch.Tensor,
+            da_c: torch.Tensor,
+            dbu_c: torch.Tensor,
+            c_c: torch.Tensor,
+        ) -> Tuple[torch.Tensor, torch.Tensor]:
+            L_c = da_c.shape[2]
+            ys_c = []
+            curr_h = h_init
+            for i in range(L_c):
+                curr_h = da_c[:, :, i, :] * curr_h + dbu_c[:, :, i, :]
+                c_t = c_c[:, :, i].contiguous().unsqueeze(-1)  # (B, d_state, 1) contiguous for cuBLAS
+                y_t = torch.bmm(curr_h, c_t).squeeze(-1)  # (B, d_inner)
+                ys_c.append(y_t)
+            return torch.stack(ys_c, dim=-1), curr_h
+
+        # Chunked scan with activation checkpointing during training
+        ys_all = []
+        import torch.utils.checkpoint as cp
+        use_cp = self.training and torch.is_grad_enabled()
+
+        for s in range(0, L, chunk_size):
+            e = min(s + chunk_size, L)
+            da_slice = delta_a[:, :, s:e, :]
+            dbu_slice = delta_b_u[:, :, s:e, :]
+            c_slice = C_in[:, :, s:e]
+
+            if use_cp:
+                y_chunk, h = cp.checkpoint(
+                    _scan_chunk,
+                    h,
+                    da_slice,
+                    dbu_slice,
+                    c_slice,
+                    use_reentrant=False,
+                )
+            else:
+                y_chunk, h = _scan_chunk(
+                    h,
+                    da_slice,
+                    dbu_slice,
+                    c_slice,
+                )
+            ys_all.append(y_chunk)
+
+        y = torch.cat(ys_all, dim=-1)  # (B, d_inner, L)
         y = y + u * D.view(1, d_inner, 1).to(target_dtype)
         return y, h
 
@@ -497,8 +546,8 @@ class MambaBlock(nn.Module):
         C_ssm: torch.Tensor,
         D: torch.Tensor,
     ) -> torch.Tensor:
-        """Prefill path: use the fast selective_scan if available."""
-        if selective_scan is not None:
+        """Prefill path: use the fast selective_scan if CUDA kernel available, else chunked recurrent."""
+        if HAS_MAMBA_CUDA and selective_scan is not None:
             try:
                 y = selective_scan(
                     u=u, delta=delta, A=A, B=B_ssm, C=C_ssm, D=D,
