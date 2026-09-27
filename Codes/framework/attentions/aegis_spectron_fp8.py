@@ -216,10 +216,16 @@ class FactorizedLinear(nn.Module):
         return self.lin2.bias
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = self.lin2(self.lin1(x))
+        orig_dtype = x.dtype
+        x_down = x.to(self.lin1.weight.dtype)
+        latent = self.lin1(x_down)
+        latent_up = latent.to(self.lin2.weight.dtype)
+        out = self.lin2(latent_up)
         if self.lora_A is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
-        return out
+            a = self.lora_A.to(orig_dtype) if self.lora_A.dtype != orig_dtype else self.lora_A
+            b = self.lora_B.to(orig_dtype) if self.lora_B.dtype != orig_dtype else self.lora_B
+            out = out.to(orig_dtype) + F.linear(F.linear(x, a), b)
+        return out.to(orig_dtype)
 
 
 # ===========================================================================
