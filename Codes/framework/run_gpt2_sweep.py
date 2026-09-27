@@ -422,7 +422,11 @@ def compute_perplexity_with_metrics(
     prev_end = 0
     tokens_eval = 0
 
-    with torch.no_grad():
+    with torch.no_grad(), torch.amp.autocast(
+        device_type="cuda" if device.startswith("cuda") else "cpu",
+        dtype=torch.float16,
+        enabled=device.startswith("cuda"),
+    ):
         for begin in range(0, total, stride):
             end = min(begin + seq_len, total)
             trg_len = end - prev_end
