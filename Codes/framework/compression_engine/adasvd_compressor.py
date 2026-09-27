@@ -198,8 +198,8 @@ class FusedQKVSVDLinear(nn.Module):
             with torch.no_grad():
                 A_param.data.zero_()
                 B_param.data.zero_()
-                A_param.data[:, :r].copy_(A_new.to(A_param.dtype, A_param.device))
-                B_param.data[:r, :].copy_(B_new.to(B_param.dtype, B_param.device))
+                A_param.data[:, :r].copy_(A_new.to(device=A_param.device, dtype=A_param.dtype))
+                B_param.data[:r, :].copy_(B_new.to(device=B_param.device, dtype=B_param.dtype))
 
     # ------------------------------------------------------------------
     @staticmethod
