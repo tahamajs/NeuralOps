@@ -247,7 +247,7 @@ def _linformer_fused_kernel(
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **83.37%** | -7.23% | 0.8391 | 1.19x | 6 | [svd-linear-attention-distilbert-sst2-linformer-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-linformer-attention) | 2026-09-25 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **81.77%** | -8.83% | 0.8310 | 1.19x | 0 | [svd-linear-attention-distilbert-sst2-linformer](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-linformer) | 2026-09-27 |
 
 
 The empirical evaluation of `linformer_attention` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

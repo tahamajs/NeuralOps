@@ -578,5 +578,35 @@
     "accuracy_pct": 90.25,
     "error": "note: zero compressed layers, zero injected layers, model unchanged",
     "timestamp": "2026-09-27T04:57:15.862413"
+  },
+  {
+    "module": "liftr_class",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.71,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T04:57:53.288144"
+  },
+  {
+    "module": "lillama",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu!",
+    "timestamp": "2026-09-27T04:57:56.274490"
+  },
+  {
+    "module": "lillama_class",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.71,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T04:58:20.726264"
   }
 ]
