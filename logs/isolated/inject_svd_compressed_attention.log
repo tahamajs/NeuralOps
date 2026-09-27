@@ -1,0 +1,72 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-21 06:04:23,834 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'inject_svd_compressed_attention', '--output_json', 'logs\\isolated_results\\inject_svd_compressed_attention_1789958043.json']
+2026-09-21 06:04:23,893 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-21 06:04:23,893 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=4 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-21 06:04:24,360 [INFO] QwenQualitySweep: Configured dataset 'wikitext2' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3345.10it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models/gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-21 06:04:25,252 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-21 06:04:25,252 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-21 06:04:25,252 [INFO] QwenQualitySweep: ================================================================================
+2026-09-21 06:04:25,252 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-21 06:04:25,253 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-21 06:04:25,253 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-21 06:04:25,253 [INFO] QwenQualitySweep:   dataset:           wikitext2
+2026-09-21 06:04:25,253 [INFO] QwenQualitySweep:   batch_size:        4
+2026-09-21 06:04:25,254 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-21 06:04:25,254 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-21 06:04:25,254 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-21 06:04:25,254 [INFO] QwenQualitySweep: ================================================================================
+2026-09-21 06:04:25,257 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\gpt2_wikitext2_sweep\finetuned_model.pt
+2026-09-21 06:04:25,262 [WARNING] QwenQualitySweep: Missing keys during load: ['transformer.wte.weight', 'transformer.wpe.weight', 'transformer.h.0.ln_1.weight', 'transformer.h.0.ln_1.bias', 'transformer.h.0.attn.c_attn.weight', 'transformer.h.0.attn.c_attn.bias', 'transformer.h.0.attn.c_proj.weight', 'transformer.h.0.attn.c_proj.bias', 'transformer.h.0.ln_2.weight', 'transformer.h.0.ln_2.bias']
+2026-09-21 06:04:25,456 [INFO] QwenQualitySweep: Loading pre-cached batches from results\gpt2_wikitext2_sweep\batch_cache_wikitext2 (skipping tokenization)
+2026-09-21 06:04:26,069 [INFO] QwenQualitySweep: Prepared 616 eval batches and 50 train batches directly on GPU.
+2026-09-21 06:04:53,319 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 99.72%
+2026-09-21 06:04:53,320 [INFO] QwenQualitySweep: ================================================================================
+2026-09-21 06:04:53,320 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=2461):
+2026-09-21 06:04:53,321 [INFO] QwenQualitySweep:   Validation Majority Count: 2461 / 2461
+2026-09-21 06:04:53,321 [INFO] QwenQualitySweep:   True Majority Baseline:    100.00%
+2026-09-21 06:04:53,321 [INFO] QwenQualitySweep:   Standard Error (SE):       0.000%
+2026-09-21 06:04:53,321 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 0.00%
+2026-09-21 06:04:53,321 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  100.00%
+2026-09-21 06:04:53,321 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=100.00% (2461/2461), SE=0.000%, 3*SE=0.000%
+2026-09-21 06:04:53,321 [INFO] QwenQualitySweep: ================================================================================
+2026-09-21 06:04:53,322 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: inject_svd_compressed_attention (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-21 06:05:04,465 [INFO] QwenQualitySweep: module=inject_svd_compressed_attention path=adapted_gpt
+2026-09-21 06:05:04,467 [INFO] QwenQualitySweep: module=inject_svd_compressed_attention injection summary: 12 SVDLinear layers active
+2026-09-21 06:05:04,467 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for inject_svd_compressed_attention (lr=2.0e-04)
+2026-09-21 06:05:04,811 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179648 trainable parameters across 96 tensors.
+2026-09-21 06:05:04,813 [INFO] framework.utils.compat: Discovered 96 trainable tensors (1179648 params)
+2026-09-21 06:05:04,818 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179648 trainable parameters across 96 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-21 06:05:05,296 [INFO] QwenQualitySweep: Step 1/50 took 0.48s (loss=0.0000, bs=4, micro=4)
+2026-09-21 06:05:06,471 [INFO] QwenQualitySweep: Step 5/50 took 0.32s (loss=0.0000, bs=4, micro=4)
+2026-09-21 06:05:07,738 [INFO] QwenQualitySweep: Step 10/50 took 0.26s (loss=0.0000, bs=4, micro=4)
+2026-09-21 06:05:09,030 [INFO] QwenQualitySweep: Step 15/50 took 0.25s (loss=0.0001, bs=4, micro=4)
+2026-09-21 06:05:10,344 [INFO] QwenQualitySweep: Step 20/50 took 0.26s (loss=0.0000, bs=4, micro=4)
+2026-09-21 06:05:12,994 [INFO] QwenQualitySweep: Step 25/50 took 0.60s (loss=0.0000, bs=4, micro=4)
+2026-09-21 06:05:14,680 [INFO] QwenQualitySweep: Step 30/50 took 0.34s (loss=0.0000, bs=4, micro=4)
+2026-09-21 06:05:16,104 [INFO] QwenQualitySweep: Step 35/50 took 0.29s (loss=0.0000, bs=4, micro=4)
+2026-09-21 06:05:17,724 [INFO] QwenQualitySweep: Step 40/50 took 0.25s (loss=0.0000, bs=4, micro=4)
+2026-09-21 06:05:19,016 [INFO] QwenQualitySweep: Step 45/50 took 0.30s (loss=0.0000, bs=4, micro=4)
+2026-09-21 06:05:20,237 [INFO] QwenQualitySweep: Step 50/50 took 0.22s (loss=0.0000, bs=4, micro=4)
+2026-09-21 06:06:21,486 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\gpt2_wikitext2_sweep\gpt2_inject_svd_compressed_attention_full_metrics.json
+2026-09-21 06:06:21,584 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\gpt2_wikitext2_sweep\checkpoints\inject_svd_compressed_attention\weights.pt (module_params=0, lora_params=97)
+2026-09-21 06:06:21,948 [INFO] QwenQualitySweep: [1/1] inject_svd_compressed_attention -> PASS 100.00% (F1: 0.0, Peak VRAM: 446.43 MB)
+2026-09-21 06:06:21,948 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\gpt2_wikitext2_sweep\checkpoints\inject_svd_compressed_attention. Automated export will be handled post-sweep by orchestrator.
+2026-09-21 06:06:22,190 [INFO] QwenQualitySweep: ================================================================================
+2026-09-21 06:06:22,190 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on wikitext2)
+2026-09-21 06:06:22,197 [INFO] QwenQualitySweep: 
+                                          Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+inject_svd_compressed_attention (efficient-attn)   PASS  100.00%    +0.28% 0.0000                  0            1.22x  446.4 MB              60.90             24.75
+2026-09-21 06:06:22,197 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:153: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

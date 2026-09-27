@@ -1,0 +1,11 @@
+{
+  "module": "compressed_mha",
+  "model": "models\\distilbert_sst2",
+  "dataset": "sst2",
+  "status": "CRASH",
+  "started_at": "2026-09-18T22:30:21.161734",
+  "pid": 13228,
+  "error": "ValueError: could not convert string to float: ''",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 40, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 2925, in run_single_module_main\n    acc_val = float(r.get(\"accuracy_pct\", 0.0))\nValueError: could not convert string to float: ''\n",
+  "finished_at": "2026-09-18T22:30:36.383761"
+}

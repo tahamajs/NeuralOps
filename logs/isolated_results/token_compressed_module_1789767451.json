@@ -1,0 +1,11 @@
+{
+  "module": "token_compressed_module",
+  "model": "Qwen/Qwen2.5-0.5B",
+  "dataset": "qb_eval",
+  "status": "CRASH",
+  "started_at": "2026-09-18T21:37:31.770372",
+  "pid": 10748,
+  "error": "TypeError: argument of type 'NoneType' is not iterable",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 62, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 2120, in run_single_module_main\n    ds = load_from_disk(args.dataset_dir); train, val = ds[\"train\"], ds[\"validation\"]\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\datasets\\load.py\", line 1469, in load_from_disk\n    fs, *_ = url_to_fs(dataset_path, **(storage_options or {}))\n             ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\fsspec\\core.py\", line 403, in url_to_fs\n    chain = _un_chain(url, kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\fsspec\\core.py\", line 335, in _un_chain\n    if \"::\" in path:\n       ^^^^^^^^^^^^\nTypeError: argument of type 'NoneType' is not iterable\n",
+  "finished_at": "2026-09-18T21:37:48.014703"
+}

@@ -1,0 +1,11 @@
+{
+  "module": "kronecker_compressor",
+  "model": "models/distilbert_agnews_full",
+  "dataset": "agnews",
+  "status": "CRASH",
+  "started_at": "2026-09-25T09:17:50.367409",
+  "pid": 2892,
+  "error": "KeyError: 'text'",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 78, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_Project\\Codes\\framework\\run_quality_sweep.py\", line 3193, in run_single_module_main\n    finetune(base, tokenizer, train, args.dataset, args.finetune_steps, args.seq_len, args.batch_size, device, args.precision == \"fp16\", lr=head_lr)\n    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\SVD_Project\\Codes\\framework\\run_quality_sweep.py\", line 1028, in finetune\n    x, y = encode(tokenizer, train[i : i + batch_size], name, seq_len, device)\n           ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\SVD_Project\\Codes\\framework\\run_quality_sweep.py\", line 363, in encode\n    texts = batch[a] if b is None else list(zip(batch[a], batch[b]))\n            ~~~~~^^^\nKeyError: 'text'\n",
+  "finished_at": "2026-09-25T09:17:51.473301"
+}

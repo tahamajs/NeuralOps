@@ -1,0 +1,17 @@
+{
+  "module": "adaptive_svd",
+  "model": "models\\distilbert_sst2",
+  "dataset": "sst2",
+  "status": "PASS",
+  "started_at": "2026-09-18T22:23:11.224134",
+  "pid": 9152,
+  "accuracy": null,
+  "f1": null,
+  "params_before": null,
+  "params_after": null,
+  "compression_ratio": null,
+  "peak_vram_mb": null,
+  "elapsed_s": null,
+  "error": "",
+  "finished_at": "2026-09-18T22:23:40.704299"
+}

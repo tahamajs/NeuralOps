@@ -1,0 +1,11 @@
+{
+  "module": "primal",
+  "model": "models\\distilbert_mnli_full",
+  "dataset": "mnli",
+  "status": "CRASH",
+  "started_at": "2026-09-19T14:15:06.369330",
+  "pid": 6944,
+  "error": "NameError: name '_name_injected' is not defined",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 57, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 2807, in run_single_module_main\n    and not _name_injected\n            ^^^^^^^^^^^^^^\nNameError: name '_name_injected' is not defined\n",
+  "finished_at": "2026-09-19T14:18:53.000614"
+}

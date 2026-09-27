@@ -1,0 +1,43 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-22 13:38:58,902 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'svd_llm_v2_attention', '--output_json', 'logs\\isolated_results\\svd_llm_v2_attention_1790071637.json']
+2026-09-22 13:38:59,237 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-22 13:38:59,237 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-22 13:38:59,996 [INFO] QwenQualitySweep: Configured dataset 'mnli' with num_labels=3
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 2584.15it/s]
+2026-09-22 13:39:01,752 [INFO] QwenQualitySweep: model=models/distilbert_mnli_full qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-22 13:39:01,752 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-22 13:39:01,752 [INFO] QwenQualitySweep: ================================================================================
+2026-09-22 13:39:01,753 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-22 13:39:01,753 [INFO] QwenQualitySweep:   model:             models/distilbert_mnli_full
+2026-09-22 13:39:01,753 [INFO] QwenQualitySweep:   family:            bert
+2026-09-22 13:39:01,753 [INFO] QwenQualitySweep:   dataset:           mnli
+2026-09-22 13:39:01,753 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-22 13:39:01,754 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-22 13:39:01,760 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-22 13:39:01,761 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-22 13:39:01,761 [INFO] QwenQualitySweep: ================================================================================
+2026-09-22 13:39:01,781 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\distilbert_mnli_full_mnli_sweep\finetuned_model.pt
+2026-09-22 13:39:01,813 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
+2026-09-22 13:39:02,499 [INFO] QwenQualitySweep: Loading pre-cached batches from results\distilbert_mnli_full_mnli_sweep\batch_cache_mnli (skipping tokenization)
+2026-09-22 13:39:02,747 [INFO] QwenQualitySweep: Prepared 16 eval batches and 50 train batches directly on GPU.
+2026-09-22 13:39:06,834 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 81.50%
+2026-09-22 13:39:07,068 [INFO] QwenQualitySweep: ================================================================================
+2026-09-22 13:39:07,068 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-22 13:39:07,068 [INFO] QwenQualitySweep:   Validation Majority Count: 341 / 1000
+2026-09-22 13:39:07,068 [INFO] QwenQualitySweep:   True Majority Baseline:    34.10%
+2026-09-22 13:39:07,068 [INFO] QwenQualitySweep:   Standard Error (SE):       1.499%
+2026-09-22 13:39:07,069 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.50%
+2026-09-22 13:39:07,069 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  38.60%
+2026-09-22 13:39:07,069 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%
+2026-09-22 13:39:07,069 [INFO] QwenQualitySweep: ================================================================================
+2026-09-22 13:39:07,084 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: svd_llm_v2_attention (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-22 13:44:32,649 [INFO] framework.core.attention_utils: Successfully injected 'svd_llm_v2_attention' into 6 transformer blocks.
+2026-09-22 13:44:32,759 [INFO] QwenQualitySweep: module=svd_llm_v2_attention path=legacy_bert
+2026-09-22 13:44:32,767 [INFO] QwenQualitySweep: module=svd_llm_v2_attention injection summary: 0 SVDLinear layers active
+2026-09-22 13:44:32,772 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for svd_llm_v2_attention (lr=2.0e-04)
+2026-09-22 13:44:33,022 [INFO] framework.utils.compat: Recovery fine-tuning selected 5329920 trainable parameters across 144 tensors.
+2026-09-22 13:44:33,024 [INFO] framework.utils.compat: Discovered 144 trainable tensors (5329920 params)
+2026-09-22 13:44:33,034 [INFO] QwenQualitySweep: LoRA fine-tuning: 5329920 trainable parameters across 144 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)

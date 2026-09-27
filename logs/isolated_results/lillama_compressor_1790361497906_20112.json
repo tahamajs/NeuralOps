@@ -1,0 +1,10 @@
+{
+  "module": "lillama_compressor",
+  "model": "models/distilbert_sst2",
+  "dataset": "sst2",
+  "status": "SKIP_DEPRECATED",
+  "started_at": "2026-09-25T18:38:39.508053",
+  "pid": 29776,
+  "error": "Deprecated module: Requires LLaMA-style SwiGLU + RMSNorm; not standard transformer compressor",
+  "finished_at": "2026-09-25T18:38:39.508077"
+}

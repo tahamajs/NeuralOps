@@ -1,0 +1,132 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-24 04:32:22,151 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'flat_llm_compressor_factory', '--output_json', 'logs\\isolated_results\\flat_llm_compressor_factory_1790211695.json']
+2026-09-24 04:32:22,234 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 04:32:22,235 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=4 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-24 04:32:23,261 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-09-24 04:32:23,371 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md "HTTP/1.1 200 OK"
+2026-09-24 04:32:23,631 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-24 04:32:24,267 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-24 04:32:24,532 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-09-24 04:32:24,782 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-09-24 04:32:25,273 [INFO] httpx: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-09-24 04:32:25,531 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-24 04:32:25,783 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-24 04:32:26,047 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-09-24 04:32:26,301 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-24 04:32:27,241 [INFO] QwenQualitySweep: Configured dataset 'wikitext2' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 4583.03it/s]
+2026-09-24 04:32:28,410 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 04:32:28,410 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 04:32:28,410 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 04:32:28,411 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 04:32:28,411 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-24 04:32:28,411 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-24 04:32:28,412 [INFO] QwenQualitySweep:   dataset:           wikitext2
+2026-09-24 04:32:28,412 [INFO] QwenQualitySweep:   batch_size:        4
+2026-09-24 04:32:28,412 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 04:32:28,412 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 04:32:28,413 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 04:32:28,413 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 04:32:28,417 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\gpt2_wikitext2_sweep\finetuned_model.pt
+2026-09-24 04:32:28,425 [WARNING] QwenQualitySweep: Missing keys during load: ['transformer.wte.weight', 'transformer.wpe.weight', 'transformer.h.0.ln_1.weight', 'transformer.h.0.ln_1.bias', 'transformer.h.0.attn.c_attn.weight', 'transformer.h.0.attn.c_attn.bias', 'transformer.h.0.attn.c_proj.weight', 'transformer.h.0.attn.c_proj.bias', 'transformer.h.0.ln_2.weight', 'transformer.h.0.ln_2.bias']
+2026-09-24 04:32:28,876 [INFO] QwenQualitySweep: Prepared 0 eval batches and 0 train batches directly on GPU.
+Token indices sequence length is longer than the specified maximum sequence length for this model (249749 > 1024). Running this sequence through the model will result in indexing errors
+`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+2026-09-24 04:36:18,522 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 95.87%
+2026-09-24 04:36:18,572 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 04:36:18,573 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-24 04:36:18,573 [INFO] QwenQualitySweep:   Validation Majority Count: 500 / 1000
+2026-09-24 04:36:18,573 [INFO] QwenQualitySweep:   True Majority Baseline:    50.00%
+2026-09-24 04:36:18,573 [INFO] QwenQualitySweep:   Standard Error (SE):       1.581%
+2026-09-24 04:36:18,573 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.74%
+2026-09-24 04:36:18,573 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  54.74%
+2026-09-24 04:36:18,574 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.00% (500/1000), SE=1.581%, 3*SE=4.740%
+2026-09-24 04:36:18,574 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 04:36:18,595 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 04:36:19,534 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: flat_llm_compressor_factory (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-24 04:36:24,322 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.4897 on transformer.h.0.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,322 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.0.mlp.c_proj.
+2026-09-24 04:36:24,340 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.4235 on transformer.h.1.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,341 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.1.attn.c_proj.
+2026-09-24 04:36:24,350 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.4856 on transformer.h.1.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,350 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.1.mlp.c_proj.
+2026-09-24 04:36:24,368 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5074 on transformer.h.2.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,369 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.2.attn.c_proj.
+2026-09-24 04:36:24,378 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5076 on transformer.h.2.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,378 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.2.mlp.c_proj.
+2026-09-24 04:36:24,396 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5049 on transformer.h.3.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,396 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.3.attn.c_proj.
+2026-09-24 04:36:24,408 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5056 on transformer.h.3.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,408 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.3.mlp.c_proj.
+2026-09-24 04:36:24,435 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5036 on transformer.h.4.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,436 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.4.attn.c_proj.
+2026-09-24 04:36:24,450 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5109 on transformer.h.4.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,451 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.4.mlp.c_proj.
+2026-09-24 04:36:24,460 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.4451 on transformer.h.5.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 04:36:24,461 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.5.attn.c_attn.
+2026-09-24 04:36:24,470 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5104 on transformer.h.5.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,470 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.5.attn.c_proj.
+2026-09-24 04:36:24,481 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5162 on transformer.h.5.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,481 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.5.mlp.c_proj.
+2026-09-24 04:36:24,491 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5028 on transformer.h.6.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 04:36:24,492 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.6.attn.c_attn.
+2026-09-24 04:36:24,502 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5061 on transformer.h.6.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,502 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.6.attn.c_proj.
+2026-09-24 04:36:24,510 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5146 on transformer.h.6.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,510 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.6.mlp.c_proj.
+2026-09-24 04:36:24,518 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.4928 on transformer.h.7.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 04:36:24,518 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.7.attn.c_attn.
+2026-09-24 04:36:24,527 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5025 on transformer.h.7.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,527 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.7.attn.c_proj.
+2026-09-24 04:36:24,538 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5133 on transformer.h.7.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,538 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.7.mlp.c_proj.
+2026-09-24 04:36:24,546 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5175 on transformer.h.8.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 04:36:24,546 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.8.attn.c_attn.
+2026-09-24 04:36:24,557 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.4987 on transformer.h.8.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,557 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.8.attn.c_proj.
+2026-09-24 04:36:24,565 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5133 on transformer.h.8.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,565 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.8.mlp.c_proj.
+2026-09-24 04:36:24,573 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5251 on transformer.h.9.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 04:36:24,573 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.9.attn.c_attn.
+2026-09-24 04:36:24,582 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.4933 on transformer.h.9.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,582 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.9.attn.c_proj.
+2026-09-24 04:36:24,591 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5196 on transformer.h.9.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,593 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.9.mlp.c_proj.
+2026-09-24 04:36:24,601 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5153 on transformer.h.10.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 04:36:24,601 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.10.attn.c_attn.
+2026-09-24 04:36:24,609 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.4835 on transformer.h.10.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,609 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.10.attn.c_proj.
+2026-09-24 04:36:24,617 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5283 on transformer.h.10.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,618 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.10.mlp.c_proj.
+2026-09-24 04:36:24,627 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.4650 on transformer.h.11.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 04:36:24,627 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.11.attn.c_attn.
+2026-09-24 04:36:24,637 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.4158 on transformer.h.11.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,637 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.11.attn.c_proj.
+2026-09-24 04:36:24,645 [WARNING] framework.compression_engine.flat_llm: FLAT-LLM reconstruction error 0.5248 on transformer.h.11.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 04:36:24,645 [INFO] framework.compression_engine.flat_llm: FLAT-LLM: fallback to original on transformer.h.11.mlp.c_proj.
+2026-09-24 04:36:24,744 [INFO] framework.compression_engine.flat_llm: FLAT-LLM compression complete: 6 compressed, 30 fallback. Avg error: 0.2779, Effective Param Ratio: 0.95x
+2026-09-24 04:36:24,762 [INFO] QwenQualitySweep: module=flat_llm_compressor_factory path=adapted_gpt
+2026-09-24 04:36:24,765 [INFO] QwenQualitySweep: module=flat_llm_compressor_factory injection summary: 0 SVDLinear layers active
+2026-09-24 04:36:24,765 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for flat_llm_compressor_factory (lr=2.0e-04)
+2026-09-24 04:36:24,948 [INFO] framework.utils.compat: Recovery fine-tuning selected 0 trainable parameters across 0 tensors.
+2026-09-24 04:36:24,951 [INFO] framework.utils.compat: Discovered 0 trainable tensors (0 params)
+2026-09-24 04:40:31,441 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\gpt2_wikitext2_sweep\gpt2_flat_llm_compressor_factory_full_metrics.json
+2026-09-24 04:40:31,451 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\gpt2_wikitext2_sweep\checkpoints\flat_llm_compressor_factory\weights.pt (module_params=0, lora_params=0)
+2026-09-24 04:40:31,754 [INFO] QwenQualitySweep: [1/1] flat_llm_compressor_factory -> PASS 71.57% (F1: 0.0, Peak VRAM: 0.0 MB)
+2026-09-24 04:40:31,754 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\gpt2_wikitext2_sweep\checkpoints\flat_llm_compressor_factory. Automated export will be handled post-sweep by orchestrator.
+2026-09-24 04:40:31,754 [INFO] QwenQualitySweep: [1/1] flat_llm_compressor_factory Timing: eval_time=252.22s
+2026-09-24 04:40:31,755 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 04:40:32,136 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 04:40:32,136 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on wikitext2)
+2026-09-24 04:40:32,159 [INFO] QwenQualitySweep: 
+                                      Module          Status Accuracy    Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                                        full            PASS    0.00% 0.00% (base)    N/A                              1.00x  916.2 MB               7.88               N/A
+                  swift_svd (efficient-attn)   PASS_DEGRADED    0.00%      -95.87%    N/A                              1.50x  838.8 MB               3.23               N/A
+            gated_delta_net (efficient-attn) SKIP_DEPRECATED    0.00%      -95.87%    N/A                              1.00x       N/A               0.00               N/A
+flat_llm_compressor_factory (efficient-attn)            PASS   71.57%      -24.30% 0.0000                 0            1.00x    0.0 MB             252.22              0.00
+2026-09-24 04:40:32,159 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:153: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

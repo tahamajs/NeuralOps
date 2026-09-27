@@ -1,0 +1,10 @@
+{
+  "module": "tt_compressor",
+  "model": "models/roberta_sst2",
+  "dataset": "sst2",
+  "status": "SKIP_DEPRECATED",
+  "started_at": "2026-09-25T17:12:20.817688",
+  "pid": 15056,
+  "error": "Deprecated module: TT decomposition is unsuitable for 2D transformer weight matrices. See Docs/content/compressions/tt.md",
+  "finished_at": "2026-09-25T17:12:20.817713"
+}

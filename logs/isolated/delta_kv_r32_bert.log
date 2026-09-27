@@ -1,0 +1,90 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+2026-09-27 09:06:47,555 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0% (leaving 5.20 GB headroom)
+2026-09-27 09:06:47,555 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-27 09:06:47,557 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-27 09:06:47,557 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0%
+2026-09-27 09:06:48,639 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
+2026-09-27 09:06:48,911 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-09-27 09:06:49,185 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert-base-uncased-finetuned-sst-2-english/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-09-27 09:06:49,456 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert/distilbert-base-uncased-finetuned-sst-2-english/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-09-27 09:06:49,727 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert-base-uncased-finetuned-sst-2-english/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-09-27 09:06:50,002 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert/distilbert-base-uncased-finetuned-sst-2-english/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-27 09:06:50,210 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+2026-09-27 09:06:50,484 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
+2026-09-27 09:06:50,759 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
+2026-09-27 09:06:51,033 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 6460.61it/s]
+2026-09-27 09:06:51,447 [INFO] QwenQualitySweep: model=distilbert-base-uncased-finetuned-sst-2-english qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-27 09:06:51,447 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'raw_family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-27 09:06:51,447 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 09:06:51,447 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-27 09:06:51,447 [INFO] QwenQualitySweep:   model:             distilbert-base-uncased-finetuned-sst-2-english
+2026-09-27 09:06:51,448 [INFO] QwenQualitySweep:   family:            bert
+2026-09-27 09:06:51,448 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-27 09:06:51,448 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-27 09:06:51,448 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-27 09:06:51,448 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-27 09:06:51,448 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-27 09:06:51,448 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 09:06:51,454 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\bert_sst2_baseline\finetuned_model.pt
+2026-09-27 09:06:51,464 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
+2026-09-27 09:06:53,142 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\04_rank_sweeps\distilbert\deep_rank_distilbert\delta_kv\rank_32\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-27 09:06:53,143 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-27 09:06:56,858 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.60%
+2026-09-27 09:06:57,129 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 09:06:57,131 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-27 09:06:57,131 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-27 09:06:57,131 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-27 09:06:57,131 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-27 09:06:57,131 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-27 09:06:57,132 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-27 09:06:57,132 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-27 09:06:57,132 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 09:06:57,132 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-27 09:06:57,413 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: delta_kv (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-27 09:06:57,866 [INFO] framework.compression_engine.delta_kv: DeltaKV: 24 target layers identified.
+2026-09-27 09:06:58,239 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.3748 on distilbert.transformer.layer.0.attention.q_lin > 0.3500; keeping original.
+2026-09-27 09:06:58,446 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.3651 on distilbert.transformer.layer.0.attention.k_lin > 0.3500; keeping original.
+2026-09-27 09:06:58,656 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.3997 on distilbert.transformer.layer.0.attention.v_lin > 0.3500; keeping original.
+2026-09-27 09:06:58,863 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.3898 on distilbert.transformer.layer.0.attention.out_lin > 0.3500; keeping original.
+2026-09-27 09:06:59,461 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.3938 on distilbert.transformer.layer.1.attention.v_lin > 0.3500; keeping original.
+2026-09-27 09:06:59,624 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.3930 on distilbert.transformer.layer.1.attention.out_lin > 0.3500; keeping original.
+2026-09-27 09:06:59,805 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.3978 on distilbert.transformer.layer.2.attention.q_lin > 0.3500; keeping original.
+2026-09-27 09:07:00,020 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.3910 on distilbert.transformer.layer.2.attention.k_lin > 0.3500; keeping original.
+2026-09-27 09:07:00,219 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.3996 on distilbert.transformer.layer.2.attention.v_lin > 0.3500; keeping original.
+2026-09-27 09:07:00,437 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.4008 on distilbert.transformer.layer.2.attention.out_lin > 0.3500; keeping original.
+2026-09-27 09:07:00,648 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.3881 on distilbert.transformer.layer.3.attention.q_lin > 0.3500; keeping original.
+2026-09-27 09:07:00,867 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.3775 on distilbert.transformer.layer.3.attention.k_lin > 0.3500; keeping original.
+2026-09-27 09:07:01,060 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.4137 on distilbert.transformer.layer.3.attention.v_lin > 0.3500; keeping original.
+2026-09-27 09:07:01,216 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.4091 on distilbert.transformer.layer.3.attention.out_lin > 0.3500; keeping original.
+2026-09-27 09:07:01,340 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.4047 on distilbert.transformer.layer.4.attention.q_lin > 0.3500; keeping original.
+2026-09-27 09:07:01,455 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.4007 on distilbert.transformer.layer.4.attention.k_lin > 0.3500; keeping original.
+2026-09-27 09:07:01,569 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.4204 on distilbert.transformer.layer.4.attention.v_lin > 0.3500; keeping original.
+2026-09-27 09:07:01,671 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.4214 on distilbert.transformer.layer.4.attention.out_lin > 0.3500; keeping original.
+2026-09-27 09:07:01,773 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.3954 on distilbert.transformer.layer.5.attention.q_lin > 0.3500; keeping original.
+2026-09-27 09:07:01,878 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.4045 on distilbert.transformer.layer.5.attention.k_lin > 0.3500; keeping original.
+2026-09-27 09:07:01,940 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.4229 on distilbert.transformer.layer.5.attention.v_lin > 0.3500; keeping original.
+2026-09-27 09:07:01,995 [WARNING] framework.compression_engine.delta_kv: DeltaKV: error 0.4291 on distilbert.transformer.layer.5.attention.out_lin > 0.3500; keeping original.
+2026-09-27 09:07:02,093 [INFO] framework.compression_engine.delta_kv: DeltaKV: 2 compressed, 22 fallback, 14 skipped. Avg err 0.3946, effective_param_ratio 0.95x.
+2026-09-27 09:07:02,100 [INFO] QwenQualitySweep: module=delta_kv path=legacy_bert
+2026-09-27 09:07:02,101 [INFO] QwenQualitySweep: module=delta_kv injection summary: 0 SVDLinear layers active
+2026-09-27 09:07:02,102 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for delta_kv (lr=2.0e-04)
+2026-09-27 09:07:02,162 [INFO] framework.utils.compat: Recovery fine-tuning selected 0 trainable parameters across 0 tensors.
+2026-09-27 09:07:02,162 [INFO] framework.utils.compat: Discovered 0 trainable tensors (0 params)
+2026-09-27 09:07:05,656 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\distilbert\deep_rank_distilbert\delta_kv\rank_32\distilbert-base-uncased-finetuned-sst-2-english_delta_kv_full_metrics.json
+2026-09-27 09:07:05,780 [INFO] QwenQualitySweep: [1/1] delta_kv -> PASS 90.83% (F1: 0.9119, Peak VRAM: 291.93 MB)
+2026-09-27 09:07:05,781 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\04_rank_sweeps\distilbert\deep_rank_distilbert\delta_kv\rank_32\checkpoints\delta_kv. Automated export will be handled post-sweep by orchestrator.
+2026-09-27 09:07:05,781 [INFO] QwenQualitySweep: [1/1] delta_kv Timing: eval_time=8.37s
+2026-09-27 09:07:05,781 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-27 09:07:06,117 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 09:07:06,118 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert-base-uncased-finetuned-sst-2-english on sst2)
+2026-09-27 09:07:06,125 [INFO] QwenQualitySweep: 
+  Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+delta_kv   PASS   90.83%    +0.23% 0.9119                  2            1.00x  291.9 MB               2.71              3.11
+2026-09-27 09:07:06,126 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:171: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

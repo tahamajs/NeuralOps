@@ -1,0 +1,11 @@
+{
+  "module": "inject_minimal_svd",
+  "model": "distilbert-base-uncased",
+  "dataset": "mnli",
+  "status": "CRASH",
+  "started_at": "2026-09-19T02:48:06.821122",
+  "pid": 6196,
+  "error": "MemoryError: ",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 47, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 2137, in run_single_module_main\n    tokenizer = AutoTokenizer.from_pretrained(args.model); tokenizer.padding_side = \"right\"\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\auto\\tokenization_auto.py\", line 817, in from_pretrained\n    return tokenizer_class.from_pretrained(pretrained_model_name_or_path, *inputs, **kwargs)\n           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\tokenization_utils_base.py\", line 1721, in from_pretrained\n    return cls._from_pretrained(\n           ~~~~~~~~~~~~~~~~~~~~^\n        resolved_vocab_files,\n        ^^^^^^^^^^^^^^^^^^^^^\n    ...<9 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\tokenization_utils_base.py\", line 1886, in _from_pretrained\n    tokenizer_file_handle = json.load(tokenizer_file_handle)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\json\\__init__.py\", line 293, in load\n    return loads(fp.read(),\n                 ~~~~~~~^^\n  File \"<frozen codecs>\", line 325, in decode\nMemoryError\n",
+  "finished_at": "2026-09-19T02:48:08.946070"
+}

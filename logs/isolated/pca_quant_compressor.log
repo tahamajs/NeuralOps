@@ -1,0 +1,106 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-24 06:48:12,137 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'pca_quant_compressor', '--output_json', 'logs\\isolated_results\\pca_quant_compressor_1790219866245_1964.json']
+2026-09-24 06:48:12,224 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 06:48:12,226 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=4 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-24 06:48:13,144 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-09-24 06:48:13,267 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md "HTTP/1.1 200 OK"
+2026-09-24 06:48:13,505 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-24 06:48:14,185 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-24 06:48:14,486 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-09-24 06:48:14,713 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-09-24 06:48:15,307 [INFO] httpx: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-09-24 06:48:15,548 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-24 06:48:15,782 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-24 06:48:16,014 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-09-24 06:48:16,271 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-24 06:48:16,904 [INFO] QwenQualitySweep: Configured dataset 'wikitext2' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3842.46it/s]
+2026-09-24 06:48:17,786 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 06:48:17,786 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 06:48:17,787 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 06:48:17,787 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 06:48:17,787 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-24 06:48:17,787 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-24 06:48:17,788 [INFO] QwenQualitySweep:   dataset:           wikitext2
+2026-09-24 06:48:17,788 [INFO] QwenQualitySweep:   batch_size:        4
+2026-09-24 06:48:17,788 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 06:48:17,788 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 06:48:17,788 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 06:48:17,788 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 06:48:18,085 [INFO] QwenQualitySweep: Prepared 0 eval batches and 0 train batches directly on GPU.
+Token indices sequence length is longer than the specified maximum sequence length for this model (249749 > 1024). Running this sequence through the model will result in indexing errors
+`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+2026-09-24 06:51:14,790 [INFO] QwenQualitySweep: Baseline model benchmark perplexity on validation set: 41.346157 (loss=3.7220)
+2026-09-24 06:51:14,988 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 06:51:14,989 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-24 06:51:14,989 [INFO] QwenQualitySweep:   Validation Majority Count: 500 / 1000
+2026-09-24 06:51:14,989 [INFO] QwenQualitySweep:   True Majority Baseline:    50.00%
+2026-09-24 06:51:15,001 [INFO] QwenQualitySweep:   Standard Error (SE):       1.581%
+2026-09-24 06:51:15,001 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.74%
+2026-09-24 06:51:15,001 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  54.74%
+2026-09-24 06:51:15,001 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.00% (500/1000), SE=1.581%, 3*SE=4.740%
+2026-09-24 06:51:15,002 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 06:51:15,005 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 06:51:15,257 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: pca_quant_compressor (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-24 06:51:16,764 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3691 on transformer.h.0.attn.c_attn exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:16,858 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3871 on transformer.h.0.attn.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:16,966 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.4499 on transformer.h.0.mlp.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:17,065 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3596 on transformer.h.1.attn.c_attn exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:17,162 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.5346 on transformer.h.1.attn.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:17,270 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.4384 on transformer.h.1.mlp.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:17,374 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3618 on transformer.h.2.attn.c_attn exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:17,471 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3947 on transformer.h.2.attn.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:17,575 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.4274 on transformer.h.2.mlp.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:17,677 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3502 on transformer.h.3.attn.c_attn exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:17,775 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3725 on transformer.h.3.attn.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:17,881 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.4240 on transformer.h.3.mlp.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:17,984 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3675 on transformer.h.4.attn.c_attn exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:18,062 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3705 on transformer.h.4.attn.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:18,174 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3897 on transformer.h.4.mlp.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:18,252 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3475 on transformer.h.5.attn.c_attn exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:18,325 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3614 on transformer.h.5.attn.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:18,402 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3683 on transformer.h.5.mlp.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:18,479 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3458 on transformer.h.6.attn.c_attn exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:18,556 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3593 on transformer.h.6.attn.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:18,634 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3668 on transformer.h.6.mlp.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:18,712 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3441 on transformer.h.7.attn.c_attn exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:18,783 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3634 on transformer.h.7.attn.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:18,861 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3598 on transformer.h.7.mlp.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:18,938 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3426 on transformer.h.8.attn.c_attn exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:19,011 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3662 on transformer.h.8.attn.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:19,091 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3579 on transformer.h.8.mlp.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:19,170 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3433 on transformer.h.9.attn.c_attn exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:19,240 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3627 on transformer.h.9.attn.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:19,319 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3552 on transformer.h.9.mlp.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:19,395 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3451 on transformer.h.10.attn.c_attn exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:19,465 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3913 on transformer.h.10.attn.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:19,543 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3628 on transformer.h.10.mlp.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:19,619 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3526 on transformer.h.11.attn.c_attn exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:19,690 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.5235 on transformer.h.11.attn.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:19,769 [WARNING] framework.compression_engine.kvtc_compressor: KVTC reconstruction error 0.3874 on transformer.h.11.mlp.c_proj exceeded max_error 0.2000. Keeping original layer.
+2026-09-24 06:51:19,817 [INFO] QwenQualitySweep: module=pca_quant_compressor path=adapted_gpt
+2026-09-24 06:51:19,819 [INFO] QwenQualitySweep: module=pca_quant_compressor injection summary: 0 SVDLinear layers active
+2026-09-24 06:51:19,819 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for pca_quant_compressor (lr=2.0e-04)
+2026-09-24 06:51:19,935 [INFO] framework.utils.compat: Recovery fine-tuning selected 0 trainable parameters across 0 tensors.
+2026-09-24 06:51:19,936 [INFO] framework.utils.compat: Discovered 0 trainable tensors (0 params)
+2026-09-24 06:54:14,428 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\gpt2_wikitext2_sweep\gpt2_pca_quant_compressor_full_metrics.json
+2026-09-24 06:54:14,445 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\gpt2_wikitext2_sweep\checkpoints\pca_quant_compressor\weights.pt (module_params=0, lora_params=0)
+2026-09-24 06:54:14,676 [INFO] QwenQualitySweep: [1/1] pca_quant_compressor -> PASS_NO_COMPRESSION 0.00% (F1: 0.0, Peak VRAM: 816.22509765625 MB)
+2026-09-24 06:54:14,676 [WARNING] QwenQualitySweep: Module 'pca_quant_compressor' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-24 06:54:14,676 [INFO] QwenQualitySweep: [Quality Guard] Module 'pca_quant_compressor' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=0.00%, pass_thresh=54.74%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-24 06:54:14,696 [INFO] QwenQualitySweep: [1/1] pca_quant_compressor Timing: eval_time=179.44s
+2026-09-24 06:54:14,696 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 06:54:15,197 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 06:54:15,197 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on wikitext2)
+2026-09-24 06:54:15,222 [INFO] QwenQualitySweep: 
+                               Module              Status Accuracy    Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                                 full                PASS    0.00% 0.00% (base)    N/A                              1.00x  916.2 MB               7.88               N/A
+           swift_svd (efficient-attn)       PASS_DEGRADED    0.00%       +0.00%    N/A                              1.50x  838.8 MB               3.23               N/A
+     gated_delta_net (efficient-attn)     SKIP_DEPRECATED    0.00%       +0.00%    N/A                              1.00x       N/A               0.00               N/A
+pca_quant_compressor (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             173.99              0.00
+2026-09-24 06:54:15,223 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:153: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

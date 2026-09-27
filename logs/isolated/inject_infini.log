@@ -1,0 +1,109 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-19 18:09:15,034 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'inject_infini', '--output_json', 'logs\\isolated_results\\inject_infini_1789828737.json']
+2026-09-19 18:09:15,105 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+D:\svd_project\Codes\framework\run_one_module_isolated.py:33: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-19 18:09:15,290 [INFO] QwenQualitySweep: Configured dataset 'mnli' with num_labels=3
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3231.57it/s]
+2026-09-19 18:09:15,782 [INFO] QwenQualitySweep: model=models\distilbert_mnli_full qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-19 18:09:15,782 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-19 18:09:15,783 [INFO] QwenQualitySweep: ================================================================================
+2026-09-19 18:09:15,783 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-19 18:09:15,783 [INFO] QwenQualitySweep:   model:             models\distilbert_mnli_full
+2026-09-19 18:09:15,783 [INFO] QwenQualitySweep:   family:            bert
+2026-09-19 18:09:15,783 [INFO] QwenQualitySweep:   dataset:           mnli
+2026-09-19 18:09:15,783 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-19 18:09:15,784 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-19 18:09:15,784 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-19 18:09:15,784 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-19 18:09:15,784 [INFO] QwenQualitySweep: ================================================================================
+2026-09-19 18:09:15,789 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\finetuned_model.pt
+2026-09-19 18:09:15,796 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
+2026-09-19 18:09:15,898 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-19 18:09:17,212 [INFO] QwenQualitySweep: Prepared 125 eval batches and 50 train batches directly on GPU.
+2026-09-19 18:09:20,719 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 81.80%
+2026-09-19 18:09:20,783 [INFO] QwenQualitySweep: ================================================================================
+2026-09-19 18:09:20,783 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-19 18:09:20,783 [INFO] QwenQualitySweep:   Validation Majority Count: 341 / 1000
+2026-09-19 18:09:20,783 [INFO] QwenQualitySweep:   True Majority Baseline:    34.10%
+2026-09-19 18:09:20,783 [INFO] QwenQualitySweep:   Standard Error (SE):       1.499%
+2026-09-19 18:09:20,784 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 1.45%
+2026-09-19 18:09:20,784 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  36.90%
+2026-09-19 18:09:20,784 [INFO] QwenQualitySweep: ================================================================================
+2026-09-19 18:09:20,797 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: inject_infini (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-19 18:09:21,616 [INFO] QwenQualitySweep: module=inject_infini path=legacy_bert
+2026-09-19 18:09:21,617 [INFO] QwenQualitySweep: module=inject_infini injection summary: 0 SVDLinear layers active
+2026-09-19 18:09:21,618 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for inject_infini (lr=2.0e-04)
+2026-09-19 18:09:21,680 [INFO] framework.utils.compat: Recovery fine-tuning selected 589830 trainable parameters across 54 tensors.
+2026-09-19 18:09:21,680 [INFO] framework.utils.compat: Discovered 54 trainable tensors (589830 params)
+2026-09-19 18:09:21,682 [INFO] QwenQualitySweep: LoRA fine-tuning: 589830 trainable parameters across 54 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-19 18:09:22,007 [INFO] QwenQualitySweep: Step 1/50 took 0.32s (loss=1.1653, bs=8, micro=8)
+2026-09-19 18:09:22,536 [INFO] QwenQualitySweep: Step 5/50 took 0.14s (loss=1.0705, bs=8, micro=8)
+2026-09-19 18:09:23,206 [INFO] QwenQualitySweep: Step 10/50 took 0.14s (loss=1.4744, bs=8, micro=8)
+2026-09-19 18:09:23,832 [INFO] QwenQualitySweep: Step 15/50 took 0.12s (loss=0.7118, bs=8, micro=8)
+2026-09-19 18:09:24,497 [INFO] QwenQualitySweep: Step 20/50 took 0.13s (loss=1.5080, bs=8, micro=8)
+2026-09-19 18:09:25,157 [INFO] QwenQualitySweep: Step 25/50 took 0.13s (loss=0.8662, bs=8, micro=8)
+2026-09-19 18:09:25,803 [INFO] QwenQualitySweep: Step 30/50 took 0.13s (loss=1.2252, bs=8, micro=8)
+2026-09-19 18:09:26,431 [INFO] QwenQualitySweep: Step 35/50 took 0.13s (loss=0.9809, bs=8, micro=8)
+2026-09-19 18:09:27,090 [INFO] QwenQualitySweep: Step 40/50 took 0.14s (loss=0.8986, bs=8, micro=8)
+2026-09-19 18:09:27,798 [INFO] QwenQualitySweep: Step 45/50 took 0.13s (loss=1.1841, bs=8, micro=8)
+2026-09-19 18:09:28,505 [INFO] QwenQualitySweep: Step 50/50 took 0.14s (loss=1.0781, bs=8, micro=8)
+2026-09-19 18:09:36,874 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\distilbert_mnli_full_inject_infini_full_metrics.json
+2026-09-19 18:09:36,948 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\checkpoints\inject_infini\weights.pt (module_params=0, lora_params=88)
+2026-09-19 18:09:37,247 [INFO] QwenQualitySweep: [1/1] inject_infini -> REJECTED_EXPANSION 42.60% (F1: 0.3537, Peak VRAM: 330.65 MB)
+2026-09-19 18:09:37,248 [INFO] QwenQualitySweep: [Quality Guard] Module 'inject_infini' did not pass quality criteria (status=REJECTED_EXPANSION, acc=42.60%, pass_thresh=36.90%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-19 18:09:37,831 [INFO] QwenQualitySweep: ================================================================================
+2026-09-19 18:09:37,832 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_mnli_full on mnli)
+2026-09-19 18:09:37,873 [INFO] QwenQualitySweep: 
+                                     Module             Status Accuracy Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+             mla_attention (efficient-attn)    CRASH_NO_OUTPUT    0.00%   -81.80% 0.0000                              1.00x    0.0 MB              18.16               N/A
+         moe_deltakv_paged (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+            nasc_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+                     nexus (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+             nha_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+               nli_softmax (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+             nsa_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+         nystrom_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+optimized_hybrid_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+           orion_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+           padre_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+       performer_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+          primal_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+projection_factorized_attn (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+            qcqa_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+     rala_linear_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+                  reap_moe (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+         replace_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+         res_svd_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+         routing_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+             rpc_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+                      salt (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+                  samba_m3 (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+                 samba_moe (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+                simple_ssm (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+   smart_weighted_ensemble (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+       soa_fused_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+   span_expanded_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+   spectraformer_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+             spectron_attn (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+    squeezing_heads_module (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+     svd_compressed_module (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+                svd_linear (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+      svd_llm_v2_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+                 svd_mamba (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+    svd_sequence_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+      tlinformer_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+   token_compressed_module (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+              tp_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+                 upi_mamba (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+             vig_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+            wgqa_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+           zeros_attention (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                              1.00x    0.0 MB               0.00               N/A
+                    primal (efficient-attn)              CRASH    0.00%   -81.80% 0.0000                 0            1.00x    0.0 MB               0.00               N/A
+          inject_cosformer (efficient-attn) REJECTED_EXPANSION   36.60%   -45.20% 0.3525                 0            1.00x  223.9 MB              15.33               N/A
+       inject_hymba_transx (efficient-attn) REJECTED_EXPANSION   47.10%   -34.70% 0.4349                 0            1.00x  492.2 MB              50.32               N/A
+             inject_infini (efficient-attn) REJECTED_EXPANSION   42.60%   -39.20% 0.3537                 0            1.00x  330.6 MB               8.00              8.00
+2026-09-19 18:09:37,874 [INFO] QwenQualitySweep: ================================================================================
+D:\svd_project\Codes\framework\run_one_module_isolated.py:120: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

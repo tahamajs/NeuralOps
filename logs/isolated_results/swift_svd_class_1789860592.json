@@ -1,0 +1,11 @@
+{
+  "module": "swift_svd_class",
+  "model": "models\\distilbert_agnews_full",
+  "dataset": "ag_news",
+  "status": "CRASH",
+  "started_at": "2026-09-19T23:30:14.416672",
+  "pid": 18596,
+  "error": "KeyError: 'text'",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 63, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 2409, in run_single_module_main\n    finetune(base, tokenizer, train, args.dataset, args.finetune_steps, args.seq_len, args.batch_size, device, args.precision == \"fp16\", lr=head_lr)\n    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 1426, in finetune\n    x, y = encode(tokenizer, train[i:i+batch_size], name, seq_len, device)\n           ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 1013, in encode\n    texts = batch[a] if b is None else list(zip(batch[a], batch[b]))\n            ~~~~~^^^\nKeyError: 'text'\n",
+  "finished_at": "2026-09-19T23:30:17.638684"
+}

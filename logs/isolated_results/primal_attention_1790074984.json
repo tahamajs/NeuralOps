@@ -1,0 +1,11 @@
+{
+  "module": "primal_attention",
+  "model": "models/distilbert_sst2",
+  "dataset": "sst2",
+  "status": "CRASH",
+  "started_at": "2026-09-22T11:03:33.306706",
+  "pid": 14060,
+  "error": "EOFError: Ran out of input",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 63, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 2905, in run_single_module_main\n    ({k: v.to(device) for k, v in x.items()}, y) for x, y in torch.load(str(_eval_cache), map_location=\"cpu\", weights_only=False)\n                                                             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\serialization.py\", line 1495, in load\n    return _legacy_load(\n        opened_file, map_location, pickle_module, **pickle_load_args\n    )\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\serialization.py\", line 1744, in _legacy_load\n    magic_number = pickle_module.load(f, **pickle_load_args)\nEOFError: Ran out of input\n",
+  "finished_at": "2026-09-22T11:03:44.200093"
+}

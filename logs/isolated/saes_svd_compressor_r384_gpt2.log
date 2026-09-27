@@ -1,0 +1,83 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'adaptive_span_attention' due to: name 'ATTENTION_REGISTRY' is not defined
+2026-09-26 01:45:21,142 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-09-26 01:45:21,143 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-26 01:45:21,143 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-26 01:45:21,143 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0%
+2026-09-26 01:45:22,176 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/allenai/c4/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-09-26 01:45:22,293 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/allenai/c4/1588ec454efa1a09f29cd18ddd04fe05fc8653a2/README.md "HTTP/1.1 200 OK"
+2026-09-26 01:45:22,551 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/allenai/c4/resolve/1588ec454efa1a09f29cd18ddd04fe05fc8653a2/c4.py "HTTP/1.1 404 Not Found"
+2026-09-26 01:45:23,198 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/allenai/c4/allenai/c4.py "HTTP/1.1 404 Not Found"
+2026-09-26 01:45:23,577 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/c4/revision/1588ec454efa1a09f29cd18ddd04fe05fc8653a2 "HTTP/1.1 200 OK"
+2026-09-26 01:45:24,380 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/allenai/c4/resolve/1588ec454efa1a09f29cd18ddd04fe05fc8653a2/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-09-26 01:45:24,690 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/c4/tree/1588ec454efa1a09f29cd18ddd04fe05fc8653a2/en?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 01:45:25,146 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/c4/tree/1588ec454efa1a09f29cd18ddd04fe05fc8653a2/en?expand=false&recursive=false&limit=1000&cursor=ZXlKbWFXeGxYMjVoYldVaU9pSmxiaTlqTkMxMGNtRnBiaTR3TURrNU9TMXZaaTB3TVRBeU5DNXFjMjl1TG1kNklpd2lkSEpsWlY5dmFXUWlPaUprWXprME0yTTBZelF3WmpVelpEQXlZak14WTJWa01XUmxabUUzWlRWbU5ETTRaRFU0TmpKbEluMD06MTAwMA%3D%3D "HTTP/1.1 200 OK"
+2026-09-26 01:45:25,422 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/allenai/c4/resolve/1588ec454efa1a09f29cd18ddd04fe05fc8653a2/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-09-26 01:45:26,150 [INFO] QwenQualitySweep: Configured dataset 'c4' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3400.50it/s]
+2026-09-26 01:45:27,168 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-26 01:45:27,168 [INFO] QwenQualitySweep: detected model family=gpt2 adapter={'family': 'gpt', 'raw_family': 'gpt2', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-26 01:45:27,168 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 01:45:27,168 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-26 01:45:27,168 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-26 01:45:27,169 [INFO] QwenQualitySweep:   family:            gpt2
+2026-09-26 01:45:27,169 [INFO] QwenQualitySweep:   dataset:           c4
+2026-09-26 01:45:27,169 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-26 01:45:27,169 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-26 01:45:27,169 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-26 01:45:27,169 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-26 01:45:27,169 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 01:45:27,353 [INFO] QwenQualitySweep: Prepared 0 eval batches and 0 train batches directly on GPU.
+Token indices sequence length is longer than the specified maximum sequence length for this model (948196 > 1024). Running this sequence through the model will result in indexing errors
+`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+2026-09-26 01:47:28,977 [INFO] QwenQualitySweep: Baseline model benchmark perplexity on validation set: 37.856544 (loss=3.6338)
+2026-09-26 01:47:29,186 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 01:47:29,187 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-26 01:47:29,187 [INFO] QwenQualitySweep:   Validation Majority Count: 500 / 1000
+2026-09-26 01:47:29,187 [INFO] QwenQualitySweep:   True Majority Baseline:    50.00%
+2026-09-26 01:47:29,187 [INFO] QwenQualitySweep:   Standard Error (SE):       1.581%
+2026-09-26 01:47:29,187 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.74%
+2026-09-26 01:47:29,187 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  54.74%
+2026-09-26 01:47:29,188 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.00% (500/1000), SE=1.581%, 3*SE=4.740%
+2026-09-26 01:47:29,188 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 01:47:29,188 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-26 01:47:29,572 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: saes_svd_compressor (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-26 01:47:35,683 [INFO] QwenQualitySweep: module=saes_svd_compressor path=adapted_gpt2
+2026-09-26 01:47:35,684 [INFO] QwenQualitySweep: module=saes_svd_compressor injection summary: 36 SVDLinear layers active
+2026-09-26 01:47:35,684 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for saes_svd_compressor (lr=2.0e-04)
+2026-09-26 01:47:35,814 [INFO] framework.utils.compat: Recovery fine-tuning selected 38956032 trainable parameters across 108 tensors.
+2026-09-26 01:47:35,816 [WARNING] framework.utils.compat: Total trainable parameters (38956032) exceeds 2000000 threshold for recovery. Pruning with priority-based allocation.
+2026-09-26 01:47:35,817 [INFO] framework.utils.compat:   priority=0: kept=0 pruned=0 (running total=0)
+2026-09-26 01:47:35,817 [INFO] framework.utils.compat:   priority=1: kept=40 pruned=68 (running total=1814016)
+2026-09-26 01:47:35,817 [INFO] framework.utils.compat:   priority=2: kept=0 pruned=0 (running total=1814016)
+2026-09-26 01:47:35,818 [INFO] framework.utils.compat:   priority=3: kept=0 pruned=0 (running total=1814016)
+2026-09-26 01:47:35,819 [INFO] framework.utils.compat: Reduced recovery parameters to 1814016 trainable parameters across 40 tensors.
+2026-09-26 01:47:35,819 [INFO] framework.utils.compat: Discovered 40 trainable tensors (1814016 params)
+2026-09-26 01:47:35,821 [INFO] QwenQualitySweep: LoRA fine-tuning: 1814016 trainable parameters across 40 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-26 01:47:36,211 [INFO] QwenQualitySweep: Step 1/50 took 0.39s (loss=6.5523, bs=8, micro=8)
+2026-09-26 01:47:36,990 [INFO] QwenQualitySweep: Step 5/50 took 0.15s (loss=6.1439, bs=8, micro=8)
+2026-09-26 01:47:37,743 [INFO] QwenQualitySweep: Step 10/50 took 0.15s (loss=5.0998, bs=8, micro=8)
+2026-09-26 01:47:38,530 [INFO] QwenQualitySweep: Step 15/50 took 0.16s (loss=5.3976, bs=8, micro=8)
+2026-09-26 01:47:39,315 [INFO] QwenQualitySweep: Step 20/50 took 0.16s (loss=5.0888, bs=8, micro=8)
+2026-09-26 01:47:40,088 [INFO] QwenQualitySweep: Step 25/50 took 0.15s (loss=5.0749, bs=8, micro=8)
+2026-09-26 01:47:40,929 [INFO] QwenQualitySweep: Step 30/50 took 0.16s (loss=4.5628, bs=8, micro=8)
+2026-09-26 01:47:41,633 [INFO] QwenQualitySweep: Step 35/50 took 0.11s (loss=4.9001, bs=8, micro=8)
+2026-09-26 01:47:42,377 [INFO] QwenQualitySweep: Step 40/50 took 0.19s (loss=5.0418, bs=8, micro=8)
+2026-09-26 01:47:43,241 [INFO] QwenQualitySweep: Step 45/50 took 0.17s (loss=5.6159, bs=8, micro=8)
+2026-09-26 01:47:44,102 [INFO] QwenQualitySweep: Step 50/50 took 0.17s (loss=5.1474, bs=8, micro=8)
+2026-09-26 01:49:43,863 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\c4_baselines\saes_svd\gpt2_saes_svd_compressor_full_metrics.json
+2026-09-26 01:49:44,223 [INFO] QwenQualitySweep: [1/1] saes_svd_compressor -> PASS_LOW_PPL 0.00% (F1: 0.0, Peak VRAM: 2250.126953125 MB)
+2026-09-26 01:49:44,223 [INFO] QwenQualitySweep: [Quality Guard] Module 'saes_svd_compressor' did not pass quality criteria (status=PASS_LOW_PPL, acc=0.00%, pass_thresh=54.74%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-26 01:49:44,229 [INFO] QwenQualitySweep: [1/1] saes_svd_compressor Timing: eval_time=134.66s
+2026-09-26 01:49:44,229 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-26 01:49:45,019 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 01:49:45,019 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on c4)
+2026-09-26 01:49:45,035 [INFO] QwenQualitySweep: 
+                              Module       Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+saes_svd_compressor (efficient-attn) PASS_LOW_PPL    0.00%    +0.00% 0.0000                  0            1.17x 2250.1 MB             118.14              0.00
+2026-09-26 01:49:45,035 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:171: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

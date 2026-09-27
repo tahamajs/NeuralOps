@@ -1,0 +1,120 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-24 21:56:09,686 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'dynamic_entropy_factory', '--output_json', 'logs\\isolated_results\\dynamic_entropy_factory_1790274343172_7204.json']
+2026-09-24 21:56:09,750 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 21:56:09,752 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=4 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-24 21:56:10,698 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-09-24 21:56:10,831 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md "HTTP/1.1 200 OK"
+2026-09-24 21:56:11,072 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-24 21:56:12,358 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-24 21:56:12,617 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-09-24 21:56:12,860 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-09-24 21:56:13,464 [INFO] httpx: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-09-24 21:56:13,819 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-24 21:56:14,066 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-24 21:56:14,307 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-09-24 21:56:14,551 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-24 21:56:15,304 [INFO] QwenQualitySweep: Configured dataset 'wikitext2' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 2396.27it/s]
+2026-09-24 21:56:16,522 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 21:56:16,522 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 21:56:16,522 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 21:56:16,522 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 21:56:16,522 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-24 21:56:16,523 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-24 21:56:16,523 [INFO] QwenQualitySweep:   dataset:           wikitext2
+2026-09-24 21:56:16,523 [INFO] QwenQualitySweep:   batch_size:        4
+2026-09-24 21:56:16,523 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 21:56:16,523 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 21:56:16,523 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 21:56:16,523 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 21:56:16,706 [INFO] QwenQualitySweep: Prepared 0 eval batches and 0 train batches directly on GPU.
+Token indices sequence length is longer than the specified maximum sequence length for this model (249749 > 1024). Running this sequence through the model will result in indexing errors
+`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+2026-09-24 21:59:13,942 [INFO] QwenQualitySweep: Baseline model benchmark perplexity on validation set: 41.346157 (loss=3.7220)
+2026-09-24 21:59:14,260 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 21:59:14,261 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-24 21:59:14,261 [INFO] QwenQualitySweep:   Validation Majority Count: 500 / 1000
+2026-09-24 21:59:14,261 [INFO] QwenQualitySweep:   True Majority Baseline:    50.00%
+2026-09-24 21:59:14,263 [INFO] QwenQualitySweep:   Standard Error (SE):       1.581%
+2026-09-24 21:59:14,263 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.74%
+2026-09-24 21:59:14,263 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  54.74%
+2026-09-24 21:59:14,263 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.00% (500/1000), SE=1.581%, 3*SE=4.740%
+2026-09-24 21:59:14,263 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 21:59:14,286 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 21:59:15,037 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: dynamic_entropy_factory (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-24 21:59:16,242 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD: no real calibration data available (calibration_loader=None, calibration_texts=None/empty). Activation-aware whitening DISABLED. Using weight-only SVD for all layers. Expected reconstruction error at rank=64: ~0.15-0.25.
+2026-09-24 21:59:20,640 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.7717 on transformer.h.0.attn.c_attn exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:20,801 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.6572 on transformer.h.0.attn.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:20,958 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8270 on transformer.h.0.mlp.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:21,109 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.7852 on transformer.h.1.attn.c_attn exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:21,250 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.6523 on transformer.h.1.attn.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:21,387 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8334 on transformer.h.1.mlp.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:21,531 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8071 on transformer.h.2.attn.c_attn exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:21,674 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.7763 on transformer.h.2.attn.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:21,832 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8201 on transformer.h.2.mlp.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:21,977 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8192 on transformer.h.3.attn.c_attn exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:22,119 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.7864 on transformer.h.3.attn.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:22,278 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8098 on transformer.h.3.mlp.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:22,431 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8071 on transformer.h.4.attn.c_attn exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:22,573 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.7797 on transformer.h.4.attn.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:22,715 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8225 on transformer.h.4.mlp.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:22,856 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8077 on transformer.h.5.attn.c_attn exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:22,993 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.7933 on transformer.h.5.attn.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:23,149 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8326 on transformer.h.5.mlp.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:23,305 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8287 on transformer.h.6.attn.c_attn exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:23,448 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.7735 on transformer.h.6.attn.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:23,587 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8404 on transformer.h.6.mlp.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:23,724 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8300 on transformer.h.7.attn.c_attn exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:23,864 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.7873 on transformer.h.7.attn.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:24,023 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8472 on transformer.h.7.mlp.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:24,173 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8511 on transformer.h.8.attn.c_attn exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:24,316 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.7880 on transformer.h.8.attn.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:24,477 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8485 on transformer.h.8.mlp.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:24,626 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8658 on transformer.h.9.attn.c_attn exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:24,769 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8314 on transformer.h.9.attn.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:24,928 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8558 on transformer.h.9.mlp.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:25,079 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8531 on transformer.h.10.attn.c_attn exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:25,220 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8346 on transformer.h.10.attn.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:25,382 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8606 on transformer.h.10.mlp.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:25,531 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8446 on transformer.h.11.attn.c_attn exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:25,672 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.7110 on transformer.h.11.attn.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:25,801 [WARNING] framework.compression_engine.dynamic_rank: DynamicEntropySVD error 0.8532 on transformer.h.11.mlp.c_proj exceeded threshold 0.4000; falling back to original.
+2026-09-24 21:59:25,891 [INFO] QwenQualitySweep: module=dynamic_entropy_factory path=adapted_gpt
+2026-09-24 21:59:25,893 [INFO] QwenQualitySweep: module=dynamic_entropy_factory injection summary: 0 SVDLinear layers active
+2026-09-24 21:59:25,893 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for dynamic_entropy_factory (lr=2.0e-04)
+2026-09-24 21:59:26,005 [INFO] framework.utils.compat: Recovery fine-tuning selected 0 trainable parameters across 0 tensors.
+2026-09-24 21:59:26,006 [INFO] framework.utils.compat: Discovered 0 trainable tensors (0 params)
+2026-09-24 22:02:37,420 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\gpt2_wikitext2_sweep\gpt2_dynamic_entropy_factory_full_metrics.json
+2026-09-24 22:02:37,948 [INFO] QwenQualitySweep: [1/1] dynamic_entropy_factory -> PASS_NO_COMPRESSION 0.00% (F1: 0.0, Peak VRAM: 816.22509765625 MB)
+2026-09-24 22:02:37,948 [WARNING] QwenQualitySweep: Module 'dynamic_entropy_factory' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-24 22:02:37,948 [INFO] QwenQualitySweep: [Quality Guard] Module 'dynamic_entropy_factory' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=0.00%, pass_thresh=54.74%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-24 22:02:37,969 [INFO] QwenQualitySweep: [1/1] dynamic_entropy_factory Timing: eval_time=202.93s
+2026-09-24 22:02:37,970 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 22:02:38,546 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 22:02:38,546 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on wikitext2)
+2026-09-24 22:02:38,586 [INFO] QwenQualitySweep: 
+                                           Module              Status Accuracy    Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                                             full                PASS    0.00% 0.00% (base)    N/A                              1.00x  916.2 MB               7.88               N/A
+                       swift_svd (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             235.02               N/A
+                 gated_delta_net (efficient-attn)     SKIP_DEPRECATED    0.00%       +0.00%    N/A                              1.00x       N/A               0.00               N/A
+                              flat_llm_compressor   FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 6            1.00x  816.2 MB             181.14               N/A
+           tt_compressor_factory (efficient-attn)   FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 0            1.05x  816.2 MB             272.95               N/A
+              hybrid_svd_factory (efficient-attn)   FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 0            1.08x 1241.0 MB             313.73               N/A
+                    svd_sequence (efficient-attn)   FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 0            1.00x 1273.3 MB             518.73               N/A
+                                     kmeans_class                PASS    0.00%       +0.00% 0.0000                36            1.83x 1400.3 MB             214.19               N/A
+                   uniql_factory (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             205.34               N/A
+                          zerokv (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             181.44               N/A
+                                 armor_compressor        PASS_LOW_PPL    0.00%       +0.00% 0.0000                12            0.98x 1229.4 MB             230.55               N/A
+rotational_slicegpt_int4_factory (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             375.93               N/A
+                   swift_svd_act (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             217.05               N/A
+              hashed_net_factory (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             216.72               N/A
+                mlorq_compressor (efficient-attn)                FAIL    0.00%       +0.00% 0.0000                 0            1.00x    0.0 MB               6.80               N/A
+      dynamic_entropy_compressor (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             221.69               N/A
+                        kronecker_tt_lora_factory  MODERATE_EXPANSION    0.00%       +0.00% 0.0000                36            0.95x 1400.4 MB             443.28               N/A
+         dynamic_entropy_factory (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             190.33              0.00
+2026-09-24 22:02:38,586 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:154: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

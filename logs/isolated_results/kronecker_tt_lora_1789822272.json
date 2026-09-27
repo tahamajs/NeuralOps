@@ -1,0 +1,11 @@
+{
+  "module": "kronecker_tt_lora",
+  "model": "models\\distilbert_mnli_full",
+  "dataset": "mnli",
+  "status": "CRASH",
+  "started_at": "2026-09-19T12:51:26.785165",
+  "pid": 20440,
+  "error": "ValueError: could not convert string to float: ''",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 57, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 3006, in run_single_module_main\n    acc_val = float(r.get(\"accuracy_pct\", 0.0))\nValueError: could not convert string to float: ''\n",
+  "finished_at": "2026-09-19T12:52:45.064818"
+}

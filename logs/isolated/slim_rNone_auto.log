@@ -1,0 +1,226 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+2026-09-27 06:11:15,760 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-09-27 06:11:15,760 [INFO] QwenQualitySweep: GPU VRAM: 2.76 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-27 06:11:15,762 [INFO] QwenQualitySweep: Free VRAM < 3.0 GB (2.76 GB) — sleeping 10s for VRAM to settle...
+2026-09-27 06:11:25,763 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-27 06:11:25,764 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0%
+2026-09-27 06:11:25,764 [WARNING] QwenQualitySweep: LOW GPU MEMORY: Only 2.92 GB VRAM available (< 4.0 GB). High risk of CUDA OOM.
+2026-09-27 06:11:26,111 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3508.75it/s]
+2026-09-27 06:11:26,944 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-27 06:11:26,944 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'raw_family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-27 06:11:26,944 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 06:11:26,945 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-27 06:11:26,945 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-27 06:11:26,945 [INFO] QwenQualitySweep:   family:            bert
+2026-09-27 06:11:26,945 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-27 06:11:26,945 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-27 06:11:26,945 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-27 06:11:26,945 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-27 06:11:26,946 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-27 06:11:26,946 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 06:11:26,950 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\bert_sst2_baseline\finetuned_model.pt
+2026-09-27 06:11:26,974 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
+2026-09-27 06:11:27,112 [INFO] QwenQualitySweep: Loading pre-cached batches from results\02_glue_sweeps\distilbert\sst2_4parallel\batch_cache_sst2 (skipping tokenization)
+2026-09-27 06:11:28,030 [INFO] QwenQualitySweep: Prepared 55 eval batches and 50 train batches directly on GPU.
+2026-09-27 06:11:31,555 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.60%
+2026-09-27 06:11:31,736 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 06:11:31,736 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-27 06:11:31,736 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-27 06:11:31,736 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-27 06:11:31,737 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-27 06:11:31,737 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-27 06:11:31,737 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-27 06:11:31,737 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-27 06:11:31,737 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 06:11:31,740 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-27 06:11:32,209 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: slim (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-27 06:11:33,524 [WARNING] framework.compression_engine.slim_compressor: SLiM reconstruction error 0.5015 on distilbert.transformer.layer.0.attention.q_lin exceeded threshold 0.5000. Skipping (fallback to original).
+2026-09-27 06:11:33,524 [WARNING] framework.compression_engine.slim_compressor: Fallback triggered for distilbert.transformer.layer.0.attention.q_lin. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-27 06:11:33,788 [WARNING] framework.compression_engine.slim_compressor: SLiM reconstruction error 0.6206 on distilbert.transformer.layer.0.attention.k_lin exceeded threshold 0.5000. Skipping (fallback to original).
+2026-09-27 06:11:33,789 [WARNING] framework.compression_engine.slim_compressor: Fallback triggered for distilbert.transformer.layer.0.attention.k_lin. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-27 06:11:34,290 [WARNING] framework.compression_engine.slim_compressor: SLiM reconstruction error 0.6187 on distilbert.transformer.layer.0.attention.out_lin exceeded threshold 0.5000. Skipping (fallback to original).
+2026-09-27 06:11:34,290 [WARNING] framework.compression_engine.slim_compressor: Fallback triggered for distilbert.transformer.layer.0.attention.out_lin. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-27 06:11:35,325 [WARNING] framework.compression_engine.slim_compressor: SLiM reconstruction error 0.5160 on distilbert.transformer.layer.1.attention.out_lin exceeded threshold 0.5000. Skipping (fallback to original).
+2026-09-27 06:11:35,325 [WARNING] framework.compression_engine.slim_compressor: Fallback triggered for distilbert.transformer.layer.1.attention.out_lin. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-27 06:11:38,460 [WARNING] framework.compression_engine.slim_compressor: SLiM reconstruction error 0.5128 on distilbert.transformer.layer.5.attention.q_lin exceeded threshold 0.5000. Skipping (fallback to original).
+2026-09-27 06:11:38,460 [WARNING] framework.compression_engine.slim_compressor: Fallback triggered for distilbert.transformer.layer.5.attention.q_lin. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-27 06:11:39,137 [INFO] QwenQualitySweep: module=slim path=legacy_bert
+2026-09-27 06:11:39,138 [INFO] QwenQualitySweep: module=slim injection summary: 0 SVDLinear layers active
+2026-09-27 06:11:39,138 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for slim (lr=2.0e-04)
+2026-09-27 06:11:39,184 [INFO] framework.utils.compat: Recovery fine-tuning selected 592130 trainable parameters across 4 tensors.
+2026-09-27 06:11:39,184 [INFO] framework.utils.compat: Discovered 4 trainable tensors (592130 params)
+2026-09-27 06:11:39,186 [INFO] QwenQualitySweep: LoRA fine-tuning: 592130 trainable parameters across 4 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-27 06:11:39,514 [INFO] QwenQualitySweep: Step 1/50 took 0.32s (loss=0.0372, bs=16, micro=8)
+2026-09-27 06:11:39,825 [INFO] QwenQualitySweep: Step 5/50 took 0.08s (loss=0.0067, bs=16, micro=8)
+2026-09-27 06:11:40,154 [INFO] QwenQualitySweep: Step 10/50 took 0.07s (loss=0.0062, bs=16, micro=8)
+2026-09-27 06:11:40,480 [INFO] QwenQualitySweep: Step 15/50 took 0.06s (loss=0.0111, bs=16, micro=8)
+2026-09-27 06:11:40,797 [INFO] QwenQualitySweep: Step 20/50 took 0.06s (loss=0.0704, bs=16, micro=8)
+2026-09-27 06:11:41,129 [INFO] QwenQualitySweep: Step 25/50 took 0.06s (loss=0.0012, bs=16, micro=8)
+2026-09-27 06:11:41,498 [INFO] QwenQualitySweep: Step 30/50 took 0.07s (loss=0.1017, bs=16, micro=8)
+2026-09-27 06:11:41,830 [INFO] QwenQualitySweep: Step 35/50 took 0.06s (loss=0.0050, bs=16, micro=8)
+2026-09-27 06:11:42,140 [INFO] QwenQualitySweep: Step 40/50 took 0.06s (loss=0.0003, bs=16, micro=8)
+2026-09-27 06:11:42,455 [INFO] QwenQualitySweep: Step 45/50 took 0.06s (loss=0.7226, bs=16, micro=8)
+2026-09-27 06:11:43,052 [INFO] QwenQualitySweep: Step 50/50 took 0.19s (loss=0.0099, bs=16, micro=8)
+2026-09-27 06:11:47,933 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\02_glue_sweeps\distilbert\sst2_4parallel\distilbert_sst2_slim_full_metrics.json
+2026-09-27 06:11:48,247 [INFO] QwenQualitySweep: [1/1] slim -> PASS_NO_COMPRESSION 89.91% (F1: 0.902, Peak VRAM: 323.83 MB)
+2026-09-27 06:11:48,247 [WARNING] QwenQualitySweep: Module 'slim' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-27 06:11:48,247 [INFO] QwenQualitySweep: [Quality Guard] Module 'slim' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=89.91%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-27 06:11:48,253 [INFO] QwenQualitySweep: [1/1] slim Timing: eval_time=16.04s
+2026-09-27 06:11:48,255 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-27 06:11:48,549 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 06:11:48,550 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-27 06:11:48,570 [INFO] QwenQualitySweep: 
+                                       Module                  Status Accuracy    Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                          aatc_xkv_compressor                    PASS   90.25%       -0.35% 0.9077                 6            1.00x  324.5 MB               7.00               N/A
+                                adaptive_span                    PASS   90.60%       +0.00% 0.9099                 6            1.00x  414.4 MB              12.91               N/A
+                    adaptive (efficient-attn)                    PASS   87.16%       -3.44% 0.8788                 0            1.06x  416.9 MB              13.76               N/A
+                                           a3                    PASS   90.14%       -0.46% 0.9057                24            1.07x  364.1 MB              13.44               N/A
+             adaptive_sparse (efficient-attn)                    PASS   89.91%       -0.69% 0.8984                 0            1.00x  405.6 MB              15.70               N/A
+                   adasplash (efficient-attn)                    PASS   89.45%       -1.15% 0.8980                 0            1.00x  453.7 MB              25.00               N/A
+                                       adasvd                    PASS   78.21%      -12.39% 0.8190                24            1.21x  346.4 MB              11.86               N/A
+                                         admm                    PASS   90.02%       -0.58% 0.9049                24            1.00x  323.7 MB               5.69               N/A
+          aegis_spectron_fp8 (efficient-attn)                    PASS   88.19%       -2.41% 0.8841                 0            1.12x  396.7 MB              74.17               N/A
+                                         asvd                    PASS   90.71%       +0.11% 0.9111                 6            1.00x  421.3 MB              16.06               N/A
+                    bam_umoe (efficient-attn)      MODERATE_EXPANSION   90.60%       +0.00% 0.9091                 0            1.00x  418.1 MB              14.09               N/A
+                      bonsai (efficient-attn)     PASS_NO_COMPRESSION   90.48%       -0.12% 0.9095                 0            1.00x  312.7 MB               3.51               N/A
+                  chela_slay (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -90.60% 0.0000                 0            1.00x    0.0 MB               0.76               N/A
+                     cluster (efficient-attn)                    PASS   90.14%       -0.46% 0.9057                 0            1.00x  411.9 MB              21.65               N/A
+                                         come                    PASS   87.84%       -2.76% 0.8825                 1            1.10x  385.5 MB               9.37               N/A
+                                   cachenotes                    PASS   90.60%       +0.00% 0.9105                24            1.00x  324.2 MB              11.17               N/A
+      block_transformer_hiba (efficient-attn)     PASS_NO_COMPRESSION   90.02%       -0.58% 0.9034                 0            1.00x  380.5 MB               8.27               N/A
+        compressed_attention (efficient-attn)                    PASS   89.33%       -1.27% 0.8984                 0            1.11x  408.0 MB               9.47               N/A
+            compressed_attention_layer_energy                    PASS   81.65%       -8.95% 0.8157                 6            1.22x  390.7 MB              11.65               N/A
+                   cosformer (efficient-attn)                    PASS   78.78%      -11.82% 0.7846                 0            1.00x  411.6 MB              14.33               N/A
+                       coopq (efficient-attn)     PASS_NO_COMPRESSION   90.48%       -0.12% 0.9089                 0            1.00x  366.8 MB               6.30               N/A
+                         cur (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  312.7 MB               8.55               N/A
+                     cur_moe (efficient-attn)     PASS_NO_COMPRESSION   90.25%       -0.35% 0.9085                 0            1.00x  324.5 MB               7.30               N/A
+                 custom_attn (efficient-attn)      MODERATE_EXPANSION   90.60%       +0.00% 0.9099                 0            1.00x  390.7 MB              10.88               N/A
+                                     delta_kv                    PASS   90.94%       +0.34% 0.9131                 8            1.00x  312.7 MB               4.48               N/A
+                  direct_svd (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  312.7 MB               4.36               N/A
+                               delta_kv_class                    PASS   90.37%       -0.23% 0.9079                24            1.00x  312.7 MB               5.26               N/A
+                        dobi (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  312.7 MB               4.63               N/A
+                  dobi_class (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  312.7 MB               4.25               N/A
+                       drone (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9103                 0            1.00x  324.5 MB               6.75               N/A
+                dynamic_rank (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  312.7 MB               5.40               N/A
+                         eat (efficient-attn)       EXTREME_EXPANSION   51.72%      -38.88% 0.6744                 0            1.00x  469.7 MB              13.04               N/A
+          dynamic_rank_class (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  312.7 MB               4.77               N/A
+              entropy_budget (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  312.7 MB               6.43               N/A
+                                    enlighten                    PASS   90.71%       +0.11% 0.9111                24            1.00x  324.5 MB               6.49               N/A
+entropy_rank_allocator_class (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  312.7 MB               4.52               N/A
+           expert_choice_moe (efficient-attn)      MODERATE_EXPANSION   89.91%       -0.69% 0.9029                 0            1.00x  403.1 MB              14.79               N/A
+                                          faq                    PASS   90.60%       +0.00% 0.9099                24            0.99x  382.7 MB              13.35               N/A
+                      flash3 (efficient-attn)                    PASS   90.60%       +0.00% 0.9091                 0            1.00x  380.5 MB               8.76               N/A
+                        flap (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  312.7 MB               2.99               N/A
+                        fasa (efficient-attn)                    PASS   90.71%       +0.11% 0.9097                 0            1.00x  386.3 MB              10.98               N/A
+                  flash3_fp8 (efficient-attn)                    PASS   90.60%       +0.00% 0.9091                 0            1.00x  380.5 MB               9.30               N/A
+                         fms (efficient-attn)      MODERATE_EXPANSION   76.38%      -14.22% 0.7399                 0            1.00x  697.4 MB              34.36               N/A
+                      frandi (efficient-attn)     PASS_NO_COMPRESSION   90.83%       +0.23% 0.9121                 0            1.00x  324.5 MB               6.50               N/A
+                                         full                    PASS   90.60% 0.00% (base) 0.9099                 0            1.00x  402.0 MB               2.36               N/A
+     frandi_compressor_class (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  324.5 MB               6.13               N/A
+                    flat_llm (efficient-attn)     PASS_NO_COMPRESSION   90.37%       -0.23% 0.9081                 0            1.00x  324.5 MB               4.92               N/A
+              full_attention (efficient-attn)                    PASS   90.83%       +0.23% 0.9105                 0            1.00x  389.5 MB              10.35               N/A
+                 fusion_attn (efficient-attn)      MODERATE_EXPANSION   89.91%       -0.69% 0.9024                 0            1.00x  380.9 MB               8.98               N/A
+                    galerkin (efficient-attn)                    PASS   78.90%      -11.70% 0.7928                 0            1.00x  402.5 MB              12.99               N/A
+           gated_linear_attn (efficient-attn)                    FAIL    0.00%      -90.60% 0.0000                 0            1.00x    0.0 MB               0.92               N/A
+                                    goldfinch      MODERATE_EXPANSION   90.60%       +0.00% 0.9097                 6            1.00x  429.2 MB              86.60               N/A
+                         gqa (efficient-attn)       FAIL_BELOW_CHANCE   54.70%      -35.90% 0.6848                 0            1.08x  370.8 MB              12.11               N/A
+                        gfws (efficient-attn)     PASS_NO_COMPRESSION   90.37%       -0.23% 0.9081                 0            1.00x  323.7 MB               8.72               N/A
+                    grecodec (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  312.7 MB               3.07               N/A
+   grecodec_compressor_class (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  312.7 MB               2.95               N/A
+                 griffin_ssd (efficient-attn)      MODERATE_EXPANSION   88.19%       -2.41% 0.8874                 0            1.00x  439.0 MB              13.77               N/A
+                     hamming (efficient-attn)                    PASS   79.59%      -11.01% 0.8241                 0            1.00x  402.4 MB              11.50               N/A
+            hashed_net_class (efficient-attn)     PASS_NO_COMPRESSION   90.25%       -0.35% 0.9069                 0            1.00x  324.5 MB               6.86               N/A
+                  hashed_net (efficient-attn)     PASS_NO_COMPRESSION   90.94%       +0.34% 0.9125                 0            1.00x  324.5 MB               6.91               N/A
+                 hgrn2_outer (efficient-attn)       SKIP_BERT_TIMEOUT    0.00%      -90.60% 0.0000                 0            1.00x    0.0 MB            1215.49               N/A
+            hybrid_attention (efficient-attn)      MODERATE_EXPANSION   89.79%       -0.81% 0.9040                 0            1.00x  421.6 MB              11.34               N/A
+                                   hybrid_svd                    PASS   89.11%       -1.49% 0.8917                18            1.08x  372.5 MB               9.17               N/A
+                    hybridkv (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  312.7 MB               3.66               N/A
+              hybridkv_class (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  312.7 MB               3.54               N/A
+                      infini (efficient-attn)      MODERATE_EXPANSION   90.60%       +0.00% 0.9099                 0            1.00x  383.5 MB              11.09               N/A
+                adaptive_svd (efficient-attn)                    PASS   88.30%       -2.30% 0.8867                 0            1.15x  363.1 MB              13.04               N/A
+                                     aatc_xkv                    PASS   90.25%       -0.35% 0.9077                 6            1.00x  324.5 MB               4.33               N/A
+                aegis_hybrid (efficient-attn)                    PASS   82.91%       -7.69% 0.8379                 0            1.19x  401.3 MB              17.43               N/A
+                                  admm_pruner                    PASS   90.25%       -0.35% 0.9055                24            1.00x  431.8 MB               5.59               N/A
+                    aegis_v2 (efficient-attn)                    PASS   89.56%       -1.04% 0.8992                 0            1.09x  383.5 MB              17.87               N/A
+                    aegis_v5 (efficient-attn)                    PASS   86.70%       -3.90% 0.8679                 0            1.11x  380.4 MB              18.98               N/A
+                    aegis_v6 (efficient-attn)                    PASS   89.11%       -1.49% 0.8977                 0            1.11x  416.4 MB              19.66               N/A
+                                        armor                    PASS   90.37%       -0.23% 0.9085                24            0.97x  453.6 MB               9.53               N/A
+                         ast (efficient-attn)     PASS_NO_COMPRESSION   90.37%       -0.23% 0.9081                 0            1.00x  323.7 MB               5.29               N/A
+                      compot (efficient-attn)     PASS_NO_COMPRESSION   90.71%       +0.11% 0.9109                 0            1.00x  323.7 MB               5.06               N/A
+     compot_compressor_class (efficient-attn)     PASS_NO_COMPRESSION   90.48%       -0.12% 0.9097                 0            1.00x  323.7 MB               6.34               N/A
+              compressed_mha (efficient-attn)                    PASS   90.14%       -0.46% 0.9042                 0            1.11x  399.5 MB              14.15               N/A
+                          cr (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  312.7 MB              11.29               N/A
+               cur_moe_class (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9107                 0            1.00x  324.5 MB               8.32               N/A
+                                        astro                    PASS   90.37%       -0.23% 0.9079                24            1.00x  324.5 MB               4.21               N/A
+                            decay_linear_attn      MODERATE_EXPANSION   77.29%      -13.31% 0.7468                 6            1.00x  427.8 MB              43.85               N/A
+            fused_svd_kernel (efficient-attn)                    PASS   81.77%       -8.83% 0.8335                 0            1.21x  356.3 MB              10.95               N/A
+                       fwsvd (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9103                 0            1.00x  324.5 MB               5.58               N/A
+                  halo_regla (efficient-attn)      MODERATE_EXPANSION   90.37%       -0.23% 0.9073                 0            1.00x  411.1 MB              11.50               N/A
+                       hgrn2 (efficient-attn)      MODERATE_EXPANSION   65.83%      -24.77% 0.7107                 0            1.00x  634.6 MB              77.83               N/A
+                         hla (efficient-attn)                    PASS   74.77%      -15.83% 0.7655                 0            1.00x  412.3 MB              12.13               N/A
+                     huffman (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  312.7 MB               2.72               N/A
+              granite_hybrid (efficient-attn)       EXTREME_EXPANSION   88.76%       -1.84% 0.8930                 0            1.00x 1868.3 MB             263.22               N/A
+                       jamba (efficient-attn)                    FAIL    0.00%      -90.60% 0.0000                 0            1.00x    0.0 MB             148.84               N/A
+                   kronecker (efficient-attn)         CRASH_NO_OUTPUT    0.00%      -90.60% 0.0000                 0            1.00x    0.0 MB              35.92               N/A
+                         erc (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  312.7 MB               9.64               N/A
+                  jamba_info (efficient-attn)       EXTREME_EXPANSION   89.56%       -1.04% 0.9010                 0            1.00x 2599.4 MB             195.31               N/A
+                     leka_v1 (efficient-attn)                    PASS   79.59%      -11.01% 0.8004                 0            1.20x  481.6 MB              40.18               N/A
+                     leka_v3 (efficient-attn)                    PASS   61.35%      -29.25% 0.6372                 0            1.19x  454.8 MB              47.47               N/A
+                 liftr_class (efficient-attn)     PASS_NO_COMPRESSION   90.71%       +0.11% 0.9113                 0            1.00x  323.7 MB               6.15               N/A
+                     lillama (efficient-attn)                    FAIL    0.00%      -90.60% 0.0000                 0            1.00x    0.0 MB               0.88               N/A
+               lillama_class (efficient-attn)     PASS_NO_COMPRESSION   90.71%       +0.11% 0.9113                 0            1.00x  323.7 MB               6.59               N/A
+                        lola (efficient-attn)                    PASS   84.86%       -5.74% 0.8553                 0            1.20x  356.8 MB              19.03               N/A
+                         lsh (efficient-attn)                    PASS   74.77%      -15.83% 0.7822                 0            1.20x  354.4 MB              57.82               N/A
+         mamba_shedder_class (efficient-attn)                    PASS   89.68%       -0.92% 0.9007                 0            1.04x  374.8 MB               7.30               N/A
+                   lsc_class (efficient-attn)     PASS_NO_COMPRESSION   90.94%       +0.34% 0.9127                 0            1.00x  323.7 MB               6.59               N/A
+                                    lora_attn                    PASS   90.60%       +0.00% 0.9091                 6            1.00x  406.4 MB              14.81               N/A
+                         lsc (efficient-attn)     PASS_NO_COMPRESSION   90.71%       +0.11% 0.9113                 0            1.00x  323.7 MB               7.12               N/A
+               mamba_shedder (efficient-attn)                    PASS   89.56%       -1.04% 0.8994                 0            1.04x  374.8 MB               7.09               N/A
+                        mgie (efficient-attn)     PASS_NO_COMPRESSION   90.94%       +0.34% 0.9127                 0            1.00x  323.7 MB              11.70               N/A
+                 mgie_budget (efficient-attn)     PASS_NO_COMPRESSION   90.94%       +0.34% 0.9127                 0            1.00x  323.7 MB              11.82               N/A
+                    mha_sdpa (efficient-attn)                    PASS   90.60%       +0.00% 0.9099                 0            1.00x  380.5 MB              13.55               N/A
+                minimal_nova (efficient-attn)                    PASS   86.70%       -3.90% 0.8753                 0            1.15x  344.5 MB              20.97               N/A
+                         mla (efficient-attn)       FAIL_BELOW_CHANCE   51.15%      -39.45% 0.6753                 0            1.08x  372.9 MB              14.13               N/A
+                        moba (efficient-attn)                    PASS   90.60%       +0.00% 0.9103                 0            1.00x  393.9 MB             143.69               N/A
+                                        mlorq                    PASS   90.94%       +0.34% 0.9121                24            1.27x  354.8 MB              17.17               N/A
+                     modegpt (efficient-attn)     PASS_NO_COMPRESSION   90.94%       +0.34% 0.9127                 0            1.00x  323.7 MB              83.86               N/A
+                         kda (efficient-attn)                    PASS   77.29%      -13.31% 0.7506                 0            1.00x  432.7 MB              44.58               N/A
+                            kronecker_tt_lora      MODERATE_EXPANSION   90.71%       +0.11% 0.9107                24            0.97x  328.6 MB              27.89               N/A
+                     leka_v2 (efficient-attn)                    PASS   81.88%       -8.72% 0.8316                 0            1.19x  449.6 MB              38.64               N/A
+                       mamba (efficient-attn)      MODERATE_EXPANSION   50.92%      -39.68% 0.6748                 0            1.00x 2446.4 MB            1252.94               N/A
+                             nli_softmax_attn                    PASS   90.60%       +0.00% 0.9091                 6            1.00x  389.5 MB              17.46               N/A
+           nli_softmax_class (efficient-attn)     PASS_NO_COMPRESSION   90.94%       +0.34% 0.9127                 0            1.00x  323.7 MB               6.39               N/A
+                hymba_transx (efficient-attn)       SKIP_BERT_TIMEOUT    0.00%      -90.60% 0.0000                 0            1.00x    0.0 MB            1261.93               N/A
+                         nha (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9097                 0            1.00x  407.9 MB              42.01               N/A
+                     nystrom (efficient-attn)                    PASS   90.60%       +0.00% 0.9099                 0            1.00x  380.5 MB              15.51               N/A
+                       orion (efficient-attn)                    PASS   79.47%      -11.13% 0.7830                 0            1.20x  408.3 MB              31.18               N/A
+                   performer (efficient-attn)                    PASS   78.90%      -11.70% 0.7767                 0            1.00x  413.8 MB              20.89               N/A
+                   projection_factorized_attn                    PASS   84.75%       -5.85% 0.8504                 6            1.20x  335.7 MB              16.62               N/A
+                                   proxsparse                    PASS   88.19%       -2.41% 0.8852                24            1.00x  323.7 MB               6.24               N/A
+                                          ptp      MODERATE_EXPANSION   90.60%       +0.00% 0.9099                 6            1.00x  395.1 MB              17.69               N/A
+                        rala (efficient-attn)                    PASS   78.56%      -12.04% 0.7813                 0            1.00x  394.9 MB              19.91               N/A
+                       regla (efficient-attn)      MODERATE_EXPANSION   81.77%       -8.83% 0.8191                 0            1.00x  474.2 MB              23.76               N/A
+                     replace (efficient-attn)     PASS_NO_COMPRESSION   90.94%       +0.34% 0.9123                 0            1.00x  323.7 MB               6.52               N/A
+                                replace_class                    PASS   81.31%       -9.29% 0.8359                 6            1.21x  345.8 MB              13.08               N/A
+                   replaceme (efficient-attn)                    PASS   73.85%      -16.75% 0.7791                 0            1.24x  292.4 MB               5.07               N/A
+                                       ressvd                    PASS   83.37%       -7.23% 0.8531                 6            1.20x  373.3 MB              29.34               N/A
+                       roast (efficient-attn)     PASS_NO_COMPRESSION   90.71%       +0.11% 0.9117                 0            1.00x  323.7 MB               6.21               N/A
+         rotational_slicegpt (efficient-attn)     PASS_NO_COMPRESSION   90.71%       +0.11% 0.9111                 0            1.00x  323.7 MB               6.14               N/A
+                         rpc (efficient-attn)                    PASS   72.71%      -17.89% 0.6972                 0            1.20x  352.9 MB              24.71               N/A
+                        rpca (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  323.7 MB              18.78               N/A
+                        saes (efficient-attn)     PASS_NO_COMPRESSION   90.71%       +0.11% 0.9113                 0            1.00x  323.7 MB               9.88               N/A
+                        salr (efficient-attn)     PASS_NO_COMPRESSION   90.60%       +0.00% 0.9099                 0            1.00x  323.7 MB               9.65               N/A
+                        salt (efficient-attn)                    PASS   87.16%       -3.44% 0.8801                 0            1.16x  466.3 MB              58.59               N/A
+                                   sdrm_class                    PASS   86.58%       -4.02% 0.8785                18            1.05x  394.6 MB              43.65               N/A
+                        sdrm (efficient-attn)                    PASS   88.42%       -2.18% 0.8920                 0            1.05x  394.6 MB              42.10               N/A
+                    slicegpt (efficient-attn)     PASS_NO_COMPRESSION   90.94%       +0.34% 0.9127                 0            1.00x  323.7 MB              25.02               N/A
+                    soa_attn (efficient-attn)                    PASS   89.22%       -1.38% 0.8974                 0            1.11x  365.2 MB              23.58               N/A
+                        slim (efficient-attn)     PASS_NO_COMPRESSION   89.91%       -0.69% 0.9020                 0            1.00x  323.8 MB               3.94              4.52
+2026-09-27 06:11:48,571 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:171: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

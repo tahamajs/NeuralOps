@@ -1,0 +1,10 @@
+{
+  "module": "gated_deltanet_block",
+  "model": "models/distilbert_mnli_full",
+  "dataset": "mnli",
+  "status": "SKIP_DEPRECATED",
+  "started_at": "2026-09-22T01:58:10.714501",
+  "pid": 8704,
+  "error": "Deprecated module: same as gated_delta_net",
+  "finished_at": "2026-09-22T01:58:10.714523"
+}

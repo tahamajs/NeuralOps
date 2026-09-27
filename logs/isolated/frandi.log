@@ -1,0 +1,87 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 14:32:13,276 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'frandi', '--output_json', 'logs\\isolated_results\\frandi_1790334112756_28228.json']
+2026-09-25 14:32:13,365 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 50.0% (leaving 4.00 GB headroom)
+2026-09-25 14:32:13,365 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 14:32:13,365 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=64 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-25 14:32:13,366 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 50.0%
+2026-09-25 14:32:13,808 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights: 100%|##########| 201/201 [00:00<00:00, 3352.05it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models/roberta_sst2
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-09-25 14:32:14,780 [INFO] QwenQualitySweep: model=models/roberta_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-25 14:32:14,780 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-25 14:32:14,780 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 14:32:14,781 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-25 14:32:14,781 [INFO] QwenQualitySweep:   model:             models/roberta_sst2
+2026-09-25 14:32:14,781 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-25 14:32:14,781 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-25 14:32:14,781 [INFO] QwenQualitySweep:   batch_size:        64
+2026-09-25 14:32:14,781 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-25 14:32:14,782 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-25 14:32:14,782 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-25 14:32:14,782 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 14:32:14,783 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-25 14:32:22,428 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.1548
+2026-09-25 14:32:29,619 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0796
+2026-09-25 14:32:35,967 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1766
+2026-09-25 14:32:41,311 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0516
+2026-09-25 14:32:46,663 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.1776
+2026-09-25 14:32:52,007 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.1528
+2026-09-25 14:32:57,321 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.1325
+2026-09-25 14:33:02,650 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.2733
+2026-09-25 14:33:02,666 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: D:\SVD_Project\results\deep_rank_roberta\frandi\rank_384\finetuned_model.pt
+2026-09-25 14:33:03,812 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to D:\SVD_Project\results\deep_rank_roberta\frandi\rank_384\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-25 14:33:03,813 [INFO] QwenQualitySweep: Prepared 14 eval batches and 50 train batches directly on GPU.
+2026-09-25 14:33:06,431 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 93.46%
+2026-09-25 14:33:06,567 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 14:33:06,567 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-25 14:33:06,567 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-25 14:33:06,567 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-25 14:33:06,567 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-25 14:33:06,567 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-25 14:33:06,567 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-25 14:33:06,567 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-25 14:33:06,568 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 14:33:06,568 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-25 14:33:06,658 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: frandi (recovery_steps=50, batch_size=64, optimizer=adamw)
+2026-09-25 14:33:17,955 [INFO] QwenQualitySweep: module=frandi path=adapted_roberta
+2026-09-25 14:33:17,957 [INFO] QwenQualitySweep: module=frandi injection summary: 0 SVDLinear layers active
+2026-09-25 14:33:17,960 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for frandi (lr=2.0e-04)
+2026-09-25 14:33:18,229 [INFO] framework.utils.compat: Recovery fine-tuning selected 28903682 trainable parameters across 100 tensors.
+2026-09-25 14:33:18,230 [WARNING] framework.utils.compat: Total trainable parameters (28903682) exceeds 10000000 threshold for recovery. Pruning heavy base weights to prevent OOM.
+2026-09-25 14:33:18,233 [INFO] framework.utils.compat: Reduced recovery parameters to 592130 trainable parameters across 4 tensors.
+2026-09-25 14:33:18,233 [INFO] framework.utils.compat: Discovered 4 trainable tensors (592130 params)
+2026-09-25 14:33:18,237 [INFO] QwenQualitySweep: LoRA fine-tuning: 592130 trainable parameters across 4 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-25 14:33:18,455 [INFO] QwenQualitySweep: Step 1/50 took 0.21s (loss=0.7061, bs=64, micro=16)
+2026-09-25 14:33:19,227 [INFO] QwenQualitySweep: Step 5/50 took 0.20s (loss=0.7070, bs=64, micro=16)
+2026-09-25 14:33:20,170 [INFO] QwenQualitySweep: Step 10/50 took 0.19s (loss=0.6870, bs=64, micro=16)
+2026-09-25 14:33:21,141 [INFO] QwenQualitySweep: Step 15/50 took 0.21s (loss=0.6819, bs=64, micro=16)
+2026-09-25 14:33:22,098 [INFO] QwenQualitySweep: Step 20/50 took 0.19s (loss=0.6826, bs=64, micro=16)
+2026-09-25 14:33:23,044 [INFO] QwenQualitySweep: Step 25/50 took 0.19s (loss=0.7296, bs=64, micro=16)
+2026-09-25 14:33:24,011 [INFO] QwenQualitySweep: Step 30/50 took 0.19s (loss=0.7013, bs=64, micro=16)
+2026-09-25 14:33:24,942 [INFO] QwenQualitySweep: Step 35/50 took 0.18s (loss=0.7169, bs=64, micro=16)
+2026-09-25 14:33:25,910 [INFO] QwenQualitySweep: Step 40/50 took 0.19s (loss=0.6899, bs=64, micro=16)
+2026-09-25 14:33:26,859 [INFO] QwenQualitySweep: Step 45/50 took 0.19s (loss=0.7125, bs=64, micro=16)
+2026-09-25 14:33:27,820 [INFO] QwenQualitySweep: Step 50/50 took 0.20s (loss=0.6808, bs=64, micro=16)
+2026-09-25 14:33:30,579 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to D:\SVD_Project\results\deep_rank_roberta\frandi\rank_384\roberta_sst2_frandi_full_metrics.json
+2026-09-25 14:33:30,792 [INFO] QwenQualitySweep: [1/1] frandi -> FAIL_BELOW_CHANCE 50.69% (F1: 0.6728, Peak VRAM: 582.61 MB)
+2026-09-25 14:33:30,792 [INFO] QwenQualitySweep: [Quality Guard] Module 'frandi' did not pass quality criteria (status=FAIL_BELOW_CHANCE, acc=50.69%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-25 14:33:30,796 [INFO] QwenQualitySweep: [1/1] frandi Timing: eval_time=24.14s
+2026-09-25 14:33:30,796 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-25 14:33:31,037 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 14:33:31,037 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-25 14:33:31,042 [INFO] QwenQualitySweep: 
+                 Module            Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+frandi (efficient-attn) FAIL_BELOW_CHANCE   50.69%   -42.77% 0.6728                  0            1.21x  582.6 MB               2.19              2.51
+2026-09-25 14:33:31,042 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:169: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

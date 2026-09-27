@@ -1,0 +1,11 @@
+{
+  "module": "mla_attention",
+  "model": "Qwen/Qwen2.5-0.5B",
+  "dataset": "sst2",
+  "status": "CRASH",
+  "started_at": "2026-09-18T21:45:03.104970",
+  "pid": 7472,
+  "error": "AttributeError: 'Namespace' object has no attribute 'num_labels'",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\svd_project\\Codes\\framework\\run_one_module_isolated.py\", line 62, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 2145, in run_single_module_main\n    num_classes = args.num_labels\n                  ^^^^^^^^^^^^^^^\nAttributeError: 'Namespace' object has no attribute 'num_labels'\n",
+  "finished_at": "2026-09-18T21:45:28.907363"
+}

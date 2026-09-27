@@ -1,0 +1,11 @@
+{
+  "module": "liftr",
+  "model": "distilbert-base-uncased",
+  "dataset": "mnli",
+  "status": "CRASH",
+  "started_at": "2026-09-19T02:57:59.196574",
+  "pid": 6968,
+  "error": "OSError: The paging file is too small for this operation to complete. (os error 1455)",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 47, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 2161, in run_single_module_main\n    base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=num_classes, ignore_mismatched_sizes=True, dtype=dtype).to(device)\n           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\auto\\auto_factory.py\", line 387, in from_pretrained\n    return model_class.from_pretrained(\n           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^\n        pretrained_model_name_or_path, *model_args, config=config, **hub_kwargs, **kwargs\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\modeling_utils.py\", line 4132, in from_pretrained\n    loading_info, disk_offload_index = cls._load_pretrained_model(model, state_dict, checkpoint_files, load_config)\n                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\modeling_utils.py\", line 4240, in _load_pretrained_model\n    file_pointer = safe_open(file, framework=\"pt\", device=\"cpu\")\nOSError: The paging file is too small for this operation to complete. (os error 1455)\n",
+  "finished_at": "2026-09-19T02:58:02.757736"
+}

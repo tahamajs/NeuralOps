@@ -1,0 +1,11 @@
+{
+  "module": "adasvd_compressor",
+  "model": "models/gpt2",
+  "dataset": "c4",
+  "status": "CRASH",
+  "started_at": "2026-09-25T21:21:04.718290",
+  "pid": 26324,
+  "error": "NameError: name 'recovery_time_s' is not defined",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 78, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_Project\\Codes\\framework\\run_quality_sweep.py\", line 3832, in run_single_module_main\n    \"recovery_time_s\": recovery_time_s,\n                       ^^^^^^^^^^^^^^^\nNameError: name 'recovery_time_s' is not defined\n",
+  "finished_at": "2026-09-25T21:27:35.256261"
+}

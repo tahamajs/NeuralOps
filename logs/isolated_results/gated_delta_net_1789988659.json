@@ -1,0 +1,10 @@
+{
+  "module": "gated_delta_net",
+  "model": "models/distilbert_sst2",
+  "dataset": "sst2",
+  "status": "SKIP_DEPRECATED",
+  "started_at": "2026-09-21T11:04:39.277680",
+  "pid": 20404,
+  "error": "Deprecated module: bad_alloc during backprop on 6-layer encoders; chunked scan demands >15GB RAM",
+  "finished_at": "2026-09-21T11:04:39.277702"
+}

@@ -1,0 +1,10 @@
+{
+  "module": "gated_deltanet_block",
+  "model": "models\\distilbert_sst2",
+  "dataset": "sst2",
+  "status": "SKIP_DEPRECATED",
+  "started_at": "2026-09-19T01:20:13.178122",
+  "pid": 3412,
+  "error": "Deprecated module: same as gated_delta_net",
+  "finished_at": "2026-09-19T01:20:13.178146"
+}

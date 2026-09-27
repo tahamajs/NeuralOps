@@ -1,0 +1,61 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-21 05:57:14,704 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'unified_rope_attention', '--output_json', 'logs\\isolated_results\\unified_rope_attention_1789957611.json']
+2026-09-21 05:57:14,811 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-21 05:57:14,812 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=4 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-21 05:57:15,413 [INFO] QwenQualitySweep: Configured dataset 'wikitext2' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3162.48it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models/gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-21 05:57:16,466 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-21 05:57:16,466 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-21 05:57:16,466 [INFO] QwenQualitySweep: ================================================================================
+2026-09-21 05:57:16,466 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-21 05:57:16,467 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-21 05:57:16,467 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-21 05:57:16,467 [INFO] QwenQualitySweep:   dataset:           wikitext2
+2026-09-21 05:57:16,467 [INFO] QwenQualitySweep:   batch_size:        4
+2026-09-21 05:57:16,468 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-21 05:57:16,468 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-21 05:57:16,469 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-21 05:57:16,469 [INFO] QwenQualitySweep: ================================================================================
+2026-09-21 05:57:16,472 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\gpt2_wikitext2_sweep\finetuned_model.pt
+2026-09-21 05:57:16,480 [WARNING] QwenQualitySweep: Missing keys during load: ['transformer.wte.weight', 'transformer.wpe.weight', 'transformer.h.0.ln_1.weight', 'transformer.h.0.ln_1.bias', 'transformer.h.0.attn.c_attn.weight', 'transformer.h.0.attn.c_attn.bias', 'transformer.h.0.attn.c_proj.weight', 'transformer.h.0.attn.c_proj.bias', 'transformer.h.0.ln_2.weight', 'transformer.h.0.ln_2.bias']
+2026-09-21 05:57:16,918 [INFO] QwenQualitySweep: Loading pre-cached batches from results\gpt2_wikitext2_sweep\batch_cache_wikitext2 (skipping tokenization)
+2026-09-21 05:57:17,496 [INFO] QwenQualitySweep: Prepared 616 eval batches and 50 train batches directly on GPU.
+2026-09-21 05:57:53,637 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 99.72%
+2026-09-21 05:57:53,741 [INFO] QwenQualitySweep: ================================================================================
+2026-09-21 05:57:53,741 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=2461):
+2026-09-21 05:57:53,742 [INFO] QwenQualitySweep:   Validation Majority Count: 2461 / 2461
+2026-09-21 05:57:53,742 [INFO] QwenQualitySweep:   True Majority Baseline:    100.00%
+2026-09-21 05:57:53,742 [INFO] QwenQualitySweep:   Standard Error (SE):       0.000%
+2026-09-21 05:57:53,742 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 0.00%
+2026-09-21 05:57:53,742 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  100.00%
+2026-09-21 05:57:53,745 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=100.00% (2461/2461), SE=0.000%, 3*SE=0.000%
+2026-09-21 05:57:53,745 [INFO] QwenQualitySweep: ================================================================================
+2026-09-21 05:57:53,752 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: unified_rope_attention (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-21 05:57:56,935 [INFO] framework.core.attention_utils: Successfully injected 'unified_rope_attention' into 12 transformer blocks.
+2026-09-21 05:57:56,953 [INFO] QwenQualitySweep: module=unified_rope_attention path=adapted_gpt
+2026-09-21 05:57:56,955 [INFO] QwenQualitySweep: module=unified_rope_attention injection summary: 0 SVDLinear layers active
+2026-09-21 05:57:56,955 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for unified_rope_attention (lr=2.0e-04)
+2026-09-21 05:57:57,194 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179648 trainable parameters across 96 tensors.
+2026-09-21 05:57:57,195 [INFO] framework.utils.compat: Discovered 96 trainable tensors (1179648 params)
+2026-09-21 05:57:57,201 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179648 trainable parameters across 96 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-21 05:57:57,768 [INFO] QwenQualitySweep: Step 1/50 took 0.56s (loss=0.0564, bs=4, micro=4)
+2026-09-21 05:57:58,909 [INFO] QwenQualitySweep: Step 5/50 took 0.29s (loss=0.0600, bs=4, micro=4)
+2026-09-21 05:58:00,244 [INFO] QwenQualitySweep: Step 10/50 took 0.26s (loss=0.0451, bs=4, micro=4)
+2026-09-21 05:58:01,505 [INFO] QwenQualitySweep: Step 15/50 took 0.26s (loss=0.0919, bs=4, micro=4)
+2026-09-21 05:58:02,727 [INFO] QwenQualitySweep: Step 20/50 took 0.24s (loss=0.1047, bs=4, micro=4)
+2026-09-21 05:58:03,932 [INFO] QwenQualitySweep: Step 25/50 took 0.23s (loss=0.0395, bs=4, micro=4)
+2026-09-21 05:58:05,250 [INFO] QwenQualitySweep: Step 30/50 took 0.26s (loss=0.0484, bs=4, micro=4)
+2026-09-21 05:58:06,649 [INFO] QwenQualitySweep: Step 35/50 took 0.26s (loss=0.0792, bs=4, micro=4)
+2026-09-21 05:58:07,965 [INFO] QwenQualitySweep: Step 40/50 took 0.27s (loss=0.0703, bs=4, micro=4)
+2026-09-21 05:58:09,322 [INFO] QwenQualitySweep: Step 45/50 took 0.26s (loss=0.0823, bs=4, micro=4)
+2026-09-21 05:58:10,748 [INFO] QwenQualitySweep: Step 50/50 took 0.31s (loss=0.0562, bs=4, micro=4)

@@ -1,0 +1,221 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+2026-09-27 07:51:38,957 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0% (leaving 5.20 GB headroom)
+2026-09-27 07:51:38,957 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-27 07:51:38,957 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-27 07:51:38,958 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0%
+2026-09-27 07:51:38,958 [INFO] QwenQualitySweep: Auto-resolving base model 'roberta-base' to fine-tuned SST-2 model: models\roberta_sst2
+2026-09-27 07:51:39,518 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights: 100%|##########| 201/201 [00:00<00:00, 3344.47it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta_sst2
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-09-27 07:51:40,482 [INFO] QwenQualitySweep: model=models\roberta_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-27 07:51:40,482 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'raw_family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-27 07:51:40,482 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 07:51:40,482 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-27 07:51:40,482 [INFO] QwenQualitySweep:   model:             models\roberta_sst2
+2026-09-27 07:51:40,483 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-27 07:51:40,483 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-27 07:51:40,483 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-27 07:51:40,483 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-27 07:51:40,483 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-27 07:51:40,484 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-27 07:51:40,484 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 07:51:40,486 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-27 07:51:42,660 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0015
+2026-09-27 07:51:44,426 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0143
+2026-09-27 07:51:45,849 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1419
+2026-09-27 07:51:47,091 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0326
+2026-09-27 07:51:48,596 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0266
+2026-09-27 07:51:49,961 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0969
+2026-09-27 07:51:51,238 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0999
+2026-09-27 07:51:52,466 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.1602
+2026-09-27 07:51:52,480 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\04_rank_sweeps\roberta\deep_rank_roberta\erc_svd\rank_16\finetuned_model.pt
+2026-09-27 07:51:53,753 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\04_rank_sweeps\roberta\deep_rank_roberta\erc_svd\rank_16\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-27 07:51:53,753 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-27 07:51:58,862 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 94.38%
+2026-09-27 07:51:59,042 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 07:51:59,042 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-27 07:51:59,042 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-27 07:51:59,043 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-27 07:51:59,043 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-27 07:51:59,043 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-27 07:51:59,043 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-27 07:51:59,043 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-27 07:51:59,043 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 07:51:59,044 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-27 07:51:59,172 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: erc_svd (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-27 07:51:59,740 [INFO] framework.compression_engine.erc_svd: ERC-SVD: Detected pre-LayerNorm encoder (models\roberta_sst2). Capping max_error from 0.50 to 0.30.
+2026-09-27 07:52:00,161 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9089 on roberta.encoder.layer.0.attention.self.query exceeded threshold 0.3000.
+2026-09-27 07:52:00,161 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.0.attention.self.query.
+2026-09-27 07:52:00,282 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.8868 on roberta.encoder.layer.0.attention.self.key exceeded threshold 0.3000.
+2026-09-27 07:52:00,282 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.0.attention.self.key.
+2026-09-27 07:52:00,398 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.8950 on roberta.encoder.layer.0.attention.self.value exceeded threshold 0.3000.
+2026-09-27 07:52:00,399 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.0.attention.self.value.
+2026-09-27 07:52:00,573 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9220 on roberta.encoder.layer.0.attention.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:00,573 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.0.attention.output.dense.
+2026-09-27 07:52:00,749 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9250 on roberta.encoder.layer.0.intermediate.dense exceeded threshold 0.3000.
+2026-09-27 07:52:00,749 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.0.intermediate.dense.
+2026-09-27 07:52:00,888 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9160 on roberta.encoder.layer.0.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:00,888 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.0.output.dense.
+2026-09-27 07:52:01,005 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9129 on roberta.encoder.layer.1.attention.self.query exceeded threshold 0.3000.
+2026-09-27 07:52:01,005 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.1.attention.self.query.
+2026-09-27 07:52:01,124 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9063 on roberta.encoder.layer.1.attention.self.key exceeded threshold 0.3000.
+2026-09-27 07:52:01,124 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.1.attention.self.key.
+2026-09-27 07:52:01,236 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9048 on roberta.encoder.layer.1.attention.self.value exceeded threshold 0.3000.
+2026-09-27 07:52:01,236 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.1.attention.self.value.
+2026-09-27 07:52:01,350 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9046 on roberta.encoder.layer.1.attention.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:01,351 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.1.attention.output.dense.
+2026-09-27 07:52:01,482 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9285 on roberta.encoder.layer.1.intermediate.dense exceeded threshold 0.3000.
+2026-09-27 07:52:01,482 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.1.intermediate.dense.
+2026-09-27 07:52:01,610 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9064 on roberta.encoder.layer.1.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:01,610 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.1.output.dense.
+2026-09-27 07:52:01,732 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9178 on roberta.encoder.layer.2.attention.self.query exceeded threshold 0.3000.
+2026-09-27 07:52:01,733 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.2.attention.self.query.
+2026-09-27 07:52:01,850 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9034 on roberta.encoder.layer.2.attention.self.key exceeded threshold 0.3000.
+2026-09-27 07:52:01,851 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.2.attention.self.key.
+2026-09-27 07:52:01,972 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.8994 on roberta.encoder.layer.2.attention.self.value exceeded threshold 0.3000.
+2026-09-27 07:52:01,972 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.2.attention.self.value.
+2026-09-27 07:52:02,091 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.8981 on roberta.encoder.layer.2.attention.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:02,091 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.2.attention.output.dense.
+2026-09-27 07:52:02,219 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9301 on roberta.encoder.layer.2.intermediate.dense exceeded threshold 0.3000.
+2026-09-27 07:52:02,220 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.2.intermediate.dense.
+2026-09-27 07:52:02,355 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9055 on roberta.encoder.layer.2.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:02,355 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.2.output.dense.
+2026-09-27 07:52:02,478 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9277 on roberta.encoder.layer.3.attention.self.query exceeded threshold 0.3000.
+2026-09-27 07:52:02,479 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.3.attention.self.query.
+2026-09-27 07:52:02,598 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9007 on roberta.encoder.layer.3.attention.self.key exceeded threshold 0.3000.
+2026-09-27 07:52:02,598 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.3.attention.self.key.
+2026-09-27 07:52:02,709 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9096 on roberta.encoder.layer.3.attention.self.value exceeded threshold 0.3000.
+2026-09-27 07:52:02,709 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.3.attention.self.value.
+2026-09-27 07:52:02,822 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9045 on roberta.encoder.layer.3.attention.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:02,822 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.3.attention.output.dense.
+2026-09-27 07:52:02,946 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9269 on roberta.encoder.layer.3.intermediate.dense exceeded threshold 0.3000.
+2026-09-27 07:52:02,946 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.3.intermediate.dense.
+2026-09-27 07:52:03,079 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9088 on roberta.encoder.layer.3.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:03,079 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.3.output.dense.
+2026-09-27 07:52:03,200 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9152 on roberta.encoder.layer.4.attention.self.query exceeded threshold 0.3000.
+2026-09-27 07:52:03,200 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.4.attention.self.query.
+2026-09-27 07:52:03,321 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9057 on roberta.encoder.layer.4.attention.self.key exceeded threshold 0.3000.
+2026-09-27 07:52:03,321 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.4.attention.self.key.
+2026-09-27 07:52:03,435 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9059 on roberta.encoder.layer.4.attention.self.value exceeded threshold 0.3000.
+2026-09-27 07:52:03,435 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.4.attention.self.value.
+2026-09-27 07:52:03,555 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9010 on roberta.encoder.layer.4.attention.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:03,555 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.4.attention.output.dense.
+2026-09-27 07:52:03,681 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9257 on roberta.encoder.layer.4.intermediate.dense exceeded threshold 0.3000.
+2026-09-27 07:52:03,681 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.4.intermediate.dense.
+2026-09-27 07:52:03,810 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9075 on roberta.encoder.layer.4.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:03,810 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.4.output.dense.
+2026-09-27 07:52:03,929 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9274 on roberta.encoder.layer.5.attention.self.query exceeded threshold 0.3000.
+2026-09-27 07:52:03,929 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.5.attention.self.query.
+2026-09-27 07:52:04,050 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.8996 on roberta.encoder.layer.5.attention.self.key exceeded threshold 0.3000.
+2026-09-27 07:52:04,050 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.5.attention.self.key.
+2026-09-27 07:52:04,165 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.8993 on roberta.encoder.layer.5.attention.self.value exceeded threshold 0.3000.
+2026-09-27 07:52:04,166 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.5.attention.self.value.
+2026-09-27 07:52:04,280 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9032 on roberta.encoder.layer.5.attention.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:04,281 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.5.attention.output.dense.
+2026-09-27 07:52:04,407 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9225 on roberta.encoder.layer.5.intermediate.dense exceeded threshold 0.3000.
+2026-09-27 07:52:04,407 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.5.intermediate.dense.
+2026-09-27 07:52:04,531 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9133 on roberta.encoder.layer.5.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:04,531 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.5.output.dense.
+2026-09-27 07:52:04,650 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.8964 on roberta.encoder.layer.6.attention.self.query exceeded threshold 0.3000.
+2026-09-27 07:52:04,651 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.6.attention.self.query.
+2026-09-27 07:52:04,771 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9030 on roberta.encoder.layer.6.attention.self.key exceeded threshold 0.3000.
+2026-09-27 07:52:04,771 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.6.attention.self.key.
+2026-09-27 07:52:04,890 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.8927 on roberta.encoder.layer.6.attention.self.value exceeded threshold 0.3000.
+2026-09-27 07:52:04,890 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.6.attention.self.value.
+2026-09-27 07:52:05,002 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9148 on roberta.encoder.layer.6.attention.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:05,002 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.6.attention.output.dense.
+2026-09-27 07:52:05,128 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9285 on roberta.encoder.layer.6.intermediate.dense exceeded threshold 0.3000.
+2026-09-27 07:52:05,128 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.6.intermediate.dense.
+2026-09-27 07:52:05,254 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9187 on roberta.encoder.layer.6.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:05,255 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.6.output.dense.
+2026-09-27 07:52:05,374 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9105 on roberta.encoder.layer.7.attention.self.query exceeded threshold 0.3000.
+2026-09-27 07:52:05,374 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.7.attention.self.query.
+2026-09-27 07:52:05,493 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9155 on roberta.encoder.layer.7.attention.self.key exceeded threshold 0.3000.
+2026-09-27 07:52:05,493 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.7.attention.self.key.
+2026-09-27 07:52:05,607 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.8938 on roberta.encoder.layer.7.attention.self.value exceeded threshold 0.3000.
+2026-09-27 07:52:05,607 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.7.attention.self.value.
+2026-09-27 07:52:05,723 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9069 on roberta.encoder.layer.7.attention.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:05,723 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.7.attention.output.dense.
+2026-09-27 07:52:05,851 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9246 on roberta.encoder.layer.7.intermediate.dense exceeded threshold 0.3000.
+2026-09-27 07:52:05,851 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.7.intermediate.dense.
+2026-09-27 07:52:05,973 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9240 on roberta.encoder.layer.7.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:05,974 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.7.output.dense.
+2026-09-27 07:52:06,094 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9037 on roberta.encoder.layer.8.attention.self.query exceeded threshold 0.3000.
+2026-09-27 07:52:06,095 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.8.attention.self.query.
+2026-09-27 07:52:06,217 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9045 on roberta.encoder.layer.8.attention.self.key exceeded threshold 0.3000.
+2026-09-27 07:52:06,217 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.8.attention.self.key.
+2026-09-27 07:52:06,330 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9005 on roberta.encoder.layer.8.attention.self.value exceeded threshold 0.3000.
+2026-09-27 07:52:06,331 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.8.attention.self.value.
+2026-09-27 07:52:06,444 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9064 on roberta.encoder.layer.8.attention.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:06,444 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.8.attention.output.dense.
+2026-09-27 07:52:06,567 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9390 on roberta.encoder.layer.8.intermediate.dense exceeded threshold 0.3000.
+2026-09-27 07:52:06,567 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.8.intermediate.dense.
+2026-09-27 07:52:06,694 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9164 on roberta.encoder.layer.8.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:06,694 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.8.output.dense.
+2026-09-27 07:52:06,815 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9052 on roberta.encoder.layer.9.attention.self.query exceeded threshold 0.3000.
+2026-09-27 07:52:06,815 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.9.attention.self.query.
+2026-09-27 07:52:06,942 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9010 on roberta.encoder.layer.9.attention.self.key exceeded threshold 0.3000.
+2026-09-27 07:52:06,943 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.9.attention.self.key.
+2026-09-27 07:52:07,055 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9079 on roberta.encoder.layer.9.attention.self.value exceeded threshold 0.3000.
+2026-09-27 07:52:07,055 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.9.attention.self.value.
+2026-09-27 07:52:07,172 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9062 on roberta.encoder.layer.9.attention.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:07,172 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.9.attention.output.dense.
+2026-09-27 07:52:07,295 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9399 on roberta.encoder.layer.9.intermediate.dense exceeded threshold 0.3000.
+2026-09-27 07:52:07,295 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.9.intermediate.dense.
+2026-09-27 07:52:07,429 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9115 on roberta.encoder.layer.9.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:07,430 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.9.output.dense.
+2026-09-27 07:52:07,547 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9160 on roberta.encoder.layer.10.attention.self.query exceeded threshold 0.3000.
+2026-09-27 07:52:07,547 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.10.attention.self.query.
+2026-09-27 07:52:07,662 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.8930 on roberta.encoder.layer.10.attention.self.key exceeded threshold 0.3000.
+2026-09-27 07:52:07,662 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.10.attention.self.key.
+2026-09-27 07:52:07,801 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9032 on roberta.encoder.layer.10.attention.self.value exceeded threshold 0.3000.
+2026-09-27 07:52:07,801 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.10.attention.self.value.
+2026-09-27 07:52:07,915 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9089 on roberta.encoder.layer.10.attention.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:07,915 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.10.attention.output.dense.
+2026-09-27 07:52:08,040 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9334 on roberta.encoder.layer.10.intermediate.dense exceeded threshold 0.3000.
+2026-09-27 07:52:08,040 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.10.intermediate.dense.
+2026-09-27 07:52:08,175 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9145 on roberta.encoder.layer.10.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:08,176 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.10.output.dense.
+2026-09-27 07:52:08,298 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9191 on roberta.encoder.layer.11.attention.self.query exceeded threshold 0.3000.
+2026-09-27 07:52:08,298 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.11.attention.self.query.
+2026-09-27 07:52:08,417 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9010 on roberta.encoder.layer.11.attention.self.key exceeded threshold 0.3000.
+2026-09-27 07:52:08,417 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.11.attention.self.key.
+2026-09-27 07:52:08,538 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9077 on roberta.encoder.layer.11.attention.self.value exceeded threshold 0.3000.
+2026-09-27 07:52:08,538 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.11.attention.self.value.
+2026-09-27 07:52:08,653 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9095 on roberta.encoder.layer.11.attention.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:08,653 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.11.attention.output.dense.
+2026-09-27 07:52:08,775 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9313 on roberta.encoder.layer.11.intermediate.dense exceeded threshold 0.3000.
+2026-09-27 07:52:08,775 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.11.intermediate.dense.
+2026-09-27 07:52:08,900 [WARNING] framework.compression_engine.erc_svd: ERC-SVD: reconstruction error 0.9356 on roberta.encoder.layer.11.output.dense exceeded threshold 0.3000.
+2026-09-27 07:52:08,901 [INFO] framework.compression_engine.erc_svd: ERC-SVD: fallback to original on roberta.encoder.layer.11.output.dense.
+2026-09-27 07:52:08,996 [INFO] framework.compression_engine.erc_svd: Compressor erc finished: 0 compressed, 72 fallback, avg_err=0.0000, max_err_threshold=0.3000
+2026-09-27 07:52:09,010 [INFO] QwenQualitySweep: module=erc_svd path=adapted_roberta
+2026-09-27 07:52:09,013 [INFO] QwenQualitySweep: module=erc_svd injection summary: 0 SVDLinear layers active
+2026-09-27 07:52:09,015 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for erc_svd (lr=2.0e-04)
+2026-09-27 07:52:09,258 [INFO] framework.utils.compat: Recovery fine-tuning selected 0 trainable parameters across 0 tensors.
+2026-09-27 07:52:09,258 [INFO] framework.utils.compat: Discovered 0 trainable tensors (0 params)
+2026-09-27 07:52:14,795 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\roberta\deep_rank_roberta\erc_svd\rank_16\roberta_sst2_erc_svd_full_metrics.json
+2026-09-27 07:52:15,104 [INFO] QwenQualitySweep: [1/1] erc_svd -> PASS_NO_COMPRESSION 94.38% (F1: 0.9445, Peak VRAM: 292.22 MB)
+2026-09-27 07:52:15,104 [WARNING] QwenQualitySweep: Module 'erc_svd' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-27 07:52:15,105 [INFO] QwenQualitySweep: [Quality Guard] Module 'erc_svd' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=94.38%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-27 07:52:15,112 [INFO] QwenQualitySweep: [1/1] erc_svd Timing: eval_time=15.94s
+2026-09-27 07:52:15,113 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-27 07:52:15,486 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 07:52:15,486 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-27 07:52:15,495 [INFO] QwenQualitySweep: 
+                  Module              Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+erc_svd (efficient-attn) PASS_NO_COMPRESSION   94.38%    +0.00% 0.9445                  0            1.00x  292.2 MB               4.49              5.15
+2026-09-27 07:52:15,495 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:171: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

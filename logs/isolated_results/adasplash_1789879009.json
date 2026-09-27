@@ -1,0 +1,11 @@
+{
+  "module": "adasplash",
+  "model": "models\\distilbert_agnews_full",
+  "dataset": "ag_news",
+  "status": "CRASH",
+  "started_at": "2026-09-20T04:37:06.834543",
+  "pid": 24124,
+  "error": "KeyError: 'text'",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\svd_project\\Codes\\framework\\run_one_module_isolated.py\", line 63, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 2520, in run_single_module_main\n    eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, eval_seq_len, args.batch_size, device)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 1028, in prepare_eval_batches\n    x, y = encode(tokenizer, {k: ds[k][i:i+batch_size] for k in ds.column_names}, name, seq_len, device)\n           ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 1013, in encode\n    texts = batch[a] if b is None else list(zip(batch[a], batch[b]))\n            ~~~~~^^^\nKeyError: 'text'\n",
+  "finished_at": "2026-09-20T04:37:10.629626"
+}

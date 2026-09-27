@@ -1,0 +1,74 @@
+2026-09-24 18:15:33,087 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'enlighten', '--output_json', 'logs\\isolated_results\\enlighten_1790261085388_23972.json']
+2026-09-24 18:15:33,184 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 18:15:33,184 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-24 18:15:33,639 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/149 [00:00<?, ?it/s]Loading weights: 100%|##########| 149/149 [00:00<00:00, 2801.22it/s]
+2026-09-24 18:15:35,057 [INFO] QwenQualitySweep: model=models\gpt2_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 18:15:35,057 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 18:15:35,057 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:15:35,057 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 18:15:35,058 [INFO] QwenQualitySweep:   model:             models\gpt2_sst2
+2026-09-24 18:15:35,058 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-24 18:15:35,058 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-24 18:15:35,058 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-24 18:15:35,060 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 18:15:35,060 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 18:15:35,060 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 18:15:35,060 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:15:35,063 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-24 18:15:37,935 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.1143
+2026-09-24 18:15:39,926 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.3716
+2026-09-24 18:15:42,196 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.4990
+2026-09-24 18:15:44,256 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.4857
+2026-09-24 18:15:46,112 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0739
+2026-09-24 18:15:48,181 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.6662
+2026-09-24 18:15:50,209 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.1685
+2026-09-24 18:15:52,305 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.2618
+2026-09-24 18:15:52,313 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_enlighten\gpt2\finetuned_model.pt
+2026-09-24 18:15:53,833 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\unified_enlighten\gpt2\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-24 18:15:53,833 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-24 18:16:00,872 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 89.33%
+2026-09-24 18:16:01,116 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:16:01,116 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-24 18:16:01,116 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-24 18:16:01,117 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-24 18:16:01,117 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-24 18:16:01,118 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-24 18:16:01,118 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-24 18:16:01,118 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-24 18:16:01,118 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:16:01,119 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 18:16:01,323 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: enlighten (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-24 18:16:05,654 [INFO] framework.compression_engine.enlighten_compressor: ENLighten compression complete: 36 compressed, 0 fallback. Avg error: 0.2478, Effective Param Ratio: 0.7292
+2026-09-24 18:16:05,666 [INFO] QwenQualitySweep: module=enlighten path=adapted_gpt
+2026-09-24 18:16:05,669 [INFO] QwenQualitySweep: module=enlighten injection summary: 0 SVDLinear layers active
+2026-09-24 18:16:05,672 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for enlighten (lr=2.0e-04)
+2026-09-24 18:16:05,830 [INFO] framework.utils.compat: Recovery fine-tuning selected 1536 trainable parameters across 1 tensors.
+2026-09-24 18:16:05,831 [INFO] framework.utils.compat: Discovered 1 trainable tensors (1536 params)
+2026-09-24 18:16:05,836 [INFO] QwenQualitySweep: LoRA fine-tuning: 1536 trainable parameters across 1 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-24 18:16:05,902 [INFO] QwenQualitySweep: Step 1/50 took 0.06s (loss=0.4123, bs=8, micro=8)
+2026-09-24 18:16:06,146 [INFO] QwenQualitySweep: Step 5/50 took 0.06s (loss=0.6594, bs=8, micro=8)
+2026-09-24 18:16:06,475 [INFO] QwenQualitySweep: Step 10/50 took 0.07s (loss=0.4829, bs=8, micro=8)
+2026-09-24 18:16:06,850 [INFO] QwenQualitySweep: Step 15/50 took 0.09s (loss=0.2088, bs=8, micro=8)
+2026-09-24 18:16:07,171 [INFO] QwenQualitySweep: Step 20/50 took 0.06s (loss=0.6107, bs=8, micro=8)
+2026-09-24 18:16:07,564 [INFO] QwenQualitySweep: Step 25/50 took 0.08s (loss=0.4048, bs=8, micro=8)
+2026-09-24 18:16:08,015 [INFO] QwenQualitySweep: Step 30/50 took 0.07s (loss=0.0498, bs=8, micro=8)
+2026-09-24 18:16:08,360 [INFO] QwenQualitySweep: Step 35/50 took 0.07s (loss=0.3161, bs=8, micro=8)
+2026-09-24 18:16:08,712 [INFO] QwenQualitySweep: Step 40/50 took 0.07s (loss=0.6349, bs=8, micro=8)
+2026-09-24 18:16:09,089 [INFO] QwenQualitySweep: Step 45/50 took 0.06s (loss=0.2632, bs=8, micro=8)
+2026-09-24 18:16:09,413 [INFO] QwenQualitySweep: Step 50/50 took 0.06s (loss=0.6082, bs=8, micro=8)
+2026-09-24 18:16:16,293 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_enlighten\gpt2\gpt2_sst2_enlighten_full_metrics.json
+2026-09-24 18:16:16,579 [INFO] QwenQualitySweep: [1/1] enlighten -> PASS 85.78% (F1: 0.8661, Peak VRAM: 382.63 MB)
+2026-09-24 18:16:16,579 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_enlighten\gpt2\checkpoints\enlighten. Automated export will be handled post-sweep by orchestrator.
+2026-09-24 18:16:16,581 [INFO] QwenQualitySweep: [1/1] enlighten Timing: eval_time=15.26s
+2026-09-24 18:16:16,581 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 18:16:16,984 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:16:16,984 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2_sst2 on sst2)
+2026-09-24 18:16:16,998 [INFO] QwenQualitySweep: 
+   Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+enlighten   PASS   85.78%    -3.55% 0.8661                 36            1.00x  382.6 MB               6.40              7.33
+2026-09-24 18:16:16,999 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:153: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

@@ -1,0 +1,11 @@
+{
+  "module": "kvtc",
+  "model": "models/gpt2",
+  "dataset": "wikitext2",
+  "status": "CRASH",
+  "started_at": "2026-09-23T23:14:23.199682",
+  "pid": 23580,
+  "error": "KeyError: 'label'",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 63, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 3136, in run_single_module_main\n    if \"wikitext\" in args.dataset.lower():\n    \nKeyError: 'label'\n",
+  "finished_at": "2026-09-23T23:17:46.886344"
+}

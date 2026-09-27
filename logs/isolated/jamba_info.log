@@ -1,0 +1,143 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-22 06:36:33,322 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'jamba_info', '--output_json', 'logs\\isolated_results\\jamba_info_1790046368.json']
+2026-09-22 06:36:33,398 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-22 06:36:33,398 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-22 06:36:33,627 [INFO] QwenQualitySweep: Configured dataset 'mnli' with num_labels=3
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 2095.96it/s]
+2026-09-22 06:36:34,365 [INFO] QwenQualitySweep: model=models/distilbert_mnli_full qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-22 06:36:34,365 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-22 06:36:34,365 [INFO] QwenQualitySweep: ================================================================================
+2026-09-22 06:36:34,365 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-22 06:36:34,365 [INFO] QwenQualitySweep:   model:             models/distilbert_mnli_full
+2026-09-22 06:36:34,366 [INFO] QwenQualitySweep:   family:            bert
+2026-09-22 06:36:34,366 [INFO] QwenQualitySweep:   dataset:           mnli
+2026-09-22 06:36:34,366 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-22 06:36:34,366 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-22 06:36:34,366 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-22 06:36:34,366 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-22 06:36:34,367 [INFO] QwenQualitySweep: ================================================================================
+2026-09-22 06:36:34,376 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\distilbert_mnli_full_mnli_sweep\finetuned_model.pt
+2026-09-22 06:36:34,384 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
+2026-09-22 06:36:34,501 [INFO] QwenQualitySweep: Loading pre-cached batches from results\distilbert_mnli_full_mnli_sweep\batch_cache_mnli (skipping tokenization)
+2026-09-22 06:36:34,720 [INFO] QwenQualitySweep: Prepared 16 eval batches and 50 train batches directly on GPU.
+2026-09-22 06:36:37,234 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 81.50%
+2026-09-22 06:36:37,302 [INFO] QwenQualitySweep: ================================================================================
+2026-09-22 06:36:37,303 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-22 06:36:37,303 [INFO] QwenQualitySweep:   Validation Majority Count: 341 / 1000
+2026-09-22 06:36:37,303 [INFO] QwenQualitySweep:   True Majority Baseline:    34.10%
+2026-09-22 06:36:37,303 [INFO] QwenQualitySweep:   Standard Error (SE):       1.499%
+2026-09-22 06:36:37,303 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.50%
+2026-09-22 06:36:37,303 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  38.60%
+2026-09-22 06:36:37,304 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%
+2026-09-22 06:36:37,304 [INFO] QwenQualitySweep: ================================================================================
+2026-09-22 06:36:37,309 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: jamba_info (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-22 06:36:38,787 [INFO] QwenQualitySweep: module=jamba_info path=legacy_bert
+2026-09-22 06:36:38,789 [INFO] QwenQualitySweep: module=jamba_info injection summary: 0 SVDLinear layers active
+2026-09-22 06:36:38,789 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for jamba_info (lr=2.0e-04)
+2026-09-22 06:36:38,950 [INFO] framework.utils.compat: Recovery fine-tuning selected 884736 trainable parameters across 72 tensors.
+2026-09-22 06:36:38,950 [INFO] framework.utils.compat: Discovered 72 trainable tensors (884736 params)
+2026-09-22 06:36:38,953 [INFO] QwenQualitySweep: LoRA fine-tuning: 884736 trainable parameters across 72 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-22 06:37:27,895 [WARNING] QwenQualitySweep: CUDA OOM during LoRA training; reducing micro-batch size to 4 (effective bs=8)
+2026-09-22 06:37:41,436 [ERROR] QwenQualitySweep: Module jamba_info execution failure:
+Traceback (most recent call last):
+  File "D:\SVD_PROJECT\Codes\framework\run_quality_sweep.py", line 2883, in run_single_module_main
+    perf_metrics, comp_metrics, injected, path_name, had_nan = _run_candidate_pipeline(model, name, args, device, family, effective_batch_size, tokenizer, val, base, train, effective_timeout, out, model_slug, total_params_before, module_rank, eval_batches, train_batches, eval_seq_len, pass_threshold_pct, typ, t)
+                                                               ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\run_quality_sweep.py", line 809, in _run_candidate_pipeline
+    had_nan = finetune_lora(
+        model, tokenizer, train, args.dataset, rec_steps, args.seq_len, effective_batch_size, device,
+    ...<3 lines>...
+        span_lambda=float(getattr(args, "span_lambda", 0.0) or 0.0),
+    )
+  File "D:\SVD_PROJECT\Codes\framework\run_quality_sweep.py", line 1612, in finetune_lora
+    out = model(**cx, labels=cy)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\generic.py", line 876, in wrapper
+    output = func(self, *args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\distilbert\modeling_distilbert.py", line 588, in forward
+    distilbert_output = self.distilbert(
+        input_ids=input_ids,
+    ...<4 lines>...
+        **kwargs,
+    )
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\generic.py", line 952, in wrapper
+    output = func(self, *args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\output_capturing.py", line 248, in wrapper
+    outputs = func(self, *args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\distilbert\modeling_distilbert.py", line 421, in forward
+    return self.transformer(
+           ~~~~~~~~~~~~~~~~^
+        hidden_states=embeddings,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+        attention_mask=attention_mask,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\distilbert\modeling_distilbert.py", line 280, in forward
+    hidden_states = layer_module(
+        hidden_states,
+        attention_mask,
+        **kwargs,
+    )
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\modeling_layers.py", line 93, in __call__
+    return super().__call__(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\distilbert\modeling_distilbert.py", line 252, in forward
+    attention_output, _ = self.attention(
+                          ~~~~~~~~~~~~~~^
+        hidden_states,
+        ^^^^^^^^^^^^^^
+        attention_mask=attention_mask,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "D:\SVD_PROJECT\Codes\framework\attentions\jamba_info.py", line 533, in forward
+    out = self.out_proj(combined)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "D:\SVD_PROJECT\Codes\framework\attentions\jamba_info.py", line 144, in forward
+    lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+2026-09-22 06:37:41,881 [INFO] QwenQualitySweep: [1/1] jamba_info -> FAIL 0.00% (F1: 0.0, Peak VRAM: 0.0 MB)
+2026-09-22 06:37:41,881 [INFO] QwenQualitySweep: [Quality Guard] Module 'jamba_info' did not pass quality criteria (status=FAIL, acc=0.00%, pass_thresh=38.60%). Pruning large checkpoint artifacts but preserving metrics.
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:153: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

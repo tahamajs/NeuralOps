@@ -1,0 +1,17 @@
+{
+  "module": "full",
+  "model": "models\\roberta-base",
+  "dataset": "sst2",
+  "status": "PASS_LOW",
+  "started_at": "2026-09-18T22:20:11.887447",
+  "pid": 7716,
+  "accuracy": 0.0,
+  "f1": 0.6748,
+  "params_before": 124647170,
+  "params_after": 124647170,
+  "compression_ratio": 1.0,
+  "peak_vram_mb": 312.85,
+  "elapsed_s": 3.49,
+  "error": "",
+  "finished_at": "2026-09-18T22:20:34.264938"
+}

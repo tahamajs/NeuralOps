@@ -1,0 +1,120 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'adaptive_span_attention' due to: name 'ATTENTION_REGISTRY' is not defined
+2026-09-26 01:21:56,994 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-09-26 01:21:56,994 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-26 01:21:56,994 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-26 01:21:56,994 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0%
+2026-09-26 01:21:57,842 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/allenai/c4/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-09-26 01:21:57,957 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/allenai/c4/1588ec454efa1a09f29cd18ddd04fe05fc8653a2/README.md "HTTP/1.1 200 OK"
+2026-09-26 01:21:58,179 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/allenai/c4/resolve/1588ec454efa1a09f29cd18ddd04fe05fc8653a2/c4.py "HTTP/1.1 404 Not Found"
+2026-09-26 01:21:59,331 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/allenai/c4/allenai/c4.py "HTTP/1.1 404 Not Found"
+2026-09-26 01:21:59,680 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/c4/revision/1588ec454efa1a09f29cd18ddd04fe05fc8653a2 "HTTP/1.1 200 OK"
+2026-09-26 01:22:00,728 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/allenai/c4/resolve/1588ec454efa1a09f29cd18ddd04fe05fc8653a2/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-09-26 01:22:01,042 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/c4/tree/1588ec454efa1a09f29cd18ddd04fe05fc8653a2/en?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 01:22:01,578 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/c4/tree/1588ec454efa1a09f29cd18ddd04fe05fc8653a2/en?expand=false&recursive=false&limit=1000&cursor=ZXlKbWFXeGxYMjVoYldVaU9pSmxiaTlqTkMxMGNtRnBiaTR3TURrNU9TMXZaaTB3TVRBeU5DNXFjMjl1TG1kNklpd2lkSEpsWlY5dmFXUWlPaUprWXprME0yTTBZelF3WmpVelpEQXlZak14WTJWa01XUmxabUUzWlRWbU5ETTRaRFU0TmpKbEluMD06MTAwMA%3D%3D "HTTP/1.1 200 OK"
+2026-09-26 01:22:01,803 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/allenai/c4/resolve/1588ec454efa1a09f29cd18ddd04fe05fc8653a2/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-09-26 01:22:02,388 [INFO] QwenQualitySweep: Configured dataset 'c4' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 2868.46it/s]
+2026-09-26 01:22:03,193 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-26 01:22:03,193 [INFO] QwenQualitySweep: detected model family=gpt2 adapter={'family': 'gpt', 'raw_family': 'gpt2', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-26 01:22:03,193 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 01:22:03,194 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-26 01:22:03,194 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-26 01:22:03,194 [INFO] QwenQualitySweep:   family:            gpt2
+2026-09-26 01:22:03,194 [INFO] QwenQualitySweep:   dataset:           c4
+2026-09-26 01:22:03,194 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-26 01:22:03,194 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-26 01:22:03,195 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-26 01:22:03,195 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-26 01:22:03,195 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 01:22:03,366 [INFO] QwenQualitySweep: Prepared 0 eval batches and 0 train batches directly on GPU.
+Token indices sequence length is longer than the specified maximum sequence length for this model (948196 > 1024). Running this sequence through the model will result in indexing errors
+`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+2026-09-26 01:23:57,926 [INFO] QwenQualitySweep: Baseline model benchmark perplexity on validation set: 37.856544 (loss=3.6338)
+2026-09-26 01:23:58,091 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 01:23:58,092 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-26 01:23:58,092 [INFO] QwenQualitySweep:   Validation Majority Count: 500 / 1000
+2026-09-26 01:23:58,092 [INFO] QwenQualitySweep:   True Majority Baseline:    50.00%
+2026-09-26 01:23:58,092 [INFO] QwenQualitySweep:   Standard Error (SE):       1.581%
+2026-09-26 01:23:58,092 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.74%
+2026-09-26 01:23:58,092 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  54.74%
+2026-09-26 01:23:58,092 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.00% (500/1000), SE=1.581%, 3*SE=4.740%
+2026-09-26 01:23:58,093 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 01:23:58,093 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-26 01:23:58,390 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: adasvd_compressor (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-26 01:24:00,098 [INFO] framework.compression_engine.adasvd_compressor: Calibration time: 1.17 s
+2026-09-26 01:24:02,711 [INFO] framework.compression_engine.adasvd_compressor: AdaSVD: routing transformer.h.0.attn.c_attn to fused-QKV split handler
+2026-09-26 01:24:03,049 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD fused-QKV split: transformer.h.0.attn.c_attn err=0.2149 exceeds strict threshold 0.1500; falling back to original (c_attn compression unsafe at this rank).
+2026-09-26 01:24:03,049 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD reconstruction error 0.2149 on transformer.h.0.attn.c_attn exceeded threshold 0.7000.
+2026-09-26 01:24:03,049 [INFO] framework.compression_engine.adasvd_compressor: Skipping AdaSVD compression for transformer.h.0.attn.c_attn (fallback to original).
+2026-09-26 01:24:03,314 [INFO] framework.compression_engine.adasvd_compressor: AdaSVD: routing transformer.h.1.attn.c_attn to fused-QKV split handler
+2026-09-26 01:24:03,659 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD fused-QKV split: transformer.h.1.attn.c_attn err=0.1541 exceeds strict threshold 0.1500; falling back to original (c_attn compression unsafe at this rank).
+2026-09-26 01:24:03,659 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD reconstruction error 0.1541 on transformer.h.1.attn.c_attn exceeded threshold 0.7000.
+2026-09-26 01:24:03,659 [INFO] framework.compression_engine.adasvd_compressor: Skipping AdaSVD compression for transformer.h.1.attn.c_attn (fallback to original).
+2026-09-26 01:24:03,820 [INFO] framework.compression_engine.adasvd_compressor: AdaSVD: routing transformer.h.2.attn.c_attn to fused-QKV split handler
+2026-09-26 01:24:04,173 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD fused-QKV split: transformer.h.2.attn.c_attn err=0.1606 exceeds strict threshold 0.1500; falling back to original (c_attn compression unsafe at this rank).
+2026-09-26 01:24:04,173 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD reconstruction error 0.1606 on transformer.h.2.attn.c_attn exceeded threshold 0.7000.
+2026-09-26 01:24:04,173 [INFO] framework.compression_engine.adasvd_compressor: Skipping AdaSVD compression for transformer.h.2.attn.c_attn (fallback to original).
+2026-09-26 01:24:04,322 [INFO] framework.compression_engine.adasvd_compressor: AdaSVD: routing transformer.h.3.attn.c_attn to fused-QKV split handler
+2026-09-26 01:24:04,664 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD fused-QKV split: transformer.h.3.attn.c_attn err=0.2000 exceeds strict threshold 0.1500; falling back to original (c_attn compression unsafe at this rank).
+2026-09-26 01:24:04,664 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD reconstruction error 0.2000 on transformer.h.3.attn.c_attn exceeded threshold 0.7000.
+2026-09-26 01:24:04,665 [INFO] framework.compression_engine.adasvd_compressor: Skipping AdaSVD compression for transformer.h.3.attn.c_attn (fallback to original).
+2026-09-26 01:24:04,817 [INFO] framework.compression_engine.adasvd_compressor: AdaSVD: routing transformer.h.4.attn.c_attn to fused-QKV split handler
+2026-09-26 01:24:05,137 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD fused-QKV split: transformer.h.4.attn.c_attn err=0.1855 exceeds strict threshold 0.1500; falling back to original (c_attn compression unsafe at this rank).
+2026-09-26 01:24:05,137 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD reconstruction error 0.1855 on transformer.h.4.attn.c_attn exceeded threshold 0.7000.
+2026-09-26 01:24:05,137 [INFO] framework.compression_engine.adasvd_compressor: Skipping AdaSVD compression for transformer.h.4.attn.c_attn (fallback to original).
+2026-09-26 01:24:05,288 [INFO] framework.compression_engine.adasvd_compressor: AdaSVD: routing transformer.h.5.attn.c_attn to fused-QKV split handler
+2026-09-26 01:24:05,630 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD fused-QKV split: transformer.h.5.attn.c_attn err=0.1706 exceeds strict threshold 0.1500; falling back to original (c_attn compression unsafe at this rank).
+2026-09-26 01:24:05,630 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD reconstruction error 0.1706 on transformer.h.5.attn.c_attn exceeded threshold 0.7000.
+2026-09-26 01:24:05,630 [INFO] framework.compression_engine.adasvd_compressor: Skipping AdaSVD compression for transformer.h.5.attn.c_attn (fallback to original).
+2026-09-26 01:24:05,782 [INFO] framework.compression_engine.adasvd_compressor: AdaSVD: routing transformer.h.6.attn.c_attn to fused-QKV split handler
+2026-09-26 01:24:06,122 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD fused-QKV split: transformer.h.6.attn.c_attn err=0.1786 exceeds strict threshold 0.1500; falling back to original (c_attn compression unsafe at this rank).
+2026-09-26 01:24:06,122 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD reconstruction error 0.1786 on transformer.h.6.attn.c_attn exceeded threshold 0.7000.
+2026-09-26 01:24:06,122 [INFO] framework.compression_engine.adasvd_compressor: Skipping AdaSVD compression for transformer.h.6.attn.c_attn (fallback to original).
+2026-09-26 01:24:06,282 [INFO] framework.compression_engine.adasvd_compressor: AdaSVD: routing transformer.h.7.attn.c_attn to fused-QKV split handler
+2026-09-26 01:24:06,617 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD fused-QKV split: transformer.h.7.attn.c_attn err=0.1779 exceeds strict threshold 0.1500; falling back to original (c_attn compression unsafe at this rank).
+2026-09-26 01:24:06,617 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD reconstruction error 0.1779 on transformer.h.7.attn.c_attn exceeded threshold 0.7000.
+2026-09-26 01:24:06,617 [INFO] framework.compression_engine.adasvd_compressor: Skipping AdaSVD compression for transformer.h.7.attn.c_attn (fallback to original).
+2026-09-26 01:24:06,777 [INFO] framework.compression_engine.adasvd_compressor: AdaSVD: routing transformer.h.8.attn.c_attn to fused-QKV split handler
+2026-09-26 01:24:07,113 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD fused-QKV split: transformer.h.8.attn.c_attn err=0.1960 exceeds strict threshold 0.1500; falling back to original (c_attn compression unsafe at this rank).
+2026-09-26 01:24:07,113 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD reconstruction error 0.1960 on transformer.h.8.attn.c_attn exceeded threshold 0.7000.
+2026-09-26 01:24:07,113 [INFO] framework.compression_engine.adasvd_compressor: Skipping AdaSVD compression for transformer.h.8.attn.c_attn (fallback to original).
+2026-09-26 01:24:07,276 [INFO] framework.compression_engine.adasvd_compressor: AdaSVD: routing transformer.h.9.attn.c_attn to fused-QKV split handler
+2026-09-26 01:24:07,611 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD fused-QKV split: transformer.h.9.attn.c_attn err=0.1982 exceeds strict threshold 0.1500; falling back to original (c_attn compression unsafe at this rank).
+2026-09-26 01:24:07,612 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD reconstruction error 0.1982 on transformer.h.9.attn.c_attn exceeded threshold 0.7000.
+2026-09-26 01:24:07,612 [INFO] framework.compression_engine.adasvd_compressor: Skipping AdaSVD compression for transformer.h.9.attn.c_attn (fallback to original).
+2026-09-26 01:24:07,773 [INFO] framework.compression_engine.adasvd_compressor: AdaSVD: routing transformer.h.10.attn.c_attn to fused-QKV split handler
+2026-09-26 01:24:08,106 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD fused-QKV split: transformer.h.10.attn.c_attn err=0.1798 exceeds strict threshold 0.1500; falling back to original (c_attn compression unsafe at this rank).
+2026-09-26 01:24:08,106 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD reconstruction error 0.1798 on transformer.h.10.attn.c_attn exceeded threshold 0.7000.
+2026-09-26 01:24:08,106 [INFO] framework.compression_engine.adasvd_compressor: Skipping AdaSVD compression for transformer.h.10.attn.c_attn (fallback to original).
+2026-09-26 01:24:08,264 [INFO] framework.compression_engine.adasvd_compressor: AdaSVD: routing transformer.h.11.attn.c_attn to fused-QKV split handler
+2026-09-26 01:24:08,599 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD fused-QKV split: transformer.h.11.attn.c_attn err=0.1982 exceeds strict threshold 0.1500; falling back to original (c_attn compression unsafe at this rank).
+2026-09-26 01:24:08,599 [WARNING] framework.compression_engine.adasvd_compressor: AdaSVD reconstruction error 0.1982 on transformer.h.11.attn.c_attn exceeded threshold 0.7000.
+2026-09-26 01:24:08,599 [INFO] framework.compression_engine.adasvd_compressor: Skipping AdaSVD compression for transformer.h.11.attn.c_attn (fallback to original).
+2026-09-26 01:24:08,754 [INFO] framework.compression_engine.adasvd_compressor: AdaSVD compression complete: 12 compressed, 12 fallback. Avg error: 0.0360.
+2026-09-26 01:24:08,783 [INFO] QwenQualitySweep: module=adasvd_compressor path=adapted_gpt2
+2026-09-26 01:24:08,784 [INFO] QwenQualitySweep: module=adasvd_compressor injection summary: 12 SVDLinear layers active
+2026-09-26 01:24:08,784 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for adasvd_compressor (lr=2.0e-04)
+2026-09-26 01:24:08,890 [INFO] framework.utils.compat: Recovery fine-tuning selected 4730880 trainable parameters across 36 tensors.
+2026-09-26 01:24:08,891 [WARNING] framework.utils.compat: Total trainable parameters (4730880) exceeds 2000000 threshold for recovery. Pruning with priority-based allocation.
+2026-09-26 01:24:08,891 [INFO] framework.utils.compat:   priority=0: kept=0 pruned=0 (running total=0)
+2026-09-26 01:24:08,892 [INFO] framework.utils.compat:   priority=1: kept=23 pruned=13 (running total=1946880)
+2026-09-26 01:24:08,892 [INFO] framework.utils.compat:   priority=2: kept=0 pruned=0 (running total=1946880)
+2026-09-26 01:24:08,892 [INFO] framework.utils.compat:   priority=3: kept=0 pruned=0 (running total=1946880)
+2026-09-26 01:24:08,893 [INFO] framework.utils.compat: Reduced recovery parameters to 1946880 trainable parameters across 23 tensors.
+2026-09-26 01:24:08,893 [INFO] framework.utils.compat: Discovered 23 trainable tensors (1946880 params)
+2026-09-26 01:24:08,895 [INFO] QwenQualitySweep: LoRA fine-tuning: 1946880 trainable parameters across 23 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-26 01:24:09,191 [INFO] QwenQualitySweep: Step 1/50 took 0.29s (loss=4.9823, bs=8, micro=8)
+2026-09-26 01:24:09,824 [INFO] QwenQualitySweep: Step 5/50 took 0.16s (loss=4.3568, bs=8, micro=8)
+2026-09-26 01:24:10,577 [INFO] QwenQualitySweep: Step 10/50 took 0.15s (loss=4.5524, bs=8, micro=8)
+2026-09-26 01:24:11,368 [INFO] QwenQualitySweep: Step 15/50 took 0.16s (loss=3.9675, bs=8, micro=8)
+2026-09-26 01:24:12,153 [INFO] QwenQualitySweep: Step 20/50 took 0.16s (loss=3.8161, bs=8, micro=8)
+2026-09-26 01:24:12,927 [INFO] QwenQualitySweep: Step 25/50 took 0.15s (loss=3.6518, bs=8, micro=8)
+2026-09-26 01:24:13,772 [INFO] QwenQualitySweep: Step 30/50 took 0.16s (loss=3.3535, bs=8, micro=8)
+2026-09-26 01:24:14,551 [INFO] QwenQualitySweep: Step 35/50 took 0.15s (loss=3.7900, bs=8, micro=8)
+2026-09-26 01:24:15,339 [INFO] QwenQualitySweep: Step 40/50 took 0.17s (loss=3.6912, bs=8, micro=8)
+2026-09-26 01:24:16,123 [INFO] QwenQualitySweep: Step 45/50 took 0.16s (loss=4.3404, bs=8, micro=8)
+2026-09-26 01:24:16,920 [INFO] QwenQualitySweep: Step 50/50 took 0.15s (loss=3.9050, bs=8, micro=8)

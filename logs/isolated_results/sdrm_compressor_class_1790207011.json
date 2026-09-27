@@ -1,0 +1,11 @@
+{
+  "module": "sdrm_compressor_class",
+  "model": "models/gpt2",
+  "dataset": "wikitext2",
+  "status": "CRASH",
+  "started_at": "2026-09-23T23:44:03.593723",
+  "pid": 20900,
+  "error": "UnboundLocalError: cannot access local variable 'majority_count' where it is not associated with a value",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 63, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 3160, in run_single_module_main\n    f\"dynamic: majority={majority_baseline_pct:.2f}% ({majority_count}/{total_val_samples}), \"\n                                                       ^^^^^^^^^^^^^^\nUnboundLocalError: cannot access local variable 'majority_count' where it is not associated with a value\n",
+  "finished_at": "2026-09-23T23:46:28.051605"
+}

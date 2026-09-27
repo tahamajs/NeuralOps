@@ -1,0 +1,114 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-24 21:14:56,670 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'rotational_slicegpt_int4_factory', '--output_json', 'logs\\isolated_results\\rotational_slicegpt_int4_factory_1790271860091_23344.json']
+2026-09-24 21:14:56,755 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 21:14:56,755 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=4 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-24 21:14:57,768 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-09-24 21:14:57,900 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md "HTTP/1.1 200 OK"
+2026-09-24 21:14:58,125 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-24 21:14:58,734 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-24 21:14:58,968 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-09-24 21:14:59,198 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-09-24 21:14:59,769 [INFO] httpx: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-09-24 21:15:00,004 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-24 21:15:00,432 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-24 21:15:00,662 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-09-24 21:15:00,894 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-24 21:15:01,626 [INFO] QwenQualitySweep: Configured dataset 'wikitext2' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 2232.79it/s]
+2026-09-24 21:15:02,954 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 21:15:02,955 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 21:15:02,955 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 21:15:02,955 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 21:15:02,955 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-24 21:15:02,955 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-24 21:15:02,956 [INFO] QwenQualitySweep:   dataset:           wikitext2
+2026-09-24 21:15:02,956 [INFO] QwenQualitySweep:   batch_size:        4
+2026-09-24 21:15:02,956 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 21:15:02,956 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 21:15:02,956 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 21:15:02,956 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 21:15:03,190 [INFO] QwenQualitySweep: Prepared 0 eval batches and 0 train batches directly on GPU.
+Token indices sequence length is longer than the specified maximum sequence length for this model (249749 > 1024). Running this sequence through the model will result in indexing errors
+`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+2026-09-24 21:18:30,311 [INFO] QwenQualitySweep: Baseline model benchmark perplexity on validation set: 41.346157 (loss=3.7220)
+2026-09-24 21:18:30,649 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 21:18:30,650 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-24 21:18:30,650 [INFO] QwenQualitySweep:   Validation Majority Count: 500 / 1000
+2026-09-24 21:18:30,650 [INFO] QwenQualitySweep:   True Majority Baseline:    50.00%
+2026-09-24 21:18:30,650 [INFO] QwenQualitySweep:   Standard Error (SE):       1.581%
+2026-09-24 21:18:30,651 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.74%
+2026-09-24 21:18:30,651 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  54.74%
+2026-09-24 21:18:30,651 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.00% (500/1000), SE=1.581%, 3*SE=4.740%
+2026-09-24 21:18:30,651 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 21:18:30,654 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 21:18:31,433 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: rotational_slicegpt_int4_factory (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-24 21:18:35,451 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5159 on transformer.h.0.attn.c_attn exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:18:37,382 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5355 on transformer.h.0.attn.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:18:44,520 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5237 on transformer.h.0.mlp.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:18:46,270 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5163 on transformer.h.1.attn.c_attn exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:18:48,013 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5763 on transformer.h.1.attn.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:18:54,333 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5282 on transformer.h.1.mlp.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:18:56,026 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5184 on transformer.h.2.attn.c_attn exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:18:57,488 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5319 on transformer.h.2.attn.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:19:04,381 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5341 on transformer.h.2.mlp.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:19:06,000 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5118 on transformer.h.3.attn.c_attn exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:19:07,884 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5251 on transformer.h.3.attn.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:19:16,041 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5411 on transformer.h.3.mlp.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:19:18,011 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5191 on transformer.h.4.attn.c_attn exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:19:19,923 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5265 on transformer.h.4.attn.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:19:27,539 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5280 on transformer.h.4.mlp.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:19:29,325 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5135 on transformer.h.5.attn.c_attn exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:19:31,216 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5209 on transformer.h.5.attn.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:19:38,899 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5201 on transformer.h.5.mlp.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:19:40,838 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5135 on transformer.h.6.attn.c_attn exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:19:42,725 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5200 on transformer.h.6.attn.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:19:50,427 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5176 on transformer.h.6.mlp.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:19:52,299 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5128 on transformer.h.7.attn.c_attn exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:19:54,273 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5187 on transformer.h.7.attn.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:20:01,138 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5152 on transformer.h.7.mlp.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:20:02,787 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5129 on transformer.h.8.attn.c_attn exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:20:04,703 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5219 on transformer.h.8.attn.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:20:13,772 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5125 on transformer.h.8.mlp.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:20:15,658 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5111 on transformer.h.9.attn.c_attn exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:20:17,565 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5201 on transformer.h.9.attn.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:20:26,794 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5117 on transformer.h.9.mlp.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:20:29,305 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5114 on transformer.h.10.attn.c_attn exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:20:31,824 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5204 on transformer.h.10.attn.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:20:40,291 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5134 on transformer.h.10.mlp.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:20:42,222 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5154 on transformer.h.11.attn.c_attn exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:20:44,061 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5668 on transformer.h.11.attn.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:20:51,252 [WARNING] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT reconstruction error 0.5135 on transformer.h.11.mlp.c_proj exceeded threshold 0.4000. Keeping original layer.
+2026-09-24 21:20:51,345 [INFO] framework.compression_engine.rotational_slicegpt_int4: RotationalSliceGPT compressed 0 layers (avg error: 0.5227, bits: 4, slice_ratio: 0.75)
+2026-09-24 21:20:51,426 [INFO] QwenQualitySweep: module=rotational_slicegpt_int4_factory path=adapted_gpt
+2026-09-24 21:20:51,428 [INFO] QwenQualitySweep: module=rotational_slicegpt_int4_factory injection summary: 0 SVDLinear layers active
+2026-09-24 21:20:51,430 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for rotational_slicegpt_int4_factory (lr=2.0e-04)
+2026-09-24 21:20:51,589 [INFO] framework.utils.compat: Recovery fine-tuning selected 0 trainable parameters across 0 tensors.
+2026-09-24 21:20:51,590 [INFO] framework.utils.compat: Discovered 0 trainable tensors (0 params)
+2026-09-24 21:24:46,767 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\gpt2_wikitext2_sweep\gpt2_rotational_slicegpt_int4_factory_full_metrics.json
+2026-09-24 21:24:47,365 [INFO] QwenQualitySweep: [1/1] rotational_slicegpt_int4_factory -> PASS_NO_COMPRESSION 0.00% (F1: 0.0, Peak VRAM: 816.22509765625 MB)
+2026-09-24 21:24:47,365 [WARNING] QwenQualitySweep: Module 'rotational_slicegpt_int4_factory' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-24 21:24:47,366 [INFO] QwenQualitySweep: [Quality Guard] Module 'rotational_slicegpt_int4_factory' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=0.00%, pass_thresh=54.74%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-24 21:24:47,382 [INFO] QwenQualitySweep: [1/1] rotational_slicegpt_int4_factory Timing: eval_time=375.95s
+2026-09-24 21:24:47,384 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 21:24:49,660 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 21:24:49,660 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on wikitext2)
+2026-09-24 21:24:49,708 [INFO] QwenQualitySweep: 
+                                           Module              Status Accuracy    Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                                             full                PASS    0.00% 0.00% (base)    N/A                              1.00x  916.2 MB               7.88               N/A
+                       swift_svd (efficient-attn)       PASS_DEGRADED    0.00%       +0.00%    N/A                              1.50x  838.8 MB               3.23               N/A
+                 gated_delta_net (efficient-attn)     SKIP_DEPRECATED    0.00%       +0.00%    N/A                              1.00x       N/A               0.00               N/A
+                              flat_llm_compressor   FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 6            1.00x  816.2 MB             181.14               N/A
+           tt_compressor_factory (efficient-attn)   FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 0            1.05x  816.2 MB             272.95               N/A
+              hybrid_svd_factory (efficient-attn)   FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 0            1.08x 1241.0 MB             313.73               N/A
+                    svd_sequence (efficient-attn)   FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 0            1.00x 1273.3 MB             518.73               N/A
+                                     kmeans_class                PASS    0.00%       +0.00% 0.0000                36            1.83x 1400.3 MB             214.19               N/A
+                   uniql_factory (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             205.34               N/A
+                          zerokv (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             181.44               N/A
+                                 armor_compressor        PASS_LOW_PPL    0.00%       +0.00% 0.0000                12            0.98x 1229.4 MB             230.55               N/A
+rotational_slicegpt_int4_factory (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             234.61              0.00
+2026-09-24 21:24:49,708 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:153: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  

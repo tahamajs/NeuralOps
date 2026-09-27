@@ -1,0 +1,72 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-21 06:01:23,473 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'token_compressed_inject', '--output_json', 'logs\\isolated_results\\token_compressed_inject_1789957857.json']
+2026-09-21 06:01:23,551 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-21 06:01:23,552 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=4 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-21 06:01:24,352 [INFO] QwenQualitySweep: Configured dataset 'wikitext2' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 2415.90it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models/gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-21 06:01:25,647 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-21 06:01:25,647 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-21 06:01:25,648 [INFO] QwenQualitySweep: ================================================================================
+2026-09-21 06:01:25,648 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-21 06:01:25,648 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-21 06:01:25,650 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-21 06:01:25,651 [INFO] QwenQualitySweep:   dataset:           wikitext2
+2026-09-21 06:01:25,651 [INFO] QwenQualitySweep:   batch_size:        4
+2026-09-21 06:01:25,651 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-21 06:01:25,651 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-21 06:01:25,651 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-21 06:01:25,651 [INFO] QwenQualitySweep: ================================================================================
+2026-09-21 06:01:25,658 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\gpt2_wikitext2_sweep\finetuned_model.pt
+2026-09-21 06:01:25,676 [WARNING] QwenQualitySweep: Missing keys during load: ['transformer.wte.weight', 'transformer.wpe.weight', 'transformer.h.0.ln_1.weight', 'transformer.h.0.ln_1.bias', 'transformer.h.0.attn.c_attn.weight', 'transformer.h.0.attn.c_attn.bias', 'transformer.h.0.attn.c_proj.weight', 'transformer.h.0.attn.c_proj.bias', 'transformer.h.0.ln_2.weight', 'transformer.h.0.ln_2.bias']
+2026-09-21 06:01:26,072 [INFO] QwenQualitySweep: Loading pre-cached batches from results\gpt2_wikitext2_sweep\batch_cache_wikitext2 (skipping tokenization)
+2026-09-21 06:01:26,983 [INFO] QwenQualitySweep: Prepared 616 eval batches and 50 train batches directly on GPU.
+2026-09-21 06:02:00,158 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 99.72%
+2026-09-21 06:02:00,159 [INFO] QwenQualitySweep: ================================================================================
+2026-09-21 06:02:00,160 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=2461):
+2026-09-21 06:02:00,160 [INFO] QwenQualitySweep:   Validation Majority Count: 2461 / 2461
+2026-09-21 06:02:00,160 [INFO] QwenQualitySweep:   True Majority Baseline:    100.00%
+2026-09-21 06:02:00,160 [INFO] QwenQualitySweep:   Standard Error (SE):       0.000%
+2026-09-21 06:02:00,160 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 0.00%
+2026-09-21 06:02:00,160 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  100.00%
+2026-09-21 06:02:00,161 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=100.00% (2461/2461), SE=0.000%, 3*SE=0.000%
+2026-09-21 06:02:00,161 [INFO] QwenQualitySweep: ================================================================================
+2026-09-21 06:02:00,161 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: token_compressed_inject (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-21 06:02:02,542 [INFO] QwenQualitySweep: module=token_compressed_inject path=adapted_gpt
+2026-09-21 06:02:02,544 [INFO] QwenQualitySweep: module=token_compressed_inject injection summary: 0 SVDLinear layers active
+2026-09-21 06:02:02,545 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for token_compressed_inject (lr=2.0e-04)
+2026-09-21 06:02:02,842 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179648 trainable parameters across 96 tensors.
+2026-09-21 06:02:02,843 [INFO] framework.utils.compat: Discovered 96 trainable tensors (1179648 params)
+2026-09-21 06:02:02,848 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179648 trainable parameters across 96 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-21 06:02:03,554 [INFO] QwenQualitySweep: Step 1/50 took 0.70s (loss=0.0774, bs=4, micro=4)
+2026-09-21 06:02:04,687 [INFO] QwenQualitySweep: Step 5/50 took 0.27s (loss=0.0868, bs=4, micro=4)
+2026-09-21 06:02:06,081 [INFO] QwenQualitySweep: Step 10/50 took 0.33s (loss=0.0834, bs=4, micro=4)
+2026-09-21 06:02:07,434 [INFO] QwenQualitySweep: Step 15/50 took 0.25s (loss=0.0670, bs=4, micro=4)
+2026-09-21 06:02:08,935 [INFO] QwenQualitySweep: Step 20/50 took 0.37s (loss=0.1047, bs=4, micro=4)
+2026-09-21 06:02:10,206 [INFO] QwenQualitySweep: Step 25/50 took 0.24s (loss=0.0674, bs=4, micro=4)
+2026-09-21 06:02:11,409 [INFO] QwenQualitySweep: Step 30/50 took 0.24s (loss=0.0937, bs=4, micro=4)
+2026-09-21 06:02:12,635 [INFO] QwenQualitySweep: Step 35/50 took 0.26s (loss=0.0906, bs=4, micro=4)
+2026-09-21 06:02:13,873 [INFO] QwenQualitySweep: Step 40/50 took 0.24s (loss=0.0879, bs=4, micro=4)
+2026-09-21 06:02:15,135 [INFO] QwenQualitySweep: Step 45/50 took 0.27s (loss=0.0692, bs=4, micro=4)
+2026-09-21 06:02:16,529 [INFO] QwenQualitySweep: Step 50/50 took 0.26s (loss=0.0470, bs=4, micro=4)
+2026-09-21 06:03:30,780 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\gpt2_wikitext2_sweep\gpt2_token_compressed_inject_full_metrics.json
+2026-09-21 06:03:30,851 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\gpt2_wikitext2_sweep\checkpoints\token_compressed_inject\weights.pt (module_params=0, lora_params=97)
+2026-09-21 06:03:31,321 [INFO] QwenQualitySweep: [1/1] token_compressed_inject -> MODERATE_EXPANSION 100.00% (F1: 0.0, Peak VRAM: 538.07 MB)
+2026-09-21 06:03:31,322 [INFO] QwenQualitySweep: [Quality Guard] Module 'token_compressed_inject' did not pass quality criteria (status=MODERATE_EXPANSION, acc=100.00%, pass_thresh=100.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-21 06:03:31,574 [INFO] QwenQualitySweep: ================================================================================
+2026-09-21 06:03:31,574 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on wikitext2)
+2026-09-21 06:03:31,588 [INFO] QwenQualitySweep: 
+                                  Module             Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+token_compressed_inject (efficient-attn) MODERATE_EXPANSION  100.00%    +0.28% 0.0000                  0            1.00x  538.1 MB              73.87             30.02
+2026-09-21 06:03:31,588 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:153: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

@@ -1,0 +1,95 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+2026-09-27 08:38:07,692 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0% (leaving 5.20 GB headroom)
+2026-09-27 08:38:07,692 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-27 08:38:07,694 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-27 08:38:07,694 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0%
+2026-09-27 08:38:07,695 [INFO] QwenQualitySweep: Auto-resolving base model 'roberta-base' to fine-tuned SST-2 model: models\roberta_sst2
+2026-09-27 08:38:08,114 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights: 100%|##########| 201/201 [00:00<00:00, 2885.95it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta_sst2
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-09-27 08:38:09,044 [INFO] QwenQualitySweep: model=models\roberta_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-27 08:38:09,045 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'raw_family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-27 08:38:09,045 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:38:09,045 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-27 08:38:09,045 [INFO] QwenQualitySweep:   model:             models\roberta_sst2
+2026-09-27 08:38:09,045 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-27 08:38:09,046 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-27 08:38:09,046 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-27 08:38:09,047 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-27 08:38:09,048 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-27 08:38:09,048 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-27 08:38:09,048 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:38:09,051 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-27 08:38:11,520 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0015
+2026-09-27 08:38:13,150 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0143
+2026-09-27 08:38:14,817 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1419
+2026-09-27 08:38:16,507 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0326
+2026-09-27 08:38:18,185 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0266
+2026-09-27 08:38:19,778 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0969
+2026-09-27 08:38:21,249 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0999
+2026-09-27 08:38:22,761 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.1602
+2026-09-27 08:38:22,777 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\04_rank_sweeps\roberta\deep_rank_roberta\nmf_compressor\rank_16\finetuned_model.pt
+2026-09-27 08:38:23,935 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\04_rank_sweeps\roberta\deep_rank_roberta\nmf_compressor\rank_16\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-27 08:38:23,936 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-27 08:38:28,856 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 94.38%
+2026-09-27 08:38:29,045 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:38:29,046 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-27 08:38:29,046 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-27 08:38:29,046 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-27 08:38:29,046 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-27 08:38:29,047 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-27 08:38:29,047 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-27 08:38:29,047 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-27 08:38:29,047 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:38:29,048 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-27 08:38:29,200 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: nmf_compressor (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-27 08:38:29,942 [ERROR] QwenQualitySweep: Module nmf_compressor execution failure:
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\compression_engine\nmf_compressor.py", line 483, in compress
+    logger.warning(
+    ^^^^^^
+NameError: name 'logger' is not defined
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 3657, in run_single_module_main
+    perf_metrics, comp_metrics, injected, path_name, had_nan, recovery_time_s, measured_calib_time = _run_candidate_pipeline(model, name, args, device, family, effective_batch_size, tokenizer, val, base, train, effective_timeout, out, model_slug, total_params_before, module_rank, eval_batches, train_batches, eval_seq_len, pass_threshold_pct, typ, t)
+                                                                                                     ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 2648, in _run_candidate_pipeline
+    model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
+               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_Project\Codes\framework\eval_all_models_datasets.py", line 627, in apply_module_to_model
+    res_mod = _invoke_compressor_instance(candidate)
+  File "D:\SVD_Project\Codes\framework\eval_all_models_datasets.py", line 573, in _invoke_compressor_instance
+    res = fn()
+  File "D:\SVD_Project\Codes\framework\eval_all_models_datasets.py", line 566, in <lambda>
+    lambda: m(),
+            ~^^
+  File "D:\SVD_Project\Codes\framework\compression_engine\nmf_compressor.py", line 520, in compress
+    logger.warning("NMF: failed on %s: %s", name, e)
+    ^^^^^^
+NameError: name 'logger' is not defined
+2026-09-27 08:38:29,960 [INFO] QwenQualitySweep: [1/1] nmf_compressor -> FAIL 0.00% (F1: 0.0, Peak VRAM: 0.0 MB)
+2026-09-27 08:38:29,960 [INFO] QwenQualitySweep: [Quality Guard] Module 'nmf_compressor' did not pass quality criteria (status=FAIL, acc=0.00%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-27 08:38:29,966 [INFO] QwenQualitySweep: [1/1] nmf_compressor Timing: eval_time=0.77s
+2026-09-27 08:38:29,966 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-27 08:38:30,309 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:38:30,310 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-27 08:38:30,320 [INFO] QwenQualitySweep: 
+                         Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+nmf_compressor (efficient-attn)   FAIL    0.00%   -94.38% 0.0000                  0            1.00x    0.0 MB               0.76              0.00
+2026-09-27 08:38:30,320 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:171: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

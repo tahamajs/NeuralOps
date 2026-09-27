@@ -1,0 +1,11 @@
+{
+  "module": "mlorq_factory",
+  "model": "models/gpt2",
+  "dataset": "wikitext2",
+  "status": "CRASH",
+  "started_at": "2026-09-21T02:07:30.229681",
+  "pid": 20072,
+  "error": "KeyError: 'text'",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 63, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 2490, in run_single_module_main\n    save_lora_weights(base, str(checkpoint), metadata={\"finetune_mode\": \"lora\", \"steps\": args.finetune_steps, \"dataset\": args.dataset, \"seed\": args.seed})\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 1454, in finetune\n    scaler = torch.amp.GradScaler(\"cuda\", enabled=fp16 and device.type == \"cuda\")\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 1013, in encode\n    texts = batch[a] if b is None else list(zip(batch[a], batch[b]))\n            ~~~~~^^^\nKeyError: 'text'\n",
+  "finished_at": "2026-09-21T02:07:31.556150"
+}

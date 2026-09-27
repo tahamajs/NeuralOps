@@ -1,0 +1,11 @@
+{
+  "module": "svd_llm_compressor",
+  "model": "models/gpt2",
+  "dataset": "wikitext2",
+  "status": "CRASH",
+  "started_at": "2026-09-25T02:32:16.935585",
+  "pid": 5600,
+  "error": "RuntimeError: CUDA error: out of memory\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 69, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_Project\\Codes\\framework\\run_quality_sweep.py\", line 3901, in run_single_module_main\n    base_snapshot.restore()\n    ~~~~~~~~~~~~~~~~~~~~~^^\n  File \"D:\\SVD_Project\\Codes\\framework\\core\\snapshot_restore.py\", line 61, in restore\n    k: v.to(device) for k, v in self.clean_state_dict.items()\n       ~~~~^^^^^^^^\nRuntimeError: CUDA error: out of memory\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n\n",
+  "finished_at": "2026-09-25T02:58:42.857053"
+}

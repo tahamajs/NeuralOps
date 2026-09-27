@@ -1,0 +1,11 @@
+{
+  "module": "a3_compressor",
+  "model": "models/gpt2",
+  "dataset": "c4",
+  "status": "CRASH",
+  "started_at": "2026-09-25T21:35:50.927370",
+  "pid": 15944,
+  "error": "NameError: name 'measured_calib_time' is not defined",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 78, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_Project\\Codes\\framework\\run_quality_sweep.py\", line 3832, in run_single_module_main\n    \"calibration_time_s\": comp_metrics.get(\"calibration_time_s\") if comp_metrics.get(\"calibration_time_s\", 0.0) > 0.0 else measured_calib_time,\n                                                                                                                           ^^^^^^^^^^^^^^^^^^^\nNameError: name 'measured_calib_time' is not defined\n",
+  "finished_at": "2026-09-25T21:39:48.922338"
+}

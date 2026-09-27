@@ -1,0 +1,11 @@
+{
+  "module": "adaptive",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "dataset": "sst2",
+  "status": "CRASH",
+  "started_at": "2026-09-23T07:14:49.394879",
+  "pid": 20236,
+  "error": "AttributeError: 'NoneType' object has no attribute 'get'",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 68, in main\n    p_before = int(metrics.get(\"total_params_before\", 0) or 0)\n                   ^^^^^^^^^^^\nAttributeError: 'NoneType' object has no attribute 'get'\n",
+  "finished_at": "2026-09-23T07:14:54.595078"
+}

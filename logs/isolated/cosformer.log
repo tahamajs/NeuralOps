@@ -1,0 +1,80 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-23 00:53:22,632 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'cosformer', '--output_json', 'logs\\isolated_results\\cosformer_1790112174.json']
+2026-09-23 00:53:22,751 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-23 00:53:22,751 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=4 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-23 00:53:24,118 [INFO] QwenQualitySweep: Configured dataset 'mrpc' with num_labels=2
+Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]Loading weights:  99%|#########9| 196/197 [00:00<00:00, 1953.77it/s]Loading weights: 100%|##########| 197/197 [00:00<00:00, 1951.17it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models/roberta-base
+Key                             | Status     | 
+--------------------------------+------------+-
+lm_head.dense.bias              | UNEXPECTED | 
+lm_head.bias                    | UNEXPECTED | 
+lm_head.layer_norm.weight       | UNEXPECTED | 
+roberta.embeddings.position_ids | UNEXPECTED | 
+lm_head.dense.weight            | UNEXPECTED | 
+lm_head.layer_norm.bias         | UNEXPECTED | 
+classifier.dense.bias           | MISSING    | 
+classifier.out_proj.bias        | MISSING    | 
+classifier.dense.weight         | MISSING    | 
+classifier.out_proj.weight      | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-23 00:53:26,031 [INFO] QwenQualitySweep: model=models/roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-23 00:53:26,031 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-23 00:53:26,031 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 00:53:26,031 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-23 00:53:26,032 [INFO] QwenQualitySweep:   model:             models/roberta-base
+2026-09-23 00:53:26,032 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-23 00:53:26,032 [INFO] QwenQualitySweep:   dataset:           mrpc
+2026-09-23 00:53:26,033 [INFO] QwenQualitySweep:   batch_size:        4
+2026-09-23 00:53:26,033 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-23 00:53:26,033 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-23 00:53:26,033 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-23 00:53:26,033 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 00:53:26,042 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\cosformer_grid\mrpc_rank128\finetuned_model.pt
+2026-09-23 00:53:26,052 [WARNING] QwenQualitySweep: Missing keys during load: ['roberta.embeddings.word_embeddings.weight', 'roberta.embeddings.token_type_embeddings.weight', 'roberta.embeddings.LayerNorm.weight', 'roberta.embeddings.LayerNorm.bias', 'roberta.embeddings.position_embeddings.weight', 'roberta.encoder.layer.0.attention.self.query.weight', 'roberta.encoder.layer.0.attention.self.query.bias', 'roberta.encoder.layer.0.attention.self.key.weight', 'roberta.encoder.layer.0.attention.self.key.bias', 'roberta.encoder.layer.0.attention.self.value.weight']
+2026-09-23 00:53:26,403 [INFO] QwenQualitySweep: Loading pre-cached batches from results\cosformer_grid\mrpc_rank128\batch_cache_mrpc (skipping tokenization)
+2026-09-23 00:53:26,735 [INFO] QwenQuality22026-09-23 00:53:32,215 [INFO] QwenQualitySweep: Baseline model benchma2026-09-23 00:53:33,856 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 68.38%
+2026-09-23 00:53:33,893 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 00:53:33,893 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=408):
+2026-09-23 00:53:33,893 [INFO] QwenQualitySweep:   Validation Majority Count: 279 / 408
+2026-09-23 00:53:33,893 [INFO] QwenQualitySweep:   True Majority Baseline:    68.38%
+2026-09-23 00:53:33,894 [INFO] QwenQualitySweep:   Standard Error (SE):       2.302%
+2026-09-23 00:53:33,894 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 6.91%
+2026-09-23 00:53:33,894 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  75.29%
+2026-09-23 00:53:33,894 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=68.38% (279/408), SE=2.302%, 3*SE=6.910%
+2026-09-23 00:53:33,894 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 00:53:33,902 [INFO] QwenQualitySweep: >>> STARTING MODUL2026-09-23 00:53:35,576 [INFO] QwenQualitySweep: module=cosformer path=2026-09-23 00:53:36,884 [INFO] QwenQualitySweep: module=cosformer path=adapted_roberta
+2026-09-23 00:53:36,886 [INFO] QwenQualitySweep: module=cosformer injection summary: 0 SVDLinear layers active
+2026-09-23 00:53:36,887 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for cosformer (lr=2.0e-04)
+2026-09-23 00:53:37,238 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179648 trainable parameters across 96 tensors.
+2026-09-23 00:53:37,238 [INFO] framework.utils.compat: Discovered 96 trainable tensors (1179648 params)
+2026-09-23 00:53:37,243 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179648 trainable parameters across 96 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-23 00:53:37,803 [INFO] QwenQualitySweep: Step 1/50 took 0.53s (loss=0.7064, bs=4, micro=4)
+2026-09-23 00:53:38,912 [INF2026-09-23 00:53:39,235 [INFO] QwenQualitySweep: Step 10/50 took 0.54s (2026-09-23 00:53:40,295 [INFO2026-09-23 00:53:41,984 [INFO] QwenQualitySweep: Step 15/50 took 0.59s (loss=0.9052, bs=8, micro=4)
+2026-09-23 00:53:44,655 [INFO] QwenQualitySweep: Step 20/50 took 0.52s (loss=0.3605, bs=8, micro=4)
+2026-09-23 00:53:47,299 [INFO] QwenQualitySweep: Step 25/50 took 0.51s (loss=0.5631, bs=8, micro=4)
+2026-09-23 00:53:49,965 [INFO] QwenQualitySweep: Step 30/50 took 0.53s (loss=0.4082, bs=8, micro=4)
+2026-09-23 00:53:52,699 [INFO] QwenQualitySweep: Step 35/50 took 0.56s (loss=0.7476, bs=8, micro=4)
+2026-09-23 00:53:55,714 [INFO] QwenQualitySweep: Step 40/50 took 0.62s (loss=0.8094, bs=8, micro=4)
+2026-09-23 00:53:58,656 [INFO] QwenQualitySweep: Step 45/50 took 0.52s (loss=0.3823, bs=8, micro=4)
+2026-09-23 00:54:01,437 [INFO] QwenQualitySweep: Step 50/50 took 0.56s (loss=0.3526, bs=8, micro=4)
+2026-09-23 00:54:07,995 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\cosformer_grid\mrpc_rank32\roberta-base_cosformer_full_metrics.json
+2026-09-23 00:54:08,047 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\cosformer_grid\mrpc_rank32\checkpoints\cosformer\weights.pt (module_params=0, lora_params=100)
+2026-09-23 00:54:08,274 [INFO] QwenQualitySweep: [1/1] cosformer -> MODERATE_EXPANSION 69.61% (F1: 0.8166, Peak VRAM: 649.39 MB)
+2026-09-23 00:54:08,274 [INFO] QwenQualitySweep: [Quality Guard] Module 'cosformer' did not pass quality criteria (status=MODERATE_EXPANSION, acc=69.61%, pass_thresh=75.29%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-23 00:54:08,542 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 00:54:08,542 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on mrpc)
+2026-09-23 00:54:08,566 [INFO] QwenQualitySweep: 
+                    Module             Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+cosformer (efficient-attn) MODERATE_EXPANSION   69.61%    +1.23% 0.8166                  0            1.00x  649.4 MB               6.17             15.12
+2026-09-23 00:54:08,567 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:153: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()
+(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

@@ -1,0 +1,10 @@
+{
+  "module": "tt_compressor",
+  "model": "models/gpt2",
+  "dataset": "wikitext2",
+  "status": "SKIP_DEPRECATED",
+  "started_at": "2026-09-25T20:01:15.114092",
+  "pid": 10464,
+  "error": "Deprecated module: TT decomposition is unsuitable for 2D transformer weight matrices. See Docs/content/compressions/tt.md",
+  "finished_at": "2026-09-25T20:01:15.114121"
+}

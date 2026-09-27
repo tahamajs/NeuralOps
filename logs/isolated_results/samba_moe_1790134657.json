@@ -1,0 +1,11 @@
+{
+  "module": "samba_moe",
+  "model": "models/distilbert_sst2",
+  "dataset": "sst2",
+  "status": "CRASH",
+  "started_at": "2026-09-23T03:37:55.323211",
+  "pid": 14800,
+  "error": "RuntimeError: CUDA error: out of memory\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 63, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 3562, in run_single_module_main\n    torch.cuda.empty_cache()\n    ~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\cuda\\memory.py\", line 218, in empty_cache\n    torch._C._cuda_emptyCache()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~^^\nRuntimeError: CUDA error: out of memory\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n\n",
+  "finished_at": "2026-09-23T03:47:10.772801"
+}

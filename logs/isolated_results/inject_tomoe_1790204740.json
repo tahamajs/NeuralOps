@@ -1,0 +1,11 @@
+{
+  "module": "inject_tomoe",
+  "model": "models/gpt2",
+  "dataset": "wikitext2",
+  "status": "CRASH",
+  "started_at": "2026-09-23T23:06:01.324260",
+  "pid": 6512,
+  "error": "KeyError: 'text'",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 63, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 3071, in run_single_module_main\n    eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, eval_seq_len, args.batch_size, device)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 370, in prepare_eval_batches\n    x, y = encode(\n           ~~~~~~^\n        tokenizer,\n        ^^^^^^^^^^\n    ...<3 lines>...\n        device,\n        ^^^^^^^\n    )\n    ^\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 341, in encode\n    texts = batch[a] if b is None else list(zip(batch[a], batch[b]))\n            ~~~~~^^^\nKeyError: 'text'\n",
+  "finished_at": "2026-09-23T23:06:05.502470"
+}

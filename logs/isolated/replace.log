@@ -1,0 +1,14 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'nha_compressor' due to: No module named 'framework.attentions.nha_attention'
+Skipping attention module 'rpc' due to: cannot import name 'LoRALinear' from 'framework.attentions.rpc_attention' (D:\SVD_PROJECT\Codes\framework\attentions\rpc_attention.py)
+2026-09-23 08:17:24,025 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'replace', '--output_json', 'logs\\isolated_results\\replace_1790138822.json']
+2026-09-23 08:17:24,136 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-23 08:17:24,136 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-23 08:17:25,513 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/agent-harnesses "HTTP/1.1 200 OK"
+2026-09-23 08:17:25,745 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/models/gpt2_sst2/resolve/main/config.json "HTTP/1.1 404 Not Found"
+2026-09-23 08:17:25,974 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/models/gpt2_sst2/resolve/main/config.json "HTTP/1.1 404 Not Found"
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:153: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

@@ -1,0 +1,11 @@
+{
+  "module": "slicegpt_pca",
+  "model": "models/gpt2",
+  "dataset": "c4",
+  "status": "CRASH",
+  "started_at": "2026-09-25T21:38:36.357118",
+  "pid": 9752,
+  "error": "NameError: name 'measured_calib_time' is not defined",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 78, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_Project\\Codes\\framework\\run_quality_sweep.py\", line 3832, in run_single_module_main\n    \"eval_time_s\": perf_metrics.get(\"eval_time_s\", round(time.monotonic() - t, 2)),\n    \nNameError: name 'measured_calib_time' is not defined\n",
+  "finished_at": "2026-09-25T21:43:21.392097"
+}

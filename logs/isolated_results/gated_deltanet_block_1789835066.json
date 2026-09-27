@@ -1,0 +1,10 @@
+{
+  "module": "gated_deltanet_block",
+  "model": "models\\distilbert_agnews_full",
+  "dataset": "ag_news",
+  "status": "SKIP_DEPRECATED",
+  "started_at": "2026-09-19T16:24:49.365113",
+  "pid": 4116,
+  "error": "Deprecated module: same as gated_delta_net",
+  "finished_at": "2026-09-19T16:24:49.365134"
+}

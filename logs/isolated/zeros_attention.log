@@ -1,0 +1,74 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-22 04:09:19,774 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'zeros_attention', '--output_json', 'logs\\isolated_results\\zeros_attention_1790037547.json']
+2026-09-22 04:09:19,829 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-22 04:09:19,829 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-22 04:09:20,180 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights: 100%|##########| 201/201 [00:00<00:00, 3574.07it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models/roberta_sst2
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-09-22 04:09:20,986 [INFO] QwenQualitySweep: model=models/roberta_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-22 04:09:20,987 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-22 04:09:20,987 [INFO] QwenQualitySweep: ================================================================================
+2026-09-22 04:09:20,987 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-22 04:09:20,987 [INFO] QwenQualitySweep:   model:             models/roberta_sst2
+2026-09-22 04:09:20,988 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-22 04:09:20,988 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-22 04:09:20,988 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-22 04:09:20,988 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-22 04:09:20,988 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-22 04:09:20,988 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-22 04:09:20,988 [INFO] QwenQualitySweep: ================================================================================
+2026-09-22 04:09:20,993 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\roberta_sst2_sst2_sweep\finetuned_model.pt
+2026-09-22 04:09:21,002 [WARNING] QwenQualitySweep: Missing keys during load: ['roberta.embeddings.word_embeddings.weight', 'roberta.embeddings.token_type_embeddings.weight', 'roberta.embeddings.LayerNorm.weight', 'roberta.embeddings.LayerNorm.bias', 'roberta.embeddings.position_embeddings.weight', 'roberta.encoder.layer.0.attention.self.query.weight', 'roberta.encoder.layer.0.attention.self.query.bias', 'roberta.encoder.layer.0.attention.self.key.weight', 'roberta.encoder.layer.0.attention.self.key.bias', 'roberta.encoder.layer.0.attention.self.value.weight']
+2026-09-22 04:09:21,214 [INFO] QwenQualitySweep: Loading pre-cached batches from results\roberta_sst2_sst2_sweep\batch_cache_sst2 (skipping tokenization)
+2026-09-22 04:09:21,348 [INFO] QwenQualitySweep: Prepared 218 eval batches and 50 train batches directly on GPU.
+2026-09-22 04:09:30,010 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 94.15%
+2026-09-22 04:09:30,059 [INFO] QwenQualitySweep: ================================================================================
+2026-09-22 04:09:30,060 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-22 04:09:30,060 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-22 04:09:30,060 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-22 04:09:30,060 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-22 04:09:30,060 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-22 04:09:30,060 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-22 04:09:30,060 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-22 04:09:30,061 [INFO] QwenQualitySweep: ================================================================================
+2026-09-22 04:09:30,061 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: zeros_attention (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-22 04:09:31,510 [INFO] framework.core.attention_utils: Successfully injected 'zeros_attention' into 12 transformer blocks.
+2026-09-22 04:09:31,527 [INFO] QwenQualitySweep: module=zeros_attention path=adapted_roberta
+2026-09-22 04:09:31,529 [INFO] QwenQualitySweep: module=zeros_attention injection summary: 0 SVDLinear layers active
+2026-09-22 04:09:31,530 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for zeros_attention (lr=2.0e-04)
+2026-09-22 04:09:31,809 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179648 trainable parameters across 96 tensors.
+2026-09-22 04:09:31,809 [INFO] framework.utils.compat: Discovered 96 trainable tensors (1179648 params)
+2026-09-22 04:09:31,814 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179648 trainable parameters across 96 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-22 04:09:32,215 [INFO] QwenQualitySweep: Step 1/50 took 0.40s (loss=0.2301, bs=4, micro=8)
+2026-09-22 04:09:33,178 [INFO] QwenQualitySweep: Step 5/50 took 0.25s (loss=0.7128, bs=4, micro=8)
+2026-09-22 04:09:34,385 [INFO] QwenQualitySweep: Step 10/50 took 0.25s (loss=0.9199, bs=4, micro=8)
+2026-09-22 04:09:35,571 [INFO] QwenQualitySweep: Step 15/50 took 0.24s (loss=0.7920, bs=4, micro=8)
+2026-09-22 04:09:36,851 [INFO] QwenQualitySweep: Step 20/50 took 0.25s (loss=0.3403, bs=4, micro=8)
+2026-09-22 04:09:38,059 [INFO] QwenQualitySweep: Step 25/50 took 0.25s (loss=0.6592, bs=4, micro=8)
+2026-09-22 04:09:39,361 [INFO] QwenQualitySweep: Step 30/50 took 0.26s (loss=1.1671, bs=4, micro=8)
+2026-09-22 04:09:40,670 [INFO] QwenQualitySweep: Step 35/50 took 0.27s (loss=0.6965, bs=4, micro=8)
+2026-09-22 04:09:41,960 [INFO] QwenQualitySweep: Step 40/50 took 0.25s (loss=0.9637, bs=4, micro=8)
+2026-09-22 04:09:43,253 [INFO] QwenQualitySweep: Step 45/50 took 0.25s (loss=0.5690, bs=4, micro=8)
+2026-09-22 04:09:44,551 [INFO] QwenQualitySweep: Step 50/50 took 0.26s (loss=0.8790, bs=4, micro=8)
+2026-09-22 04:10:05,836 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\roberta_sst2_sst2_sweep\roberta_sst2_zeros_attention_full_metrics.json
+2026-09-22 04:10:05,883 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\roberta_sst2_sst2_sweep\checkpoints\zeros_attention\weights.pt (module_params=0, lora_params=100)
+2026-09-22 04:10:06,117 [INFO] QwenQualitySweep: [1/1] zeros_attention -> MODERATE_EXPANSION 50.92% (F1: 0.6748, Peak VRAM: 632.14 MB)
+2026-09-22 04:10:06,117 [INFO] QwenQualitySweep: [Quality Guard] Module 'zeros_attention' did not pass quality criteria (status=MODERATE_EXPANSION, acc=50.92%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-22 04:10:06,390 [INFO] QwenQualitySweep: ================================================================================
+2026-09-22 04:10:06,390 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-22 04:10:06,394 [INFO] QwenQualitySweep: 
+         Module             Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+zeros_attention MODERATE_EXPANSION   50.92%   -43.23% 0.6748                 12            1.00x  632.1 MB              20.90             23.97
+2026-09-22 04:10:06,394 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:153: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

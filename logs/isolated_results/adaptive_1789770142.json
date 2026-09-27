@@ -1,0 +1,11 @@
+{
+  "module": "adaptive",
+  "model": "models\\distilbert_sst2",
+  "dataset": "sst2",
+  "status": "CRASH",
+  "started_at": "2026-09-18T22:22:42.939302",
+  "pid": 14256,
+  "error": "ValueError: could not convert string to float: ''",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 40, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 2512, in run_single_module_main\n    n, len(names), name, summary_dict[name].get(\"status\"), float(summary_dict[name].get(\"accuracy_pct\", 0.0)))\n                                                           ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nValueError: could not convert string to float: ''\n",
+  "finished_at": "2026-09-18T22:22:47.615317"
+}

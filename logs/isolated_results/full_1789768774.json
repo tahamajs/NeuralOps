@@ -1,0 +1,17 @@
+{
+  "module": "full",
+  "model": "models\\distilbert_sst2",
+  "dataset": "sst2",
+  "status": "PASS_LOW",
+  "started_at": "2026-09-18T21:59:52.577881",
+  "pid": 10956,
+  "accuracy": 0.0,
+  "f1": 0.9137,
+  "params_before": 66955010,
+  "params_after": 66955010,
+  "compression_ratio": 1.0,
+  "peak_vram_mb": 197.09,
+  "elapsed_s": 1.86,
+  "error": "",
+  "finished_at": "2026-09-18T22:00:05.771890"
+}

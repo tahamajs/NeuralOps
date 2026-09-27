@@ -1,0 +1,124 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+2026-09-27 07:40:56,671 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0% (leaving 5.20 GB headroom)
+2026-09-27 07:40:56,672 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-27 07:40:56,674 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-27 07:40:56,674 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0%
+2026-09-27 07:40:56,675 [INFO] QwenQualitySweep: Auto-resolving base model 'roberta-base' to fine-tuned SST-2 model: models\roberta_sst2
+2026-09-27 07:40:57,042 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights:  86%|########6 | 173/201 [00:00<00:00, 1729.44it/s]Loading weights: 100%|##########| 201/201 [00:00<00:00, 1936.90it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta_sst2
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-09-27 07:40:58,330 [INFO] QwenQualitySweep: model=models\roberta_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-27 07:40:58,330 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'raw_family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-27 07:40:58,331 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 07:40:58,331 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-27 07:40:58,331 [INFO] QwenQualitySweep:   model:             models\roberta_sst2
+2026-09-27 07:40:58,331 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-27 07:40:58,331 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-27 07:40:58,332 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-27 07:40:58,332 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-27 07:40:58,332 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-27 07:40:58,332 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-27 07:40:58,332 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 07:40:58,334 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-27 07:41:00,765 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0015
+2026-09-27 07:41:02,329 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0143
+2026-09-27 07:41:03,934 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1419
+2026-09-27 07:41:05,466 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0326
+2026-09-27 07:41:07,010 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0266
+2026-09-27 07:41:08,610 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0969
+2026-09-27 07:41:10,197 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0999
+2026-09-27 07:41:11,797 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.1602
+2026-09-27 07:41:11,816 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\04_rank_sweeps\roberta\deep_rank_roberta\cr_compressor\rank_16\finetuned_model.pt
+2026-09-27 07:41:13,211 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\04_rank_sweeps\roberta\deep_rank_roberta\cr_compressor\rank_16\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-27 07:41:13,212 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-27 07:41:18,016 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 94.38%
+2026-09-27 07:41:18,176 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 07:41:18,176 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-27 07:41:18,176 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-27 07:41:18,176 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-27 07:41:18,176 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-27 07:41:18,177 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-27 07:41:18,177 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-27 07:41:18,177 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-27 07:41:18,177 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 07:41:18,177 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-27 07:41:18,339 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: cr_compressor (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-27 07:41:19,634 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.0.attention.self.query error 0.9143 exceeded max_error 0.5000
+2026-09-27 07:41:19,996 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.0.attention.self.key error 0.8779 exceeded max_error 0.5000
+2026-09-27 07:41:20,387 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.0.attention.self.value error 0.9198 exceeded max_error 0.5000
+2026-09-27 07:41:20,808 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.0.attention.output.dense error 0.8749 exceeded max_error 0.5000
+2026-09-27 07:41:21,261 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.1.attention.self.query error 0.8993 exceeded max_error 0.5000
+2026-09-27 07:41:21,646 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.1.attention.self.key error 0.8763 exceeded max_error 0.5000
+2026-09-27 07:41:22,055 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.1.attention.self.value error 0.9009 exceeded max_error 0.5000
+2026-09-27 07:41:22,430 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.1.attention.output.dense error 0.8812 exceeded max_error 0.5000
+2026-09-27 07:41:22,808 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.2.attention.self.query error 0.9010 exceeded max_error 0.5000
+2026-09-27 07:41:23,236 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.2.attention.self.key error 0.9000 exceeded max_error 0.5000
+2026-09-27 07:41:23,688 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.2.attention.self.value error 0.9045 exceeded max_error 0.5000
+2026-09-27 07:41:24,118 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.2.attention.output.dense error 0.9055 exceeded max_error 0.5000
+2026-09-27 07:41:24,507 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.3.attention.self.query error 0.9019 exceeded max_error 0.5000
+2026-09-27 07:41:24,881 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.3.attention.self.key error 0.9130 exceeded max_error 0.5000
+2026-09-27 07:41:25,305 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.3.attention.self.value error 0.9081 exceeded max_error 0.5000
+2026-09-27 07:41:25,764 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.3.attention.output.dense error 0.8973 exceeded max_error 0.5000
+2026-09-27 07:41:26,172 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.4.attention.self.query error 0.9062 exceeded max_error 0.5000
+2026-09-27 07:41:26,610 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.4.attention.self.key error 0.9134 exceeded max_error 0.5000
+2026-09-27 07:41:27,026 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.4.attention.self.value error 0.9012 exceeded max_error 0.5000
+2026-09-27 07:41:27,440 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.4.attention.output.dense error 0.9027 exceeded max_error 0.5000
+2026-09-27 07:41:27,925 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.5.attention.self.query error 0.9056 exceeded max_error 0.5000
+2026-09-27 07:41:28,378 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.5.attention.self.key error 0.9202 exceeded max_error 0.5000
+2026-09-27 07:41:28,855 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.5.attention.self.value error 0.9115 exceeded max_error 0.5000
+2026-09-27 07:41:29,280 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.5.attention.output.dense error 0.9090 exceeded max_error 0.5000
+2026-09-27 07:41:29,701 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.6.attention.self.query error 0.9142 exceeded max_error 0.5000
+2026-09-27 07:41:30,190 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.6.attention.self.key error 0.9036 exceeded max_error 0.5000
+2026-09-27 07:41:30,623 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.6.attention.self.value error 0.9258 exceeded max_error 0.5000
+2026-09-27 07:41:31,079 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.6.attention.output.dense error 0.9144 exceeded max_error 0.5000
+2026-09-27 07:41:31,492 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.7.attention.self.query error 0.9146 exceeded max_error 0.5000
+2026-09-27 07:41:31,898 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.7.attention.self.key error 0.9004 exceeded max_error 0.5000
+2026-09-27 07:41:32,450 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.7.attention.self.value error 0.9153 exceeded max_error 0.5000
+2026-09-27 07:41:32,837 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.7.attention.output.dense error 0.9122 exceeded max_error 0.5000
+2026-09-27 07:41:33,203 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.8.attention.self.query error 0.9097 exceeded max_error 0.5000
+2026-09-27 07:41:33,646 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.8.attention.self.key error 0.9005 exceeded max_error 0.5000
+2026-09-27 07:41:34,114 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.8.attention.self.value error 0.9267 exceeded max_error 0.5000
+2026-09-27 07:41:34,603 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.8.attention.output.dense error 0.9236 exceeded max_error 0.5000
+2026-09-27 07:41:35,132 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.9.attention.self.query error 0.8895 exceeded max_error 0.5000
+2026-09-27 07:41:35,635 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.9.attention.self.key error 0.8943 exceeded max_error 0.5000
+2026-09-27 07:41:36,056 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.9.attention.self.value error 0.9257 exceeded max_error 0.5000
+2026-09-27 07:41:36,443 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.9.attention.output.dense error 0.9242 exceeded max_error 0.5000
+2026-09-27 07:41:36,794 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.10.attention.self.query error 0.9064 exceeded max_error 0.5000
+2026-09-27 07:41:37,154 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.10.attention.self.key error 0.9083 exceeded max_error 0.5000
+2026-09-27 07:41:37,481 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.10.attention.self.value error 0.9384 exceeded max_error 0.5000
+2026-09-27 07:41:37,823 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.10.attention.output.dense error 0.9347 exceeded max_error 0.5000
+2026-09-27 07:41:38,157 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.11.attention.self.query error 0.8977 exceeded max_error 0.5000
+2026-09-27 07:41:38,487 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.11.attention.self.key error 0.9198 exceeded max_error 0.5000
+2026-09-27 07:41:38,819 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.11.attention.self.value error 0.9405 exceeded max_error 0.5000
+2026-09-27 07:41:39,258 [WARNING] framework.compression_engine.cr_compressor: CRCompressor: Layer roberta.encoder.layer.11.attention.output.dense error 0.9426 exceeded max_error 0.5000
+2026-09-27 07:41:39,264 [INFO] framework.compression_engine.cr_compressor: Compressor cr finished: 0 compressed, 48 fallback, avg_err=0.0000, max_err_threshold=0.5000
+2026-09-27 07:41:39,286 [INFO] QwenQualitySweep: module=cr_compressor path=adapted_roberta
+2026-09-27 07:41:39,289 [INFO] QwenQualitySweep: module=cr_compressor injection summary: 0 SVDLinear layers active
+2026-09-27 07:41:39,292 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for cr_compressor (lr=2.0e-04)
+2026-09-27 07:41:39,553 [INFO] framework.utils.compat: Recovery fine-tuning selected 0 trainable parameters across 0 tensors.
+2026-09-27 07:41:39,553 [INFO] framework.utils.compat: Discovered 0 trainable tensors (0 params)
+2026-09-27 07:41:44,426 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\roberta\deep_rank_roberta\cr_compressor\rank_16\roberta_sst2_cr_compressor_full_metrics.json
+2026-09-27 07:41:44,681 [INFO] QwenQualitySweep: [1/1] cr_compressor -> PASS_NO_COMPRESSION 94.38% (F1: 0.9445, Peak VRAM: 292.72 MB)
+2026-09-27 07:41:44,681 [WARNING] QwenQualitySweep: Module 'cr_compressor' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-27 07:41:44,681 [INFO] QwenQualitySweep: [Quality Guard] Module 'cr_compressor' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=94.38%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-27 07:41:44,689 [INFO] QwenQualitySweep: [1/1] cr_compressor Timing: eval_time=26.35s
+2026-09-27 07:41:44,689 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-27 07:41:45,104 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 07:41:45,104 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-27 07:41:45,116 [INFO] QwenQualitySweep: 
+                        Module              Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+cr_compressor (efficient-attn) PASS_NO_COMPRESSION   94.38%    +0.00% 0.9445                  0            1.00x  292.7 MB               3.87              4.44
+2026-09-27 07:41:45,116 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:171: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

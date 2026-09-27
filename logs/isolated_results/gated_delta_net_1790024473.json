@@ -1,0 +1,10 @@
+{
+  "module": "gated_delta_net",
+  "model": "models/roberta_sst2",
+  "dataset": "sst2",
+  "status": "SKIP_DEPRECATED",
+  "started_at": "2026-09-21T21:01:30.523053",
+  "pid": 9968,
+  "error": "Deprecated module: bad_alloc during backprop on 6-layer encoders; chunked scan demands >15GB RAM",
+  "finished_at": "2026-09-21T21:01:30.523075"
+}

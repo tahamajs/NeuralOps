@@ -1,0 +1,10 @@
+{
+  "module": "gated_delta_net",
+  "model": "models/distilbert_mnli_full",
+  "dataset": "mnli",
+  "status": "SKIP_DEPRECATED",
+  "started_at": "2026-09-22T01:57:32.443627",
+  "pid": 4480,
+  "error": "Deprecated module: bad_alloc during backprop on 6-layer encoders; chunked scan demands >15GB RAM",
+  "finished_at": "2026-09-22T01:57:32.443648"
+}

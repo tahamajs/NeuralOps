@@ -1,0 +1,11 @@
+{
+  "module": "performer_attention",
+  "model": "models/distilbert_sst2",
+  "dataset": "sst2",
+  "status": "CRASH",
+  "started_at": "2026-09-22T10:38:54.543184",
+  "pid": 14940,
+  "error": "NameError: name 'FuturesTimeoutError' is not defined",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 2442, in run_single_module_main\n    perf_metrics, comp_metrics, injected, path_name, had_nan = _run_candidate_pipeline(model, name, args, device, family, effective_batch_size, tokenizer, val, base, train, effective_timeout, out, model_slug, total_params_before, module_rank, eval_batches, train_batches, eval_seq_len, pass_threshold_pct, typ, t)\n                                                               ^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name '_run_candidate_pipeline' is not defined\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 63, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 2445, in run_single_module_main\n    except (TimeoutError, FuturesTimeoutError) as exc:\n                          ^^^^^^^^^^^^^^^^^^^\nNameError: name 'FuturesTimeoutError' is not defined\n",
+  "finished_at": "2026-09-22T10:39:05.837664"
+}

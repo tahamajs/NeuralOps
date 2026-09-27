@@ -1,0 +1,11 @@
+{
+  "module": "aegis_spectron_fp8",
+  "model": "distilbert-base-uncased",
+  "dataset": "mnli",
+  "status": "CRASH",
+  "started_at": "2026-09-19T03:16:39.632539",
+  "pid": 2372,
+  "error": "NameError: name 'stat_margin_pct' is not defined",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 47, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_PROJECT\\Codes\\framework\\run_quality_sweep.py\", line 2516, in run_single_module_main\n    LOG.info(\"  Statistical Margin (3*SE): %.2f%%\", stat_margin_pct)\n                                                    ^^^^^^^^^^^^^^^\nNameError: name 'stat_margin_pct' is not defined\n",
+  "finished_at": "2026-09-19T03:16:47.467434"
+}

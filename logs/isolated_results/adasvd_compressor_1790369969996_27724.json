@@ -1,0 +1,11 @@
+{
+  "module": "adasvd_compressor",
+  "model": "models/distilbert_sst2",
+  "dataset": "sst2",
+  "status": "CRASH",
+  "started_at": "2026-09-25T21:00:12.767115",
+  "pid": 30512,
+  "error": "NameError: name 'measured_calib_time' is not defined",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\SVD_Project\\Codes\\framework\\run_one_module_isolated.py\", line 78, in main\n    metrics = run_single_module_main(args)\n  File \"D:\\SVD_Project\\Codes\\framework\\run_quality_sweep.py\", line 3827, in run_single_module_main\n    \"calibration_time_s\": comp_metrics.get(\"calibration_time_s\") if comp_metrics.get(\"calibration_time_s\", 0.0) > 0.0 else measured_calib_time,\n                                                                                                                           ^^^^^^^^^^^^^^^^^^^\nNameError: name 'measured_calib_time' is not defined\n",
+  "finished_at": "2026-09-25T21:00:31.858585"
+}
