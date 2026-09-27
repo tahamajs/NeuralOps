@@ -470,3 +470,32 @@ def recalibrate_layernorms(
 # FIX APPLIED: SparseGPT Hessian damping H + lambda I
 # FIX APPLIED: Unconditional [CLS] token protection token 0 embeddings
 
+
+def adaptive_max_error(rank: Optional[Union[int, float]], in_features: int, out_features: int, family: Optional[str] = None) -> float:
+    """
+    Higher error is acceptable when rank is a small fraction
+    of matrix size, because LoRA recovery can compensate.
+    """
+    min_dim = max(1, min(in_features, out_features))
+    if rank is None or rank <= 0:
+        ratio = 0.1
+    elif isinstance(rank, float) and rank <= 1.0:
+        ratio = rank
+    else:
+        ratio = float(rank) / min_dim
+
+    if ratio >= 0.5:
+        base_err = 0.35
+    elif ratio >= 0.25:
+        base_err = 0.55
+    elif ratio >= 0.10:
+        base_err = 0.75
+    else:
+        base_err = 0.95
+
+    if family in ("bert", "distilbert", "roberta"):
+        base_err = max(base_err, 0.85)
+
+    return base_err
+
+

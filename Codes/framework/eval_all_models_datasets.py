@@ -614,7 +614,14 @@ def apply_module_to_model(
                             candidate = None
 
             if candidate is not None:
-                if isinstance(candidate, nn.Module) and not hasattr(candidate, "compress"):
+                if isinstance(candidate, tuple) and len(candidate) > 0 and isinstance(candidate[0], nn.Module):
+                    model = candidate[0]
+                    if len(candidate) > 1 and isinstance(candidate[1], dict):
+                        try:
+                            model.compression_stats = candidate[1]
+                        except Exception:
+                            pass
+                elif isinstance(candidate, nn.Module) and not hasattr(candidate, "compress"):
                     model = candidate
                 else:
                     res_mod = _invoke_compressor_instance(candidate)

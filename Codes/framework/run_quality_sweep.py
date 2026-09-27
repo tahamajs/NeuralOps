@@ -464,7 +464,7 @@ def compute_compression_metrics(
         1
         for m in model.modules()
         if m.__class__.__name__
-        in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear", "A3FactorizedLinear")
+        in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear", "A3FactorizedLinear", "CoopQLinear")
         or any(
             k in m.__class__.__name__
             for k in ("SVDCompressed", "MinimalNOVA", "MinimalPRISM", "NEXUS", "ORION", "MoBA", "A3")
