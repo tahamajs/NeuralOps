@@ -668,5 +668,55 @@
     "accuracy_pct": 90.25,
     "error": "note: zero compressed layers, zero injected layers, model unchanged",
     "timestamp": "2026-09-27T05:32:32.119608"
+  },
+  {
+    "module": "moe_deltakv_paged",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "FAIL_BELOW_CHANCE",
+    "perplexity": "",
+    "accuracy_pct": 50.92,
+    "error": "FAIL_BELOW_CHANCE: zero compressed layers, zero injected layers (FAIL: accuracy (50.92%) below chance threshold (56.00%))",
+    "timestamp": "2026-09-27T05:44:53.739942"
+  },
+  {
+    "module": "hymba_transx",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "SKIP_BERT_TIMEOUT",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "Module pipeline exceeded hard 1200s timeout",
+    "timestamp": "2026-09-27T05:49:41.890600"
+  },
+  {
+    "module": "nasc",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 88.42,
+    "error": "base_before=66955010 base_after=66993428 delta=+0.06%",
+    "timestamp": "2026-09-27T05:53:55.076231"
+  },
+  {
+    "module": "mamba",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 50.92,
+    "error": "base_before=66955010 base_after=75406082 delta=+12.62%",
+    "timestamp": "2026-09-27T05:53:59.638569"
+  },
+  {
+    "module": "nha",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T05:54:30.239138"
   }
 ]
