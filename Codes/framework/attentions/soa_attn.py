@@ -56,7 +56,11 @@ class FactorizedLinear(nn.Module):
         return self.up.out_features
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.up(self.down(x))
+        orig_dtype = x.dtype
+        x_down = x.to(self.down.weight.dtype)
+        latent = self.down(x_down)
+        latent_up = latent.to(self.up.weight.dtype)
+        return self.up(latent_up).to(orig_dtype)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
