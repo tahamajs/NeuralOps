@@ -200,9 +200,9 @@ class ExpertChoiceMoE(nn.Module):
             for _ in range(n_experts)
         ])
 
-        # Step-0 representation preservation: zero-initialize the final projection of each expert
+        # Active MoE expert representation
         for expert in self.experts:
-            nn.init.zeros_(expert[2].weight)
+            nn.init.normal_(expert[2].weight, std=0.02)
             if expert[2].bias is not None:
                 nn.init.zeros_(expert[2].bias)
 
@@ -271,7 +271,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
         comp_config: Optional[Any] = None,
         layer_id: Optional[int] = None,
         layer_idx: Optional[int] = None,
-        moe_init_gate: float = -4.0,
+        moe_init_gate: float = 0.0,
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
