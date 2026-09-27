@@ -17,6 +17,7 @@ import torch.nn.functional as F
 
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.core.pruning_utils import adaptive_max_error
 from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
@@ -370,8 +371,11 @@ class FRanDICompressor(BaseCompressor):
         self.calibration_loader = calibration_loader or _cfg_get(cfg, "calibration_loader", None)
         self.lora_r = int(_cfg_get(cfg, "lora_r", _cfg_get(cfg, "lora_rank", lora_r)))
         self.lora_alpha = float(_cfg_get(cfg, "lora_alpha", lora_alpha))
-        self.max_error = float(_cfg_get(cfg, "frandi_max_error",
-                                        _cfg_get(cfg, "max_error", max_error)))
+        c_max_error = _cfg_get(cfg, "frandi_max_error", _cfg_get(cfg, "max_error", max_error))
+        if c_max_error is None or c_max_error == 0.5:
+            c_max_error = adaptive_max_error(self.rank, 768, 768, "distilbert")
+
+        self.max_error = float(c_max_error)
         self.target_attention_only = bool(
             _cfg_get(cfg, "frandi_target_attention_only",
                      _cfg_get(cfg, "target_attention_only", target_attention_only))
@@ -681,6 +685,13 @@ class FRanDICompressor(BaseCompressor):
             "forward_check_success": forward_check_success,
             "method": "frandi",
         })
+        logger.info(
+            "Compressor frandi finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
+        )
         return self.model, stats
 
 
@@ -737,6 +748,10 @@ def frandi_factory(
         **kwargs,
     )
     compressed_model, stats = compressor.compress()
+    try:
+        compressed_model.compression_stats = stats
+    except Exception:
+        pass
     if return_stats:
         return compressed_model, stats
     return compressed_model

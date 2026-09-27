@@ -18,7 +18,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
-from framework.core.pruning_utils import get_calibration_tensors
+from framework.core.pruning_utils import get_calibration_tensors, adaptive_max_error
 from framework.utils.compat import should_compress_linear
 
 
@@ -236,6 +236,9 @@ class COMPOTCompressor(BaseCompressor):
             )
 
         self.rank = int(rank)
+        if max_error is None or max_error == 0.20:
+            max_error = adaptive_max_error(self.rank, 768, 768, "distilbert")
+
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
         self.calibration_texts = calibration_texts
@@ -412,10 +415,11 @@ class COMPOTCompressor(BaseCompressor):
             }
         )
         logger.info(
-            "COMPOT compression complete: %d compressed, %d fallback. Avg error: %.4f.",
+            "Compressor compot finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
             len(self.compressed_layers),
             len(self.fallback_layers),
             avg_err,
+            self.max_error,
         )
         return self.model, stats
 
@@ -437,6 +441,7 @@ def compot_compressor_factory(
     max_error = getattr(comp_config, "compot_max_error", getattr(comp_config, "max_error", 0.20))
     fallback = getattr(comp_config, "compot_fallback_to_original", getattr(comp_config, "fallback_to_original", True))
 
+    return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     compressor = COMPOTCompressor(
         model,
         rank=effective_rank,
@@ -447,7 +452,13 @@ def compot_compressor_factory(
         cfg=comp_config,
         **kwargs,
     )
-    compressed_model, _ = compressor.compress()
+    compressed_model, stats = compressor.compress()
+    try:
+        compressed_model.compression_stats = stats
+    except Exception:
+        pass
+    if return_stats:
+        return compressed_model, stats
     return compressed_model
 
 

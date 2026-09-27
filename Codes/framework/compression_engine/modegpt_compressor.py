@@ -27,6 +27,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.core.pruning_utils import adaptive_max_error
 from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
@@ -242,6 +243,9 @@ class MoDeGPTCompressor(BaseCompressor):
 
         self.rank = max(1, int(rank))
         self.method = str(method).lower()
+        if max_error is None or max_error == 0.50:
+            max_error = adaptive_max_error(self.rank, 768, 768, "distilbert")
+
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
         self.lora_r = max(0, int(lora_r))
@@ -693,9 +697,11 @@ class MoDeGPTCompressor(BaseCompressor):
         })
         self.stats = stats
         logger.info(
-            "MoDeGPT: %d compressed, %d fallback, avg_err=%.4f, storage_ratio=%.2fx",
-            len(self.compressed_layers), len(self.fallback_layers),
-            avg_err, storage_ratio,
+            "Compressor modegpt finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
         )
         return self.model, stats
 

@@ -16,6 +16,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.model_utils import replace_module
+from framework.core.pruning_utils import adaptive_max_error
 from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
@@ -223,8 +224,11 @@ class CRCompressor(BaseCompressor):
         c_fallback = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
         c_target_attn = _cfg_get(cfg, "cr_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
 
+        if c_max_error is None or c_max_error == 0.20:
+            c_max_error = adaptive_max_error(c_rank, 768, 768, "distilbert")
+
         self.rank = int(c_rank) if c_rank is not None else 64
-        self.max_error = float(c_max_error) if c_max_error is not None else 0.20
+        self.max_error = float(c_max_error)
         self.fallback_to_original = bool(c_fallback)
         self.max_retries = max(0, int(max_retries))
         self.target_attention_only = bool(c_target_attn)
@@ -422,6 +426,13 @@ class CRCompressor(BaseCompressor):
                 "used_interpolative_decomposition_count": len(self.compressed_layers),
             }
         )
+        logger.info(
+            "Compressor cr finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
+        )
         return self.model, stats
 
     def compress_linear(self, linear: Union[nn.Linear, Any]) -> CRLinear:
@@ -454,6 +465,10 @@ def cr_compressor_factory(
         **kwargs,
     )
     compressed_model, stats = compressor.compress()
+    try:
+        compressed_model.compression_stats = stats
+    except Exception:
+        pass
     if return_stats:
         return compressed_model, stats
     return compressed_model

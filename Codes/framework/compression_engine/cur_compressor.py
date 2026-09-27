@@ -16,6 +16,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.core.pruning_utils import adaptive_max_error
 from framework.utils.compat import should_compress_linear
 
 try:
@@ -328,11 +329,14 @@ class CURCompressor(BaseCompressor):
         c_freeze = _cfg_get(cfg, "freeze_skeletons", freeze_skeletons)
         c_target_attn = _cfg_get(cfg, "cur_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
 
+        if c_max_error is None or c_max_error == 0.20:
+            c_max_error = adaptive_max_error(c_rank, 768, 768, "distilbert")
+
         self.rank = int(c_rank) if c_rank is not None else 64
         self.min_rank = int(c_min_rank) if c_min_rank is not None else 8
         self.method = str(c_method)
         self.deterministic = bool(c_det)
-        self.max_error = float(c_max_error) if c_max_error is not None else 0.20
+        self.max_error = float(c_max_error)
         self.fallback_to_original = bool(c_fallback)
         self.max_retries = max(0, int(max_retries))
         self.lora_r = int(c_lora_r or 0)
@@ -574,6 +578,13 @@ class CURCompressor(BaseCompressor):
                 "effective_parameter_ratio": round(effective_param_ratio, 4),
             }
         )
+        logger.info(
+            "Compressor cur finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
+        )
         return self.model, stats
 
     def compress_linear(self, linear: Union[nn.Linear, Any]) -> CURLinear:
@@ -633,6 +644,10 @@ def cur_compressor_factory(
         **kwargs,
     )
     compressed_model, stats = compressor.compress()
+    try:
+        compressed_model.compression_stats = stats
+    except Exception:
+        pass
     if return_stats:
         return compressed_model, stats
     return compressed_model

@@ -597,7 +597,11 @@ def coopq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         cfg=comp_config,
         **kwargs,
     )
-    compressed_model, _ = compressor.compress()
+    compressed_model, stats = compressor.compress()
+    try:
+        compressed_model.compression_stats = stats
+    except Exception as e:
+        logger.warning("Failed to attach compression_stats: %s", e)
     return compressed_model
 
 __all__ = [

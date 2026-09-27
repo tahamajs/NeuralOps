@@ -18,6 +18,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.core.pruning_utils import adaptive_max_error
 from framework.utils.compat import should_compress_linear, get_dynamic_compression_rank
 from framework.compression_engine.aa_svd_compressor import SVDLinear
 
@@ -61,7 +62,10 @@ class DRONECompressor(BaseCompressor):
             "target_attention_only", kwargs.get("drone_target_attention_only", target_attention_only)
         )
         self.rank = rank
-        self.max_error = max_error
+        if max_error is None or max_error == 0.50:
+            max_error = adaptive_max_error(self.rank, 768, 768, "distilbert")
+
+        self.max_error = float(max_error)
         self.fallback_to_original = fallback_to_original
         self.tokenizer = tokenizer
         self.target_modules = target_modules
@@ -232,12 +236,23 @@ class DRONECompressor(BaseCompressor):
                 self.compressed_layers.append(name)
 
         stats = {
-            "compressed_layers": len(self.compressed_layers),
-            "fallback_layers": len(self.fallback_layers),
+            "compressed_layers": self.compressed_layers,
+            "compressed_layer_count": len(self.compressed_layers),
+            "fallback_layers": self.fallback_layers,
+            "fallback_layer_count": len(self.fallback_layers),
+            "num_compressed": len(self.compressed_layers),
+            "num_fallback": len(self.fallback_layers),
             "avg_reconstruction_error": float(
                 sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
             ) if self.layer_errors else 0.0,
             "layer_ranks": self.layer_ranks,
         }
         self.model.compression_stats = stats
+        logger.info(
+            "Compressor drone finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            stats["avg_reconstruction_error"],
+            self.max_error,
+        )
         return self.model, stats

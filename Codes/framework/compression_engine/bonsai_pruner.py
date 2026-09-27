@@ -24,6 +24,7 @@ from framework.core.pruning_utils import (
     compute_taylor_first_order_saliency,
     get_calibration_tensors,
     recalibrate_layernorms,
+    adaptive_max_error,
 )
 from framework.utils.compat import should_compress_linear
 
@@ -212,7 +213,7 @@ class BonsaiPruner(BaseCompressor):
         self.target_attention_only = bool(target_attention_only)
         self.skip_attention_qkv = bool(
             skip_attention_qkv if skip_attention_qkv is not None
-            else getattr(cfg_obj, "skip_attention_qkv", True)
+            else getattr(cfg_obj, "skip_attention_qkv", False)
         )
         self.use_lora = bool(use_lora or getattr(cfg_obj, "use_lora", False) or (lora_r > 0))
         self.lora_r = int(lora_r or getattr(cfg_obj, "lora_r", 0))
@@ -227,7 +228,7 @@ class BonsaiPruner(BaseCompressor):
         elif hasattr(cfg_obj, "max_error") and getattr(cfg_obj, "max_error") is not None:
             self.max_error = float(getattr(cfg_obj, "max_error"))
         else:
-            self.max_error = None
+            self.max_error = adaptive_max_error(int((1.0 - self.sparsity) * 768), 768, 768, "distilbert")
 
         self.fallback_to_original = bool(
             fallback_to_original if fallback_to_original is not None
@@ -628,6 +629,13 @@ class BonsaiPruner(BaseCompressor):
             "method": "bonsai_iterative_pruning_with_gd_recovery",
         })
         self.stats = stats
+        logger.info(
+            "Compressor bonsai finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
+            len(self.pruned_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error if self.max_error is not None else 1.0,
+        )
         return self.model, stats
 
 
@@ -635,6 +643,8 @@ class BonsaiPruner(BaseCompressor):
 # Factory
 # ===========================================================================
 
+@COMPRESSOR_REGISTRY.register("bonsai")
+@COMPRESSOR_REGISTRY.register("bonsai_pruner")
 @COMPRESSOR_REGISTRY.register("bonsai_factory")
 @COMPRESSOR_REGISTRY.register("bonsai_pruner_factory")
 def bonsai_factory(
@@ -659,7 +669,7 @@ def bonsai_factory(
     structured_24 = _get("structured_24", False)
     protect_cls = _get("protect_cls", True)
     recalibrate_ln = _get("recalibrate_ln", True)
-    skip_attention_qkv = _get("skip_attention_qkv", True)
+    skip_attention_qkv = _get("skip_attention_qkv", False)
     use_lora = _get("use_lora", False)
     lora_r = _get("lora_r", 0)
     lora_alpha = _get("lora_alpha", 1.0)
@@ -687,6 +697,10 @@ def bonsai_factory(
         **kwargs,
     )
     compressed_model, stats = compressor.compress()
+    try:
+        compressed_model.compression_stats = stats
+    except Exception:
+        pass
     if return_stats or return_tuple or return_both:
         return compressed_model, stats
     return compressed_model

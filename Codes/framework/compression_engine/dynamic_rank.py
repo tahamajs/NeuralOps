@@ -21,6 +21,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.core.pruning_utils import adaptive_max_error
 from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
@@ -506,6 +507,9 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         self.target_param_ratio = float(target_param_ratio) if target_param_ratio is not None else None
         self.total_rank_budget = int(total_rank_budget) if total_rank_budget is not None else None
         self.target_rank = int(target_rank) if target_rank is not None else None
+        if max_error is None or max_error == 0.35:
+            max_error = adaptive_max_error(self.target_rank or self.min_rank, 768, 768, "distilbert")
+
         self.max_error = float(max_error)
         self.target_attention_only = bool(target_attention_only)
         self.fallback_to_original = bool(fallback_to_original)
@@ -888,6 +892,13 @@ class DynamicEntropySVDCompressor(BaseCompressor):
             "method": "dynamic_entropy_svd",
         })
         self.stats = stats
+        logger.info(
+            "Compressor dynamic_rank finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
+        )
         return self.model, stats
 
 
@@ -946,6 +957,10 @@ def dynamic_entropy_svd_factory(
             **kwargs,
         )
         compressed_model, stats = compressor.compress()
+        try:
+            compressed_model.compression_stats = stats
+        except Exception:
+            pass
         if return_stats:
             return compressed_model, stats
         return compressed_model

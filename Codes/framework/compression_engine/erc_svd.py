@@ -25,6 +25,7 @@ from framework.compression_engine.aa_svd_compressor import SVDLinear
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.core.pruning_utils import adaptive_max_error
 from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
@@ -74,11 +75,14 @@ class ERCCompressor(BaseCompressor):
         cfg = cfg or kwargs.get("comp_config", None)
         self.cfg = cfg
 
-        self.allowed_error = float(
-            _cfg_get(cfg, "erc_allowed_error", _cfg_get(cfg, "allowed_error", allowed_error))
-        )
-        effective_max = _cfg_get(cfg, "erc_max_error",
-                                _cfg_get(cfg, "max_error", max_error))
+        c_allowed = _cfg_get(cfg, "erc_allowed_error", _cfg_get(cfg, "allowed_error", allowed_error))
+        effective_max = _cfg_get(cfg, "erc_max_error", _cfg_get(cfg, "max_error", max_error))
+        if effective_max is None and (c_allowed is None or c_allowed <= 0.25):
+            effective_max = adaptive_max_error(rank, 768, 768, "distilbert")
+        if c_allowed is None or c_allowed <= 0.25:
+            c_allowed = adaptive_max_error(rank, 768, 768, "distilbert")
+
+        self.allowed_error = float(c_allowed)
         self.max_error = float(effective_max if effective_max is not None else self.allowed_error)
         self.target_attention_only = bool(
             _cfg_get(cfg, "erc_target_attention_only",
@@ -428,10 +432,11 @@ class ERCCompressor(BaseCompressor):
             "method": "erc_svd",
         })
         logger.info(
-            "ERC-SVD compression complete: %d compressed, %d fallback. "
-            "Avg error: %.4f, Effective Param Ratio: %.2fx",
-            len(self.compressed_layers), len(self.fallback_layers),
-            avg_err, effective_ratio,
+            "Compressor erc finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
         )
         return self.model, stats
 

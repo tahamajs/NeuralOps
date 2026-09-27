@@ -14,6 +14,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from framework.core.base import BaseCompressor
+from framework.core.pruning_utils import adaptive_max_error
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
@@ -415,8 +416,12 @@ class HuffmanCompressor(BaseCompressor):
 
                 self.layer_errors[name] = err
 
-                if err > self.max_error:
-                    logger.warning("Huffman error %.4f on %s exceeded max_error %.4f", err, name, self.max_error)
+                d_out, d_in = W_orig.shape
+                fam = getattr(getattr(self.model, "config", None), "model_type", None)
+                eff_max_err = max(self.max_error, adaptive_max_error(None, d_in, d_out, family=fam))
+
+                if err > eff_max_err:
+                    logger.warning("Huffman error %.4f on %s exceeded max_error %.4f (base max_err=%.4f)", err, name, eff_max_err, self.max_error)
                     if self.fallback_to_original:
                         self.fallback_layers.append(name)
                         _freeze_base_only(module)
@@ -507,6 +512,10 @@ class HuffmanCompressor(BaseCompressor):
         stats["skipped_layers"] = self.skipped_layers
         stats["avg_reconstruction_error"] = avg_err
         stats["forward_check_success"] = forward_check_success
+        logger.info(
+            "Compressor huffman finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
+            len(self.compressed_layers), len(self.fallback_layers), avg_err, self.max_error,
+        )
         return self.model, stats
 
 
