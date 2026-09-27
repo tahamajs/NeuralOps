@@ -402,4 +402,4 @@ print(f"[PASS] leka_v1 forward logits shape:", outputs.logits.shape)
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 27.90 ms | 1338.3 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 28.97 ms | 1348.2 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 29.09 ms | 1348.2 MB |
-
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **79.59%** | -11.01% | 0.8004 | 1.20x | 0 | [svd-linear-attention-distilbert-sst2-leka-v1](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-leka-v1) | 2026-09-27 |
