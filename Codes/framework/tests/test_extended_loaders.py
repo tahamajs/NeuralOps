@@ -2,7 +2,7 @@
 
 import pytest
 import torch
-from framework.datasets.extended_lra_loaders import (
+from framework.datasets_local.extended_lra_loaders import (
     ListOpsDataset,
     SequentialCIFAR10Dataset,
     get_extended_task_dataset,
