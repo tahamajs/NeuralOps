@@ -3638,8 +3638,8 @@ def run_single_module_main(args) -> dict:
             "nasc": 8,
             "nasc_attention": 8,
         }
-        # Only apply OOM override on 12-layer models (roberta, gpt)
-        if name in _OOM_MODULE_BATCH_OVERRIDES and family in ("roberta", "gpt"):
+        # Apply OOM overrides across all models if module has known high memory consumption
+        if name in _OOM_MODULE_BATCH_OVERRIDES:
             effective_batch_size = min(args.batch_size, _OOM_MODULE_BATCH_OVERRIDES[name])
         else:
             effective_batch_size = args.batch_size
