@@ -312,6 +312,7 @@ Combining low-rank decomposition with uniform scalar quantization yields ultra-h
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **53.90%** | -27.90% | 0.5017 | 1.20x | 0 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **89.40%** | -4.90% | 0.8903 | 1.20x | 0 | N/A | 2026-09-19 |
 | **roberta-sst2** | sst2 | `PASS` | 93.81% | **91.86%** | -1.95% | 0.9210 | 1.01x | 0 | [svd-linear-attention-roberta-sst2-svd-linear](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-sst2-svd-linear) | 2026-09-25 |
+| **distilbert-base-uncased-finetuned-sst-2-english** | sst2 | `PASS` | 90.60% | **81.42%** | -9.18% | 0.8220 | 1.23x | 0 | [svd-linear-attention-distilbert-base-uncased-finetuned-sst-2-english-svd-linear](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-base-uncased-finetuned-sst-2-english-svd-linear) | 2026-09-27 |
 
 
 The empirical evaluation of `svd_linear` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
