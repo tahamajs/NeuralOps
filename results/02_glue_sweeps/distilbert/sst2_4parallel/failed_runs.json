@@ -408,5 +408,25 @@
     "accuracy_pct": 88.19,
     "error": "base_before=66955010 base_after=70480202 delta=+5.27%",
     "timestamp": "2026-09-27T03:31:37.328969"
+  },
+  {
+    "module": "hashed_net_class",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.25,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T03:32:37.364065"
+  },
+  {
+    "module": "hgrn2",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 65.83,
+    "error": "base_before=66955010 base_after=70503170 delta=+5.30%",
+    "timestamp": "2026-09-27T03:34:23.131263"
   }
 ]
