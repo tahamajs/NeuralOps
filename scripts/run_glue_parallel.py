@@ -48,11 +48,7 @@ def get_existing_completed(output_dir: Path):
             for r in reader:
                 mod = r.get("module_name")
                 status = r.get("status", "")
-                if mod and status in {
-                    "PASS", "PASS_LOW", "REJECTED_EXPANSION",
-                    "EXTREME_EXPANSION", "MODERATE_EXPANSION",
-                    "TIMEOUT", "SKIP_BERT_ARCHITECTURAL", "SKIP_BLOCKED",
-                }:
+                if mod and status and status != "UNKNOWN" and status != "PENDING":
                     completed.add(mod)
     except Exception:
         pass
