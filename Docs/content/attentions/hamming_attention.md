@@ -309,7 +309,7 @@ def inject_hamming(
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **82.11%** | -8.49% | 0.8368 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-hamming-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-hamming-attention) | 2026-09-23 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **79.59%** | -11.01% | 0.8241 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-hamming](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-hamming) | 2026-09-27 |
 
 
 > [!NOTE]

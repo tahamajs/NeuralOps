@@ -348,5 +348,65 @@
     "accuracy_pct": 48.51,
     "error": "FAIL: accuracy (48.51%) below chance threshold (56.00%)",
     "timestamp": "2026-09-27T03:29:48.039708"
+  },
+  {
+    "module": "gfws",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.37,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T03:29:59.448967"
+  },
+  {
+    "module": "grecodec",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T03:30:51.015969"
+  },
+  {
+    "module": "goldfinch",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "base_before=66955010 base_after=74097488 delta=+10.67%",
+    "timestamp": "2026-09-27T03:30:52.723787"
+  },
+  {
+    "module": "grecodec_compressor_class",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 90.6,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-27T03:31:04.141466"
+  },
+  {
+    "module": "halo_regla",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 90.37,
+    "error": "base_before=66955010 base_after=67010378 delta=+0.08%",
+    "timestamp": "2026-09-27T03:31:36.549570"
+  },
+  {
+    "module": "griffin_ssd",
+    "model": "models/distilbert_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 88.19,
+    "error": "base_before=66955010 base_after=70480202 delta=+5.27%",
+    "timestamp": "2026-09-27T03:31:37.328969"
   }
 ]
