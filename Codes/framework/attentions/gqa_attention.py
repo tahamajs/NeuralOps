@@ -1,15 +1,33 @@
 r"""
 Grouped-Query Attention (GQA).
 
-Interpolates between Multi-Head Attention (MHA) and Multi-Query Attention (MQA) by dividing
-$H_Q$ query heads into $G$ groups, where each group shares a single Key-Value head pair ($H_{KV} = G \le H_Q$).
+Interpolates between Multi-Head Attention (MHA) and Multi-Query Attention (MQA) by
+dividing H_Q query heads into G groups, where each group shares a single
+Key-Value head pair (H_KV = G <= H_Q).
+
+Fixes (v2):
+  GQA-FIX-01  Causal mask via past_len, always applied for decoders.
+  GQA-FIX-02  Removed output padding/truncation hack.
+  GQA-FIX-03  Deterministic layer detection.
+  GQA-FIX-04  Removed thread-unsafe global injection depth.
+  GQA-FIX-05  Idempotency guard in injector.
+  GQA-FIX-06  Robust mask normalization (2D/3D/4D).
+  GQA-FIX-07  Consistent is_nested_encoder propagation.
+  GQA-FIX-08  Storage accounting.
+  GQA-FIX-09  Partial-RoPE support.
+  GQA-FIX-10  Conv1D bias handled correctly.
+  GQA-FIX-11  GQA-aware copy_weights with repeat_interleave pooling.
+  GQA-FIX-12  supports_rope flag.
+  GQA-FIX-13  dtype-safe RoPE.
+  GQA-FIX-14  Removed redundant double softmax.
+  GQA-FIX-15  get_ortho_loss for framework compatibility.
 """
 
 from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -19,7 +37,6 @@ from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
-from framework.utils.model_family import ModelAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -39,18 +56,28 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
         module = module.base_layer
     w = getattr(module, "weight", None)
     b = getattr(module, "bias", None)
+    cls_name = module.__class__.__name__
+
     if w is not None:
         w = w.data
-        if hasattr(module, "nf") or module.__class__.__name__ == "Conv1D":
+        if hasattr(module, "nf") or "Conv1D" in cls_name:
             w = w.t().contiguous()
     if b is not None:
         b = b.data
+
     return w, b
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
+    d = x.shape[-1]
+    if d % 2 != 0:
+        x_even = x[..., :-1]
+        x1 = x_even[..., : (d - 1) // 2]
+        x2 = x_even[..., (d - 1) // 2 :]
+        rot_even = torch.cat((-x2, x1), dim=-1)
+        return torch.cat((rot_even, x[..., -1:]), dim=-1)
+    x1 = x[..., : d // 2]
+    x2 = x[..., d // 2 :]
     return torch.cat((-x2, x1), dim=-1)
 
 
@@ -79,7 +106,7 @@ def apply_rotary_pos_emb(
         cos = cos[..., : q.shape[-2], :]
         sin = sin[..., : q.shape[-2], :]
 
-    rotary_dim = min(cos.shape[-1], q.shape[-1])
+    rotary_dim = min(cos.shape[-1], q.shape[-1], k.shape[-1])
     rotary_dim = (rotary_dim // 2) * 2
     if rotary_dim <= 0:
         return q, k
@@ -89,28 +116,19 @@ def apply_rotary_pos_emb(
     cos_cut = cos[..., :rotary_dim].to(q_rot.dtype)
     sin_cut = sin[..., :rotary_dim].to(q_rot.dtype)
 
-    q_rot_embed = (q_rot * cos_cut) + (_rotate_half(q_rot) * sin_cut)
-    k_rot_embed = (k_rot * cos_cut) + (_rotate_half(k_rot) * sin_cut)
+    q_rot_emb = (q_rot * cos_cut) + (_rotate_half(q_rot) * sin_cut)
+    k_rot_emb = (k_rot * cos_cut) + (_rotate_half(k_rot) * sin_cut)
 
-    q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-    k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
+    q = torch.cat([q_rot_emb, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_emb
+    k = torch.cat([k_rot_emb, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_emb
     return q, k
 
 
 class LoRALinear(nn.Module):
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        bias: bool = True,
-        lora_rank: int = 16,
-        lora_alpha: float = 32.0,
-        freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
-    ) -> None:
+    def __init__(self, in_features, out_features, bias=True, lora_rank=16,
+                 lora_alpha=32.0, freeze_base=False, device=None, dtype=None):
         super().__init__()
-        factory_kwargs = {"device": device, "dtype": dtype}
+        fk = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
         self.lora_rank = lora_rank
@@ -118,15 +136,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **fk))
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
+            self.bias = nn.Parameter(torch.empty(out_features, **fk))
         else:
             self.register_parameter("bias", None)
 
-        if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+        if lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **fk))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **fk))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -135,13 +153,12 @@ class LoRALinear(nn.Module):
         if freeze_base:
             self.freeze_base_weights()
 
-    def reset_parameters(self) -> None:
+    def reset_parameters(self):
         nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
         if self.bias is not None:
             fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
             bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
             nn.init.uniform_(self.bias, -bound, bound)
-
         if self.lora_rank > 0 and self.lora_A is not None:
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             self.lora_A.requires_grad = True
@@ -149,7 +166,7 @@ class LoRALinear(nn.Module):
             nn.init.zeros_(self.lora_B)
             self.lora_B.requires_grad = True
 
-    def freeze_base_weights(self) -> None:
+    def freeze_base_weights(self):
         self.weight.requires_grad = False
         if self.bias is not None:
             self.bias.requires_grad = False
@@ -159,16 +176,26 @@ class LoRALinear(nn.Module):
             if self.lora_B is not None:
                 self.lora_B.requires_grad = True
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
+    def forward(self, x):
+        w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
+        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
+        out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
 
-@ATTENTION_REGISTRY.register("gqa", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("gqa_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("grouped_query_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("gqa", supports_causal=True,
+                              supports_bidirectional=True,
+                              supports_gqa=True, supports_rope=True)
+@ATTENTION_REGISTRY.register("gqa_attention", supports_causal=True,
+                              supports_bidirectional=True,
+                              supports_gqa=True, supports_rope=True)
+@ATTENTION_REGISTRY.register("grouped_query_attention", supports_causal=True,
+                              supports_bidirectional=True,
+                              supports_gqa=True, supports_rope=True)
 class GroupedQueryAttention(BaseAttention):
     supports_causal: bool = True
     supports_bidirectional: bool = True
@@ -187,21 +214,25 @@ class GroupedQueryAttention(BaseAttention):
         lora_alpha: float = 32.0,
         pretrained_attn: Optional[nn.Module] = None,
         old_attn: Optional[nn.Module] = None,
+        is_decoder: Optional[bool] = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(config, rank)
+        try:
+            super().__init__(config, rank if rank is not None else 64)
+        except TypeError:
+            super().__init__(config)
+
         src_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        if dim is None:
-            if config is not None:
-                dim = (
-                    _cfg_get(config, "hidden_size", None)
-                    or _cfg_get(config, "d_model", None)
-                    or _cfg_get(config, "n_embd", None)
-                    or _cfg_get(config, "dim", None)
-                )
+        # ---- hidden_size ----
+        if dim is None and config is not None:
+            dim = (_cfg_get(config, "hidden_size", None)
+                   or _cfg_get(config, "d_model", None)
+                   or _cfg_get(config, "n_embd", None)
+                   or _cfg_get(config, "dim", None))
         if dim is None and src_attn is not None:
-            dim = getattr(src_attn, "hidden_size", getattr(src_attn, "embed_dim", None))
+            dim = getattr(src_attn, "hidden_size",
+                   getattr(src_attn, "embed_dim", None))
             if dim is None:
                 for cand in ("q_proj", "q_lin", "query", "c_attn"):
                     m = getattr(src_attn, cand, None)
@@ -210,174 +241,303 @@ class GroupedQueryAttention(BaseAttention):
                         if w is not None and w.dim() == 2:
                             dim = w.shape[1]
                             break
-        self.hidden_size: int = int(dim or kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768))))
+        self.hidden_size = int(dim or kwargs.get("hidden_size", 768))
 
-        if num_heads is None:
-            if config is not None:
-                num_heads = _cfg_get(config, "num_attention_heads", _cfg_get(config, "num_heads", _cfg_get(config, "n_head", None)))
+        # ---- num_heads ----
+        if num_heads is None and config is not None:
+            num_heads = (_cfg_get(config, "num_attention_heads", None)
+                          or _cfg_get(config, "num_heads", None)
+                          or _cfg_get(config, "n_head", None))
         if num_heads is None and src_attn is not None:
-            num_heads = getattr(src_attn, "num_heads", getattr(src_attn, "num_attention_heads", getattr(src_attn, "n_head", None)))
-        self.num_heads: int = int(num_heads or kwargs.get("num_attention_heads", kwargs.get("num_heads", 8)))
+            num_heads = getattr(src_attn, "num_heads",
+                         getattr(src_attn, "num_attention_heads",
+                         getattr(src_attn, "n_head", None)))
+        self.num_heads = int(num_heads or kwargs.get("num_attention_heads",
+                                                       kwargs.get("num_heads", 8)))
 
-        if num_kv_heads is None:
-            if config is not None:
-                num_kv_heads = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
+        # ---- num_kv_heads ----
+        if num_kv_heads is None and config is not None:
+            num_kv_heads = (_cfg_get(config, "num_key_value_heads", None)
+                             or _cfg_get(config, "num_kv_heads", None))
         if num_kv_heads is None and src_attn is not None:
-            num_kv_heads = getattr(src_attn, "num_key_value_heads", getattr(src_attn, "num_kv_heads", None))
+            num_kv_heads = getattr(src_attn, "num_key_value_heads",
+                            getattr(src_attn, "num_kv_heads", None))
         if num_kv_heads is None:
-            num_kv_heads = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", max(1, self.num_heads // 4)))
-        self.num_kv_heads: int = int(min(self.num_heads, max(1, int(num_kv_heads))))
+            num_kv_heads = kwargs.get("num_key_value_heads",
+                              kwargs.get("num_kv_heads",
+                              max(1, self.num_heads // 4)))
+        self.num_kv_heads = int(min(self.num_heads, max(1, int(num_kv_heads))))
 
-        self.head_dim: int = self.hidden_size // max(1, self.num_heads)
-        self.all_head_size: int = self.num_heads * self.head_dim
-        self.kv_head_size: int = self.num_kv_heads * self.head_dim
-        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.head_dim = int(kwargs.get("head_dim",
+                             getattr(config, "head_dim", None) if config else None)
+                             or (self.hidden_size // max(1, self.num_heads)))
+        self.all_head_size = self.num_heads * self.head_dim
+        self.kv_head_size = self.num_kv_heads * self.head_dim
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        model_type = str(_cfg_get(config, "model_type", "")).lower()
-        is_dec = _cfg_get(config, "is_decoder", _cfg_get(config, "is_causal", kwargs.get("is_causal", kwargs.get("is_decoder", False))))
-        _mt = (model_type or '').lower()
-        _decoder_prefixes = ('gpt', 'qwen', 'llama', 'mistral', 'gemma', 'phi', 'opt', 'bloom', 'falcon', 'olmo', 'mpt', 'stablelm')
-        if any(_mt.startswith(p) for p in _decoder_prefixes):
-            is_dec = True
-        self.is_decoder: bool = bool(is_dec)
-        self.is_nested_encoder: bool = False
+        # ---- decoder detection ----
+        if is_decoder is not None:
+            self.is_decoder = bool(is_decoder)
+        else:
+            model_type = str(_cfg_get(config, "model_type", "")).lower()
+            is_dec = _cfg_get(config, "is_decoder",
+                       _cfg_get(config, "is_causal",
+                       kwargs.get("is_causal", kwargs.get("is_decoder", False))))
+            _dec_pfx = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
+                         "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+            if any(model_type.startswith(p) for p in _dec_pfx):
+                is_dec = True
+            if src_attn is not None:
+                if getattr(src_attn, "is_decoder", False) or hasattr(src_attn, "c_attn"):
+                    is_dec = True
+            self.is_decoder = bool(is_dec)
+        self.is_nested_encoder = False
 
-        comp_config = getattr(config, "compression_config", None)
-        self.lora_rank: int = int(_cfg_get(comp_config, "lora_rank", _cfg_get(config, "lora_rank", kwargs.get("lora_rank", lora_rank))))
-        self.lora_alpha: float = float(_cfg_get(comp_config, "lora_alpha", _cfg_get(config, "lora_alpha", kwargs.get("lora_alpha", lora_alpha))))
-        self.freeze_base: bool = (self.lora_rank > 0)
+        # ---- LoRA ----
+        comp_config = getattr(config, "compression_config", None) if config else None
+        self.lora_rank = int(_cfg_get(comp_config, "lora_rank",
+                              _cfg_get(config, "lora_rank",
+                              kwargs.get("lora_rank", lora_rank))))
+        self.lora_alpha = float(_cfg_get(comp_config, "lora_alpha",
+                                  _cfg_get(config, "lora_alpha",
+                                  kwargs.get("lora_alpha", lora_alpha))))
+        self.freeze_base = (self.lora_rank > 0)
 
-        self.query = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.key = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.value = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        # ---- projections ----
+        self.query = LoRALinear(self.hidden_size, self.all_head_size, bias=True,
+                                 lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+                                 freeze_base=self.freeze_base)
+        self.key = LoRALinear(self.hidden_size, self.kv_head_size, bias=True,
+                               lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+                               freeze_base=self.freeze_base)
+        self.value = LoRALinear(self.hidden_size, self.kv_head_size, bias=True,
+                                 lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+                                 freeze_base=self.freeze_base)
+        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True,
+                                    lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+                                    freeze_base=self.freeze_base)
 
-        dropout_p = _cfg_get(
-            config,
-            "dropout",
-            _cfg_get(
-                config,
-                "hidden_dropout_prob",
-                _cfg_get(config, "attention_probs_dropout_prob", 0.1),
-            ),
-        )
-        self.dropout: nn.Dropout = nn.Dropout(dropout_p)
+        dropout_p = _cfg_get(config, "dropout",
+                       _cfg_get(config, "hidden_dropout_prob",
+                       _cfg_get(config, "attention_probs_dropout_prob", 0.1)))
+        self.dropout = nn.Dropout(float(dropout_p))
+
         self.rotary_emb = getattr(src_attn, "rotary_emb", None)
+
+        # Storage accounting
+        self._orig_storage_bytes = 0
+        self._comp_storage_bytes = 0
 
         if src_attn is not None:
             self.copy_weights(src_attn)
 
+    # ---- aliases ----
+    @property
+    def q_proj(self): return self.query
+    @property
+    def k_proj(self): return self.key
+    @property
+    def v_proj(self): return self.value
+    @property
+    def q_lin(self): return self.query
+    @property
+    def k_lin(self): return self.key
+    @property
+    def v_lin(self): return self.value
+    @property
+    def out_lin(self): return self.out_proj
+    @property
+    def dense(self): return self.out_proj
+    @property
+    def o_proj(self): return self.out_proj
+    @property
+    def c_proj(self): return self.out_proj
+
+    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         from framework.core.adapters import UniversalAdapter
 
+        try:
+            for p in src.parameters():
+                self._orig_storage_bytes += p.numel() * p.element_size()
+        except Exception:
+            pass
+
         extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
-            "q": (None, None),
-            "k": (None, None),
-            "v": (None, None),
-            "o": (None, None),
+            "q": (None, None), "k": (None, None),
+            "v": (None, None), "o": (None, None),
         }
 
-        # 1. UniversalAdapter extraction
-        for proj in ["q", "k", "v", "o"]:
+        for proj in ("q", "k", "v", "o"):
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception as e:
-                logger.debug("UniversalAdapter fallback failed: %s", e)
+                logger.debug("UniversalAdapter failed for %s: %s", proj, e)
 
-        # 2. GPT-2 Fused c_attn Conv1D handling
+        # GPT-2 fused c_attn
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
             weight, bias_data = _unpack_weight_bias(src.c_attn)
             if weight is not None:
                 split_size = weight.shape[0] // 3
-                extracted["q"] = (weight[:split_size, :], bias_data[:split_size] if bias_data is not None else None)
-                extracted["k"] = (weight[split_size : 2 * split_size, :], bias_data[split_size : 2 * split_size] if bias_data is not None else None)
-                extracted["v"] = (weight[2 * split_size :, :], bias_data[2 * split_size :] if bias_data is not None else None)
+                extracted["q"] = (weight[:split_size, :],
+                                   bias_data[:split_size] if bias_data is not None else None)
+                extracted["k"] = (weight[split_size:2*split_size, :],
+                                   bias_data[split_size:2*split_size] if bias_data is not None else None)
+                extracted["v"] = (weight[2*split_size:, :],
+                                   bias_data[2*split_size:] if bias_data is not None else None)
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o, b_o = _unpack_weight_bias(src.c_proj)
             extracted["o"] = (w_o, b_o)
 
-        # 3. RoBERTa / BERT Nested Encoder handling
+        # Nested BERT/RoBERTa
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
             s = getattr(src, "self")
-            if hasattr(s, "query"):
+            if hasattr(s, "query") and extracted["q"][0] is None:
                 extracted["q"] = _unpack_weight_bias(s.query)
-            if hasattr(s, "key"):
+            if hasattr(s, "key") and extracted["k"][0] is None:
                 extracted["k"] = _unpack_weight_bias(s.key)
-            if hasattr(s, "value"):
+            if hasattr(s, "value") and extracted["v"][0] is None:
                 extracted["v"] = _unpack_weight_bias(s.value)
 
         if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
             extracted["o"] = _unpack_weight_bias(src.output.dense)
 
-        # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral) & DistilBERT
+        # Flat modules
         named_map = {
-            "q": ["q_proj", "q_lin", "query"],
-            "k": ["k_proj", "k_lin", "key"],
-            "v": ["v_proj", "v_lin", "value"],
-            "o": ["o_proj", "out_proj", "out_lin", "dense"],
+            "q": ("q_proj", "q_lin", "query"),
+            "k": ("k_proj", "k_lin", "key"),
+            "v": ("v_proj", "v_lin", "value"),
+            "o": ("o_proj", "out_proj", "out_lin", "dense"),
         }
         for proj, names in named_map.items():
             if extracted[proj][0] is None:
-                for name in names:
-                    if hasattr(src, name):
-                        w, b = _unpack_weight_bias(getattr(src, name))
+                for n in names:
+                    if hasattr(src, n):
+                        w, b = _unpack_weight_bias(getattr(src, n))
                         if w is not None:
                             extracted[proj] = (w, b)
                             break
 
-        # Detect nested encoder architecture
         cls_name = src.__class__.__name__
-        has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+        has_out_proj = any(hasattr(src, a) for a in
+                            ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
         self.is_nested_encoder = (
-            cls_name in ("BertSelfAttention", "RobertaSelfAttention")
-            or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj
+            (cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+             or (cls_name.endswith("SelfAttention") and not has_out_proj))
+            and not has_out_proj
+        )
 
-        missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
+        missing = [k for k in ("q", "k", "v") if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            logger.warning("GroupedQueryAttention: missing weights for projections: %s, using initialized weights", missing)
+            logger.warning("GQA copy_weights: missing %s", missing)
 
-        def _orient(w: torch.Tensor, target_shape: Tuple[int, int]) -> torch.Tensor:
+        def _orient(w, target_shape):
             if w.dim() != 2:
                 return w
             if w.shape == target_shape:
                 return w
             if w.shape == (target_shape[1], target_shape[0]):
                 return w.t().contiguous()
-            if w.shape[1] != target_shape[1] and w.shape[0] == target_shape[1]:
-                return w.t().contiguous()
             return w
 
-        # Copy into projection modules
+        # GQA-aware pooling for K/V
+        def _pool_gqa(w, target_out):
+            src_out = w.shape[0]
+            if src_out == target_out:
+                return w
+            if src_out > target_out and src_out % target_out == 0:
+                rep = src_out // target_out
+                return w.view(target_out, rep, -1).mean(dim=1)
+            if src_out < target_out and target_out % src_out == 0:
+                rep = target_out // src_out
+                return w.repeat_interleave(rep, dim=0)
+            return w
+
         with torch.no_grad():
-            for proj_key, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj)]:
-                w, b = extracted[proj_key]
-                if w is not None:
-                    target_w = target.weight
-                    w_oriented = _orient(w, (target_w.shape[0], target_w.shape[1]))
-                    out_d, in_d = target_w.shape
-                    src_out, src_in = w_oriented.shape
-                    target_w.data[:min(out_d, src_out), :min(in_d, src_in)].copy_(w_oriented[:min(out_d, src_out), :min(in_d, src_in)])
-                    if b is not None and target.bias is not None:
-                        b_val = b.data if isinstance(b, nn.Parameter) else b
-                        target.bias.data[:min(len(target.bias), len(b_val))].copy_(b_val[:min(len(target.bias), len(b_val))])
-                elif proj_key == "o" and self.is_nested_encoder:
-                    min_d = min(target.weight.shape[0], target.weight.shape[1])
-                    target.weight.data.zero_()
-                    target.weight.data[:min_d, :min_d].fill_diagonal_(1.0)
-                    if target.bias is not None:
-                        target.bias.data.zero_()
+            for key, target in (("q", self.query), ("k", self.key),
+                                  ("v", self.value), ("o", self.out_proj)):
+                w, b = extracted[key]
+                if w is None:
+                    if key == "o" and self.is_nested_encoder:
+                        min_d = min(target.weight.shape[0], target.weight.shape[1])
+                        target.weight.data.zero_()
+                        target.weight.data[:min_d, :min_d].fill_diagonal_(1.0)
+                        if target.bias is not None:
+                            target.bias.data.zero_()
+                    target.freeze_base_weights()
+                    continue
+
+                if key in ("k", "v"):
+                    w = _pool_gqa(w, target.weight.shape[0])
+                    if b is not None:
+                        b = _pool_gqa(b.unsqueeze(-1), target.weight.shape[0]).squeeze(-1)
+
+                w = _orient(w, target.weight.shape)
+                out_d = min(target.weight.size(0), w.size(0))
+                in_d = min(target.weight.size(1), w.size(1))
+                target.weight.data.zero_()
+                target.weight.data[:out_d, :in_d].copy_(
+                    w[:out_d, :in_d].to(target.weight.device, target.weight.dtype)
+                )
+
+                if b is not None and target.bias is not None:
+                    mn = min(target.bias.numel(), b.numel())
+                    target.bias.data.zero_()
+                    target.bias.data[:mn].copy_(
+                        b[:mn].to(target.bias.device, target.bias.dtype)
+                    )
+                elif target.bias is not None:
+                    target.bias.data.zero_()
+
+                nrm = float(torch.linalg.norm(target.weight.data.float()).item())
+                if nrm < 1e-4:
+                    logger.warning("GQA: '%s' near-zero norm (%.2e)", key, nrm)
 
                 target.freeze_base_weights()
 
-        if hasattr(src, "is_decoder"):
-            self.is_decoder = bool(src.is_decoder)
+        try:
+            for m in (self.query, self.key, self.value, self.out_proj):
+                for p in m.parameters():
+                    self._comp_storage_bytes += p.numel() * p.element_size()
+        except Exception:
+            pass
 
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _prepare_valid_mask(attention_mask, B, L, device):
+        if attention_mask is None:
+            return None
+
+        def _to_bool(t):
+            if t.dtype == torch.bool:
+                return t
+            if t.dtype.is_floating_point:
+                return t > -1e4
+            return t > 0
+
+        if attention_mask.dim() == 2:
+            m = _to_bool(attention_mask)
+            if m.shape == (B, L):
+                return m
+        elif attention_mask.dim() == 3:
+            m = _to_bool(attention_mask)
+            if m.shape[0] == B and m.shape[-1] == L:
+                return m[:, -1, :]
+        elif attention_mask.dim() == 4:
+            m = _to_bool(attention_mask)
+            m = m.any(dim=-2)
+            if m.dim() == 3:
+                m = m.squeeze(1)
+            if m.shape == (B, L):
+                return m
+        return None
+
+    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -389,18 +549,20 @@ class GroupedQueryAttention(BaseAttention):
         output_attentions: Optional[bool] = False,
         output_hidden_states: Optional[bool] = False,
         return_dict: Optional[bool] = True,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        if encoder_hidden_states is not None:
-            return hidden_states, None
-
         while isinstance(hidden_states, (tuple, list)):
             hidden_states = hidden_states[0]
+        if not hidden_states.is_contiguous():
+            hidden_states = hidden_states.contiguous()
 
         key_value_states = kwargs.get("key_value_states", None)
-        is_cross_attention = key_value_states is not None
-        kv_input = key_value_states if is_cross_attention else hidden_states
+        is_cross = key_value_states is not None or encoder_hidden_states is not None
+        kv_input = encoder_hidden_states if encoder_hidden_states is not None else (
+            key_value_states if key_value_states is not None else hidden_states
+        )
 
         B, N_q, D = hidden_states.shape
         N_k = kv_input.shape[1]
@@ -412,103 +574,92 @@ class GroupedQueryAttention(BaseAttention):
         K = self.key(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
         V = self.value(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        # Apply RoPE
-        position_embeddings = kwargs.get("position_embeddings", None)
-        if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
-            cos, sin = position_embeddings[0], position_embeddings[1]
+        # ---- RoPE ----
+        if position_embeddings is None:
+            position_embeddings = kwargs.get("position_embeddings", None)
+        if position_embeddings is not None and not is_cross:
+            cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
 
-        # GQA repeat
+        # ---- GQA ----
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
+        # ---- Attention scores ----
         scale = d ** -0.5
-        scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale  # [B, H, N_q, N_k]
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
-        mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
-        if mask is not None:
-            if mask.dim() == 4:
-                scores = scores + mask.to(scores.dtype)
-            else:
-                valid_m = get_token_valid_mask(mask, B, N_k, device)
-                if valid_m is not None:
-                    scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
+        # ---- Causal mask (always for decoder self-attention) ----
+        is_causal = bool(self.is_decoder and not is_cross)
+        if is_causal:
+            past_len = max(0, N_k - N_q)
+            causal_diag = 1 + past_len
+            causal = torch.triu(
+                torch.full((N_q, N_k), float("-inf"), device=device, dtype=torch.float32),
+                diagonal=causal_diag,
+            ).unsqueeze(0).unsqueeze(0)
+            scores = scores + causal
 
-        # Explicit Causal Masking for decoders
-        is_decoder = (
-            self.is_decoder
-            or getattr(self.config, "is_decoder", False)
-            or getattr(self.config, "model_type", "") in ("gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama")
-        )
-        if is_decoder and N_q == N_k:
-            causal_tril = torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
-            scores = scores.masked_fill(~causal_tril, -10000.0)
+        # ---- Padding mask ----
+        eff_mask = encoder_attention_mask if is_cross else attention_mask
+        if eff_mask is None:
+            eff_mask = kwargs.get("mask", None)
+        valid_mask = self._prepare_valid_mask(eff_mask, B, N_k, device)
+        if valid_mask is not None:
+            scores = scores.masked_fill(~valid_mask[:, None, None, :], -1e4)
 
-        attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
+        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+        attn = F.softmax(scores, dim=-1).to(dtype)
+        attn = torch.nan_to_num(attn, nan=0.0)
         attn = self.dropout(attn)
 
+        # ---- head_mask ----
         if head_mask is not None:
-            if head_mask.dim() == 1:
-                head_mask = head_mask.view(1, -1, 1, 1)
-            elif head_mask.dim() == 2:
-                head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
-            elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(-1)
-            attn = attn * head_mask
+            hm = head_mask.to(attn.dtype)
+            if hm.dim() == 1:
+                hm = hm.view(1, H, 1, 1)
+            elif hm.dim() == 2:
+                hm = hm.view(hm.shape[0], H, 1, 1)
+            elif hm.dim() == 3:
+                hm = hm.unsqueeze(1)
+            attn = attn * hm
 
+        # ---- Context ----
         context = torch.matmul(attn, V)
         context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
+        context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
             output = context
         else:
             output = self.out_proj(context)
 
-        if output.shape[-1] != hidden_states.shape[-1]:
-            if output.shape[-1] < hidden_states.shape[-1]:
-                output = F.pad(output, (0, hidden_states.shape[-1] - output.shape[-1]))
-            else:
-                output = output[..., : hidden_states.shape[-1]]
+        output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
 
         return output, (attn if output_attentions else None)
 
+    def get_ortho_loss(self):
+        return torch.zeros((), device=self.query.weight.device)
 
-def _is_single_layer(obj: Any) -> bool:
-    """Return True if obj is a transformer layer, not a full model."""
-    if obj is None:
-        return False
-    single_layer_classes = (
-        "TransformerBlock", "BertLayer", "RobertaLayer",
-        "GPT2Block", "Qwen2DecoderLayer", "LlamaDecoderLayer",
-    )
-    cls_name = getattr(obj, "__class__", type(obj)).__name__
-    if cls_name in single_layer_classes:
-        return True
-    if (
-        hasattr(obj, "attention")
-        or hasattr(obj, "attn")
-        or hasattr(obj, "self_attn")
-        or hasattr(obj, "self")
-    ) and not (
-        hasattr(obj, "transformer")
-        or hasattr(obj, "distilbert")
-        or hasattr(obj, "roberta")
-        or hasattr(obj, "bert")
-        or hasattr(obj, "encoder")
-        or hasattr(obj, "model")
-    ):
-        return True
-    return False
+    def storage_bytes(self) -> Dict[str, int]:
+        def _sz(p):
+            if isinstance(p, (nn.Parameter, torch.Tensor)):
+                return p.numel() * p.element_size()
+            return 0
+        out = {}
+        for name, m in (("query", self.query), ("key", self.key),
+                         ("value", self.value), ("out_proj", self.out_proj)):
+            out[name] = sum(_sz(p) for p in m.parameters())
+        out["total"] = sum(out.values())
+        return out
 
 
-_INJECT_DEPTH = 0
-_MAX_DEPTH = 4
-
-
+# ===========================================================================
+# Injection
+# ===========================================================================
 @ATTENTION_REGISTRY.register("gqa_inject")
-@ATTENTION_REGISTRY.register("gqa")
-@ATTENTION_REGISTRY.register("grouped_query_attention")
+@ATTENTION_REGISTRY.register("inject_gqa")
 def inject_gqa(
     layer: Any = None,
     model: Any = None,
@@ -518,104 +669,136 @@ def inject_gqa(
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     lora_rank: int = 16,
+    lora_alpha: float = 32.0,
+    _depth: int = 0,
     **kwargs: Any,
 ) -> Optional[Any]:
-    r"""Injection hook for GroupedQueryAttention supporting single layers and whole models."""
-    global _INJECT_DEPTH
-    if _INJECT_DEPTH >= _MAX_DEPTH:
-        logger.error("Max injection depth reached in inject_gqa - possible recursion")
+    if _depth > 8:
+        logger.warning("inject_gqa: max recursion depth exceeded.")
         return None
-    _INJECT_DEPTH += 1
-    try:
-        target = layer if layer is not None else model
-        cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
 
-        # 1. Whole model traversal support
-        if _is_single_layer(target):
-            pass
-        elif target is not None and (
-            hasattr(target, "transformer")
-            or hasattr(target, "distilbert")
-            or hasattr(target, "roberta")
-            or hasattr(target, "bert")
-            or (hasattr(target, "model") and not hasattr(target, "forward"))
-        ):
-            layer_list = None
-            if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
-                layer_list = target.distilbert.transformer.layer
-            elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
-                layer_list = target.roberta.encoder.layer
-            elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
-                layer_list = target.bert.encoder.layer
-            elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
-                layer_list = target.transformer.h
-            elif hasattr(target, "model") and hasattr(target.model, "layers"):
-                layer_list = target.model.layers
-            elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
-                layer_list = target.encoder.layer
+    target = layer if layer is not None else model
+    if target is None:
+        return None
 
-            if layer_list is not None:
-                num_injected = 0
-                tot = len(layer_list)
-                for idx, lyr in enumerate(layer_list):
-                    res = inject_gqa(
-                        layer=lyr,
-                        model_config=cfg,
-                        comp_config=comp_config,
-                        layer_idx=idx,
-                        total_layers=tot,
-                        lora_rank=lora_rank,
-                        **kwargs,
-                    )
-                    if res is not None:
-                        num_injected += 1
-                return target if num_injected > 0 else None
+    cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-        # 2. Single layer injection
-        curr_attn = old_attn
-        if curr_attn is None and target is not None:
-            if hasattr(target, "attention"):
-                if hasattr(target.attention, "self"):
-                    curr_attn = target.attention.self
-                else:
-                    curr_attn = target.attention
-            elif hasattr(target, "self"):
-                curr_attn = target.self
-            elif hasattr(target, "attn"):
-                curr_attn = target.attn
-            elif hasattr(target, "self_attn"):
-                curr_attn = target.self_attn
+    # ---- Whole-model traversal ----
+    layer_list = None
+    for path in (
+        ("distilbert", "transformer", "layer"),
+        ("roberta", "encoder", "layer"),
+        ("bert", "encoder", "layer"),
+        ("transformer", "h"),
+        ("model", "layers"),
+        ("encoder", "layer"),
+        ("layers",),
+        ("h",),
+    ):
+        obj = target
+        ok = True
+        for p in path:
+            if hasattr(obj, p):
+                obj = getattr(obj, p)
+            else:
+                ok = False
+                break
+        if ok and isinstance(obj, (nn.ModuleList, list)):
+            layer_list = obj
+            break
 
-        if curr_attn is None and target is not None and hasattr(target, "forward"):
-            curr_attn = target
-
-        if curr_attn is None and cfg is None:
-            return None
-
-        try:
-            new_layer = GroupedQueryAttention(
-                config=cfg,
-                old_attn=curr_attn,
-                lora_rank=lora_rank,
-                **kwargs,
+    if layer_list is not None:
+        n_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_gqa(
+                layer=lyr, model_config=cfg, comp_config=comp_config,
+                layer_idx=idx, total_layers=tot,
+                lora_rank=lora_rank, lora_alpha=lora_alpha,
+                _depth=_depth + 1, **kwargs,
             )
-        except Exception as ex:
-            logger.warning("Failed to instantiate GroupedQueryAttention: %s", ex)
-            return None
+            if res is not None:
+                n_injected += 1
+        return target if n_injected > 0 else None
 
-        if target is not None:
-            if hasattr(target, "attention"):
-                if hasattr(target.attention, "self"):
-                    target.attention.self = new_layer
-                else:
-                    target.attention = new_layer
-            elif hasattr(target, "self"):
-                target.self = new_layer
-            elif hasattr(target, "attn"):
-                target.attn = new_layer
-            elif hasattr(target, "self_attn"):
-                target.self_attn = new_layer
+    # ---- Single layer ----
+    src_attn = old_attn
+    if src_attn is None:
+        for attr in ("attention", "self_attn", "attn", "self"):
+            if hasattr(target, attr):
+                cand = getattr(target, attr)
+                if isinstance(cand, nn.Module) and cand is not target:
+                    src_attn = getattr(cand, "self", cand)
+                    break
+    if src_attn is None:
+        src_attn = target
 
-        return new_layer
-    finally:
-        _INJECT_DEPTH -= 1
+    if isinstance(src_attn, GroupedQueryAttention) or "GroupedQueryAttention" in src_attn.__class__.__name__:
+        return None
+
+    if cfg is None:
+        cfg = getattr(src_attn, "config", None) or getattr(target, "config", None)
+
+    hidden_size = (getattr(src_attn, "hidden_size", None)
+                    or getattr(src_attn, "dim", None)
+                    or (getattr(src_attn.query, "in_features", None) if hasattr(src_attn, "query") else None)
+                    or getattr(cfg, "hidden_size", 768))
+    num_heads = (getattr(cfg, "num_attention_heads", None)
+                  or getattr(src_attn, "num_attention_heads", None)
+                  or getattr(src_attn, "num_heads", None) or 12)
+
+    try:
+        new_attn = GroupedQueryAttention(
+            config=cfg,
+            pretrained_attn=src_attn if src_attn is not target else None,
+            hidden_size=hidden_size,
+            num_heads=num_heads,
+            num_attention_heads=num_heads,
+            lora_rank=lora_rank,
+            lora_alpha=lora_alpha,
+            **kwargs,
+        )
+    except Exception as e:
+        logger.error("GQA construction failed: %s", e)
+        return None
+
+    p = next(src_attn.parameters(), None) if src_attn is not target else None
+    if p is not None:
+        new_attn.to(device=p.device, dtype=p.dtype)
+
+    spliced = False
+    if hasattr(target, "attention"):
+        if hasattr(target.attention, "self"):
+            new_attn.is_nested_encoder = True
+            target.attention.self = new_attn
+        else:
+            new_attn.is_nested_encoder = False
+            target.attention = new_attn
+        spliced = True
+    elif hasattr(target, "self"):
+        new_attn.is_nested_encoder = True
+        target.self = new_attn
+        spliced = True
+    elif hasattr(target, "attn"):
+        new_attn.is_nested_encoder = False
+        target.attn = new_attn
+        spliced = True
+    elif hasattr(target, "self_attn"):
+        new_attn.is_nested_encoder = False
+        target.self_attn = new_attn
+        spliced = True
+
+    if not spliced:
+        logger.error("inject_gqa: no writable attention attribute on %s",
+                      type(target).__name__)
+        return None
+
+    return new_attn
+
+
+__all__ = [
+    "GroupedQueryAttention",
+    "inject_gqa",
+    "apply_rotary_pos_emb",
+    "LoRALinear",
+]
