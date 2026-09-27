@@ -524,4 +524,4 @@ print(f"[PASS] leka_v2 forward logits shape:", outputs.logits.shape)
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.37%** | -0.69% | 0.9058 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-leka-v2](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-leka-v2) | 2026-09-19 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **81.88%** | -8.72% | 0.8316 | 1.19x | 0 | [svd-linear-attention-distilbert-sst2-leka-v2](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-leka-v2) | 2026-09-27 |
