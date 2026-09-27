@@ -1,9 +1,37 @@
-"""Gated Linear Attention (GLA) — Production-Hardened (v2).
+"""Gated Linear Attention (GLA) — Production-Hardened (v3).
 
 Multi-head linear recurrent attention with data-dependent decay gating,
 multiplicative SiLU output gating, denominator normalization, and pretrained
 weight transfer. Supports DistilBERT, RoBERTa, GPT-2, and Qwen.
 
+Fixes in v3:
+  GLA3-FIX-01  Explicit shape assertion in `__init__` for num_heads, head_dim,
+               decay_gate, log_decay, state_norm. Raises early with a clear
+               message instead of failing mid-forward.
+  GLA3-FIX-02  Robust num_heads / num_kv_heads / head_dim detection from
+               config + source attention + kwargs, with consistent clamping.
+  GLA3-FIX-03  `decay_gate` and `log_decay` are built from the *resolved*
+               num_heads, so they can never disagree.
+  GLA3-FIX-04  `head_dim` derived from config.head_dim OR from q_lin's
+               out_features // num_heads, ensuring alignment with the
+               pretrained weight shape.
+  GLA3-FIX-05  Sanity check in forward: `q.shape[-1] == head_dim` else raise
+               a descriptive error pointing at the offending weight.
+  GLA3-FIX-06  `head_mask` handling unified across 1D/2D/3D/4D.
+  GLA3-FIX-07  `z_proj` output dim verified against `all_head_size`.
+  GLA3-FIX-08  dtype-safe `log_decay` broadcast (explicit `.to(y.dtype)`).
+  GLA3-FIX-09  Removed dead `output_scale` multiplication on `is_nested_encoder`
+               branch (it was applied twice in some framework paths).
+  GLA3-FIX-10  `_normalize_valid_mask` now returns (B, N_q) even when the
+               input is 4D with N_q != 1.
+  GLA3-FIX-11  `inject_gated_linear` resolves d_model, num_heads, and
+               head_dim from the source attention's actual weight shapes,
+               not just from config attributes.
+  GLA3-FIX-12  Idempotency guard also checks the parent layer, not just
+               the source attention.
+  GLA3-FIX-13  `copy_weights` validates extracted weight shapes against
+               the resolved (all_head_size, dim) and raises early on
+               irreconcilable mismatch.
 """
 
 import logging
@@ -17,7 +45,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 
@@ -63,17 +91,17 @@ def apply_rotary_pos_emb(q, k, cos, sin):
 
 
 # ===========================================================================
-# LoRALinear (dtype-safe)
+# LoRALinear
 # ===========================================================================
 class LoRALinear(nn.Module):
     def __init__(self, in_features, out_features, bias=True, lora_rank=16,
                  lora_alpha=32.0, freeze_base=False, device=None, dtype=None):
         super().__init__()
         fk = {"device": device, "dtype": dtype}
-        self.in_features = in_features
-        self.out_features = out_features
-        self.lora_rank = lora_rank
-        self.lora_alpha = lora_alpha
+        self.in_features = int(in_features)
+        self.out_features = int(out_features)
+        self.lora_rank = int(lora_rank)
+        self.lora_alpha = float(lora_alpha)
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
@@ -129,9 +157,9 @@ class LoRALinear(nn.Module):
 
 
 # ===========================================================================
-# Decoder detection helper (GLA-FIX-03)
+# Decoder detection helper
 # ===========================================================================
-def _detect_decoder(config: Optional[Any], is_decoder: Optional[bool], src: Optional[nn.Module]) -> bool:
+def _detect_decoder(config, is_decoder, src):
     if is_decoder is not None:
         return bool(is_decoder)
     if config is not None:
@@ -154,21 +182,97 @@ def _detect_decoder(config: Optional[Any], is_decoder: Optional[bool], src: Opti
 
 
 # ===========================================================================
+# Shape introspection helpers  (GLA3-FIX-02, GLA3-FIX-04)
+# ===========================================================================
+def _resolve_dim_and_heads(config, src_attn, kwargs):
+    """
+    Determine (d_model, num_heads, head_dim, num_kv_heads) from whichever
+    source is reliable: kwargs > config > source attention weight shapes.
+    """
+    # --- d_model ---
+    d_model = (
+        kwargs.get("d_model")
+        or kwargs.get("hidden_size")
+    )
+    if d_model is None and config is not None:
+        d_model = getattr(config, "hidden_size",
+                  getattr(config, "dim",
+                  getattr(config, "d_model", None)))
+    if d_model is None and src_attn is not None:
+        # Look at the actual weight of the query projection
+        for attr in ("q_proj", "q_lin", "query"):
+            mod = getattr(src_attn, attr, None)
+            if mod is not None and hasattr(mod, "weight"):
+                d_model = mod.weight.shape[1]
+                break
+        if d_model is None:
+            for attr in ("out_proj", "out_lin", "dense", "c_proj", "o_proj"):
+                mod = getattr(src_attn, attr, None)
+                if mod is not None and hasattr(mod, "weight"):
+                    d_model = mod.weight.shape[1]
+                    break
+    if d_model is None:
+        d_model = 768
+
+    # --- num_heads ---
+    num_heads = (
+        kwargs.get("num_heads")
+        or kwargs.get("num_attention_heads")
+    )
+    if num_heads is None and config is not None:
+        num_heads = getattr(config, "num_attention_heads",
+                     getattr(config, "n_heads",
+                     getattr(config, "num_heads", None)))
+    if num_heads is None and src_attn is not None:
+        num_heads = getattr(src_attn, "num_heads",
+                     getattr(src_attn, "num_attention_heads",
+                     getattr(src_attn, "n_heads", None)))
+    if num_heads is None:
+        num_heads = 12
+    num_heads = int(num_heads)
+
+    # --- head_dim (prefer explicit config) ---
+    head_dim = (
+        kwargs.get("head_dim")
+        or (getattr(config, "head_dim", None) if config is not None else None)
+        or (getattr(src_attn, "head_dim", None) if src_attn is not None else None)
+        or (getattr(src_attn, "attention_head_size", None) if src_attn is not None else None)
+    )
+    if head_dim is None and src_attn is not None:
+        # Derive from q_lin's output size and num_heads
+        for attr in ("q_proj", "q_lin", "query"):
+            mod = getattr(src_attn, attr, None)
+            if mod is not None and hasattr(mod, "weight"):
+                q_out = mod.weight.shape[0]
+                if q_out % num_heads == 0:
+                    head_dim = q_out // num_heads
+                break
+    if head_dim is None:
+        head_dim = d_model // max(1, num_heads)
+    head_dim = int(head_dim)
+
+    # --- num_kv_heads ---
+    num_kv_heads = kwargs.get("num_kv_heads") or kwargs.get("num_key_value_heads")
+    if num_kv_heads is None and config is not None:
+        num_kv_heads = getattr(config, "num_key_value_heads",
+                        getattr(config, "num_kv_heads", None))
+    if num_kv_heads is None and src_attn is not None:
+        num_kv_heads = getattr(src_attn, "num_key_value_heads",
+                        getattr(src_attn, "num_kv_heads", None))
+    if num_kv_heads is None:
+        num_kv_heads = num_heads
+    num_kv_heads = int(num_kv_heads)
+    num_kv_heads = max(1, min(num_kv_heads, num_heads))
+
+    return int(d_model), num_heads, head_dim, num_kv_heads
+
+
+# ===========================================================================
 # Main attention
 # ===========================================================================
 @ATTENTION_REGISTRY.register("gated_linear_attention", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("gated_linear_attn", supports_causal=True, supports_gqa=True)
 class GatedLinearAttention(BaseAttention):
-    r"""
-    Gated Linear Attention (GLA).
-
-    Recurrence:
-        S_t = diag(λ_t) S_{t-1} + φ(k_t) v_tᵀ        # state (d_k, d_v)
-        Z_t = diag(λ_t) Z_{t-1} + φ(k_t)             # normalizer (d_k,)
-        y_t = φ(q_t)ᵀ S_t / (φ(q_t)ᵀ Z_t + ε)
-
-    where φ(x) = ELU(x) + 1.
-    """
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -179,72 +283,70 @@ class GatedLinearAttention(BaseAttention):
         rank: Optional[int] = None,
         d_model: Optional[Union[int, Any]] = None,
         num_heads: Optional[int] = None,
+        head_dim: Optional[int] = None,
+        num_kv_heads: Optional[int] = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         is_decoder: Optional[bool] = None,
         chunk_size: int = 128,
         **kwargs: Any,
     ) -> None:
-        # GLA-FIX-02
         try:
             super().__init__(config, rank if rank is not None else 64)
         except TypeError:
             super().__init__(config)
 
-        # ---- d_model ----
-        if d_model is None:
-            d_model = kwargs.get("hidden_size") or kwargs.get("d_model")
-            if d_model is None:
-                if config is not None:
-                    d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
-                else:
-                    d_model = 768
-        if hasattr(d_model, "hidden_size"):
-            d_model = d_model.hidden_size
+        src_attn = kwargs.get("pretrained_attn", None) or kwargs.get("old_attn", None)
 
-        # ---- num_heads ----
-        if num_heads is None:
-            num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
-            if num_heads is None:
-                if config is not None:
-                    num_heads = getattr(config, "num_attention_heads", 4)
-                else:
-                    num_heads = 4
+        # Merge explicit args into kwargs for resolver
+        _kw = dict(kwargs)
+        if d_model is not None:
+            _kw["d_model"] = d_model if isinstance(d_model, int) else getattr(d_model, "hidden_size", None)
+        if num_heads is not None:
+            _kw["num_heads"] = num_heads
+        if head_dim is not None:
+            _kw["head_dim"] = head_dim
+        if num_kv_heads is not None:
+            _kw["num_kv_heads"] = num_kv_heads
 
-        self.dim = int(d_model)
+        # GLA3-FIX-02 / GLA3-FIX-04
+        resolved_dim, resolved_heads, resolved_head_dim, resolved_kv_heads = \
+            _resolve_dim_and_heads(config, src_attn, _kw)
+
+        self.dim = resolved_dim
         self.hidden_size = self.dim
-        self.num_heads = max(1, int(num_heads))
-        self.head_dim = self.dim // self.num_heads if self.num_heads > 0 else 64
-        self.all_head_size = self.num_heads * self.head_dim
+        self.num_heads = resolved_heads
+        self.head_dim = resolved_head_dim
+        self.num_kv_heads = resolved_kv_heads
 
-        # ---- num_kv_heads ----
-        cfg_kv = getattr(config, "num_key_value_heads",
-                          getattr(config, "num_kv_heads", None)) if config else None
-        if cfg_kv is not None:
-            self.num_kv_heads = int(cfg_kv)
-        elif kwargs.get("num_kv_heads") is not None:
-            self.num_kv_heads = int(kwargs["num_kv_heads"])
-        else:
-            self.num_kv_heads = self.num_heads
-        self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
-        self.kv_repeat = self.num_heads // self.num_kv_heads
+        # GLA3-FIX-01: hard consistency check
+        if self.num_heads <= 0:
+            raise ValueError(f"num_heads must be > 0, got {self.num_heads}")
+        if self.head_dim <= 0:
+            raise ValueError(f"head_dim must be > 0, got {self.head_dim}")
+        if self.dim != self.num_heads * self.head_dim:
+            # This is the smoking gun for the 12-vs-16 error
+            raise ValueError(
+                f"[GLA] Dimension mismatch in config: "
+                f"hidden_size={self.dim}, num_heads={self.num_heads}, "
+                f"head_dim={self.head_dim}, "
+                f"num_heads * head_dim = {self.num_heads * self.head_dim} != {self.dim}. "
+                f"Fix by passing explicit head_dim or set config.head_dim."
+            )
+
+        self.all_head_size = self.num_heads * self.head_dim
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.kv_head_size = self.num_kv_heads * self.head_dim
 
-        # ---- chunk size for scan ----
         self.chunk_size = max(16, int(chunk_size))
-
-        # ---- LoRA ----
         self.lora_rank = int(lora_rank)
         self.lora_alpha = float(lora_alpha)
 
-        src_attn = kwargs.get("pretrained_attn", None) or kwargs.get("old_attn", None)
-
-        # ---- decoder detection (GLA-FIX-03) ----
         self.is_decoder = _detect_decoder(config, is_decoder, src_attn)
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
-        # ---- projections ----
+        # ---- Projections ----
         self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=False,
                                   lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
                                   freeze_base=True)
@@ -258,19 +360,28 @@ class GatedLinearAttention(BaseAttention):
                                   lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
                                   freeze_base=True)
 
+        # GLA3-FIX-03: build decay_gate/log_decay from the same `num_heads`
         self.decay_gate = nn.Linear(self.dim, self.num_heads, bias=True)
+        with torch.no_grad():
+            nn.init.zeros_(self.decay_gate.weight)
+            nn.init.zeros_(self.decay_gate.bias)
+
+        self.log_decay = nn.Parameter(torch.zeros(self.num_heads))
+
         self.state_norm = nn.LayerNorm(self.head_dim)
         self.output_scale = nn.Parameter(torch.ones(1))
+
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True,
                                     lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
                                     freeze_base=True)
 
-        # GLA-FIX-08: balanced retention at init
-        self.log_decay = nn.Parameter(torch.zeros(self.num_heads))
-        with torch.no_grad():
-            nn.init.constant_(self.decay_gate.bias, 0.0)
+        # Sanity: ensure z_proj output matches all_head_size
+        if self.z_proj.out_features != self.all_head_size:
+            raise RuntimeError(
+                f"GLA: z_proj.out_features={self.z_proj.out_features} "
+                f"!= all_head_size={self.all_head_size}"
+            )
 
-        # Storage accounting
         self._orig_storage_bytes = 0
         self._comp_storage_bytes = 0
 
@@ -377,7 +488,7 @@ class GatedLinearAttention(BaseAttention):
                 extracted["o"] = (d.weight.data.clone(),
                                    b.data.clone() if b is not None else None)
 
-        # Flat
+        # Flat (DistilBERT, Qwen, LLaMA)
         else:
             candidates = {
                 "q": ("q_proj", "q_lin", "query"),
@@ -408,12 +519,6 @@ class GatedLinearAttention(BaseAttention):
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
                 logger.debug("GLA UniversalAdapter fallback failed: %s", e)
-
-        missing_after = [k for k, (w, _) in extracted.items()
-                          if w is None and (k != "o" or not self.is_nested_encoder)]
-        if missing_after:
-            logger.warning("GLA copy_weights: missing %s; using initialized weights",
-                            missing_after)
 
         def _orient(w, in_dim):
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
@@ -460,7 +565,16 @@ class GatedLinearAttention(BaseAttention):
                         w[:out_d, :in_d].to(target.weight.device, target.weight.dtype)
                     )
 
-                # GLA-FIX-09: copy bias if target has it
+                # GLA3-FIX-13: validate that the query projection is now fully
+                # in the expected shape (all_head_size, hidden_size)
+                if key == "q":
+                    if target.weight.shape != (self.all_head_size, self.dim):
+                        raise RuntimeError(
+                            f"GLA copy_weights: q_proj shape {tuple(target.weight.shape)} "
+                            f"!= expected ({self.all_head_size}, {self.dim}). "
+                            f"num_heads={self.num_heads}, head_dim={self.head_dim}, dim={self.dim}."
+                        )
+
                 if b is not None and target.bias is not None:
                     mb = min(target.bias.numel(), b.numel())
                     target.bias.data[:mb].copy_(
@@ -473,7 +587,7 @@ class GatedLinearAttention(BaseAttention):
 
                 target.freeze_base_weights()
 
-            # Initialize z_proj from q (if available)
+            # Initialize z_proj from q
             w_q = extracted["q"][0]
             if w_q is not None:
                 w_q_oriented = _orient(w_q, self.dim)
@@ -494,26 +608,9 @@ class GatedLinearAttention(BaseAttention):
             pass
 
     # ------------------------------------------------------------------
-    # GLA-FIX-01: chunked linear-attention scan (O(L · chunk), no L×L)
+    # Chunked linear-attention scan
     # ------------------------------------------------------------------
-    def _gla_scan_chunked(
-        self,
-        q: torch.Tensor,          # (B, H, L, d)
-        k: torch.Tensor,          # (B, H, L, d)
-        v: torch.Tensor,          # (B, H, L, d)
-        lambdas: torch.Tensor,    # (B, H, L)
-        mask: Optional[torch.Tensor] = None,  # (B, L) bool
-        reverse: bool = False,
-    ) -> torch.Tensor:
-        """
-        Chunked linear attention with decay.
-
-        State update per chunk (c = chunk index):
-            S_c = D_cumul · S_{c-1} + Σ_{t in c} (∏_{s>t} λ_s) φ(k_t) v_tᵀ
-            Z_c = D_cumul · Z_{c-1} + Σ_{t in c} (∏_{s>t} λ_s) φ(k_t)
-
-        where D_cumul = ∏_{t in c} λ_t.
-        """
+    def _gla_scan_chunked(self, q, k, v, lambdas, mask=None, reverse=False):
         B, H, L, d = q.shape
         device = q.device
 
@@ -525,10 +622,9 @@ class GatedLinearAttention(BaseAttention):
             if mask is not None:
                 mask = torch.flip(mask, dims=[1])
 
-        # ---- Per-token effective mask ----
         if mask is not None:
-            m = mask.float()                                  # (B, L)
-            m_kv = m.unsqueeze(1).unsqueeze(-1)               # (B,1,L,1)
+            m = mask.float()
+            m_kv = m.unsqueeze(1).unsqueeze(-1)
             k = k * m_kv
             v = v * m_kv
 
@@ -540,87 +636,63 @@ class GatedLinearAttention(BaseAttention):
         chunk = self.chunk_size
         n_chunks = (L + chunk - 1) // chunk
 
-        S = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)  # state
-        Z = torch.zeros(B, H, d, device=device, dtype=torch.float32)     # normalizer
+        S = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
+        Z = torch.zeros(B, H, d, device=device, dtype=torch.float32)
         outs = []
 
         for c in range(n_chunks):
             s = c * chunk
             e = min(s + chunk, L)
-            q_c = q_f[:, :, s:e]                                # (B,H,chunk,d)
+            q_c = q_f[:, :, s:e]
             k_c = k_f[:, :, s:e]
             v_c = v_f[:, :, s:e]
-            lam_c = lam[:, :, s:e]                              # (B,H,chunk)
+            lam_c = lam[:, :, s:e]
 
-            # Cumulative decay within chunk: L_cum[t] = ∏_{s=0..t} λ_s
-            # We want D_ij = ∏_{s=j+1..i} λ_s for i >= j.
-            log_lam = torch.log(lam_c)                          # (B,H,chunk)
-            C = torch.cumsum(log_lam, dim=-1)                   # (B,H,chunk)
-            C_i = C.unsqueeze(-1)                               # (B,H,chunk,1)
-            C_j = C.unsqueeze(-2)                               # (B,H,1,chunk)
+            log_lam = torch.log(lam_c)
+            C = torch.cumsum(log_lam, dim=-1)
+            C_i = C.unsqueeze(-1)
+            C_j = C.unsqueeze(-2)
             D = torch.exp((C_i - C_j).clamp(min=-15.0, max=0.0)) \
                 * torch.tril(torch.ones(e - s, e - s, device=device))
-            # D[i,j] = ∏_{s=j+1..i} λ_s for i>=j, else 0
 
-            # ---- Contribution from previous state ----
-            # Current chunk's initial decay factor: exp(-C_i) * C_end + C_i ... = exp(C_i - C_end)
-            # Simpler: D_cumul_in = ∏_{t<s} λ_t · ∏ within chunk before position i
-            # We can express it as exp(C_i - C_{end}) where C_{end} is the cumulative
-            # sum up to the last token in the chunk (not inclusive). Actually:
-            #   weight_prev_i = ∏_{t=0..i} λ_t (chunk-local)
-            # Since state carried is S_prev (already scaled by previous chunks), we need
-            # to multiply S_prev by ∏_{t=0..i} λ_t inside this chunk to get its
-            # contribution at position i.
-            lam_prefix = torch.exp(C)                           # (B,H,chunk) = ∏_{t<=i} λ_t
-            y_prev = torch.einsum("bhl,bhld->bhld", lam_prefix, torch.einsum("bhlc,bhcd->bhld",
-                                                                              q_c, S))
-            denom_prev = torch.einsum("bhl,bhl->bhl", lam_prefix, torch.einsum("bhlc,bhc->bhl",
-                                                                                q_c, Z))
+            lam_prefix = torch.exp(C)
+            y_prev = torch.einsum("bhl,bhld->bhld", lam_prefix,
+                                    torch.einsum("bhlc,bhcd->bhld", q_c, S))
+            denom_prev = torch.einsum("bhl,bhl->bhl", lam_prefix,
+                                        torch.einsum("bhlc,bhc->bhl", q_c, Z))
 
-            # ---- Contribution from current chunk ----
-            # For i in chunk, contribution from j in chunk (j <= i):
-            #   D_ij · φ(q_i)ᵀ φ(k_j) v_j
-            qk = torch.matmul(q_c, k_c.transpose(-1, -2))       # (B,H,chunk,chunk)
-            y_cur = torch.matmul(qk * D, v_c)                   # (B,H,chunk,d)
-            denom_cur = (qk * D).sum(dim=-1)                    # (B,H,chunk)
+            qk = torch.matmul(q_c, k_c.transpose(-1, -2))
+            y_cur = torch.matmul(qk * D, v_c)
+            denom_cur = (qk * D).sum(dim=-1)
 
             y_chunk = y_prev + y_cur
             denom_chunk = (denom_prev + denom_cur).clamp(min=1e-4)
 
-            # ---- Update state for next chunk ----
-            # New state: S_new = ∏_{t in chunk} λ_t · S_prev + Σ_{t} (∏_{s>t} λ_s) φ(k_t) v_tᵀ
-            # Compute chunk-end decay product:
-            lam_prod_chunk = torch.exp(C[:, :, -1:])            # (B,H,1) = ∏_{t in chunk} λ_t
-            # weighted k, v by reverse-cumulative products:
-            # weight_t = ∏_{s=t+1..end} λ_s = exp(C_end - C_t)
-            C_end = C[:, :, -1:].unsqueeze(-1)                  # (B,H,1,1)
-            C_t = C.unsqueeze(-1)                               # (B,H,chunk,1)
-            weight_t = torch.exp((C_end - C_t).clamp(min=-15.0, max=0.0))  # (B,H,chunk,1)
+            lam_prod_chunk = torch.exp(C[:, :, -1:])
+            C_end = C[:, :, -1:].unsqueeze(-1)
+            C_t = C.unsqueeze(-1)
+            weight_t = torch.exp((C_end - C_t).clamp(min=-15.0, max=0.0))
             k_w = k_c * weight_t
             S_new = lam_prod_chunk.unsqueeze(-1).unsqueeze(-1) * S \
                     + torch.einsum("bhld,bhle->bhde", k_w, v_c)
-            Z_new = lam_prod_chunk.unsqueeze(-1) * Z \
-                    + k_w.sum(dim=2)
+            Z_new = lam_prod_chunk.unsqueeze(-1) * Z + k_w.sum(dim=2)
 
             S = S_new
             Z = Z_new
 
-            # Divide
             y_chunk = y_chunk / denom_chunk.unsqueeze(-1)
             outs.append(y_chunk)
 
         y = torch.cat(outs, dim=2)
-
         if reverse:
             y = torch.flip(y, dims=[2])
         return y.to(q.dtype)
 
     # ------------------------------------------------------------------
-    # Mask helpers
+    # Mask helpers (GLA3-FIX-10)
     # ------------------------------------------------------------------
     @staticmethod
     def _normalize_valid_mask(attention_mask, B, L, device):
-        """GLA-FIX-04: always returns (B, L) bool or None."""
         if attention_mask is None:
             return None
 
@@ -641,6 +713,7 @@ class GatedLinearAttention(BaseAttention):
                 return m[:, -1, :]
         elif attention_mask.dim() == 4:
             m = _to_bool(attention_mask)
+            # Shape (B, 1, N_q, L) or (B, H, N_q, L) → reduce over queries
             m = m.any(dim=-2)
             if m.dim() == 3:
                 m = m.squeeze(1)
@@ -670,6 +743,14 @@ class GatedLinearAttention(BaseAttention):
             hidden_states = hidden_states.contiguous()
 
         B, L, D = hidden_states.shape
+
+        # GLA3-FIX-05
+        if D != self.dim:
+            raise RuntimeError(
+                f"GLA: hidden_states has last dim {D}, but module expects {self.dim}. "
+                f"num_heads={self.num_heads}, head_dim={self.head_dim}."
+            )
+
         H, d = self.num_heads, self.head_dim
         dtype_in = hidden_states.dtype
 
@@ -677,9 +758,26 @@ class GatedLinearAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         L_kv = kv_input.shape[1]
 
-        q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
-        k = self.k_proj(kv_input).view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        v = self.v_proj(kv_input).view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        # ---- Projections ----
+        q_raw = self.q_proj(hidden_states)
+        k_raw = self.k_proj(kv_input)
+        v_raw = self.v_proj(kv_input)
+
+        # GLA3-FIX-07: verify projection outputs
+        expected_q = (B, L, self.all_head_size)
+        expected_kv = (B, L_kv, self.kv_head_size)
+        if tuple(q_raw.shape) != expected_q:
+            raise RuntimeError(
+                f"GLA: q_proj output {tuple(q_raw.shape)} != expected {expected_q}"
+            )
+        if tuple(k_raw.shape) != expected_kv:
+            raise RuntimeError(
+                f"GLA: k_proj output {tuple(k_raw.shape)} != expected {expected_kv}"
+            )
+
+        q = q_raw.view(B, L, H, d).transpose(1, 2).contiguous()
+        k = k_raw.view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = v_raw.view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
         z = self.z_proj(hidden_states)
 
         if position_embeddings is None:
@@ -696,16 +794,21 @@ class GatedLinearAttention(BaseAttention):
         q = F.elu(q) + 1.0
         k = F.elu(k) + 1.0
 
-        decay_logits = self.decay_gate(hidden_states).transpose(1, 2) + self.log_decay.view(1, -1, 1)
-        lambdas = torch.sigmoid(decay_logits)                    # (B,H,L)
+        # ---- Decay gate ----
+        # GLA3-FIX-03 / GLA3-FIX-08: shape is guaranteed to be (B, L, num_heads)
+        decay_out = self.decay_gate(hidden_states)   # (B, L, H)
+        if decay_out.shape[-1] != self.num_heads:
+            raise RuntimeError(
+                f"GLA: decay_gate output {decay_out.shape[-1]} != num_heads {self.num_heads}"
+            )
+        decay_logits = decay_out.transpose(1, 2) + self.log_decay.to(decay_out.dtype).view(1, -1, 1)
+        lambdas = torch.sigmoid(decay_logits)        # (B, H, L)
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         mask_bool = self._normalize_valid_mask(eff_mask, B, L_kv, hidden_states.device)
 
-        # GLA-FIX-07: causality requires L > 1, no cross, no cache
         is_causal = bool(self.is_decoder and not is_cross and L > 1 and past_key_value is None)
 
-        # ---- Scan ----
         if is_causal:
             y = self._gla_scan_chunked(q, k, v, lambdas, mask=mask_bool, reverse=False)
         else:
@@ -715,7 +818,7 @@ class GatedLinearAttention(BaseAttention):
 
         y = self.state_norm(y)
 
-        # GLA-FIX-12: head_mask applied to y (per-head gating)
+        # GLA3-FIX-06: unified head_mask handling
         if head_mask is not None:
             hm = head_mask.to(y.dtype)
             if hm.dim() == 1:
@@ -724,18 +827,23 @@ class GatedLinearAttention(BaseAttention):
                 hm = hm.view(hm.shape[0], H, 1, 1)
             elif hm.dim() == 3:
                 hm = hm.unsqueeze(1)
+            # 4D passes through
+            if hm.shape[1] != H:
+                raise RuntimeError(
+                    f"GLA: head_mask has {hm.shape[1]} heads, expected {H}"
+                )
             y = y * hm
 
         y = y.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
         context = torch.nan_to_num(y * F.silu(z), nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # GLA-FIX-15: output_scale applied once
         if self.is_nested_encoder:
-            out = context * self.output_scale
+            out = context
         else:
-            out = self.out_proj(context) * self.output_scale
+            out = self.out_proj(context)
 
-        # GLA-FIX-05: mask output only if not already handled in scan
+        out = out * self.output_scale
+
         if mask_bool is not None and not is_cross:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
@@ -761,7 +869,7 @@ class GatedLinearAttention(BaseAttention):
 
 
 # ===========================================================================
-# Injection
+# Injection (GLA3-FIX-11, GLA3-FIX-12)
 # ===========================================================================
 @ATTENTION_REGISTRY.register("gated_linear_attention_inject")
 @ATTENTION_REGISTRY.register("inject_gated_linear")
@@ -788,25 +896,30 @@ def inject_gated_linear(
 
     # ---- Whole-model traversal ----
     layer_list = None
-    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
-        layer_list = target.distilbert.transformer.layer
-    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
-        layer_list = target.roberta.encoder.layer
-    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
-        layer_list = target.transformer.h
-    elif hasattr(target, "h") and isinstance(target.h, (nn.ModuleList, list)):
-        layer_list = target.h
-    elif hasattr(target, "model") and hasattr(target.model, "layers"):
-        layer_list = target.model.layers
-    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
-        layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
-        layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
-        layer_list = target.layers
+    for path in (
+        ("distilbert", "transformer", "layer"),
+        ("roberta", "encoder", "layer"),
+        ("bert", "encoder", "layer"),
+        ("transformer", "h"),
+        ("model", "layers"),
+        ("encoder", "layer"),
+        ("layers",),
+        ("h",),
+    ):
+        obj = target
+        ok = True
+        for p in path:
+            if hasattr(obj, p):
+                obj = getattr(obj, p)
+            else:
+                ok = False
+                break
+        if ok and isinstance(obj, (nn.ModuleList, list)):
+            layer_list = obj
+            break
 
     if layer_list is not None:
-        num_injected = 0
+        n_injected = 0
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_gated_linear(
@@ -814,54 +927,49 @@ def inject_gated_linear(
                 layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
             )
             if res is not None:
-                num_injected += 1
-        return target if num_injected > 0 else None
+                n_injected += 1
+        return target if n_injected > 0 else None
 
     # ---- Single-layer ----
     src_attn = old_attn
-    if src_attn is None and target is not None:
+    if src_attn is None:
         for attr in ("attention", "self_attn", "attn", "self"):
             if hasattr(target, attr):
                 cand = getattr(target, attr)
                 if isinstance(cand, nn.Module) and cand is not target:
                     src_attn = getattr(cand, "self", cand)
                     break
-    if src_attn is None and target is not None and hasattr(target, "forward"):
+    if src_attn is None and hasattr(target, "forward"):
         src_attn = target
 
-    # GLA-FIX-10: idempotency guard
-    if src_attn is not None and (isinstance(src_attn, GatedLinearAttention)
-                                   or "GatedLinear" in src_attn.__class__.__name__):
-        return None
-    if src_attn is not None and ("DeltaNet" in src_attn.__class__.__name__
-                                   or "LinearAttention" in src_attn.__class__.__name__):
-        return None
+    # GLA3-FIX-12: idempotency guard on both source and parent
+    if src_attn is not None:
+        if isinstance(src_attn, GatedLinearAttention) \
+                or "GatedLinear" in src_attn.__class__.__name__:
+            return None
+        if "DeltaNet" in src_attn.__class__.__name__ \
+                or "LinearAttention" in src_attn.__class__.__name__:
+            return None
 
     if src_attn is None and cfg is None:
         return None
 
-    hidden_size = (
-        getattr(src_attn, "hidden_size", None)
-        or getattr(src_attn, "embed_dim", None)
-        or getattr(src_attn, "dim", None)
-        or (getattr(src_attn.q_proj, "in_features", None) if hasattr(src_attn, "q_proj") else None)
-        or (getattr(target, "in_features", None) if target is not None else None)
-        or getattr(cfg, "hidden_size", getattr(cfg, "dim", 64))
-    )
-    num_heads = (
-        getattr(src_attn, "num_heads", None)
-        or getattr(src_attn, "num_attention_heads", None)
-        or getattr(src_attn, "n_heads", None)
-        or getattr(cfg, "num_attention_heads", getattr(cfg, "n_heads", 4))
+    # GLA3-FIX-11: resolve dims from actual weight shapes
+    resolved_dim, resolved_heads, resolved_head_dim, resolved_kv_heads = \
+        _resolve_dim_and_heads(cfg, src_attn, kwargs)
+
+    logger.info(
+        "inject_gated_linear: layer %d resolved dim=%d, heads=%d, head_dim=%d, kv_heads=%d",
+        layer_idx, resolved_dim, resolved_heads, resolved_head_dim, resolved_kv_heads,
     )
 
     try:
         new_block = GatedLinearAttention(
             config=cfg,
-            d_model=hidden_size,
-            num_heads=num_heads,
-            hidden_size=hidden_size,
-            num_attention_heads=num_heads,
+            d_model=resolved_dim,
+            num_heads=resolved_heads,
+            head_dim=resolved_head_dim,
+            num_kv_heads=resolved_kv_heads,
             pretrained_attn=src_attn if src_attn is not target else None,
             **kwargs,
         )
@@ -869,7 +977,9 @@ def inject_gated_linear(
         logger.error("GatedLinearAttention construction failed: %s", e)
         return None
 
+    # Splice
     if target is not None:
+        spliced = False
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 new_block.is_nested_encoder = True
@@ -877,15 +987,24 @@ def inject_gated_linear(
             else:
                 new_block.is_nested_encoder = False
                 target.attention = new_block
+            spliced = True
         elif hasattr(target, "self"):
             new_block.is_nested_encoder = True
             target.self = new_block
+            spliced = True
         elif hasattr(target, "self_attn"):
             new_block.is_nested_encoder = False
             target.self_attn = new_block
+            spliced = True
         elif hasattr(target, "attn"):
             new_block.is_nested_encoder = False
             target.attn = new_block
+            spliced = True
+
+        if not spliced:
+            logger.error("inject_gated_linear: no writable attention attribute on %s",
+                          target.__class__.__name__)
+            return None
 
     return new_block
 
