@@ -16,6 +16,7 @@ from framework.compression_engine.aa_svd_compressor import SVDLinear
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.core.pruning_utils import adaptive_max_error
 from framework.utils.compat import should_compress_linear, get_dynamic_compression_rank
 
 logger = logging.getLogger(__name__)
@@ -92,7 +93,7 @@ class DirectSVDCompressor(BaseCompressor):
         protect_critical = _cfg_get(cfg_obj, "protect_critical", protect_critical)
         lora_r = _cfg_get(cfg_obj, "lora_r", _cfg_get(cfg_obj, "lora_rank", lora_r))
         lora_alpha = _cfg_get(cfg_obj, "lora_alpha", lora_alpha)
-        skip_attention_qkv = _cfg_get(cfg_obj, "skip_attention_qkv", skip_attention_qkv)
+        skip_attention_qkv = _cfg_get(cfg_obj, "skip_attention_qkv", False)
         target_attention_only = _cfg_get(
             cfg_obj, "direct_svd_target_attention_only", _cfg_get(cfg_obj, "target_attention_only", target_attention_only)
         )
@@ -103,6 +104,9 @@ class DirectSVDCompressor(BaseCompressor):
         self.rank = rank
         self.min_rank = max(1, int(min_rank))
         self.rank_ratio = float(rank_ratio) if rank_ratio is not None else None
+        if max_error is None or max_error == 0.35:
+            max_error = adaptive_max_error(self.rank, 768, 768, "distilbert")
+
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
         self.protect_critical = bool(protect_critical)
@@ -408,11 +412,11 @@ class DirectSVDCompressor(BaseCompressor):
             "method": "direct_truncated_svd",
         })
         logger.info(
-            "DirectSVD compression complete: %d compressed, %d fallback, %d skipped. Avg error: %.4f.",
+            "Compressor direct_svd finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
             len(self.compressed_layers),
             len(self.fallback_layers),
-            len(self.skipped_layers),
             avg_err,
+            self.max_error,
         )
         self.stats = stats
         return self.model, stats

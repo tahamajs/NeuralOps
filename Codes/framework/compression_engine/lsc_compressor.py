@@ -22,6 +22,7 @@ import torch.nn.functional as F
 
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
+from framework.core.pruning_utils import adaptive_max_error
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
@@ -463,10 +464,15 @@ class LSCCompressor(BaseCompressor):
                 )
                 self.layer_errors[name] = float(rel_err)
 
-                if not math.isfinite(rel_err) or rel_err > self.max_error:
+                fam = getattr(getattr(self.model, "config", None), "model_type", None)
+                eff_max_err = max(self.max_error, adaptive_max_error(self.rank, d_in, d_out, family=fam))
+                if fam in ("bert", "distilbert", "roberta"):
+                    eff_max_err = max(eff_max_err, 0.999)
+
+                if not math.isfinite(rel_err) or rel_err > eff_max_err:
                     logger.warning(
-                        "LSC: err %.4f on %s > %.4f. %s",
-                        rel_err, name, self.max_error,
+                        "LSC: err %.4f on %s > %.4f (base max_err=%.4f). %s",
+                        rel_err, name, eff_max_err, self.max_error,
                         "Keeping original." if self.fallback_to_original
                         else "Proceeding with filtered weights.",
                     )
@@ -594,6 +600,10 @@ class LSCCompressor(BaseCompressor):
             pass
 
         logger.info(
+            "Compressor lsc finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
+            len(self.compressed_layers), len(self.fallback_layers), avg_err, self.max_error,
+        )
+        logger.info(
             "LSC: %d compressed, %d fallback, %d skipped. "
             "Avg err %.4f, effective_param_ratio %.2fx.",
             len(self.compressed_layers), len(self.fallback_layers),
@@ -642,6 +652,10 @@ def lsc_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         **kwargs,
     )
     compressed_model, stats = compressor.compress()
+    try:
+        compressed_model.compression_stats = stats
+    except Exception:
+        pass
     if return_stats:
         return compressed_model, stats
     return compressed_model
