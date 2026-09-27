@@ -138,14 +138,18 @@ class AdaptiveSVDLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""Forward computation for low-rank SVD + trainable residual adapter."""
-        Vx = F.linear(x, self.V)
-        out = F.linear(Vx, self.U)
+        orig_dtype = x.dtype
+        x_in = x.to(self.V.dtype)
+        Vx = F.linear(x_in, self.V)
+        out = F.linear(Vx, self.U.to(Vx.dtype))
         if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
-            Ax = F.linear(x, self.lora_A)
-            out = out + F.linear(Ax, self.lora_B)
+            a = self.lora_A.to(x_in.dtype)
+            b = self.lora_B.to(x_in.dtype)
+            Ax = F.linear(x_in, a)
+            out = out + F.linear(Ax, b)
         if self.bias is not None:
-            out = out + self.bias
-        return out
+            out = out + self.bias.to(out.dtype)
+        return out.to(orig_dtype)
 
 
 @ATTENTION_REGISTRY.register("adaptive_svd_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
@@ -639,7 +643,7 @@ class AdaptiveSVDAttention(BaseAttention):
                 head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
             attn_weights = attn_weights * head_mask
 
-        context = torch.matmul(attn_weights, V)
+        context = torch.matmul(attn_weights, V.to(attn_weights.dtype))
         context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
 
         # In nested encoders (BERT/RoBERTa .self), context passes through directly because output.dense applies after
@@ -648,6 +652,7 @@ class AdaptiveSVDAttention(BaseAttention):
         else:
             output = self.out_proj(context)
 
+        output = output.to(hidden_states.dtype)
         if position_bias is not None:
             return output, position_bias
         return output, attn_weights if output_attentions else None
