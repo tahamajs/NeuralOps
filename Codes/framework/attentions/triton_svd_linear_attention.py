@@ -12,15 +12,22 @@ High-performance GPU implementation using OpenAI Triton language (tl) with:
      - Fused parallel reduction of K^T V and K^T 1 for encoder architectures (DistilBERT, RoBERTa).
      - Fused query projection with numerical stability epsilon clamping in registers.
 
-  3. Backward Kernel & Complete Autograd Connection:
-     - _TritonLinearAttentionAutogradFunction provides fully connected forward & backward methods.
+  3. Non-Zero Identity SVD Initialization (BUG 5 FIX):
+     - SVDLinearProjection initializes U with identity-like structure (eye for rank dimensions)
+       and V with Kaiming uniform so initial output is non-zero before fine-tuning.
+
+  4. Backward Kernel & Clean Autograd (BUG 1 FIX):
+     - Uses explicit torch.autograd.grad(out, [q_req, k_req, v_req], grad_out) preventing double-backward warnings.
      - Bridges _triton_linear_attn_bwd_kernel on CUDA GPUs for bidirectional attention.
      - Provides streaming chunked backward propagation for causal decoder attention.
 
-  4. Genuine SVD Low-Rank Factorization (SVDLinearProjection):
-     - Real low-rank parameterization W \approx U @ V where U \in R^{out x r}, V \in R^{r x in}.
-     - Factory truncated SVD initialization from pretrained transformer attention layers.
-     - Forward pass: y = (x @ V^T) @ U^T + bias.
+  5. Attention Masking & Padding Invariant (BUG 2 FIX):
+     - Ensures padding tokens on K and V are strictly zeroed out before attention accumulation,
+       preventing contaminated normalization denominator Z.
+
+  6. RoPE and GQA Support (BUG 3 & BUG 4 FIX):
+     - Seamless Rotary Position Embeddings (RoPE) via apply_rotary_pos_emb.
+     - Full Grouped Query Attention (GQA) support with separate num_kv_heads and repeat_kv.
 """
 
 from __future__ import annotations
@@ -46,6 +53,42 @@ try:
     HAS_TRITON = True
 except ImportError:
     HAS_TRITON = False
+
+
+# ============================================================================
+# HELPER FUNCTIONS: RoPE
+# ============================================================================
+
+def _rotate_half(x: torch.Tensor) -> torch.Tensor:
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
+    return torch.cat((-x2, x1), dim=-1)
+
+
+def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+    position_ids: Optional[torch.Tensor] = None,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    rotary_dim = cos.shape[-1]
+    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+
+    q_embed = (q_rot * cos) + (_rotate_half(q_rot) * sin)
+    k_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
+
+    if q_pass.shape[-1] > 0:
+        return torch.cat([q_embed, q_pass], dim=-1), torch.cat([k_embed, k_pass], dim=-1)
+    return q_embed, k_embed
 
 
 # ============================================================================
@@ -244,8 +287,6 @@ if HAS_TRITON:
     ):
         r"""
         Analytical Backward Kernel in Triton for Bidirectional Linear Attention.
-        Evaluates exact gradients for dQ, dK, dV in registers without storing
-        full N x N attention Jacobian matrices.
         """
         bh_id = tl.program_id(0)
 
@@ -262,7 +303,7 @@ if HAS_TRITON:
         offs_dv = tl.arange(0, D_V)
         offs_n = tl.arange(0, BLOCK_N)
 
-        # 1. First Pass: Compute forward global states S = K^T V and Z = sum(K)
+        # 1. First Pass: S = K^T V and Z = sum(K)
         S = tl.zeros((D_K, D_V), dtype=tl.float32)
         Z = tl.zeros((D_K,), dtype=tl.float32)
 
@@ -274,7 +315,7 @@ if HAS_TRITON:
             S += tl.dot(tl.trans(k.to(tl.float32)), v.to(tl.float32))
             Z += tl.sum(k, axis=0)
 
-        # 2. Second Pass: Compute dQ and accumulate dS = Q^T (dO / denom)
+        # 2. Second Pass: Compute dQ and accumulate dS
         dS = tl.zeros((D_K, D_V), dtype=tl.float32)
         dZ = tl.zeros((D_K,), dtype=tl.float32)
 
@@ -299,7 +340,7 @@ if HAS_TRITON:
 
             tl.store(dq_base + cur_n[:, None] * stride_dqn + offs_dk[None, :] * stride_dqd, dq.to(dQ_ptr.dtype.element_ty), mask=mask[:, None])
 
-        # 3. Third Pass: Compute dK and dV from accumulated dS and dZ
+        # 3. Third Pass: dK and dV
         for n_start in range(0, N, BLOCK_N):
             cur_n = n_start + offs_n
             mask = cur_n < N
@@ -437,11 +478,6 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx: Any, grad_out: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, None]:
-        """
-        Complete Autograd Backward: Evaluates exact gradients for dQ, dK, dV.
-        Dispatches Triton backward kernel on CUDA for bidirectional attention,
-        and provides streaming chunked autograd for causal decoders.
-        """
         q, k, v = ctx.saved_tensors
         is_causal = ctx.is_causal
         activation_mode = ctx.activation_mode
@@ -450,7 +486,7 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
         B, H, N, D_k = q.shape
         D_v = v.shape[-1]
 
-        # Use Triton backward kernel on CUDA for bidirectional mode
+        # Use Triton backward kernel on CUDA for bidirectional identity mode
         use_triton_bwd = (
             HAS_TRITON
             and q.is_cuda
@@ -482,7 +518,7 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
             )
             return dq, dk, dv, None, None, None
 
-        # Universal Analytical Backward via Chunked Autograd
+        # BUG 1 FIX: Clean explicit torch.autograd.grad preventing double-backward warnings & extra memory
         with torch.enable_grad():
             q_req = q.detach().requires_grad_(True)
             k_req = k.detach().requires_grad_(True)
@@ -538,9 +574,15 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
                 denom = torch.matmul(phi_q, Z.transpose(-1, -2)) + eps
                 out = (num / denom).to(q.dtype)
 
-            torch.autograd.backward(out, grad_out)
+            dq, dk, dv = torch.autograd.grad(
+                outputs=out,
+                inputs=[q_req, k_req, v_req],
+                grad_outputs=grad_out,
+                retain_graph=False,
+                create_graph=False,
+            )
 
-            return q_req.grad, k_req.grad, v_req.grad, None, None, None
+            return dq, dk, dv, None, None, None
 
 
 def triton_linear_attention(
@@ -591,8 +633,14 @@ class SVDLinearProjection(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
+        # BUG 5 FIX: Identity-like init for U so initial output is non-zero before fine-tuning
         nn.init.kaiming_uniform_(self.V, a=math.sqrt(5))
         nn.init.zeros_(self.U)
+        with torch.no_grad():
+            r = min(self.out_features, self.rank)
+            self.U[:r, :r].copy_(torch.eye(r))
+        if self.bias is not None:
+            nn.init.zeros_(self.bias)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Fused low-rank projection: (x @ V^T) @ U^T + bias
@@ -634,14 +682,8 @@ class SVDLinearProjection(nn.Module):
 @ATTENTION_REGISTRY.register("triton_linear_attention", supports_causal=True, supports_bidirectional=True)
 class TritonSVDLinearAttention(BaseAttention):
     r"""
-    Triton-Accelerated Linear Attention with Genuine SVD Low-Rank Projections.
-
-    Features:
-      - OpenAI Triton JIT fused kernels for GPU streaming linear attention.
-      - Full Autograd backward pass connection (backward method implemented).
-      - Genuine SVD low-rank factorized projections (U @ V) for Q, K, V.
-      - Dual-mode operation: Chunked Causal (decoders) and Bidirectional (encoders).
-      - Zero HBM memory roundtrips for intermediate attention score matrices.
+    Triton-Accelerated Linear Attention with Genuine SVD Low-Rank Projections,
+    RoPE, GQA, and Masked Attention.
     """
 
     def __init__(
@@ -649,73 +691,216 @@ class TritonSVDLinearAttention(BaseAttention):
         config: Any = None,
         embed_dim: Optional[int] = None,
         num_heads: Optional[int] = None,
+        num_kv_heads: Optional[int] = None,
         rank: Optional[int] = 64,
         is_decoder: bool = False,
         activation_mode: str = "elu",
         eps: float = 1e-6,
+        pretrained_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ):
         super().__init__()
         self.config = config
-        self.is_decoder = bool(is_decoder or getattr(config, "is_decoder", False))
+        self.is_decoder = bool(is_decoder or getattr(config, "is_decoder", False) or getattr(config, "is_causal", False))
         self.activation_mode = activation_mode
         self.eps = eps
 
         # Dimensionality extraction
         self.embed_dim = embed_dim or getattr(config, "hidden_size", 768)
         self.num_heads = num_heads or getattr(config, "num_attention_heads", 12)
+        # BUG 4 FIX: Support GQA
+        self.num_kv_heads = num_kv_heads or getattr(config, "num_key_value_heads", self.num_heads)
         self.head_dim = self.embed_dim // self.num_heads
         self.rank = rank or 64
+        self.kv_dim = self.num_kv_heads * self.head_dim
 
         # Genuine SVD Low-Rank Linear Projections
         if self.rank < self.embed_dim:
             self.q_proj = SVDLinearProjection(self.embed_dim, self.embed_dim, rank=self.rank, bias=True)
-            self.k_proj = SVDLinearProjection(self.embed_dim, self.embed_dim, rank=self.rank, bias=True)
-            self.v_proj = SVDLinearProjection(self.embed_dim, self.embed_dim, rank=self.rank, bias=True)
+            self.k_proj = SVDLinearProjection(self.embed_dim, self.kv_dim, rank=min(self.rank, self.kv_dim), bias=True)
+            self.v_proj = SVDLinearProjection(self.embed_dim, self.kv_dim, rank=min(self.rank, self.kv_dim), bias=True)
         else:
             self.q_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=True)
-            self.k_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=True)
-            self.v_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=True)
+            self.k_proj = nn.Linear(self.embed_dim, self.kv_dim, bias=True)
+            self.v_proj = nn.Linear(self.embed_dim, self.kv_dim, bias=True)
 
         self.out_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=True)
 
-    def copy_weights_from_pretrained(self, q_layer: nn.Linear, k_layer: nn.Linear, v_layer: nn.Linear, out_layer: nn.Linear) -> None:
-        """Initializes low-rank projections from existing pretrained Linear weights via Truncated SVD."""
-        if isinstance(self.q_proj, SVDLinearProjection):
-            self.q_proj = SVDLinearProjection.from_pretrained_linear(q_layer, rank=self.rank)
-            self.k_proj = SVDLinearProjection.from_pretrained_linear(k_layer, rank=self.rank)
-            self.v_proj = SVDLinearProjection.from_pretrained_linear(v_layer, rank=self.rank)
-        else:
-            self.q_proj.weight.data.copy_(q_layer.weight.data)
-            self.k_proj.weight.data.copy_(k_layer.weight.data)
-            self.v_proj.weight.data.copy_(v_layer.weight.data)
-            if q_layer.bias is not None and self.q_proj.bias is not None:
-                self.q_proj.bias.data.copy_(q_layer.bias.data)
-            if k_layer.bias is not None and self.k_proj.bias is not None:
-                self.k_proj.bias.data.copy_(k_layer.bias.data)
-            if v_layer.bias is not None and self.v_proj.bias is not None:
-                self.v_proj.bias.data.copy_(v_layer.bias.data)
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
 
-        self.out_proj.weight.data.copy_(out_layer.weight.data)
-        if out_layer.bias is not None and self.out_proj.bias is not None:
-            self.out_proj.bias.data.copy_(out_layer.bias.data)
+    def copy_weights(self, src: Any) -> None:
+        """Transfer pretrained projection weights from GPT-2, RoBERTa/BERT, or standard linear layers."""
+        if src is None:
+            return
+
+        cls_name = getattr(src, "__class__", type(src)).__name__
+
+        # 1. GPT-2: Fused c_attn (Conv1D) + c_proj
+        if hasattr(src, "c_attn") and src.c_attn is not None:
+            c_attn_mod = src.c_attn
+            base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
+            c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
+            if c_w is not None:
+                c_w = c_w.data.clone()
+                if (
+                    c_attn_mod.__class__.__name__ == "Conv1D"
+                    or base_c.__class__.__name__ == "Conv1D"
+                    or hasattr(c_attn_mod, "nf")
+                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
+                ):
+                    c_w = c_w.t().contiguous()
+
+                split_size = c_w.size(0) // 3
+                bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
+                c_b = bias_mod.data.clone() if bias_mod is not None else None
+
+                q_w, q_b = c_w[:split_size, :], c_b[:split_size] if c_b is not None else None
+                k_w, k_b = c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None
+                v_w, v_b = c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None
+
+                self._copy_single_proj(self.q_proj, q_w, q_b)
+                self._copy_single_proj(self.k_proj, k_w, k_b)
+                self._copy_single_proj(self.v_proj, v_w, v_b)
+
+            if hasattr(src, "c_proj") and src.c_proj is not None:
+                c_proj_mod = src.c_proj
+                base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
+                o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
+                if o_w is not None:
+                    o_w = o_w.data.clone()
+                    if (
+                        c_proj_mod.__class__.__name__ == "Conv1D"
+                        or base_o.__class__.__name__ == "Conv1D"
+                        or hasattr(c_proj_mod, "nf")
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
+                    ):
+                        o_w = o_w.t().contiguous()
+                    self.out_proj.weight.data.copy_(o_w)
+                    bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
+                    if bias_o is not None and self.out_proj.bias is not None:
+                        self.out_proj.bias.data.copy_(bias_o.data)
+
+        # 2. RoBERTa / BERT nested self-attention
+        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+            s = getattr(src, "self")
+            mapping = [("q_proj", "query"), ("k_proj", "key"), ("v_proj", "value")]
+            for target_name, sub_name in mapping:
+                target_mod = getattr(self, target_name)
+                src_mod = getattr(s, sub_name, None)
+                base_src = getattr(src_mod, "base_layer", src_mod)
+                if base_src is not None and hasattr(base_src, "weight"):
+                    w = base_src.weight.data
+                    b = getattr(base_src, "bias", None)
+                    b_data = b.data if b is not None else None
+                    self._copy_single_proj(target_mod, w, b_data)
+
+            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+                out_mod = src.output.dense
+                base_out = getattr(out_mod, "base_layer", out_mod)
+                self.out_proj.weight.data.copy_(base_out.weight.data)
+                if base_out.bias is not None and self.out_proj.bias is not None:
+                    self.out_proj.bias.data.copy_(base_out.bias.data)
+
+        # 3. Standard flat linear projections
+        else:
+            proj_candidates = {
+                "q_proj": ["q_proj", "query", "q_lin", "W_q", "wq"],
+                "k_proj": ["k_proj", "key", "k_lin", "W_k", "wk"],
+                "v_proj": ["v_proj", "value", "v_lin", "W_v", "wv"],
+                "out_proj": ["out_proj", "dense", "out_lin", "c_proj", "o_proj", "wo"],
+            }
+            for target_name, candidates in proj_candidates.items():
+                target_mod = getattr(self, target_name)
+                for cand in candidates:
+                    if hasattr(src, cand):
+                        src_mod = getattr(src, cand)
+                        base_mod = getattr(src_mod, "base_layer", src_mod)
+                        if base_mod is not None and hasattr(base_mod, "weight"):
+                            w = base_mod.weight.data
+                            b = getattr(base_mod, "bias", None)
+                            b_data = b.data if b is not None else None
+                            if target_name == "out_proj":
+                                if w.ndim == 2 and w.shape != target_mod.weight.shape and w.t().shape == target_mod.weight.shape:
+                                    w = w.t()
+                                target_mod.weight.data.copy_(w)
+                                if b_data is not None and target_mod.bias is not None:
+                                    target_mod.bias.data.copy_(b_data)
+                            else:
+                                self._copy_single_proj(target_mod, w, b_data)
+                            break
+
+    def _copy_single_proj(self, target_mod: nn.Module, w: torch.Tensor, b: Optional[torch.Tensor]) -> None:
+        """Decomposes weights into low-rank SVD factors or copies directly."""
+        if isinstance(target_mod, SVDLinearProjection):
+            with torch.no_grad():
+                W_f = w.float()
+                u, s, vh = torch.linalg.svd(W_f, full_matrices=False)
+                r = target_mod.rank
+                s_sqrt = torch.diag(torch.sqrt(s[:r]))
+                target_mod.U.data.copy_(torch.matmul(u[:, :r], s_sqrt).to(w.dtype))
+                target_mod.V.data.copy_(torch.matmul(s_sqrt, vh[:r, :]).to(w.dtype))
+                if b is not None and target_mod.bias is not None:
+                    target_mod.bias.data.copy_(b)
+        else:
+            if w.ndim == 2 and w.shape != target_mod.weight.shape and w.t().shape == target_mod.weight.shape:
+                w = w.t()
+            target_mod.weight.data.copy_(w)
+            if b is not None and target_mod.bias is not None:
+                target_mod.bias.data.copy_(b)
+
+    # Alias for API uniformity
+    copy_weights_from_pretrained = copy_weights
 
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        position_ids: Optional[torch.Tensor] = None,
         past_key_value: Optional[Any] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[Any]]:
         B, N, C = hidden_states.shape
 
+        if position_embeddings is None:
+            position_embeddings = kwargs.get("position_embeddings", None)
+
         # 1. Project Q, K, V via SVD low-rank factorized projections
         q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k = self.k_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        v = self.v_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
-        # 2. Dispatch Fully Differentiable Triton Linear Attention
+        # 2. BUG 3 FIX: Apply Rotary Position Embeddings (RoPE) if provided
+        if position_embeddings is not None:
+            cos, sin = position_embeddings
+            q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=position_ids)
+
+        # 3. BUG 4 FIX: GQA expansion if num_kv_heads < num_heads
+        if self.num_kv_heads != self.num_heads:
+            k = repeat_kv(k, self.num_heads // self.num_kv_heads)
+            v = repeat_kv(v, self.num_heads // self.num_kv_heads)
+
+        # 4. BUG 2 FIX: Mask handling for padding tokens on K and V
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                mask = attention_mask[:, None, :, None].to(q.dtype)  # [B, 1, N, 1]
+                if (mask < 0).any():
+                    mask = (mask > -1000.0).to(q.dtype)
+                k = k * mask
+                v = v * mask
+            elif attention_mask.dim() == 4:
+                if attention_mask.shape[-2] == 1:
+                    mask = attention_mask.squeeze(1).squeeze(1)[:, None, :, None].to(q.dtype)
+                else:
+                    mask = attention_mask[:, 0, -1, :][:, None, :, None].to(q.dtype)
+                if (mask < 0).any():
+                    mask = (mask > -1000.0).to(q.dtype)
+                k = k * mask
+                v = v * mask
+
+        # 5. Dispatch Fully Differentiable Triton Linear Attention
         out = triton_linear_attention(
             q=q,
             k=k,
@@ -725,8 +910,25 @@ class TritonSVDLinearAttention(BaseAttention):
             eps=self.eps,
         )
 
-        # 3. Reshape and final output projection
+        # 6. Reshape and final output projection
         out = out.transpose(1, 2).contiguous().view(B, N, C)
         out = self.out_proj(out)
 
         return out, None
+
+
+# ============================================================================
+# FACTORY INJECTION FUNCTION (For eval_all_models_datasets & run_gpt2_sweep)
+# ============================================================================
+
+@ATTENTION_REGISTRY.register("inject_triton_svd_linear_attention")
+@ATTENTION_REGISTRY.register("triton_svd_linear_attention_inject")
+def inject_triton_svd_linear_attention(
+    model: nn.Module = None,
+    rank: int = 64,
+    copy_weights: bool = True,
+    **kwargs: Any,
+) -> Optional[nn.Module]:
+    """Safe factory function to inject TritonSVDLinearAttention into a model."""
+    from framework.core.attention_utils import inject_attention
+    return inject_attention(model, "triton_svd_linear_attention", rank=rank, copy_weights=copy_weights, **kwargs)
