@@ -10,14 +10,14 @@
   "cwd": "D:\\SVD_Project",
   "traceback": [
     "Traceback (most recent call last):\n",
-    "  File \"D:\\SVD_Project\\Codes\\framework\\run_gpt2_sweep.py\", line 960, in main\n    cand, comp_stats = apply_module_to_model(\n                       ~~~~~~~~~~~~~~~~~~~~~^\n        cand, mod, typ,\n        ^^^^^^^^^^^^^^^\n    ...<4 lines>...\n        tokenizer=tokenizer,\n        ^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n",
+    "  File \"D:\\SVD_Project\\Codes\\framework\\run_gpt2_sweep.py\", line 946, in main\n    cand, comp_stats = apply_module_to_model(\n                       ~~~~~~~~~~~~~~~~~~~~~^\n        cand, mod, typ,\n        ^^^^^^^^^^^^^^^\n    ...<3 lines>...\n        tokenizer=tokenizer,\n        ^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n",
     "  File \"D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py\", line 575, in apply_module_to_model\n    inject_attention(model, module_name, rank=rank, copy_weights=True)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
     "  File \"D:\\SVD_Project\\Codes\\framework\\core\\attention_utils.py\", line 579, in inject_attention\n    raise RuntimeError(f\"Could not instantiate attention class {attn_class.__name__}\")\n",
     "RuntimeError: Could not instantiate attention class ChelaSlayAttention\n"
   ],
   "torch_version": "2.6.0+cu124",
   "cuda_available": true,
-  "timestamp": "2026-09-27T16:49:39",
+  "timestamp": "2026-09-28T02:02:26",
   "baseline_ppl": 21.71,
   "rank": 64,
   "seq_len": 1024,
