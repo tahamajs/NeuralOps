@@ -452,6 +452,7 @@ print('Output logits shape:', outputs.logits.shape)
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.60%** | +0.00% | 0.9097 | 1.00x | 0 | N/A | 2026-09-28 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.80%** | +0.00% | 0.8177 | 1.00x | 0 | [svd-linear-attention-distilbert-mnli-full-nystrom](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-nystrom) | 2026-09-19 |
+| **roberta-sst2** | sst2 | `PASS` | 92.09% | **100.00%** | +7.91% | 1.0000 | 0.94x | 0 | N/A | 2026-09-28 |
 
 
 Evaluations across sequence lengths and model scales:
