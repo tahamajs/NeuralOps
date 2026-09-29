@@ -229,6 +229,9 @@ Fuse `CompressedAttentionLayer` projections directly into Triton FlashAttention 
 | **distilbert-base-uncased** | mnli | `PASS` | 34.40% | **47.20%** | +12.80% | 0.4407 | 1.04x | 0 | [svd-linear-attention-distilbert-base-uncased-adaptive](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-base-uncased-adaptive) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **75.80%** | -6.00% | 0.7556 | 1.04x | 0 | [svd-linear-attention-distilbert-mnli-full-adaptive](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-adaptive) | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **92.80%** | -1.50% | 0.9242 | 1.04x | 0 | N/A | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **88.07%** | N/A | 0.8891 | 1.04x | 0 | [svd-linear-attention-distilbert-adaptive_compressor](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-adaptive_compressor) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **86.35%** | N/A | 0.8649 | 1.12x | 0 | [svd-linear-attention-roberta-adaptive_compressor](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-adaptive_compressor) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **81.88%** | N/A | 0.8316 | 1.15x | 0 | [svd-linear-attention-gpt2-adaptive_compressor](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-adaptive_compressor) | 2026-09-29 |
 
 
 The empirical evaluation of `adaptive_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

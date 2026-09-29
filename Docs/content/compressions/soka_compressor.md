@@ -465,6 +465,9 @@ if compressor_cls:
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 13.89 ms | 711.7 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 14.59 ms | 721.6 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 14.84 ms | 721.6 MB |
+| **distilbert** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9077 | 1.00x | 0 | [svd-linear-attention-distilbert-soka](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-soka) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.11%** | N/A | 0.7586 | 1.00x | 0 | [svd-linear-attention-roberta-soka](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-soka) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **60.78%** | N/A | 0.6354 | 1.00x | 0 | [svd-linear-attention-gpt2-soka](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-soka) | 2026-09-29 |
 
 ## Unified 4-Architecture Benchmark Results (SOKA Compressor)
 Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):

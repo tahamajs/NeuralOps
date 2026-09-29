@@ -265,6 +265,9 @@ ARMOR utilizes empirical input activations to compute resilient Taylor parameter
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.37%** | -0.69% | 0.9087 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-armor](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-armor) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.30%** | -0.50% | 0.8119 | 1.00x | 0 | [svd-linear-attention-distilbert-mnli-full-armor](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-armor) | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **93.70%** | -0.60% | 0.9338 | 1.00x | 0 | N/A | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **89.91%** | N/A | 0.8998 | 0.97x | 23 | [svd-linear-attention-distilbert-armor](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-armor) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **92.66%** | N/A | 0.9284 | 0.97x | 40 | [svd-linear-attention-roberta-armor](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-armor) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.61%** | N/A | 0.8759 | 0.98x | 14 | [svd-linear-attention-gpt2-armor](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-armor) | 2026-09-29 |
 
 
 > [!NOTE]

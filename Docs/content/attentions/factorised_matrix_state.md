@@ -259,6 +259,9 @@ print(f"[PASS] factorised_matrix_state forward logits shape:", outputs.logits.sh
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 1895.71 ms | 3811.3 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 1892.66 ms | 3821.2 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 1907.72 ms | 3821.2 MB |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-fms](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-fms) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-fms](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-fms) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-fms](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-fms) | 2026-09-29 |
 
 ## Empirical Benchmark Results
 

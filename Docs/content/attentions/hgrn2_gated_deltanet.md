@@ -215,6 +215,9 @@ def inject_hgrn2_gated_deltanet(
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **59.40%** | -31.66% | 0.6954 | 1.00x | 12 | [svd-linear-attention-distilbert-sst2-hgrn2](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-hgrn2) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9091 | 1.00x | 0 | [svd-linear-attention-distilbert-hgrn2_gated_deltanet](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-hgrn2_gated_deltanet) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.15%** | N/A | 0.9425 | 1.00x | 0 | [svd-linear-attention-roberta-hgrn2_gated_deltanet](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-hgrn2_gated_deltanet) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8868 | 1.00x | 0 | [svd-linear-attention-gpt2-hgrn2_gated_deltanet](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-hgrn2_gated_deltanet) | 2026-09-29 |
 
 
 > [!NOTE]

@@ -365,6 +365,15 @@ __all__ = [
 
 ## Empirical Benchmark Results
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9077 | 1.00x | 0 | [svd-linear-attention-distilbert-saes_svd_v2](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-saes_svd_v2) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.11%** | N/A | 0.7586 | 1.00x | 0 | [svd-linear-attention-roberta-saes_svd_v2](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-saes_svd_v2) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **60.78%** | N/A | 0.6354 | 1.00x | 0 | [svd-linear-attention-gpt2-saes_svd_v2](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-saes_svd_v2) | 2026-09-29 |
+
+
 Evaluations across sequence lengths and model scales:
 
 | Evaluation Suite | Base Model | Metric | Value | Latency Reduction | Peak Memory Delta | Status |

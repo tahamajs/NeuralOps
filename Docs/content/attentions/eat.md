@@ -292,3 +292,6 @@ print(f"[PASS] eat forward logits shape:", outputs.logits.shape)
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.83%** | -0.23% | 0.9111 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-eat](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-eat) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **58.20%** | -23.60% | 0.5788 | 1.00x | 0 | N/A | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-eat](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-eat) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-eat](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-eat) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-eat](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-eat) | 2026-09-29 |

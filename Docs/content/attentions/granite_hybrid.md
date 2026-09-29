@@ -229,6 +229,9 @@ Group tokens by assigned expert index using a fast SRAM parallel radix sort. Fur
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.14%** | -0.92% | 0.9040 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-granite-hybrid](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-granite-hybrid) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-granite_hybrid](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-granite_hybrid) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-granite_hybrid](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-granite_hybrid) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-granite_hybrid](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-granite_hybrid) | 2026-09-29 |
 
 
 The empirical evaluation of `granite_hybrid` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

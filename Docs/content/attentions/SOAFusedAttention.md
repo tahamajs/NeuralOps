@@ -128,6 +128,9 @@ python Codes/framework/launch_gpu_server.py \
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **76.30%** | +25.30% | 0.7317 | 1.14x | 6 | N/A | 2026-09-18 |
 | **roberta-base** | ag_news | `PASS` | 74.50% | **49.40%** | -25.10% | 0.4264 | 1.09x | 12 | N/A | 2026-09-18 |
 | **gpt2** | ag_news | `PASS` | 79.70% | **72.60%** | -7.10% | 0.7215 | 1.16x | 12 | N/A | 2026-09-18 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9077 | 1.00x | 0 | [svd-linear-attention-distilbert-soafusedattention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-soafusedattention) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.11%** | N/A | 0.7586 | 1.00x | 0 | [svd-linear-attention-roberta-soafusedattention](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-soafusedattention) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **60.78%** | N/A | 0.6354 | 1.00x | 0 | [svd-linear-attention-gpt2-soafusedattention](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-soafusedattention) | 2026-09-29 |
 
 
 Evaluated across standard GLUE benchmark suites on NVIDIA GPUs:

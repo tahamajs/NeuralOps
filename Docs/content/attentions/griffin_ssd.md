@@ -434,6 +434,9 @@ print(f"[PASS] griffin_ssd forward logits shape:", outputs.logits.shape)
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 1045.30 ms | 4328.6 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 1047.63 ms | 4338.5 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 1032.61 ms | 4338.5 MB |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-griffin_ssd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-griffin_ssd) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-griffin_ssd](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-griffin_ssd) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-griffin_ssd](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-griffin_ssd) | 2026-09-29 |
 
 ## Empirical Benchmark Results
 

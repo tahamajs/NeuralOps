@@ -569,6 +569,9 @@ print(f"[PASS] aegis_v2 forward logits shape:", outputs.logits.shape)
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 31.81 ms | 1852.8 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 32.47 ms | 1852.8 MB |
 | **roberta-sst2** | sst2 | `PASS` | 93.46% | **63.99%** | -29.47% | 0.6549 | 1.03x | 0 | [svd-linear-attention-roberta-sst2-aegis-v2](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-sst2-aegis-v2) | 2026-09-25 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-aegis_v2](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-aegis_v2) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-aegis_v2](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-aegis_v2) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-aegis_v2](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-aegis_v2) | 2026-09-29 |
 
 ## Empirical Benchmark Results
 

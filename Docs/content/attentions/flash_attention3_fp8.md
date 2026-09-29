@@ -210,6 +210,9 @@ Issue native FP8 WGMMA matrix instructions on Consumer warps, achieving up to $2
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.60%** | +0.00% | 0.9091 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-flash-attention3-fp8](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-flash-attention3-fp8) | 2026-09-23 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-flash3_fp8](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-flash3_fp8) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-flash3_fp8](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-flash3_fp8) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-flash3_fp8](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-flash3_fp8) | 2026-09-29 |
 
 
 The empirical evaluation of `flash_attention3_fp8` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

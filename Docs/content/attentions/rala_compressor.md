@@ -215,6 +215,9 @@ Finally, a promising structural convergence lies in the synthesis of hybrid RALA
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **78.56%** | -12.04% | 0.7813 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-rala](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-rala) | 2026-09-27 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-rala_compressor](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-rala_compressor) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-rala_compressor](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-rala_compressor) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **57.91%** | N/A | 0.3010 | 1.00x | 0 | [svd-linear-attention-gpt2-rala_compressor](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-rala_compressor) | 2026-09-29 |
 
 
 The empirical evaluation of `rala_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

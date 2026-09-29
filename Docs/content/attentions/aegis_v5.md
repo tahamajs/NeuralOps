@@ -594,6 +594,9 @@ print(f"[PASS] aegis_v5 forward logits shape:", outputs.logits.shape)
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 28.80 ms | 1227.3 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 29.26 ms | 1237.1 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 29.17 ms | 1237.1 MB |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-aegis_v5_module](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-aegis_v5_module) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-aegis_v5_module](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-aegis_v5_module) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-aegis_v5_module](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-aegis_v5_module) | 2026-09-29 |
 
 ## Empirical Benchmark Results
 

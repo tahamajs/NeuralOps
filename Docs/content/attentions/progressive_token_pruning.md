@@ -176,6 +176,15 @@ class ProgressiveTokenPruning(BaseAttention):
 
 ## 6. Empirical Benchmark Results & Verification
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-progressive_token_pruning](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-progressive_token_pruning) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-progressive_token_pruning](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-progressive_token_pruning) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 48 | [svd-linear-attention-gpt2-progressive_token_pruning](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-progressive_token_pruning) | 2026-09-29 |
+
+
 > [!NOTE]
 > **GPU Benchmark Evaluation Protocol**: Standardized evaluation on GLUE benchmarks (SST-2, MRPC, QNLI, MNLI) and LongBench is executed via distributed GPU cluster runs. Benchmark execution scripts and diagnostic verification harnesses are provided below.
 

@@ -187,6 +187,9 @@ def cachenotes_row_mask_kernel(
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.71%** | -0.35% | 0.9115 | 1.00x | 24 | [svd-linear-attention-distilbert-sst2-cachenotes](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-cachenotes) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.30%** | -0.50% | 0.8120 | 1.00x | 24 | [svd-linear-attention-distilbert-mnli-full-cachenotes](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-cachenotes) | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.40%** | +0.10% | 0.9398 | 1.00x | 24 | N/A | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9109 | 1.00x | 24 | [svd-linear-attention-distilbert-cachenotes](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-cachenotes) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **92.66%** | N/A | 0.9287 | 1.00x | 46 | [svd-linear-attention-roberta-cachenotes](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-cachenotes) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8835 | 1.00x | 14 | [svd-linear-attention-gpt2-cachenotes](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-cachenotes) | 2026-09-29 |
 
 
 The empirical evaluation of `cachenotes_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

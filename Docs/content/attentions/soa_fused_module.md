@@ -129,6 +129,9 @@ python Codes/framework/launch_gpu_server.py \
 | **roberta-base** | ag_news | `PASS` | 74.50% | **49.40%** | -25.10% | 0.4264 | 1.09x | 12 | N/A | 2026-09-18 |
 | **gpt2** | ag_news | `PASS` | 79.70% | **72.60%** | -7.10% | 0.7215 | 1.16x | 12 | N/A | 2026-09-18 |
 | **gpt2** | wikitext2 | `PASS` | 99.72% | **99.96%** | +0.24% | 0.0000 | 1.16x | 12 | [svd-linear-attention-gpt2-soa-fused-module](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-soa-fused-module) | 2026-09-24 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-soa_fused_module](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-soa_fused_module) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-soa_fused_module](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-soa_fused_module) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 48 | [svd-linear-attention-gpt2-soa_fused_module](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-soa_fused_module) | 2026-09-29 |
 
 
 Evaluated across standard GLUE benchmark suites on NVIDIA GPUs:

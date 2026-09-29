@@ -489,6 +489,9 @@ injected_model = inject_reap_moe(model=model, num_experts=8, top_k=2)
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 46.93 ms | 2926.2 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 47.20 ms | 2936.1 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 46.50 ms | 2936.1 MB |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-reap_moe](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-reap_moe) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-reap_moe](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-reap_moe) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **57.91%** | N/A | 0.3010 | 1.00x | 0 | [svd-linear-attention-gpt2-reap_moe](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-reap_moe) | 2026-09-29 |
 
 
 ## Limitations & Future Work

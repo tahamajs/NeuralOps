@@ -301,6 +301,9 @@ A Triton kernel for Adaptive SVD Attention fuses the frozen SVD base GEMM tile a
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **88.30%** | -2.30% | 0.8867 | 1.15x | 0 | [svd-linear-attention-distilbert-sst2-adaptive-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-adaptive-svd) | 2026-09-27 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **68.90%** | -12.90% | 0.6856 | 1.15x | 6 | [svd-linear-attention-distilbert-mnli-full-adaptive-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-adaptive-svd) | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **92.30%** | -2.00% | 0.9192 | 1.15x | 6 | N/A | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-adaptive_svd_attn](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-adaptive_svd_attn) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.50%** | N/A | 0.9458 | 1.00x | 0 | [svd-linear-attention-roberta-adaptive_svd_attn](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-adaptive_svd_attn) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **85.67%** | N/A | 0.8683 | 1.00x | 0 | [svd-linear-attention-gpt2-adaptive_svd_attn](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-adaptive_svd_attn) | 2026-09-29 |
 
 
 > [!NOTE]

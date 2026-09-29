@@ -185,6 +185,9 @@ def admm_joint_prune_quant_kernel(
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.83%** | -0.23% | 0.9129 | 1.00x | 11 | [svd-linear-attention-distilbert-sst2-admm](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-admm) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **80.70%** | -1.10% | 0.8058 | 1.00x | 11 | [svd-linear-attention-distilbert-mnli-full-admm](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-admm) | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.30%** | +0.00% | 0.9387 | 1.00x | 11 | N/A | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.14%** | N/A | 0.9044 | 1.00x | 24 | [svd-linear-attention-distilbert-admm](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-admm) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **93.35%** | N/A | 0.9335 | 1.00x | 48 | [svd-linear-attention-roberta-admm](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-admm) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.73%** | N/A | 0.8828 | 1.00x | 24 | [svd-linear-attention-gpt2-admm](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-admm) | 2026-09-29 |
 
 
 The empirical evaluation of `admm_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

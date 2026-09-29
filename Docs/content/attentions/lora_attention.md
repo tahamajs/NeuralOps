@@ -178,6 +178,9 @@ Furthermore, prior to production deployment, complete offline weight fusion shou
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.60%** | +0.00% | 0.9091 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-lora-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-lora-attention) | 2026-09-18 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9077 | 1.00x | 0 | [svd-linear-attention-distilbert-lora_attn](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-lora_attn) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.00%** | N/A | 0.7578 | 1.00x | 0 | [svd-linear-attention-roberta-lora_attn](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-lora_attn) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **60.78%** | N/A | 0.6354 | 1.00x | 0 | [svd-linear-attention-gpt2-lora_attn](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-lora_attn) | 2026-09-29 |
 
 
 The empirical evaluation of `lora_attention` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

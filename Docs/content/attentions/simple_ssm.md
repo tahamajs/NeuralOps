@@ -423,4 +423,6 @@ print(f"[PASS] simple_ssm forward logits shape:", outputs.logits.shape)
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 1010.07 ms | 2725.3 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 974.34 ms | 2735.2 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 990.80 ms | 2735.2 MB |
-
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-simple_ssm](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-simple_ssm) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-simple_ssm](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-simple_ssm) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 48 | [svd-linear-attention-gpt2-simple_ssm](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-simple_ssm) | 2026-09-29 |

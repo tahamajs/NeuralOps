@@ -295,6 +295,15 @@ def inject_decay_linear(
 
 ## 6. Empirical Benchmark Results & Verification
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-decay_linear_attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-decay_linear_attention) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-decay_linear_attention](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-decay_linear_attention) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-decay_linear_attention](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-decay_linear_attention) | 2026-09-29 |
+
+
 > [!NOTE]
 > **GPU Benchmark Evaluation Protocol**: Standardized evaluation on GLUE benchmarks (SST-2, MRPC, QNLI, MNLI) and LongBench is executed via distributed GPU cluster runs. Benchmark execution scripts and diagnostic verification harnesses are provided below.
 

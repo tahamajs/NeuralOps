@@ -233,6 +233,9 @@ ROAST (registered as `"roast"`) presents a hardware‑minded approach to weight 
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.83%** | -0.23% | 0.9117 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-roast](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-roast) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **82.20%** | +0.40% | 0.8212 | 1.00x | 0 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.30%** | +0.00% | 0.9390 | 1.00x | 0 | [svd-linear-attention-distilbert-agnews-full-roast](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-roast) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-roast_hashed_linear](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-roast_hashed_linear) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-roast_hashed_linear](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-roast_hashed_linear) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **57.91%** | N/A | 0.3010 | 1.00x | 0 | [svd-linear-attention-gpt2-roast_hashed_linear](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-roast_hashed_linear) | 2026-09-29 |
 
 
 The empirical evaluation of `roast_hashed_linear` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

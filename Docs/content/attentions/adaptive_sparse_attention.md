@@ -570,6 +570,9 @@ print(f"[PASS] adaptive_sparse_attention forward logits shape:", outputs.logits.
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 37.10 ms | 1235.7 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 36.32 ms | 1245.6 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 37.37 ms | 1245.6 MB |
+| **roberta** | sst2 | `PASS` | N/A | **90.60%** | N/A | 0.9093 | 1.00x | 73 | [svd-linear-attention-roberta-adaptive_sparse_attention_attention](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-adaptive_sparse_attention_attention) | 2026-09-29 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-adaptive_sparse_attention_attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-adaptive_sparse_attention_attention) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 48 | [svd-linear-attention-gpt2-adaptive_sparse_attention_attention](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-adaptive_sparse_attention_attention) | 2026-09-29 |
 
 ## Unified 4-Architecture Benchmark Results (Adaptive Sparse Attention)
 Evaluated on SST-2 sentiment classification (FP16, batch size 8, 200 recovery steps, lr 2e-4, LoRA rank 16):

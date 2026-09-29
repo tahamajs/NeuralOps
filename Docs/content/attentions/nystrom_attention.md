@@ -453,6 +453,9 @@ print('Output logits shape:', outputs.logits.shape)
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.60%** | +0.00% | 0.9097 | 1.00x | 0 | N/A | 2026-09-28 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.80%** | +0.00% | 0.8177 | 1.00x | 0 | [svd-linear-attention-distilbert-mnli-full-nystrom](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-nystrom) | 2026-09-19 |
 | **roberta-sst2** | sst2 | `PASS` | 92.09% | **100.00%** | +7.91% | 1.0000 | 0.94x | 0 | N/A | 2026-09-28 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-nystrom](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-nystrom) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-nystrom](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-nystrom) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **57.91%** | N/A | 0.3010 | 1.00x | 0 | [svd-linear-attention-gpt2-nystrom](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-nystrom) | 2026-09-29 |
 
 
 Evaluations across sequence lengths and model scales:

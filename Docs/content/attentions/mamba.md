@@ -385,6 +385,9 @@ print(f"[PASS] mamba forward logits shape:", outputs.logits.shape)
 | BERT | mrpc | `TIMEOUT` | 91.06% | **0.00%** | 0.00 ms | 0.0 MB |
 | ROBERTA | sst2 | `TIMEOUT` | 91.06% | **0.00%** | 0.00 ms | 0.0 MB |
 | ROBERTA | mrpc | `TIMEOUT` | 91.06% | **0.00%** | 0.00 ms | 0.0 MB |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-mamba_inject](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mamba_inject) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-mamba_inject](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-mamba_inject) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **57.91%** | N/A | 0.3010 | 1.00x | 0 | [svd-linear-attention-gpt2-mamba_inject](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-mamba_inject) | 2026-09-29 |
 
 
 

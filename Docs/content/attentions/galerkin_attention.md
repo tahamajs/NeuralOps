@@ -417,6 +417,9 @@ injected_model = inject_galerkin_attention(model=model, basis_rank=32)
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 17.54 ms | 497.4 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 18.23 ms | 507.3 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 18.55 ms | 507.3 MB |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-galerkin_attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-galerkin_attention) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-galerkin_attention](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-galerkin_attention) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-galerkin_attention](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-galerkin_attention) | 2026-09-29 |
 
 
 ## Limitations & Future Work

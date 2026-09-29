@@ -212,7 +212,7 @@ compressed_model = a3_compressor_factory(
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **roberta-base** | sst2 | `PASS` | 50.92% | **64.33%** | +13.41% | 0.7340 | 1.04x | 32 | [svd-linear-attention-roberta-base-a3](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-base-a3) | 2026-09-19 |
-| **gpt2** | sst2 | `PASS` | 79.36% | **63.19%** | -16.17% | 0.7216 | 1.00x | 2 | N/A | 2026-09-18 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.16%** | N/A | 0.8724 | 1.01x | 7 | [svd-linear-attention-gpt2-a3](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-a3) | 2026-09-29 |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.71%** | -0.35% | 0.9105 | 1.05x | 22 | [svd-linear-attention-distilbert-sst2-a3](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-a3) | 2026-09-19 |
 | **distilbert-sst2** | mnli | `PASS` | 38.50% | **44.40%** | +5.90% | 0.3516 | 1.02x | 6 | N/A | 2026-09-18 |
 | **roberta-base** | mnli | `PASS` | 35.60% | **40.10%** | +4.50% | 0.2981 | 1.00x | 3 | N/A | 2026-09-18 |
@@ -221,6 +221,8 @@ compressed_model = a3_compressor_factory(
 | **distilbert-base-uncased** | mnli | `PASS` | 34.40% | **42.10%** | +7.70% | 0.3542 | 1.05x | 21 | [svd-linear-attention-distilbert-base-uncased-a3](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-base-uncased-a3) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **72.30%** | -9.50% | 0.7224 | 1.05x | 21 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **89.30%** | -5.00% | 0.8857 | 1.05x | 21 | N/A | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.60%** | N/A | 0.9097 | 1.03x | 22 | [svd-linear-attention-distilbert-a3](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-a3) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **92.66%** | N/A | 0.9289 | 1.02x | 32 | [svd-linear-attention-roberta-a3](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-a3) | 2026-09-29 |
 
 
 The hardened A3 compressor implementation was evaluated natively on a dedicated remote GPU server under full hardware acceleration:

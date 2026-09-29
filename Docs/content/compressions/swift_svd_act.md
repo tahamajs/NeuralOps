@@ -428,6 +428,9 @@ def swift_svd_act_factory(
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **91.06%** | +0.00% | 0.9137 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-swift-svd-act](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-swift-svd-act) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.50%** | -0.30% | 0.8145 | 1.00x | 0 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.60%** | +0.30% | 0.9422 | 1.00x | 0 | [svd-linear-attention-distilbert-agnews-full-swift-svd-act](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-swift-svd-act) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9077 | 1.00x | 0 | [svd-linear-attention-distilbert-swift_svd_act](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-swift_svd_act) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.11%** | N/A | 0.7586 | 1.00x | 0 | [svd-linear-attention-roberta-swift_svd_act](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-swift_svd_act) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **60.78%** | N/A | 0.6354 | 1.00x | 0 | [svd-linear-attention-gpt2-swift_svd_act](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-swift_svd_act) | 2026-09-29 |
 
 
 Evaluations across sequence lengths and model scales:

@@ -240,6 +240,9 @@ Finally, deploying FP8 Tensor Core acceleration (utilizing E4M3 floating-point f
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **37.40%** | -44.40% | 0.2569 | 1.20x | 0 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **53.10%** | -41.20% | 0.4279 | 1.20x | 0 | [svd-linear-attention-distilbert-agnews-full-orion](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-orion) | 2026-09-19 |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **79.47%** | -11.13% | 0.7830 | 1.20x | 0 | [svd-linear-attention-distilbert-sst2-orion](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-orion) | 2026-09-27 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-orion_module](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-orion_module) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-orion_module](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-orion_module) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **57.91%** | N/A | 0.3010 | 1.00x | 0 | [svd-linear-attention-gpt2-orion_module](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-orion_module) | 2026-09-29 |
 
 
 The empirical evaluation of `orion` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

@@ -148,6 +148,9 @@ For input sequence batch with $B=8, N=128, D=768, H=12, d=64$, and ASVD rank $r=
 | **gpt2** | ag_news | `PASS` | 79.70% | **82.80%** | +3.10% | 0.8216 | 1.00x | 12 | N/A | 2026-09-18 |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.71%** | +0.11% | 0.9111 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-asvd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-asvd) | 2026-09-27 |
 | **roberta-base** | sst2 | `PASS` | 50.92% | **81.31%** | +30.39% | 0.8397 | 1.00x | 12 | [svd-linear-attention-roberta-base-asvd](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-base-asvd) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-asvd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-asvd) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-asvd](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-asvd) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-asvd](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-asvd) | 2026-09-29 |
 
 
 The hardened `ASVDAttention` module was evaluated in an end-to-end benchmark across four foundational model families on the GLUE SST-2 task ($N=872$ validation samples, majority class baseline $50.92\%$, minimum pass threshold $56.00\%$) with `lora_rank=32`, `recovery_steps=200`, `learning_rate=2e-4`, `batch_size=8`, and `precision=fp16`:

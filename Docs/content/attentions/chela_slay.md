@@ -341,3 +341,6 @@ print(f"[PASS] chela_slay forward logits shape:", outputs.logits.shape)
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.60%** | -0.46% | 0.9091 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-chela-slay](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-chela-slay) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-chela_slay](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-chela_slay) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-chela_slay](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-chela_slay) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-chela_slay](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-chela_slay) | 2026-09-29 |

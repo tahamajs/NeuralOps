@@ -301,6 +301,9 @@ print('Output logits shape:', outputs.logits.shape)
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **80.96%** | -10.10% | 0.8172 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-regla](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-regla) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-regla](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-regla) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-regla](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-regla) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 48 | [svd-linear-attention-gpt2-regla](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-regla) | 2026-09-29 |
 
 
 Evaluations across sequence lengths and model scales:

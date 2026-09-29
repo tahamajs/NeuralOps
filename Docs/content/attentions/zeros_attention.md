@@ -137,6 +137,15 @@ print("Logits shape:", outputs.logits.shape)
 
 ## 6. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-zeros](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-zeros) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-zeros](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-zeros) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **57.91%** | N/A | 0.3010 | 1.00x | 0 | [svd-linear-attention-gpt2-zeros](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-zeros) | 2026-09-29 |
+
+
 | Evaluation Benchmark | Model Architecture | Metric | ZeroS Attention | Baseline (Full MHA) | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | GLUE (SST-2, MRPC, QNLI) | `bert-base-uncased` / `roberta-base` | Accuracy / F1 | Pending actual benchmark results | Baseline reference | Pending Sweep |
