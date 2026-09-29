@@ -110,7 +110,7 @@ def run_model(m: dict) -> dict:
             "name":         m["name"],
             "slug":         m["slug"],
             "family":       m["family"],
-            "out_dir":      str(out_dir),
+            "out_dir":      out_dir,
             "exit_code":    0,
             "status":       "NOT_INSTALLED",
             "accuracy_pct": 0.0,
@@ -257,14 +257,14 @@ def export_qualified(results: list[dict]) -> None:
                 "[REJECTED] %s — %s %.2f%% < %.1f%%",
                 r["name"], r["status"], r["accuracy_pct"], PASS_THRESHOLD,
             )
-            weights_dir = r["out_dir"] / "checkpoints" / MODULE_KEY
+            weights_dir = Path(r["out_dir"]) / "checkpoints" / MODULE_KEY
             if weights_dir.exists():
                 shutil.rmtree(weights_dir, ignore_errors=True)
             continue
 
         pass_count += 1
         slug    = r["slug"]
-        out_dir = r["out_dir"]
+        out_dir = Path(r["out_dir"])
         row     = r["row_data"]
         repo_id = f"{hf_org}/svd-linear-attention-{slug}-{MODULE_KEY}"
         hf_dir  = out_dir / "checkpoints" / MODULE_KEY / "hf_export"
