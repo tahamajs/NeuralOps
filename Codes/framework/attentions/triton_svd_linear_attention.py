@@ -886,6 +886,10 @@ class TritonSVDLinearAttention(BaseAttention):
     ) -> Tuple[torch.Tensor, Optional[Any]]:
         B, N, C = hidden_states.shape
 
+        if torch.is_autocast_enabled() and hidden_states.is_cuda:
+            ac_dtype = torch.get_autocast_dtype("cuda") if hasattr(torch, "get_autocast_dtype") else torch.float16
+            hidden_states = hidden_states.to(ac_dtype)
+
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings", None)
 
