@@ -58,3 +58,10 @@ For chunk $c \in \{0, \dots, C-1\}$:
   - **Throughput:** 1216.03 tok/s
   - **Latency:** 0.8224 ms/token
   - **Injected Layers:** 12/12 blocks replaced cleanly
+
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert** | sst2 | `PASS` | N/A | **77.29%** | N/A | 0.7916 | 1.00x | 6 | [svd-linear-attention-distilbert-triton_cosformer](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-triton_cosformer) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **64.45%** | N/A | 0.7355 | 1.00x | 12 | [svd-linear-attention-gpt2-triton_cosformer](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-triton_cosformer) | 2026-09-29 |
