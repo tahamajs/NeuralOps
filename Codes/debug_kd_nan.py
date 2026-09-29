@@ -41,15 +41,25 @@ loss.backward()
 
 print("--- GRAD STATS BEFORE CLIP ---")
 for name, p in student.named_parameters():
-    if p.requires_grad and p.grad is not None:
-        gnorm = p.grad.norm().item()
-        has_nan = torch.isnan(p.grad).any().item()
-        has_inf = torch.isinf(p.grad).any().item()
-        if gnorm > 10.0 or has_nan or has_inf:
-            print(f"{name}: norm={gnorm:.4f}, nan={has_nan}, inf={has_inf}")
+    if p.requires_grad:
+        if p.grad is None:
+            print(f"GRAD IS NONE: {name}")
+        else:
+            has_nan = torch.isnan(p.grad).any().item()
+            has_inf = torch.isinf(p.grad).any().item()
+            gnorm = p.grad.norm().item()
+            print(f"{name}: grad_shape={list(p.grad.shape)}, norm={gnorm}, nan={has_nan}, inf={has_inf}")
+
+print(f"Total trainable params: {len(trainable)}")
+print(f"Params with grad: {sum(1 for p in trainable if p.grad is not None)}")
 
 total_norm = torch.nn.utils.clip_grad_norm_(trainable, max_norm=0.5)
 print(f"Total grad norm before clip: {total_norm}")
+print("Checking grads after clip_grad_norm_:")
+for name, p in student.named_parameters():
+    if p.requires_grad and p.grad is not None:
+        if torch.isnan(p.grad).any().item() or torch.isinf(p.grad).any().item():
+            print(f"AFTER CLIP NAN/INF: {name}")
 
 opt.step()
 opt.zero_grad()
