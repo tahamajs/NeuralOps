@@ -3,6 +3,7 @@ import copy
 import math
 import sys
 import torch
+import torch.nn.functional as F
 from pathlib import Path
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
