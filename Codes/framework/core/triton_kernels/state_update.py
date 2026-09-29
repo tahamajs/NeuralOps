@@ -145,13 +145,13 @@ class _TritonStateUpdateAutogradFunction(torch.autograd.Function):
     @staticmethod
     def backward(ctx: Any, grad_y: torch.Tensor, grad_state: torch.Tensor) -> Tuple[Optional[torch.Tensor], ...]:
         u, delta, A, B, C, D, state = ctx.saved_tensors
-        u_req = u.detach().requires_grad_(u.requires_grad)
-        delta_req = delta.detach().requires_grad_(delta.requires_grad)
-        A_req = A.detach().requires_grad_(A.requires_grad)
-        B_req = B.detach().requires_grad_(B.requires_grad)
-        C_req = C.detach().requires_grad_(C.requires_grad)
-        D_req = D.detach().requires_grad_(D.requires_grad) if D is not None else None
-        state_req = state.detach().requires_grad_(state.requires_grad) if state is not None else None
+        u_req = u.detach().requires_grad_(True)
+        delta_req = delta.detach().requires_grad_(True)
+        A_req = A.detach().requires_grad_(True)
+        B_req = B.detach().requires_grad_(True)
+        C_req = C.detach().requires_grad_(True)
+        D_req = D.detach().requires_grad_(True) if D is not None else None
+        state_req = state.detach().requires_grad_(True) if state is not None else None
 
         with torch.enable_grad():
             out_y, out_state = state_update_pytorch_fallback(
@@ -165,14 +165,18 @@ class _TritonStateUpdateAutogradFunction(torch.autograd.Function):
                 diff_vars.append(state_req)
                 grad_outputs.append(grad_state)
 
-            grads = torch.autograd.grad(out_y, diff_vars, grad_y, retain_graph=False)
+            grads = torch.autograd.grad(out_y, diff_vars, grad_y, retain_graph=False, allow_unused=True)
 
-        g_u, g_delta, g_A, g_B, g_C = grads[0], grads[1], grads[2], grads[3], grads[4]
+        g_u = grads[0] if ctx.needs_input_grad[0] else None
+        g_delta = grads[1] if ctx.needs_input_grad[1] else None
+        g_A = grads[2] if ctx.needs_input_grad[2] else None
+        g_B = grads[3] if ctx.needs_input_grad[3] else None
+        g_C = grads[4] if ctx.needs_input_grad[4] else None
         idx = 5
-        g_D = grads[idx] if D_req is not None else None
+        g_D = grads[idx] if D_req is not None and ctx.needs_input_grad[5] else None
         if D_req is not None:
             idx += 1
-        g_state = grads[idx] if state_req is not None else None
+        g_state = grads[idx] if state_req is not None and ctx.needs_input_grad[6] else None
         return g_u, g_delta, g_A, g_B, g_C, g_D, g_state, None
 
 
