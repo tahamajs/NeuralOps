@@ -150,8 +150,10 @@ if HAS_TRITON:
             v_tile = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0)
 
             # 2. Non-negative kernel map: ELU + 1
-            phi_q = tl.where(q_tile > 0.0, q_tile, tl.exp(q_tile) - 1.0) + 1.0
-            phi_k = tl.where(k_tile > 0.0, k_tile, tl.exp(k_tile) - 1.0) + 1.0
+            q_f = q_tile.to(tl.float32)
+            k_f = k_tile.to(tl.float32)
+            phi_q = tl.where(q_f > 0.0, q_f, tl.exp(q_f) - 1.0) + 1.0
+            phi_k = tl.where(k_f > 0.0, k_f, tl.exp(k_f) - 1.0) + 1.0
 
             phi_k = tl.where(mask_n[:, None], phi_k, 0.0)
             v_tile = tl.where(mask_n[:, None], v_tile, 0.0)
@@ -240,7 +242,8 @@ if HAS_TRITON:
             k_tile = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0)
             v_tile = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0)
 
-            phi_k = tl.where(k_tile > 0.0, k_tile, tl.exp(k_tile) - 1.0) + 1.0
+            k_f = k_tile.to(tl.float32)
+            phi_k = tl.where(k_f > 0.0, k_f, tl.exp(k_f) - 1.0) + 1.0
             phi_k = tl.where(mask_n[:, None], phi_k, 0.0)
             v_tile = tl.where(mask_n[:, None], v_tile, 0.0)
 
@@ -262,7 +265,8 @@ if HAS_TRITON:
             q_ptrs = q_base + (cur_m[:, None] * stride_qn + offs_d[None, :] * stride_qd)
             q_tile = tl.load(q_ptrs, mask=mask_m[:, None], other=0.0)
 
-            phi_q = tl.where(q_tile > 0.0, q_tile, tl.exp(q_tile) - 1.0) + 1.0
+            q_f = q_tile.to(tl.float32)
+            phi_q = tl.where(q_f > 0.0, q_f, tl.exp(q_f) - 1.0) + 1.0
             pos_angles = cur_m.to(tl.float32) * angle_factor
             q_c = phi_q * tl.cos(pos_angles)[:, None]
             q_s = phi_q * tl.sin(pos_angles)[:, None]
@@ -314,7 +318,8 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
                     k.stride(0), k.stride(1), k.stride(2), k.stride(3),
                     v.stride(0), v.stride(1), v.stride(2), v.stride(3),
                     out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-                    N=N, D=D, BLOCK_CHUNK=64, EPS=eps, MAX_LENGTH=max_length,
+                    N=N, D=D, BLOCK_CHUNK=32, EPS=eps, MAX_LENGTH=max_length,
+                    num_stages=2, num_warps=4,
                 )
             else:
                 _triton_bidirectional_cosformer_fwd_kernel[grid](
@@ -323,7 +328,8 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
                     k.stride(0), k.stride(1), k.stride(2), k.stride(3),
                     v.stride(0), v.stride(1), v.stride(2), v.stride(3),
                     out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-                    N=N, D=D, BLOCK_M=64, BLOCK_N=64, EPS=eps, MAX_LENGTH=max_length,
+                    N=N, D=D, BLOCK_M=32, BLOCK_N=32, EPS=eps, MAX_LENGTH=max_length,
+                    num_stages=2, num_warps=4,
                 )
         else:
             # Strictly O(N * d^2) PyTorch Fallback for CPU / Mac MPS (Zero N x N memory footprint)
