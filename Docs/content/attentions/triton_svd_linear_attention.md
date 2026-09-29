@@ -57,3 +57,10 @@ Given non-negative feature activations $\phi(Q), \phi(K) \ge 0$:
 - **Unit Test Coverage:** 8/8 comprehensive tests passing (`100% green`)
 - **Double-Backward Warnings:** 0 (Clean explicit `torch.autograd.grad` backward pass)
 - **Mask Handling:** Fully verified on padded batches
+
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert** | sst2 | `PASS` | N/A | **75.80%** | N/A | 0.7827 | 1.15x | 6 | [svd-linear-attention-distilbert-triton_svd_linear_attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-triton_svd_linear_attention) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **63.99%** | N/A | 0.7312 | 1.17x | 12 | [svd-linear-attention-gpt2-triton_svd_linear_attention](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-triton_svd_linear_attention) | 2026-09-29 |
