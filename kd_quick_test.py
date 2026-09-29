@@ -175,8 +175,8 @@ def compute_kl_divergence(
     teacher_logits: torch.Tensor,
     temperature: float = 2.0,
 ) -> torch.Tensor:
-    p_s = F.log_softmax(student_logits / temperature, dim=-1)
-    p_t = F.softmax(teacher_logits / temperature, dim=-1)
+    p_s = F.log_softmax(student_logits.float() / temperature, dim=-1).view(-1, student_logits.size(-1))
+    p_t = F.softmax(teacher_logits.float() / temperature, dim=-1).view(-1, teacher_logits.size(-1))
     return F.kl_div(p_s, p_t, reduction="batchmean") * (temperature * temperature)
 
 
@@ -617,9 +617,15 @@ def run_kd_method(
         f"Train scope: '{args.train_scope}' | Trainable parameters: {n_trainable:,} / {sum(p.numel() for p in student.parameters()):,}"
     )
 
+    # Master weights in FP32 for numerical stability in AdamW
+    if args.fp16 and device.startswith("cuda"):
+        for p in student.parameters():
+            if p.requires_grad:
+                p.data = p.data.float()
+
     # Optimizer & Scheduler
     trainable_params = [p for p in student.parameters() if p.requires_grad]
-    optimizer = torch.optim.AdamW(trainable_params, lr=args.learning_rate, weight_decay=0.01)
+    optimizer = torch.optim.AdamW(trainable_params, lr=args.learning_rate, weight_decay=0.01, eps=1e-8)
 
     total_steps = args.recovery_steps
     warmup_steps = args.warmup_steps
@@ -631,7 +637,7 @@ def run_kd_method(
         return max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
 
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
-    use_scaler = bool(args.fp16 and device.startswith("cuda") and not any(p.dtype == torch.float16 for p in trainable_params))
+    use_scaler = bool(args.fp16 and device.startswith("cuda"))
     scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
 
     # Training state
@@ -741,6 +747,11 @@ def run_kd_method(
                 loss_scaled = loss / args.grad_accum_steps
                 final_loss = float(loss.item())
 
+            if torch.isnan(loss) or torch.isinf(loss):
+                LOG.warning(f"[{method_name}] NaN/Inf loss encountered, skipping micro-batch...")
+                optimizer.zero_grad()
+                continue
+
             if use_scaler:
                 scaler.scale(loss_scaled).backward()
             else:
@@ -749,17 +760,23 @@ def run_kd_method(
 
             if accum_count % args.grad_accum_steps == 0:
                 max_norm = getattr(args, "max_grad_norm", 1.0)
+                stepped = True
                 if use_scaler:
                     scaler.unscale_(optimizer)
                     torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=max_norm)
+                    scale_before = scaler.get_scale()
                     scaler.step(optimizer)
                     scaler.update()
+                    scale_after = scaler.get_scale()
+                    stepped = (scale_after >= scale_before)
                 else:
                     torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=max_norm)
                     optimizer.step()
                 optimizer.zero_grad()
-                scheduler.step()
-                step += 1
+
+                if stepped:
+                    scheduler.step()
+                    step += 1
 
                 if step % 50 == 0 or step == total_steps or step <= 5 or (total_steps <= 20 and step % 2 == 0):
                     step_time_ms = ((time.time() - t_start) / max(1, step)) * 1000.0
