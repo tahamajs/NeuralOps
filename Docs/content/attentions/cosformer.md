@@ -151,6 +151,9 @@ python Codes/framework/launch_gpu_server.py \
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **78.78%** | -11.82% | 0.7846 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-cosformer](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-cosformer) | 2026-09-27 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-cosformer](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-cosformer) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-cosformer](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-cosformer) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-cosformer](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-cosformer) | 2026-09-29 |
 
 
 Evaluated on NVIDIA Tensor Core GPUs across standard GLUE benchmark suites:

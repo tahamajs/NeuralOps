@@ -406,4 +406,6 @@ print(f"[PASS] mixattention_moska forward logits shape:", outputs.logits.shape)
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 16.91 ms | 739.1 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 17.79 ms | 749.0 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 17.33 ms | 749.0 MB |
-
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-mixattention_moska](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mixattention_moska) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-mixattention_moska](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-mixattention_moska) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 48 | [svd-linear-attention-gpt2-mixattention_moska](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-mixattention_moska) | 2026-09-29 |

@@ -858,6 +858,9 @@ def inject_adasplash(
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **89.45%** | -1.15% | 0.8980 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-adasplash](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-adasplash) | 2026-09-27 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **79.20%** | -2.60% | 0.7913 | 1.00x | 0 | [svd-linear-attention-distilbert-mnli-full-adasplash](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-adasplash) | 2026-09-19 |
 | **gpt2** | wikitext2 | `PASS` | 99.72% | **100.00%** | +0.28% | 0.0000 | 1.00x | 0 | [svd-linear-attention-gpt2-adasplash-attention](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-adasplash-attention) | 2026-09-24 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-adasplash](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-adasplash) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.50%** | N/A | 0.9458 | 1.00x | 0 | [svd-linear-attention-roberta-adasplash](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-adasplash) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **85.67%** | N/A | 0.8683 | 1.00x | 0 | [svd-linear-attention-gpt2-adasplash](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-adasplash) | 2026-09-29 |
 
 
 The unified benchmark was conducted on the remote GPU server (`NVIDIA GeForce RTX 4070 Laptop GPU`, 8GB VRAM, driver 566.07, CUDA 12.7) under strict standardized evaluation criteria:

@@ -232,6 +232,9 @@ Emerging frontiers in dynamic receptive field gating explore multi-scale archite
 | **roberta-base** | ag_news | `PASS` | 74.50% | **80.40%** | +5.90% | 0.7884 | 1.00x | 12 | N/A | 2026-09-18 |
 | **gpt2** | ag_news | `PASS` | 79.70% | **82.00%** | +2.30% | 0.8134 | 1.00x | 12 | N/A | 2026-09-18 |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.60%** | +0.00% | 0.9099 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-adaptive-span](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-adaptive-span) | 2026-09-27 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-adaptive_span](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-adaptive_span) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.50%** | N/A | 0.9458 | 1.00x | 0 | [svd-linear-attention-roberta-adaptive_span](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-adaptive_span) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **85.67%** | N/A | 0.8683 | 1.00x | 0 | [svd-linear-attention-gpt2-adaptive_span](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-adaptive_span) | 2026-09-29 |
 
 
 The empirical evaluation of `adaptive_span_attention` systematically assesses task accuracy recovery across diverse foundation architectures, analyzes the architectural dynamics of causal sequence aggregation, profiles hardware scaling boundaries, and probes the converged hierarchical receptive fields.

@@ -193,6 +193,9 @@ def mlorq_reconstruct_kernel(
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.14%** | -0.92% | 0.9055 | 1.00x | 36 | [svd-linear-attention-distilbert-sst2-mlorq](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-mlorq) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **80.60%** | -1.20% | 0.8054 | 1.00x | 36 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.40%** | +0.10% | 0.9405 | 1.00x | 36 | [svd-linear-attention-distilbert-agnews-full-mlorq](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-mlorq) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9077 | 1.00x | 0 | [svd-linear-attention-distilbert-mlorq](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mlorq) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.11%** | N/A | 0.7586 | 1.00x | 0 | [svd-linear-attention-roberta-mlorq](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-mlorq) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **60.78%** | N/A | 0.6354 | 1.00x | 0 | [svd-linear-attention-gpt2-mlorq](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-mlorq) | 2026-09-29 |
 
 
 The empirical evaluation of `mlorq_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

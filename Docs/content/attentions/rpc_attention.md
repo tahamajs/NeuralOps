@@ -170,6 +170,9 @@ Concurrently, structured random projections—such as Fast Walsh-Hadamard Transf
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **72.71%** | -17.89% | 0.6972 | 1.20x | 0 | [svd-linear-attention-distilbert-sst2-rpc](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-rpc) | 2026-09-27 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-rpc](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-rpc) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **60.09%** | N/A | 0.3718 | 1.00x | 0 | [svd-linear-attention-roberta-rpc](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-rpc) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 48 | [svd-linear-attention-gpt2-rpc](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-rpc) | 2026-09-29 |
 
 
 The empirical evaluation of `rpc_attention` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

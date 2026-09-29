@@ -217,6 +217,15 @@ Replace standard Shannon Entropy with parameterized Renyi Entropy $\mathcal{H}_{
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9077 | 1.00x | 0 | [svd-linear-attention-distilbert-mgie_budget](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mgie_budget) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **88.76%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-roberta-mgie_budget](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-mgie_budget) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **81.31%** | N/A | 0.8372 | 1.00x | 0 | [svd-linear-attention-gpt2-mgie_budget](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-mgie_budget) | 2026-09-29 |
+
+
 The empirical evaluation of `mgie_svd_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
 
 ### 8.1 Language Modeling Quality & Throughput

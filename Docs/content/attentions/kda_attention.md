@@ -280,6 +280,9 @@ def inject_kda(
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **77.29%** | -13.31% | 0.7506 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-kda](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-kda) | 2026-09-27 |
 | **distilbert-base-uncased** | sst2 | `PASS` | 54.59% | **100.00%** | +45.41% | 1.0000 | 0.99x | 0 | [svd-linear-attention-distilbert-base-uncased-kda](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-base-uncased-kda) | 2026-09-23 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-kda](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-kda) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-kda](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-kda) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **57.91%** | N/A | 0.3010 | 1.00x | 0 | [svd-linear-attention-gpt2-kda](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-kda) | 2026-09-29 |
 
 
 > [!NOTE]

@@ -260,6 +260,9 @@ def inject_halo_regla(
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.14%** | -0.92% | 0.9049 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-halo-regla](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-halo-regla) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-halo_regla](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-halo_regla) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-halo_regla](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-halo_regla) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-halo_regla](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-halo_regla) | 2026-09-29 |
 
 
 > [!NOTE]

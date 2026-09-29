@@ -237,7 +237,7 @@ To eliminate intermediate $N \times N$ score materialization, hardware-accelerat
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **gpt2** | sst2 | `PASS` | N/A | **87.61%** | N/A | 0.8844 | 1.00x | 0 | N/A | 2026-09-24 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-full](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-full) | 2026-09-29 |
 | **roberta-base (un-finetuned)** | sst2 | `PASS` | N/A | **78.56%** (archived, untuned base) | N/A | 0.8124 | 1.00x | 0 | N/A | 2026-09-15 |
 | **qwen2.5-0.5b-instruct** | sst2 | `PASS` | N/A | **76.61%** | N/A | 0.7939 | 1.00x | 0 | N/A | 2026-09-14 |
 | **distilbert-sst2** | mnli | `PASS` | N/A | **47.30%** | N/A | 0.3810 | 1.00x | 0 | N/A | 2026-09-18 |
@@ -251,6 +251,8 @@ To eliminate intermediate $N \times N$ score materialization, hardware-accelerat
 | **distilbert-agnews-full** | ag_news | `PASS` | N/A | **94.30%** | N/A | 0.9390 | 1.00x | 0 | N/A | 2026-09-19 |
 | **distilbert-base-uncased-finetuned-sst-2-english** | sst2 | `PASS` | N/A | **90.60%** | N/A | 0.9099 | 1.00x | 0 | N/A | 2026-09-23 |
 | **gpt2-sst2** | sst2 | `PASS` | N/A | **87.61%** | N/A | 0.8844 | 1.00x | 0 | N/A | 2026-09-24 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-full](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-full) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-full](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-full) | 2026-09-29 |
 
 
 The empirical evaluation of `full_attention` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

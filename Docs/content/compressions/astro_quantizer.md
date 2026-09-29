@@ -546,6 +546,9 @@ print('Compressed output logits:', outputs.logits.shape)
 | **roberta-base** | sst2 | `PASS` | 50.92% | **57.57%** | +6.65% | 0.7045 | 1.00x | 0 | [svd-linear-attention-roberta-base-ast](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-base-ast) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.50%** | -0.30% | 0.8146 | 1.00x | 33 | [svd-linear-attention-distilbert-mnli-full-astro](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-astro) | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.50%** | +0.20% | 0.9414 | 1.00x | 33 | N/A | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 24 | [svd-linear-attention-distilbert-astro](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-astro) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **92.89%** | N/A | 0.9320 | 1.00x | 48 | [svd-linear-attention-roberta-astro](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-astro) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **88.65%** | N/A | 0.8901 | 1.00x | 24 | [svd-linear-attention-gpt2-astro](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-astro) | 2026-09-29 |
 
 
 Evaluations across sequence lengths and model scales:

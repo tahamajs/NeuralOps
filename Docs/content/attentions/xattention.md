@@ -167,6 +167,9 @@ print("Logits shape:", outputs.logits.shape)
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **86.12%** | -4.48% | 0.8736 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-xattention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-xattention) | 2026-09-27 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-xattention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-xattention) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-xattention](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-xattention) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 0 | [svd-linear-attention-gpt2-xattention](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-xattention) | 2026-09-29 |
 
 
 | Evaluation Suite | Model Architecture | Metric | XAttention | Full Dense MHA | Status |

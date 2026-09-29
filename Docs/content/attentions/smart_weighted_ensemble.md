@@ -149,6 +149,15 @@ print("Ensemble fused logits:", logits.shape)
 
 ## 6. Empirical Benchmark Results & Verification
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9077 | 1.00x | 0 | [svd-linear-attention-distilbert-smart_weighted_ensemble](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-smart_weighted_ensemble) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.11%** | N/A | 0.7586 | 1.00x | 0 | [svd-linear-attention-roberta-smart_weighted_ensemble](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-smart_weighted_ensemble) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **60.78%** | N/A | 0.6354 | 1.00x | 0 | [svd-linear-attention-gpt2-smart_weighted_ensemble](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-smart_weighted_ensemble) | 2026-09-29 |
+
+
 | Evaluation Suite | Ensemble Composition | Aggregation Method | Benchmark Metric | Result | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | GLUE Suite | BERT + RoBERTa | Simple Average | Accuracy | Pending actual benchmark results | Pending Sweep |

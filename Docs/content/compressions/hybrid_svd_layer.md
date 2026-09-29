@@ -260,6 +260,9 @@ The Hybrid SVD Layer (`SVDSingleHead` and `DirectSVDEncoderLayer`) provides a no
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **76.38%** | -14.68% | 0.7804 | 1.91x | 36 | [svd-linear-attention-distilbert-sst2-hybrid-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-hybrid-svd) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **37.50%** | -44.30% | 0.3298 | 1.91x | 36 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **73.50%** | -20.80% | 0.7241 | 1.91x | 36 | [svd-linear-attention-distilbert-agnews-full-hybrid-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-hybrid-svd) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-hybrid_svd_layer](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-hybrid_svd_layer) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-hybrid_svd_layer](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-hybrid_svd_layer) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **57.91%** | N/A | 0.3010 | 1.00x | 0 | [svd-linear-attention-gpt2-hybrid_svd_layer](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-hybrid_svd_layer) | 2026-09-29 |
 
 
 The empirical evaluation of `hybrid_svd_layer` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

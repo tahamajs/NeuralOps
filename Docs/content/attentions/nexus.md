@@ -699,3 +699,6 @@ print(f"[PASS] nexus forward logits shape:", outputs.logits.shape)
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 20.12 ms | 1293.6 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 20.33 ms | 1293.6 MB |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.71%** | +0.11% | 0.9111 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-nexus](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-nexus) | 2026-09-27 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-nexus](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-nexus) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-nexus](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-nexus) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 48 | [svd-linear-attention-gpt2-nexus](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-nexus) | 2026-09-29 |

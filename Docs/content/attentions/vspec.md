@@ -177,6 +177,9 @@ if outputs.attentions is not None:
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **46.90%** | -34.90% | 0.4587 | 1.17x | 0 | N/A | 2026-09-19 |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **83.26%** | -7.34% | 0.8399 | 1.17x | 0 | [svd-linear-attention-distilbert-sst2-vspec](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-vspec) | 2026-09-27 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-vspec](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-vspec) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-vspec](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-vspec) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 48 | [svd-linear-attention-gpt2-vspec](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-vspec) | 2026-09-29 |
 
 
 | Model | Baseline Acc | VSpec Acc | Δ Acc | F1 | Peak VRAM | Status |

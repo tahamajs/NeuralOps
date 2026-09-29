@@ -72,3 +72,6 @@ injected_model = inject_projection_factorized_attn(model=model, rank=64)
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **84.75%** | -5.85% | 0.8504 | 1.20x | 6 | [svd-linear-attention-distilbert-sst2-projection-factorized-attn](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-projection-factorized-attn) | 2026-09-27 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **53.90%** | -27.90% | 0.5017 | 1.20x | 6 | N/A | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-projection_factorized_attn](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-projection_factorized_attn) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-projection_factorized_attn](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-projection_factorized_attn) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 48 | [svd-linear-attention-gpt2-projection_factorized_attn](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-projection_factorized_attn) | 2026-09-29 |

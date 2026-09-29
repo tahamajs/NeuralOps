@@ -235,6 +235,9 @@ SLiM (registered as `"slim"`) offers a three‑stage compression recipe that com
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.60%** | -0.46% | 0.9083 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-slim](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-slim) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **78.80%** | -3.00% | 0.7853 | 1.00x | 0 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.20%** | -0.10% | 0.9380 | 1.00x | 0 | [svd-linear-attention-distilbert-agnews-full-slim](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-slim) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9077 | 1.00x | 0 | [svd-linear-attention-distilbert-slim](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-slim) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.11%** | N/A | 0.7586 | 1.00x | 0 | [svd-linear-attention-roberta-slim](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-slim) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **60.78%** | N/A | 0.6354 | 1.00x | 0 | [svd-linear-attention-gpt2-slim](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-slim) | 2026-09-29 |
 
 
 The empirical evaluation of `slim_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

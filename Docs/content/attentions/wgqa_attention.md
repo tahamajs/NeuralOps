@@ -166,6 +166,9 @@ print("Logits shape:", outputs.logits.shape)
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.71%** | +0.11% | 0.9113 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-wgqa](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-wgqa) | 2026-09-27 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.37%** | N/A | 0.9067 | 0.99x | 24 | [svd-linear-attention-distilbert-wgqa_rerun](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-wgqa_rerun) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-wgqa](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-wgqa) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 48 | [svd-linear-attention-gpt2-wgqa](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-wgqa) | 2026-09-29 |
 
 
 | Model | Baseline Acc | WGQA Acc | Δ Acc | F1 | Peak VRAM |

@@ -222,6 +222,9 @@ A Triton kernel for Lagrangian SVD-Compressed Attention streams layer-specific r
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **52.30%** | -29.50% | 0.4860 | 1.20x | 0 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **89.70%** | -4.60% | 0.8934 | 1.20x | 0 | N/A | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-svd_compressed](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-svd_compressed) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-svd_compressed](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-svd_compressed) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 0 | [svd-linear-attention-gpt2-svd_compressed](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-svd_compressed) | 2026-09-29 |
 
 
 The empirical evaluation of `svd_compressed` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

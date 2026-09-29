@@ -74,6 +74,9 @@ injected_model = inject_svd_linear_decay(model=model, rank=64)
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 14.89 ms | 719.1 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 15.73 ms | 729.0 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 15.01 ms | 729.0 MB |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-svd_linear_decay](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-svd_linear_decay) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-svd_linear_decay](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-svd_linear_decay) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **57.91%** | N/A | 0.3010 | 1.00x | 0 | [svd-linear-attention-gpt2-svd_linear_decay](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-svd_linear_decay) | 2026-09-29 |
 
 ---
 

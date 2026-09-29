@@ -403,3 +403,6 @@ print(f"[PASS] leka_v1 forward logits shape:", outputs.logits.shape)
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 28.97 ms | 1348.2 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 29.09 ms | 1348.2 MB |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **79.59%** | -11.01% | 0.8004 | 1.20x | 0 | [svd-linear-attention-distilbert-sst2-leka-v1](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-leka-v1) | 2026-09-27 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-leka_v1](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-leka_v1) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-leka_v1](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-leka_v1) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 48 | [svd-linear-attention-gpt2-leka_v1](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-leka_v1) | 2026-09-29 |

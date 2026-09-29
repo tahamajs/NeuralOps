@@ -785,3 +785,10 @@ Evaluated on SST-2 sentiment classification (FP16, layer shedding with learnable
 | DISTILBERT | 90.71% | 86.35% | -4.36% | 0.8667 | 4/6 | 33.3% | 33.3% | 2 | 325.5 MB | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-come) |
 | ROBERTA | 94.38% | 72.48% | -21.90% | 0.7586 | 9/12 | 25.0% | 25.0% | 0 | 344.9 MB | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-come) |
 | GPT2 | 89.33% | 0.00% | -89.33% | 0.0000 | 9/12 | 25.0% | 25.0% | 0 | 0.0 MB | `CRASH` | N/A |
+
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert** | sst2 | `PASS` | N/A | **86.35%** | N/A | 0.8667 | 1.22x | 1 | [svd-linear-attention-distilbert-come](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-come) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **72.48%** | N/A | 0.7586 | 1.56x | 0 | [svd-linear-attention-roberta-come](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-come) | 2026-09-29 |

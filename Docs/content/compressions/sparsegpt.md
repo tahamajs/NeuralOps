@@ -210,6 +210,9 @@ def sparsegpt_quant_prune_kernel(
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **88.65%** | -2.41% | 0.8884 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-sparsegpt](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-sparsegpt) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **73.30%** | -8.50% | 0.7287 | 1.00x | 0 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **93.00%** | -1.30% | 0.9257 | 1.00x | 0 | [svd-linear-attention-distilbert-agnews-full-sparsegpt](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-sparsegpt) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9077 | 1.00x | 0 | [svd-linear-attention-distilbert-sparsegpt](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sparsegpt) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.11%** | N/A | 0.7586 | 1.00x | 0 | [svd-linear-attention-roberta-sparsegpt](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-sparsegpt) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **60.78%** | N/A | 0.6354 | 1.00x | 0 | [svd-linear-attention-gpt2-sparsegpt](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-sparsegpt) | 2026-09-29 |
 
 
 The empirical evaluation of `sparsegpt` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

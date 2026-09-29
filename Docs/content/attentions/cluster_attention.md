@@ -919,6 +919,9 @@ print('Output logits shape:', outputs.logits.shape)
 | **gpt2** | ag_news | `PASS` | 79.70% | **82.00%** | +2.30% | 0.8134 | 1.00x | 0 | N/A | 2026-09-18 |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.14%** | -0.46% | 0.9057 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-cluster](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-cluster) | 2026-09-27 |
 | **distilbert-mnli** | mnli | `PASS` | 67.00% | **60.10%** | -6.90% | 0.5999 | 1.00x | 0 | [svd-linear-attention-distilbert-mnli-cluster-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-cluster-attention) | 2026-09-26 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-cluster](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-cluster) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-cluster](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-cluster) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-cluster](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-cluster) | 2026-09-29 |
 
 
 Evaluations across sequence lengths and model scales:

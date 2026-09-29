@@ -891,9 +891,9 @@ model, stats = compressor.compress()
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert** | sst2 | `PASS` | N/A | **88.42%** | N/A | 0.8889 | 1.13x | 16 | [svd-linear-attention-distilbert-aasvd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-aasvd) | 2026-09-21 |
-| **roberta** | sst2 | `PASS` | 78.56% | **86.70%** | +8.14% | 0.8766 | 1.01x | 10 | [svd-linear-attention-roberta-aasvd](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-aasvd) | 2026-09-15 |
-| **gpt2** | sst2 | `PASS` | 73.62% | **65.71%** | -7.91% | 0.7433 | 1.03x | 4 | [svd-linear-attention-gpt2-aasvd](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-aasvd) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **84.06%** | N/A | 0.8526 | 1.20x | 24 | [svd-linear-attention-distilbert-aasvd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-aasvd) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **80.85%** | N/A | 0.8280 | 1.21x | 48 | [svd-linear-attention-roberta-aasvd](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-aasvd) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **75.11%** | N/A | 0.7849 | 1.22x | 24 | [svd-linear-attention-gpt2-aasvd](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-aasvd) | 2026-09-29 |
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **85.80%** | +34.80% | 0.8538 | 1.13x | 16 | N/A | 2026-09-18 |
 | **roberta-base** | ag_news | `PASS` | 74.50% | **84.70%** | +10.20% | 0.8406 | 1.08x | 18 | N/A | 2026-09-18 |
 | **gpt2** | ag_news | `PASS` | 79.70% | **78.60%** | -1.10% | 0.7824 | 1.03x | 4 | N/A | 2026-09-18 |

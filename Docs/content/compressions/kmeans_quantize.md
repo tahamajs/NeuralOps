@@ -346,6 +346,9 @@ print('Compressed output logits:', outputs.logits.shape)
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.37%** | -0.69% | 0.9089 | 2.73x | 36 | [svd-linear-attention-distilbert-sst2-kmeans](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-kmeans) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.40%** | -0.40% | 0.8129 | 2.73x | 36 | [svd-linear-attention-distilbert-mnli-full-kmeans](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-kmeans) | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.70%** | +0.40% | 0.9433 | 2.73x | 36 | [svd-linear-attention-distilbert-agnews-full-kmeans](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-kmeans) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9077 | 1.00x | 0 | [svd-linear-attention-distilbert-kmeans](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-kmeans) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.11%** | N/A | 0.7586 | 1.00x | 0 | [svd-linear-attention-roberta-kmeans](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-kmeans) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **60.78%** | N/A | 0.6354 | 1.00x | 0 | [svd-linear-attention-gpt2-kmeans](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-kmeans) | 2026-09-29 |
 
 
 Evaluations across sequence lengths and model scales:

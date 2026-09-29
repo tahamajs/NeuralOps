@@ -229,6 +229,9 @@ A Triton kernel fuses the attention matrix product over span length $L_{\text{sp
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.60%** | +0.00% | 0.9099 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-span-expanded](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-span-expanded) | 2026-09-27 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.20%** | -0.10% | 0.9381 | 1.00x | 6 | [svd-linear-attention-distilbert-agnews-full-span-expanded](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-span-expanded) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.80%** | +0.00% | 0.8177 | 1.00x | 6 | [svd-linear-attention-distilbert-mnli-full-span-expanded](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-span-expanded) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-span_expanded](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-span_expanded) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.11%** | N/A | 0.7586 | 1.00x | 0 | [svd-linear-attention-roberta-span_expanded](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-span_expanded) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **60.78%** | N/A | 0.6354 | 1.00x | 0 | [svd-linear-attention-gpt2-span_expanded](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-span_expanded) | 2026-09-29 |
 
 
 The empirical evaluation of `span_expanded_attention` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
