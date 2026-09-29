@@ -431,6 +431,9 @@ print(f"[PASS] hymba_transx forward logits shape:", outputs.logits.shape)
 | BERT | mrpc | `FAIL` | 91.06% | **0.00%** | 0.00 ms | 0.0 MB |
 | ROBERTA | sst2 | `FAIL` | 91.06% | **0.00%** | 0.00 ms | 0.0 MB |
 | ROBERTA | mrpc | `FAIL` | 91.06% | **0.00%** | 0.00 ms | 0.0 MB |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-hymba_transx](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-hymba_transx) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-hymba_transx](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-hymba_transx) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 48 | [svd-linear-attention-gpt2-hymba_transx](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-hymba_transx) | 2026-09-29 |
 
 ## Empirical Benchmark Results
 

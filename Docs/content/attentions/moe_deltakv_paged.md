@@ -501,4 +501,6 @@ print(f"[PASS] moe_deltakv_paged forward logits shape:", outputs.logits.shape)
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 56.59 ms | 1437.2 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 56.42 ms | 1447.0 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 56.76 ms | 1447.0 MB |
-
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-moe_deltakv_paged](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-moe_deltakv_paged) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-moe_deltakv_paged](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-moe_deltakv_paged) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 48 | [svd-linear-attention-gpt2-moe_deltakv_paged](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-moe_deltakv_paged) | 2026-09-29 |

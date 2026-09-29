@@ -304,6 +304,9 @@ def inject_hgrn2_outer(
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **72.36%** | -18.70% | 0.7372 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-hgrn2-outer](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-hgrn2-outer) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-hgrn2_outer](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-hgrn2_outer) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-hgrn2_outer](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-hgrn2_outer) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-hgrn2_outer](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-hgrn2_outer) | 2026-09-29 |
 
 
 > [!NOTE]

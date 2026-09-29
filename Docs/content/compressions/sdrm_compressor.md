@@ -330,6 +330,9 @@ if compressor_cls:
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 10.71 ms | 571.8 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 10.96 ms | 581.7 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 11.30 ms | 581.7 MB |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-sdrm](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sdrm) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-sdrm](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-sdrm) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 48 | [svd-linear-attention-gpt2-sdrm](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-sdrm) | 2026-09-29 |
 
 ## Unified 4-Architecture Benchmark Results (SDRM Compressor)
 Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):

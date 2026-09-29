@@ -397,4 +397,6 @@ print(f"[PASS] hgrn2_layer forward logits shape:", outputs.logits.shape)
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 427.22 ms | 755.2 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 454.60 ms | 765.1 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 429.82 ms | 765.1 MB |
-
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-hgrn2_layer](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-hgrn2_layer) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-hgrn2_layer](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-hgrn2_layer) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-hgrn2_layer](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-hgrn2_layer) | 2026-09-29 |

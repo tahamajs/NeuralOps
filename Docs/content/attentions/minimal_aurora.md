@@ -166,6 +166,9 @@ Stream Q, K, V tensors through a Triton FlashAttention-2 kernel with `BLOCK_M = 
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **55.10%** | -26.70% | 0.5441 | 1.15x | 0 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **91.80%** | -2.50% | 0.9152 | 1.15x | 0 | [svd-linear-attention-distilbert-agnews-full-minimal-aurora](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-minimal-aurora) | 2026-09-19 |
 | **gpt2** | wikitext2 | `PASS` | 95.87% | **95.87%** | -0.00% | 0.0000 | 1.00x | 0 | [svd-linear-attention-gpt2-minimal-aurora](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-minimal-aurora) | 2026-09-24 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-minimal_aurora](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-minimal_aurora) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-minimal_aurora](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-minimal_aurora) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 48 | [svd-linear-attention-gpt2-minimal_aurora](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-minimal_aurora) | 2026-09-29 |
 
 
 The empirical evaluation of `minimal_aurora` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

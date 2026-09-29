@@ -456,6 +456,9 @@ print(f"[PASS] spectra_v2 forward logits shape:", outputs.logits.shape)
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 18.41 ms | 1090.4 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 18.99 ms | 1100.3 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 19.58 ms | 1100.3 MB |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-spectra_v2](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-spectra_v2) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-spectra_v2](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-spectra_v2) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 48 | [svd-linear-attention-gpt2-spectra_v2](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-spectra_v2) | 2026-09-29 |
 
 ## Empirical Benchmark Results
 

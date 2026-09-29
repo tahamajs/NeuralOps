@@ -82,6 +82,9 @@ Input Activation X [B, L, D]
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **77.29%** | -13.77% | 0.7537 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-tpa](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-tpa) | 2026-09-19 |
 | **distilbert-base-uncased** | sst2 | `PASS` | 54.59% | **100.00%** | +45.41% | 1.0000 | 0.70x | 0 | [svd-linear-attention-distilbert-base-uncased-tpa](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-base-uncased-tpa) | 2026-09-23 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-tpa](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-tpa) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-tpa](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-tpa) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **57.80%** | N/A | 0.2977 | 1.00x | 0 | [svd-linear-attention-gpt2-tpa](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-tpa) | 2026-09-29 |
 
 
 | Benchmark / Metric | Empirical Value | Baseline (Full MHA) | Status |

@@ -298,6 +298,9 @@ Given: Batch Size B=8, Sequence Length L=128, Hidden Dim D=768, Heads H=12, Head
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **82.91%** | -7.69% | 0.8379 | 1.19x | 0 | [svd-linear-attention-distilbert-sst2-aegis-hybrid](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-hybrid) | 2026-09-27 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **48.60%** | -33.20% | 0.4589 | 1.18x | 6 | [svd-linear-attention-distilbert-mnli-full-aegis-hybrid](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-aegis-hybrid) | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **89.50%** | -4.80% | 0.8909 | 1.18x | 0 | N/A | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-aegis_hybrid](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-aegis_hybrid) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-aegis_hybrid](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-aegis_hybrid) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-aegis_hybrid](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-aegis_hybrid) | 2026-09-29 |
 
 
 All evaluations were executed on an NVIDIA RTX GPU (FP16 mixed precision, AdamW optimizer, batch size 8, 200 recovery fine-tuning steps, SST-2 sentiment classification benchmark).

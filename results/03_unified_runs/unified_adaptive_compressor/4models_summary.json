@@ -1,0 +1,26 @@
+[
+  {
+    "name": "distilbert",
+    "slug": "distilbert",
+    "status": "PASS",
+    "accuracy_pct": 88.07,
+    "elapsed_s": 0.0,
+    "out_dir": "results/03_unified_runs/unified_adaptive_compressor/distilbert"
+  },
+  {
+    "name": "roberta",
+    "slug": "roberta",
+    "status": "PASS",
+    "accuracy_pct": 86.35,
+    "elapsed_s": 0.0,
+    "out_dir": "results/03_unified_runs/unified_adaptive_compressor/roberta"
+  },
+  {
+    "name": "gpt2",
+    "slug": "gpt2",
+    "status": "PASS",
+    "accuracy_pct": 81.88,
+    "elapsed_s": 0.0,
+    "out_dir": "results/03_unified_runs/unified_adaptive_compressor/gpt2"
+  }
+]

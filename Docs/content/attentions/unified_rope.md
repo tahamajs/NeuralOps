@@ -222,6 +222,9 @@ A proposed Triton kernel fuses Query/Key low-rank scaling, half-rotation index m
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **88.99%** | -2.07% | 0.8950 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-unified-rope](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-unified-rope) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **64.70%** | -17.10% | 0.6474 | 1.00x | 0 | [svd-linear-attention-distilbert-mnli-full-unified-rope](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-unified-rope) | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **93.00%** | -1.30% | 0.9260 | 1.00x | 0 | [svd-linear-attention-distilbert-agnews-full-unified-rope](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-unified-rope) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9077 | 1.00x | 0 | [svd-linear-attention-distilbert-rope](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-rope) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.11%** | N/A | 0.7586 | 1.00x | 0 | [svd-linear-attention-roberta-rope](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-rope) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **60.78%** | N/A | 0.6354 | 1.00x | 0 | [svd-linear-attention-gpt2-rope](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-rope) | 2026-09-29 |
 
 
 ### 7.1 Language Modeling Quality & Throughput

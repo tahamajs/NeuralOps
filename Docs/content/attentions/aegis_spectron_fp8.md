@@ -183,6 +183,9 @@ Input Activation X [B, N, D]
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **88.19%** | -2.41% | 0.8841 | 1.12x | 0 | [svd-linear-attention-distilbert-sst2-aegis-spectron-fp8](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-spectron-fp8) | 2026-09-27 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.71%** | N/A | 0.9099 | 1.00x | 0 | [svd-linear-attention-distilbert-aegis_spectron_fp8](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-aegis_spectron_fp8) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.38%** | N/A | 0.9445 | 1.00x | 0 | [svd-linear-attention-roberta-aegis_spectron_fp8](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-aegis_spectron_fp8) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **89.33%** | N/A | 0.8942 | 1.00x | 0 | [svd-linear-attention-gpt2-aegis_spectron_fp8](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-aegis_spectron_fp8) | 2026-09-29 |
 
 
 ### 4.1 Unified 4-Model SST-2 Evaluation Benchmark (200 Recovery Steps)

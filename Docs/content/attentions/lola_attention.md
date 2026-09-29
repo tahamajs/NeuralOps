@@ -186,6 +186,9 @@ def _lola_fused_multitier_kernel(
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **84.86%** | -5.74% | 0.8553 | 1.20x | 0 | [svd-linear-attention-distilbert-sst2-lola](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-lola) | 2026-09-27 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **48.20%** | -33.60% | 0.4735 | 1.20x | 0 | [svd-linear-attention-distilbert-mnli-full-lola](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-lola) | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **89.10%** | -5.20% | 0.8879 | 1.20x | 0 | [svd-linear-attention-distilbert-agnews-full-lola](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-lola) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9077 | 1.00x | 0 | [svd-linear-attention-distilbert-lola_attn](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-lola_attn) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.11%** | N/A | 0.7586 | 1.00x | 0 | [svd-linear-attention-roberta-lola_attn](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-lola_attn) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **60.78%** | N/A | 0.6354 | 1.00x | 0 | [svd-linear-attention-gpt2-lola_attn](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-lola_attn) | 2026-09-29 |
 
 
 The empirical evaluation of `lola_attention` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

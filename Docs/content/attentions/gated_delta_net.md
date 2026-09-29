@@ -490,4 +490,6 @@ print(f"[PASS] gated_delta_net forward logits shape:", outputs.logits.shape)
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 1771.03 ms | 5832.5 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 1817.40 ms | 5842.4 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 1757.88 ms | 5842.4 MB |
-
+| **distilbert** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9091 | 1.00x | 0 | [svd-linear-attention-distilbert-gated_delta_net](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-gated_delta_net) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **94.15%** | N/A | 0.9425 | 1.00x | 0 | [svd-linear-attention-roberta-gated_delta_net](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-gated_delta_net) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8868 | 1.00x | 0 | [svd-linear-attention-gpt2-gated_delta_net](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-gated_delta_net) | 2026-09-29 |

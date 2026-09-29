@@ -820,6 +820,9 @@ injected_model = inject_spectron(model=model, spectral_rank=32)
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 2441.38 ms | 1341.5 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 2525.18 ms | 1341.5 MB |
 | **roberta-sst2** | sst2 | `PASS` | 93.46% | **67.55%** | -25.91% | 0.7260 | 1.09x | 12 | [svd-linear-attention-roberta-sst2-spectron](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-sst2-spectron) | 2026-09-25 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-spectron](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-spectron) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-spectron](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-spectron) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **57.91%** | N/A | 0.3010 | 1.00x | 0 | [svd-linear-attention-gpt2-spectron](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-spectron) | 2026-09-29 |
 
 
 ## Limitations & Future Work

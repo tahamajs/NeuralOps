@@ -264,6 +264,9 @@ The Subspace Projection compressor (registered as `"subspace_projection"`) provi
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.48%** | -0.58% | 0.9091 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-optimal-subspace-projection](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-optimal-subspace-projection) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **80.20%** | -1.60% | 0.8015 | 1.00x | 1 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.40%** | +0.10% | 0.9404 | 1.00x | 2 | [svd-linear-attention-distilbert-agnews-full-optimal-subspace-projection](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-optimal-subspace-projection) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9077 | 1.00x | 0 | [svd-linear-attention-distilbert-optimal_subspace_projection](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-optimal_subspace_projection) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.11%** | N/A | 0.7586 | 1.00x | 0 | [svd-linear-attention-roberta-optimal_subspace_projection](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-optimal_subspace_projection) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **60.78%** | N/A | 0.6354 | 1.00x | 0 | [svd-linear-attention-gpt2-optimal_subspace_projection](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-optimal_subspace_projection) | 2026-09-29 |
 
 
 The empirical evaluation of `optimal_subspace_projection` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

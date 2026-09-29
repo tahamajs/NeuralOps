@@ -233,6 +233,9 @@ Swift‑SVD (registered as `"swift_svd"`) provides a fast, no‑frills SVD compr
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **82.91%** | -8.15% | 0.8372 | 1.44x | 0 | [svd-linear-attention-distilbert-sst2-swift-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-swift-svd) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **51.90%** | -29.90% | 0.4855 | 1.44x | 0 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **89.00%** | -5.30% | 0.8862 | 1.44x | 0 | [svd-linear-attention-distilbert-agnews-full-swift-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-swift-svd) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9077 | 1.00x | 0 | [svd-linear-attention-distilbert-swift_svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-swift_svd) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.11%** | N/A | 0.7586 | 1.00x | 0 | [svd-linear-attention-roberta-swift_svd](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-swift_svd) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **60.78%** | N/A | 0.6354 | 1.00x | 0 | [svd-linear-attention-gpt2-swift_svd](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-swift_svd) | 2026-09-29 |
 
 
 The empirical evaluation of `swift_svd` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

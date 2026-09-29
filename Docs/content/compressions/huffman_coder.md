@@ -161,6 +161,9 @@ def huffman_decode_kernel(
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.60%** | -0.46% | 0.9105 | 1.00x | 35 | [svd-linear-attention-distilbert-sst2-huffman](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-huffman) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.50%** | -0.30% | 0.8145 | 1.00x | 35 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.60%** | +0.30% | 0.9425 | 1.00x | 35 | [svd-linear-attention-distilbert-agnews-full-huffman](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-huffman) | 2026-09-19 |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-huffman_coder](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-huffman_coder) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-huffman_coder](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-huffman_coder) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **57.91%** | N/A | 0.3010 | 1.00x | 0 | [svd-linear-attention-gpt2-huffman_coder](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-huffman_coder) | 2026-09-29 |
 
 
 The empirical evaluation of `huffman_coder` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:

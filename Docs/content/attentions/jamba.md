@@ -419,4 +419,6 @@ print(f"[PASS] jamba forward logits shape:", outputs.logits.shape)
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 1031.24 ms | 3848.8 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 1026.73 ms | 3858.7 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 1024.87 ms | 3858.7 MB |
-
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-jamba](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-jamba) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-jamba](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-jamba) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **57.91%** | N/A | 0.3010 | 1.00x | 0 | [svd-linear-attention-gpt2-jamba](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-jamba) | 2026-09-29 |

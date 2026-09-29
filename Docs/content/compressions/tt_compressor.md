@@ -435,6 +435,9 @@ compressed_model = compressor.compress(model=model)
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 18.80 ms | 1034.8 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 19.71 ms | 1071.6 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 19.14 ms | 1072.1 MB |
+| **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-tt](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-tt) | 2026-09-29 |
+| **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-tt](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-tt) | 2026-09-29 |
+| **gpt2** | sst2 | `PASS` | N/A | **87.84%** | N/A | 0.8776 | 1.00x | 48 | [svd-linear-attention-gpt2-tt](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-tt) | 2026-09-29 |
 
 
 ## Limitations & Future Work
