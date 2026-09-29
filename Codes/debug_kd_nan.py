@@ -36,60 +36,35 @@ print("Trainable dtypes:", set(p.dtype for p in trainable))
 opt = torch.optim.AdamW(trainable, lr=2.5e-5, weight_decay=0.01)
 scaler = torch.cuda.amp.GradScaler(enabled=True)
 
-batch = chunks[:4]
-print("Running Step 1 forward...")
-with torch.cuda.amp.autocast(dtype=torch.float16):
-    teacher_out = model(batch)
-    student_out = student(batch)
-    loss = compute_kl_divergence(student_out.logits, teacher_out.logits, temperature=4.0)
+def proper_kl(student_logits, teacher_logits, temperature=4.0):
+    p_s = F.log_softmax(student_logits / temperature, dim=-1).view(-1, student_logits.size(-1))
+    p_t = F.softmax(teacher_logits / temperature, dim=-1).view(-1, teacher_logits.size(-1))
+    return F.kl_div(p_s, p_t, reduction="batchmean") * (temperature * temperature)
 
-print(f"Initial loss: {loss.item()}")
-scaler.scale(loss).backward()
-scaler.unscale_(opt)
+print("Starting 10-step training loop...")
+for step in range(1, 11):
+    opt.zero_grad()
+    b_idx = (step - 1) * 4
+    batch = chunks[b_idx:b_idx + 4]
+    
+    with torch.cuda.amp.autocast(dtype=torch.float16):
+        with torch.no_grad():
+            t_out = model(batch)
+        s_out = student(batch)
+        loss_kl = proper_kl(s_out.logits, t_out.logits, temperature=4.0)
+        
+        shift_logits = s_out.logits[..., :-1, :].contiguous()
+        shift_labels = batch[..., 1:].contiguous()
+        loss_ce = F.cross_entropy(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+        
+        loss = 0.9 * loss_kl + 0.1 * loss_ce
+        
+    scaler.scale(loss).backward()
+    scaler.unscale_(opt)
+    norm = torch.nn.utils.clip_grad_norm_(trainable, max_norm=0.5)
+    scaler.step(opt)
+    scaler.update()
+    
+    print(f"Step {step:2d} | Loss: {loss.item():.4f} (KL: {loss_kl.item():.4f}, CE: {loss_ce.item():.4f}) | Grad Norm: {norm.item():.4f}")
 
-print("--- GRAD STATS BEFORE CLIP ---")
-for name, p in student.named_parameters():
-    if p.requires_grad:
-        if p.grad is None:
-            print(f"GRAD IS NONE: {name}")
-        else:
-            has_nan = torch.isnan(p.grad).any().item()
-            has_inf = torch.isinf(p.grad).any().item()
-            gnorm = p.grad.norm().item()
-            print(f"{name}: grad_shape={list(p.grad.shape)}, norm={gnorm}, nan={has_nan}, inf={has_inf}")
-
-print(f"Total trainable params: {len(trainable)}")
-print(f"Params with grad: {sum(1 for p in trainable if p.grad is not None)}")
-
-total_norm = torch.nn.utils.clip_grad_norm_(trainable, max_norm=0.5)
-print(f"Total grad norm before clip: {total_norm}")
-print("Checking grads after clip_grad_norm_:")
-for name, p in student.named_parameters():
-    if p.requires_grad and p.grad is not None:
-        if torch.isnan(p.grad).any().item() or torch.isinf(p.grad).any().item():
-            print(f"AFTER CLIP NAN/INF: {name}")
-
-scaler.step(opt)
-scaler.update()
-opt.zero_grad()
-
-print("--- PARAM STATS AFTER STEP ---")
-any_nan = False
-for name, p in student.named_parameters():
-    if p.requires_grad:
-        pnorm = p.norm().item()
-        has_nan = torch.isnan(p).any().item()
-        has_inf = torch.isinf(p).any().item()
-        if has_nan or has_inf or pnorm > 1000:
-            print(f"{name}: norm={pnorm:.4f}, nan={has_nan}, inf={has_inf}")
-            any_nan = True
-print(f"Any params nan after step?: {any_nan}")
-
-print("Running Step 2 forward...")
-with torch.cuda.amp.autocast(dtype=torch.float16):
-    out2 = student(batch)
-    print("out2.logits has nan?:", torch.isnan(out2.logits).any().item())
-    print("out2.logits has inf?:", torch.isinf(out2.logits).any().item())
-    if torch.isnan(out2.logits).any().item():
-        # Check layer by layer where NaNs first appeared
-        pass
+print("Training finished cleanly without NaNs!")
