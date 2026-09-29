@@ -657,7 +657,11 @@ class SVDLinearProjection(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Fused low-rank projection: (x @ V^T) @ U^T + bias
-        return triton_dispatch(self.triton_kernel, x, self.U, self.V, bias=self.bias)
+        # Align weights with input dtype (e.g. under fp16/bf16 autocast) so Triton kernel runs directly
+        u = self.U.to(x.dtype) if self.U.dtype != x.dtype else self.U
+        v = self.V.to(x.dtype) if self.V.dtype != x.dtype else self.V
+        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
+        return triton_dispatch(self.triton_kernel, x, u, v, bias=b)
 
     @classmethod
     def from_pretrained_linear(cls, linear: nn.Linear, rank: int = 64) -> "SVDLinearProjection":
