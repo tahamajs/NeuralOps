@@ -150,8 +150,10 @@ if HAS_TRITON:
 
             # 2. In-SRAM Non-Negative Activation
             if ACTIVATION_MODE == 0:  # ELU + 1
-                phi_q = tl.where(q_tile > 0.0, q_tile, tl.exp(q_tile) - 1.0) + 1.0
-                phi_k = tl.where(k_tile > 0.0, k_tile, tl.exp(k_tile) - 1.0) + 1.0
+                q_f = q_tile.to(tl.float32)
+                k_f = k_tile.to(tl.float32)
+                phi_q = tl.where(q_f > 0.0, q_f, tl.exp(q_f) - 1.0) + 1.0
+                phi_k = tl.where(k_f > 0.0, k_f, tl.exp(k_f) - 1.0) + 1.0
             elif ACTIVATION_MODE == 1:  # ReLU
                 phi_q = tl.maximum(q_tile, 0.0)
                 phi_k = tl.maximum(k_tile, 0.0)
@@ -233,7 +235,8 @@ if HAS_TRITON:
             v_tile = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0)
 
             if ACTIVATION_MODE == 0:
-                phi_k = tl.where(k_tile > 0.0, k_tile, tl.exp(k_tile) - 1.0) + 1.0
+                k_f = k_tile.to(tl.float32)
+                phi_k = tl.where(k_f > 0.0, k_f, tl.exp(k_f) - 1.0) + 1.0
             elif ACTIVATION_MODE == 1:
                 phi_k = tl.maximum(k_tile, 0.0)
             else:
@@ -254,7 +257,8 @@ if HAS_TRITON:
             q_tile = tl.load(q_ptrs, mask=mask_m[:, None], other=0.0)
 
             if ACTIVATION_MODE == 0:
-                phi_q = tl.where(q_tile > 0.0, q_tile, tl.exp(q_tile) - 1.0) + 1.0
+                q_f = q_tile.to(tl.float32)
+                phi_q = tl.where(q_f > 0.0, q_f, tl.exp(q_f) - 1.0) + 1.0
             elif ACTIVATION_MODE == 1:
                 phi_q = tl.maximum(q_tile, 0.0)
             else:
@@ -392,7 +396,7 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
             grid = (B * H,)
 
             if is_causal:
-                block_chunk = 64
+                block_chunk = 32
                 _triton_chunked_causal_linear_attn_fwd_kernel[grid](
                     q, k, v, out,
                     q.stride(0), q.stride(1), q.stride(2), q.stride(3),
@@ -403,10 +407,12 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
                     BLOCK_CHUNK=block_chunk,
                     EPS=eps,
                     ACTIVATION_MODE=act_id,
+                    num_stages=2,
+                    num_warps=4,
                 )
             else:
-                block_m = 64
-                block_n = 64
+                block_m = 32
+                block_n = 32
                 _triton_bidirectional_linear_attn_fwd_kernel[grid](
                     q, k, v, out,
                     q.stride(0), q.stride(1), q.stride(2), q.stride(3),
@@ -417,6 +423,8 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
                     BLOCK_M=block_m, BLOCK_N=block_n,
                     EPS=eps,
                     ACTIVATION_MODE=act_id,
+                    num_stages=2,
+                    num_warps=4,
                 )
         else:
             # Reference PyTorch fallback (CPU / Apple Silicon MPS / Non-Triton)
@@ -513,8 +521,10 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
                 dk.stride(0), dk.stride(1), dk.stride(2), dk.stride(3),
                 dv.stride(0), dv.stride(1), dv.stride(2), dv.stride(3),
                 N=N, D_K=D_k, D_V=D_v,
-                BLOCK_N=64,
+                BLOCK_N=32,
                 EPS=eps,
+                num_stages=2,
+                num_warps=4,
             )
             return dq, dk, dv, None, None, None
 
