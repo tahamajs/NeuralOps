@@ -171,9 +171,9 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
     @staticmethod
     def backward(ctx: Any, grad_out: torch.Tensor) -> Tuple[Optional[torch.Tensor], ...]:
         q, k, v, block_mask = ctx.saved_tensors
-        q_req = q.detach().requires_grad_(q.requires_grad)
-        k_req = k.detach().requires_grad_(k.requires_grad)
-        v_req = v.detach().requires_grad_(v.requires_grad)
+        q_req = q.detach().requires_grad_(True)
+        k_req = k.detach().requires_grad_(True)
+        v_req = v.detach().requires_grad_(True)
 
         with torch.enable_grad():
             out = sparse_attn_pytorch_fallback(
@@ -185,7 +185,10 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
             )
             grads = torch.autograd.grad(out, [q_req, k_req, v_req], grad_out, retain_graph=False)
 
-        return grads[0], grads[1], grads[2], None, None, None, None
+        g_q = grads[0] if ctx.needs_input_grad[0] else None
+        g_k = grads[1] if ctx.needs_input_grad[1] else None
+        g_v = grads[2] if ctx.needs_input_grad[2] else None
+        return g_q, g_k, g_v, None, None, None, None
 
 
 def is_supported(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, **kwargs: Any) -> bool:
