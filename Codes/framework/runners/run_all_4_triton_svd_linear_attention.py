@@ -103,6 +103,21 @@ def run_model(m: dict) -> dict:
     out_dir = RESULTS_BASE / m["slug"]
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    model_p = Path(m["model_path"])
+    if not model_p.exists():
+        logger.warning("Model path %s does not exist — skipping %s.", model_p, m["name"])
+        return {
+            "name":         m["name"],
+            "slug":         m["slug"],
+            "family":       m["family"],
+            "out_dir":      str(out_dir),
+            "exit_code":    0,
+            "status":       "NOT_INSTALLED",
+            "accuracy_pct": 0.0,
+            "elapsed_s":    0.0,
+            "row_data":     {},
+        }
+
     cmd = [
         sys.executable, "-u", str(SWEEP_SCRIPT),
         "--model",          m["model_path"],
@@ -210,7 +225,7 @@ def save_consolidated(results: list[dict]) -> None:
     with json_path.open("w", encoding="utf-8") as f:
         json.dump(
             [{k: v for k, v in r.items() if k != "row_data"} for r in results],
-            f, indent=2,
+            f, indent=2, default=str,
         )
     logger.info("Consolidated results saved → %s", RESULTS_BASE)
 
