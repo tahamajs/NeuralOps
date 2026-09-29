@@ -121,6 +121,7 @@ def compute_perplexity(
     stride: int = 512,
     max_eval_tokens: int = 15000,
     device: str = "cuda",
+    eval_dtype: Optional[torch.dtype] = None,
 ) -> float:
     model.eval()
     text = "\n\n".join(test_dataset["text"])
@@ -130,6 +131,16 @@ def compute_perplexity(
         input_ids = input_ids.unsqueeze(0)
     total_len = min(input_ids.size(1), max_eval_tokens)
     input_ids = input_ids[:, :total_len]
+
+    if eval_dtype is None:
+        for p in model.parameters():
+            if p.dtype in (torch.float16, torch.bfloat16):
+                eval_dtype = p.dtype
+                break
+        if eval_dtype is None:
+            eval_dtype = torch.float32
+
+    use_autocast = device.startswith("cuda") and eval_dtype in (torch.float16, torch.bfloat16)
 
     nlls = []
     prev_end = 0
@@ -146,14 +157,16 @@ def compute_perplexity(
 
             with torch.amp.autocast(
                 device_type="cuda" if device.startswith("cuda") else "cpu",
-                dtype=torch.float16,
-                enabled=device.startswith("cuda"),
+                dtype=eval_dtype if eval_dtype in (torch.float16, torch.bfloat16) else torch.float32,
+                enabled=use_autocast,
             ):
                 out = model(ids, labels=tgt)
                 loss = out.loss
 
             if torch.isnan(loss) or torch.isinf(loss):
-                return float("nan")
+                LOG.warning(f"Non-finite loss ({loss.item()}) at window [{begin}:{end}], skipping window...")
+                prev_end = end
+                continue
 
             nlls.append((loss * trg_len).detach().cpu())
             prev_end = end
@@ -304,6 +317,7 @@ def get_cache_hash(
     num_chunks: int,
     methods: List[str],
     include_attn: bool,
+    dtype_str: str = "fp16",
 ) -> str:
     cache_key_data = {
         "model_path": str(model_path),
@@ -312,6 +326,7 @@ def get_cache_hash(
         "num_chunks": int(num_chunks),
         "methods": sorted(list(set(methods))),
         "include_attn": bool(include_attn),
+        "dtype": str(dtype_str),
         "torch_version": torch.__version__,
         "cuda_device": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu",
     }
@@ -359,6 +374,7 @@ def build_teacher_cache(
     seq_len: int,
     include_attn: bool = False,
     max_train_texts: int = 1000,
+    dtype: torch.dtype = torch.float16,
 ) -> Path:
     """
     Runs teacher forward on every chunk, saves outputs to cache_dir.
@@ -373,8 +389,8 @@ def build_teacher_cache(
     need_attn = include_attn and ("C" in methods_set)
 
     LOG.info(
-        "Building teacher cache for %d chunks (max_texts=%d, seq_len=%d)...",
-        n_chunks, max_train_texts, seq_len
+        "Building teacher cache for %d chunks (max_texts=%d, seq_len=%d, dtype=%s)...",
+        n_chunks, max_train_texts, seq_len, dtype
     )
     t0 = time.time()
 
@@ -396,8 +412,8 @@ def build_teacher_cache(
 
             with torch.amp.autocast(
                 device_type="cuda" if device.startswith("cuda") else "cpu",
-                dtype=torch.float16,
-                enabled=device.startswith("cuda"),
+                dtype=dtype,
+                enabled=device.startswith("cuda") and dtype in (torch.float16, torch.bfloat16),
             ):
                 out = teacher(
                     chunk_batch,
@@ -406,14 +422,14 @@ def build_teacher_cache(
                 )
 
             if need_logits:
-                all_logits.append(out.logits.detach().to(torch.float16).cpu())
+                all_logits.append(out.logits.detach().to(dtype).cpu())
 
             if need_hidden and out.hidden_states is not None:
-                batch_layers = [h.detach().to(torch.float16).cpu() for h in out.hidden_states]
+                batch_layers = [h.detach().to(dtype).cpu() for h in out.hidden_states]
                 all_hidden_batches.append(batch_layers)
 
             if need_attn and out.attentions is not None:
-                batch_attns = [a.detach().to(torch.float16).cpu() for a in out.attentions]
+                batch_attns = [a.detach().to(dtype).cpu() for a in out.attentions]
                 all_attn_batches.append(batch_attns)
 
     manifest: Dict[str, Any] = {
@@ -585,6 +601,10 @@ def run_kd_method(
     else:
         LOG.info("[%s] Teacher cache not active/available; running live teacher forward", method_name)
 
+    target_dtype = getattr(args, "target_dtype", torch.bfloat16 if getattr(args, "bf16", False) else (torch.float16 if getattr(args, "fp16", False) else torch.float32))
+    use_amp = device.startswith("cuda") and target_dtype in (torch.float16, torch.bfloat16)
+    use_scaler = device.startswith("cuda") and (target_dtype == torch.float16)
+
     # Instantiate fresh student from snapshot
     student = copy.deepcopy(base_snapshot)
     student.to(device)
@@ -601,13 +621,17 @@ def run_kd_method(
         calibration_data=calib_slice,
         tokenizer=tokenizer,
     )
-    if args.fp16 and device.startswith("cuda"):
-        student.half()
+    if use_amp and device.startswith("cuda"):
+        student.to(dtype=target_dtype)
+
+    injected_count = sum(1 for m in student.modules() if m.__class__.__name__ in ("TritonSVDLinearAttention", "UniversalAttentionWrapper"))
+    LOG.info("[%s] Injection verification: %d attention layers injected", method_name, injected_count)
 
     # Pre-KD Perplexity
     pre_ppl = compute_perplexity(
         student, tokenizer, test_dataset,
-        seq_len=args.seq_len, stride=128, max_eval_tokens=args.eval_max_tokens, device=device
+        seq_len=args.seq_len, stride=128, max_eval_tokens=args.eval_max_tokens, device=device,
+        eval_dtype=target_dtype,
     )
     LOG.info("Pre-KD PPL for Method %s: %.2f", method_name, pre_ppl)
 
@@ -618,7 +642,7 @@ def run_kd_method(
     )
 
     # Master weights in FP32 for numerical stability in AdamW
-    if args.fp16 and device.startswith("cuda"):
+    if use_amp and device.startswith("cuda"):
         for p in student.parameters():
             if p.requires_grad:
                 p.data = p.data.float()
@@ -666,7 +690,7 @@ def run_kd_method(
                 batch_ids = batch_ids[:, :current_seq_len]
             batch_ids = batch_ids.to(device)
 
-            with torch.cuda.amp.autocast(enabled=args.fp16 and device.startswith("cuda")):
+            with torch.cuda.amp.autocast(enabled=use_amp, dtype=target_dtype):
                 # Teacher forward or cached lookup
                 if use_cache and teacher_cache is not None:
                     c_logits = None
@@ -794,6 +818,7 @@ def run_kd_method(
                         stride=128,
                         max_eval_tokens=args.eval_max_tokens,
                         device=device,
+                        eval_dtype=target_dtype,
                     )
                     ppl_history[step] = eval_ppl
                     LOG.info(f"[{method_name}] Step {step} Eval PPL: {eval_ppl:.2f}")
@@ -854,7 +879,7 @@ def run_kd_method(
         torch.cuda.empty_cache()
     time.sleep(2)
 
-    return {
+    res = {
         "method": method_name,
         "pre_ppl": pre_ppl,
         "post_ppl": post_ppl,
@@ -865,13 +890,12 @@ def run_kd_method(
         "s_per_step": s_per_step,
         "loss_final": round(final_loss, 4),
         "cached": bool(use_cache),
-        "ppl_at_step_250": ppl_history.get(250, ""),
-        "ppl_at_step_500": ppl_history.get(500, ""),
-        "ppl_at_step_750": ppl_history.get(750, ""),
-        "ppl_at_step_1000": ppl_history.get(1000, ""),
-        "ppl_at_step_1250": ppl_history.get(1250, ""),
-        "ppl_at_step_1500": ppl_history.get(1500, ""),
+        "injected_layers": injected_count,
+        "ppl_history": ppl_history,
     }
+    for s_step, s_ppl in sorted(ppl_history.items()):
+        res[f"ppl_at_step_{s_step}"] = s_ppl
+    return res
 
 
 # -----------------------------------------------------------------------------
@@ -918,7 +942,8 @@ def main():
     parser.add_argument("--train_scope", type=str, default="all")
     parser.add_argument("--lora_rank", type=int, default=64)
     parser.add_argument("--rank", type=int, default=64)
-    parser.add_argument("--fp16", action="store_true", default=True)
+    parser.add_argument("--fp16", action="store_true", default=False, help="Use float16 precision")
+    parser.add_argument("--bf16", action="store_true", default=False, help="Use bfloat16 precision (recommended on RTX 4070+)")
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--early_stop_ppl", type=float, default=5000.0)
     parser.add_argument("--methods", nargs="+", default=["A", "B", "C", "D"])
@@ -941,15 +966,34 @@ def main():
 
     args = parser.parse_args()
 
+    # Auto-detect precision: prefer bf16 on supported CUDA hardware (e.g. RTX 4070 / Ada Lovelace)
+    if not args.fp16 and not args.bf16:
+        if args.device.startswith("cuda") and torch.cuda.is_available() and torch.cuda.is_bf16_supported():
+            args.bf16 = True
+            LOG.info("Auto-selected BF16 precision (hardware supported on %s)", torch.cuda.get_device_name(0))
+        else:
+            args.fp16 = True
+            LOG.info("Auto-selected FP16 precision")
+
+    if args.bf16:
+        args.target_dtype = torch.bfloat16
+        args.precision_str = "bf16"
+    elif args.fp16:
+        args.target_dtype = torch.float16
+        args.precision_str = "fp16"
+    else:
+        args.target_dtype = torch.float32
+        args.precision_str = "fp32"
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     if not args.log_file:
         args.log_file = f"logs/kd_comparison_mamba_{timestamp}.log"
     setup_logging(args.log_file)
 
     LOG.info("=" * 70)
-    LOG.info("KNOWLEDGE DISTILLATION QUICK TEST: MAMBA_BLOCK RESCUE")
+    LOG.info("KNOWLEDGE DISTILLATION QUICK TEST: %s RESCUE", args.module.upper())
     LOG.info("  Module:           %s", args.module)
-    LOG.info("  Device:           %s (fp16=%s)", args.device, args.fp16)
+    LOG.info("  Device:           %s (dtype=%s)", args.device, args.precision_str)
     LOG.info("  Recovery steps:   %d (accum=%d, eff_batch=%d)",
              args.recovery_steps, args.grad_accum_steps, args.batch_size * args.grad_accum_steps)
     LOG.info("  Seq len:          %d (fallback=128 on OOM)", args.seq_len)
@@ -991,8 +1035,8 @@ def main():
     # 3. Load Teacher Model & Snapshot
     LOG.info("Loading Teacher GPT-2 from %s...", tok_src)
     teacher = AutoModelForCausalLM.from_pretrained(tok_src)
-    if args.fp16 and args.device.startswith("cuda"):
-        teacher.half()
+    if (args.bf16 or args.fp16) and args.device.startswith("cuda"):
+        teacher.to(dtype=args.target_dtype)
     teacher.to(args.device)
     teacher.eval()
     for p in teacher.parameters():
@@ -1002,7 +1046,8 @@ def main():
 
     # 4. Evaluate Baseline PPL
     baseline_ppl = compute_perplexity(
-        teacher, tokenizer, ds_test, seq_len=args.seq_len, stride=128, max_eval_tokens=args.eval_max_tokens, device=args.device
+        teacher, tokenizer, ds_test, seq_len=args.seq_len, stride=128, max_eval_tokens=args.eval_max_tokens, device=args.device,
+        eval_dtype=args.target_dtype,
     )
     LOG.info("Teacher Baseline PPL: %.2f", baseline_ppl)
 
@@ -1020,6 +1065,7 @@ def main():
                 len(train_chunks),
                 cache_methods,
                 args.cache_attn,
+                dtype_str=args.precision_str,
             )
             cache_dir = Path("cache") / f"teacher_{c_hash}"
 
@@ -1041,6 +1087,7 @@ def main():
                 seq_len=args.seq_len,
                 include_attn=args.cache_attn,
                 max_train_texts=max_train_texts,
+                dtype=args.target_dtype,
             )
         else:
             LOG.info("Reusing existing teacher cache from %s", cache_dir)
@@ -1072,14 +1119,17 @@ def main():
     # 6. Save CSV
     csv_path = Path(args.output_csv)
     csv_path.parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = [
+    all_keys = [
         "method", "pre_ppl", "post_ppl", "ppl_ratio", "recovery_pct",
         "peak_vram_mb", "train_time_s", "s_per_step", "loss_final", "cached",
-        "ppl_at_step_250", "ppl_at_step_500", "ppl_at_step_750",
-        "ppl_at_step_1000", "ppl_at_step_1250", "ppl_at_step_1500",
+        "injected_layers",
     ]
+    for r in results:
+        for k in r.keys():
+            if k not in all_keys and k != "ppl_history":
+                all_keys.append(k)
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+        writer = csv.DictWriter(f, fieldnames=all_keys, extrasaction="ignore")
         writer.writeheader()
         for r in results:
             writer.writerow(r)
