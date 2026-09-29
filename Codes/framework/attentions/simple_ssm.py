@@ -25,6 +25,7 @@ from framework.core.adapters import UniversalAdapter
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.triton_kernels import triton_dispatch
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +87,7 @@ class SimpleSSM(BaseAttention):
     is_custom_attention: bool = True
     supports_causal: bool = True
     supports_bidirectional: bool = True
+    triton_kernel: str = "state_update"
 
     def __init__(
         self,
@@ -175,6 +177,7 @@ class SimpleSSM(BaseAttention):
         if not is_nested and model_type in ["roberta", "bert"] and not self.is_decoder:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
+        self.triton_kwargs = {}
 
         if old_attn is not None:
             self.copy_weights(old_attn)

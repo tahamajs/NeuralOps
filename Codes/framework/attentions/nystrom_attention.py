@@ -27,6 +27,7 @@ from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.triton_kernels import triton_dispatch
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +150,7 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register("nystrom_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class NystromAttention(BaseAttention):
     is_custom_attention: bool = True
+    triton_kernel: str = "linear_attn"
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -238,6 +240,7 @@ class NystromAttention(BaseAttention):
 
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
+        self.triton_kwargs = {"phi": "identity", "eps": 1e-6}
 
         if source_attn is not None:
             self.copy_weights(source_attn)

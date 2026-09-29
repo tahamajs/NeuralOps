@@ -15,6 +15,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.triton_kernels import triton_dispatch
 
 logger = logging.getLogger(__name__)
 
@@ -156,6 +157,7 @@ class MoBAAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
+    triton_kernel: str = "sparse_attn"
 
     def __init__(
         self,
@@ -242,6 +244,7 @@ class MoBAAttention(BaseAttention):
         # MB-FIX-11: storage accounting
         self._orig_storage_bytes = 0
         self._comp_storage_bytes = 0
+        self.triton_kwargs = {"block_size": self.block_size, "eps": 1e-6}
 
         pretrained_attn = kwargs.get("pretrained_attn", None)
         if pretrained_attn is not None:

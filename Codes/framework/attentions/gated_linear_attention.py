@@ -47,6 +47,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.triton_kernels import triton_dispatch
 
 
 # ===========================================================================
@@ -276,6 +277,7 @@ class GatedLinearAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
+    triton_kernel: str = "linear_attn"
 
     def __init__(
         self,
@@ -384,6 +386,7 @@ class GatedLinearAttention(BaseAttention):
 
         self._orig_storage_bytes = 0
         self._comp_storage_bytes = 0
+        self.triton_kwargs = {"phi": "elu+1", "eps": 1e-4}
 
         if src_attn is not None:
             self.copy_weights(src_attn)

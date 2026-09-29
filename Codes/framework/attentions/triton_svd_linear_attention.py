@@ -43,6 +43,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.gqa_utils import repeat_kv
+from framework.core.triton_kernels import triton_dispatch
 
 logger = logging.getLogger(__name__)
 
@@ -621,6 +622,8 @@ class SVDLinearProjection(nn.Module):
       y = (x @ V^T) @ U^T + bias
     """
 
+    triton_kernel = "low_rank"
+
     def __init__(
         self,
         in_features: int,
@@ -654,9 +657,7 @@ class SVDLinearProjection(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Fused low-rank projection: (x @ V^T) @ U^T + bias
-        z = F.linear(x, self.V)       # [..., rank]
-        out = F.linear(z, self.U, self.bias)  # [..., out_features]
-        return out
+        return triton_dispatch(self.triton_kernel, x, self.U, self.V, bias=self.bias)
 
     @classmethod
     def from_pretrained_linear(cls, linear: nn.Linear, rank: int = 64) -> "SVDLinearProjection":
@@ -695,6 +696,7 @@ class TritonSVDLinearAttention(BaseAttention):
     Triton-Accelerated Linear Attention with Genuine SVD Low-Rank Projections,
     RoPE, GQA, and Masked Attention.
     """
+    triton_kernel = "linear_attn"
 
     def __init__(
         self,
@@ -714,13 +716,19 @@ class TritonSVDLinearAttention(BaseAttention):
         self.is_decoder = bool(is_decoder or getattr(config, "is_decoder", False) or getattr(config, "is_causal", False))
         self.activation_mode = activation_mode
         self.eps = eps
+        self.triton_kwargs = {
+            "phi": "elu+1" if self.activation_mode == "elu" else self.activation_mode,
+            "eps": self.eps,
+            "cos_weight": None,
+            "sin_weight": None,
+        }
 
         # Dimensionality extraction
-        self.embed_dim = embed_dim or getattr(config, "hidden_size", 768)
-        self.num_heads = num_heads or getattr(config, "num_attention_heads", 12)
+        self.embed_dim = embed_dim or kwargs.get("hidden_size") or getattr(config, "hidden_size", 768)
+        self.num_heads = num_heads or kwargs.get("num_attention_heads") or getattr(config, "num_attention_heads", 12)
         # BUG 4 FIX: Support GQA
-        self.num_kv_heads = num_kv_heads or getattr(config, "num_key_value_heads", self.num_heads)
-        self.head_dim = self.embed_dim // self.num_heads
+        self.num_kv_heads = num_kv_heads or kwargs.get("num_kv_heads") or getattr(config, "num_key_value_heads", self.num_heads)
+        self.head_dim = kwargs.get("head_dim") or (self.embed_dim // self.num_heads)
         self.rank = rank or 64
         self.kv_dim = self.num_kv_heads * self.head_dim
 
@@ -911,13 +919,11 @@ class TritonSVDLinearAttention(BaseAttention):
                 v = v * mask
 
         # 5. Dispatch Fully Differentiable Triton Linear Attention
-        out = triton_linear_attention(
-            q=q,
-            k=k,
-            v=v,
+        out = triton_dispatch(
+            self.triton_kernel,
+            q, k, v,
             is_causal=self.is_decoder,
-            activation_mode=self.activation_mode,
-            eps=self.eps,
+            **self.triton_kwargs,
         )
 
         # 6. Reshape and final output projection

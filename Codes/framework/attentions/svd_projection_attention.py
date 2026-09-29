@@ -23,6 +23,7 @@ from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.triton_kernels import triton_dispatch
 
 logger = logging.getLogger(__name__)
 
@@ -157,10 +158,11 @@ class SVDProjectionLinear(nn.Module):
         """Reconstructed effective dense weight matrix."""
         return torch.matmul(self.U, self.V)
 
+    triton_kernel: str = "low_rank"
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Base factorized SVD projection
-        Vx = F.linear(x, self.V)
-        out = F.linear(Vx, self.U, self.bias)
+        out = triton_dispatch(self.triton_kernel, x, self.U, self.V, bias=self.bias)
 
         # Trainable LoRA residual branch
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
@@ -190,6 +192,7 @@ class SVDProjectionAttention(BaseAttention):
 
     supports_gqa: bool = True
     is_custom_attention: bool = True
+    triton_kernel: str = "low_rank"
 
     def __init__(
         self,
@@ -305,6 +308,7 @@ class SVDProjectionAttention(BaseAttention):
             ),
         )
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
+        self.triton_kwargs = {}
 
         # 4. Copy weights if old_attn passed
         if old_attn is not None:
