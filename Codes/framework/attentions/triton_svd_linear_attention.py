@@ -934,6 +934,10 @@ class TritonSVDLinearAttention(BaseAttention):
         out = out.transpose(1, 2).contiguous().view(B, N, C)
         out = self.out_proj(out)
 
+        # Numerical safety guard against unbounded linear attention residual accumulation in FP16
+        if out.dtype == torch.float16:
+            out = torch.clamp(out, min=-65000.0, max=65000.0)
+
         return out, None
 
 
