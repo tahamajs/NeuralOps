@@ -52,6 +52,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.triton_kernels import triton_dispatch
 
 logger = logging.getLogger(__name__)
 
@@ -208,6 +209,7 @@ class MLAAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
+    triton_kernel: str = "low_rank"
 
     def __init__(
         self,
@@ -307,6 +309,7 @@ class MLAAttention(BaseAttention):
 
         # ---- source attention (for injector) ----
         self._source_attn_id: Optional[int] = None
+        self.triton_kwargs = {}
 
         pretrained_attn = kwargs.get("pretrained_attn", None)
         if pretrained_attn is not None:
@@ -666,9 +669,10 @@ class MLAAttention(BaseAttention):
 
         # ---- projections ----
         q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        latent = self.kv_down(kv_input)
-        k = self.k_up(latent).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        v = self.v_up(latent).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        k_raw = triton_dispatch(self.triton_kernel, kv_input, self.k_up.weight, self.kv_down.weight)
+        v_raw = triton_dispatch(self.triton_kernel, kv_input, self.v_up.weight, self.kv_down.weight)
+        k = k_raw.view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = v_raw.view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # ---- RoPE ----
         if position_embeddings is None:

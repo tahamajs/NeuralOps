@@ -29,6 +29,7 @@ from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.triton_kernels import triton_dispatch
 
 logger = logging.getLogger(__name__)
 
@@ -245,6 +246,7 @@ class LoRALinear(nn.Module):
 )
 class PerformerAttention(BaseAttention):
     is_custom_attention: bool = True
+    triton_kernel = "linear_attn"
 
     def __init__(
         self,
@@ -490,6 +492,12 @@ class PerformerAttention(BaseAttention):
             dropout_p = 0.1
         self.dropout = nn.Dropout(dropout_p)
         self.rotary_emb = getattr(source_attn, "rotary_emb", None)
+        self.triton_kwargs = {
+            "phi": "identity",
+            "eps": self.eps,
+            "cos_weight": None,
+            "sin_weight": None,
+        }
 
         # ---------------- Copy weights from source ----------------
         if source_attn is not None:
@@ -887,11 +895,13 @@ class PerformerAttention(BaseAttention):
         Q_feat = self._feature_map(Q) * mask_expanded
         K_feat = self._feature_map(K) * mask_expanded
 
-        # ---- Attention ----
-        if self.is_decoder:
-            context = self._forward_causal(Q_feat, K_feat, V, B, H, d, N, device, dtype)
-        else:
-            context = self._forward_bidirectional(Q_feat, K_feat, V, B, device, dtype)
+        # ---- Attention via shared Triton dispatcher ----
+        context = triton_dispatch(
+            self.triton_kernel,
+            Q_feat, K_feat, V,
+            is_causal=self.is_decoder,
+            **self.triton_kwargs,
+        )
 
         context = torch.nan_to_num(context, nan=0.0)
         context = self.dropout(context)

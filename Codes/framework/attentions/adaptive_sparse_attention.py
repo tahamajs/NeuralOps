@@ -22,6 +22,7 @@ from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.triton_kernels import triton_dispatch
 from framework.utils.model_family import ModelAdapter
 
 
@@ -165,6 +166,7 @@ class AdaptiveSparseAttention(BaseAttention):
     supports_bidirectional = True
     supports_gqa = True
     supports_rope = True
+    triton_kernel: str = "sparse_attn"
 
     def __init__(
         self,
@@ -319,6 +321,8 @@ class AdaptiveSparseAttention(BaseAttention):
         else:
             self.relative_attention_num_buckets = 32
             self.relative_attention_max_distance = 128
+
+        self.triton_kwargs = {"block_size": 64, "eps": 1e-6}
 
         if source_attn is not None:
             self.copy_weights(source_attn)

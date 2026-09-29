@@ -30,6 +30,7 @@ import torch.nn.functional as F
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.triton_kernels import triton_dispatch
 
 logger = logging.getLogger(__name__)
 
@@ -176,6 +177,7 @@ class DecayLinearAttention(BaseAttention):
     r"""Decay Linear Attention Module with Data-Dependent Exponential Decay Gating."""
 
     is_custom_attention: bool = True
+    triton_kernel: str = "linear_attn"
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -283,6 +285,7 @@ class DecayLinearAttention(BaseAttention):
 
         self.rotary_emb = None
         self.comp_config: Optional[Any] = comp_config
+        self.triton_kwargs = {"phi": "elu+1", "eps": 1e-6}
 
         if source_attn is not None:
             self.copy_weights(source_attn)

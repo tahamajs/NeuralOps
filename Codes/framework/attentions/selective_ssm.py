@@ -21,6 +21,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.selective_scan import selective_scan
+from framework.core.triton_kernels import triton_dispatch
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,7 @@ class SelectiveSSM(BaseAttention):
 
     supports_causal: bool = True
     is_custom_attention: bool = True
+    triton_kernel: str = "state_update"
 
     def __init__(
         self,
@@ -119,6 +121,7 @@ class SelectiveSSM(BaseAttention):
             self.A_log_bwd = nn.Parameter(torch.log(A_bwd))
             self.D_bwd = nn.Parameter(torch.ones(self.d_inner))
             self.out_proj_bwd = nn.Linear(self.d_inner, self.d_model, bias=bias)
+        self.triton_kwargs = {}
 
         self._reset_parameters()
 

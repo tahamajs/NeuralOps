@@ -15,6 +15,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.triton_kernels import triton_dispatch
 
 logger = logging.getLogger(__name__)
 
@@ -202,6 +203,7 @@ class LinformerAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
+    triton_kernel: str = "linear_attn"
 
     def __init__(
         self,
@@ -304,6 +306,7 @@ class LinformerAttention(BaseAttention):
              if config else 0.1)
         )
         self.dropout = nn.Dropout(dropout_p)
+        self.triton_kwargs = {"phi": "identity", "eps": 1e-6}
 
         if source_attn is not None:
             self.copy_weights(source_attn)
