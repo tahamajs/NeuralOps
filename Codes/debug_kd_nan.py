@@ -26,8 +26,15 @@ student, _ = apply_module_to_model(student, "triton_svd_linear_attention", "atte
 student.half()
 set_train_scope(student, "mamba")
 
+# Keep frozen backbone in half, but ensure trainable parameters are float32 (master weights)
+for p in student.parameters():
+    if p.requires_grad:
+        p.data = p.data.float()
+
 trainable = [p for p in student.parameters() if p.requires_grad]
+print("Trainable dtypes:", set(p.dtype for p in trainable))
 opt = torch.optim.AdamW(trainable, lr=2.5e-5, weight_decay=0.01)
+scaler = torch.cuda.amp.GradScaler(enabled=True)
 
 batch = chunks[:4]
 print("Running Step 1 forward...")
@@ -37,7 +44,8 @@ with torch.cuda.amp.autocast(dtype=torch.float16):
     loss = compute_kl_divergence(student_out.logits, teacher_out.logits, temperature=4.0)
 
 print(f"Initial loss: {loss.item()}")
-loss.backward()
+scaler.scale(loss).backward()
+scaler.unscale_(opt)
 
 print("--- GRAD STATS BEFORE CLIP ---")
 for name, p in student.named_parameters():
@@ -61,7 +69,8 @@ for name, p in student.named_parameters():
         if torch.isnan(p.grad).any().item() or torch.isinf(p.grad).any().item():
             print(f"AFTER CLIP NAN/INF: {name}")
 
-opt.step()
+scaler.step(opt)
+scaler.update()
 opt.zero_grad()
 
 print("--- PARAM STATS AFTER STEP ---")
