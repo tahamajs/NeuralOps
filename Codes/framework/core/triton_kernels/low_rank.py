@@ -133,20 +133,52 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
     @staticmethod
     def backward(ctx: Any, grad_out: torch.Tensor) -> Tuple[Optional[torch.Tensor], ...]:
         x, U, V, bias = ctx.saved_tensors
-        x_req = x.detach().requires_grad_(x.requires_grad)
-        U_req = U.detach().requires_grad_(U.requires_grad)
-        V_req = V.detach().requires_grad_(V.requires_grad)
-        bias_req = bias.detach().requires_grad_(bias.requires_grad) if bias is not None else None
+        orig_shape = x.shape
+        D_in = orig_shape[-1]
+        x_2d = x.contiguous().view(-1, D_in)
+        M = x_2d.shape[0]
 
-        with torch.enable_grad():
-            out = low_rank_pytorch_fallback(x_req, U_req, V_req, bias=bias_req)
-            vars_to_diff = [x_req, U_req, V_req]
-            if bias_req is not None:
-                vars_to_diff.append(bias_req)
-            grads = torch.autograd.grad(out, vars_to_diff, grad_out, retain_graph=False)
+        # V_mat has shape [D_in, Rank]
+        V_mat = V.t() if V.shape[-1] == D_in else V
+        Rank = V_mat.shape[1]
 
-        g_x, g_U, g_V = grads[0], grads[1], grads[2]
-        g_bias = grads[3] if bias_req is not None else None
+        # U_mat has shape [Rank, D_out]
+        U_mat = U.t() if U.shape[-1] == Rank else U
+        D_out = U_mat.shape[1]
+
+        grad_out_2d = grad_out.contiguous().view(-1, D_out)
+
+        g_x = None
+        g_U = None
+        g_V = None
+        g_bias = None
+
+        if bias is not None and ctx.needs_input_grad[3]:
+            g_bias = grad_out_2d.sum(dim=0).to(bias.dtype)
+
+        # dz = grad_out @ U_mat.t() -> [M, Rank]
+        dz = torch.matmul(grad_out_2d, U_mat.t())
+
+        if ctx.needs_input_grad[0]:
+            g_x_2d = torch.matmul(dz, V_mat.t())
+            g_x = g_x_2d.view(*orig_shape).to(x.dtype)
+
+        if ctx.needs_input_grad[1]:
+            # z = x @ V_mat -> [M, Rank]
+            z = torch.matmul(x_2d, V_mat)
+            g_U_mat = torch.matmul(z.t(), grad_out_2d)  # [Rank, D_out]
+            if U.shape[-1] == Rank:
+                g_U = g_U_mat.t().to(U.dtype)
+            else:
+                g_U = g_U_mat.to(U.dtype)
+
+        if ctx.needs_input_grad[2]:
+            g_V_mat = torch.matmul(x_2d.t(), dz)  # [D_in, Rank]
+            if V.shape[-1] == D_in:
+                g_V = g_V_mat.t().to(V.dtype)
+            else:
+                g_V = g_V_mat.to(V.dtype)
+
         return g_x, g_U, g_V, g_bias
 
 
