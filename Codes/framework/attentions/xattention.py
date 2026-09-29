@@ -23,6 +23,7 @@ from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.triton_kernels import triton_dispatch
 from framework.utils.model_family import ModelAdapter
 
 logger = logging.getLogger(__name__)
@@ -231,6 +232,7 @@ class XAttention(BaseAttention):
     supports_gqa: bool = True
     supports_rope: bool = True
     is_custom_attention: bool = True
+    triton_kernel: str = "sparse_attn"
 
     def __init__(
         self,
@@ -318,6 +320,7 @@ class XAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
         self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
+        self.triton_kwargs = {"block_size": self.block_size, "eps": 1e-6}
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)

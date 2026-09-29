@@ -22,6 +22,7 @@ from framework.core.adapters import UniversalAdapter
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.triton_kernels import triton_dispatch
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +101,7 @@ class SVDLLMV2Attention(BaseAttention):
 
     supports_gqa: bool = True
     is_custom_attention: bool = True
+    triton_kernel: str = "low_rank"
 
     def __init__(
         self,
@@ -256,6 +258,7 @@ class SVDLLMV2Attention(BaseAttention):
             else dropout
         )
         self.dropout = nn.Dropout(dropout_p)
+        self.triton_kwargs = {}
 
         if target_device is not None or target_dtype is not None:
             self.to(device=target_device, dtype=target_dtype)
@@ -463,7 +466,8 @@ class SVDLLMV2Attention(BaseAttention):
         lora_B: Optional[nn.Parameter],
     ) -> torch.Tensor:
         """Factorized SVD projection with LoRA residual addition."""
-        base_out = ((x @ vh.t().contiguous()) * s.to(dtype=x.dtype)) @ u.t().contiguous() + b
+        V_eff = s.to(dtype=vh.dtype).view(-1, 1) * vh
+        base_out = triton_dispatch(self.triton_kernel, x, u, V_eff, bias=b)
         if self.lora_rank > 0 and lora_A is not None and lora_B is not None:
             lora_out = F.linear(F.linear(x, lora_A), lora_B) * self.scaling
             base_out = base_out + lora_out

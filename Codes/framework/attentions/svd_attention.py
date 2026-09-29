@@ -46,6 +46,7 @@ from framework.core.attention_mask import apply_attention_mask, get_token_valid_
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.triton_kernels import triton_dispatch
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if cfg is None:
@@ -177,6 +178,7 @@ class SVDLinearAttention(BaseAttention):
 
     supports_gqa: bool = True
     is_custom_attention: bool = True
+    triton_kernel: str = "low_rank"
 
     def __init__(
         self,
@@ -294,6 +296,7 @@ class SVDLinearAttention(BaseAttention):
         init_rank = max(1, self.rank or 64)
         self.register_buffer("svd_proj", torch.eye(self.hidden_size, init_rank), persistent=True)
         self._svd_proj_ready: bool = False
+        self.triton_kwargs = {}
 
         if old_attn is not None:
             self.copy_weights(old_attn)

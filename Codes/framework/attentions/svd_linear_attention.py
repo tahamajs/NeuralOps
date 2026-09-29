@@ -22,6 +22,7 @@ from framework.core.attention_mask import apply_attention_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.triton_kernels import triton_dispatch
 
 try:
     from framework.attentions.fused_svd_kernel import FusedSVDLinear, fused_svd_linear
@@ -203,6 +204,8 @@ class SVDLinear(nn.Module):
         if self.bias is not None:
             nn.init.zeros_(self.bias)
 
+    triton_kernel: str = "low_rank"
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.use_fused_kernel and HAS_FUSED_KERNEL:
             out = fused_svd_linear(
@@ -214,6 +217,8 @@ class SVDLinear(nn.Module):
                 eps=self.eps,
                 use_rms_norm=self.use_rms_norm,
             )
+        elif not self.use_rms_norm:
+            out = triton_dispatch(self.triton_kernel, x, self.U, self.V, bias=self.bias)
         else:
             Vx = F.linear(x, self.V)
             if self.use_rms_norm and self.norm_weight is not None:
@@ -259,6 +264,7 @@ class SVDLinearAttention(BaseAttention):
 
     supports_gqa: bool = True
     is_custom_attention: bool = True
+    triton_kernel: str = "linear_attn"
 
     def __init__(
         self,
@@ -354,6 +360,7 @@ class SVDLinearAttention(BaseAttention):
             config, "attention_probs_dropout_prob", _cfg_get(config, "dropout", 0.1)
         )
         self.eps: float = _cfg_get(config, "linear_attention_eps", 1e-6)
+        self.triton_kwargs = {"phi": "elu+1", "eps": self.eps}
 
         # 2. Causal decoder flag detection
         if is_decoder is not None:
@@ -790,6 +797,14 @@ class SVDLinearAttention(BaseAttention):
     def _forward_linear_kernel(
         self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, mask: Optional[torch.Tensor]
     ) -> torch.Tensor:
+        if mask is None:
+            return triton_dispatch(
+                self.triton_kernel,
+                q, k, v,
+                is_causal=self.is_decoder,
+                **self.triton_kwargs,
+            )
+
         B, H, N, D_k = q.shape
         D_v = v.shape[-1]
 

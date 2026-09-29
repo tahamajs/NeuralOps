@@ -41,6 +41,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.gqa_utils import repeat_kv
+from framework.core.triton_kernels import triton_dispatch
 
 logger = logging.getLogger(__name__)
 
@@ -520,6 +521,7 @@ class TritonCosformerAttention(BaseAttention):
     Triton-Accelerated Cosformer Linear Attention with Full Autograd Differentiability,
     RoPE support, Pretrained Weight Loading, and Masked Attention.
     """
+    triton_kernel = "linear_attn"
 
     def __init__(
         self,
@@ -536,11 +538,17 @@ class TritonCosformerAttention(BaseAttention):
         self.config = config
         self.is_decoder = bool(is_decoder or getattr(config, "is_decoder", False) or getattr(config, "is_causal", False))
         self.eps = eps
+        self.triton_kwargs = {
+            "phi": "elu+1",
+            "eps": self.eps,
+            "cos_weight": None,
+            "sin_weight": None,
+        }
 
-        self.embed_dim = embed_dim or getattr(config, "hidden_size", 768)
-        self.num_heads = num_heads or getattr(config, "num_attention_heads", 12)
-        self.num_kv_heads = num_kv_heads or getattr(config, "num_key_value_heads", self.num_heads)
-        self.head_dim = self.embed_dim // self.num_heads
+        self.embed_dim = embed_dim or kwargs.get("hidden_size") or getattr(config, "hidden_size", 768)
+        self.num_heads = num_heads or kwargs.get("num_attention_heads") or getattr(config, "num_attention_heads", 12)
+        self.num_kv_heads = num_kv_heads or kwargs.get("num_kv_heads") or getattr(config, "num_key_value_heads", self.num_heads)
+        self.head_dim = kwargs.get("head_dim") or (self.embed_dim // self.num_heads)
 
         # BUG 5 FIX: fixed max_length from config
         self.max_length = getattr(config, "max_position_embeddings", 2048) or 2048
@@ -714,14 +722,23 @@ class TritonCosformerAttention(BaseAttention):
                 k = k * mask
                 v = v * mask
 
-        # 5. Differentiable forward pass (bridges Triton kernel or chunked O(N) fallback)
-        out = triton_cosformer_attention(
-            q=q,
-            k=k,
-            v=v,
-            is_decoder=self.is_decoder,
-            eps=self.eps,
-            max_length=self.max_length,
+        # 5. Differentiable forward pass using shared Triton dispatcher
+        angle_factor = math.pi / (2.0 * float(self.max_length))
+        positions = torch.arange(N, device=q.device, dtype=torch.float32)
+        angles = positions * angle_factor
+        cos_w = torch.cos(angles).view(1, 1, N, 1).to(q.dtype)
+        sin_w = torch.sin(angles).view(1, 1, N, 1).to(q.dtype)
+
+        dispatch_kwargs = dict(self.triton_kwargs)
+        dispatch_kwargs["cos_weight"] = cos_w
+        dispatch_kwargs["sin_weight"] = sin_w
+        dispatch_kwargs["eps"] = self.eps
+
+        out = triton_dispatch(
+            self.triton_kernel,
+            q, k, v,
+            is_causal=self.is_decoder,
+            **dispatch_kwargs,
         )
 
         out = out.transpose(1, 2).contiguous().view(B, N, C)

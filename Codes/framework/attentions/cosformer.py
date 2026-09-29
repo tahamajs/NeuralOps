@@ -37,6 +37,7 @@ import torch.nn.functional as F
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.triton_kernels import triton_dispatch
 
 
 # ============================================================================
@@ -212,17 +213,10 @@ class LoRALinear(nn.Module):
     "cosformer_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
 class CosformerAttention(BaseAttention):
-    r"""Cosformer Attention with Linear Complexity and Exact Multi-Architecture Support.
-
-    **Important: Cosformer is rank-agnostic.** Unlike Performer (FAVOR+) or LUNA,
-    Cosformer does NOT use random features or rank-based factorization. The `rank`
-    parameter accepted by the constructor is retained for API compatibility with
-    other attention modules, but has NO EFFECT on the forward pass. Cosformer
-    relies purely on non-negative kernel activation (ELU + 1) combined with
-    cosine/sine positional reweighting to achieve linear complexity O(N).
-    """
+    r"""Cosformer Attention with Linear Complexity and Exact Multi-Architecture Support."""
 
     is_custom_attention: bool = True
+    triton_kernel = "linear_attn"
 
     def __init__(
         self,
@@ -381,6 +375,12 @@ class CosformerAttention(BaseAttention):
 
         self.rotary_emb = None
         self.comp_config: Optional[Any] = comp_config
+        self.triton_kwargs = {
+            "phi": "elu+1",
+            "eps": self.eps,
+            "cos_weight": None,
+            "sin_weight": None,
+        }
 
         if source_attn is not None:
             self.copy_weights(source_attn)
@@ -739,18 +739,20 @@ class CosformerAttention(BaseAttention):
 
         # 6. Cosine/Sine position modulation
         cos_w_q, sin_w_q = self._get_cos_sin_weights(N, device, torch.float32)
-        cos_w_k, sin_w_k = self._get_cos_sin_weights(kv_len, device, torch.float32)
 
-        Q_cos = Q * cos_w_q
-        Q_sin = Q * sin_w_q
-        K_cos = K * cos_w_k
-        K_sin = K * sin_w_k
+        # 7. Linear attention via shared Triton dispatcher
+        is_causal_eval = bool(self.is_decoder and not is_cross_attention and N == kv_len)
+        dispatch_kwargs = dict(self.triton_kwargs)
+        dispatch_kwargs["cos_weight"] = cos_w_q
+        dispatch_kwargs["sin_weight"] = sin_w_q
+        dispatch_kwargs["eps"] = self.eps
 
-        # 7. Linear attention
-        if self.is_decoder and not is_cross_attention and N == kv_len:
-            context = self._forward_causal(Q_cos, Q_sin, K_cos, K_sin, V, B, H, d, N, device, dtype)
-        else:
-            context = self._forward_bidirectional(Q_cos, Q_sin, K_cos, K_sin, V, B, H, d, device, dtype)
+        context = triton_dispatch(
+            self.triton_kernel,
+            Q, K, V,
+            is_causal=is_causal_eval,
+            **dispatch_kwargs,
+        )
 
         # 8. Head mask
         if head_mask is not None:

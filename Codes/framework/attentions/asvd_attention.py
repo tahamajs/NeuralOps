@@ -22,6 +22,7 @@ from framework.core.attention_mask import apply_attention_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.triton_kernels import triton_dispatch
 
 logger = logging.getLogger(__name__)
 
@@ -235,16 +236,13 @@ class ASVDLinear(nn.Module):
             W = W + torch.matmul(self.lora_B, self.lora_A) * self.lora_scaling
         return W
 
+    triton_kernel: str = "low_rank"
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: (*, in_features)
-        # 1. x @ V.T -> (*, rank)
-        Vx = F.linear(x, self.V)
-        # 2. scale by singular values S
-        SVx = Vx * self.S
-        # 3. SVx @ U.T -> (*, out_features)
-        out = F.linear(SVx, self.U)
-        if self.bias is not None:
-            out = out + self.bias
+        # Factorized SVD projection: y = ((x @ V.T) * S) @ U.T + bias
+        V_eff = self.S.view(-1, 1) * self.V
+        out = triton_dispatch(self.triton_kernel, x, self.U, V_eff, bias=self.bias)
 
         # 4. Residual LoRA adapter path: (x @ lora_A.T) @ lora_B.T
         if getattr(self, "lora_A", None) is not None and self.lora_A is not None:
@@ -269,6 +267,7 @@ class ASVDAttention(BaseAttention):
     """
 
     is_custom_attention: bool = True
+    triton_kernel: str = "low_rank"
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -333,6 +332,7 @@ class ASVDAttention(BaseAttention):
             ),
         )
         self.dropout = nn.Dropout(dropout_p)
+        self.triton_kwargs = {}
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
