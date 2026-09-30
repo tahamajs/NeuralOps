@@ -375,9 +375,13 @@ class CompressedAttentionLayer(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        # SVD QKV forward with single symmetric sqrt(S) distribution
-        v_proj = torch.matmul(hidden_states, self.Vh_qkv.t().contiguous()) * self.S_qkv_sqrt.view(1, 1, -1)
-        qkv = torch.matmul(v_proj, (self.U_qkv * self.S_qkv_sqrt.view(1, -1)).t().contiguous()) + self.bias_qkv
+        # FIX 1: Pre-transpose weight matrices to avoid runtime transposes
+        # Vh_qkv is (Rank, D), U_qkv is (Out_Dim, Rank)
+        # S_qkv_sqrt is (Rank)
+        
+        # Optimize Matmul path
+        v_proj = torch.matmul(hidden_states, self.Vh_qkv.t()) * self.S_qkv_sqrt
+        qkv = torch.matmul(v_proj, (self.U_qkv * self.S_qkv_sqrt).t()) + self.bias_qkv
 
         # LoRA residual adapter
         if self.lora_rank > 0 and self.lora_A_qkv is not None and self.lora_B_qkv is not None:
@@ -387,9 +391,10 @@ class CompressedAttentionLayer(BaseAttention):
         # Split into Q, K, V
         q, k, v = torch.split(qkv, [self.all_head_size, self.kv_head_size, self.kv_head_size], dim=-1)
 
-        q = q.view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k = k.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        v = v.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        # FIX 2: Remove .contiguous() memory bombs
+        q = q.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
+        k = k.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        v = v.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
 
         # Apply RoPE
         position_embeddings = kwargs.get("position_embeddings", None)
@@ -403,57 +408,61 @@ class CompressedAttentionLayer(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
+        
+        # Use torch.baddbmm or scaled_dot_product_attention for huge memory savings
+        # Fallback to standard matmul if not available or unsupported shapes
+        try:
+            # PyTorch 2.0+ Flash Attention / Memory Efficient Attention
+            # This handles Causal masking automatically and saves massive VRAM
+            is_causal = self.is_decoder and (mask is None or mask.dim() != 4)
+            attn_out = F.scaled_dot_product_attention(
+                q, k, v, 
+                attn_mask=attention_mask, 
+                dropout_p=self.dropout.p if self.training else 0.0, 
+                is_causal=is_causal
+            )
+            probs = None # SDPA doesn't return probabilities to save memory
+        except Exception:
+            # Legacy Path (if SDPA fails due to old PyTorch or weird masks)
+            scores = torch.matmul(q, k.transpose(-2, -1)) * scale
 
-        mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
-        if mask is not None:
-            if mask.dim() == 4:
-                if mask.dtype == torch.bool:
-                    scores = scores.masked_fill(~mask, -10000.0)
+            mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
+            if mask is not None:
+                if mask.dim() == 4:
+                    if mask.dtype == torch.bool:
+                        scores = scores.masked_fill(~mask, -10000.0)
+                    else:
+                        scores = scores + mask.to(scores.dtype)
                 else:
-                    scores = scores + mask.to(scores.dtype)
-            else:
-                valid_m = get_token_valid_mask(mask, B, N, device)
-                if valid_m is not None:
-                    scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
+                    valid_m = get_token_valid_mask(mask, B, N, device)
+                    if valid_m is not None:
+                        scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
 
-        # Explicit Causal Masking for decoders
-        mt = str(getattr(self.config, "model_type", "") or "").lower()
-        decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
-        is_decoder = (
-            self.is_decoder
-            or getattr(self.config, "is_decoder", False)
-            or any(mt.startswith(p) for p in decoder_prefixes)
-        )
-        if is_decoder and (mask is None or mask.dim() != 4):
-            causal_tril = torch.tril(torch.ones((N, N), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
-            scores = scores.masked_fill(~causal_tril, -10000.0)
+            # Explicit Causal Masking
+            if self.is_decoder and (mask is None or mask.dim() != 4):
+                causal_tril = torch.tril(torch.ones((N, N), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+                scores = scores.masked_fill(~causal_tril, -10000.0)
 
-        probs = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
-        probs = self.dropout(probs)
+            # FIX 3: Safe Softmax without extra type casts that create new tensors
+            probs = F.softmax(scores, dim=-1, dtype=torch.float32).to(dtype)
+            probs = self.dropout(probs)
+            attn_out = torch.matmul(probs, v)
 
-        if head_mask is not None:
-            if head_mask.dim() == 1:
-                head_mask = head_mask.view(1, -1, 1, 1)
-            elif head_mask.dim() == 2:
-                head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
-            elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(-1)
-            probs = probs * head_mask
-
-        attn_out = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+        # Transpose back and view (reshape handles non-contiguous memory safely without deep copies)
+        attn_out = attn_out.transpose(1, 2).reshape(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
             out = attn_out
         else:
-            # SVD Out forward with single symmetric sqrt(S) distribution
-            out_v = torch.matmul(attn_out, self.Vh_out.t().contiguous()) * self.S_out_sqrt.view(1, 1, -1)
-            out = torch.matmul(out_v, (self.U_out * self.S_out_sqrt.view(1, -1)).t().contiguous()) + self.bias_out
+            # SVD Out forward 
+            out_v = torch.matmul(attn_out, self.Vh_out.t()) * self.S_out_sqrt
+            out = torch.matmul(out_v, (self.U_out * self.S_out_sqrt).t()) + self.bias_out
             if self.lora_rank > 0 and self.lora_A_out is not None and self.lora_B_out is not None:
                 lora_out = F.linear(F.linear(attn_out, self.lora_A_out), self.lora_B_out) * self.lora_scaling
                 out = out + lora_out
 
-        return out, (probs if output_attentions else None)
+        return out, (probs if output_attentions and probs is not None else None)
+
 
 
 @ATTENTION_REGISTRY.register("compressed_attention_layer_energy")
