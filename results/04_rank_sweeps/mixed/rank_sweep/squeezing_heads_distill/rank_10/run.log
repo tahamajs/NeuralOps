@@ -65,3 +65,7 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 20:38:46,545 [INFO] QwenQualitySweep: Step 95/100 took 0.18s (loss=0.0348, bs=8, micro=8)
 2026-09-30 20:38:47,439 [INFO] QwenQualitySweep: Step 100/100 took 0.17s (loss=0.0332, bs=8, micro=8)
 2026-09-30 20:38:57,086 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\mixed\rank_sweep\squeezing_heads_distill\rank_10\distilbert_sst2_squeezing_heads_distill_full_metrics.json
+2026-09-30 20:38:57,624 [INFO] QwenQualitySweep: [1/1] squeezing_heads_distill -> PASS 90.83% (F1: 0.9125, Peak VRAM: 360.76 MB)
+2026-09-30 20:38:57,759 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / squeezing-heads-distill is SUCCESSFUL (acc=90.83% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-squeezing-heads-distill and Git recording.
+2026-09-30 20:38:58,935 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-squeezing-heads-distill: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
+2026-09-30 20:38:58,989 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\squeezing_heads_distill.md

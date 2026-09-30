@@ -382,7 +382,7 @@ The `LoRALinear` architecture incorporates telemetry hooks for tracking singular
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.37%** | -0.23% | 0.9056 | 1.00x | 0 | N/A | 2026-09-30 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.83%** | +0.23% | 0.9125 | 1.00x | 0 | N/A | 2026-09-30 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.30%** | +0.00% | 0.9391 | 1.00x | 0 | N/A | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **80.40%** | -1.40% | 0.8034 | 1.00x | 0 | N/A | 2026-09-19 |
 | **distilbert** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9077 | 1.00x | 0 | [svd-linear-attention-distilbert-squeezing_heads_distill](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-squeezing_heads_distill) | 2026-09-29 |

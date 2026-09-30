@@ -67,3 +67,24 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 20:38:54,193 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / adaptive-svd-attention is SUCCESSFUL (acc=88.65% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-adaptive-svd-attention and Git recording.
 2026-09-30 20:38:55,665 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-adaptive-svd-attention: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 20:38:55,727 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\adaptive_svd_attention.md
+[main d9fbb6872] feat(benchmark): record successful adaptive_svd_attention on distilbert-sst2 (Acc: 88.65%, F1: 0.8901)
+ 25 files changed, 1726 insertions(+), 1083 deletions(-)
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/adaptive_svd_attention/rank_128/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/adaptive_svd_attention/rank_128/distilbert_sst2_adaptive_svd_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/adaptive_svd_attention/rank_128/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/adaptive_svd_attention/rank_128/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/adaptive_svd_attention/rank_16/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/adaptive_svd_attention/rank_16/distilbert_sst2_adaptive_svd_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/adaptive_svd_attention/rank_16/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/adaptive_svd_attention/rank_16/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/adaptive_svd_attention/rank_32/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/adaptive_svd_attention/rank_32/distilbert_sst2_adaptive_svd_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/adaptive_svd_attention/rank_32/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/adaptive_svd_attention/rank_32/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/adaptive_svd_attention/rank_64/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/adaptive_svd_attention/rank_64/distilbert_sst2_adaptive_svd_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/adaptive_svd_attention/rank_64/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/adaptive_svd_attention/rank_64/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_10/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_10/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_10/run.log

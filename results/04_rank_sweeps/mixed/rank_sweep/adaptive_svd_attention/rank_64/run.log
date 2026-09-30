@@ -73,3 +73,9 @@ Another git process seems to be running in this repository, or the lock file may
 2026-09-30 20:38:55,897 [INFO] HFGitExporter: No changes to commit to Git.
 2026-09-30 20:38:55,976 [INFO] QwenQualitySweep: [1/1] adaptive_svd_attention Timing: eval_time=67.97s
 2026-09-30 20:38:55,976 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 20:38:57,171 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:38:57,171 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 20:38:57,195 [INFO] QwenQualitySweep: 
+                                 Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+adaptive_svd_attention (efficient-attn)   PASS   88.65%    -1.95% 0.8901                  0            1.15x  442.9 MB               4.46              5.11
+2026-09-30 20:38:57,196 [INFO] QwenQualitySweep: ================================================================================
