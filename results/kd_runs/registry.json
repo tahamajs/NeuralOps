@@ -1,0 +1,160 @@
+{
+  "runs": [
+    {
+      "module": "compressed_attention",
+      "timestamp": "20260930_165141",
+      "run_dir": "results/kd_runs/compressed_attention/20260930_165141_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 1000,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": NaN,
+      "best_recovery_pct": 0.0,
+      "results": {
+        "C": {
+          "pre_ppl": NaN,
+          "post_ppl": NaN,
+          "ppl_ratio": Infinity,
+          "recovery_pct": 0.0,
+          "peak_vram_mb": 0.0,
+          "train_time_s": 0.0,
+          "loss_final": NaN,
+          "error": "CUDA error: out of memory\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n"
+        }
+      }
+    },
+    {
+      "module": "factorised_matrix_state",
+      "timestamp": "20260930_165411",
+      "run_dir": "results/kd_runs/factorised_matrix_state/20260930_165411_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 1000,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": NaN,
+      "best_recovery_pct": 0.0,
+      "results": {
+        "C": {
+          "pre_ppl": NaN,
+          "post_ppl": NaN,
+          "ppl_ratio": Infinity,
+          "recovery_pct": 0.0,
+          "peak_vram_mb": 0.0,
+          "train_time_s": 0.0,
+          "loss_final": NaN,
+          "error": "CUDA error: out of memory\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n"
+        }
+      }
+    },
+    {
+      "module": "compressed_attention",
+      "timestamp": "20260930_165615",
+      "run_dir": "results/kd_runs/compressed_attention/20260930_165615_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 1000,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 43.2,
+      "best_recovery_pct": 91.3,
+      "results": {
+        "C": {
+          "pre_ppl": 165.59,
+          "post_ppl": 43.2,
+          "ppl_ratio": 1.3697,
+          "recovery_pct": 91.3,
+          "peak_vram_mb": 1255.3,
+          "train_time_s": 389.18,
+          "s_per_step": 0.3892,
+          "loss_final": 56.9356,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 45.46,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": 43.2,
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    },
+    {
+      "module": "factorised_matrix_state",
+      "timestamp": "20260930_165617",
+      "run_dir": "results/kd_runs/factorised_matrix_state/20260930_165617_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 1000,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 114.52,
+      "best_recovery_pct": 97.84,
+      "results": {
+        "C": {
+          "pre_ppl": 3867.96,
+          "post_ppl": 114.52,
+          "ppl_ratio": 3.6309,
+          "recovery_pct": 97.84,
+          "peak_vram_mb": 1754.48,
+          "train_time_s": 419.1,
+          "s_per_step": 0.4191,
+          "loss_final": 139.3655,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 144.42,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": 114.52,
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    },
+    {
+      "module": "xattention",
+      "timestamp": "20260930_165342",
+      "run_dir": "results/kd_runs/xattention/20260930_165342_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 1000,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 36.1,
+      "best_recovery_pct": 71.64,
+      "results": {
+        "C": {
+          "pre_ppl": 47.62,
+          "post_ppl": 36.1,
+          "ppl_ratio": 1.1446,
+          "recovery_pct": 71.64,
+          "peak_vram_mb": 1460.46,
+          "train_time_s": 558.73,
+          "s_per_step": 0.5587,
+          "loss_final": 36.1903,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 36.93,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": 36.1,
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    }
+  ]
+}
