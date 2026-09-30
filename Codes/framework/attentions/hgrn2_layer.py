@@ -325,9 +325,8 @@ class HGRN2Layer(BaseAttention):
         iv: torch.Tensor,
         chunk_size: int = 32,
     ) -> torch.Tensor:
-
-        if HAS_TRITON_HGRN2 and f.is_cuda and not torch.is_grad_enabled() is False:
-        # Triton path: faster, supports fp16/bf16/fp32 uniformly
+        if HAS_TRITON_HGRN2 and f.is_cuda:
+            # Triton path: single fused kernel, replaces the Python chunk loop
             return hgrn2_scan_triton(f.contiguous(), iv.contiguous(), res_clip=self.res_clip)
 
         """Parallel chunked log-space associative scan."""
@@ -380,7 +379,10 @@ class HGRN2Layer(BaseAttention):
                 mask_float = mask.float()
             iv = iv * mask_float.unsqueeze(-1)
 
-        if self.training:
+        # Forward scan
+        if HAS_TRITON_HGRN2 and f.is_cuda:
+            h_fwd = self._scan_direction(f, iv)
+        elif self.training:
             import torch.utils.checkpoint as cp
             h_fwd = cp.checkpoint(self._scan_direction, f, iv, use_reentrant=False)
         else:
@@ -389,16 +391,16 @@ class HGRN2Layer(BaseAttention):
         if self.is_decoder:
             return h_fwd, None
 
-        if HAS_TRITON_HGRN2 and f.is_cuda:
-            h_fwd = self._scan_direction(f, iv)
-        else:
-            h_fwd = self._scan_direction(f, iv)  # fallback still uses checkpoint inside
-        if self.is_decoder:
-            return h_fwd, None
-        # backward direction
+        # Anticausal backward scan for bidirectional encoders
         f_rev = torch.flip(f, dims=[1])
         iv_rev = torch.flip(iv, dims=[1])
-        h_rev = self._scan_direction(f_rev, iv_rev)
+        if HAS_TRITON_HGRN2 and f.is_cuda:
+            h_rev = self._scan_direction(f_rev, iv_rev)
+        elif self.training:
+            import torch.utils.checkpoint as cp
+            h_rev = cp.checkpoint(self._scan_direction, f_rev, iv_rev, use_reentrant=False)
+        else:
+            h_rev = self._scan_direction(f_rev, iv_rev)
         h_bwd = torch.flip(h_rev, dims=[1])
         return h_fwd, h_bwd
 
