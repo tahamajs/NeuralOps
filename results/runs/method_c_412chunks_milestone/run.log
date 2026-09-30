@@ -1,0 +1,73 @@
+2026-09-30 14:49:52,810 [INFO] MambaKD: ======================================================================
+2026-09-30 14:49:52,810 [INFO] MambaKD: KNOWLEDGE DISTILLATION QUICK TEST: MAMBA_BLOCK RESCUE
+2026-09-30 14:49:52,810 [INFO] MambaKD:   Module:           mamba_block
+2026-09-30 14:49:52,811 [INFO] MambaKD:   Device:           cuda (fp16=True)
+2026-09-30 14:49:52,811 [INFO] MambaKD:   Recovery steps:   1000 (accum=4, eff_batch=32)
+2026-09-30 14:49:52,811 [INFO] MambaKD:   Seq len:          128 (fallback=128 on OOM)
+2026-09-30 14:49:52,811 [INFO] MambaKD:   Learning rate:    5.00e-06 (warmup=100)
+2026-09-30 14:49:52,811 [INFO] MambaKD:   Methods to test:  C
+2026-09-30 14:49:52,811 [INFO] MambaKD:   Teacher Cache:    ENABLED
+2026-09-30 14:49:52,811 [INFO] MambaKD: ======================================================================
+2026-09-30 14:49:52,811 [INFO] MambaKD: Loading tokenizer from models/gpt2_wikitext...
+2026-09-30 14:49:53,162 [INFO] MambaKD: Loading WikiText-2 datasets...
+2026-09-30 14:49:53,164 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-09-30 14:49:53,167 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-09-30 14:49:53,275 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-09-30 14:49:53,280 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-09-30 14:49:53,292 [INFO] MambaKD: Preparing training chunks (max_texts=500, seq_len=128)...
+2026-09-30 14:49:53,658 [INFO] MambaKD: Total training chunks prepared: 412
+2026-09-30 14:49:53,659 [INFO] MambaKD: Loading Teacher GPT-2 from models/gpt2_wikitext...
+2026-09-30 14:50:01,385 [INFO] MambaKD: Teacher Baseline PPL: 31.54
+2026-09-30 14:50:01,387 [INFO] MambaKD: Building teacher cache for 412 chunks (max_texts=500, seq_len=128)...
+2026-09-30 14:50:19,157 [INFO] MambaKD: Cache built: cache\teacher_dca952ea154c (logits: 5.3 GB, total: 6.4 GB)
+2026-09-30 14:50:19,192 [INFO] MambaKD: Loaded logits with mmap=True
+2026-09-30 14:50:19,206 [INFO] MambaKD: Loaded hidden states with mmap=True
+2026-09-30 14:50:19,206 [INFO] MambaKD: ======================================================================
+2026-09-30 14:50:19,206 [INFO] MambaKD: STARTING METHOD C
+2026-09-30 14:50:19,207 [INFO] MambaKD: ======================================================================
+2026-09-30 14:50:19,207 [INFO] MambaKD: [C] Using precomputed teacher cache (teacher forward pass BYPASS)
+2026-09-30 14:50:19,993 [INFO] MambaKD: Injecting 'mamba_block' into student model...
+2026-09-30 14:50:23,606 [INFO] framework.core.attention_utils: Successfully injected 'mamba_block' into 12 transformer blocks.
+2026-09-30 14:50:35,660 [INFO] MambaKD: Pre-KD PPL for Method C: 4585.77
+2026-09-30 14:50:35,664 [INFO] MambaKD: Train scope 'mamba': 45250560/141341952 trainable (32.01%)
+2026-09-30 14:50:35,665 [INFO] MambaKD: Train scope: 'mamba' | Trainable parameters: 45,250,560 / 141,341,952
+2026-09-30 14:50:40,099 [INFO] MambaKD: [C] Step 1/1000 | Loss: 603.0782 | LR: 2.50e-07 | Step time: 4336.0ms
+2026-09-30 14:50:41,492 [INFO] MambaKD: [C] Step 2/1000 | Loss: 618.4666 | LR: 5.00e-07 | Step time: 2864.5ms
+2026-09-30 14:50:43,045 [INFO] MambaKD: [C] Step 3/1000 | Loss: 532.8114 | LR: 7.50e-07 | Step time: 2427.4ms
+2026-09-30 14:50:44,621 [INFO] MambaKD: [C] Step 4/1000 | Loss: 535.6900 | LR: 1.00e-06 | Step time: 2214.6ms
+2026-09-30 14:50:46,217 [INFO] MambaKD: [C] Step 5/1000 | Loss: 629.4777 | LR: 1.25e-06 | Step time: 2090.7ms
+2026-09-30 14:51:35,106 [INFO] MambaKD: [C] Step 50/1000 | Loss: 416.2493 | LR: 1.25e-05 | Step time: 1186.9ms
+2026-09-30 14:52:17,829 [INFO] MambaKD: [C] Step 100/1000 | Loss: 194.4432 | LR: 2.50e-05 | Step time: 1020.7ms
+2026-09-30 14:52:28,144 [INFO] MambaKD: [C] Step 100 Eval PPL: 1076.99
+2026-09-30 14:53:11,208 [INFO] MambaKD: [C] Step 150/1000 | Loss: 133.8883 | LR: 2.50e-05 | Step time: 1036.3ms
+2026-09-30 14:53:53,971 [INFO] MambaKD: [C] Step 200/1000 | Loss: 143.5257 | LR: 2.50e-05 | Step time: 991.0ms
+2026-09-30 14:54:03,789 [INFO] MambaKD: [C] Step 200 Eval PPL: 338.48
+2026-09-30 14:54:46,799 [INFO] MambaKD: [C] Step 250/1000 | Loss: 132.5137 | LR: 2.50e-05 | Step time: 1004.1ms
+2026-09-30 14:55:29,826 [INFO] MambaKD: [C] Step 300/1000 | Loss: 162.0849 | LR: 2.50e-05 | Step time: 980.2ms
+2026-09-30 14:55:40,189 [INFO] MambaKD: [C] Step 300 Eval PPL: 203.94
+2026-09-30 14:56:23,151 [INFO] MambaKD: [C] Step 350/1000 | Loss: 125.7775 | LR: 2.50e-05 | Step time: 992.5ms
+2026-09-30 14:57:06,242 [INFO] MambaKD: [C] Step 400/1000 | Loss: 121.6515 | LR: 2.50e-05 | Step time: 976.2ms
+2026-09-30 14:57:16,167 [INFO] MambaKD: [C] Step 400 Eval PPL: 141.13
+2026-09-30 14:57:59,041 [INFO] MambaKD: [C] Step 450/1000 | Loss: 123.1967 | LR: 2.50e-05 | Step time: 985.1ms
+2026-09-30 14:58:41,801 [INFO] MambaKD: [C] Step 500/1000 | Loss: 119.1736 | LR: 2.50e-05 | Step time: 972.1ms
+2026-09-30 14:58:51,614 [INFO] MambaKD: [C] Step 500 Eval PPL: 107.63
+2026-09-30 14:59:34,665 [INFO] MambaKD: [C] Step 550/1000 | Loss: 109.9305 | LR: 2.50e-05 | Step time: 979.8ms
+2026-09-30 15:00:18,383 [INFO] MambaKD: [C] Step 600/1000 | Loss: 127.2289 | LR: 2.50e-05 | Step time: 971.0ms
+2026-09-30 15:00:30,219 [INFO] MambaKD: [C] Step 600 Eval PPL: 84.97
+2026-09-30 15:01:14,922 [INFO] MambaKD: [C] Step 650/1000 | Loss: 128.3074 | LR: 2.50e-05 | Step time: 983.3ms
+2026-09-30 15:01:57,531 [INFO] MambaKD: [C] Step 700/1000 | Loss: 139.4487 | LR: 2.50e-05 | Step time: 974.0ms
+2026-09-30 15:02:07,340 [INFO] MambaKD: [C] Step 700 Eval PPL: 72.56
+2026-09-30 15:02:50,765 [INFO] MambaKD: [C] Step 750/1000 | Loss: 125.2093 | LR: 2.50e-05 | Step time: 980.0ms
+2026-09-30 15:03:33,602 [INFO] MambaKD: [C] Step 800/1000 | Loss: 121.7318 | LR: 2.50e-05 | Step time: 972.3ms
+2026-09-30 15:03:43,295 [INFO] MambaKD: [C] Step 800 Eval PPL: 63.39
+2026-09-30 15:04:26,296 [INFO] MambaKD: [C] Step 850/1000 | Loss: 135.7886 | LR: 2.50e-05 | Step time: 977.1ms
+2026-09-30 15:05:09,109 [INFO] MambaKD: [C] Step 900/1000 | Loss: 124.6906 | LR: 2.50e-05 | Step time: 970.4ms
+2026-09-30 15:05:18,877 [INFO] MambaKD: [C] Step 900 Eval PPL: 56.42
+2026-09-30 15:06:01,844 [INFO] MambaKD: [C] Step 950/1000 | Loss: 112.3649 | LR: 2.50e-05 | Step time: 974.8ms
+2026-09-30 15:06:44,643 [INFO] MambaKD: [C] Step 1000/1000 | Loss: 119.7305 | LR: 2.50e-05 | Step time: 968.9ms
+2026-09-30 15:06:54,385 [INFO] MambaKD: [C] Step 1000 Eval PPL: 51.18
+2026-09-30 15:06:54,388 [INFO] MambaKD: [C] COMPLETE | Pre: 4585.77 -> Post: 51.18 | Recovery: 99.57% | VRAM: 5173.37 MB | Time: 978.62s (978.6ms/step)
+2026-09-30 15:06:56,186 [INFO] MambaKD: Saved loss curve: results\loss_curve_C_diag_b_large_data.png
+2026-09-30 15:06:58,482 [INFO] MambaKD: Saved CSV results to results\kd_comparison_mamba.csv
+2026-09-30 15:06:58,484 [INFO] MambaKD: Saved JSON summary to results\kd_comparison_mamba.json
+2026-09-30 15:06:59,012 [INFO] MambaKD: Saved comparison plot: results\methods_comparison_20260930_144952.png
