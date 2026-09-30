@@ -1219,7 +1219,7 @@ def main():
     parser.add_argument("--max_grad_norm", type=float, default=1.0, help="Max gradient norm for clipping (default 1.0)")
     parser.add_argument("--kl_warmup_steps", type=int, default=0, help="Number of steps to linearly ramp up KL loss weight (default 0)")
     parser.add_argument("--tag", type=str, default="run", help="Tag for output plot filenames")
-    parser.add_argument("--no-cosine-lr", action="store_true", default=False, help="Disable cosine LR decay, use constant LR after warmup")
+    parser.add_argument("--no-cosine-lr", "--no_cosine_lr", dest="no_cosine_lr", action="store_true", default=False, help="Disable cosine LR decay, use constant LR after warmup")
     parser.add_argument("--no-fp16", action="store_true", default=False, help="Disable FP16 / run in FP32")
     args = parser.parse_args()
     if args.no_fp16:
