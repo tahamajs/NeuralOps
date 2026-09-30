@@ -91,3 +91,12 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
  create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_6/batch_cache_sst2/meta.json
  create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_6/finetune_metadata.json
  create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_6/run.log
+2026-09-30 20:35:42,303 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: 97637708
+2026-09-30 20:35:42,305 [INFO] QwenQualitySweep: [1/1] flash_attention3 Timing: eval_time=48.13s
+2026-09-30 20:35:42,305 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 20:35:42,748 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:35:42,748 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 20:35:42,755 [INFO] QwenQualitySweep: 
+                           Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+flash_attention3 (efficient-attn)   PASS   90.71%    +0.11% 0.9099                  0            1.00x  429.5 MB               3.55              4.07
+2026-09-30 20:35:42,755 [INFO] QwenQualitySweep: ================================================================================
