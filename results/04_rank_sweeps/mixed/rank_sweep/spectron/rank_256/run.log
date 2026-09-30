@@ -56,3 +56,13 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 20:15:58,368 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / spectron is SUCCESSFUL (acc=90.48% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-spectron and Git recording.
 2026-09-30 20:15:59,119 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-spectron: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 20:15:59,160 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\spectron.md
+[main 86988b336] feat(benchmark): record successful spectron on distilbert-sst2 (Acc: 90.48%, F1: 0.9083)
+ 10 files changed, 193 insertions(+), 1 deletion(-)
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_256/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_256/distilbert_sst2_spectron_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_256/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_256/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_256/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_384/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_384/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_384/run.log

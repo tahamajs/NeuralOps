@@ -50,3 +50,9 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 20:15:56,974 [INFO] QwenQualitySweep: Step 35/50 took 0.24s (loss=0.0072, bs=32, micro=16)
 2026-09-30 20:15:58,096 [INFO] QwenQualitySweep: Step 40/50 took 0.22s (loss=0.1505, bs=32, micro=16)
 2026-09-30 20:15:59,300 [INFO] QwenQualitySweep: Step 45/50 took 0.25s (loss=0.1088, bs=32, micro=16)
+2026-09-30 20:16:00,782 [INFO] QwenQualitySweep: Step 50/50 took 0.25s (loss=0.1179, bs=32, micro=16)
+2026-09-30 20:16:02,961 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\mixed\rank_sweep\spectron\rank_384\distilbert_sst2_spectron_full_metrics.json
+2026-09-30 20:16:03,219 [INFO] QwenQualitySweep: [1/1] spectron -> PASS 91.40% (F1: 0.9169, Peak VRAM: 463.62 MB)
+2026-09-30 20:16:03,285 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / spectron is SUCCESSFUL (acc=91.40% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-spectron and Git recording.
+2026-09-30 20:16:03,925 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-spectron: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
+2026-09-30 20:16:03,945 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\spectron.md
