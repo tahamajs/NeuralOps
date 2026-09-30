@@ -1,7 +1,7 @@
 rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
 16,svd_linear_attention,PASS,81.77,0.8195,0.416,390.28,1.2391,19.3,0,0,93.56,66955010,54034250
-32,svd_linear_attention,PASS,83.72,0.8436,0.411,392.53,1.2257,18.42,0,0,133.9,66955010,54624074
+32,svd_linear_attention,PASS,83.72,0.8436,0.411,392.53,1.2257,18.42,0,0,139.3,66955010,54624074
 64,svd_linear_attention,PASS,87.16,0.8767,0.3537,397.03,1.1998,16.65,0,0,88.86,66955010,55803722
-128,svd_linear_attention,PASS,88.88,0.8945,0.3414,406.03,1.1512,13.13,0,0,32.9,66955010,58163018
+128,svd_linear_attention,PASS,88.88,0.8945,0.3414,406.03,1.1512,13.13,0,0,146.1,66955010,58163018
 256,svd_linear_attention,PASS,90.02,0.9026,0.3285,371.98,1.0648,6.08,0,0,85.39,66955010,62881610
-384,svd_linear_attention,MODERATE_EXPANSION,90.71,0.9101,0.3312,450.78,1.0,0.0,0,0,115.62,66955010,67600202
+384,svd_linear_attention,MODERATE_EXPANSION,90.71,0.9101,0.3312,450.78,1.0,0.0,0,0,143.7,66955010,67600202
