@@ -1,7 +1,7 @@
 # All Modules KD Results
 
-**Generated:** 2026-09-30T20:40:22.506900  
-**Total modules tested:** 21  
+**Generated:** 2026-09-30T20:51:37.630767  
+**Total modules tested:** 23  
 **Baseline (GPT-2 Teacher):** PPL = `31.54`
 
 ## Results Table
@@ -29,3 +29,5 @@
 | 19 | `svd_linear_attention` | 339.37 | **173.41** | 53.91% | 5.50x | PASS |
 | 20 | `adaptive_svd_attention` | 339.43 | **184.52** | 50.31% | 5.85x | PASS |
 | 21 | `leka_v3` | 711.96 | **261.47** | 66.21% | 8.29x | PASS |
+| 22 | `fused_svd_kernel` | 339.36 | **281.41** | 18.83% | 8.92x | PASS |
+| 23 | `hgrn2_outer` | 12352.75 | **1014.88** | 92.02% | 32.18x | PASS |

@@ -124,5 +124,17 @@
     "pre_ppl": 711.96,
     "post_ppl": 261.47,
     "recovery_pct": 66.21
+  },
+  {
+    "module": "fused_svd_kernel",
+    "pre_ppl": 339.36,
+    "post_ppl": 281.41,
+    "recovery_pct": 18.83
+  },
+  {
+    "module": "hgrn2_outer",
+    "pre_ppl": 12352.75,
+    "post_ppl": 1014.88,
+    "recovery_pct": 92.02
   }
 ]
