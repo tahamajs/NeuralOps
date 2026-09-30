@@ -1,10 +1,10 @@
 {
   "module_name": "svd_proj",
   "status": "FAIL_PPL_DIVERGED",
-  "perplexity": 403.9031,
+  "perplexity": 403.9213,
   "baseline_ppl": 21.71,
-  "delta_ppl": 382.1931,
-  "ppl_ratio": 18.6045,
+  "delta_ppl": 382.2113,
+  "ppl_ratio": 18.6053,
   "compression_rate": 1.2197,
   "compression_ratio_pct": 18.01,
   "total_params_before": 124439808,
@@ -14,13 +14,13 @@
   "num_compressed_layers": 0,
   "num_fallback_layers": 0,
   "lora_params": 0,
-  "calibration_time_s": 7.156,
+  "calibration_time_s": 10.588,
   "recovery_time_s": 0.0,
   "peak_vram_mb": 800.42,
-  "latency_ms_per_token": 0.3281,
-  "throughput_tok_per_sec": 3047.68,
-  "eval_elapsed_s": 32.812,
-  "wall_elapsed_s": 42.938,
+  "latency_ms_per_token": 0.3693,
+  "throughput_tok_per_sec": 2707.99,
+  "eval_elapsed_s": 36.928,
+  "wall_elapsed_s": 50.024,
   "error": "",
-  "timestamp": "2026-09-28T06:58:13"
+  "timestamp": "2026-09-30T06:55:18"
 }
