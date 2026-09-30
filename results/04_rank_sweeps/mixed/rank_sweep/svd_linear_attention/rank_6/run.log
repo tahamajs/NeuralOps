@@ -76,3 +76,8 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 21:11:26,008 [INFO] QwenQualitySweep: Step 90/100 took 1.15s (loss=0.3533, bs=32, micro=16)
 2026-09-30 21:11:32,146 [INFO] QwenQualitySweep: Step 95/100 took 1.24s (loss=0.2855, bs=32, micro=16)
 2026-09-30 21:11:37,975 [INFO] QwenQualitySweep: Step 100/100 took 1.11s (loss=0.2776, bs=32, micro=16)
+2026-09-30 21:11:55,401 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\mixed\rank_sweep\svd_linear_attention\rank_6\distilbert_sst2_svd_linear_attention_full_metrics.json
+2026-09-30 21:11:55,628 [INFO] QwenQualitySweep: [1/1] svd_linear_attention -> PASS 79.59% (F1: 0.7906, Peak VRAM: 388.87 MB)
+2026-09-30 21:11:55,685 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / svd-linear-attention is SUCCESSFUL (acc=79.59% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-svd-linear-attention and Git recording.
+2026-09-30 21:11:56,596 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-svd-linear-attention: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
+2026-09-30 21:11:56,627 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\compressions\svd_linear.md
