@@ -1,7 +1,5 @@
 rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-16,flash_attention3,PASS,90.83,0.9109,0.2902,429.53,1.0,0.0,0,0,131.4,66955010,67544834
-32,flash_attention3,PASS,90.83,0.9109,0.2902,429.53,1.0,0.0,0,0,96.1,66955010,67544834
-64,flash_attention3,PASS,90.71,0.9099,0.2919,429.53,1.0,0.0,0,0,60.1,66955010,67544834
-128,flash_attention3,PASS,90.71,0.9099,0.292,429.53,1.0,0.0,0,0,55.9,66955010,67544834
-256,flash_attention3,PASS,90.71,0.9099,0.292,429.53,1.0,0.0,0,0,64.0,66955010,67544834
-384,flash_attention3,PASS,90.71,0.9099,0.292,429.53,1.0,0.0,0,0,65.3,66955010,67544834
+16,primal_attention,PASS,87.39,0.8741,0.3748,467.31,1.0,0.0,6,0,64.5,66955010,67544834
+32,primal_attention,PASS,90.37,0.9075,0.3051,469.81,1.0,0.0,6,0,66.18,66955010,67544834
+64,primal_attention,PASS,91.4,0.9171,0.3153,471.81,1.0,0.0,6,0,1906.24,66955010,67544834
+128,primal_attention,ERROR_CODE_0,0.0,0.0,99.0,0.0,1.0,,0,0,306.3,,
