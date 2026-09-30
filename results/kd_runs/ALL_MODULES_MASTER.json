@@ -36,6 +36,12 @@
     "recovery_pct": 0.0
   },
   {
+    "module": "granite_hybrid",
+    "pre_ppl": 31.54,
+    "post_ppl": 31.74,
+    "recovery_pct": 0.0
+  },
+  {
     "module": "squeezing_heads",
     "pre_ppl": 31.54,
     "post_ppl": 31.83,
@@ -118,6 +124,12 @@
     "pre_ppl": 339.43,
     "post_ppl": 184.52,
     "recovery_pct": 50.31
+  },
+  {
+    "module": "kda_attention",
+    "pre_ppl": 2796.78,
+    "post_ppl": 189.05,
+    "recovery_pct": 94.3
   },
   {
     "module": "leka_v3",

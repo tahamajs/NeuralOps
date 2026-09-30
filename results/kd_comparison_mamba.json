@@ -1,21 +1,21 @@
 {
-  "module": "hgrn2_outer",
-  "pre_ppl": 12352.75,
+  "module": "kda_attention",
+  "pre_ppl": 2796.78,
   "baseline_ppl": 31.54,
   "results": {
     "C": {
       "method": "C",
-      "pre_ppl": 12352.75,
-      "post_ppl": 1014.88,
-      "ppl_ratio": 32.1776,
-      "recovery_pct": 92.02,
-      "peak_vram_mb": 1927.34,
-      "train_time_s": 533.15,
-      "s_per_step": 1.0663,
-      "loss_final": 470.6824,
+      "pre_ppl": 2796.78,
+      "post_ppl": 189.05,
+      "ppl_ratio": 5.994,
+      "recovery_pct": 94.3,
+      "peak_vram_mb": 1500.95,
+      "train_time_s": 246.1,
+      "s_per_step": 0.4922,
+      "loss_final": 257.1298,
       "cached": true,
       "ppl_at_step_250": "",
-      "ppl_at_step_500": 1014.88,
+      "ppl_at_step_500": 189.05,
       "ppl_at_step_750": "",
       "ppl_at_step_1000": "",
       "ppl_at_step_1250": "",
@@ -23,8 +23,8 @@
     }
   },
   "best_method": "C",
-  "best_post_ppl": 1014.88,
-  "is_ssm_recoverable": false,
-  "recommendation": "NO: Fundamental mathematical incompatibility between SSM recurrence and pre-trained attention representations.",
-  "run_dir": "results/kd_runs/hgrn2_outer/20260930_204105_bs1_seq128_lr5e-06_noclr_C"
+  "best_post_ppl": 189.05,
+  "is_ssm_recoverable": true,
+  "recommendation": "MAYBE: Partial recovery achieved. Additional recovery steps or specialized scan kernels needed.",
+  "run_dir": "results/kd_runs/kda_attention/20260930_205209_bs1_seq128_lr5e-06_noclr_C"
 }
