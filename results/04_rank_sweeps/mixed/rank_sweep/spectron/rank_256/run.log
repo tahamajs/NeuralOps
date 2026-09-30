@@ -66,3 +66,12 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
  create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_384/batch_cache_sst2/meta.json
  create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_384/finetune_metadata.json
  create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_384/run.log
+2026-09-30 20:16:06,523 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: fca257e5
+2026-09-30 20:16:06,525 [INFO] QwenQualitySweep: [1/1] spectron Timing: eval_time=29.18s
+2026-09-30 20:16:06,526 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 20:16:06,886 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:16:06,886 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 20:16:06,899 [INFO] QwenQualitySweep: 
+                   Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+spectron (efficient-attn)   PASS   90.48%    -0.12% 0.9083                  0            1.07x  436.9 MB               1.66              1.90
+2026-09-30 20:16:06,900 [INFO] QwenQualitySweep: ================================================================================
