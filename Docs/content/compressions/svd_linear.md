@@ -308,7 +308,7 @@ Combining low-rank decomposition with uniform scalar quantization yields ultra-h
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | ag_news | `PASS` | 70.70% | **36.30%** | -34.40% | 0.2689 | 1.20x | 0 | [svd-linear-attention-distilbert-sst2-svd-linear](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-svd-linear) | 2026-09-16 |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **81.77%** | -8.83% | 0.8195 | 1.24x | 0 | N/A | 2026-09-30 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **87.16%** | -3.44% | 0.8767 | 1.20x | 0 | N/A | 2026-09-30 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **53.90%** | -27.90% | 0.5017 | 1.20x | 0 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **89.40%** | -4.90% | 0.8903 | 1.20x | 0 | N/A | 2026-09-19 |
 | **roberta-sst2** | sst2 | `PASS` | 94.38% | **72.94%** | -21.44% | 0.7424 | 1.18x | 0 | [svd-linear-attention-roberta-sst2-svd-linear](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-sst2-svd-linear) | 2026-09-27 |
