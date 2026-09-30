@@ -54,3 +54,11 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 21:15:32,332 [INFO] QwenQualitySweep: Step 50/100 took 30.65s (loss=0.0175, bs=32, micro=16)
 2026-09-30 21:18:24,459 [INFO] QwenQualitySweep: Step 55/100 took 35.01s (loss=0.0040, bs=32, micro=16)
 2026-09-30 21:20:24,061 [INFO] QwenQualitySweep: Step 60/100 took 21.88s (loss=0.1942, bs=32, micro=16)
+2026-09-30 21:22:27,427 [INFO] QwenQualitySweep: Step 65/100 took 24.44s (loss=0.0089, bs=32, micro=16)
+2026-09-30 21:24:18,811 [INFO] QwenQualitySweep: Step 70/100 took 20.19s (loss=0.0237, bs=32, micro=16)
+forrtl: error (200): program aborting due to control-C event
+Image              PC                Routine            Line        Source             
+libifcoremd.dll    00007FFF486EDF54  Unknown               Unknown  Unknown
+KERNELBASE.dll     00007FFFB41D652D  Unknown               Unknown  Unknown
+KERNEL32.DLL       00007FFFB51FCD87  Unknown               Unknown  Unknown
+ntdll.dll          00007FFFB696CAEC  Unknown               Unknown  Unknown
