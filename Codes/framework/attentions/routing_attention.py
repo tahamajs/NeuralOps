@@ -661,10 +661,10 @@ class RoutingAttention(BaseAttention):
             out_k = torch.matmul(attn_k, V_k)                          # (B, H, max_q, d)
 
             # Zero out padded queries before scattering
-            out_k = out_k * valid_q.unsqueeze(-1).to(dtype)
+            out_k = out_k * valid_q.unsqueeze(-1).to(out_k.dtype)
 
             # Scatter back (each token belongs to exactly one cluster → safe)
-            outputs.scatter_add_(2, q_idx_exp, out_k)
+            outputs.scatter_add_(2, q_idx_exp, out_k.to(outputs.dtype))
 
         # ===========================================================
         # Post-processing

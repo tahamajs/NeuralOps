@@ -157,6 +157,8 @@ def linear_attn_pytorch_fallback(
         k_c = phi_k * cos_w
         k_s = phi_k * sin_w
 
+    eff_eps = max(eps, 1e-4) if orig_dtype == torch.float16 else eps
+
     if is_causal:
         # Memory-efficient streaming chunked prefix recurrence
         chunk_size = min(64, max(1, N))
@@ -190,7 +192,15 @@ def linear_attn_pytorch_fallback(
                 num_intra = torch.matmul(A_intra, vc)
                 denom_intra = A_intra.sum(dim=-1)
 
-                chunk_out = (num_inter + num_intra) / (denom_inter.unsqueeze(-1) + denom_intra.unsqueeze(-1) + eps)
+                denom_val = denom_inter.unsqueeze(-1) + denom_intra.unsqueeze(-1)
+                if phi in ("elu+1", "relu", "softmax_free"):
+                    denom_safe = torch.clamp(denom_val, min=eff_eps)
+                else:
+                    denom_sign = torch.sign(denom_val)
+                    denom_sign = torch.where(denom_sign == 0, torch.ones_like(denom_sign), denom_sign)
+                    denom_safe = torch.where(denom_val.abs() < eff_eps, eff_eps * denom_sign, denom_val)
+
+                chunk_out = (num_inter + num_intra) / denom_safe
                 out[:, :, start:end] = chunk_out
 
                 # State update
@@ -219,7 +229,15 @@ def linear_attn_pytorch_fallback(
                 num_intra = torch.matmul(A_intra, vc)
                 denom_intra = A_intra.sum(dim=-1)
 
-                chunk_out = (num_inter + num_intra) / (denom_inter.unsqueeze(-1) + denom_intra.unsqueeze(-1) + eps)
+                denom_val = denom_inter.unsqueeze(-1) + denom_intra.unsqueeze(-1)
+                if phi in ("elu+1", "relu", "softmax_free"):
+                    denom_safe = torch.clamp(denom_val, min=eff_eps)
+                else:
+                    denom_sign = torch.sign(denom_val)
+                    denom_sign = torch.where(denom_sign == 0, torch.ones_like(denom_sign), denom_sign)
+                    denom_safe = torch.where(denom_val.abs() < eff_eps, eff_eps * denom_sign, denom_val)
+
+                chunk_out = (num_inter + num_intra) / denom_safe
                 out[:, :, start:end] = chunk_out
 
                 S = S + torch.matmul(kc.transpose(-1, -2), vc)
@@ -235,14 +253,26 @@ def linear_attn_pytorch_fallback(
             Z_sin = k_s.sum(dim=-2, keepdim=True)
 
             num = torch.matmul(q_c, S_cos) + torch.matmul(q_s, S_sin)
-            denom = torch.matmul(q_c, Z_cos.transpose(-1, -2)) + torch.matmul(q_s, Z_sin.transpose(-1, -2)) + eps
-            res = (num / denom).to(orig_dtype)
+            denom = torch.matmul(q_c, Z_cos.transpose(-1, -2)) + torch.matmul(q_s, Z_sin.transpose(-1, -2))
+            if phi in ("elu+1", "relu", "softmax_free"):
+                denom_safe = torch.clamp(denom, min=eff_eps)
+            else:
+                denom_sign = torch.sign(denom)
+                denom_sign = torch.where(denom_sign == 0, torch.ones_like(denom_sign), denom_sign)
+                denom_safe = torch.where(denom.abs() < eff_eps, eff_eps * denom_sign, denom)
+            res = (num / denom_safe).to(orig_dtype)
         else:
             KV = torch.matmul(phi_k.transpose(-1, -2), v_f)
             num = torch.matmul(phi_q, KV)
             Z = phi_k.sum(dim=-2, keepdim=True)
-            denom = torch.matmul(phi_q, Z.transpose(-1, -2)) + eps
-            res = (num / denom).to(orig_dtype)
+            denom = torch.matmul(phi_q, Z.transpose(-1, -2))
+            if phi in ("elu+1", "relu", "softmax_free"):
+                denom_safe = torch.clamp(denom, min=eff_eps)
+            else:
+                denom_sign = torch.sign(denom)
+                denom_sign = torch.where(denom_sign == 0, torch.ones_like(denom_sign), denom_sign)
+                denom_safe = torch.where(denom.abs() < eff_eps, eff_eps * denom_sign, denom)
+            res = (num / denom_safe).to(orig_dtype)
 
     if orig_dim == 3:
         res = res.squeeze(1)

@@ -104,9 +104,13 @@ class LoRALinear(nn.Module):
                 self.bias.requires_grad = False
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
+        w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
+        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
+        out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
+            a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            lora_out = F.linear(F.linear(x, a), bb) * self.scaling
             out = out + lora_out
         return out
 
@@ -401,7 +405,12 @@ class HLAAttention(BaseAttention):
         tri_mask = torch.triu(torch.ones(L, L, device=q.device, dtype=torch.bool)) if reverse else torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
 
         log_decay = torch.log(decay.squeeze(-1).squeeze(-1).clamp(min=1e-5, max=1.0 - 1e-5))  # [1, H]
-        decay_mat = torch.exp(diff.unsqueeze(0).unsqueeze(0).float() * log_decay.unsqueeze(-1).unsqueeze(-1)) * tri_mask.float().unsqueeze(0).unsqueeze(0)
+        exp_arg = torch.where(
+            tri_mask.unsqueeze(0).unsqueeze(0),
+            diff.unsqueeze(0).unsqueeze(0).float() * log_decay.unsqueeze(-1).unsqueeze(-1),
+            float("-inf"),
+        )
+        decay_mat = torch.exp(exp_arg)  # [1, H, L, L], exactly 0.0 outside causal triangle
 
         # Attention weights with exponential decay: scores = (q @ k^T) * decay_mat
         qk = torch.matmul(q_f, k_f.transpose(-1, -2).contiguous()) # [B, H, L, L]

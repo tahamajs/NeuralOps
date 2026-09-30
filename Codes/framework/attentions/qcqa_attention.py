@@ -241,6 +241,7 @@ class QCQAAttention(BaseAttention):
         else:
             self.num_kv_heads = int(kwargs.get("num_kv_heads", 4))
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         self.head_dim = int(
             kwargs.get("head_dim")
@@ -627,8 +628,8 @@ class QCQAAttention(BaseAttention):
         K_perm = K_cat.permute(0, 2, 1, 3)   # (B, H_kv, N_kv, d)
         V_perm = V_cat.permute(0, 2, 1, 3)
         # einsum: w_head[b,h_q,h_kv] · K_perm[b,h_kv,j,d] → (B, H_q, N_kv, d)
-        K_mixed = torch.einsum("bhqk,bkjd->bhqjd", w_head, K_perm)   # (B, H_q, N_kv, d)
-        V_mixed = torch.einsum("bhqk,bkjd->bhqjd", w_head, V_perm)
+        K_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, K_perm)   # (B, H_q, N_kv, d)
+        V_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, V_perm)
 
         # Prepare q for attention
         q_heads = q.permute(0, 2, 1, 3).contiguous()   # (B, H_q, L, d)

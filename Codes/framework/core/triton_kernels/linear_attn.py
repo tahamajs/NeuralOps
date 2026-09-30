@@ -106,7 +106,12 @@ if HAS_TRITON:
             denom_intra = tl.sum(scores_causal, axis=1)
 
             num_total = num_inter + num_intra
-            denom_total = denom_inter + denom_intra + EPS
+            denom_raw = denom_inter + denom_intra
+            if ACTIVATION_MODE == 2:  # Identity
+                denom_sign = tl.where(denom_raw >= 0.0, 1.0, -1.0)
+                denom_total = tl.maximum(tl.abs(denom_raw), EPS) * denom_sign
+            else:
+                denom_total = tl.maximum(denom_raw, EPS)
             out_tile = num_total / denom_total[:, None]
 
             out_ptrs = out_base + (cur_offs_n[:, None] * stride_on + offs_dv[None, :] * stride_od)
@@ -196,8 +201,13 @@ if HAS_TRITON:
             phi_q = tl.where(mask_m[:, None], phi_q, 0.0)
 
             num = tl.dot(phi_q, state_KV)
-            denom = tl.sum(phi_q * state_Z[None, :], axis=1) + EPS
-            out_tile = num / denom[:, None]
+            denom_raw = tl.sum(phi_q * state_Z[None, :], axis=1)
+            if ACTIVATION_MODE == 2:  # Identity
+                denom_sign = tl.where(denom_raw >= 0.0, 1.0, -1.0)
+                denom_total = tl.maximum(tl.abs(denom_raw), EPS) * denom_sign
+            else:
+                denom_total = tl.maximum(denom_raw, EPS)
+            out_tile = num / denom_total[:, None]
 
             out_ptrs = out_base + (cur_m[:, None] * stride_on + offs_dv[None, :] * stride_od)
             tl.store(out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_m[:, None])
@@ -243,6 +253,7 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
         elif phi == "identity":
             act_mode = 2
 
+        eps_eff = max(eps, 1e-4) if q.dtype == torch.float16 else eps
         out = torch.empty((BH, N, D_v), dtype=q.dtype, device=q.device)
 
         if is_causal:
@@ -256,7 +267,7 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
                 out.stride(0), out.stride(1), out.stride(2),
                 N=N, D_K=D_k, D_V=D_v,
                 BLOCK_CHUNK=block_chunk,
-                EPS=eps,
+                EPS=eps_eff,
                 ACTIVATION_MODE=act_mode,
             )
         else:
@@ -271,14 +282,14 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
                 out.stride(0), out.stride(1), out.stride(2),
                 N=N, D_K=D_k, D_V=D_v,
                 BLOCK_M=block_m, BLOCK_N=block_n,
-                EPS=eps,
+                EPS=eps_eff,
                 ACTIVATION_MODE=act_mode,
             )
 
         ctx.save_for_backward(q, k, v)
         ctx.is_causal = is_causal
         ctx.phi = phi
-        ctx.eps = eps
+        ctx.eps = eps_eff
         ctx.cos_weight = cos_weight
         ctx.sin_weight = sin_weight
         return out.view(*orig_shape[:-1], D_v)
@@ -301,9 +312,14 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
             )
             grads = torch.autograd.grad(out, [q_req, k_req, v_req], grad_out, retain_graph=False)
 
-        g_q = grads[0] if ctx.needs_input_grad[0] else None
-        g_k = grads[1] if ctx.needs_input_grad[1] else None
-        g_v = grads[2] if ctx.needs_input_grad[2] else None
+        def _sanitize(g: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
+            if g is None:
+                return None
+            return torch.nan_to_num(g, nan=0.0, posinf=65500.0, neginf=-65500.0)
+
+        g_q = _sanitize(grads[0]) if ctx.needs_input_grad[0] else None
+        g_k = _sanitize(grads[1]) if ctx.needs_input_grad[1] else None
+        g_v = _sanitize(grads[2]) if ctx.needs_input_grad[2] else None
         return g_q, g_k, g_v, None, None, None, None, None
 
 
