@@ -42,3 +42,4 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 21:59:54,524 [INFO] framework.utils.compat: Discovered 48 trainable tensors (589824 params)
 2026-09-30 21:59:54,530 [INFO] QwenQualitySweep: LoRA fine-tuning: 589824 trainable parameters across 48 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
 2026-09-30 22:00:30,643 [INFO] QwenQualitySweep: Step 1/100 took 36.11s (loss=0.0235, bs=32, micro=16)
+2026-09-30 22:02:34,928 [INFO] QwenQualitySweep: Step 5/100 took 32.01s (loss=0.0479, bs=32, micro=16)
