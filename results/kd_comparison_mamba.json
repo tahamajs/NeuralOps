@@ -1,29 +1,29 @@
 {
   "module": "mamba_block",
-  "pre_ppl": 4203.45,
+  "pre_ppl": 4811.35,
   "baseline_ppl": 31.54,
   "results": {
     "C": {
       "method": "C",
-      "pre_ppl": 4203.45,
-      "post_ppl": 138.52,
-      "ppl_ratio": 4.3919,
-      "recovery_pct": 97.44,
-      "peak_vram_mb": 5165.48,
-      "train_time_s": 1085.33,
-      "s_per_step": 1.0853,
-      "loss_final": 122.1277,
+      "pre_ppl": 4811.35,
+      "post_ppl": 152.47,
+      "ppl_ratio": 4.8342,
+      "recovery_pct": 97.47,
+      "peak_vram_mb": 5165.23,
+      "train_time_s": 509.01,
+      "s_per_step": 1.018,
+      "loss_final": 86.6995,
       "cached": true,
       "ppl_at_step_250": "",
-      "ppl_at_step_500": 161.96,
+      "ppl_at_step_500": 152.47,
       "ppl_at_step_750": "",
-      "ppl_at_step_1000": 138.52,
+      "ppl_at_step_1000": "",
       "ppl_at_step_1250": "",
       "ppl_at_step_1500": ""
     }
   },
   "best_method": "C",
-  "best_post_ppl": 138.52,
+  "best_post_ppl": 152.47,
   "is_ssm_recoverable": true,
   "recommendation": "MAYBE: Partial recovery achieved. Additional recovery steps or specialized scan kernels needed."
 }
