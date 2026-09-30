@@ -1086,6 +1086,74 @@
           "ppl_at_step_1500": ""
         }
       }
+    },
+    {
+      "module": "adaptive_span_attention",
+      "timestamp": "20260930_215122",
+      "run_dir": "results/kd_runs/adaptive_span_attention/20260930_215122_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 31.77,
+      "best_recovery_pct": 0.0,
+      "results": {
+        "C": {
+          "pre_ppl": 31.54,
+          "post_ppl": 31.77,
+          "ppl_ratio": 1.0073,
+          "recovery_pct": 0.0,
+          "peak_vram_mb": 1496.99,
+          "train_time_s": 275.41,
+          "s_per_step": 0.5508,
+          "loss_final": 21.7524,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 31.77,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    },
+    {
+      "module": "adaptive_sparse_attention",
+      "timestamp": "20260930_215125",
+      "run_dir": "results/kd_runs/adaptive_sparse_attention/20260930_215125_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 31.57,
+      "best_recovery_pct": 0.0,
+      "results": {
+        "C": {
+          "pre_ppl": 31.57,
+          "post_ppl": 31.57,
+          "ppl_ratio": 1.001,
+          "recovery_pct": 0.0,
+          "peak_vram_mb": 1216.11,
+          "train_time_s": 287.98,
+          "s_per_step": 0.576,
+          "loss_final": 24.7912,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 31.57,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
     }
   ]
 }

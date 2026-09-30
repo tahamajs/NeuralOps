@@ -1,21 +1,21 @@
 {
-  "module": "kda_attention",
-  "pre_ppl": 2796.78,
+  "module": "adaptive_sparse_attention",
+  "pre_ppl": 31.57,
   "baseline_ppl": 31.54,
   "results": {
     "C": {
       "method": "C",
-      "pre_ppl": 2796.78,
-      "post_ppl": 189.05,
-      "ppl_ratio": 5.994,
-      "recovery_pct": 94.3,
-      "peak_vram_mb": 1500.95,
-      "train_time_s": 246.1,
-      "s_per_step": 0.4922,
-      "loss_final": 257.1298,
+      "pre_ppl": 31.57,
+      "post_ppl": 31.57,
+      "ppl_ratio": 1.001,
+      "recovery_pct": 0.0,
+      "peak_vram_mb": 1216.11,
+      "train_time_s": 287.98,
+      "s_per_step": 0.576,
+      "loss_final": 24.7912,
       "cached": true,
       "ppl_at_step_250": "",
-      "ppl_at_step_500": 189.05,
+      "ppl_at_step_500": 31.57,
       "ppl_at_step_750": "",
       "ppl_at_step_1000": "",
       "ppl_at_step_1250": "",
@@ -23,8 +23,8 @@
     }
   },
   "best_method": "C",
-  "best_post_ppl": 189.05,
+  "best_post_ppl": 31.57,
   "is_ssm_recoverable": true,
-  "recommendation": "MAYBE: Partial recovery achieved. Additional recovery steps or specialized scan kernels needed.",
-  "run_dir": "results/kd_runs/kda_attention/20260930_205209_bs1_seq128_lr5e-06_noclr_C"
+  "recommendation": "YES: SSM can learn from attention. Distillation successfully bridged the architectural gap.",
+  "run_dir": "results/kd_runs/adaptive_sparse_attention/20260930_215125_bs1_seq128_lr5e-06_noclr_C"
 }
