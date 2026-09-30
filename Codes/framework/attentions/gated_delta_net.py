@@ -95,12 +95,6 @@ def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=32):
     GD-FIX-09: no inner Python overhead beyond the minimal recurrence.
     """
 
-    if HAS_TRITON_GDN and q.is_cuda and q.shape[-1] <= MAX_REGISTER_DIM:
-        try:
-            return gdn_scan_triton(q, k, v, beta, alpha, chunk_size)
-        except Exception as e:
-            logger.warning("Triton gdn_scan failed, falling back to PyTorch: %s", e)
-
     B, H, L, d = q.shape
     device = q.device
 
@@ -112,6 +106,14 @@ def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=32):
 
     k_f = F.normalize(k_f, p=2, dim=-1, eps=1e-6)
     q_f = F.normalize(q_f, p=2, dim=-1, eps=1e-6)
+
+    # Triton fast path (head_dim <= 64, on CUDA)
+    if (HAS_TRITON_GDN and q.is_cuda and d <= MAX_REGISTER_DIM
+            and q.dtype in (torch.float16, torch.bfloat16, torch.float32)):
+        try:
+            return gdn_scan_triton(q_f, k_f, v_f, beta_f, alpha_f).to(q.dtype)
+        except Exception as e:
+            logger.warning("Triton gdn_scan failed, falling back to PyTorch: %s", e)
 
     pad_len = (chunk_size - L % chunk_size) % chunk_size
     if pad_len > 0:
