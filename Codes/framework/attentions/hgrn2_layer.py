@@ -20,11 +20,13 @@ from framework.core.registry import ATTENTION_REGISTRY
 try:
     from framework.core.triton_kernels.hgrn2_scan import hgrn2_scan_triton
     HAS_TRITON_HGRN2 = True
+    logger = logging.getLogger(__name__)
+    logger.info("HGRN2: Triton scan available")
 except Exception as _e:
-    logging.getLogger(__name__).warning("Triton hgrn2_scan unavailable: %s", _e)
+    logger = logging.getLogger(__name__)
+    logger.warning("HGRN2: Triton scan unavailable: %s", _e)
     hgrn2_scan_triton = None
     HAS_TRITON_HGRN2 = False
-logger = logging.getLogger(__name__)
 
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
@@ -325,11 +327,20 @@ class HGRN2Layer(BaseAttention):
         iv: torch.Tensor,
         chunk_size: int = 32,
     ) -> torch.Tensor:
-        if HAS_TRITON_HGRN2 and f.is_cuda:
-            # Triton path: single fused kernel, replaces the Python chunk loop
-            return hgrn2_scan_triton(f.contiguous(), iv.contiguous(), res_clip=self.res_clip)
+        # --- Triton fast path ---
+        if HAS_TRITON_HGRN2 and hgrn2_scan_triton is not None and f.is_cuda:
+            try:
+                out = hgrn2_scan_triton(
+                    f.contiguous(), iv.contiguous(), res_clip=self.res_clip
+                )
+                logger.debug("HGRN2: Triton scan used")
+                return out
+            except Exception as e:
+                logger.warning("HGRN2 Triton scan failed, falling back: %s", e)
+                logger.debug("HGRN2: Triton FAILED: %s", e)
 
-        """Parallel chunked log-space associative scan."""
+        # --- PyTorch fallback ---
+        logger.debug("HGRN2: PyTorch fallback")
         B, L, D = iv.shape
         f_fp32 = f.float()
         iv_fp32 = iv.float()
@@ -364,7 +375,7 @@ class HGRN2Layer(BaseAttention):
         iv: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """Memory-efficient parallel element-wise recurrence scan in FP32."""
+        # mask preprocessing
         if mask is not None:
             if mask.dim() == 2:
                 mask_float = mask.float()
@@ -379,24 +390,28 @@ class HGRN2Layer(BaseAttention):
                 mask_float = mask.float()
             iv = iv * mask_float.unsqueeze(-1)
 
-        # Forward scan
+        # --- Triton path (no checkpoint, kernel handles backward) ---
         if HAS_TRITON_HGRN2 and f.is_cuda:
             h_fwd = self._scan_direction(f, iv)
-        elif self.training:
+            if self.is_decoder:
+                return h_fwd, None
+            f_rev = torch.flip(f, dims=[1])
+            iv_rev = torch.flip(iv, dims=[1])
+            h_rev = self._scan_direction(f_rev, iv_rev)
+            h_bwd = torch.flip(h_rev, dims=[1])
+            return h_fwd, h_bwd
+
+        # --- PyTorch path with checkpointing ---
+        if self.training:
             import torch.utils.checkpoint as cp
             h_fwd = cp.checkpoint(self._scan_direction, f, iv, use_reentrant=False)
         else:
             h_fwd = self._scan_direction(f, iv)
-
         if self.is_decoder:
             return h_fwd, None
-
-        # Anticausal backward scan for bidirectional encoders
         f_rev = torch.flip(f, dims=[1])
         iv_rev = torch.flip(iv, dims=[1])
-        if HAS_TRITON_HGRN2 and f.is_cuda:
-            h_rev = self._scan_direction(f_rev, iv_rev)
-        elif self.training:
+        if self.training:
             import torch.utils.checkpoint as cp
             h_rev = cp.checkpoint(self._scan_direction, f_rev, iv_rev, use_reentrant=False)
         else:
