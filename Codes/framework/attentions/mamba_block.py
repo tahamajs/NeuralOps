@@ -25,6 +25,15 @@ except Exception as e:  # pragma: no cover
     selective_scan = None  # type: ignore
     HAS_MAMBA_CUDA = False
 
+try:
+    from mamba_ssm.ops.triton.selective_scan import selective_scan_fn as triton_selective_scan
+    HAS_TRITON_MAMBA = True
+except Exception as _e:
+    # mamba-ssm is not installed or does not have Triton selective_scan;
+    # we will use the parallel selective_scan from framework.core.selective_scan
+    triton_selective_scan = None
+    HAS_TRITON_MAMBA = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -546,16 +555,50 @@ class MambaBlock(nn.Module):
         C_ssm: torch.Tensor,
         D: torch.Tensor,
     ) -> torch.Tensor:
-        """Prefill path: use the fast selective_scan if CUDA kernel available, else chunked recurrent."""
+        """
+        Parallel scan dispatch with 3-tier fallback:
+          Path 1: Official CUDA kernel via selective_scan (Linux only, when compiled)
+          Path 2: Triton selective_scan (if mamba_ssm Triton ops available)
+          Path 3: Fast chunked parallel scan (framework.core.selective_scan, O(1) ops per chunk)
+          Path 4: Chunked recurrent scan with activation checkpointing (failsafe fallback)
+        """
+        # Path 1: Official CUDA kernel
         if HAS_MAMBA_CUDA and selective_scan is not None:
             try:
-                y = selective_scan(
+                return selective_scan(
                     u=u, delta=delta, A=A, B=B_ssm, C=C_ssm, D=D,
                     delta_softplus=True,
                 )
-                return y
             except Exception as e:
-                logger.debug("selective_scan failed, falling back to recurrent: %s", e)
+                logger.debug("CUDA selective_scan failed: %s", e)
+
+        # Path 2: Triton kernel
+        if HAS_TRITON_MAMBA and triton_selective_scan is not None:
+            try:
+                y = triton_selective_scan(
+                    u.transpose(1, 2).contiguous(),
+                    delta.transpose(1, 2).contiguous(),
+                    A,
+                    B_ssm.transpose(1, 2).contiguous(),
+                    C_ssm.transpose(1, 2).contiguous(),
+                    D,
+                    delta_softplus=True,
+                )
+                return y.transpose(1, 2).contiguous()
+            except Exception as e:
+                logger.warning("Triton selective_scan failed: %s", e)
+
+        # Path 3: Fast chunked parallel scan (avoids token-by-token Python loop)
+        if selective_scan is not None:
+            try:
+                return selective_scan(
+                    u=u, delta=delta, A=A, B=B_ssm, C=C_ssm, D=D,
+                    delta_softplus=True,
+                )
+            except Exception as e:
+                logger.debug("Parallel selective_scan fallback failed: %s", e)
+
+        # Path 4: Failsafe sequential / chunked recurrent fallback
         y, _ = self._recurrent_scan(u, delta, A, B_ssm, C_ssm, D, None)
         return y
 
