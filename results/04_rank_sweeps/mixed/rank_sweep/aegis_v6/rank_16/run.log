@@ -56,3 +56,24 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 20:17:15,449 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / aegis-v6 is SUCCESSFUL (acc=89.11% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-aegis-v6 and Git recording.
 2026-09-30 20:17:16,246 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-aegis-v6: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 20:17:16,264 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\aegis_v6.md
+[main 2a98319aa] feat(benchmark): record successful aegis_v6 on distilbert-sst2 (Acc: 89.11%, F1: 0.8977)
+ 11 files changed, 904 insertions(+), 654 deletions(-)
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/aegis_v6/rank_16/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/aegis_v6/rank_16/distilbert_sst2_aegis_v6_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/aegis_v6/rank_16/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/aegis_v6/rank_16/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/aegis_v6/rank_16/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/aegis_v6/rank_32/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/aegis_v6/rank_32/distilbert_sst2_aegis_v6_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/aegis_v6/rank_32/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/aegis_v6/rank_32/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/aegis_v6/rank_32/summary.csv
+2026-09-30 20:17:23,368 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: 2a98319a
+2026-09-30 20:17:23,369 [INFO] QwenQualitySweep: [1/1] aegis_v6 Timing: eval_time=39.64s
+2026-09-30 20:17:23,370 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 20:17:23,682 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:17:23,682 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 20:17:23,690 [INFO] QwenQualitySweep: 
+                   Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+aegis_v6 (efficient-attn)   PASS   89.11%    -1.49% 0.8977                  0            1.11x  524.1 MB               4.97              5.70
+2026-09-30 20:17:23,690 [INFO] QwenQualitySweep: ================================================================================
