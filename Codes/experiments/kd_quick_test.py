@@ -352,48 +352,85 @@ def set_train_scope(model, train_scope="all"):
 
     - 'all'                 : train everything
     - 'mamba'/'attention'/'module' : train ONLY parameters inside
-                                    the attention submodule, EXCEPT the
-                                    original GPT-2 c_attn/c_proj fused
-                                    projections. This works for ANY
-                                    injected attention module, whether it
-                                    uses UniversalAttentionWrapper or
-                                    injects directly (q_proj, k_proj, ...).
+                                    the attention submodule, EXCEPT:
+                                      1. Original GPT-2 c_attn/c_proj weights
+                                      2. SVD base weights (.U, .S, .V)
+                                      3. FactorisedLinear base weights
+                                         (.down.weight, .up.weight, .up.bias)
+                                         when lora_A/lora_B adapters exist
+                                    TRAINABLE: lora_A, lora_B, fusion_gate,
+                                    prune_gate, SSM-specific params, etc.
     """
     if train_scope == "all":
         for p in model.parameters():
             p.requires_grad = True
     elif train_scope in ("mamba", "attention", "module"):
-        # Keywords indicating low-rank / SVD / adapter parameters that should be trained
-        trainable_keywords = ("W_u", "W_v", "weight_u", "weight_v", "lora_A", "lora_B", "adapter", "A", "B")
+        # Build a lookup of all named modules for parent-inspection
+        named_mods = dict(model.named_modules())
+
+        # Keywords indicating low-rank / SSM / adapter parameters to keep trainable
+        trainable_keywords = (
+            "W_u", "W_v", "weight_u", "weight_v",
+            "lora_A", "lora_B",
+            "adapter",
+            "A_log", "A", "D",       # Mamba/SSM state matrices
+            "dt_proj", "dt_bias",    # SSM delta-time projections
+            "conv1d", "conv",        # Mamba conv layers
+            "in_proj", "x_proj",     # Mamba input projections
+            "fusion_gate",           # aegis gate
+            "prune_gate",            # aegis pruning gate
+        )
+
         for name, p in model.named_parameters():
             # Must be inside a transformer block's attention submodule
             if ".attn." not in name:
                 p.requires_grad = False
                 continue
 
-            # Within .attn., inspect the immediate submodule name
-            sub = name.split(".attn.", 1)[-1]
-
-            # Check if this is an SVD base weight of a FactorisedLinear module.
-            is_svd_base = False
+            # --- Freeze SVD tri-factor bases (.U, .S, .V) ---
             if any(name.endswith(sfx) for sfx in (".U", ".S", ".V")):
-                is_svd_base = True
-            elif name.endswith(".bias"):
-                parent_path = name.rsplit(".", 1)[0]
-                parent_mod = dict(model.named_modules()).get(parent_path, None)
-                if parent_mod is not None and (
-                    hasattr(parent_mod, "lora_A") or hasattr(parent_mod, "lora_B")
-                ):
-                    is_svd_base = True
+                p.requires_grad = False
+                continue
 
-            if is_svd_base:
+            # --- Freeze FactorisedLinear BASE weights ---
+            # Pattern: <path>.down.weight or <path>.up.weight or <path>.up.bias
+            # We freeze these iff the PARENT FactorisedLinear has lora_A/lora_B.
+            # Without LoRA adapters (lora_rank=0), the base weights ARE the
+            # learned parameters and should be trained.
+            factorised_base = False
+            for base_sfx in (".down.weight", ".up.weight", ".up.bias"):
+                if name.endswith(base_sfx):
+                    # Parent module is everything before ".down.weight" etc.
+                    parent_path = name[: name.rfind(base_sfx.rsplit(".", 2)[0]) + len(base_sfx.rsplit(".", 2)[0]) - 1]
+                    # E.g. "...attn.q_proj.down.weight" → parent = "...attn.q_proj"
+                    parent_path = name.rsplit(".", 2)[0]  # strip ".down.weight" → "...q_proj"
+                    parent_mod = named_mods.get(parent_path)
+                    if parent_mod is not None:
+                        has_lora = (
+                            getattr(parent_mod, "lora_A", None) is not None
+                            and getattr(parent_mod, "lora_B", None) is not None
+                        )
+                        if has_lora:
+                            factorised_base = True
+                    break
+
+            if factorised_base:
                 p.requires_grad = False
-            elif any(kw in name for kw in trainable_keywords):
-                p.requires_grad = True
-            elif sub.startswith(("c_attn.weight", "c_proj.weight", "c_attn.bias", "c_proj.bias")) or sub in ("c_attn", "c_proj"):
+                continue
+
+            # --- Freeze original GPT-2 c_attn / c_proj ---
+            sub = name.split(".attn.", 1)[-1]
+            if sub.startswith((
+                "c_attn.weight", "c_proj.weight",
+                "c_attn.bias",   "c_proj.bias",
+            )) or sub in ("c_attn", "c_proj"):
                 p.requires_grad = False
-            else:
-                p.requires_grad = True
+                continue
+
+            # --- Everything else inside .attn. is trainable ---
+            # Includes: lora_A, lora_B, fusion_gate, prune_gate, SSM matrices,
+            #           FactorisedLinear bases when lora_rank=0 (they ARE the weights)
+            p.requires_grad = True
     else:
         raise ValueError(f"Unknown train_scope: {train_scope}")
 
@@ -408,6 +445,7 @@ def set_train_scope(model, train_scope="all"):
 # -----------------------------------------------------------------------------
 # Teacher Output Preprocessing Cache
 # -----------------------------------------------------------------------------
+
 class CachedTeacherOutput:
     def __init__(
         self,
