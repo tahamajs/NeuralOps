@@ -128,3 +128,34 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 20:22:04,901 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / asvd-attention is SUCCESSFUL (acc=90.60% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-asvd-attention and Git recording.
 2026-09-30 20:22:06,052 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-asvd-attention: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 20:22:06,092 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\asvd_attention.md
+[main 5dc50a819] feat(benchmark): record successful asvd_attention on distilbert-sst2 (Acc: 90.60%, F1: 0.9083)
+ 21 files changed, 1932 insertions(+), 1008 deletions(-)
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_128/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_128/distilbert_sst2_asvd_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_128/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_128/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_128/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_16/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_16/distilbert_sst2_asvd_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_16/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_16/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_16/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_32/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_32/distilbert_sst2_asvd_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_32/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_32/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_32/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_64/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_64/distilbert_sst2_asvd_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_64/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_64/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_64/summary.csv
+2026-09-30 20:22:17,450 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: 5dc50a81
+2026-09-30 20:22:17,454 [INFO] QwenQualitySweep: [1/1] asvd_attention Timing: eval_time=150.28s
+2026-09-30 20:22:17,455 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 20:22:18,427 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:22:18,428 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 20:22:18,439 [INFO] QwenQualitySweep: 
+        Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+asvd_attention   PASS   90.60%    +0.00% 0.9083                  6            1.00x  494.6 MB              11.76             13.49
+2026-09-30 20:22:18,440 [INFO] QwenQualitySweep: ================================================================================
