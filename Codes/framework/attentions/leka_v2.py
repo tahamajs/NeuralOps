@@ -6,17 +6,17 @@ Supports:
 - GQA with repeat_kv
 - RoPE position embeddings
 - Exact causal masking for decoders
-- Nested encoder bypass
+- Chunk-wise Landmark Selection (Solves Causal Starvation)
+- Block-wise Sliding Window Attention (True O(N) memory scaling)
 - Frobenius norm verification (>= 1e-4)
 - Safe injection returning None on failure
-
 """
 
 from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -33,7 +33,6 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # RoPE (dtype-safe)
 # ===========================================================================
-
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     x1 = x[..., : x.shape[-1] // 2]
     x2 = x[..., x.shape[-1] // 2 :]
@@ -41,10 +40,7 @@ def _rotate_half(x: torch.Tensor) -> torch.Tensor:
 
 
 def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
+    q: torch.Tensor, k: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
@@ -60,30 +56,21 @@ def apply_rotary_pos_emb(
         cos = cos.unsqueeze(0)
         sin = sin.unsqueeze(0)
 
-    if cos.shape[-2] != q.shape[-2]:
-        raise ValueError(
-            f"apply_rotary_pos_emb: cos/sin seq len {cos.shape[-2]} != q seq len {q.shape[-2]}"
-        )
-
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
 
     if rotary_dim < head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        cos_q = cos.to(q_rot.dtype)
-        sin_q = sin.to(q_rot.dtype)
-        cos_k = cos.to(k_rot.dtype)
-        sin_k = sin.to(k_rot.dtype)
+        cos_q, sin_q = cos.to(q_rot.dtype), sin.to(q_rot.dtype)
+        cos_k, sin_k = cos.to(k_rot.dtype), sin.to(k_rot.dtype)
         q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
         k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
         q = torch.cat([q_rot_embed, q_pass], dim=-1)
         k = torch.cat([k_rot_embed, k_pass], dim=-1)
     else:
-        cos_q = cos[..., :head_dim].to(q.dtype)
-        sin_q = sin[..., :head_dim].to(q.dtype)
-        cos_k = cos[..., :head_dim].to(k.dtype)
-        sin_k = sin[..., :head_dim].to(k.dtype)
+        cos_q, sin_q = cos[..., :head_dim].to(q.dtype), sin[..., :head_dim].to(q.dtype)
+        cos_k, sin_k = cos[..., :head_dim].to(k.dtype), sin[..., :head_dim].to(k.dtype)
         q = (q * cos_q) + (_rotate_half(q) * sin_q)
         k = (k * cos_k) + (_rotate_half(k) * sin_k)
 
@@ -91,22 +78,16 @@ def apply_rotary_pos_emb(
 
 
 # ===========================================================================
-# Decoder detection (LV2-16)
+# Decoder detection
 # ===========================================================================
-
-def _detect_decoder(
-    config: Any,
-    is_decoder: Optional[bool],
-    src_attn: Optional[nn.Module],
-) -> bool:
+def _detect_decoder(config: Any, is_decoder: Optional[bool], src_attn: Optional[nn.Module]) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)
     if config is not None:
         if getattr(config, "is_decoder", False) or getattr(config, "causal", False):
             return True
         mt = str(getattr(config, "model_type", "") or "").lower()
-        if mt.startswith(("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                          "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")):
+        if mt.startswith(("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon")):
             return True
         arch = getattr(config, "architectures", None)
         if arch and any(("GPT" in str(a) or "CausalLM" in str(a)) for a in arch):
@@ -122,21 +103,14 @@ def _detect_decoder(
 
 
 # ===========================================================================
-# LV2-07: Reference softpick (arXiv:2504.20966)
+# Reference softpick (arXiv:2504.20966)
 # ===========================================================================
-
 def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
-    """
-    Rectified softmax with temperature:
-        p_i = ReLU(exp((x_i - m) / T) - exp(-m / T)) / sum_j ReLU(...)
-    where m = max_j x_j. Falls back to softmax if all p_i are zero.
-    """
     orig_dtype = x.dtype
     x_f = x.float()
     temp = max(float(temperature), 1e-6)
 
     m = x_f.amax(dim=dim, keepdim=True)
-    # For all-masked rows (m << 0), set m_safe to 0 so exp(-m_safe) = 1
     m_safe = torch.where(m < -1e3, torch.zeros_like(m), m)
 
     z = x_f - m_safe
@@ -155,34 +129,18 @@ def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.
 
 
 # ===========================================================================
-# LV2-08: FactorizedLoRALinear
+# FactorizedLoRALinear
 # ===========================================================================
-
 class FactorizedLoRALinear(nn.Module):
-    """
-    SVD-factorized linear + LoRA adapter.
-
-    Forward: y = up(down(x)) + (lora_B @ lora_A)(x) * scaling
-    Base (down, up) frozen; LoRA trainable.
-    """
     is_custom_attention = False
 
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        rank: int = 64,
-        lora_rank: int = 16,
-        lora_alpha: float = 32.0,
-        bias: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
-    ) -> None:
+    def __init__(self, in_features: int, out_features: int, rank: int = 64,
+                 lora_rank: int = 16, lora_alpha: float = 32.0, bias: bool = True,
+                 device=None, dtype=None) -> None:
         super().__init__()
         self.in_features = int(in_features)
         self.out_features = int(out_features)
         self.rank = max(1, min(int(rank), self.in_features, self.out_features))
-        self.svd_rank = self.rank
         self.lora_rank = int(lora_rank) if lora_rank > 0 else 0
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
 
@@ -204,17 +162,6 @@ class FactorizedLoRALinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
-    @property
-    def weight(self) -> torch.Tensor:
-        w = torch.matmul(self.up.weight, self.down.weight)
-        if self.lora_A is not None and self.lora_B is not None:
-            w = w + (self.lora_B @ self.lora_A) * self.lora_scaling
-        return w
-
-    @property
-    def bias(self) -> Optional[torch.Tensor]:
-        return self.up.bias
-
     def freeze_base_weights(self) -> None:
         self.down.weight.requires_grad = False
         self.up.weight.requires_grad = False
@@ -225,12 +172,6 @@ class FactorizedLoRALinear(nn.Module):
         if self.lora_B is not None:
             self.lora_B.requires_grad = True
 
-    def unfreeze_base_weights(self) -> None:
-        self.down.weight.requires_grad = True
-        self.up.weight.requires_grad = True
-        if self.up.bias is not None:
-            self.up.bias.requires_grad = True
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.up(self.down(x))
         if self.lora_A is not None and self.lora_B is not None:
@@ -239,9 +180,8 @@ class FactorizedLoRALinear(nn.Module):
 
 
 # ===========================================================================
-# Main LEKAv2
+# Main LEKAv2 Attention
 # ===========================================================================
-
 @ATTENTION_REGISTRY.register("leka_v2", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("leka_v2_attention", supports_causal=True, supports_gqa=True)
 class LEKAv2Attention(BaseAttention):
@@ -263,7 +203,6 @@ class LEKAv2Attention(BaseAttention):
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        # LV2-02: robust super().__init__
         try:
             super().__init__(config, rank)
         except TypeError:
@@ -288,21 +227,19 @@ class LEKAv2Attention(BaseAttention):
 
         # Hyper-parameters
         self.landmark_ratio = float(getattr(comp_config, "landmark_ratio", 0.5) if comp_config else 0.5)
+        self.landmark_chunk_size = int(getattr(comp_config, "landmark_chunk_size", 64) if comp_config else 64)
         self.min_landmarks = int(getattr(comp_config, "min_landmarks", 64) if comp_config else 64)
         self.num_landmarks = int(getattr(comp_config, "num_landmarks", self.min_landmarks) if comp_config else self.min_landmarks)
         self.feature_dim = int(getattr(comp_config, "feature_dim", 128) if comp_config else 128)
         self.local_window_size = int(getattr(comp_config, "local_window_size", 128) if comp_config else 128)
         dropout_p = float(
-            getattr(comp_config, "dropout",
-                    getattr(config, "dropout", 0.1)) if config is not None else 0.1
+            getattr(comp_config, "dropout", getattr(config, "dropout", 0.1)) if config is not None else 0.1
         )
 
-        # LV2-16: centralized decoder detection
         self.is_decoder = _detect_decoder(config, is_decoder, source_attn)
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
-        # LoRA config
         self.lora_rank = int(
             getattr(config, "lora_rank", None)
             or (getattr(comp_config, "lora_rank", None) if comp_config else None)
@@ -313,15 +250,12 @@ class LEKAv2Attention(BaseAttention):
             or (getattr(comp_config, "lora_alpha", None) if comp_config else None)
             or kwargs.get("lora_alpha", 32.0)
         )
-
-        # LV2-08: projection rank for FactorizedLoRALinear
         self.proj_rank = int(
             kwargs.get("proj_rank")
             or (getattr(comp_config, "proj_rank", None) if comp_config else None)
             or (rank if rank is not None else 64)
         )
 
-        # FactorizedLoRALinear projections
         FF = FactorizedLoRALinear
         self.query = FF(self.dim, self.all_head_size, rank=self.proj_rank,
                         lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, bias=True)
@@ -331,12 +265,8 @@ class LEKAv2Attention(BaseAttention):
                         lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, bias=True)
         self.out_proj = FF(self.all_head_size, self.dim, rank=self.proj_rank,
                            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, bias=True)
+        self.q_proj, self.k_proj, self.v_proj = self.query, self.key, self.value
 
-        self.q_proj = self.query
-        self.k_proj = self.key
-        self.v_proj = self.value
-
-        # Dual-scale RFF projections (fixed)
         self.register_buffer(
             "rand_proj1",
             torch.randn(self.head_dim, self.feature_dim) / math.sqrt(self.head_dim),
@@ -348,7 +278,6 @@ class LEKAv2Attention(BaseAttention):
             persistent=True,
         )
 
-        # Landmark scorer
         tot_feat = self.feature_dim * 2 + (self.feature_dim // 2) * 2
         self.landmark_scorer = nn.Sequential(
             nn.LayerNorm(tot_feat),
@@ -357,21 +286,17 @@ class LEKAv2Attention(BaseAttention):
             nn.Linear(64, 1),
         )
 
-        # LV2-09: per-head correlation (shape [H, d, d])
         self.W_corr = nn.Parameter(
             torch.eye(self.head_dim).unsqueeze(0).repeat(self.num_heads, 1, 1)
         )
-
-        # Local-vs-landmark gate
         self.local_gate = nn.Parameter(torch.full((self.num_heads,), -2.0))
-
         self.dropout = nn.Dropout(dropout_p)
 
         if source_attn is not None:
             self.copy_weights(source_attn)
 
     # ------------------------------------------------------------------
-    # Dimension detection
+    # Dimension detectors
     # ------------------------------------------------------------------
     @staticmethod
     def _detect_hidden_size(config: Any, src: Optional[nn.Module], kwargs: Dict[str, Any]) -> int:
@@ -474,43 +399,111 @@ class LEKAv2Attention(BaseAttention):
         return x.permute(0, 2, 1, 3)
 
     # ------------------------------------------------------------------
-    # LV2-12/13: Landmark selection
+    # Chunk-wise Landmark Selection (Solves Causal Starvation)
     # ------------------------------------------------------------------
-    def select_landmarks(
+    def select_landmarks_chunked(
         self,
         K_features: torch.Tensor,
         V: torch.Tensor,
         valid_mask: Optional[torch.Tensor] = None,
-        num_landmarks: Optional[int] = None,
-        return_indices: bool = False,
     ):
         B, H, N, feat_dim = K_features.shape
-        target_landmarks = num_landmarks if num_landmarks is not None else self.num_landmarks
-        L_max = min(max(1, target_landmarks), N)
+        chunk_sz = max(1, int(self.landmark_chunk_size))
+        k_per_chunk = max(1, int(chunk_sz * self.landmark_ratio))
 
-        # LV2-12: scorer under no_grad for efficiency (no gradient flow to topk selection)
         with torch.no_grad():
             scores = self.landmark_scorer(K_features).squeeze(-1)   # (B, H, N)
 
-            # LV2-13: add anchor boost BEFORE masking so that block 0 is always top
+            # Anchor boost for position 0 (always select the first token)
             anchor_boost = torch.zeros_like(scores)
             anchor_boost[:, :, 0] = 1e4
             scores = scores + anchor_boost
 
             if valid_mask is not None:
-                pad = (~valid_mask).unsqueeze(1)   # (B, 1, N)
-                scores = scores.masked_fill(pad, -1e4)
+                scores = scores.masked_fill(~valid_mask.unsqueeze(1), -1e4)
 
-            _, idx = scores.topk(L_max, dim=-1)
-            idx = idx.clone()
-            idx[:, :, 0] = 0
+            # Pad to multiple of chunk_size
+            pad_len = (chunk_sz - N % chunk_sz) % chunk_sz
+            if pad_len > 0:
+                scores_pad = F.pad(scores, (0, pad_len), value=-1e4)
+            else:
+                scores_pad = scores
 
-        K_land = torch.gather(K_features, 2, idx.unsqueeze(-1).expand(-1, -1, -1, feat_dim))
-        V_land = torch.gather(V, 2, idx.unsqueeze(-1).expand(-1, -1, -1, V.shape[-1]))
+            num_chunks = scores_pad.shape[-1] // chunk_sz
+            scores_c = scores_pad.view(B, H, num_chunks, chunk_sz)
 
-        if return_indices:
-            return K_land, V_land, idx
-        return K_land, V_land
+            k_act = min(k_per_chunk, chunk_sz)
+            _, local_idx = scores_c.topk(k_act, dim=-1)
+
+            offsets = torch.arange(0, num_chunks * chunk_sz, chunk_sz,
+                                   device=scores.device).view(1, 1, -1, 1)
+            global_idx = (local_idx + offsets).view(B, H, -1)
+            global_idx = global_idx.clamp(max=N - 1)
+
+        K_land = torch.gather(
+            K_features, 2,
+            global_idx.unsqueeze(-1).expand(-1, -1, -1, feat_dim),
+        )
+        V_land = torch.gather(
+            V, 2,
+            global_idx.unsqueeze(-1).expand(-1, -1, -1, V.shape[-1]),
+        )
+        return K_land, V_land, global_idx
+
+    # ------------------------------------------------------------------
+    # Block-wise Sliding Window Attention (True O(N) memory)
+    # ------------------------------------------------------------------
+    def block_local_attention(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor,
+                              valid_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+        B, H, N, d = q.shape
+        W = max(1, int(self.local_window_size))
+
+        pad_len = (W - N % W) % W
+        if pad_len > 0:
+            q_p = F.pad(q, (0, 0, 0, pad_len))
+            k_p = F.pad(k, (0, 0, 0, pad_len))
+            v_p = F.pad(v, (0, 0, 0, pad_len))
+        else:
+            q_p, k_p, v_p = q, k, v
+
+        N_pad = q_p.shape[2]
+        num_blocks = N_pad // W
+        scale = 1.0 / math.sqrt(d)
+
+        q_b = q_p.view(B, H, num_blocks, W, d)
+        k_b = k_p.view(B, H, num_blocks, W, d)
+        v_b = v_p.view(B, H, num_blocks, W, d)
+
+        # 1. Intra-block (self) attention
+        attn_intra = torch.matmul(q_b, k_b.transpose(-1, -2)) * scale
+        if self.is_decoder:
+            causal_mask = torch.tril(torch.ones(W, W, device=q.device, dtype=torch.bool))
+            attn_intra = attn_intra.masked_fill(~causal_mask.view(1, 1, 1, W, W), -1e4)
+
+        # 2. Inter-block (previous block) attention
+        k_b_shifted = F.pad(k_b[:, :, :-1, :, :], (0, 0, 0, 0, 1, 0))
+        v_b_shifted = F.pad(v_b[:, :, :-1, :, :], (0, 0, 0, 0, 1, 0))
+        attn_inter = torch.matmul(q_b, k_b_shifted.transpose(-1, -2)) * scale
+        attn_inter[:, :, 0, :, :] = -1e4   # First block has no previous block
+
+        attn_combined = torch.cat([attn_inter, attn_intra], dim=-1)  # (B, H, nb, W, 2W)
+
+        if valid_mask is not None:
+            v_mask_p = F.pad(valid_mask.float(), (0, pad_len), value=0.0).bool()
+            # valid_mask shape: (B, N_pad) → broadcast against 2W dim
+            v_mask_2w = torch.cat([v_mask_p, v_mask_p], dim=-1).view(B, num_blocks, 1, 2 * W)
+            attn_combined = attn_combined.masked_fill(
+                ~v_mask_2w.unsqueeze(1), -1e4
+            )
+
+        attn_combined = torch.nan_to_num(attn_combined, nan=-1e4, posinf=1e4, neginf=-1e4)
+        attn_weights = F.softmax(attn_combined, dim=-1).to(v.dtype)
+        attn_weights = self.dropout(attn_weights)
+
+        v_combined = torch.cat([v_b_shifted, v_b], dim=-2)  # (B, H, nb, 2W, d)
+        out_local = torch.matmul(attn_weights, v_combined)   # (B, H, nb, W, d)
+
+        return out_local.reshape(B, H, N_pad, d)[:, :, :N, :]
 
     # ------------------------------------------------------------------
     # SVD init
@@ -551,7 +544,7 @@ class LEKAv2Attention(BaseAttention):
                 proj.up.bias.data.zero_()
 
     # ------------------------------------------------------------------
-    # LV2-17: copy_weights raises on missing
+    # copy_weights (GPT-2 / BERT-nested / DistilBERT / Qwen)
     # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
@@ -631,7 +624,7 @@ class LEKAv2Attention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # 3. Flat modules (DistilBERT)
+        # 3. Flat modules (DistilBERT, LLaMA-style)
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -734,7 +727,7 @@ class LEKAv2Attention(BaseAttention):
             for mod in (self.query, self.key, self.value, self.out_proj):
                 mod.freeze_base_weights()
 
-        # LV2-14: forward sanity check
+        # Forward sanity check
         try:
             with torch.no_grad():
                 d = next(self.parameters()).device
@@ -762,13 +755,12 @@ class LEKAv2Attention(BaseAttention):
         B, N, D = hidden_states.shape
         H = self.num_heads
         device = hidden_states.device
-        dtype = hidden_states.dtype
 
         q = self.query(hidden_states).view(B, N, H, self.head_dim).transpose(1, 2).contiguous()
         k = self.key(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         v = self.value(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
-        # LV2-05: RoPE with past_len offset
+        # RoPE with past_len offset
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings", None)
         if position_embeddings is not None:
@@ -791,79 +783,38 @@ class LEKAv2Attention(BaseAttention):
         Q_features = self.kernel_feature_map(q)
         K_features = self.kernel_feature_map(k)
 
-        # Effective landmarks
-        effective_landmarks = max(self.min_landmarks, int(N * self.landmark_ratio))
-        effective_landmarks = min(effective_landmarks, N)
-
         token_valid = None
         if attention_mask is not None:
             token_valid = get_token_valid_mask(attention_mask, B, N, device)
 
-        K_land, V_land, land_idx = self.select_landmarks(
+        # 1. Landmark branch (chunk-wise selection, solves causal starvation)
+        K_land, V_land, land_idx = self.select_landmarks_chunked(
             K_features, v, valid_mask=token_valid,
-            num_landmarks=effective_landmarks, return_indices=True,
         )
-
-        # LV2-09: per-head correlation applied correctly
-        # V_land: (B, H, L, d); W_corr: (H, d, d)
-        # V_land_adj[b, h, l, e] = sum_d V_land[b, h, l, d] * W_corr[h, d, e]
         V_land_adj = torch.einsum("bhld,hde->bhle", V_land, self.W_corr.to(V_land.dtype))
 
-        # Landmark attention scores
-        attn_weights = torch.matmul(
+        attn_land = torch.matmul(
             Q_features.float(), K_land.transpose(-2, -1).contiguous().float()
         )
 
-        # Query padding mask
         if token_valid is not None:
-            attn_weights = attn_weights.masked_fill(
+            attn_land = attn_land.masked_fill(
                 ~token_valid.unsqueeze(1).unsqueeze(-1), -1e4
             )
 
-        # Causal mask: query at i can only attend to landmarks at pos <= i
         if self.is_decoder:
             q_pos = torch.arange(N, device=device).view(1, 1, N, 1)
-            k_land_pos = land_idx.unsqueeze(2)   # (B, H, 1, L)
-            causal_land_mask = (k_land_pos <= q_pos)   # (B, H, N, L)
-            attn_weights = attn_weights.masked_fill(~causal_land_mask, -1e4)
+            causal_land_mask = (land_idx.unsqueeze(2) <= q_pos)
+            attn_land = attn_land.masked_fill(~causal_land_mask, -1e4)
 
-        # LV2-10: softpick for landmark attention too
-        attn_weights = softpick(attn_weights, dim=-1)
-        attn_weights = self.dropout(attn_weights)
-        context_leka = torch.matmul(attn_weights.to(v.dtype), V_land_adj)
+        attn_land = softpick(attn_land, dim=-1)
+        attn_land = self.dropout(attn_land)
+        context_leka = torch.matmul(attn_land.to(v.dtype), V_land_adj)
 
-        # Local window attention
-        idx = torch.arange(N, device=device)
-        dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
-        local_window = min(self.local_window_size, N)
-        radius = max(1, local_window // 2)
-        window_mask = (dist <= radius).unsqueeze(0).unsqueeze(0)
+        # 2. Local branch (block-wise sliding window, true O(N) memory)
+        context_local = self.block_local_attention(q, k, v, token_valid)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
-        local_scores = torch.matmul(q.float(), k.transpose(-2, -1).contiguous().float()) * scale
-        local_scores = local_scores.masked_fill(~window_mask, -1e4)
-
-        # LV2-11: explicit bool for causal_local
-        if self.is_decoder:
-            causal_local = torch.tril(
-                torch.ones(N, N, device=device, dtype=torch.bool)
-            )
-            local_scores = local_scores.masked_fill(
-                ~causal_local.unsqueeze(0).unsqueeze(0), -1e4
-            )
-
-        if token_valid is not None:
-            local_scores = local_scores.masked_fill(
-                ~token_valid.unsqueeze(1).unsqueeze(2), -1e4
-            )
-
-        local_scores = torch.nan_to_num(local_scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-        local_attn = F.softmax(local_scores, dim=-1).to(v.dtype)
-        local_attn = self.dropout(local_attn)
-        context_local = torch.matmul(local_attn, v)
-
-        # Gate fusion: local path dominates at init
-        # local_gate init -2.0 → sigmoid ≈ 0.12 → gate_val ≈ 0.12 favors local (1-gate)
+        # 3. Gate fusion (local dominates at init)
         gate_val = torch.sigmoid(self.local_gate).view(1, H, 1, 1)
         context = (1.0 - gate_val) * context_local + gate_val * context_leka
 
@@ -897,9 +848,8 @@ LEKAV2Attention = LEKAv2Attention
 
 
 # ===========================================================================
-# Injection (LV2-03: recursion guard)
+# Injection (with recursion guard)
 # ===========================================================================
-
 @ATTENTION_REGISTRY.register("leka_v2_inject")
 @ATTENTION_REGISTRY.register("inject_leka_v2")
 def inject_leka_v2(
@@ -937,7 +887,8 @@ def inject_leka_v2(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") \
+            and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -973,7 +924,7 @@ def inject_leka_v2(
         if isinstance(src_attn, LEKAv2Attention) or "LEKAv2" in src_attn.__class__.__name__:
             return None
 
-        # Skip Qwen3.5 hybrid layers
+        # Skip hybrid layers (e.g. Qwen3.5 DeltaNet)
         c_name = src_attn.__class__.__name__
         if "DeltaNet" in c_name or "LinearAttention" in c_name:
             return None

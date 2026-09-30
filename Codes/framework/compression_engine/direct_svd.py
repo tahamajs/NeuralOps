@@ -104,8 +104,8 @@ class DirectSVDCompressor(BaseCompressor):
         self.rank = rank
         self.min_rank = max(1, int(min_rank))
         self.rank_ratio = float(rank_ratio) if rank_ratio is not None else None
-        if max_error is None or max_error == 0.35:
-            max_error = adaptive_max_error(self.rank, 768, 768, "distilbert")
+        if max_error is None:
+            max_error = 0.05
 
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
