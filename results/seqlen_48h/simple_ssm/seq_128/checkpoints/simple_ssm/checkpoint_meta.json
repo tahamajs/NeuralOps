@@ -1,0 +1,63 @@
+{
+  "module_name": "simple_ssm",
+  "model_name": "models/distilbert_sst2",
+  "model_family": "bert",
+  "dataset": "sst2",
+  "accuracy_pct": 50.92,
+  "recovery_steps": 50,
+  "timestamp": "2026-09-25T13:00:58.880435",
+  "performance_metrics": {
+    "accuracy_pct": 50.92,
+    "f1_score": 0.6748,
+    "f1_macro": 0.3374,
+    "precision": 0.2546,
+    "recall": 0.5,
+    "val_loss": 0.7312,
+    "peak_vram_mb": 3985.06,
+    "tokens_per_sec": 610.58,
+    "eval_time_s": 182.8,
+    "latency_ms": 209.64,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.5092,
+        "recall": 1.0,
+        "f1": 0.6748,
+        "support": 444
+      }
+    },
+    "collapse_flag": true
+  },
+  "compression_metrics": {
+    "module_name": "simple_ssm",
+    "module_type": "attention",
+    "total_params_before": 66955010,
+    "total_params_after": 75406082,
+    "trainable_recovery_params": 592130,
+    "compression_rate": 1.0,
+    "compression_rate_raw": 0.8879,
+    "compression_rate_net": 0.8879,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 6,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 6,
+    "lora_params": 0,
+    "avg_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "distilbert.transformer.layer.0.attention": 64,
+      "distilbert.transformer.layer.1.attention": 64,
+      "distilbert.transformer.layer.2.attention": 64,
+      "distilbert.transformer.layer.3.attention": 64,
+      "distilbert.transformer.layer.4.attention": 64,
+      "distilbert.transformer.layer.5.attention": 64
+    },
+    "is_unstructured_sparsity": false
+  }
+}

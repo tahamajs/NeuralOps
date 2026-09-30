@@ -1,0 +1,62 @@
+{
+  "performance": {
+    "accuracy_pct": 89.33,
+    "f1_score": 0.8963,
+    "f1_macro": 0.8933,
+    "precision": 0.8936,
+    "recall": 0.8931,
+    "val_loss": 0.248,
+    "peak_vram_mb": 439.42,
+    "tokens_per_sec": 6039.78,
+    "eval_time_s": 18.48,
+    "latency_ms": 21.19,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.8998,
+        "recall": 0.8808,
+        "f1": 0.8902,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.8874,
+        "recall": 0.9054,
+        "f1": 0.8963,
+        "support": 444
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression": {
+    "module_name": "expert_choice_moe",
+    "module_type": "attention",
+    "total_params_before": 124647170,
+    "total_params_after": 140051726,
+    "trainable_recovery_params": 1179648,
+    "compression_rate": 1.0,
+    "compression_rate_raw": 0.8976,
+    "compression_rate_net": 0.89,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 12,
+    "lora_params": 1179648,
+    "avg_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "roberta.encoder.layer.0.attention.self": 32,
+      "roberta.encoder.layer.1.attention.self": 32,
+      "roberta.encoder.layer.2.attention.self": 32,
+      "roberta.encoder.layer.3.attention.self": 32,
+      "roberta.encoder.layer.4.attention.self": 32,
+      "roberta.encoder.layer.5.attention.self": 32,
+      "roberta.encoder.layer.6.attention.self": 32,
+      "roberta.encoder.layer.7.attention.self": 32,
+      "roberta.encoder.layer.8.attention.self": 32,
+      "roberta.encoder.layer.9.attention.self": 32,
+      "roberta.encoder.layer.10.attention.self": 32,
+      "roberta.encoder.layer.11.attention.self": 32
+    },
+    "is_unstructured_sparsity": false
+  }
+}

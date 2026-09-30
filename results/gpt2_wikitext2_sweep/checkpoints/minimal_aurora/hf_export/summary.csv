@@ -1,0 +1,4 @@
+module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_rate_raw,compression_rate_net,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,latency_ms_per_token,throughput_tok_per_sec,perplexity,long_context_accuracy,error,path,timestamp
+full,PASS,,,,,,,7.88,916.17,,124439808,124439808,,1.0,,,0.0,,,,,,,,0.079,12691.0,25.88,,,,2026-09-23T09:04:28
+swift_svd,PASS_DEGRADED,,,,,,,3.23,838.79,,124439808,83128320,,1.497,,,33.2,,,,,,,,0.032,30975.8,5388.66,,,,2026-09-23T09:04:40
+gated_delta_net,SKIP_DEPRECATED,0.0,,,,,,0.0,,,,,,,,,,,,,,,,,,,,,DEPRECATED: bad_alloc during backprop on 6-layer encoders; chunked scan demands >15GB RAM,deprecated,2026-09-24T01:40:47.413354

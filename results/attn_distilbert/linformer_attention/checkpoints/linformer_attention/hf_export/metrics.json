@@ -1,0 +1,80 @@
+{
+  "performance": {
+    "accuracy_pct": 83.37,
+    "f1_score": 0.8391,
+    "f1_macro": 0.8335,
+    "precision": 0.834,
+    "recall": 0.8334,
+    "val_loss": 0.4342,
+    "peak_vram_mb": 531.82,
+    "tokens_per_sec": 51898.38,
+    "eval_time_s": 2.15,
+    "latency_ms": 2.47,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.841,
+        "recall": 0.8154,
+        "f1": 0.828,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.8271,
+        "recall": 0.8514,
+        "f1": 0.8391,
+        "support": 444
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression": {
+    "module_name": "linformer_attention",
+    "module_type": "attention",
+    "total_params_before": 66955010,
+    "total_params_after": 56141570,
+    "trainable_recovery_params": 983040,
+    "compression_rate": 1.1926,
+    "compression_rate_raw": 1.2053,
+    "compression_rate_net": 1.1926,
+    "compression_ratio_pct": 16.15,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 6,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 6,
+    "lora_params": 589824,
+    "avg_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "distilbert.transformer.layer.0.attention": 64,
+      "distilbert.transformer.layer.0.attention._wrapped_attention.q_proj": 64,
+      "distilbert.transformer.layer.0.attention._wrapped_attention.k_proj": 64,
+      "distilbert.transformer.layer.0.attention._wrapped_attention.v_proj": 64,
+      "distilbert.transformer.layer.0.attention._wrapped_attention.out_proj": 64,
+      "distilbert.transformer.layer.1.attention": 64,
+      "distilbert.transformer.layer.1.attention._wrapped_attention.q_proj": 64,
+      "distilbert.transformer.layer.1.attention._wrapped_attention.k_proj": 64,
+      "distilbert.transformer.layer.1.attention._wrapped_attention.v_proj": 64,
+      "distilbert.transformer.layer.1.attention._wrapped_attention.out_proj": 64,
+      "distilbert.transformer.layer.2.attention": 64,
+      "distilbert.transformer.layer.2.attention._wrapped_attention.q_proj": 64,
+      "distilbert.transformer.layer.2.attention._wrapped_attention.k_proj": 64,
+      "distilbert.transformer.layer.2.attention._wrapped_attention.v_proj": 64,
+      "distilbert.transformer.layer.2.attention._wrapped_attention.out_proj": 64,
+      "distilbert.transformer.layer.3.attention": 64,
+      "distilbert.transformer.layer.3.attention._wrapped_attention.q_proj": 64,
+      "distilbert.transformer.layer.3.attention._wrapped_attention.k_proj": 64,
+      "distilbert.transformer.layer.3.attention._wrapped_attention.v_proj": 64,
+      "distilbert.transformer.layer.3.attention._wrapped_attention.out_proj": 64,
+      "distilbert.transformer.layer.4.attention": 64,
+      "distilbert.transformer.layer.4.attention._wrapped_attention.q_proj": 64,
+      "distilbert.transformer.layer.4.attention._wrapped_attention.k_proj": 64,
+      "distilbert.transformer.layer.4.attention._wrapped_attention.v_proj": 64,
+      "distilbert.transformer.layer.4.attention._wrapped_attention.out_proj": 64,
+      "distilbert.transformer.layer.5.attention": 64,
+      "distilbert.transformer.layer.5.attention._wrapped_attention.q_proj": 64,
+      "distilbert.transformer.layer.5.attention._wrapped_attention.k_proj": 64,
+      "distilbert.transformer.layer.5.attention._wrapped_attention.v_proj": 64,
+      "distilbert.transformer.layer.5.attention._wrapped_attention.out_proj": 64
+    },
+    "is_unstructured_sparsity": false
+  }
+}

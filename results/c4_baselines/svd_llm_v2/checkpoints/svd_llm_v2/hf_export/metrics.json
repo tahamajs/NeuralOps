@@ -1,0 +1,53 @@
+{
+  "performance": {
+    "status": "PASS",
+    "accuracy_pct": 0.0,
+    "f1_score": 0.0,
+    "f1_macro": null,
+    "precision": null,
+    "recall": null,
+    "val_loss": 3.819946953383647,
+    "perplexity": 45.601789,
+    "throughput": 5009.648265580984,
+    "tokens_per_sec": 5009.648265580984,
+    "vram_mb": 2499.7724609375,
+    "peak_vram_mb": 2499.7724609375,
+    "latency_ms_per_token": 0.19961481265472178,
+    "eval_time_s": 189.27
+  },
+  "compression": {
+    "module_name": "svd_llm_v2",
+    "module_type": "attention",
+    "total_params_before": 124439808,
+    "total_params_after": 125637888,
+    "trainable_recovery_params": 1179648,
+    "compression_rate": 1.0,
+    "compression_rate_raw": 0.9999,
+    "compression_rate_net": 0.9905,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 12,
+    "lora_params": 1179648,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "calibration_time_s": 0.0,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "transformer.h.0.attn": 384,
+      "transformer.h.1.attn": 384,
+      "transformer.h.2.attn": 384,
+      "transformer.h.3.attn": 384,
+      "transformer.h.4.attn": 384,
+      "transformer.h.5.attn": 384,
+      "transformer.h.6.attn": 384,
+      "transformer.h.7.attn": 384,
+      "transformer.h.8.attn": 384,
+      "transformer.h.9.attn": 384,
+      "transformer.h.10.attn": 384,
+      "transformer.h.11.attn": 384
+    },
+    "is_unstructured_sparsity": false
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "performance": {
+    "accuracy_pct": 90.71,
+    "f1_score": 0.9099,
+    "f1_macro": 0.907,
+    "precision": 0.9075,
+    "recall": 0.9068,
+    "val_loss": 0.3027,
+    "peak_vram_mb": 389.51,
+    "tokens_per_sec": 53982.11,
+    "eval_time_s": 2.07,
+    "latency_ms": 2.37
+  },
+  "compression": {
+    "module_name": "full",
+    "module_type": "attention",
+    "total_params_before": 66955010,
+    "total_params_after": 66955010,
+    "trainable_recovery_params": 0,
+    "compression_rate": 1.0,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 0,
+    "lora_params": 0,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {}
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "module_name": "hgrn2_layer",
+  "model_name": "models/distilbert_sst2",
+  "model_family": "bert",
+  "dataset": "sst2",
+  "accuracy_pct": 70.53,
+  "recovery_steps": 50,
+  "timestamp": "2026-09-25T12:46:33.575646",
+  "performance_metrics": {
+    "accuracy_pct": 70.53,
+    "f1_score": 0.7498,
+    "f1_macro": 0.6957,
+    "precision": 0.7281,
+    "recall": 0.7023,
+    "val_loss": 0.5811,
+    "peak_vram_mb": 1483.98,
+    "tokens_per_sec": 4381.66,
+    "eval_time_s": 25.47,
+    "latency_ms": 29.21,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.7958,
+        "recall": 0.5374,
+        "f1": 0.6416,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.6604,
+        "recall": 0.8671,
+        "f1": 0.7498,
+        "support": 444
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression_metrics": {
+    "module_name": "hgrn2_layer",
+    "module_type": "attention",
+    "total_params_before": 66955010,
+    "total_params_after": 70798082,
+    "trainable_recovery_params": 294912,
+    "compression_rate": 1.0,
+    "compression_rate_raw": 0.9497,
+    "compression_rate_net": 0.9457,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 0,
+    "lora_params": 294912,
+    "avg_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "distilbert.transformer.layer.0.attention": 64,
+      "distilbert.transformer.layer.1.attention": 64,
+      "distilbert.transformer.layer.2.attention": 64,
+      "distilbert.transformer.layer.3.attention": 64,
+      "distilbert.transformer.layer.4.attention": 64,
+      "distilbert.transformer.layer.5.attention": 64
+    },
+    "is_unstructured_sparsity": false
+  }
+}

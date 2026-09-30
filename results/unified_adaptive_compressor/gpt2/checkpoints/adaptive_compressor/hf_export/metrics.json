@@ -1,0 +1,74 @@
+{
+  "performance": {
+    "accuracy_pct": 81.88,
+    "f1_score": 0.8316,
+    "f1_macro": 0.8178,
+    "precision": 0.8233,
+    "recall": 0.8177,
+    "val_loss": 0.4139,
+    "peak_vram_mb": 444.13,
+    "tokens_per_sec": 24364.3,
+    "eval_time_s": 4.58,
+    "latency_ms": 5.25,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.8571,
+        "recall": 0.757,
+        "f1": 0.804,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.7895,
+        "recall": 0.8784,
+        "f1": 0.8316,
+        "support": 444
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression": {
+    "module_name": "adaptive_compressor",
+    "module_type": "compressor",
+    "total_params_before": 124441344,
+    "total_params_after": 108056832,
+    "trainable_recovery_params": 38400,
+    "compression_rate": 1.1516,
+    "compression_rate_raw": 1.1516,
+    "compression_rate_net": 1.1516,
+    "compression_ratio_pct": 13.17,
+    "flops_reduction_pct": 57.87,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 0,
+    "lora_params": 0,
+    "avg_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "transformer.h.0.attn.c_attn": 230,
+      "transformer.h.0.attn.c_proj": 115,
+      "transformer.h.1.attn.c_attn": 230,
+      "transformer.h.1.attn.c_proj": 115,
+      "transformer.h.2.attn.c_attn": 230,
+      "transformer.h.2.attn.c_proj": 115,
+      "transformer.h.3.attn.c_attn": 230,
+      "transformer.h.3.attn.c_proj": 288,
+      "transformer.h.4.attn.c_attn": 230,
+      "transformer.h.4.attn.c_proj": 288,
+      "transformer.h.5.attn.c_attn": 230,
+      "transformer.h.5.attn.c_proj": 288,
+      "transformer.h.6.attn.c_attn": 230,
+      "transformer.h.6.attn.c_proj": 115,
+      "transformer.h.7.attn.c_attn": 230,
+      "transformer.h.7.attn.c_proj": 115,
+      "transformer.h.8.attn.c_attn": 230,
+      "transformer.h.8.attn.c_proj": 115,
+      "transformer.h.9.attn.c_attn": 230,
+      "transformer.h.9.attn.c_proj": 288,
+      "transformer.h.10.attn.c_attn": 230,
+      "transformer.h.10.attn.c_proj": 288,
+      "transformer.h.11.attn.c_attn": 230,
+      "transformer.h.11.attn.c_proj": 115
+    },
+    "is_unstructured_sparsity": false
+  }
+}

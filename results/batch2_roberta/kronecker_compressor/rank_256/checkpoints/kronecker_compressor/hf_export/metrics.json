@@ -1,0 +1,77 @@
+{
+  "performance": {
+    "accuracy_pct": 91.74,
+    "f1_score": 0.9191,
+    "f1_macro": 0.9174,
+    "precision": 0.9174,
+    "recall": 0.9174,
+    "val_loss": 0.2762,
+    "peak_vram_mb": 410.33,
+    "tokens_per_sec": 66218.21,
+    "eval_time_s": 1.69,
+    "latency_ms": 1.93,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.9178,
+        "recall": 0.9136,
+        "f1": 0.9157,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.917,
+        "recall": 0.9212,
+        "f1": 0.9191,
+        "support": 444
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression": {
+    "module_name": "kronecker_compressor",
+    "module_type": "compressor",
+    "total_params_before": 124647170,
+    "total_params_after": 120002306,
+    "trainable_recovery_params": 663552,
+    "compression_rate": 1.0387,
+    "compression_rate_raw": 1.0445,
+    "compression_rate_net": 1.0387,
+    "compression_ratio_pct": 3.73,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 27,
+    "num_fallback_layers": 21,
+    "num_injected_attention_layers": 0,
+    "lora_params": 663552,
+    "avg_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "roberta.encoder.layer.0.attention.self.key": 256,
+      "roberta.encoder.layer.0.attention.output.dense": 256,
+      "roberta.encoder.layer.1.attention.self.key": 256,
+      "roberta.encoder.layer.1.attention.self.value": 256,
+      "roberta.encoder.layer.1.attention.output.dense": 256,
+      "roberta.encoder.layer.2.attention.self.query": 256,
+      "roberta.encoder.layer.2.attention.self.key": 256,
+      "roberta.encoder.layer.2.attention.self.value": 256,
+      "roberta.encoder.layer.3.attention.self.value": 256,
+      "roberta.encoder.layer.3.attention.output.dense": 256,
+      "roberta.encoder.layer.4.attention.self.query": 256,
+      "roberta.encoder.layer.4.attention.self.value": 256,
+      "roberta.encoder.layer.4.attention.output.dense": 256,
+      "roberta.encoder.layer.5.attention.self.value": 256,
+      "roberta.encoder.layer.5.attention.output.dense": 256,
+      "roberta.encoder.layer.6.attention.self.query": 256,
+      "roberta.encoder.layer.6.attention.self.key": 256,
+      "roberta.encoder.layer.7.attention.self.query": 256,
+      "roberta.encoder.layer.7.attention.self.key": 256,
+      "roberta.encoder.layer.8.attention.self.query": 256,
+      "roberta.encoder.layer.8.attention.self.key": 256,
+      "roberta.encoder.layer.9.attention.self.query": 256,
+      "roberta.encoder.layer.9.attention.self.key": 256,
+      "roberta.encoder.layer.10.attention.self.query": 256,
+      "roberta.encoder.layer.10.attention.self.key": 256,
+      "roberta.encoder.layer.11.attention.self.query": 256,
+      "roberta.encoder.layer.11.attention.self.key": 256
+    },
+    "is_unstructured_sparsity": false
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "performance": {
+    "accuracy_pct": 51.4,
+    "f1_score": 0.4655,
+    "f1_macro": 0.4655,
+    "precision": 0.5886,
+    "recall": 0.5212,
+    "val_loss": 1.1631,
+    "peak_vram_mb": 297.8,
+    "tokens_per_sec": 11089.8,
+    "eval_time_s": 11.54,
+    "latency_ms": 11.54
+  },
+  "compression": {
+    "module_name": "aegis_v6",
+    "module_type": "attention",
+    "total_params_before": 66955779,
+    "total_params_after": 53449809,
+    "trainable_recovery_params": 1261137,
+    "compression_rate": 1.2527,
+    "compression_rate_raw": 1.2527,
+    "compression_rate_net": 1.2527,
+    "compression_ratio_pct": 20.17,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 6,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 6,
+    "lora_params": 0,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {}
+  }
+}

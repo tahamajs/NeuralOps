@@ -1,0 +1,3 @@
+module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
+full,PASS,88.76,0.8942,0.8872,0.891,0.8868,0.295,5.93,299.92,30110.33,127325954,127325954,0,1.0,0.0,0.0,0,0,,,0,2678784,,adapted_roberta,2026-09-08T09:27:32.892088
+mamba_shedder,PASS,85.55,0.8732,0.8526,0.879,0.8532,0.5679,23.54,337.21,13015.45,127325954,127325954,3270914,1.0,0.0,0.0,0,0,0.47763216495513916,0.4973,0,2678784,,adapted_roberta,2026-09-08T09:27:56.674859

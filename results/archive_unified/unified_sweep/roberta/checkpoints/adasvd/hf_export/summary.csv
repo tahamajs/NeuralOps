@@ -1,0 +1,8 @@
+module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
+full,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.6774,4.19,722.98,42447.03,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-18T22:32:31.144400
+aasvd,PASS,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-18T22:33:33.057590
+a3,PASS,64.33,0.734,0.5965,0.7448,0.6373,0.6381,21.05,600.92,42526.71,124647170,120123650,592130,1.0377,3.63,0.0,32,4,0.3737907224358506,0.3737907224358507,0,0,,adapted_roberta,2026-09-18T22:33:42.590874
+adaptive_span,PASS,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-18T22:34:26.261116
+adaptive_sparse,PASS,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-18T22:35:18.075367
+adaptive,PASS,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-18T22:35:40.151232
+adaptive_svd,PASS,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,,,2026-09-18T22:36:07.158904

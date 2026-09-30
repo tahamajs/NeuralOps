@@ -1,0 +1,81 @@
+{
+  "module_name": "faq_quantizer",
+  "model_name": "models/distilbert_sst2",
+  "model_family": "bert",
+  "dataset": "sst2",
+  "accuracy_pct": 90.6,
+  "recovery_steps": 50,
+  "timestamp": "2026-09-25T11:02:52.409906",
+  "performance_metrics": {
+    "accuracy_pct": 90.6,
+    "f1_score": 0.9097,
+    "f1_macro": 0.9058,
+    "precision": 0.9071,
+    "recall": 0.9055,
+    "val_loss": 0.3228,
+    "peak_vram_mb": 513.85,
+    "tokens_per_sec": 53067.71,
+    "eval_time_s": 2.1,
+    "latency_ms": 2.41,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.924,
+        "recall": 0.8808,
+        "f1": 0.9019,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.8901,
+        "recall": 0.9302,
+        "f1": 0.9097,
+        "support": 444
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression_metrics": {
+    "module_name": "faq_quantizer",
+    "module_type": "compressor",
+    "total_params_before": 66955010,
+    "total_params_after": 67544834,
+    "trainable_recovery_params": 589824,
+    "compression_rate": 0.9913,
+    "compression_rate_raw": 1.0,
+    "compression_rate_net": 0.9913,
+    "compression_ratio_pct": -0.88,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 24,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 0,
+    "lora_params": 589824,
+    "avg_reconstruction_error": 0.0085,
+    "per_layer_reconstruction_errors": {
+      "distilbert.transformer.layer.0.attention.q_lin": 0.009642100892961025,
+      "distilbert.transformer.layer.0.attention.k_lin": 0.010577232576906681,
+      "distilbert.transformer.layer.0.attention.v_lin": 0.008040359243750572,
+      "distilbert.transformer.layer.0.attention.out_lin": 0.00827956385910511,
+      "distilbert.transformer.layer.1.attention.q_lin": 0.009063087403774261,
+      "distilbert.transformer.layer.1.attention.k_lin": 0.009466301649808884,
+      "distilbert.transformer.layer.1.attention.v_lin": 0.008036875165998936,
+      "distilbert.transformer.layer.1.attention.out_lin": 0.008161444216966629,
+      "distilbert.transformer.layer.2.attention.q_lin": 0.00853679422289133,
+      "distilbert.transformer.layer.2.attention.k_lin": 0.00852108746767044,
+      "distilbert.transformer.layer.2.attention.v_lin": 0.00831845123320818,
+      "distilbert.transformer.layer.2.attention.out_lin": 0.008133847266435623,
+      "distilbert.transformer.layer.3.attention.q_lin": 0.008141329512000084,
+      "distilbert.transformer.layer.3.attention.k_lin": 0.008454072289168835,
+      "distilbert.transformer.layer.3.attention.v_lin": 0.008129153400659561,
+      "distilbert.transformer.layer.3.attention.out_lin": 0.008108475245535374,
+      "distilbert.transformer.layer.4.attention.q_lin": 0.007994355633854866,
+      "distilbert.transformer.layer.4.attention.k_lin": 0.00930688064545393,
+      "distilbert.transformer.layer.4.attention.v_lin": 0.008024109527468681,
+      "distilbert.transformer.layer.4.attention.out_lin": 0.007880843244493008,
+      "distilbert.transformer.layer.5.attention.q_lin": 0.010003959760069847,
+      "distilbert.transformer.layer.5.attention.k_lin": 0.008220946416258812,
+      "distilbert.transformer.layer.5.attention.v_lin": 0.008080660365521908,
+      "distilbert.transformer.layer.5.attention.out_lin": 0.007996346801519394
+    },
+    "per_layer_ranks": {},
+    "is_unstructured_sparsity": false
+  }
+}

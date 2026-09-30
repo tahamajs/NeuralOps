@@ -1,0 +1,38 @@
+{
+  "performance": {
+    "status": "PASS",
+    "accuracy_pct": 0.0,
+    "f1_score": 0.0,
+    "f1_macro": null,
+    "precision": null,
+    "recall": null,
+    "val_loss": 3.721979489231453,
+    "perplexity": 41.346157,
+    "throughput": 1379.7834114011162,
+    "tokens_per_sec": 1379.7834114011162,
+    "vram_mb": 816.22509765625,
+    "peak_vram_mb": 816.22509765625,
+    "latency_ms_per_token": 0.7247514296352782,
+    "eval_time_s": 181.01
+  },
+  "compression": {
+    "module_name": "dobi_svd_compressor",
+    "module_type": "compressor",
+    "total_params_before": 124439808,
+    "total_params_after": 124439808,
+    "trainable_recovery_params": 0,
+    "compression_rate": 1.0,
+    "compression_rate_raw": 1.0,
+    "compression_rate_net": 1.0,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 0,
+    "lora_params": 0,
+    "avg_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {},
+    "is_unstructured_sparsity": false
+  }
+}

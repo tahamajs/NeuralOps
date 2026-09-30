@@ -1,0 +1,62 @@
+{
+  "performance": {
+    "accuracy_pct": 92.55,
+    "f1_score": 0.929,
+    "f1_macro": 0.9253,
+    "precision": 0.9275,
+    "recall": 0.9249,
+    "val_loss": 0.2434,
+    "peak_vram_mb": 457.08,
+    "tokens_per_sec": 93410.82,
+    "eval_time_s": 1.19,
+    "latency_ms": 1.37,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.9526,
+        "recall": 0.8925,
+        "f1": 0.9216,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.9023,
+        "recall": 0.9572,
+        "f1": 0.929,
+        "support": 444
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression": {
+    "module_name": "bonsai_pruner",
+    "module_type": "compressor",
+    "total_params_before": 124647170,
+    "total_params_after": 124647170,
+    "trainable_recovery_params": 0,
+    "compression_rate": 1.0,
+    "compression_rate_raw": 1.0,
+    "compression_rate_net": 1.0,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 12,
+    "num_injected_attention_layers": 0,
+    "lora_params": 0,
+    "avg_reconstruction_error": 0.5909,
+    "per_layer_reconstruction_errors": {
+      "roberta.encoder.layer.0.attention.output.dense": 0.544435977935791,
+      "roberta.encoder.layer.1.attention.output.dense": 0.5919737219810486,
+      "roberta.encoder.layer.2.attention.output.dense": 0.5674125552177429,
+      "roberta.encoder.layer.3.attention.output.dense": 0.6017481684684753,
+      "roberta.encoder.layer.4.attention.output.dense": 0.5811482667922974,
+      "roberta.encoder.layer.5.attention.output.dense": 0.583195149898529,
+      "roberta.encoder.layer.6.attention.output.dense": 0.5818783640861511,
+      "roberta.encoder.layer.7.attention.output.dense": 0.5948017239570618,
+      "roberta.encoder.layer.8.attention.output.dense": 0.6095242500305176,
+      "roberta.encoder.layer.9.attention.output.dense": 0.6119335293769836,
+      "roberta.encoder.layer.10.attention.output.dense": 0.5904725790023804,
+      "roberta.encoder.layer.11.attention.output.dense": 0.6325496435165405
+    },
+    "per_layer_ranks": {},
+    "is_unstructured_sparsity": true
+  }
+}

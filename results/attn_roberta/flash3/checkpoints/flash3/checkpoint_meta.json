@@ -1,0 +1,69 @@
+{
+  "module_name": "flash3",
+  "model_name": "models/roberta_sst2",
+  "model_family": "roberta",
+  "dataset": "sst2",
+  "accuracy_pct": 92.2,
+  "recovery_steps": 50,
+  "timestamp": "2026-09-25T15:52:49.515089",
+  "performance_metrics": {
+    "accuracy_pct": 92.2,
+    "f1_score": 0.9258,
+    "f1_macro": 0.9218,
+    "precision": 0.9242,
+    "recall": 0.9214,
+    "val_loss": 0.2167,
+    "peak_vram_mb": 574.78,
+    "tokens_per_sec": 65683.01,
+    "eval_time_s": 1.7,
+    "latency_ms": 1.95,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.95,
+        "recall": 0.8879,
+        "f1": 0.9179,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.8983,
+        "recall": 0.955,
+        "f1": 0.9258,
+        "support": 444
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression_metrics": {
+    "module_name": "flash3",
+    "module_type": "attention",
+    "total_params_before": 124647170,
+    "total_params_after": 132913922,
+    "trainable_recovery_params": 1179648,
+    "compression_rate": 1.0,
+    "compression_rate_raw": 0.9462,
+    "compression_rate_net": 0.9378,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 12,
+    "lora_params": 1179648,
+    "avg_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "roberta.encoder.layer.0.attention.self": 64,
+      "roberta.encoder.layer.1.attention.self": 64,
+      "roberta.encoder.layer.2.attention.self": 64,
+      "roberta.encoder.layer.3.attention.self": 64,
+      "roberta.encoder.layer.4.attention.self": 64,
+      "roberta.encoder.layer.5.attention.self": 64,
+      "roberta.encoder.layer.6.attention.self": 64,
+      "roberta.encoder.layer.7.attention.self": 64,
+      "roberta.encoder.layer.8.attention.self": 64,
+      "roberta.encoder.layer.9.attention.self": 64,
+      "roberta.encoder.layer.10.attention.self": 64,
+      "roberta.encoder.layer.11.attention.self": 64
+    },
+    "is_unstructured_sparsity": false
+  }
+}

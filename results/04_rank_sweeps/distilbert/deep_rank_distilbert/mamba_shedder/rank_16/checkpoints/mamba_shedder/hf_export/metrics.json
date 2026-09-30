@@ -1,0 +1,51 @@
+{
+  "performance": {
+    "accuracy_pct": 89.22,
+    "f1_score": 0.8969,
+    "f1_macro": 0.892,
+    "precision": 0.8936,
+    "recall": 0.8917,
+    "val_loss": 0.4053,
+    "peak_vram_mb": 354.24,
+    "tokens_per_sec": 31637.58,
+    "eval_time_s": 3.53,
+    "latency_ms": 4.05,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.9134,
+        "recall": 0.8621,
+        "f1": 0.887,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.8739,
+        "recall": 0.9212,
+        "f1": 0.8969,
+        "support": 444
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression": {
+    "module_name": "mamba_shedder",
+    "module_type": "compressor",
+    "total_params_before": 66955010,
+    "total_params_after": 64112786,
+    "trainable_recovery_params": 592130,
+    "compression_rate": 1.0443,
+    "compression_rate_raw": 1.0443,
+    "compression_rate_net": 1.0443,
+    "compression_ratio_pct": 4.24,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 0,
+    "lora_params": 0,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "calibration_time_s": 0.0,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {},
+    "is_unstructured_sparsity": false
+  }
+}

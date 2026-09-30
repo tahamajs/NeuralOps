@@ -1,0 +1,41 @@
+{
+  "performance": {
+    "accuracy_pct": 71.5,
+    "f1_score": 0.7115,
+    "f1_macro": 0.7115,
+    "precision": 0.7165,
+    "recall": 0.7125,
+    "val_loss": 0.6442,
+    "peak_vram_mb": 368.98,
+    "tokens_per_sec": 55610.64,
+    "eval_time_s": 2.3,
+    "latency_ms": 2.3
+  },
+  "compression": {
+    "module_name": "soa_attn",
+    "module_type": "attention",
+    "total_params_before": 66955779,
+    "total_params_after": 60283395,
+    "trainable_recovery_params": 405504,
+    "compression_rate": 1.1107,
+    "compression_rate_raw": 1.1182,
+    "compression_rate_net": 1.1107,
+    "compression_ratio_pct": 9.97,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 6,
+    "lora_params": 405504,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "distilbert.transformer.layer.0.attention": 128,
+      "distilbert.transformer.layer.1.attention": 128,
+      "distilbert.transformer.layer.2.attention": 128,
+      "distilbert.transformer.layer.3.attention": 128,
+      "distilbert.transformer.layer.4.attention": 128,
+      "distilbert.transformer.layer.5.attention": 128
+    }
+  }
+}

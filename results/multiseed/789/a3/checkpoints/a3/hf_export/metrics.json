@@ -1,0 +1,99 @@
+{
+  "performance": {
+    "accuracy_pct": 76.7,
+    "f1_score": 0.7641,
+    "f1_macro": 0.7641,
+    "precision": 0.7652,
+    "recall": 0.7649,
+    "val_loss": 0.6592,
+    "peak_vram_mb": 261.69,
+    "tokens_per_sec": 44226.75,
+    "eval_time_s": 2.89,
+    "latency_ms": 2.89,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.7703,
+        "recall": 0.8065,
+        "f1": 0.788,
+        "support": 341
+      },
+      "1": {
+        "precision": 0.7387,
+        "recall": 0.6646,
+        "f1": 0.6997,
+        "support": 319
+      },
+      "2": {
+        "precision": 0.7865,
+        "recall": 0.8235,
+        "f1": 0.8046,
+        "support": 340
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression": {
+    "module_name": "a3",
+    "module_type": "compressor",
+    "total_params_before": 66955779,
+    "total_params_after": 63633411,
+    "trainable_recovery_params": 9066243,
+    "compression_rate": 1.0522,
+    "compression_rate_raw": 1.0522,
+    "compression_rate_net": 1.0522,
+    "compression_ratio_pct": 4.96,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 21,
+    "num_fallback_layers": 3,
+    "num_injected_attention_layers": 0,
+    "lora_params": 0,
+    "avg_reconstruction_error": 0.3753,
+    "weighted_reconstruction_error": 0.3749,
+    "per_layer_reconstruction_errors": {
+      "distilbert.transformer.layer.0.attention.q_lin": 0.3482,
+      "distilbert.transformer.layer.0.attention.k_lin": 0.3946,
+      "distilbert.transformer.layer.0.attention.v_lin": 0.3709,
+      "distilbert.transformer.layer.0.attention.out_lin": 0.3878,
+      "distilbert.transformer.layer.1.attention.q_lin": 0.3788,
+      "distilbert.transformer.layer.1.attention.k_lin": 0.3533,
+      "distilbert.transformer.layer.1.attention.v_lin": 0.3673,
+      "distilbert.transformer.layer.1.attention.out_lin": 0.3625,
+      "distilbert.transformer.layer.2.attention.q_lin": 0.3728,
+      "distilbert.transformer.layer.2.attention.k_lin": 0.3786,
+      "distilbert.transformer.layer.2.attention.v_lin": 0.3759,
+      "distilbert.transformer.layer.2.attention.out_lin": 0.3672,
+      "distilbert.transformer.layer.3.attention.q_lin": 0.3877,
+      "distilbert.transformer.layer.3.attention.k_lin": 0.3889,
+      "distilbert.transformer.layer.3.attention.v_lin": 0.3766,
+      "distilbert.transformer.layer.4.attention.q_lin": 0.3763,
+      "distilbert.transformer.layer.4.attention.k_lin": 0.3739,
+      "distilbert.transformer.layer.4.attention.v_lin": 0.3815,
+      "distilbert.transformer.layer.5.attention.q_lin": 0.3845,
+      "distilbert.transformer.layer.5.attention.k_lin": 0.3956,
+      "distilbert.transformer.layer.5.attention.v_lin": 0.3584
+    },
+    "per_layer_ranks": {
+      "distilbert.transformer.layer.0.attention.q_lin": 281,
+      "distilbert.transformer.layer.0.attention.k_lin": 242,
+      "distilbert.transformer.layer.0.attention.v_lin": 281,
+      "distilbert.transformer.layer.0.attention.out_lin": 281,
+      "distilbert.transformer.layer.1.attention.q_lin": 242,
+      "distilbert.transformer.layer.1.attention.k_lin": 242,
+      "distilbert.transformer.layer.1.attention.v_lin": 281,
+      "distilbert.transformer.layer.1.attention.out_lin": 320,
+      "distilbert.transformer.layer.2.attention.q_lin": 281,
+      "distilbert.transformer.layer.2.attention.k_lin": 281,
+      "distilbert.transformer.layer.2.attention.v_lin": 281,
+      "distilbert.transformer.layer.2.attention.out_lin": 320,
+      "distilbert.transformer.layer.3.attention.q_lin": 242,
+      "distilbert.transformer.layer.3.attention.k_lin": 242,
+      "distilbert.transformer.layer.3.attention.v_lin": 320,
+      "distilbert.transformer.layer.4.attention.q_lin": 281,
+      "distilbert.transformer.layer.4.attention.k_lin": 281,
+      "distilbert.transformer.layer.4.attention.v_lin": 320,
+      "distilbert.transformer.layer.5.attention.q_lin": 281,
+      "distilbert.transformer.layer.5.attention.k_lin": 281,
+      "distilbert.transformer.layer.5.attention.v_lin": 320
+    }
+  }
+}

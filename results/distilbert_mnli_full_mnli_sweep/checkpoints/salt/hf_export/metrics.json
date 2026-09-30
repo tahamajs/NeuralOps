@@ -1,0 +1,86 @@
+{
+  "performance": {
+    "accuracy_pct": 65.6,
+    "f1_score": 0.6552,
+    "f1_macro": 0.6552,
+    "precision": 0.6569,
+    "recall": 0.6547,
+    "val_loss": 0.7767,
+    "peak_vram_mb": 642.11,
+    "tokens_per_sec": 46155.79,
+    "eval_time_s": 2.77,
+    "latency_ms": 2.77,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.626,
+        "recall": 0.6774,
+        "f1": 0.6507,
+        "support": 341
+      },
+      "1": {
+        "precision": 0.6117,
+        "recall": 0.5925,
+        "f1": 0.6019,
+        "support": 319
+      },
+      "2": {
+        "precision": 0.7329,
+        "recall": 0.6941,
+        "f1": 0.713,
+        "support": 340
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression": {
+    "module_name": "salt",
+    "module_type": "attention",
+    "total_params_before": 66955779,
+    "total_params_after": 62243331,
+    "trainable_recovery_params": 603651,
+    "compression_rate": 1.0757,
+    "compression_rate_raw": 1.0757,
+    "compression_rate_net": 1.0757,
+    "compression_ratio_pct": 7.04,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 30,
+    "lora_params": 0,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "distilbert.transformer.layer.0.attention": 128,
+      "distilbert.transformer.layer.0.attention.q_proj": 256,
+      "distilbert.transformer.layer.0.attention.k_proj": 256,
+      "distilbert.transformer.layer.0.attention.v_proj": 256,
+      "distilbert.transformer.layer.0.attention.out_proj": 256,
+      "distilbert.transformer.layer.1.attention": 128,
+      "distilbert.transformer.layer.1.attention.q_proj": 256,
+      "distilbert.transformer.layer.1.attention.k_proj": 256,
+      "distilbert.transformer.layer.1.attention.v_proj": 256,
+      "distilbert.transformer.layer.1.attention.out_proj": 256,
+      "distilbert.transformer.layer.2.attention": 128,
+      "distilbert.transformer.layer.2.attention.q_proj": 256,
+      "distilbert.transformer.layer.2.attention.k_proj": 256,
+      "distilbert.transformer.layer.2.attention.v_proj": 256,
+      "distilbert.transformer.layer.2.attention.out_proj": 256,
+      "distilbert.transformer.layer.3.attention": 128,
+      "distilbert.transformer.layer.3.attention.q_proj": 256,
+      "distilbert.transformer.layer.3.attention.k_proj": 256,
+      "distilbert.transformer.layer.3.attention.v_proj": 256,
+      "distilbert.transformer.layer.3.attention.out_proj": 256,
+      "distilbert.transformer.layer.4.attention": 128,
+      "distilbert.transformer.layer.4.attention.q_proj": 256,
+      "distilbert.transformer.layer.4.attention.k_proj": 256,
+      "distilbert.transformer.layer.4.attention.v_proj": 256,
+      "distilbert.transformer.layer.4.attention.out_proj": 256,
+      "distilbert.transformer.layer.5.attention": 128,
+      "distilbert.transformer.layer.5.attention.q_proj": 256,
+      "distilbert.transformer.layer.5.attention.k_proj": 256,
+      "distilbert.transformer.layer.5.attention.v_proj": 256,
+      "distilbert.transformer.layer.5.attention.out_proj": 256
+    }
+  }
+}

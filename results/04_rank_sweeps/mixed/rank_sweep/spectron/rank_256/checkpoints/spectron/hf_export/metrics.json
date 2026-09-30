@@ -1,0 +1,51 @@
+{
+  "performance": {
+    "accuracy_pct": 90.48,
+    "f1_score": 0.9083,
+    "f1_macro": 0.9047,
+    "precision": 0.9056,
+    "recall": 0.9044,
+    "val_loss": 0.324,
+    "peak_vram_mb": 436.87,
+    "tokens_per_sec": 67372.08,
+    "eval_time_s": 1.66,
+    "latency_ms": 1.9,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.9197,
+        "recall": 0.8832,
+        "f1": 0.9011,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.8915,
+        "recall": 0.9257,
+        "f1": 0.9083,
+        "support": 444
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression": {
+    "module_name": "spectron",
+    "module_type": "attention",
+    "total_params_before": 66955010,
+    "total_params_after": 62826242,
+    "trainable_recovery_params": 589824,
+    "compression_rate": 1.0657,
+    "compression_rate_raw": 1.0758,
+    "compression_rate_net": 1.0657,
+    "compression_ratio_pct": 6.17,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 6,
+    "lora_params": 589824,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "calibration_time_s": 0.0,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {},
+    "is_unstructured_sparsity": false
+  }
+}

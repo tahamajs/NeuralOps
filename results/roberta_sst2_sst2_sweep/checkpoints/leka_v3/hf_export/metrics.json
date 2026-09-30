@@ -1,0 +1,62 @@
+{
+  "performance": {
+    "accuracy_pct": 56.77,
+    "f1_score": 0.644,
+    "f1_macro": 0.5468,
+    "precision": 0.5768,
+    "recall": 0.5639,
+    "val_loss": 0.8354,
+    "peak_vram_mb": 647.39,
+    "tokens_per_sec": 3549.64,
+    "eval_time_s": 31.44,
+    "latency_ms": 36.06,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.5992,
+        "recall": 0.3598,
+        "f1": 0.4496,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.5545,
+        "recall": 0.768,
+        "f1": 0.644,
+        "support": 444
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression": {
+    "module_name": "leka_v3",
+    "module_type": "attention",
+    "total_params_before": 124647170,
+    "total_params_after": 133702046,
+    "trainable_recovery_params": 1179792,
+    "compression_rate": 1.0,
+    "compression_rate_raw": 0.9406,
+    "compression_rate_net": 0.9323,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 12,
+    "lora_params": 1179648,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "roberta.encoder.layer.0.attention.self": 64,
+      "roberta.encoder.layer.1.attention.self": 64,
+      "roberta.encoder.layer.2.attention.self": 64,
+      "roberta.encoder.layer.3.attention.self": 64,
+      "roberta.encoder.layer.4.attention.self": 64,
+      "roberta.encoder.layer.5.attention.self": 64,
+      "roberta.encoder.layer.6.attention.self": 64,
+      "roberta.encoder.layer.7.attention.self": 64,
+      "roberta.encoder.layer.8.attention.self": 64,
+      "roberta.encoder.layer.9.attention.self": 64,
+      "roberta.encoder.layer.10.attention.self": 64,
+      "roberta.encoder.layer.11.attention.self": 64
+    }
+  }
+}

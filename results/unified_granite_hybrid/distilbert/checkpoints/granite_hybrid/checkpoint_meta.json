@@ -1,0 +1,63 @@
+{
+  "module_name": "granite_hybrid",
+  "model_name": "models\\distilbert_sst2",
+  "model_family": "bert",
+  "dataset": "sst2",
+  "accuracy_pct": 89.45,
+  "recovery_steps": 50,
+  "timestamp": "2026-09-24T19:26:25.718887",
+  "performance_metrics": {
+    "accuracy_pct": 89.45,
+    "f1_score": 0.8982,
+    "f1_macro": 0.8944,
+    "precision": 0.8952,
+    "recall": 0.8941,
+    "val_loss": 0.2831,
+    "peak_vram_mb": 1251.94,
+    "tokens_per_sec": 801.28,
+    "eval_time_s": 139.3,
+    "latency_ms": 159.74,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.9078,
+        "recall": 0.8738,
+        "f1": 0.8905,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.8826,
+        "recall": 0.9144,
+        "f1": 0.8982,
+        "support": 444
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression_metrics": {
+    "module_name": "granite_hybrid",
+    "module_type": "attention",
+    "total_params_before": 66955010,
+    "total_params_after": 216526130,
+    "trainable_recovery_params": 589842,
+    "compression_rate": 1.0,
+    "compression_rate_raw": 0.3101,
+    "compression_rate_net": 0.3092,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 0,
+    "lora_params": 589824,
+    "avg_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "distilbert.transformer.layer.0.attention": 32,
+      "distilbert.transformer.layer.1.attention": 32,
+      "distilbert.transformer.layer.2.attention": 32,
+      "distilbert.transformer.layer.3.attention": 32,
+      "distilbert.transformer.layer.4.attention": 32,
+      "distilbert.transformer.layer.5.attention": 32
+    },
+    "is_unstructured_sparsity": false
+  }
+}

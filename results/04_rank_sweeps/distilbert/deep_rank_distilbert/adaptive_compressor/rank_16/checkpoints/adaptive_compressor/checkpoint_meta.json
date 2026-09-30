@@ -1,0 +1,83 @@
+{
+  "module_name": "adaptive_compressor",
+  "model_name": "distilbert-base-uncased-finetuned-sst-2-english",
+  "model_family": "bert",
+  "dataset": "sst2",
+  "accuracy_pct": 85.32,
+  "recovery_steps": 50,
+  "timestamp": "2026-09-27T07:06:08.723398",
+  "performance_metrics": {
+    "accuracy_pct": 85.32,
+    "f1_score": 0.8539,
+    "f1_macro": 0.8532,
+    "precision": 0.8533,
+    "recall": 0.8534,
+    "val_loss": 0.9228,
+    "peak_vram_mb": 396.87,
+    "tokens_per_sec": 42194.52,
+    "eval_time_s": 2.65,
+    "latency_ms": 3.03,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.8409,
+        "recall": 0.8645,
+        "f1": 0.8525,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.8657,
+        "recall": 0.8423,
+        "f1": 0.8539,
+        "support": 444
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression_metrics": {
+    "module_name": "adaptive_compressor",
+    "module_type": "compressor",
+    "total_params_before": 66955010,
+    "total_params_after": 63416066,
+    "trainable_recovery_params": 9900290,
+    "compression_rate": 1.0558,
+    "compression_rate_raw": 1.0558,
+    "compression_rate_net": 1.0558,
+    "compression_ratio_pct": 5.29,
+    "flops_reduction_pct": 25.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 0,
+    "lora_params": 0,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "calibration_time_s": 0.0,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "distilbert.transformer.layer.0.attention.q_lin": 288,
+      "distilbert.transformer.layer.0.attention.k_lin": 288,
+      "distilbert.transformer.layer.0.attention.v_lin": 288,
+      "distilbert.transformer.layer.0.attention.out_lin": 288,
+      "distilbert.transformer.layer.1.attention.q_lin": 288,
+      "distilbert.transformer.layer.1.attention.k_lin": 288,
+      "distilbert.transformer.layer.1.attention.v_lin": 288,
+      "distilbert.transformer.layer.1.attention.out_lin": 288,
+      "distilbert.transformer.layer.2.attention.q_lin": 288,
+      "distilbert.transformer.layer.2.attention.k_lin": 288,
+      "distilbert.transformer.layer.2.attention.v_lin": 288,
+      "distilbert.transformer.layer.2.attention.out_lin": 288,
+      "distilbert.transformer.layer.3.attention.q_lin": 288,
+      "distilbert.transformer.layer.3.attention.k_lin": 288,
+      "distilbert.transformer.layer.3.attention.v_lin": 288,
+      "distilbert.transformer.layer.3.attention.out_lin": 288,
+      "distilbert.transformer.layer.4.attention.q_lin": 288,
+      "distilbert.transformer.layer.4.attention.k_lin": 288,
+      "distilbert.transformer.layer.4.attention.v_lin": 288,
+      "distilbert.transformer.layer.4.attention.out_lin": 288,
+      "distilbert.transformer.layer.5.attention.q_lin": 288,
+      "distilbert.transformer.layer.5.attention.k_lin": 288,
+      "distilbert.transformer.layer.5.attention.v_lin": 288,
+      "distilbert.transformer.layer.5.attention.out_lin": 288
+    },
+    "is_unstructured_sparsity": false
+  }
+}

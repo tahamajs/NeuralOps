@@ -1,0 +1,41 @@
+{
+  "performance": {
+    "accuracy_pct": 82.6,
+    "f1_score": 0.8203,
+    "f1_macro": 0.8203,
+    "precision": 0.8335,
+    "recall": 0.8187,
+    "val_loss": 0.5896,
+    "peak_vram_mb": 322.92,
+    "tokens_per_sec": 16946.81,
+    "eval_time_s": 7.55,
+    "latency_ms": 7.55
+  },
+  "compression": {
+    "module_name": "hla",
+    "module_type": "attention",
+    "total_params_before": 66956548,
+    "total_params_after": 67532626,
+    "trainable_recovery_params": 589902,
+    "compression_rate": 1.0,
+    "compression_rate_raw": 1.0002,
+    "compression_rate_net": 0.9915,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 6,
+    "lora_params": 589824,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "distilbert.transformer.layer.0.attention": 64,
+      "distilbert.transformer.layer.1.attention": 64,
+      "distilbert.transformer.layer.2.attention": 64,
+      "distilbert.transformer.layer.3.attention": 64,
+      "distilbert.transformer.layer.4.attention": 64,
+      "distilbert.transformer.layer.5.attention": 64
+    }
+  }
+}

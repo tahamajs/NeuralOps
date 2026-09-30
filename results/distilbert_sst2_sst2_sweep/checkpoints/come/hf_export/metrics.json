@@ -1,0 +1,49 @@
+{
+  "performance": {
+    "accuracy_pct": 85.89,
+    "f1_score": 0.8632,
+    "f1_macro": 0.8588,
+    "precision": 0.8592,
+    "recall": 0.8587,
+    "val_loss": 0.3299,
+    "peak_vram_mb": 429.56,
+    "tokens_per_sec": 71040.69,
+    "eval_time_s": 1.57,
+    "latency_ms": 1.8,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.8657,
+        "recall": 0.8435,
+        "f1": 0.8544,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.8527,
+        "recall": 0.8739,
+        "f1": 0.8632,
+        "support": 444
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression": {
+    "module_name": "come",
+    "module_type": "compressor",
+    "total_params_before": 66955010,
+    "total_params_after": 53860612,
+    "trainable_recovery_params": 884738,
+    "compression_rate": 1.2431,
+    "compression_rate_raw": 1.2639,
+    "compression_rate_net": 1.2431,
+    "compression_ratio_pct": 19.56,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 1,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 0,
+    "lora_params": 884736,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {}
+  }
+}

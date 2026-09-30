@@ -1,0 +1,45 @@
+{
+  "performance": {
+    "accuracy_pct": 53.56,
+    "f1_score": 0.6843,
+    "f1_macro": 0.4029,
+    "precision": 0.6859,
+    "recall": 0.5271,
+    "val_loss": 0.7063,
+    "peak_vram_mb": 489.61,
+    "tokens_per_sec": 6431.37,
+    "eval_time_s": 17.35,
+    "latency_ms": 19.9
+  },
+  "compression": {
+    "module_name": "soafusedattention",
+    "module_type": "attention",
+    "total_params_before": 124441344,
+    "total_params_after": 105732864,
+    "trainable_recovery_params": 755712,
+    "compression_rate": 1.1769,
+    "compression_ratio_pct": 15.03,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 12,
+    "lora_params": 755712,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "transformer.h.0.attn": 32,
+      "transformer.h.1.attn": 32,
+      "transformer.h.2.attn": 32,
+      "transformer.h.3.attn": 32,
+      "transformer.h.4.attn": 32,
+      "transformer.h.5.attn": 32,
+      "transformer.h.6.attn": 32,
+      "transformer.h.7.attn": 32,
+      "transformer.h.8.attn": 32,
+      "transformer.h.9.attn": 32,
+      "transformer.h.10.attn": 32,
+      "transformer.h.11.attn": 32
+    }
+  }
+}

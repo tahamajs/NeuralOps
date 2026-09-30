@@ -1,0 +1,32 @@
+{
+  "performance": {
+    "accuracy_pct": 84.52,
+    "f1_score": 0.8475,
+    "f1_macro": 0.8451,
+    "precision": 0.8451,
+    "recall": 0.8452,
+    "val_loss": 0.3882,
+    "peak_vram_mb": 274.26,
+    "tokens_per_sec": 140197.94,
+    "eval_time_s": 0.8,
+    "latency_ms": 0.91
+  },
+  "compression": {
+    "module_name": "come",
+    "module_type": "compressor",
+    "total_params_before": 66955010,
+    "total_params_after": 53958916,
+    "trainable_recovery_params": 592132,
+    "compression_rate": 1.2409,
+    "compression_ratio_pct": 19.41,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 1,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 0,
+    "lora_params": 0,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {}
+  }
+}

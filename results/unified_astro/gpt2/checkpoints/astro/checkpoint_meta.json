@@ -1,0 +1,81 @@
+{
+  "module_name": "astro",
+  "model_name": "models\\gpt2_sst2",
+  "model_family": "gpt",
+  "dataset": "sst2",
+  "accuracy_pct": 88.65,
+  "recovery_steps": 50,
+  "timestamp": "2026-09-24T17:27:22.845132",
+  "performance_metrics": {
+    "accuracy_pct": 88.65,
+    "f1_score": 0.8901,
+    "f1_macro": 0.8863,
+    "precision": 0.8869,
+    "recall": 0.8862,
+    "val_loss": 0.342,
+    "peak_vram_mb": 382.13,
+    "tokens_per_sec": 23189.87,
+    "eval_time_s": 4.81,
+    "latency_ms": 5.52,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.8964,
+        "recall": 0.8692,
+        "f1": 0.8826,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.8775,
+        "recall": 0.9032,
+        "f1": 0.8901,
+        "support": 444
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression_metrics": {
+    "module_name": "astro",
+    "module_type": "compressor",
+    "total_params_before": 124441344,
+    "total_params_after": 124441344,
+    "trainable_recovery_params": 1536,
+    "compression_rate": 1.0,
+    "compression_rate_raw": 1.0,
+    "compression_rate_net": 1.0,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 24,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 0,
+    "lora_params": 0,
+    "avg_reconstruction_error": 0.0461,
+    "per_layer_reconstruction_errors": {
+      "transformer.h.0.attn.c_attn": 0.03236511200839597,
+      "transformer.h.0.attn.c_proj": 0.05099506190986596,
+      "transformer.h.1.attn.c_attn": 0.020117719553625877,
+      "transformer.h.1.attn.c_proj": 0.10495554332005524,
+      "transformer.h.2.attn.c_attn": 0.024982965013981874,
+      "transformer.h.2.attn.c_proj": 0.06430272670990832,
+      "transformer.h.3.attn.c_attn": 0.03034943273690993,
+      "transformer.h.3.attn.c_proj": 0.056544257615992646,
+      "transformer.h.4.attn.c_attn": 0.05174001107743615,
+      "transformer.h.4.attn.c_proj": 0.044898795121061076,
+      "transformer.h.5.attn.c_attn": 0.024710353894796172,
+      "transformer.h.5.attn.c_proj": 0.04797527900392387,
+      "transformer.h.6.attn.c_attn": 0.029130713957045994,
+      "transformer.h.6.attn.c_proj": 0.037098959707388496,
+      "transformer.h.7.attn.c_attn": 0.031779883796597894,
+      "transformer.h.7.attn.c_proj": 0.0444168396501168,
+      "transformer.h.8.attn.c_attn": 0.034854674500757236,
+      "transformer.h.8.attn.c_proj": 0.05453557356208783,
+      "transformer.h.9.attn.c_attn": 0.03578251615433788,
+      "transformer.h.9.attn.c_proj": 0.033020060508792255,
+      "transformer.h.10.attn.c_attn": 0.033984850966811406,
+      "transformer.h.10.attn.c_proj": 0.06525968857959187,
+      "transformer.h.11.attn.c_attn": 0.04081105902623862,
+      "transformer.h.11.attn.c_proj": 0.11097559084457914
+    },
+    "per_layer_ranks": {},
+    "is_unstructured_sparsity": false
+  }
+}

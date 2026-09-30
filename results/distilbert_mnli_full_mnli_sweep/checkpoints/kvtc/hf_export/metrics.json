@@ -1,0 +1,80 @@
+{
+  "performance": {
+    "accuracy_pct": 81.5,
+    "f1_score": 0.8149,
+    "f1_macro": 0.8149,
+    "precision": 0.8158,
+    "recall": 0.8149,
+    "val_loss": 0.6169,
+    "peak_vram_mb": 446.34,
+    "tokens_per_sec": 142139.81,
+    "eval_time_s": 0.9,
+    "latency_ms": 0.9,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.8328,
+        "recall": 0.8182,
+        "f1": 0.8254,
+        "support": 341
+      },
+      "1": {
+        "precision": 0.7566,
+        "recall": 0.8088,
+        "f1": 0.7818,
+        "support": 319
+      },
+      "2": {
+        "precision": 0.858,
+        "recall": 0.8176,
+        "f1": 0.8373,
+        "support": 340
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression": {
+    "module_name": "kvtc",
+    "module_type": "compressor",
+    "total_params_before": 66955779,
+    "total_params_after": 66955779,
+    "trainable_recovery_params": 0,
+    "compression_rate": 1.0,
+    "compression_rate_raw": 1.0,
+    "compression_rate_net": 1.0,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 24,
+    "num_injected_attention_layers": 0,
+    "lora_params": 0,
+    "avg_reconstruction_error": 0.3484,
+    "weighted_reconstruction_error": 0.3484,
+    "per_layer_reconstruction_errors": {
+      "distilbert.transformer.layer.0.attention.q_lin": 0.35191017389297485,
+      "distilbert.transformer.layer.0.attention.k_lin": 0.3655373454093933,
+      "distilbert.transformer.layer.0.attention.v_lin": 0.34070488810539246,
+      "distilbert.transformer.layer.0.attention.out_lin": 0.37052416801452637,
+      "distilbert.transformer.layer.1.attention.q_lin": 0.3628343939781189,
+      "distilbert.transformer.layer.1.attention.k_lin": 0.36334294080734253,
+      "distilbert.transformer.layer.1.attention.v_lin": 0.34322938323020935,
+      "distilbert.transformer.layer.1.attention.out_lin": 0.35771444439888,
+      "distilbert.transformer.layer.2.attention.q_lin": 0.34412774443626404,
+      "distilbert.transformer.layer.2.attention.k_lin": 0.345054030418396,
+      "distilbert.transformer.layer.2.attention.v_lin": 0.3429584801197052,
+      "distilbert.transformer.layer.2.attention.out_lin": 0.35298997163772583,
+      "distilbert.transformer.layer.3.attention.q_lin": 0.34246689081192017,
+      "distilbert.transformer.layer.3.attention.k_lin": 0.3430083990097046,
+      "distilbert.transformer.layer.3.attention.v_lin": 0.3425820469856262,
+      "distilbert.transformer.layer.3.attention.out_lin": 0.3481874167919159,
+      "distilbert.transformer.layer.4.attention.q_lin": 0.3401792645454407,
+      "distilbert.transformer.layer.4.attention.k_lin": 0.34491977095603943,
+      "distilbert.transformer.layer.4.attention.v_lin": 0.34143364429473877,
+      "distilbert.transformer.layer.4.attention.out_lin": 0.3446510434150696,
+      "distilbert.transformer.layer.5.attention.q_lin": 0.34810319542884827,
+      "distilbert.transformer.layer.5.attention.k_lin": 0.34083250164985657,
+      "distilbert.transformer.layer.5.attention.v_lin": 0.3414020538330078,
+      "distilbert.transformer.layer.5.attention.out_lin": 0.3422374725341797
+    },
+    "per_layer_ranks": {}
+  }
+}

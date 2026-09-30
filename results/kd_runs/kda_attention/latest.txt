@@ -1,1 +1,1 @@
-D:\SVD_Project\results\kd_runs\kda_attention\20260930_205209_bs1_seq128_lr5e-06_noclr_C
+D:\SVD_Project\results\kd_runs\kda_attention\20261001_000227_bs2_seq128_lr2e-05_C

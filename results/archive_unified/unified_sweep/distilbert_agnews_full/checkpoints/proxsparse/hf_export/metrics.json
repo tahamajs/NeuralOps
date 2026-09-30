@@ -1,0 +1,53 @@
+{
+  "performance": {
+    "accuracy_pct": 85.4,
+    "f1_score": 0.8483,
+    "f1_macro": 0.8483,
+    "precision": 0.8497,
+    "recall": 0.8476,
+    "val_loss": 0.4133,
+    "peak_vram_mb": 326.47,
+    "tokens_per_sec": 110546.2,
+    "eval_time_s": 1.16,
+    "latency_ms": 1.16
+  },
+  "compression": {
+    "module_name": "proxsparse",
+    "module_type": "compressor",
+    "total_params_before": 66956548,
+    "total_params_after": 66956548,
+    "trainable_recovery_params": 593668,
+    "compression_rate": 1.0,
+    "compression_rate_raw": 1.0,
+    "compression_rate_net": 1.0,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 0,
+    "lora_params": 0,
+    "avg_reconstruction_error": 0.6792,
+    "weighted_reconstruction_error": 0.6792,
+    "per_layer_reconstruction_errors": {
+      "distilbert.transformer.layer.0.attention.out_lin": 0.6933968663215637,
+      "distilbert.transformer.layer.0.ffn.lin1": 0.6919811964035034,
+      "distilbert.transformer.layer.0.ffn.lin2": 0.6673906445503235,
+      "distilbert.transformer.layer.1.attention.out_lin": 0.6875455975532532,
+      "distilbert.transformer.layer.1.ffn.lin1": 0.6783381700515747,
+      "distilbert.transformer.layer.1.ffn.lin2": 0.6645529866218567,
+      "distilbert.transformer.layer.2.attention.out_lin": 0.6696216464042664,
+      "distilbert.transformer.layer.2.ffn.lin1": 0.6665086150169373,
+      "distilbert.transformer.layer.2.ffn.lin2": 0.6450181603431702,
+      "distilbert.transformer.layer.3.attention.out_lin": 0.6581177711486816,
+      "distilbert.transformer.layer.3.ffn.lin1": 0.6821122169494629,
+      "distilbert.transformer.layer.3.ffn.lin2": 0.6776657700538635,
+      "distilbert.transformer.layer.4.attention.out_lin": 0.6816648840904236,
+      "distilbert.transformer.layer.4.ffn.lin1": 0.6832599639892578,
+      "distilbert.transformer.layer.4.ffn.lin2": 0.6725227236747742,
+      "distilbert.transformer.layer.5.attention.out_lin": 0.6799941062927246,
+      "distilbert.transformer.layer.5.ffn.lin1": 0.710442841053009,
+      "distilbert.transformer.layer.5.ffn.lin2": 0.7149820923805237
+    },
+    "per_layer_ranks": {}
+  }
+}

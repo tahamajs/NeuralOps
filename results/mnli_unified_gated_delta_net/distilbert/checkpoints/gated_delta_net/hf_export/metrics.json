@@ -1,0 +1,39 @@
+{
+  "performance": {
+    "accuracy_pct": 34.0,
+    "f1_score": 0.1692,
+    "f1_macro": 0.1692,
+    "precision": 0.1133,
+    "recall": 0.3333,
+    "val_loss": 1.1066,
+    "peak_vram_mb": 454.58,
+    "tokens_per_sec": 931.05,
+    "eval_time_s": 137.48,
+    "latency_ms": 137.48
+  },
+  "compression": {
+    "module_name": "gated_delta_net",
+    "module_type": "attention",
+    "total_params_before": 66955779,
+    "total_params_after": 85521555,
+    "trainable_recovery_params": 737280,
+    "compression_rate": 1.0,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 0,
+    "lora_params": 737280,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "distilbert.transformer.layer.0.attention": 64,
+      "distilbert.transformer.layer.1.attention": 64,
+      "distilbert.transformer.layer.2.attention": 64,
+      "distilbert.transformer.layer.3.attention": 64,
+      "distilbert.transformer.layer.4.attention": 64,
+      "distilbert.transformer.layer.5.attention": 64
+    }
+  }
+}

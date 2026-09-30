@@ -1,0 +1,51 @@
+{
+  "performance": {
+    "accuracy_pct": 64.45,
+    "f1_score": 0.7355,
+    "f1_macro": 0.5968,
+    "precision": 0.7509,
+    "recall": 0.6384,
+    "val_loss": 0.7166,
+    "peak_vram_mb": 749.37,
+    "tokens_per_sec": 18634.41,
+    "eval_time_s": 5.99,
+    "latency_ms": 6.87,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.9097,
+        "recall": 0.3061,
+        "f1": 0.458,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.592,
+        "recall": 0.9707,
+        "f1": 0.7355,
+        "support": 444
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression": {
+    "module_name": "triton_cosformer",
+    "module_type": "attention",
+    "total_params_before": 124441344,
+    "total_params_after": 124441344,
+    "trainable_recovery_params": 1807872,
+    "compression_rate": 1.0,
+    "compression_rate_raw": 1.0,
+    "compression_rate_net": 1.0,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 12,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 12,
+    "lora_params": 0,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "calibration_time_s": 0.0,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {},
+    "is_unstructured_sparsity": false
+  }
+}

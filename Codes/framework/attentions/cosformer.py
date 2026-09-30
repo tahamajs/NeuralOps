@@ -346,8 +346,6 @@ class CosformerAttention(BaseAttention):
         self.is_causal: bool = bool(is_dec)
         self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", False))
 
-        # Fix 2: tau buffer removed (was unused)
-
         # Multi-head projections equipped with LoRA adapters
         self.q_proj = LoRALinear(
             self.dim, self.all_head_size, bias=True,
@@ -664,7 +662,9 @@ class CosformerAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        # Fix 17: input validation
+        # ------------------------------------------------------------------
+        # 0. Input validation
+        # ------------------------------------------------------------------
         assert hidden_states.dim() == 3, (
             f"CosformerAttention expects 3D hidden_states [B, N, D], "
             f"got shape {tuple(hidden_states.shape)}"
@@ -673,18 +673,22 @@ class CosformerAttention(BaseAttention):
         B, N, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
         device = hidden_states.device
-        dtype = hidden_states.dtype
+        input_dtype = hidden_states.dtype
 
         is_cross_attention = encoder_hidden_states is not None
         kv_input = encoder_hidden_states if is_cross_attention else hidden_states
         kv_len = kv_input.shape[1]
 
-        # 1. Projections
+        # ------------------------------------------------------------------
+        # 1. Q/K/V projections
+        # ------------------------------------------------------------------
         Q = self.q_proj(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
         K = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
         V = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        # 2. RoPE (Fix 7: strict tuple requirement)
+        # ------------------------------------------------------------------
+        # 2. RoPE (only for self-attention, not cross-attention)
+        # ------------------------------------------------------------------
         pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)
         if pos_emb is not None and not is_cross_attention:
             if isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
@@ -692,8 +696,8 @@ class CosformerAttention(BaseAttention):
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids)
             else:
                 logger.warning(
-                    f"CosformerAttention: unexpected position_embeddings "
-                    f"format ({type(pos_emb)}), skipping RoPE."
+                    "CosformerAttention: unexpected position_embeddings format (%s), skipping RoPE.",
+                    type(pos_emb),
                 )
         elif self.rotary_emb is not None and not is_cross_attention:
             rotary_mod = self.rotary_emb
@@ -714,47 +718,118 @@ class CosformerAttention(BaseAttention):
             if cos is not None and sin is not None:
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids=pos_ids)
 
+        # ------------------------------------------------------------------
         # 3. GQA head expansion
+        # ------------------------------------------------------------------
         if self.num_kv_heads != self.num_heads:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        # 4. Non-negative kernel activation (Fix 18: comment clarified)
-        # FP32 for numerical stability
+        # ------------------------------------------------------------------
+        # 4. Kernel feature mapping (ELU+1) — in FP32 for stability
+        # ------------------------------------------------------------------
         if self.act_fun == "softplus":
-            Q = F.softplus(Q.float())
-            K = F.softplus(K.float())
+            Q_k = F.softplus(Q.float())
+            K_k = F.softplus(K.float())
         else:
-            Q = F.elu(Q.float()) + 1.0
-            K = F.elu(K.float()) + 1.0
-        V = V.float()
+            # default: elu + 1 → non-negative kernel feature map
+            Q_k = F.elu(Q.float()) + 1.0
+            K_k = F.elu(K.float()) + 1.0
+        V_f = V.float()
 
-        # 5. Token valid mask on both K and V
+        # ------------------------------------------------------------------
+        # 5. Token valid mask on both K and V (padding tokens → 0)
+        # ------------------------------------------------------------------
         eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
+        valid_mask = None
         if eff_mask is not None:
-            valid_mask = get_token_valid_mask(eff_mask, B, kv_len, device)
-            mask_expanded = valid_mask.unsqueeze(1).unsqueeze(-1).float()
-            K = K * mask_expanded
-            V = V * mask_expanded
+            valid_mask = get_token_valid_mask(eff_mask, B, kv_len, device)   # [B, kv_len] bool
+            mask_expanded = valid_mask.unsqueeze(1).unsqueeze(-1).float()      # [B, 1, kv_len, 1]
+            K_k = K_k * mask_expanded
+            V_f = V_f * mask_expanded
 
-        # 6. Cosine/Sine position modulation
-        cos_w_q, sin_w_q = self._get_cos_sin_weights(N, device, torch.float32)
+        # ------------------------------------------------------------------
+        # 6. Cos/Sin positional reweighting (cosformer's signature)
+        # ------------------------------------------------------------------
+        cos_w, sin_w = self._get_cos_sin_weights(N, device, dtype=torch.float32)
+        # cos_w, sin_w: [1, 1, N, 1]
+        Q_cos = Q_k * cos_w
+        Q_sin = Q_k * sin_w
+        K_cos = K_k * cos_w
+        K_sin = K_k * sin_w
 
-        # 7. Linear attention via shared Triton dispatcher
+        # ------------------------------------------------------------------
+        # 7. Linear attention — try Triton, fallback to stable Python path
+        # ------------------------------------------------------------------
         is_causal_eval = bool(self.is_decoder and not is_cross_attention and N == kv_len)
-        dispatch_kwargs = dict(self.triton_kwargs)
-        dispatch_kwargs["cos_weight"] = cos_w_q
-        dispatch_kwargs["sin_weight"] = sin_w_q
-        dispatch_kwargs["eps"] = self.eps
 
-        context = triton_dispatch(
-            self.triton_kernel,
-            Q, K, V,
-            is_causal=is_causal_eval,
-            **dispatch_kwargs,
-        )
+        context = None
+        triton_ok = False
+        if triton_dispatch is not None and not is_cross_attention:
+            try:
+                # Triton path expects FP16 inputs. Force FP16 only if values are bounded.
+                # ELU+1 can produce values up to ~10, times cos/sin up to 1 → safe.
+                Q_t = Q_cos.half()
+                K_t = K_cos.half()
+                K_s_t = K_sin.half()
+                V_t = V_f.half()
 
-        # 8. Head mask
+                # Quick sanity check for overflow before calling Triton
+                if (torch.isnan(Q_t).any() or torch.isnan(K_t).any()
+                        or torch.isinf(Q_t).any() or torch.isinf(K_t).any()):
+                    raise RuntimeError("Non-finite values detected before Triton dispatch")
+
+                dispatch_kwargs = dict(self.triton_kwargs)
+                dispatch_kwargs["cos_weight"] = cos_w.half()
+                dispatch_kwargs["sin_weight"] = sin_w.half()
+                dispatch_kwargs["eps"] = self.eps
+
+                # Some dispatchers expect (Q_cos, Q_sin, K_cos, K_sin, V)
+                context = triton_dispatch(
+                    self.triton_kernel,
+                    Q_t, K_t, V_t,
+                    Q_sin=Q_k.half() * sin_w.half(),
+                    K_sin=K_s_t,
+                    is_causal=is_causal_eval,
+                    **dispatch_kwargs,
+                )
+                context = context.float()
+                triton_ok = True
+            except Exception as e:
+                logger.debug("Triton dispatch failed, using Python fallback: %s", e)
+                triton_ok = False
+
+        # ------------------------------------------------------------------
+        # 7b. Python fallback: stable causal / bidirectional linear attention
+        # ------------------------------------------------------------------
+        if not triton_ok or context is None:
+            if is_cross_attention:
+                # Cross-attention: only bidirectional path (no causal masking)
+                context = self._forward_bidirectional(
+                    Q_cos, Q_sin, K_cos, K_sin, V_f,
+                    B, H, d, kv_len, device, torch.float32,
+                )
+            elif is_causal_eval:
+                # Causal self-attention for decoders
+                context = self._forward_causal(
+                    Q_cos, Q_sin, K_cos, K_sin, V_f,
+                    B, H, d, N, device, torch.float32,
+                )
+            else:
+                # Bidirectional self-attention for encoders
+                context = self._forward_bidirectional(
+                    Q_cos, Q_sin, K_cos, K_sin, V_f,
+                    B, H, d, N, device, torch.float32,
+                )
+
+        # ------------------------------------------------------------------
+        # 8. Safety: kill any nan/inf before head mask and out_proj
+        # ------------------------------------------------------------------
+        context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        # ------------------------------------------------------------------
+        # 9. Head mask
+        # ------------------------------------------------------------------
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -764,85 +839,86 @@ class CosformerAttention(BaseAttention):
                 head_mask = head_mask.unsqueeze(-1)
             context = context * head_mask
 
-        context = torch.nan_to_num(context, nan=0.0)
+        # ------------------------------------------------------------------
+        # 10. Merge heads → [B, N, H*d]
+        # ------------------------------------------------------------------
+        context = context.to(input_dtype)
         context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
 
-        # 9. Output projection (nested encoder bypass)
+        # ------------------------------------------------------------------
+        # 11. Output projection (or nested encoder bypass)
+        # ------------------------------------------------------------------
         if self.is_nested_encoder:
             final_out = context
         else:
             final_out = self.out_proj(context)
 
-        return final_out.to(dtype), None
+        # ------------------------------------------------------------------
+        # 12. Final safety clamp — prevents logit explosion downstream
+        #     (adjust bounds if you know your task needs larger values)
+        # ------------------------------------------------------------------
+        final_out = torch.nan_to_num(final_out, nan=0.0, posinf=1e4, neginf=-1e4)
+        final_out = final_out.clamp(min=-1e4, max=1e4)
+
+        return final_out.to(input_dtype), None
+
+    
 
     # ------------------------------------------------------------------
     # Causal forward (Fix 8: V masked in last chunk)
     # ------------------------------------------------------------------
     def _forward_causal(
         self,
-        Q_cos: torch.Tensor,
-        Q_sin: torch.Tensor,
-        K_cos: torch.Tensor,
-        K_sin: torch.Tensor,
+        Q_cos: torch.Tensor, Q_sin: torch.Tensor,
+        K_cos: torch.Tensor, K_sin: torch.Tensor,
         V: torch.Tensor,
-        B: int,
-        H: int,
-        d: int,
-        N: int,
-        device: torch.device,
-        dtype: torch.dtype,
+        B: int, H: int, d: int, N: int,
+        device: torch.device, dtype: torch.dtype,
     ) -> torch.Tensor:
+        """Chunked causal linear attention. Stable in FP32."""
         chunk_size = max(16, min(64, N // 8))
 
         if N <= chunk_size:
+            # Single-chunk: explicit causal mask
             causal_mask = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
-            score_c = torch.matmul(Q_cos, K_cos.transpose(-1, -2).contiguous()).masked_fill(~causal_mask, 0.0)
-            score_s = torch.matmul(Q_sin, K_sin.transpose(-1, -2).contiguous()).masked_fill(~causal_mask, 0.0)
-            scores = score_c + score_s
+            score_c = torch.matmul(Q_cos, K_cos.transpose(-1, -2).contiguous())
+            score_s = torch.matmul(Q_sin, K_sin.transpose(-1, -2).contiguous())
+            scores = (score_c + score_s).masked_fill(~causal_mask, 0.0)
             num = torch.matmul(scores, V)
-            denom = (
-                score_c.sum(dim=-1, keepdim=True)
-                + score_s.sum(dim=-1, keepdim=True)
-                + self.eps
-            )
+            denom = (score_c + score_s).masked_fill(~causal_mask, 0.0).sum(dim=-1, keepdim=True)
             return (num / denom.clamp(min=self.eps)).to(dtype)
 
+        # Multi-chunk
         pad_len = (chunk_size - (N % chunk_size)) % chunk_size
         if pad_len > 0:
-            Q_c_pad = F.pad(Q_cos, (0, 0, 0, pad_len))
-            Q_s_pad = F.pad(Q_sin, (0, 0, 0, pad_len))
-            K_c_pad = F.pad(K_cos, (0, 0, 0, pad_len))
-            K_s_pad = F.pad(K_sin, (0, 0, 0, pad_len))
-            V_pad = F.pad(V, (0, 0, 0, pad_len))
-        else:
-            Q_c_pad, Q_s_pad, K_c_pad, K_s_pad, V_pad = Q_cos, Q_sin, K_cos, K_sin, V
+            Q_cos = F.pad(Q_cos, (0, 0, 0, pad_len))
+            Q_sin = F.pad(Q_sin, (0, 0, 0, pad_len))
+            K_cos = F.pad(K_cos, (0, 0, 0, pad_len))
+            K_sin = F.pad(K_sin, (0, 0, 0, pad_len))
+            V     = F.pad(V,     (0, 0, 0, pad_len))
 
         total_N = N + pad_len
         num_chunks = total_N // chunk_size
 
-        qc_c = Q_c_pad.view(B, H, num_chunks, chunk_size, d)
-        qs_c = Q_s_pad.view(B, H, num_chunks, chunk_size, d)
-        kc_c = K_c_pad.view(B, H, num_chunks, chunk_size, d)
-        ks_c = K_s_pad.view(B, H, num_chunks, chunk_size, d)
-        v_c = V_pad.view(B, H, num_chunks, chunk_size, d)
+        qc_c = Q_cos.view(B, H, num_chunks, chunk_size, d)
+        qs_c = Q_sin.view(B, H, num_chunks, chunk_size, d)
+        kc_c = K_cos.view(B, H, num_chunks, chunk_size, d)
+        ks_c = K_sin.view(B, H, num_chunks, chunk_size, d)
+        v_c  = V.view(B, H, num_chunks, chunk_size, d)
 
         causal_mask = torch.tril(torch.ones(chunk_size, chunk_size, device=device, dtype=torch.bool))
 
         score_c = torch.matmul(qc_c, kc_c.transpose(-1, -2).contiguous()).masked_fill(~causal_mask, 0.0)
         score_s = torch.matmul(qs_c, ks_c.transpose(-1, -2).contiguous()).masked_fill(~causal_mask, 0.0)
-        scores = score_c + score_s
-
-        num_intra = torch.matmul(scores, v_c)
-        denom_intra = score_c.sum(dim=-1, keepdim=True) + score_s.sum(dim=-1, keepdim=True)
+        num_intra = torch.matmul(score_c + score_s, v_c)
+        denom_intra = (score_c + score_s).sum(dim=-1, keepdim=True)
 
         S_cos = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
         S_sin = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
         Z_cos = torch.zeros(B, H, d, 1, device=device, dtype=torch.float32)
         Z_sin = torch.zeros(B, H, d, 1, device=device, dtype=torch.float32)
 
-        num_list = []
-        denom_list = []
-
+        num_list, denom_list = [], []
         for c in range(num_chunks):
             num_inter = torch.matmul(qc_c[:, :, c], S_cos) + torch.matmul(qs_c[:, :, c], S_sin)
             denom_inter = torch.matmul(qc_c[:, :, c], Z_cos) + torch.matmul(qs_c[:, :, c], Z_sin)
@@ -854,15 +930,11 @@ class CosformerAttention(BaseAttention):
             ks_curr = ks_c[:, :, c]
             v_curr = v_c[:, :, c]
 
-            # Fix 8: mask K, K_sin, AND V in the last chunk
             if c == num_chunks - 1 and pad_len > 0:
                 valid = chunk_size - pad_len
-                kc_curr = kc_curr.clone()
-                ks_curr = ks_curr.clone()
-                v_curr = v_curr.clone()
-                kc_curr[:, :, valid:] = 0.0
-                ks_curr[:, :, valid:] = 0.0
-                v_curr[:, :, valid:] = 0.0
+                kc_curr = kc_curr.clone(); kc_curr[:, :, valid:] = 0.0
+                ks_curr = ks_curr.clone(); ks_curr[:, :, valid:] = 0.0
+                v_curr = v_curr.clone(); v_curr[:, :, valid:] = 0.0
 
             S_cos = S_cos + torch.matmul(kc_curr.transpose(-1, -2).contiguous(), v_curr)
             S_sin = S_sin + torch.matmul(ks_curr.transpose(-1, -2).contiguous(), v_curr)
@@ -872,39 +944,30 @@ class CosformerAttention(BaseAttention):
         num = torch.cat(num_list, dim=2)[:, :, :N, :]
         denom = torch.cat(denom_list, dim=2)[:, :, :N, :]
         return (num / (denom + self.eps).clamp(min=self.eps)).to(dtype)
-
     # ------------------------------------------------------------------
     # Bidirectional forward
     # ------------------------------------------------------------------
     def _forward_bidirectional(
         self,
-        Q_cos: torch.Tensor,
-        Q_sin: torch.Tensor,
-        K_cos: torch.Tensor,
-        K_sin: torch.Tensor,
+        Q_cos: torch.Tensor, Q_sin: torch.Tensor,
+        K_cos: torch.Tensor, K_sin: torch.Tensor,
         V: torch.Tensor,
-        B: int,
-        H: int,
-        d: int,
-        device: torch.device,
-        dtype: torch.dtype,
+        B: int, H: int, d: int, N: int,
+        device: torch.device, dtype: torch.dtype,
     ) -> torch.Tensor:
         KV_cos = torch.matmul(K_cos.transpose(-2, -1).contiguous(), V)
         KV_sin = torch.matmul(K_sin.transpose(-2, -1).contiguous(), V)
 
-        Z_cos = K_cos.sum(dim=2, keepdim=True)
+        Z_cos = K_cos.sum(dim=2, keepdim=True)   # [B, H, 1, d]
         Z_sin = K_sin.sum(dim=2, keepdim=True)
 
         num = torch.matmul(Q_cos, KV_cos) + torch.matmul(Q_sin, KV_sin)
-        denom = (
-            torch.matmul(Q_cos, Z_cos.transpose(-2, -1).contiguous())
-            + torch.matmul(Q_sin, Z_sin.transpose(-2, -1).contiguous())
-        )
+        denom = (torch.matmul(Q_cos, Z_cos.transpose(-2, -1).contiguous())
+                 + torch.matmul(Q_sin, Z_sin.transpose(-2, -1).contiguous()))
         denom = denom.clamp(min=self.eps)
 
         context = (num / denom).to(dtype)
         return torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
-
 
 # ============================================================================
 # Injection factory

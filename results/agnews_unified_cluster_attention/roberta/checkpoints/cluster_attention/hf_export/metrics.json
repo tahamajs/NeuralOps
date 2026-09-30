@@ -1,0 +1,45 @@
+{
+  "performance": {
+    "accuracy_pct": 79.2,
+    "f1_score": 0.7732,
+    "f1_macro": 0.7732,
+    "precision": 0.8189,
+    "recall": 0.7917,
+    "val_loss": 0.6089,
+    "peak_vram_mb": 537.49,
+    "tokens_per_sec": 13220.49,
+    "eval_time_s": 9.68,
+    "latency_ms": 9.68
+  },
+  "compression": {
+    "module_name": "cluster_attention",
+    "module_type": "attention",
+    "total_params_before": 124648708,
+    "total_params_after": 132915484,
+    "trainable_recovery_params": 0,
+    "compression_rate": 1.0,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 12,
+    "lora_params": 1179648,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "roberta.encoder.layer.0.attention.self": 64,
+      "roberta.encoder.layer.1.attention.self": 64,
+      "roberta.encoder.layer.2.attention.self": 64,
+      "roberta.encoder.layer.3.attention.self": 64,
+      "roberta.encoder.layer.4.attention.self": 64,
+      "roberta.encoder.layer.5.attention.self": 64,
+      "roberta.encoder.layer.6.attention.self": 64,
+      "roberta.encoder.layer.7.attention.self": 64,
+      "roberta.encoder.layer.8.attention.self": 64,
+      "roberta.encoder.layer.9.attention.self": 64,
+      "roberta.encoder.layer.10.attention.self": 64,
+      "roberta.encoder.layer.11.attention.self": 64
+    }
+  }
+}

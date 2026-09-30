@@ -1,0 +1,74 @@
+{
+  "performance": {
+    "accuracy_pct": 91.17,
+    "f1_score": 0.9155,
+    "f1_macro": 0.9115,
+    "precision": 0.9131,
+    "recall": 0.9112,
+    "val_loss": 0.3183,
+    "peak_vram_mb": 427.89,
+    "tokens_per_sec": 154197.33,
+    "eval_time_s": 0.72,
+    "latency_ms": 0.83,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.9333,
+        "recall": 0.8832,
+        "f1": 0.9076,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.8929,
+        "recall": 0.9392,
+        "f1": 0.9155,
+        "support": 444
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression": {
+    "module_name": "soka_compressor",
+    "module_type": "compressor",
+    "total_params_before": 66955010,
+    "total_params_after": 65477378,
+    "trainable_recovery_params": 592130,
+    "compression_rate": 1.0226,
+    "compression_rate_raw": 1.0226,
+    "compression_rate_net": 1.0226,
+    "compression_ratio_pct": 2.21,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 0,
+    "lora_params": 0,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "distilbert.transformer.layer.0.attention.q_lin": 329,
+      "distilbert.transformer.layer.0.attention.k_lin": 324,
+      "distilbert.transformer.layer.0.attention.v_lin": 346,
+      "distilbert.transformer.layer.0.attention.out_lin": 332,
+      "distilbert.transformer.layer.1.attention.q_lin": 313,
+      "distilbert.transformer.layer.1.attention.k_lin": 293,
+      "distilbert.transformer.layer.1.attention.v_lin": 342,
+      "distilbert.transformer.layer.1.attention.out_lin": 339,
+      "distilbert.transformer.layer.2.attention.q_lin": 340,
+      "distilbert.transformer.layer.2.attention.k_lin": 344,
+      "distilbert.transformer.layer.2.attention.v_lin": 343,
+      "distilbert.transformer.layer.2.attention.out_lin": 351,
+      "distilbert.transformer.layer.3.attention.q_lin": 308,
+      "distilbert.transformer.layer.3.attention.k_lin": 310,
+      "distilbert.transformer.layer.3.attention.v_lin": 374,
+      "distilbert.transformer.layer.3.attention.out_lin": 373,
+      "distilbert.transformer.layer.4.attention.q_lin": 341,
+      "distilbert.transformer.layer.4.attention.k_lin": 340,
+      "distilbert.transformer.layer.4.attention.v_lin": 380,
+      "distilbert.transformer.layer.4.attention.out_lin": 383,
+      "distilbert.transformer.layer.5.attention.q_lin": 347,
+      "distilbert.transformer.layer.5.attention.k_lin": 354,
+      "distilbert.transformer.layer.5.attention.v_lin": 365,
+      "distilbert.transformer.layer.5.attention.out_lin": 383
+    }
+  }
+}

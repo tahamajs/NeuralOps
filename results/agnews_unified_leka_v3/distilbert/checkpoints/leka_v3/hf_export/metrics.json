@@ -1,0 +1,39 @@
+{
+  "performance": {
+    "accuracy_pct": 63.5,
+    "f1_score": 0.6364,
+    "f1_macro": 0.6364,
+    "precision": 0.7218,
+    "recall": 0.6404,
+    "val_loss": 0.9754,
+    "peak_vram_mb": 742.24,
+    "tokens_per_sec": 9814.4,
+    "eval_time_s": 13.04,
+    "latency_ms": 13.04
+  },
+  "compression": {
+    "module_name": "leka_v3",
+    "module_type": "attention",
+    "total_params_before": 66956548,
+    "total_params_after": 67940434,
+    "trainable_recovery_params": 589896,
+    "compression_rate": 1.0,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 0,
+    "lora_params": 589824,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "distilbert.transformer.layer.0.attention": 64,
+      "distilbert.transformer.layer.1.attention": 64,
+      "distilbert.transformer.layer.2.attention": 64,
+      "distilbert.transformer.layer.3.attention": 64,
+      "distilbert.transformer.layer.4.attention": 64,
+      "distilbert.transformer.layer.5.attention": 64
+    }
+  }
+}

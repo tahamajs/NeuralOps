@@ -1,0 +1,41 @@
+{
+  "performance": {
+    "accuracy_pct": 76.49,
+    "f1_score": 0.7466,
+    "f1_macro": 0.7637,
+    "precision": 0.7737,
+    "recall": 0.7665,
+    "val_loss": 0.584,
+    "peak_vram_mb": 334.79,
+    "tokens_per_sec": 17403.51,
+    "eval_time_s": 6.41,
+    "latency_ms": 7.35
+  },
+  "compression": {
+    "module_name": "kda",
+    "module_type": "attention",
+    "total_params_before": 66955010,
+    "total_params_after": 67544912,
+    "trainable_recovery_params": 589902,
+    "compression_rate": 1.0,
+    "compression_rate_raw": 1.0,
+    "compression_rate_net": 0.9913,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 6,
+    "lora_params": 589824,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "distilbert.transformer.layer.0.attention": 64,
+      "distilbert.transformer.layer.1.attention": 64,
+      "distilbert.transformer.layer.2.attention": 64,
+      "distilbert.transformer.layer.3.attention": 64,
+      "distilbert.transformer.layer.4.attention": 64,
+      "distilbert.transformer.layer.5.attention": 64
+    }
+  }
+}

@@ -1,30 +1,23 @@
 {
-  "module": "aegis_v5",
-  "pre_ppl": 211.86,
-  "baseline_ppl": 31.54,
+  "module": "hgrn2_gated_deltanet",
+  "pre_ppl": NaN,
+  "baseline_ppl": 34.01,
   "results": {
     "C": {
       "method": "C",
-      "pre_ppl": 211.86,
-      "post_ppl": 98.77,
-      "ppl_ratio": 3.1316,
-      "recovery_pct": 62.72,
-      "peak_vram_mb": 1226.31,
-      "train_time_s": 390.53,
-      "s_per_step": 0.7811,
-      "loss_final": 170.1925,
-      "cached": true,
-      "ppl_at_step_250": "",
-      "ppl_at_step_500": 98.77,
-      "ppl_at_step_750": "",
-      "ppl_at_step_1000": "",
-      "ppl_at_step_1250": "",
-      "ppl_at_step_1500": ""
+      "pre_ppl": NaN,
+      "post_ppl": NaN,
+      "ppl_ratio": Infinity,
+      "recovery_pct": 0.0,
+      "peak_vram_mb": 0.0,
+      "train_time_s": 0.0,
+      "loss_final": NaN,
+      "error": "CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 1.84 GiB is free. Of the allocated memory 877.98 MiB is allocated by PyTorch, and 28.02 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)"
     }
   },
-  "best_method": "C",
-  "best_post_ppl": 98.77,
-  "is_ssm_recoverable": true,
-  "recommendation": "YES: SSM can learn from attention. Distillation successfully bridged the architectural gap.",
-  "run_dir": "results/kd_runs/aegis_v5/20260930_220841_bs1_seq128_lr5e-06_noclr_C"
+  "best_method": "None",
+  "best_post_ppl": Infinity,
+  "is_ssm_recoverable": false,
+  "recommendation": "NO: Fundamental mathematical incompatibility between SSM recurrence and pre-trained attention representations.",
+  "run_dir": "results/kd_runs/hgrn2_gated_deltanet/20261001_000237_bs1_seq96_lr5e-06_noclr_C"
 }

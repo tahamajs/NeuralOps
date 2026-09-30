@@ -1,0 +1,45 @@
+{
+  "performance": {
+    "accuracy_pct": 68.58,
+    "f1_score": 0.74,
+    "f1_macro": 0.6715,
+    "precision": 0.7166,
+    "recall": 0.6822,
+    "val_loss": 0.6951,
+    "peak_vram_mb": 683.9,
+    "tokens_per_sec": 2973.21,
+    "eval_time_s": 37.54,
+    "latency_ms": 43.05
+  },
+  "compression": {
+    "module_name": "adasplash",
+    "module_type": "attention",
+    "total_params_before": 124647170,
+    "total_params_after": 132913922,
+    "trainable_recovery_params": 1179648,
+    "compression_rate": 1.0,
+    "compression_ratio_pct": 0.0,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 12,
+    "lora_params": 1179648,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "roberta.encoder.layer.0.attention.self": 32,
+      "roberta.encoder.layer.1.attention.self": 32,
+      "roberta.encoder.layer.2.attention.self": 32,
+      "roberta.encoder.layer.3.attention.self": 32,
+      "roberta.encoder.layer.4.attention.self": 32,
+      "roberta.encoder.layer.5.attention.self": 32,
+      "roberta.encoder.layer.6.attention.self": 32,
+      "roberta.encoder.layer.7.attention.self": 32,
+      "roberta.encoder.layer.8.attention.self": 32,
+      "roberta.encoder.layer.9.attention.self": 32,
+      "roberta.encoder.layer.10.attention.self": 32,
+      "roberta.encoder.layer.11.attention.self": 32
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "module": "eat",
+  "pre_ppl": 34.01,
+  "baseline_ppl": 34.01,
+  "results": {
+    "C": {
+      "method": "C",
+      "pre_ppl": 34.01,
+      "post_ppl": 34.55,
+      "ppl_ratio": 1.0159,
+      "recovery_pct": 0.0,
+      "peak_vram_mb": 1376.03,
+      "train_time_s": 82.55,
+      "s_per_step": 0.2752,
+      "loss_final": 27.108,
+      "cached": true,
+      "ppl_at_step_250": "",
+      "ppl_at_step_500": "",
+      "ppl_at_step_750": "",
+      "ppl_at_step_1000": "",
+      "ppl_at_step_1250": "",
+      "ppl_at_step_1500": ""
+    }
+  },
+  "best_method": "C",
+  "best_post_ppl": 34.55,
+  "is_ssm_recoverable": true,
+  "recommendation": "YES: SSM can learn from attention. Distillation successfully bridged the architectural gap.",
+  "run_dir": "results/kd_runs/eat/20260930_224854_bs1_seq96_lr5e-06_noclr_C"
+}

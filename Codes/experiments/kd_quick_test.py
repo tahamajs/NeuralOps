@@ -767,6 +767,7 @@ def run_kd_method(
     # Inject module
     LOG.info("Injecting '%s' into student model...", args.module)
     calib_slice = train_chunks[:4, :128].to(device)
+
     student, comp_stats = apply_module_to_model(
         student,
         args.module,
@@ -776,6 +777,21 @@ def run_kd_method(
         calibration_data=calib_slice,
         tokenizer=tokenizer,
     )
+
+    student.eval()
+    with torch.no_grad():
+        diag_ids = train_chunks[:1, :128].to(device)
+        diag_out = student(diag_ids)
+        print(f"DIAG: logits nan={torch.isnan(diag_out.logits).any().item()}, "
+            f"min={diag_out.logits.min().item():.4f}, "
+            f"max={diag_out.logits.max().item():.4f}, "
+            f"mean={diag_out.logits.mean().item():.4f}")
+        # چک تک‌تک لایه‌ها
+        for name, mod in student.named_modules():
+            if isinstance(mod, type(student.transformer.h[0].attn)) or "cosformer" in name.lower():
+                print(f"  Attn module: {name} | is_decoder={getattr(mod, 'is_decoder', '?')}, "
+                    f"is_causal={getattr(mod, 'is_causal', '?')}")
+
     if args.fp16 and device.startswith("cuda"):
         student.half()
 

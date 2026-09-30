@@ -1,0 +1,60 @@
+{
+  "performance": {
+    "accuracy_pct": 55.6,
+    "f1_score": 0.55,
+    "f1_macro": 0.55,
+    "precision": 0.5618,
+    "recall": 0.553,
+    "val_loss": 0.9532,
+    "peak_vram_mb": 302.42,
+    "tokens_per_sec": 137472.35,
+    "eval_time_s": 0.93,
+    "latency_ms": 0.93
+  },
+  "compression": {
+    "module_name": "cur_moe_class",
+    "module_type": "compressor",
+    "total_params_before": 66955779,
+    "total_params_after": 48763395,
+    "trainable_recovery_params": 1127427,
+    "compression_rate": 1.3731,
+    "compression_rate_raw": 1.3731,
+    "compression_rate_net": 1.3731,
+    "compression_ratio_pct": 27.17,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 0,
+    "lora_params": 0,
+    "avg_reconstruction_error": 0.8663,
+    "weighted_reconstruction_error": 0.8633,
+    "per_layer_reconstruction_errors": {
+      "distilbert.transformer.layer.0.ffn.lin1": 0.8922406435012817,
+      "distilbert.transformer.layer.0.ffn.lin2": 0.8741838335990906,
+      "distilbert.transformer.layer.1.ffn.lin1": 0.8823360800743103,
+      "distilbert.transformer.layer.1.ffn.lin2": 0.8522626161575317,
+      "distilbert.transformer.layer.2.ffn.lin1": 0.8794412612915039,
+      "distilbert.transformer.layer.2.ffn.lin2": 0.8332963585853577,
+      "distilbert.transformer.layer.3.ffn.lin1": 0.8828380703926086,
+      "distilbert.transformer.layer.3.ffn.lin2": 0.8765012621879578,
+      "distilbert.transformer.layer.4.ffn.lin1": 0.879711925983429,
+      "distilbert.transformer.layer.4.ffn.lin2": 0.88887619972229,
+      "distilbert.transformer.layer.5.ffn.lin1": 0.8282619118690491,
+      "distilbert.transformer.layer.5.ffn.lin2": 0.8259993195533752
+    },
+    "per_layer_ranks": {
+      "distilbert.transformer.layer.0.ffn.lin1": 192,
+      "distilbert.transformer.layer.0.ffn.lin2": 192,
+      "distilbert.transformer.layer.1.ffn.lin1": 192,
+      "distilbert.transformer.layer.1.ffn.lin2": 192,
+      "distilbert.transformer.layer.2.ffn.lin1": 192,
+      "distilbert.transformer.layer.2.ffn.lin2": 192,
+      "distilbert.transformer.layer.3.ffn.lin1": 192,
+      "distilbert.transformer.layer.3.ffn.lin2": 192,
+      "distilbert.transformer.layer.4.ffn.lin1": 192,
+      "distilbert.transformer.layer.4.ffn.lin2": 192,
+      "distilbert.transformer.layer.5.ffn.lin1": 288,
+      "distilbert.transformer.layer.5.ffn.lin2": 288
+    }
+  }
+}

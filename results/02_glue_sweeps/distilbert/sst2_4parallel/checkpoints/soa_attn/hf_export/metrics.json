@@ -1,0 +1,58 @@
+{
+  "performance": {
+    "accuracy_pct": 89.22,
+    "f1_score": 0.8974,
+    "f1_macro": 0.8919,
+    "precision": 0.8941,
+    "recall": 0.8916,
+    "val_loss": 0.3612,
+    "peak_vram_mb": 365.21,
+    "tokens_per_sec": 31830.01,
+    "eval_time_s": 3.51,
+    "latency_ms": 4.02,
+    "per_class_metrics": {
+      "0": {
+        "precision": 0.9175,
+        "recall": 0.8575,
+        "f1": 0.8865,
+        "support": 428
+      },
+      "1": {
+        "precision": 0.8708,
+        "recall": 0.9257,
+        "f1": 0.8974,
+        "support": 444
+      }
+    },
+    "collapse_flag": false
+  },
+  "compression": {
+    "module_name": "soa_attn",
+    "module_type": "attention",
+    "total_params_before": 66955010,
+    "total_params_after": 60282626,
+    "trainable_recovery_params": 405504,
+    "compression_rate": 1.1107,
+    "compression_rate_raw": 1.1182,
+    "compression_rate_net": 1.1107,
+    "compression_ratio_pct": 9.97,
+    "flops_reduction_pct": 0.0,
+    "num_compressed_layers": 0,
+    "num_fallback_layers": 0,
+    "num_injected_attention_layers": 6,
+    "lora_params": 405504,
+    "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "calibration_time_s": 0.0,
+    "per_layer_reconstruction_errors": {},
+    "per_layer_ranks": {
+      "distilbert.transformer.layer.0.attention": 128,
+      "distilbert.transformer.layer.1.attention": 128,
+      "distilbert.transformer.layer.2.attention": 128,
+      "distilbert.transformer.layer.3.attention": 128,
+      "distilbert.transformer.layer.4.attention": 128,
+      "distilbert.transformer.layer.5.attention": 128
+    },
+    "is_unstructured_sparsity": false
+  }
+}
