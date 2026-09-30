@@ -17,10 +17,10 @@
   "calibration_time_s": 0.0,
   "recovery_time_s": 0.0,
   "peak_vram_mb": 935.23,
-  "latency_ms_per_token": 0.1376,
-  "throughput_tok_per_sec": 7265.06,
+  "latency_ms_per_token": 0.0978,
+  "throughput_tok_per_sec": 10220.19,
   "eval_elapsed_s": 0.0,
-  "wall_elapsed_s": 2.099,
+  "wall_elapsed_s": 2.255,
   "error": "[D:\\SVD_Project\\Codes\\framework\\compression_engine\\lillama_compressor.py:440] RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu!",
-  "timestamp": "2026-09-28T07:08:00"
+  "timestamp": "2026-09-30T06:20:09"
 }

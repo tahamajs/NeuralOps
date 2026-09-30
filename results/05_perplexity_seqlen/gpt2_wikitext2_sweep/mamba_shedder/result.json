@@ -16,11 +16,11 @@
   "lora_params": 0,
   "calibration_time_s": 0.0,
   "recovery_time_s": 0.0,
-  "peak_vram_mb": 936.74,
-  "latency_ms_per_token": 0.1377,
-  "throughput_tok_per_sec": 7260.92,
+  "peak_vram_mb": 937.11,
+  "latency_ms_per_token": 0.1007,
+  "throughput_tok_per_sec": 9930.0,
   "eval_elapsed_s": 0.0,
-  "wall_elapsed_s": 0.353,
+  "wall_elapsed_s": 0.31,
   "error": "[D:\\SVD_Project\\Codes\\framework\\compression_engine\\mamba_shedder.py:613] RuntimeError: selected index k out of range",
-  "timestamp": "2026-09-28T07:08:06"
+  "timestamp": "2026-09-30T06:20:14"
 }
