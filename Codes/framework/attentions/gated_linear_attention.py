@@ -49,6 +49,15 @@ from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.triton_kernels import triton_dispatch
 
+try:
+    from framework.core.triton_kernels.gla_scan import gla_scan_triton, MAX_REGISTER_DIM
+    HAS_TRITON_GLA = True
+except Exception as _e:
+    logger.warning("GLA Triton unavailable: %s", _e)
+    HAS_TRITON_GLA = False
+    MAX_REGISTER_DIM = 64
+
+
 
 # ===========================================================================
 # RoPE
@@ -616,6 +625,12 @@ class GatedLinearAttention(BaseAttention):
     def _gla_scan_chunked(self, q, k, v, lambdas, mask=None, reverse=False):
         B, H, L, d = q.shape
         device = q.device
+
+        if HAS_TRITON_GLA and q.is_cuda and d <= MAX_REGISTER_DIM and mask is None and not reverse:
+            try:
+                return gla_scan_triton(q.float(), k.float(), v.float(), lambdas.float()).to(q.dtype)
+            except Exception as e:
+                logger.debug("GLA Triton scan failed, falling back: %s", e)
 
         if reverse:
             q = torch.flip(q, dims=[2])
