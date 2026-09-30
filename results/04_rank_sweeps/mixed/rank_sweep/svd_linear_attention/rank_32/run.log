@@ -72,12 +72,25 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 21:30:23,213 [INFO] QwenQualitySweep: Step 70/100 took 0.86s (loss=0.2614, bs=32, micro=16)
 2026-09-30 21:30:28,114 [INFO] QwenQualitySweep: Step 75/100 took 1.17s (loss=0.5885, bs=32, micro=16)
 2026-09-30 21:30:33,703 [INFO] QwenQualitySweep: Step 80/100 took 1.02s (loss=0.1568, bs=32, micro=16)
-2026-09-30 21:30:07,429 [INFO] QwenQualitySweep: Step 85/100 took 0.83s (loss=0.2240, bs=32, micro=16)
-2026-09-30 21:30:11,743 [INFO] QwenQualitySweep: Step 90/100 took 0.83s (loss=0.4513, bs=32, micro=16)
-2026-09-30 21:30:15,996 [INFO] QwenQualitySweep: Step 95/100 took 0.83s (loss=0.3316, bs=32, micro=16)
-2026-09-30 21:30:20,307 [INFO] QwenQualitySweep: Step 100/100 took 0.84s (loss=0.2285, bs=32, micro=16)
-2026-09-30 21:30:33,681 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\mixed\rank_sweep\svd_linear_attention\rank_32\distilbert_sst2_svd_linear_attention_full_metrics.json
-2026-09-30 21:30:33,997 [INFO] QwenQualitySweep: [1/1] svd_linear_attention -> PASS 83.72% (F1: 0.8436, Peak VRAM: 392.53 MB)
-2026-09-30 21:30:34,057 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / svd-linear-attention is SUCCESSFUL (acc=83.72% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-svd-linear-attention and Git recording.
-2026-09-30 21:30:34,928 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-svd-linear-attention: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
-2026-09-30 21:30:34,932 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\compressions\svd_linear.md
+2026-09-30 21:30:38,974 [INFO] QwenQualitySweep: Step 85/100 took 1.14s (loss=0.2240, bs=32, micro=16)
+2026-09-30 21:30:44,171 [INFO] QwenQualitySweep: Step 90/100 took 1.29s (loss=0.4513, bs=32, micro=16)
+2026-09-30 21:30:49,248 [INFO] QwenQualitySweep: Step 95/100 took 0.96s (loss=0.3316, bs=32, micro=16)
+2026-09-30 21:30:54,518 [INFO] QwenQualitySweep: Step 100/100 took 1.01s (loss=0.2285, bs=32, micro=16)
+2026-09-30 21:31:08,485 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\mixed\rank_sweep\svd_linear_attention\rank_32\distilbert_sst2_svd_linear_attention_full_metrics.json
+2026-09-30 21:31:08,721 [INFO] QwenQualitySweep: [1/1] svd_linear_attention -> PASS 83.72% (F1: 0.8436, Peak VRAM: 392.53 MB)
+2026-09-30 21:31:08,747 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / svd-linear-attention is SUCCESSFUL (acc=83.72% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-svd-linear-attention and Git recording.
+2026-09-30 21:31:09,561 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-svd-linear-attention: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
+2026-09-30 21:31:09,586 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\compressions\svd_linear.md
+[main 5ae3d7119] feat(benchmark): record successful svd_linear_attention on distilbert-sst2 (Acc: 83.72%, F1: 0.8436)
+ 6 files changed, 274 insertions(+), 190 deletions(-)
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/svd_linear_attention/rank_32/distilbert_sst2_svd_linear_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/svd_linear_attention/rank_32/summary.csv
+2026-09-30 21:30:42,734 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: 5ae3d711
+2026-09-30 21:30:42,736 [INFO] QwenQualitySweep: [1/1] svd_linear_attention Timing: eval_time=111.30s
+2026-09-30 21:30:42,736 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 21:30:43,213 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 21:30:43,214 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 21:30:43,223 [INFO] QwenQualitySweep: 
+                               Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+svd_linear_attention (efficient-attn)   PASS   83.72%    -6.88% 0.8436                  0            1.23x  392.5 MB              11.55             13.25
+2026-09-30 21:30:43,223 [INFO] QwenQualitySweep: ================================================================================
