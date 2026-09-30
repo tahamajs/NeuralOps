@@ -56,3 +56,22 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 20:14:54,382 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / spectron is SUCCESSFUL (acc=84.17% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-spectron and Git recording.
 2026-09-30 20:14:55,231 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-spectron: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 20:14:55,259 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\spectron.md
+[main 6067f3fba] feat(benchmark): record successful spectron on distilbert-sst2 (Acc: 84.17%, F1: 0.8453)
+ 10 files changed, 215 insertions(+), 1 deletion(-)
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_128/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_128/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_128/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_64/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_64/distilbert_sst2_spectron_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_64/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_64/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_64/summary.csv
+2026-09-30 20:15:02,433 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: 6067f3fb
+2026-09-30 20:15:02,434 [INFO] QwenQualitySweep: [1/1] spectron Timing: eval_time=29.89s
+2026-09-30 20:15:02,434 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 20:15:02,748 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:15:02,748 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 20:15:02,765 [INFO] QwenQualitySweep: 
+                   Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+spectron (efficient-attn)   PASS   84.17%    -6.43% 0.8453                  0            1.20x  409.9 MB               1.65              1.89
+2026-09-30 20:15:02,765 [INFO] QwenQualitySweep: ================================================================================
