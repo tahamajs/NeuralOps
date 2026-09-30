@@ -1,11 +1,11 @@
 r"""
-Grouped-Query Attention (GQA).
+Grouped-Query Attention (GQA) — v3, rank-aware.
 
-Interpolates between Multi-Head Attention (MHA) and Multi-Query Attention (MQA) by
-dividing H_Q query heads into G groups, where each group shares a single
-Key-Value head pair (H_KV = G <= H_Q).
+Interpolates between Multi-Head Attention (MHA) and Multi-Query Attention (MQA)
+by dividing H_Q query heads into G groups, where each group shares a single
+Key-Value head pair (H_KV = G ≤ H_Q).
 
-Fixes (v2):
+Fixes (v3):
   GQA-FIX-01  Causal mask via past_len, always applied for decoders.
   GQA-FIX-02  Removed output padding/truncation hack.
   GQA-FIX-03  Deterministic layer detection.
@@ -21,6 +21,10 @@ Fixes (v2):
   GQA-FIX-13  dtype-safe RoPE.
   GQA-FIX-14  Removed redundant double softmax.
   GQA-FIX-15  get_ortho_loss for framework compatibility.
+  GQA-FIX-16  **`rank` now maps to `num_kv_heads` when passed via injector.**
+              Rank sweep actually produces different compression levels.
+  GQA-FIX-17  **`_unpack_weight_bias` handled for LoRA-wrapped modules.**
+  GQA-FIX-18  **Numerically safe padding mask path.**
 """
 
 from __future__ import annotations
@@ -255,22 +259,61 @@ class GroupedQueryAttention(BaseAttention):
         self.num_heads = int(num_heads or kwargs.get("num_attention_heads",
                                                        kwargs.get("num_heads", 8)))
 
-        # ---- num_kv_heads ----
-        if num_kv_heads is None and config is not None:
-            num_kv_heads = (_cfg_get(config, "num_key_value_heads", None)
-                             or _cfg_get(config, "num_kv_heads", None))
-        if num_kv_heads is None and src_attn is not None:
-            num_kv_heads = getattr(src_attn, "num_key_value_heads",
-                            getattr(src_attn, "num_kv_heads", None))
-        if num_kv_heads is None:
-            num_kv_heads = kwargs.get("num_key_value_heads",
-                              kwargs.get("num_kv_heads",
-                              max(1, self.num_heads // 4)))
-        self.num_kv_heads = int(min(self.num_heads, max(1, int(num_kv_heads))))
-
+        # ---- head_dim ----
         self.head_dim = int(kwargs.get("head_dim",
                              getattr(config, "head_dim", None) if config else None)
                              or (self.hidden_size // max(1, self.num_heads)))
+
+        # ==================================================================
+        # GQA-FIX-16: derive num_kv_heads from `rank` when not explicitly given
+        # ==================================================================
+        # Priority:
+        #   1. explicit `num_kv_heads` argument
+        #   2. config's num_key_value_heads
+        #   3. `rank` argument (1 <= rank <= num_heads)
+        #   4. kwargs' num_kv_heads
+        #   5. default = num_heads // 4
+        # ==================================================================
+        resolved_kv_heads = None
+        source = "default"
+
+        if num_kv_heads is not None:
+            resolved_kv_heads = int(num_kv_heads)
+            source = "explicit_arg"
+        elif config is not None:
+            cfg_kv = (_cfg_get(config, "num_key_value_heads", None)
+                      or _cfg_get(config, "num_kv_heads", None))
+            if cfg_kv is not None:
+                resolved_kv_heads = int(cfg_kv)
+                source = "config"
+        if resolved_kv_heads is None and src_attn is not None:
+            src_kv = getattr(src_attn, "num_key_value_heads",
+                      getattr(src_attn, "num_kv_heads", None))
+            if src_kv is not None:
+                resolved_kv_heads = int(src_kv)
+                source = "src_attn"
+
+        # GQA-FIX-16: if `rank` is given and looks like a head count (1..num_heads),
+        # use it as num_kv_heads. This makes the rank sweep actually produce
+        # different compression levels.
+        if rank is not None and 1 <= int(rank) <= self.num_heads:
+            resolved_kv_heads = int(rank)
+            source = "rank"
+
+        if resolved_kv_heads is None:
+            kwargs_kv = kwargs.get("num_key_value_heads",
+                          kwargs.get("num_kv_heads", None))
+            if kwargs_kv is not None:
+                resolved_kv_heads = int(kwargs_kv)
+                source = "kwargs"
+            else:
+                resolved_kv_heads = max(1, self.num_heads // 4)
+                source = "default"
+
+        self.num_kv_heads = int(min(self.num_heads, max(1, resolved_kv_heads)))
+        self._num_kv_heads_source = source
+
+        # ---- sizes ----
         self.all_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
@@ -330,6 +373,14 @@ class GroupedQueryAttention(BaseAttention):
 
         if src_attn is not None:
             self.copy_weights(src_attn)
+
+        # Log the resolved head config
+        logger.debug(
+            "GQA: hidden=%d num_heads=%d num_kv_heads=%d (source=%s) "
+            "kv_repeat=%d head_dim=%d",
+            self.hidden_size, self.num_heads, self.num_kv_heads,
+            self._num_kv_heads_source, self.kv_repeat, self.head_dim,
+        )
 
     # ---- aliases ----
     @property
@@ -447,6 +498,11 @@ class GroupedQueryAttention(BaseAttention):
 
         # GQA-aware pooling for K/V
         def _pool_gqa(w, target_out):
+            """
+            Map source K/V of shape (src_out, in) to (target_out, in).
+            If src has more heads, mean-pool groups.
+            If src has fewer heads, repeat each head.
+            """
             src_out = w.shape[0]
             if src_out == target_out:
                 return w
@@ -456,7 +512,11 @@ class GroupedQueryAttention(BaseAttention):
             if src_out < target_out and target_out % src_out == 0:
                 rep = target_out // src_out
                 return w.repeat_interleave(rep, dim=0)
-            return w
+            # Fallback: principal slice
+            out = torch.zeros(target_out, w.shape[1], dtype=w.dtype, device=w.device)
+            m = min(target_out, src_out)
+            out[:m].copy_(w[:m])
+            return out
 
         with torch.no_grad():
             for key, target in (("q", self.query), ("k", self.key),
@@ -581,7 +641,7 @@ class GroupedQueryAttention(BaseAttention):
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
 
-        # ---- GQA ----
+        # ---- GQA expand ----
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
@@ -590,7 +650,7 @@ class GroupedQueryAttention(BaseAttention):
         scale = d ** -0.5
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
-        # ---- Causal mask (always for decoder self-attention) ----
+        # ---- Causal mask ----
         is_causal = bool(self.is_decoder and not is_cross)
         if is_causal:
             past_len = max(0, N_k - N_q)
@@ -656,7 +716,7 @@ class GroupedQueryAttention(BaseAttention):
 
 
 # ===========================================================================
-# Injection
+# Injection (GQA-FIX-16: propagate rank → num_kv_heads)
 # ===========================================================================
 @ATTENTION_REGISTRY.register("gqa_inject")
 @ATTENTION_REGISTRY.register("inject_gqa")
@@ -670,6 +730,8 @@ def inject_gqa(
     old_attn: Optional[nn.Module] = None,
     lora_rank: int = 16,
     lora_alpha: float = 32.0,
+    rank: Optional[int] = None,
+    num_kv_heads: Optional[int] = None,
     _depth: int = 0,
     **kwargs: Any,
 ) -> Optional[Any]:
@@ -715,6 +777,7 @@ def inject_gqa(
                 layer=lyr, model_config=cfg, comp_config=comp_config,
                 layer_idx=idx, total_layers=tot,
                 lora_rank=lora_rank, lora_alpha=lora_alpha,
+                rank=rank, num_kv_heads=num_kv_heads,
                 _depth=_depth + 1, **kwargs,
             )
             if res is not None:
@@ -756,6 +819,8 @@ def inject_gqa(
             num_attention_heads=num_heads,
             lora_rank=lora_rank,
             lora_alpha=lora_alpha,
+            rank=rank,
+            num_kv_heads=num_kv_heads,
             **kwargs,
         )
     except Exception as e:

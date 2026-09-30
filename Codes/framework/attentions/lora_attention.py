@@ -1,8 +1,30 @@
 """
-LoRA Parameter-Efficient Fine-Tuning Attention Module.
+LoRA Parameter-Efficient Fine-Tuning Attention Module (v2, Production-Hardened).
 
-Replaces standard query, key, value, and output linear projections with frozen pretrained base weights
-and trainable low-rank residual adapters, with multi-architecture weight transfer, GQA, RoPE, and causal decoding.
+Replaces standard Q/K/V/O projections with frozen pretrained base weights plus
+trainable low-rank residual adapters, with multi-architecture weight transfer,
+GQA, RoPE, and causal decoding support.
+
+This is intentionally an attention-swap module, NOT a compressor:
+  - Base weights are frozen.
+  - Only LoRA A/B are trainable.
+  - Parameters are NOT reduced (compression_rate stays ~1.0).
+  - Its purpose is PEFT, not compression.
+
+Fixes (v2):
+  LORA2-FIX-01  `actual_rank` is now purely the LoRA rank. `rank` (compression
+                rank) is no longer conflated with LoRA rank.
+  LORA2-FIX-02  Removed duplicated `if hasattr(layer, 'attention')` block.
+  LORA2-FIX-03  Removed unreachable `elif hasattr(layer, 'attention')`.
+  LORA2-FIX-04  Causal mask applied only for self-attention.
+  LORA2-FIX-05  Robust `cfg = None` handling.
+  LORA2-FIX-06  Proper `is_nested_encoder` propagation.
+  LORA2-FIX-07  Idempotency guard in injector.
+  LORA2-FIX-08  Storage accounting (`orig_storage_bytes`, `comp_storage_bytes`).
+  LORA2-FIX-09  LoRA init: kaiming A, zeros B, dtype-safe.
+  LORA2-FIX-10  `position_embeddings` accepted as explicit param + kwargs.
+  LORA2-FIX-11  Strict mask handling with normalized valid-mask shape.
+  LORA2-FIX-12  Deterministic injector recursion.
 """
 
 from __future__ import annotations
@@ -24,9 +46,12 @@ from framework.utils.model_family import ModelAdapter
 logger = logging.getLogger(__name__)
 
 
+# ===========================================================================
+# RoPE (dtype-safe)
+# ===========================================================================
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
+    x2 = x[..., x.shape[-1] // 2:]
     return torch.cat((-x2, x1), dim=-1)
 
 
@@ -73,7 +98,19 @@ def apply_rotary_pos_emb(
     return q, k
 
 
+# ===========================================================================
+# LoRALinear (dtype-safe)
+# ===========================================================================
 class LoRALinear(nn.Module):
+    """
+    Linear layer with frozen base weights and trainable LoRA adapters.
+
+    Forward:
+        y = x W^T + b + (alpha / r) * x A^T B^T
+    where W, b are frozen, and A, B are trainable.
+    """
+    is_custom_attention: bool = False
+
     def __init__(
         self,
         in_features: int,
@@ -86,23 +123,23 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        factory_kwargs = {"device": device, "dtype": dtype}
-        self.in_features = in_features
-        self.out_features = out_features
-        self.lora_rank = lora_rank
-        self.lora_alpha = lora_alpha
-        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
-        self.freeze_base = freeze_base
+        fk = {"device": device, "dtype": dtype}
+        self.in_features = int(in_features)
+        self.out_features = int(out_features)
+        self.lora_rank = int(lora_rank)
+        self.lora_alpha = float(lora_alpha)
+        self.lora_scaling = (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
+        self.freeze_base = bool(freeze_base)
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **fk))
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
+            self.bias = nn.Parameter(torch.empty(out_features, **fk))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(torch.empty((self.lora_rank, in_features), **fk))
+            self.lora_B = nn.Parameter(torch.zeros((out_features, self.lora_rank), **fk))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -118,9 +155,16 @@ class LoRALinear(nn.Module):
             bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
             nn.init.uniform_(self.bias, -bound, bound)
 
+        # LORA2-FIX-09: A kaiming, B zeros (dtype-safe)
         if self.lora_rank > 0 and self.lora_A is not None:
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            if self.lora_A.dtype in (torch.float16, torch.bfloat16):
+                tmp = torch.empty_like(self.lora_A, dtype=torch.float32, device="cpu")
+                nn.init.kaiming_uniform_(tmp, a=math.sqrt(5))
+                self.lora_A.data.copy_(tmp.to(self.lora_A.dtype))
+            else:
+                nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             self.lora_A.requires_grad = True
+
         if self.lora_rank > 0 and self.lora_B is not None:
             nn.init.zeros_(self.lora_B)
             self.lora_B.requires_grad = True
@@ -136,15 +180,39 @@ class LoRALinear(nn.Module):
                 self.lora_B.requires_grad = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
+        # dtype-safe
+        w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
+        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
+        out = F.linear(x, w, b)
+
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
+            out = out + lora_out
         return out
 
 
-@ATTENTION_REGISTRY.register("lora_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("lora_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+# ===========================================================================
+# Main Attention
+# ===========================================================================
+@ATTENTION_REGISTRY.register("lora_attn",
+                              supports_causal=True,
+                              supports_bidirectional=True,
+                              supports_gqa=True)
+@ATTENTION_REGISTRY.register("lora_attention",
+                              supports_causal=True,
+                              supports_bidirectional=True,
+                              supports_gqa=True)
 class LoRAAttention(BaseAttention):
+    """
+    LoRA attention wrapper.
+
+    NOTE: This module is deliberately a PEFT swap, NOT a compressor.
+    `compression_rate` remains ~1.0; `num_compressed_layers` remains 0.
+    Its role is to provide a trainable LoRA residual on top of frozen
+    pretrained attention weights.
+    """
     supports_causal: bool = True
     supports_bidirectional: bool = True
     supports_gqa: bool = True
@@ -155,62 +223,110 @@ class LoRAAttention(BaseAttention):
         self,
         config: Optional[Any] = None,
         model_config: Optional[Any] = None,
-        rank: Optional[int] = None,
+        rank: Optional[int] = None,           # accepted for compat, ignored
         lora_rank: int = 16,
         alpha: float = 32.0,
         dropout: float = 0.1,
         pretrained_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ) -> None:
-        cfg = config or model_config
-        actual_rank = rank if rank is not None else getattr(cfg, "rank", lora_rank)
-        super().__init__(cfg, actual_rank)
+        cfg = config if config is not None else model_config
+        # LORA2-FIX-01: LoRA rank is what actually matters. `rank` from
+        # the sweep (compression rank) is not used for LoRA.
+        actual_lora_rank = int(lora_rank) if lora_rank is not None else 16
+
+        super().__init__(cfg, actual_lora_rank)
+        # LORA2-FIX-05: cfg may be None
+        if cfg is None:
+            cfg = getattr(pretrained_attn, "config", None)
+
         self.adapter = ModelAdapter(cfg)
-        self.num_heads: int = self.adapter.num_heads
-        self.num_kv_heads: int = self.adapter.num_key_value_heads
-        self.hidden_size: int = self.adapter.hidden_size
-        self.head_dim: int = self.adapter.head_dim
-        self.all_head_size: int = self.num_heads * self.head_dim
-        self.kv_head_size: int = self.num_kv_heads * self.head_dim
-        self.kv_repeat: int = self.adapter.kv_repeat
-        self.is_decoder: bool = getattr(cfg, "is_decoder", False)
-        self.is_nested_encoder: bool = False
+        self.num_heads = int(self.adapter.num_heads)
+        self.num_kv_heads = int(self.adapter.num_key_value_heads)
+        self.hidden_size = int(self.adapter.hidden_size)
+        self.head_dim = int(self.adapter.head_dim)
+        self.all_head_size = self.num_heads * self.head_dim
+        self.kv_head_size = self.num_kv_heads * self.head_dim
+        self.kv_repeat = int(self.adapter.kv_repeat)
+        self.is_decoder = bool(getattr(cfg, "is_decoder", False)) if cfg is not None else False
+        self.is_nested_encoder = False
 
-        self.lora_rank = actual_rank
-        self.alpha = getattr(cfg, "lora_alpha", alpha)
+        self.lora_rank = actual_lora_rank
+        self.alpha = float(getattr(cfg, "lora_alpha", alpha)) if cfg is not None else float(alpha)
 
-        self.q_proj = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.alpha, freeze_base=True)
-        self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.alpha, freeze_base=True)
-        self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.alpha, freeze_base=True)
-        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.alpha, freeze_base=True)
+        self.q_proj = LoRALinear(self.hidden_size, self.all_head_size, bias=True,
+                                  lora_rank=self.lora_rank, lora_alpha=self.alpha,
+                                  freeze_base=True)
+        self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True,
+                                  lora_rank=self.lora_rank, lora_alpha=self.alpha,
+                                  freeze_base=True)
+        self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True,
+                                  lora_rank=self.lora_rank, lora_alpha=self.alpha,
+                                  freeze_base=True)
+        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True,
+                                    lora_rank=self.lora_rank, lora_alpha=self.alpha,
+                                    freeze_base=True)
 
-        dropout_p = getattr(
-            cfg,
-            "dropout",
-            getattr(
-                cfg,
-                "hidden_dropout_prob",
-                getattr(cfg, "attention_probs_dropout_prob", dropout),
-            ),
+        dropout_p = float(
+            getattr(cfg, "dropout",
+                    getattr(cfg, "hidden_dropout_prob",
+                            getattr(cfg, "attention_probs_dropout_prob", dropout)))
+            if cfg is not None else dropout
         )
-        self.dropout: nn.Dropout = nn.Dropout(dropout_p)
+        self.dropout = nn.Dropout(dropout_p)
         self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
+
+        # LORA2-FIX-08: storage accounting
+        self._orig_storage_bytes: int = 0
+        self._comp_storage_bytes: int = 0
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
+    # ------------------------------------------------------------------
+    # Aliases
+    # ------------------------------------------------------------------
+    @property
+    def query(self): return self.q_proj
+    @property
+    def key(self): return self.k_proj
+    @property
+    def value(self): return self.v_proj
+    @property
+    def dense(self): return self.out_proj
+    @property
+    def q_lin(self): return self.q_proj
+    @property
+    def k_lin(self): return self.k_proj
+    @property
+    def v_lin(self): return self.v_proj
+    @property
+    def out_lin(self): return self.out_proj
+    @property
+    def o_proj(self): return self.out_proj
+    @property
+    def c_proj(self): return self.out_proj
+
+    # ------------------------------------------------------------------
+    # copy_weights
+    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         from framework.core.adapters import UniversalAdapter
 
+        # Track original bytes
+        try:
+            for p in src.parameters():
+                self._orig_storage_bytes += p.numel() * p.element_size()
+        except Exception:
+            pass
+
         extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
-            "q": (None, None),
-            "k": (None, None),
-            "v": (None, None),
-            "o": (None, None),
+            "q": (None, None), "k": (None, None),
+            "v": (None, None), "o": (None, None),
         }
 
-        # 1. UniversalAdapter extraction
-        for proj in ["q", "k", "v", "o"]:
+        # 1. UniversalAdapter
+        for proj in ("q", "k", "v", "o"):
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 if w is not None:
@@ -218,52 +334,63 @@ class LoRAAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        # 2. GPT-2 Fused c_attn Conv1D handling
-        if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            weight = src.c_attn.weight.data
-            bias = getattr(src.c_attn, "bias", None)
-            bias_data = bias.data if bias is not None else None
-            if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                weight = weight.t().contiguous()
-            split_size = weight.shape[0] // 3
-            q_w = weight[:split_size, :]
-            k_w = weight[split_size : 2 * split_size, :]
-            v_w = weight[2 * split_size :, :]
-            q_b = bias_data[:split_size] if bias_data is not None else None
-            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
-            v_b = bias_data[2 * split_size :] if bias_data is not None else None
-            extracted["q"] = (q_w, q_b)
-            extracted["k"] = (k_w, k_b)
-            extracted["v"] = (v_w, v_b)
+        # 2. GPT-2 fused c_attn
+        if hasattr(src, "c_attn") and any(extracted[p][0] is None for p in ("q", "k", "v")):
+            c_attn = src.c_attn
+            base_c = getattr(c_attn, "base_layer", c_attn)
+            cw = getattr(base_c, "weight", getattr(c_attn, "weight", None))
+            if cw is not None:
+                cw = cw.data.clone()
+                is_conv = (c_attn.__class__.__name__ == "Conv1D"
+                           or base_c.__class__.__name__ == "Conv1D"
+                           or (cw.ndim == 2 and cw.shape[0] < cw.shape[1]))
+                if is_conv:
+                    cw = cw.t().contiguous()
+                split = cw.size(0) // 3
+                bmod = getattr(base_c, "bias", getattr(c_attn, "bias", None))
+                cb = bmod.data.clone() if bmod is not None else None
+                extracted["q"] = (cw[:split], cb[:split] if cb is not None else None)
+                extracted["k"] = (cw[split:2*split], cb[split:2*split] if cb is not None else None)
+                extracted["v"] = (cw[2*split:], cb[2*split:] if cb is not None else None)
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
-            w_o = src.c_proj.weight.data
-            p_cls = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
-            if ("Conv1D" in p_cls) or hasattr(src.c_proj, "nf") or (w_o.dim() == 2 and (w_o.shape[0] < w_o.shape[1] or (w_o.shape[0] == self.hidden_size and w_o.shape[1] == self.hidden_size))):
-                w_o = w_o.t().contiguous()
-            b_o = getattr(src.c_proj, "bias", None)
-            extracted["o"] = (w_o, b_o.data if b_o is not None else None)
+            c_proj = src.c_proj
+            base_o = getattr(c_proj, "base_layer", c_proj)
+            ow = getattr(base_o, "weight", getattr(c_proj, "weight", None))
+            if ow is not None:
+                ow = ow.data.clone()
+                is_conv_o = (c_proj.__class__.__name__ == "Conv1D"
+                             or base_o.__class__.__name__ == "Conv1D"
+                             or (ow.ndim == 2 and ow.shape[0] < ow.shape[1]))
+                if is_conv_o:
+                    ow = ow.t().contiguous()
+                bo = getattr(base_o, "bias", getattr(c_proj, "bias", None))
+                extracted["o"] = (ow, bo.data.clone() if bo is not None else None)
 
-        # 3. RoBERTa / BERT Nested Encoder handling
-        if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+        # 3. Nested BERT / RoBERTa
+        if hasattr(src, "self") and any(extracted[p][0] is None for p in ("q", "k", "v")):
             s = getattr(src, "self")
-            if hasattr(s, "query"):
-                extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
-            if hasattr(s, "key"):
-                extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
-            if hasattr(s, "value"):
-                extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
+            if hasattr(s, "query") and extracted["q"][0] is None:
+                m = s.query
+                extracted["q"] = (m.weight.data, m.bias.data if m.bias is not None else None)
+            if hasattr(s, "key") and extracted["k"][0] is None:
+                m = s.key
+                extracted["k"] = (m.weight.data, m.bias.data if m.bias is not None else None)
+            if hasattr(s, "value") and extracted["v"][0] is None:
+                m = s.value
+                extracted["v"] = (m.weight.data, m.bias.data if m.bias is not None else None)
 
-        if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
-            dense = src.output.dense
-            extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
+        if (hasattr(src, "output") and hasattr(getattr(src, "output"), "dense")
+                and extracted["o"][0] is None):
+            d = src.output.dense
+            extracted["o"] = (d.weight.data, d.bias.data if d.bias is not None else None)
 
-        # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral) & DistilBERT
+        # 4. Modern decoders and flat modules
         named_map = {
-            "q": ["q_proj", "q_lin", "query"],
-            "k": ["k_proj", "k_lin", "key"],
-            "v": ["v_proj", "v_lin", "value"],
-            "o": ["o_proj", "out_proj", "out_lin", "dense"],
+            "q": ("q_proj", "q_lin", "query"),
+            "k": ("k_proj", "k_lin", "key"),
+            "v": ("v_proj", "v_lin", "value"),
+            "o": ("o_proj", "out_proj", "out_lin", "dense"),
         }
         for proj, names in named_map.items():
             if extracted[proj][0] is None:
@@ -271,12 +398,18 @@ class LoRAAttention(BaseAttention):
                     if hasattr(src, name):
                         layer = getattr(src, name)
                         if hasattr(layer, "weight"):
-                            extracted[proj] = (layer.weight.data, getattr(layer, "bias", None))
+                            b = getattr(layer, "bias", None)
+                            extracted[proj] = (
+                                layer.weight.data,
+                                b.data if b is not None else None,
+                            )
                             break
 
-        # Detect nested encoder architecture
+        # Detect nested encoder
         cls_name = src.__class__.__name__
-        has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+        has_out_proj = any(hasattr(src, attr) for attr in
+                           ("dense", "out_proj", "c_proj", "out_lin",
+                            "o_proj", "wo", "o", "proj"))
         is_nested = False
         if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
             is_nested = True
@@ -287,57 +420,117 @@ class LoRAAttention(BaseAttention):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        # Check required weights
-        missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
+        missing = [k for k in ("q", "k", "v") if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            logger.warning("Module copy_weights warning. Proceeding with initialized weights.")
+            logger.warning("LoRAAttention copy_weights: missing %s", missing)
 
-        # Frobenius norm validation
-        for proj_key in ["q", "k", "v"]:
-            w = extracted[proj_key][0]
+        # Frobenius norm checks
+        for k in ("q", "k", "v"):
+            w = extracted[k][0]
             if w is not None:
-                norm = torch.linalg.norm(w.float())
-                if norm < 1e-4:
-                    logger.warning(f"LoRAAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})")
-
+                n = torch.linalg.norm(w.float()).item()
+                if n < 1e-4:
+                    logger.warning("LoRAAttention: '%s' near-zero norm (%.2e)", k, n)
         if extracted["o"][0] is not None:
-            norm_o = torch.linalg.norm(extracted["o"][0].float())
-            if norm_o < 1e-4:
-                logger.warning(f"LoRAAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})")
+            n = torch.linalg.norm(extracted["o"][0].float()).item()
+            if n < 1e-4:
+                logger.warning("LoRAAttention: 'o' near-zero norm (%.2e)", n)
 
-        def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
+        def _orient(w, in_dim):
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
                 return w.t().contiguous()
             return w
 
-        # Copy into projection modules
         with torch.no_grad():
-            for proj_key, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
-                w, b = extracted[proj_key]
+            for key, target in (("q", self.q_proj), ("k", self.k_proj),
+                                 ("v", self.v_proj), ("o", self.out_proj)):
+                w, b = extracted[key]
                 if w is not None:
-                    in_dim = self.all_head_size if proj_key == "o" else self.hidden_size
+                    in_dim = self.all_head_size if key == "o" else self.hidden_size
                     w_oriented = _orient(w, in_dim)
-                    target_w = target.weight
-                    out_d, in_d = target_w.shape
+                    out_d, in_d = target.weight.shape
                     src_out, src_in = w_oriented.shape
-                    target_w.data[:min(out_d, src_out), :min(in_d, src_in)].copy_(w_oriented[:min(out_d, src_out), :min(in_d, src_in)])
-                    if b is not None and target.bias is not None:
-                        b_val = b.data if isinstance(b, nn.Parameter) else b
-                        target.bias.data[:min(len(target.bias), len(b_val))].copy_(b_val[:min(len(target.bias), len(b_val))])
-                elif proj_key == "o" and self.is_nested_encoder:
-                    min_d = min(target.weight.shape[0], target.weight.shape[1])
+                    # K/V: GQA-safe copy with mean-pooling if needed
+                    if key in ("k", "v") and src_out != out_d:
+                        if src_out > out_d and src_out % out_d == 0:
+                            rep = src_out // out_d
+                            w_pooled = w_oriented.view(out_d, rep, -1).mean(dim=1)
+                            target.weight.data.copy_(w_pooled)
+                            if b is not None and target.bias is not None:
+                                bp = b.view(out_d, rep).mean(dim=1)
+                                target.bias.data.copy_(bp)
+                        elif src_out < out_d and out_d % src_out == 0:
+                            rep = out_d // src_out
+                            target.weight.data.copy_(w_oriented.repeat(rep, 1))
+                            if b is not None and target.bias is not None:
+                                target.bias.data.copy_(b.repeat(rep))
+                        else:
+                            m0, m1 = min(out_d, src_out), min(in_d, src_in)
+                            target.weight.data.zero_()
+                            target.weight.data[:m0, :m1].copy_(w_oriented[:m0, :m1])
+                            if b is not None and target.bias is not None:
+                                mb = min(target.bias.shape[0], b.shape[0])
+                                target.bias.data.zero_()
+                                target.bias.data[:mb].copy_(b[:mb])
+                    else:
+                        m0, m1 = min(out_d, src_out), min(in_d, src_in)
+                        target.weight.data.zero_()
+                        target.weight.data[:m0, :m1].copy_(w_oriented[:m0, :m1])
+                        if b is not None and target.bias is not None:
+                            mb = min(target.bias.shape[0], b.shape[0])
+                            target.bias.data.zero_()
+                            target.bias.data[:mb].copy_(b[:mb])
+                elif key == "o" and self.is_nested_encoder:
+                    md = min(target.weight.shape[0], target.weight.shape[1])
                     target.weight.data.zero_()
-                    target.weight.data[:min_d, :min_d].fill_diagonal_(1.0)
+                    target.weight.data[:md, :md].fill_diagonal_(1.0)
                     if target.bias is not None:
                         target.bias.data.zero_()
 
                 target.freeze_base_weights()
 
+        # Track compressed bytes
+        try:
+            for m in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
+                for p in m.parameters():
+                    self._comp_storage_bytes += p.numel() * p.element_size()
+        except Exception:
+            pass
+
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
+    # ------------------------------------------------------------------
+    # Mask helper (LORA2-FIX-11)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _normalize_valid_mask(attention_mask, B, N_kv, device):
+        if attention_mask is None:
+            return None
+        if attention_mask.dim() == 2:
+            if attention_mask.dtype == torch.bool:
+                m = attention_mask
+            elif attention_mask.dtype.is_floating_point:
+                m = attention_mask > -1e4
+            else:
+                m = attention_mask > 0
+            return m if m.shape == (B, N_kv) else None
+        if attention_mask.dim() == 4:
+            if attention_mask.dtype == torch.bool:
+                v = attention_mask
+            elif attention_mask.dtype.is_floating_point:
+                v = attention_mask > -1e4
+            else:
+                v = attention_mask > 0
+            m = v.any(dim=-2).squeeze(1)
+            return m if m.shape == (B, N_kv) else None
+        return None
+
+    # ------------------------------------------------------------------
+    # Forward
+    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -349,14 +542,15 @@ class LoRAAttention(BaseAttention):
         output_attentions: Optional[bool] = False,
         output_hidden_states: Optional[bool] = False,
         return_dict: Optional[bool] = True,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
-        is_cross_attention = key_value_states is not None
-        kv_input = key_value_states if is_cross_attention else hidden_states
+        is_cross = key_value_states is not None
+        kv_input = key_value_states if is_cross else hidden_states
 
-        B, N_q, D = hidden_states.shape
+        B, N_q, _ = hidden_states.shape
         N_k = kv_input.shape[1]
         H, d = self.num_heads, self.head_dim
         device = hidden_states.device
@@ -366,9 +560,12 @@ class LoRAAttention(BaseAttention):
         K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
         V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        # Apply RoPE
-        position_embeddings = kwargs.get("position_embeddings", None)
-        if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
+        # RoPE
+        if position_embeddings is None:
+            position_embeddings = kwargs.get("position_embeddings", None)
+        if (position_embeddings is not None and not is_cross
+                and isinstance(position_embeddings, (tuple, list))
+                and len(position_embeddings) >= 2):
             cos, sin = position_embeddings[0], position_embeddings[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
 
@@ -378,41 +575,43 @@ class LoRAAttention(BaseAttention):
             V = repeat_kv(V, self.kv_repeat)
 
         scale = d ** -0.5
-        scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
+        # Attention mask
         mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
-        if mask is not None:
-            if mask.dim() == 4:
-                scores = scores + mask.to(scores.dtype)
-            else:
-                valid_m = get_token_valid_mask(mask, B, N_k, device)
-                if valid_m is not None:
-                    scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
+        valid_m = self._normalize_valid_mask(mask, B, N_k, device)
+        if valid_m is not None:
+            scores = scores.masked_fill(~valid_m[:, None, None, :], -1e4)
 
-        # Explicit Causal Masking for decoders
-        is_decoder = (
+        # LORA2-FIX-04: causal only for self-attention
+        is_decoder = bool(
             self.is_decoder
             or getattr(self.config, "is_decoder", False)
-            or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+            or getattr(self.config, "model_type", "") in
+               ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
-        if is_decoder:
-            causal_tril = torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
-            scores = scores.masked_fill(~causal_tril, -10000.0)
+        if is_decoder and not is_cross:
+            causal = torch.tril(torch.ones(N_q, N_k, device=device, dtype=torch.bool))
+            scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
 
-        attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
+        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+        attn = F.softmax(scores, dim=-1).to(dtype)
+        attn = torch.nan_to_num(attn, nan=0.0)
         attn = self.dropout(attn)
 
         if head_mask is not None:
-            if head_mask.dim() == 1:
-                head_mask = head_mask.view(1, -1, 1, 1)
-            elif head_mask.dim() == 2:
-                head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
-            elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(-1)
-            attn = attn * head_mask
+            hm = head_mask.to(attn.dtype)
+            if hm.dim() == 1:
+                hm = hm.view(1, -1, 1, 1)
+            elif hm.dim() == 2:
+                hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
+            elif hm.dim() == 3:
+                hm = hm.unsqueeze(1)
+            attn = attn * hm
 
         context = torch.matmul(attn, V)
         context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
+        context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
             output = context
@@ -422,7 +621,11 @@ class LoRAAttention(BaseAttention):
         return output, (attn if output_attentions else None)
 
 
+# ===========================================================================
+# Injection
+# ===========================================================================
 @ATTENTION_REGISTRY.register("lora_attention_inject")
+@ATTENTION_REGISTRY.register("inject_lora_attention")
 def inject_lora_attention(
     layer: Any = None,
     model: Any = None,
@@ -431,8 +634,13 @@ def inject_lora_attention(
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
+    _depth: int = 0,
     **kwargs: Any,
 ):
+    if _depth > 8:
+        logger.warning("inject_lora_attention: recursion depth exceeded.")
+        return None
+
     target = layer if layer is not None else model
     if target is None:
         target = kwargs.get("model", kwargs.get("layer", None))
@@ -443,90 +651,115 @@ def inject_lora_attention(
 
     # Whole-model traversal
     layer_list = None
-    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
-        layer_list = target.distilbert.transformer.layer
-    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
-        layer_list = target.roberta.encoder.layer
-    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
-        layer_list = target.transformer.h
-    elif hasattr(target, "h") and isinstance(target.h, (torch.nn.ModuleList, list)):
-        layer_list = target.h
-    elif hasattr(target, "model") and hasattr(target.model, "layers"):
-        layer_list = target.model.layers
-    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
-        layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
-        layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
-        layer_list = target.layers
+    for path in (
+        ("distilbert", "transformer", "layer"),
+        ("roberta", "encoder", "layer"),
+        ("bert", "encoder", "layer"),
+        ("transformer", "h"),
+        ("model", "layers"),
+        ("encoder", "layer"),
+        ("layers",),
+        ("h",),
+    ):
+        obj = target
+        ok = True
+        for p in path:
+            if hasattr(obj, p):
+                obj = getattr(obj, p)
+            else:
+                ok = False
+                break
+        if ok and isinstance(obj, (nn.ModuleList, list)):
+            layer_list = obj
+            break
 
     if layer_list is not None:
-        num_injected = 0
+        n_inj = 0
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_lora_attention(
-                layer=lyr,
-                model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
-                layer_idx=idx,
-                total_layers=tot,
-                **kwargs,
+                layer=lyr, model_config=cfg, comp_config=comp_config,
+                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
             )
             if res is not None:
-                num_injected += 1
-        return target if num_injected > 0 else None
+                n_inj += 1
+        return target if n_inj > 0 else None
 
-    layer = target
-
-    if old_attn is None and layer is not None:
+    # Single-layer injection
+    src_attn = old_attn
+    if src_attn is None:
         for attr in ("attn", "attention", "self_attn", "self"):
-            if hasattr(layer, attr):
-                cand = getattr(layer, attr)
-                if cand is not None:
-                    old_attn = getattr(cand, "self", cand)
+            if hasattr(target, attr):
+                cand = getattr(target, attr)
+                if isinstance(cand, nn.Module) and cand is not target:
+                    src_attn = getattr(cand, "self", cand)
                     break
+    if src_attn is None:
+        src_attn = target
 
-    if model_config is None and old_attn is not None:
-        model_config = getattr(old_attn, "config", None)
+    # LORA2-FIX-07: idempotency guard
+    if isinstance(src_attn, LoRAAttention) or "LoRAAttention" in src_attn.__class__.__name__:
+        return None
+
+    if cfg is None:
+        cfg = getattr(src_attn, "config", None) or getattr(target, "config", None)
 
     try:
-        rank = getattr(comp_config, "rank", 16)
-        alpha = getattr(comp_config, "alpha", 32.0)
+        # LORA2-FIX-01: lora_rank is the meaningful knob for LoRA.
+        # `rank` from sweep is ignored.
+        lora_rank = int(kwargs.pop("lora_rank", 16))
+        if comp_config is not None:
+            lora_rank = int(getattr(comp_config, "lora_rank", lora_rank))
+        alpha = float(kwargs.pop("alpha", 32.0))
+        if comp_config is not None:
+            alpha = float(getattr(comp_config, "lora_alpha", alpha))
+
         new_attn = LoRAAttention(
-            config=model_config,
-            rank=rank,
+            config=cfg,
+            lora_rank=lora_rank,
             alpha=alpha,
-            pretrained_attn=old_attn,
+            pretrained_attn=src_attn if src_attn is not target else None,
+            **kwargs,
         )
-        if hasattr(layer, 'attention'):
-            if hasattr(layer.attention, 'self'):
-                layer.attention.self = new_attn
+        p = next(src_attn.parameters(), None) if src_attn is not target else None
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
+
+        # LORA2-FIX-02/03: single, correct splice branch
+        if hasattr(target, "attn"):
+            new_attn.is_nested_encoder = False
+            target.attn = new_attn
+        elif hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                new_attn.is_nested_encoder = True
+                target.attention.self = new_attn
             else:
-                layer.attention = new_attn
-        elif hasattr(layer, 'attention'):
+                new_attn.is_nested_encoder = False
+                target.attention = new_attn
+        elif hasattr(target, "self_attn"):
+            new_attn.is_nested_encoder = False
+            target.self_attn = new_attn
+        elif hasattr(target, "self"):
+            new_attn.is_nested_encoder = True
+            target.self = new_attn
+        else:
+            logger.error("inject_lora_attention: no writable attention attribute on %s",
+                          target.__class__.__name__)
+            return None
 
-            if hasattr(layer.attention, 'self'):
-
-                layer.attention.self = new_attn
-
-            else:
-
-                if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
-                    layer.attention.self = new_attn
-                else:
-                    layer.attention = new_attn
-
-        elif hasattr(layer, 'self'):
-
-            layer.self = new_attn
-
-        elif hasattr(layer, 'attn'):
-            layer.attn = new_attn
-
-        if old_attn is not None:
-            new_attn.train(old_attn.training)
-        elif layer is not None and hasattr(layer, 'training'):
-            new_attn.train(layer.training)
+        # Propagate training mode (LORA2-FIX-06)
+        if src_attn is not target:
+            new_attn.train(src_attn.training)
         return new_attn
-    except Exception:
+
+    except Exception as e:
+        logger.exception("inject_lora_attention failed at layer %d: %s", layer_idx, e)
         return None
+
+
+__all__ = [
+    "LoRAAttention",
+    "LoRALinear",
+    "inject_lora_attention",
+    "apply_rotary_pos_emb",
+]

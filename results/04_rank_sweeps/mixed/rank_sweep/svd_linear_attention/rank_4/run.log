@@ -81,3 +81,27 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 21:09:17,685 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / svd-linear-attention is SUCCESSFUL (acc=79.36% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-svd-linear-attention and Git recording.
 2026-09-30 21:09:18,359 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-svd-linear-attention: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 21:09:18,388 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\compressions\svd_linear.md
+[main 14cf2fa5c] feat(benchmark): record successful svd_linear_attention on distilbert-sst2 (Acc: 79.36%, F1: 0.7821)
+ 18 files changed, 888 insertions(+), 606 deletions(-)
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/primal_attention/rank_384/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/primal_attention/rank_384/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/svd_linear_attention/rank_4/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/svd_linear_attention/rank_4/distilbert_sst2_svd_linear_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/svd_linear_attention/rank_4/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/svd_linear_attention/rank_4/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/svd_linear_attention/rank_4/summary.csv
+ create mode 100644 results/kd_runs/infini_attention/latest.txt
+ create mode 100644 results/kd_runs/samba_m3/latest.txt
+ create mode 100644 results/methods_comparison_20260930_195529.png
+ create mode 100644 results/methods_comparison_20260930_204105.png
+ create mode 100644 results/methods_comparison_20260930_205209.png
+ create mode 100644 results/methods_comparison_20260930_205212.png
+2026-09-30 21:09:27,035 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: 14cf2fa5
+2026-09-30 21:09:27,037 [INFO] QwenQualitySweep: [1/1] svd_linear_attention Timing: eval_time=108.93s
+2026-09-30 21:09:27,038 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 21:09:27,471 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 21:09:27,471 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 21:09:27,484 [INFO] QwenQualitySweep: 
+                               Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+svd_linear_attention (efficient-attn)   PASS   79.36%   -11.24% 0.7821                  0            1.25x  388.6 MB               9.70             11.12
+2026-09-30 21:09:27,484 [INFO] QwenQualitySweep: ================================================================================
