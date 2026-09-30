@@ -1,1 +1,1 @@
-D:\SVD_Project\results\kd_runs\fused_svd_kernel\20260930_183645_bs1_seq128_lr5e-06_noclr_C
+D:\SVD_Project\results\kd_runs\fused_svd_kernel\20260930_195529_bs1_seq128_lr5e-06_noclr_C
