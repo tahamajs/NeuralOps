@@ -136,6 +136,9 @@ CSV_FIELDS: List[str] = [
     # Diagnostics
     "error",
     "timestamp",
+    # KD Recovery (optional)
+    "post_kd_ppl",
+    "delta_ppl_recovery",
 ]
 
 
@@ -172,6 +175,9 @@ class ResultRow:
 
     error: str = ""
     timestamp: str = ""
+
+    post_kd_ppl: float = -1.0
+    delta_ppl_recovery: float = 0.0
 
     def to_csv_dict(self) -> Dict[str, Any]:
         return {k: getattr(self, k, "") for k in CSV_FIELDS}
@@ -291,6 +297,12 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     p.add_argument("--dry_run", action="store_true", default=False)
     p.add_argument("--recompute_baseline", action="store_true", default=False,
                    help="Force recompute baseline PPL (default: reuse cached)")
+
+    # KD Recovery
+    p.add_argument("--with_kd_recovery", action="store_true", default=False,
+                   help="Run KD recovery fine-tuning if zero-shot PPL > 2x baseline")
+    p.add_argument("--kd_recovery_steps", type=int, default=100,
+                   help="Number of KD steps to run for recovery")
 
     # Parallelism
     p.add_argument("--worker_id", type=int, default=0)
@@ -475,6 +487,118 @@ def compute_perplexity_with_metrics(
         "tokens_evaluated": tokens_eval,
         "is_finite": bool(np.isfinite(ppl)),
     }
+
+
+# ---------------------------------------------------------------------------
+# KD Recovery (Fine-tuning recovery for post-injection PPL)
+# ---------------------------------------------------------------------------
+def run_kd_recovery(
+    student: nn.Module,
+    teacher: nn.Module,
+    tokenizer,
+    train_dataset,
+    device: str = "cuda",
+    steps: int = 100,
+    seq_len: int = 128,
+    lr: float = 2.5e-5,
+    kl_temp: float = 4.0,
+) -> float:
+    """
+    Lightweight KD recovery (Method A / logits KD) on train_dataset.
+    Returns recovery time in seconds.
+    """
+    LOG.info("Running KD recovery: %d steps, batch=1, seq_len=%d, lr=%.2e", steps, seq_len, lr)
+    t0 = time.time()
+    
+    # Configure trainable parameters: unfreeze low-rank / SVD / injected params
+    trainable_keywords = ("W_u", "W_v", "weight_u", "weight_v", "lora_A", "lora_B", "adapter", "A", "B")
+    trainable_params = []
+    for name, p in student.named_parameters():
+        if ".attn." not in name:
+            p.requires_grad = False
+            continue
+        sub = name.split(".attn.", 1)[-1]
+        if any(kw in name for kw in trainable_keywords):
+            p.requires_grad = True
+        elif sub.startswith(("c_attn.weight", "c_proj.weight", "c_attn.bias", "c_proj.bias")) or sub in ("c_attn", "c_proj"):
+            p.requires_grad = False
+        else:
+            p.requires_grad = True
+
+        if p.requires_grad:
+            p.data = p.data.float()
+            trainable_params.append(p)
+
+    if not trainable_params:
+        LOG.warning("No trainable parameters found for KD recovery; training all parameters with requires_grad.")
+        trainable_params = [p for p in student.parameters() if p.requires_grad]
+
+    if not trainable_params:
+        LOG.warning("KD recovery: completely 0 trainable parameters, skipping recovery.")
+        return 0.0
+
+    optimizer = torch.optim.AdamW(trainable_params, lr=lr, weight_decay=0.01)
+    use_scaler = bool(device.startswith("cuda"))
+    scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
+
+    # Tokenize training chunks
+    texts = [t.strip() for t in train_dataset["text"] if len(t.strip()) > 20][:max(steps * 2, 200)]
+    all_ids = []
+    for t in texts:
+        ids = tokenizer(t, add_special_tokens=False).input_ids
+        if ids:
+            all_ids.extend(ids)
+            all_ids.append(tokenizer.eos_token_id or 0)
+        if len(all_ids) >= steps * seq_len:
+            break
+
+    target_tokens = steps * seq_len
+    if len(all_ids) < target_tokens:
+        while len(all_ids) < target_tokens:
+            all_ids.extend(all_ids[:max(1, target_tokens - len(all_ids))])
+    all_ids = all_ids[:target_tokens]
+    chunks = torch.tensor(all_ids, dtype=torch.long).view(steps, seq_len)
+
+    student.train()
+    teacher.eval()
+    teacher.to(device)
+
+    for step_idx in range(steps):
+        batch = chunks[step_idx : step_idx + 1].to(device)
+        optimizer.zero_grad()
+
+        with torch.no_grad():
+            with torch.cuda.amp.autocast(enabled=device.startswith("cuda")):
+                t_out = teacher(batch)
+
+        with torch.cuda.amp.autocast(enabled=device.startswith("cuda")):
+            s_out = student(batch)
+            # Logits KD (KL divergence with temperature)
+            p_s = F.log_softmax(s_out.logits / kl_temp, dim=-1)
+            p_t = F.softmax(t_out.logits / kl_temp, dim=-1)
+            loss_kl = F.kl_div(p_s, p_t, reduction="batchmean") * (kl_temp * kl_temp)
+
+            # Next token cross-entropy
+            shift_logits = s_out.logits[..., :-1, :].contiguous()
+            shift_labels = batch[..., 1:].contiguous()
+            loss_ce = F.cross_entropy(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+            loss = 0.9 * loss_kl + 0.1 * loss_ce
+
+        if use_scaler:
+            scaler.scale(loss).backward()
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=0.5)
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=0.5)
+            optimizer.step()
+
+    student.eval()
+    elapsed = time.time() - t0
+    LOG.info("KD recovery finished in %.2fs", elapsed)
+    return elapsed
 
 
 # ---------------------------------------------------------------------------
@@ -1010,6 +1134,34 @@ def main(argv: Optional[List[str]] = None):
             if status == "PASS" and mod != "full" and (n_inj + n_comp) == 0:
                 status = "PASS_WITHOUT_EFFECT"
 
+            # ---- Optional KD Recovery ----
+            post_kd_ppl = -1.0
+            delta_ppl_recovery = 0.0
+            if args.with_kd_recovery and np.isfinite(ppl) and ppl > (2.0 * baseline_ppl):
+                LOG.info("[%s] Zero-shot PPL %.2f > 2x baseline (%.2f); running KD recovery...", mod, ppl, 2.0 * baseline_ppl)
+                try:
+                    kd_rec_time = run_kd_recovery(
+                        student=cand,
+                        teacher=base_snapshot,
+                        tokenizer=tokenizer,
+                        train_dataset=ds_train,
+                        device=args.device,
+                        steps=args.kd_recovery_steps,
+                        seq_len=128,
+                    )
+                    # Evaluate post-KD PPL
+                    post_metrics = compute_perplexity_with_metrics(
+                        cand, tokenizer, ds_test,
+                        seq_len=args.seq_len, stride=args.stride,
+                        max_eval_tokens=args.max_eval_tokens, device=args.device,
+                    )
+                    post_kd_ppl = post_metrics["perplexity"]
+                    if np.isfinite(post_kd_ppl):
+                        delta_ppl_recovery = round(ppl - post_kd_ppl, 4)
+                        LOG.info("[%s] Post-KD PPL: %.2f | Delta recovery: %.2f", mod, post_kd_ppl, delta_ppl_recovery)
+                except Exception as ex_kd:
+                    LOG.warning("[%s] KD recovery failed: %s", mod, ex_kd)
+
             row = ResultRow(
                 module_name=mod,
                 status=status,
@@ -1035,6 +1187,8 @@ def main(argv: Optional[List[str]] = None):
                 wall_elapsed_s=round(wall, 3),
                 error="",
                 timestamp=time.strftime("%Y-%m-%dT%H:%M:%S"),
+                post_kd_ppl=post_kd_ppl,
+                delta_ppl_recovery=delta_ppl_recovery,
             )
             LOG.info(
                 "[%d/%d] %s -> %s | PPL=%.3f (ratio=%.3f) | "
@@ -1042,6 +1196,11 @@ def main(argv: Optional[List[str]] = None):
                 idx, len(module_list), mod, status, ppl, ppl_ratio,
                 comp_rate, n_inj, n_comp, wall,
             )
+
+            # Also persist to summary_with_kd.csv if KD recovery is enabled
+            if args.with_kd_recovery:
+                kd_csv = out_dir / "summary_with_kd.csv"
+                upsert_row(kd_csv, row.to_csv_dict())
 
         except Exception as e:
             wall = time.time() - t_mod
