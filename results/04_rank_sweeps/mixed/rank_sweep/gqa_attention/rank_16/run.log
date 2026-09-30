@@ -1,0 +1,69 @@
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+2026-09-30 20:24:55,961 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 20.0% (leaving 6.40 GB headroom)
+2026-09-30 20:24:55,962 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-30 20:24:55,962 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=32 (explicit_parallel=True, explicit_batch=False)
+2026-09-30 20:24:55,982 [INFO] QwenQualitySweep: Running 1 attention modules in-memory sequentially
+2026-09-30 20:24:55,982 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 20.0%
+2026-09-30 20:24:56,224 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 6570.88it/s]
+2026-09-30 20:24:56,874 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-30 20:24:56,874 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'raw_family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-30 20:24:56,874 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:24:56,874 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-30 20:24:56,874 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-30 20:24:56,875 [INFO] QwenQualitySweep:   family:            bert
+2026-09-30 20:24:56,875 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-30 20:24:56,875 [INFO] QwenQualitySweep:   batch_size:        32
+2026-09-30 20:24:56,875 [INFO] QwenQualitySweep:   recovery_steps:    100
+2026-09-30 20:24:56,875 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-30 20:24:56,875 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-30 20:24:56,877 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:24:56,886 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\bert_sst2_baseline\finetuned_model.pt
+2026-09-30 20:24:56,894 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
+2026-09-30 20:24:59,811 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\04_rank_sweeps\mixed\rank_sweep\gqa_attention\rank_16\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-30 20:24:59,812 [INFO] QwenQualitySweep: Prepared 28 eval batches and 100 train batches directly on GPU.
+2026-09-30 20:25:01,833 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.60%
+2026-09-30 20:25:02,045 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:25:02,045 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-30 20:25:02,045 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-30 20:25:02,046 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-30 20:25:02,046 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-30 20:25:02,046 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-30 20:25:02,046 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-30 20:25:02,046 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-30 20:25:02,046 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:25:02,047 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-30 20:25:02,282 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: gqa_attention (recovery_steps=100, batch_size=32, optimizer=adamw)
+2026-09-30 20:25:03,203 [INFO] framework.core.attention_utils: Successfully injected 'gqa_attention' into 6 transformer blocks.
+2026-09-30 20:25:03,213 [INFO] QwenQualitySweep: module=gqa_attention path=legacy_bert
+2026-09-30 20:25:03,215 [INFO] QwenQualitySweep: module=gqa_attention injection summary: 0 SVDLinear layers active
+2026-09-30 20:25:03,216 [INFO] QwenQualitySweep: Running 100 recovery fine-tuning steps for gqa_attention (lr=2.0e-04)
+2026-09-30 20:25:03,299 [INFO] framework.utils.compat: Recovery fine-tuning selected 589824 trainable parameters across 48 tensors.
+2026-09-30 20:25:03,299 [INFO] framework.utils.compat: Discovered 48 trainable tensors (589824 params)
+2026-09-30 20:25:03,303 [INFO] QwenQualitySweep: LoRA fine-tuning: 589824 trainable parameters across 48 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-30 20:25:03,855 [INFO] QwenQualitySweep: Step 1/100 took 0.55s (loss=0.0240, bs=32, micro=16)
+2026-09-30 20:25:05,237 [INFO] QwenQualitySweep: Step 5/100 took 0.34s (loss=0.0479, bs=32, micro=16)
+2026-09-30 20:25:06,905 [INFO] QwenQualitySweep: Step 10/100 took 0.34s (loss=0.0216, bs=32, micro=16)
+2026-09-30 20:25:08,643 [INFO] QwenQualitySweep: Step 15/100 took 0.34s (loss=0.1072, bs=32, micro=16)
+2026-09-30 20:25:10,275 [INFO] QwenQualitySweep: Step 20/100 took 0.32s (loss=0.0053, bs=32, micro=16)
+2026-09-30 20:25:11,944 [INFO] QwenQualitySweep: Step 25/100 took 0.35s (loss=0.0071, bs=32, micro=16)
+2026-09-30 20:25:13,546 [INFO] QwenQualitySweep: Step 30/100 took 0.32s (loss=0.0022, bs=32, micro=16)
+2026-09-30 20:25:15,288 [INFO] QwenQualitySweep: Step 35/100 took 0.33s (loss=0.0037, bs=32, micro=16)
+2026-09-30 20:25:16,963 [INFO] QwenQualitySweep: Step 40/100 took 0.33s (loss=0.1357, bs=32, micro=16)
+2026-09-30 20:25:18,652 [INFO] QwenQualitySweep: Step 45/100 took 0.36s (loss=0.0473, bs=32, micro=16)
+2026-09-30 20:25:20,362 [INFO] QwenQualitySweep: Step 50/100 took 0.35s (loss=0.0192, bs=32, micro=16)
+2026-09-30 20:25:22,078 [INFO] QwenQualitySweep: Step 55/100 took 0.33s (loss=0.0039, bs=32, micro=16)
+2026-09-30 20:25:23,779 [INFO] QwenQualitySweep: Step 60/100 took 0.33s (loss=0.1957, bs=32, micro=16)
+2026-09-30 20:25:25,474 [INFO] QwenQualitySweep: Step 65/100 took 0.35s (loss=0.0090, bs=32, micro=16)
+2026-09-30 20:25:27,165 [INFO] QwenQualitySweep: Step 70/100 took 0.34s (loss=0.0234, bs=32, micro=16)
+2026-09-30 20:25:28,853 [INFO] QwenQualitySweep: Step 75/100 took 0.33s (loss=0.0110, bs=32, micro=16)
+2026-09-30 20:25:30,548 [INFO] QwenQualitySweep: Step 80/100 took 0.35s (loss=0.0134, bs=32, micro=16)
+2026-09-30 20:25:32,230 [INFO] QwenQualitySweep: Step 85/100 took 0.34s (loss=0.2128, bs=32, micro=16)
+2026-09-30 20:25:33,904 [INFO] QwenQualitySweep: Step 90/100 took 0.33s (loss=0.0142, bs=32, micro=16)
+2026-09-30 20:25:35,605 [INFO] QwenQualitySweep: Step 95/100 took 0.35s (loss=0.0441, bs=32, micro=16)
+2026-09-30 20:25:37,308 [INFO] QwenQualitySweep: Step 100/100 took 0.34s (loss=0.0078, bs=32, micro=16)
+2026-09-30 20:25:40,720 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\mixed\rank_sweep\gqa_attention\rank_16\distilbert_sst2_gqa_attention_full_metrics.json
+2026-09-30 20:25:40,958 [INFO] QwenQualitySweep: [1/1] gqa_attention -> PASS 91.06% (F1: 0.9137, Peak VRAM: 449.58 MB)
+2026-09-30 20:25:41,019 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / gqa-attention is SUCCESSFUL (acc=91.06% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-gqa-attention and Git recording.
+2026-09-30 20:25:41,919 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-gqa-attention: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
+2026-09-30 20:25:42,003 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\gqa_attention.md
