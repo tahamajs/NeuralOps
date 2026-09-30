@@ -42,6 +42,12 @@
     "recovery_pct": 0.0
   },
   {
+    "module": "primal_attention",
+    "pre_ppl": 31.7,
+    "post_ppl": 32.01,
+    "recovery_pct": -193.75
+  },
+  {
     "module": "mamba_svd_flash",
     "pre_ppl": 31.54,
     "post_ppl": 32.03,
@@ -97,8 +103,8 @@
   },
   {
     "module": "aegis_v6",
-    "pre_ppl": 157.78,
-    "post_ppl": 157.78,
+    "pre_ppl": 156.83,
+    "post_ppl": 156.83,
     "recovery_pct": 0.0
   },
   {
