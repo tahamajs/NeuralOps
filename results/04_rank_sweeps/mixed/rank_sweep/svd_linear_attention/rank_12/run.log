@@ -81,3 +81,16 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 21:19:21,748 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / svd-linear-attention is SUCCESSFUL (acc=80.73% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-svd-linear-attention and Git recording.
 2026-09-30 21:19:22,452 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-svd-linear-attention: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 21:19:22,478 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\compressions\svd_linear.md
+[main f5dabea3f] feat(benchmark): record successful svd_linear_attention on distilbert-sst2 (Acc: 80.73%, F1: 0.8056)
+ 6 files changed, 120 insertions(+), 1 deletion(-)
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/svd_linear_attention/rank_12/distilbert_sst2_svd_linear_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/svd_linear_attention/rank_12/summary.csv
+2026-09-30 21:19:30,619 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: f5dabea3
+2026-09-30 21:19:30,621 [INFO] QwenQualitySweep: [1/1] svd_linear_attention Timing: eval_time=118.56s
+2026-09-30 21:19:30,621 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 21:19:30,958 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 21:19:30,959 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 21:19:30,966 [INFO] QwenQualitySweep: 
+                               Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+svd_linear_attention (efficient-attn)   PASS   80.73%    -9.87% 0.8056                  0            1.24x  389.7 MB               9.18             10.53
+2026-09-30 21:19:30,966 [INFO] QwenQualitySweep: ================================================================================
