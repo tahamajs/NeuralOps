@@ -241,7 +241,14 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
 
         # Apply modulation if present
         if cos_weight is not None and sin_weight is not None:
-            # When modulated, pass to fallback or pre-multiply
+            # When modulated, pass to PyTorch fallback.
+            # MUST save tensors here so backward() has them regardless of path.
+            ctx.save_for_backward(q, k, v)
+            ctx.is_causal = is_causal
+            ctx.phi = phi
+            ctx.eps = eps if isinstance(eps, float) else float(eps)
+            ctx.cos_weight = cos_weight
+            ctx.sin_weight = sin_weight
             return linear_attn_pytorch_fallback(
                 q, k, v, is_causal=is_causal, phi=phi, eps=eps,
                 cos_weight=cos_weight, sin_weight=sin_weight
