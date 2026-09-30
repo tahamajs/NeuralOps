@@ -81,3 +81,18 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 21:22:22,521 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / svd-linear-attention is SUCCESSFUL (acc=81.77% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-svd-linear-attention and Git recording.
 2026-09-30 21:22:23,223 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-svd-linear-attention: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 21:22:23,250 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\compressions\svd_linear.md
+[main 04bec4ca6] feat(benchmark): record successful svd_linear_attention on distilbert-sst2 (Acc: 81.77%, F1: 0.8195)
+ 7 files changed, 176 insertions(+), 27 deletions(-)
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/svd_linear_attention/rank_16/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/svd_linear_attention/rank_16/distilbert_sst2_svd_linear_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/svd_linear_attention/rank_16/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/svd_linear_attention/rank_16/summary.csv
+2026-09-30 21:22:30,738 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: 04bec4ca
+2026-09-30 21:22:30,740 [INFO] QwenQualitySweep: [1/1] svd_linear_attention Timing: eval_time=101.82s
+2026-09-30 21:22:30,740 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 21:22:31,072 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 21:22:31,072 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 21:22:31,081 [INFO] QwenQualitySweep: 
+                               Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+svd_linear_attention (efficient-attn)   PASS   81.77%    -8.83% 0.8195                  0            1.24x  390.3 MB               9.36             10.73
+2026-09-30 21:22:31,081 [INFO] QwenQualitySweep: ================================================================================
