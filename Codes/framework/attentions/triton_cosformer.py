@@ -722,23 +722,14 @@ class TritonCosformerAttention(BaseAttention):
                 k = k * mask
                 v = v * mask
 
-        # 5. Differentiable forward pass using shared Triton dispatcher
-        angle_factor = math.pi / (2.0 * float(self.max_length))
-        positions = torch.arange(N, device=q.device, dtype=torch.float32)
-        angles = positions * angle_factor
-        cos_w = torch.cos(angles).view(1, 1, N, 1).to(q.dtype)
-        sin_w = torch.sin(angles).view(1, 1, N, 1).to(q.dtype)
-
-        dispatch_kwargs = dict(self.triton_kwargs)
-        dispatch_kwargs["cos_weight"] = cos_w
-        dispatch_kwargs["sin_weight"] = sin_w
-        dispatch_kwargs["eps"] = self.eps
-
-        out = triton_dispatch(
-            self.triton_kernel,
-            q, k, v,
-            is_causal=self.is_decoder,
-            **dispatch_kwargs,
+        # 5. Differentiable forward pass using cosformer's own autograd function.
+        # NOTE: We call _TritonCosformerAutogradFunction.apply() directly instead
+        # of routing through triton_dispatch → linear_attn.fwd, because:
+        #   - linear_attn.fwd early-exits to PyTorch fallback when cos_weight is set
+        #   - That path was broken (ctx.save_for_backward not called before return)
+        #   - This module has its own complete Triton + PyTorch fallback built in.
+        out = _TritonCosformerAutogradFunction.apply(
+            q, k, v, self.is_decoder, self.eps, self.max_length
         )
 
         out = out.transpose(1, 2).contiguous().view(B, N, C)
