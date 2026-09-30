@@ -66,3 +66,16 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 21:51:29,778 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / flash-attention3 is SUCCESSFUL (acc=90.71% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-flash-attention3 and Git recording.
 2026-09-30 21:51:30,501 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-flash-attention3: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 21:51:30,524 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\flash_attention3.md
+[main db0e3deee] feat(benchmark): record successful flash_attention3 on distilbert-sst2 (Acc: 90.71%, F1: 0.9099)
+ 7 files changed, 87 insertions(+), 87 deletions(-)
+ create mode 100644 results/kd_runs/adaptive_span_attention/latest.txt
+ create mode 100644 results/kd_runs/adaptive_sparse_attention/latest.txt
+2026-09-30 21:51:38,506 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: db0e3dee
+2026-09-30 21:51:38,508 [INFO] QwenQualitySweep: [1/1] flash_attention3 Timing: eval_time=34.18s
+2026-09-30 21:51:38,508 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 21:51:38,820 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 21:51:38,821 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 21:51:38,828 [INFO] QwenQualitySweep: 
+                           Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+flash_attention3 (efficient-attn)   PASS   90.71%    +0.11% 0.9099                  0            1.00x  429.5 MB               1.45              1.67
+2026-09-30 21:51:38,828 [INFO] QwenQualitySweep: ================================================================================
