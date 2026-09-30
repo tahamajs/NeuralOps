@@ -118,7 +118,7 @@ class MambaBlock(nn.Module):
         self,
         config: Optional[Any] = None,
         d_model: Optional[int] = None,
-        d_state: int = 256,
+        d_state: int = 16,
         d_conv: int = 4,
         expand: int = 2,
         dt_rank: Optional[int] = None,
