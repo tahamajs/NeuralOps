@@ -420,6 +420,332 @@
           "ppl_at_step_1500": ""
         }
       }
+    },
+    {
+      "module": "aa_svd",
+      "timestamp": "20260930_180657",
+      "run_dir": "results/kd_runs/aa_svd/20260930_180657_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 40.11,
+      "best_recovery_pct": 45.34,
+      "results": {
+        "C": {
+          "pre_ppl": 47.22,
+          "post_ppl": 40.11,
+          "ppl_ratio": 1.2717,
+          "recovery_pct": 45.34,
+          "peak_vram_mb": 1334.2,
+          "train_time_s": 122.35,
+          "s_per_step": 0.2447,
+          "loss_final": 48.2911,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 40.11,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    },
+    {
+      "module": "aegis_v6",
+      "timestamp": "20260930_181104",
+      "run_dir": "results/kd_runs/aegis_v6/20260930_181104_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 10,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 157.78,
+      "best_recovery_pct": 0.0,
+      "results": {
+        "C": {
+          "pre_ppl": 157.78,
+          "post_ppl": 157.78,
+          "ppl_ratio": 5.0025,
+          "recovery_pct": 0.0,
+          "peak_vram_mb": 1469.61,
+          "train_time_s": 35.51,
+          "s_per_step": 3.551,
+          "loss_final": 44.8791,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": "",
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    },
+    {
+      "module": "squeezing_heads",
+      "timestamp": "20260930_182452",
+      "run_dir": "results/kd_runs/squeezing_heads/20260930_182452_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 31.83,
+      "best_recovery_pct": 0.0,
+      "results": {
+        "C": {
+          "pre_ppl": 31.54,
+          "post_ppl": 31.83,
+          "ppl_ratio": 1.0092,
+          "recovery_pct": 0.0,
+          "peak_vram_mb": 1453.94,
+          "train_time_s": 225.49,
+          "s_per_step": 0.451,
+          "loss_final": 21.1041,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 31.83,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    },
+    {
+      "module": "gqa_attention",
+      "timestamp": "20260930_182442",
+      "run_dir": "results/kd_runs/gqa_attention/20260930_182442_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 31.65,
+      "best_recovery_pct": 0.0,
+      "results": {
+        "C": {
+          "pre_ppl": 31.54,
+          "post_ppl": 31.65,
+          "ppl_ratio": 1.0035,
+          "recovery_pct": 0.0,
+          "peak_vram_mb": 1474.12,
+          "train_time_s": 250.12,
+          "s_per_step": 0.5002,
+          "loss_final": 21.7907,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 31.65,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    },
+    {
+      "module": "asvd_attention",
+      "timestamp": "20260930_182436",
+      "run_dir": "results/kd_runs/asvd_attention/20260930_182436_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 34.82,
+      "best_recovery_pct": 58.16,
+      "results": {
+        "C": {
+          "pre_ppl": 39.38,
+          "post_ppl": 34.82,
+          "ppl_ratio": 1.104,
+          "recovery_pct": 58.16,
+          "peak_vram_mb": 1161.7,
+          "train_time_s": 244.01,
+          "s_per_step": 0.488,
+          "loss_final": 55.1091,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 34.82,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    },
+    {
+      "module": "fusion_attn",
+      "timestamp": "20260930_183101",
+      "run_dir": "results/kd_runs/fusion_attn/20260930_183101_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": NaN,
+      "best_recovery_pct": 0.0,
+      "results": {
+        "C": {
+          "pre_ppl": NaN,
+          "post_ppl": NaN,
+          "ppl_ratio": Infinity,
+          "recovery_pct": 0.0,
+          "peak_vram_mb": 0.0,
+          "train_time_s": 0.0,
+          "loss_final": NaN,
+          "error": "CUDA error: out of memory\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n"
+        }
+      }
+    },
+    {
+      "module": "flash_attention3",
+      "timestamp": "20260930_183104",
+      "run_dir": "results/kd_runs/flash_attention3/20260930_183104_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 31.74,
+      "best_recovery_pct": 0.0,
+      "results": {
+        "C": {
+          "pre_ppl": 31.54,
+          "post_ppl": 31.74,
+          "ppl_ratio": 1.0063,
+          "recovery_pct": 0.0,
+          "peak_vram_mb": 1443.83,
+          "train_time_s": 245.92,
+          "s_per_step": 0.4918,
+          "loss_final": 21.1504,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 31.74,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    },
+    {
+      "module": "lora_attention",
+      "timestamp": "20260930_183101",
+      "run_dir": "results/kd_runs/lora_attention/20260930_183101_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 31.52,
+      "best_recovery_pct": 0.0,
+      "results": {
+        "C": {
+          "pre_ppl": 31.54,
+          "post_ppl": 31.52,
+          "ppl_ratio": 0.9994,
+          "recovery_pct": 0.0,
+          "peak_vram_mb": 1460.8,
+          "train_time_s": 270.84,
+          "s_per_step": 0.5417,
+          "loss_final": 21.6957,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 31.52,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    },
+    {
+      "module": "res_svd",
+      "timestamp": "20260930_183644",
+      "run_dir": "results/kd_runs/res_svd/20260930_183644_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": NaN,
+      "best_recovery_pct": 0.0,
+      "results": {
+        "C": {
+          "pre_ppl": NaN,
+          "post_ppl": NaN,
+          "ppl_ratio": Infinity,
+          "recovery_pct": 0.0,
+          "peak_vram_mb": 0.0,
+          "train_time_s": 0.0,
+          "loss_final": NaN,
+          "error": ""
+        }
+      }
+    },
+    {
+      "module": "mamba_svd_flash",
+      "timestamp": "20260930_183650",
+      "run_dir": "results/kd_runs/mamba_svd_flash/20260930_183650_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 32.03,
+      "best_recovery_pct": 0.0,
+      "results": {
+        "C": {
+          "pre_ppl": 31.54,
+          "post_ppl": 32.03,
+          "ppl_ratio": 1.0155,
+          "recovery_pct": 0.0,
+          "peak_vram_mb": 1418.88,
+          "train_time_s": 136.64,
+          "s_per_step": 0.2733,
+          "loss_final": 22.2465,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 32.03,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
     }
   ]
 }
