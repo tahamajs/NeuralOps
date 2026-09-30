@@ -1,0 +1,30 @@
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+2026-09-30 20:41:35,533 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 20.0% (leaving 6.40 GB headroom)
+2026-09-30 20:41:35,533 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-30 20:41:35,533 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=32 (explicit_parallel=True, explicit_batch=False)
+2026-09-30 20:41:35,555 [INFO] QwenQualitySweep: Running 1 attention modules in-memory sequentially
+2026-09-30 20:41:35,556 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 20.0%
+2026-09-30 20:41:36,044 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 4449, in <module>
+    main()
+    ~~~~^^
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 4434, in main
+    run_single_module_main(args)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 3070, in run_single_module_main
+    base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=num_classes, ignore_mismatched_sizes=True, dtype=dtype).to(device)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\auto\auto_factory.py", line 387, in from_pretrained
+    return model_class.from_pretrained(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        pretrained_model_name_or_path, *model_args, config=config, **hub_kwargs, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\modeling_utils.py", line 4132, in from_pretrained
+    loading_info, disk_offload_index = cls._load_pretrained_model(model, state_dict, checkpoint_files, load_config)
+                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\modeling_utils.py", line 4240, in _load_pretrained_model
+    file_pointer = safe_open(file, framework="pt", device="cpu")
+OSError: The paging file is too small for this operation to complete. (os error 1455)

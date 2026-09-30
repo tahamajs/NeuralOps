@@ -1,0 +1,127 @@
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+2026-09-30 20:42:28,251 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 20.0% (leaving 6.40 GB headroom)
+2026-09-30 20:42:28,251 [INFO] QwenQualitySweep: GPU VRAM: 3.27 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-30 20:42:28,251 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=16 (explicit_parallel=True, explicit_batch=False)
+2026-09-30 20:42:28,273 [INFO] QwenQualitySweep: Running 1 attention modules in-memory sequentially
+2026-09-30 20:42:28,273 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 20.0%
+2026-09-30 20:42:28,273 [WARNING] QwenQualitySweep: LOW GPU MEMORY: Only 3.27 GB VRAM available (< 4.0 GB). High risk of CUDA OOM.
+2026-09-30 20:42:28,720 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3623.08it/s]
+2026-09-30 20:42:29,642 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-30 20:42:29,642 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'raw_family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-30 20:42:29,642 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:42:29,642 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-30 20:42:29,642 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-30 20:42:29,643 [INFO] QwenQualitySweep:   family:            bert
+2026-09-30 20:42:29,643 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-30 20:42:29,645 [INFO] QwenQualitySweep:   batch_size:        16
+2026-09-30 20:42:29,645 [INFO] QwenQualitySweep:   recovery_steps:    100
+2026-09-30 20:42:29,645 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-30 20:42:29,645 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-30 20:42:29,645 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:42:29,652 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\bert_sst2_baseline\finetuned_model.pt
+2026-09-30 20:42:29,666 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
+2026-09-30 20:42:33,104 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\04_rank_sweeps\mixed\rank_sweep\svd_linear_attention\rank_256\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-30 20:42:33,104 [INFO] QwenQualitySweep: Prepared 55 eval batches and 100 train batches directly on GPU.
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 4449, in <module>
+    main()
+    ~~~~^^
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 4434, in main
+    run_single_module_main(args)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 3398, in run_single_module_main
+    base_benchmark_acc = round(evaluate(base, tokenizer, val, args.dataset, eval_seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
+                               ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\utils\_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 1034, in evaluate
+    res = evaluate_comprehensive(
+        model, tokenizer, ds, name, seq_len, batch_size, device, fp16=fp16, precomputed_batches=precomputed_batches
+    )
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\utils\_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 934, in evaluate_comprehensive
+    raise exc
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 899, in evaluate_comprehensive
+    outputs = model(**x)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\generic.py", line 876, in wrapper
+    output = func(self, *args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\distilbert\modeling_distilbert.py", line 588, in forward
+    distilbert_output = self.distilbert(
+        input_ids=input_ids,
+    ...<4 lines>...
+        **kwargs,
+    )
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\generic.py", line 952, in wrapper
+    output = func(self, *args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\output_capturing.py", line 248, in wrapper
+    outputs = func(self, *args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\distilbert\modeling_distilbert.py", line 421, in forward
+    return self.transformer(
+           ~~~~~~~~~~~~~~~~^
+        hidden_states=embeddings,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+        attention_mask=attention_mask,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\distilbert\modeling_distilbert.py", line 280, in forward
+    hidden_states = layer_module(
+        hidden_states,
+        attention_mask,
+        **kwargs,
+    )
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\modeling_layers.py", line 93, in __call__
+    return super().__call__(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\distilbert\modeling_distilbert.py", line 252, in forward
+    attention_output, _ = self.attention(
+                          ~~~~~~~~~~~~~~^
+        hidden_states,
+        ^^^^^^^^^^^^^^
+        attention_mask=attention_mask,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\distilbert\modeling_distilbert.py", line 187, in forward
+    query_layer = self.q_lin(hidden_states).view(*hidden_shape).transpose(1, 2)
+                  ~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\linear.py", line 125, in forward
+    return F.linear(input, self.weight, self.bias)
+           ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: CUDA error: CUBLAS_STATUS_NOT_SUPPORTED when calling `cublasLtMatmulAlgoGetHeuristic( ltHandle, computeDesc.descriptor(), Adesc.descriptor(), Bdesc.descriptor(), Cdesc.descriptor(), Cdesc.descriptor(), preference.descriptor(), 1, &heuristicResult, &returnedResult)`

@@ -1,0 +1,7 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+16,svd_linear_attention,ERROR_CODE_1,0.0,0.0,99.0,0.0,1.0,,0,0,57.0,,
+32,svd_linear_attention,ERROR_CODE_1,0.0,0.0,99.0,0.0,1.0,,0,0,56.4,,
+64,svd_linear_attention,ERROR_CODE_1,0.0,0.0,99.0,0.0,1.0,,0,0,55.3,,
+128,svd_linear_attention,ERROR_CODE_1,0.0,0.0,99.0,0.0,1.0,,0,0,56.1,,
+256,svd_linear_attention,ERROR_CODE_1,0.0,0.0,99.0,0.0,1.0,,0,0,56.6,,
+384,svd_linear_attention,ERROR_CODE_3221225477,0.0,0.0,99.0,0.0,1.0,,0,0,218.8,,
