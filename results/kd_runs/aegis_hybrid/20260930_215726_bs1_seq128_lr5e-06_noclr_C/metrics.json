@@ -1,0 +1,30 @@
+{
+  "module": "aegis_hybrid",
+  "pre_ppl": 371.97,
+  "baseline_ppl": 31.54,
+  "results": {
+    "C": {
+      "method": "C",
+      "pre_ppl": 371.97,
+      "post_ppl": 431.19,
+      "ppl_ratio": 13.6712,
+      "recovery_pct": -17.4,
+      "peak_vram_mb": 1181.67,
+      "train_time_s": 353.64,
+      "s_per_step": 0.7073,
+      "loss_final": 351.7761,
+      "cached": true,
+      "ppl_at_step_250": "",
+      "ppl_at_step_500": 431.19,
+      "ppl_at_step_750": "",
+      "ppl_at_step_1000": "",
+      "ppl_at_step_1250": "",
+      "ppl_at_step_1500": ""
+    }
+  },
+  "best_method": "C",
+  "best_post_ppl": 431.19,
+  "is_ssm_recoverable": true,
+  "recommendation": "MAYBE: Partial recovery achieved. Additional recovery steps or specialized scan kernels needed.",
+  "run_dir": "results/kd_runs/aegis_hybrid/20260930_215726_bs1_seq128_lr5e-06_noclr_C"
+}
