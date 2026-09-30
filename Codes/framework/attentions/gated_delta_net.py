@@ -19,8 +19,9 @@ from framework.core.registry import ATTENTION_REGISTRY
 try:
     from framework.core.triton_kernels.gdn_scan import gdn_scan_triton, MAX_REGISTER_DIM
     HAS_TRITON_GDN = True
+    logger.info("GDN: Triton scan available")
 except Exception as _e:
-    logging.getLogger(__name__).warning("Triton gdn_scan unavailable: %s", _e)
+    logger.warning("GDN: Triton scan unavailable: %s", _e)
     gdn_scan_triton = None
     HAS_TRITON_GDN = False
     MAX_REGISTER_DIM = 64
@@ -94,7 +95,6 @@ def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=32):
 
     GD-FIX-09: no inner Python overhead beyond the minimal recurrence.
     """
-
     B, H, L, d = q.shape
     device = q.device
 
@@ -107,14 +107,19 @@ def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=32):
     k_f = F.normalize(k_f, p=2, dim=-1, eps=1e-6)
     q_f = F.normalize(q_f, p=2, dim=-1, eps=1e-6)
 
-    # Triton fast path (head_dim <= 64, on CUDA)
-    if (HAS_TRITON_GDN and q.is_cuda and d <= MAX_REGISTER_DIM
+    # --- Triton fast path (head_dim <= 64, on CUDA) ---
+    if (HAS_TRITON_GDN and gdn_scan_triton is not None and q.is_cuda and d <= MAX_REGISTER_DIM
             and q.dtype in (torch.float16, torch.bfloat16, torch.float32)):
         try:
-            return gdn_scan_triton(q_f, k_f, v_f, beta_f, alpha_f).to(q.dtype)
+            out = gdn_scan_triton(q_f, k_f, v_f, beta_f, alpha_f).to(q.dtype)
+            print('[GDN] Triton scan used', flush=True)  # debug
+            return out
         except Exception as e:
             logger.warning("Triton gdn_scan failed, falling back to PyTorch: %s", e)
+            print(f'[GDN] Triton FAILED: {e}', flush=True)
 
+    # --- PyTorch fallback ---
+    print('[GDN] PyTorch fallback', flush=True)
     pad_len = (chunk_size - L % chunk_size) % chunk_size
     if pad_len > 0:
         q_f = F.pad(q_f, (0, 0, 0, pad_len))
@@ -147,6 +152,29 @@ def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=32):
         y = y[:, :, :L, :]
     return torch.nan_to_num(y, nan=0.0).to(q.dtype)
 
+
+def compute_relational_kd_loss(
+    student_hidden_states: Tuple[torch.Tensor, ...],
+    teacher_hidden_states: Tuple[torch.Tensor, ...],
+) -> torch.Tensor:
+    """
+    Vectorized Relational Knowledge Distillation (RKD)
+    بهینه‌شده برای سرعت بالا (بدون حلقه For) و پایدار در برابر NaN
+    """
+    # ۱. تجمیع تمام لایه‌ها در یک تنسور واحد: (Num_Layers, Batch, Seq_Len, Dim)
+    s_stacked = torch.stack(student_hidden_states[1:], dim=0).float()
+    t_stacked = torch.stack(teacher_hidden_states[1:], dim=0).float()
+
+    # ۲. نرمال‌سازی با eps=1e-8 (محافظت قطعی در برابر خطای NaN)
+    s_norm = F.normalize(s_stacked, p=2, dim=-1, eps=1e-8)
+    t_norm = F.normalize(t_stacked, p=2, dim=-1, eps=1e-8)
+
+    # ۳. ضرب ماتریسی همزمان برای تمام لایه‌ها و بچ‌ها -> خروجی: (Num_Layers, Batch, Seq_Len, Seq_Len)
+    s_rel = torch.matmul(s_norm, s_norm.transpose(-1, -2))
+    t_rel = torch.matmul(t_norm, t_norm.transpose(-1, -2))
+
+    # ۴. محاسبه میانگین خطا به صورت یکجا
+    return F.smooth_l1_loss(s_rel, t_rel)
 
 def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
     if cos is None or sin is None:
