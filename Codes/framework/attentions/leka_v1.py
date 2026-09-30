@@ -1,7 +1,7 @@
-"""LEKAv1: Linear-time Efficient Kernel Attention (Corrected).
+"""LEKAv1: Linear-time Efficient Kernel Attention (Corrected with Positive Features).
 
-Approximates the Gaussian RBF kernel via Random Fourier Feature (RFF) mapping:
-    φ(x) = [cos(x W), sin(x W)] / sqrt(F)
+Approximates the attention kernel via Positive Feature Mapping (ELU + 1)
+to guarantee strict positivity and stable gradients, avoiding NaN denominator collapse.
 
 Supports:
 - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
@@ -225,7 +225,6 @@ class LEKAV1Attention(BaseAttention):
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        # LEKA-02: robust super().__init__
         try:
             super().__init__(config, rank)
         except TypeError:
@@ -253,12 +252,10 @@ class LEKAV1Attention(BaseAttention):
                     getattr(config, "dropout", 0.1)) if config is not None else 0.1
         )
 
-        # LEKA-05: decoder detection
         self.is_decoder = _detect_decoder(config, is_decoder, source_attn)
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
-        # LoRA config
         self.lora_rank = int(
             getattr(config, "lora_rank", None)
             or (getattr(comp_config, "lora_rank", None) if comp_config else None)
@@ -270,14 +267,12 @@ class LEKAV1Attention(BaseAttention):
             or kwargs.get("lora_alpha", 32.0)
         )
 
-        # LEKA-11: projection rank
         self.proj_rank = int(
             kwargs.get("proj_rank")
             or (getattr(comp_config, "proj_rank", None) if comp_config else None)
             or (rank if rank is not None else 64)
         )
 
-        # FactorizedLoRALinear projections
         FF = FactorizedLoRALinear
         self.query = FF(self.dim, self.all_head_size, rank=self.proj_rank,
                         lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, bias=True)
@@ -295,10 +290,8 @@ class LEKAV1Attention(BaseAttention):
         self.norm = nn.LayerNorm(self.head_dim)
         self.dropout = nn.Dropout(dropout_p)
 
-        # LEKA-10: pres_gate for residual blend: out = sigmoid(pres_gate)*attn + (1-sigmoid)*input
         self.pres_gate = nn.Parameter(torch.tensor(2.0))
 
-        # LEKA-14: robust QR-orthogonal projection
         proj_data = self._build_projection_buffer()
         self.register_buffer("proj", proj_data, persistent=True)
 
@@ -449,21 +442,23 @@ class LEKAV1Attention(BaseAttention):
                 proj.up.bias.data.zero_()
 
     # ------------------------------------------------------------------
-    # Kernel feature map
+    # Kernel feature map (FIXED: ELU + 1)
     # ------------------------------------------------------------------
     def kernel_feature_map(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Positive kernel feature embedding:
-            φ(x) = [cos(x_norm W), sin(x_norm W)] / sqrt(F)
-        Returns tensor of shape (B, H, N, 2*F).
+        Positive kernel feature embedding using ELU + 1.
+        Guarantees strict positivity so denominator never collapses or becomes negative.
+        Returns tensor of shape (B, H, N, F).
         """
         x_norm = self.norm(x)
-        proj = self.proj.to(device=x.device, dtype=x.dtype)
-        features = torch.einsum("bhnd,hdf->bhnf", x_norm, proj)
-        scale = 1.0 / math.sqrt(self.feature_dim)
-        phi_cos = torch.cos(features) * scale
-        phi_sin = torch.sin(features) * scale
-        return torch.cat([phi_cos, phi_sin], dim=-1)
+        proj_matrix = self.proj.to(device=x.device, dtype=x.dtype)
+        
+        # Linear projection to feature space
+        features = torch.einsum("bhnd,hdf->bhnf", x_norm, proj_matrix)
+        
+        # Apply ELU + 1 to ensure outputs are strictly > 0
+        # Adding 1e-6 for extreme numerical stability
+        return F.elu(features) + 1.0 + 1e-6
 
     # ------------------------------------------------------------------
     # LEKA-06: copy_weights raises on missing
@@ -581,7 +576,6 @@ class LEKAV1Attention(BaseAttention):
         missing_after = [k for k, (w, _) in extracted.items()
                          if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            # LEKA-06: raise instead of silently proceeding
             raise RuntimeError(
                 f"LEKAV1Attention.copy_weights: missing mandatory projections "
                 f"{missing_after} from {cls_name}."
@@ -650,7 +644,6 @@ class LEKAV1Attention(BaseAttention):
             for mod in (self.query, self.key, self.value, self.out_proj):
                 mod.freeze_base_weights()
 
-        # LEKA-15: forward sanity check
         try:
             with torch.no_grad():
                 d = next(self.parameters()).device
@@ -689,6 +682,8 @@ class LEKAV1Attention(BaseAttention):
             K_total = K_local + state_k.unsqueeze(2)
 
             num = torch.einsum("bhcf,bhcfd->bhcd", Qc, KV_total)
+            
+            # The denominator is now perfectly safe because Q and K are strictly positive.
             den = torch.einsum("bhcf,bhcf->bhc", Qc, K_total).clamp(min=1e-5)
             outs.append(num / den.unsqueeze(-1))
 
@@ -721,7 +716,6 @@ class LEKAV1Attention(BaseAttention):
         k = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
         v = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        # LEKA-05: RoPE with past_len offset
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings", None)
         if position_embeddings is not None:
@@ -741,11 +735,10 @@ class LEKAV1Attention(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        # Kernel feature map
+        # Kernel feature map (Now strictly positive)
         Q_features = self.kernel_feature_map(q)
         K_features = self.kernel_feature_map(k)
 
-        # LEKA-13: mask only K_features and V (not context)
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 valid_mask = (attention_mask > 0).to(dtype)
@@ -765,7 +758,6 @@ class LEKAV1Attention(BaseAttention):
 
         # Compute attention
         if self.is_decoder:
-            # LEKA-08: chunked causal
             context = self._causal_linear_attention(
                 Q_features.float(), K_features.float(), v.float(),
                 chunk_size=64,
@@ -799,7 +791,7 @@ class LEKAV1Attention(BaseAttention):
         else:
             attn_out = self.out_proj(context)
 
-        # LEKA-10: residual blend via pres_gate (init σ(2.0) ≈ 0.88 → mostly attn)
+        # Residual blend via pres_gate
         alpha = torch.sigmoid(self.pres_gate)
         out = alpha * attn_out + (1.0 - alpha) * hidden_states
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
@@ -811,7 +803,7 @@ class LEKAV1Attention(BaseAttention):
 
 
 # ===========================================================================
-# Injection (LEKA-03: recursion guard)
+# Injection 
 # ===========================================================================
 
 @ATTENTION_REGISTRY.register("leka_v1_inject")
@@ -880,7 +872,6 @@ def inject_leka_v1(
                     src_attn = getattr(cand, "self", cand)
                     break
 
-        # Double-injection guard
         if isinstance(src_attn, LEKAV1Attention) or "LEKA" in src_attn.__class__.__name__:
             return None
 
