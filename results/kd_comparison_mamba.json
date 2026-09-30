@@ -1,29 +1,29 @@
 {
-  "module": "aegis_hybrid",
-  "pre_ppl": 3730.84,
-  "baseline_ppl": 27.89,
+  "module": "mamba_block",
+  "pre_ppl": 4203.45,
+  "baseline_ppl": 31.54,
   "results": {
-    "A": {
-      "method": "A",
-      "pre_ppl": 407.9,
-      "post_ppl": 1175.29,
-      "ppl_ratio": 42.1402,
-      "recovery_pct": 0.0,
-      "peak_vram_mb": 3836.95,
-      "train_time_s": 400.63,
-      "s_per_step": 1.3354,
-      "loss_final": 858.451,
+    "C": {
+      "method": "C",
+      "pre_ppl": 4203.45,
+      "post_ppl": 138.52,
+      "ppl_ratio": 4.3919,
+      "recovery_pct": 97.44,
+      "peak_vram_mb": 5165.48,
+      "train_time_s": 1085.33,
+      "s_per_step": 1.0853,
+      "loss_final": 122.1277,
       "cached": true,
-      "ppl_at_step_250": 1175.29,
-      "ppl_at_step_500": "",
+      "ppl_at_step_250": "",
+      "ppl_at_step_500": 161.96,
       "ppl_at_step_750": "",
-      "ppl_at_step_1000": "",
+      "ppl_at_step_1000": 138.52,
       "ppl_at_step_1250": "",
       "ppl_at_step_1500": ""
     }
   },
-  "best_method": "A",
-  "best_post_ppl": 1175.29,
-  "is_ssm_recoverable": false,
-  "recommendation": "NO: Fundamental mathematical incompatibility between SSM recurrence and pre-trained attention representations."
+  "best_method": "C",
+  "best_post_ppl": 138.52,
+  "is_ssm_recoverable": true,
+  "recommendation": "MAYBE: Partial recovery achieved. Additional recovery steps or specialized scan kernels needed."
 }
