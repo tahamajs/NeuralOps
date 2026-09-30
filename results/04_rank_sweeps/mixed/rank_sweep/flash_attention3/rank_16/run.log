@@ -66,3 +66,30 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 22:00:05,873 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / flash-attention3 is SUCCESSFUL (acc=90.71% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-flash-attention3 and Git recording.
 2026-09-30 22:00:06,579 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-flash-attention3: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 22:00:06,623 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\flash_attention3.md
+[main dcdaa5b0d] feat(benchmark): record successful flash_attention3 on distilbert-sst2 (Acc: 90.71%, F1: 0.9099)
+ 28 files changed, 1565 insertions(+), 290 deletions(-)
+ create mode 100644 results/kd_runs/adaptive_span_attention/20260930_215122_bs1_seq128_lr5e-06_noclr_C/README.md
+ create mode 100644 results/kd_runs/adaptive_span_attention/20260930_215122_bs1_seq128_lr5e-06_noclr_C/config.json
+ create mode 100644 results/kd_runs/adaptive_span_attention/20260930_215122_bs1_seq128_lr5e-06_noclr_C/loss_curve_C.png
+ create mode 100644 results/kd_runs/adaptive_span_attention/20260930_215122_bs1_seq128_lr5e-06_noclr_C/methods_comparison.png
+ create mode 100644 results/kd_runs/adaptive_span_attention/20260930_215122_bs1_seq128_lr5e-06_noclr_C/metrics.csv
+ create mode 100644 results/kd_runs/adaptive_span_attention/20260930_215122_bs1_seq128_lr5e-06_noclr_C/metrics.json
+ create mode 100644 results/kd_runs/adaptive_sparse_attention/20260930_215125_bs1_seq128_lr5e-06_noclr_C/README.md
+ create mode 100644 results/kd_runs/adaptive_sparse_attention/20260930_215125_bs1_seq128_lr5e-06_noclr_C/config.json
+ create mode 100644 results/kd_runs/adaptive_sparse_attention/20260930_215125_bs1_seq128_lr5e-06_noclr_C/loss_curve_C.png
+ create mode 100644 results/kd_runs/adaptive_sparse_attention/20260930_215125_bs1_seq128_lr5e-06_noclr_C/methods_comparison.png
+ create mode 100644 results/kd_runs/adaptive_sparse_attention/20260930_215125_bs1_seq128_lr5e-06_noclr_C/metrics.csv
+ create mode 100644 results/kd_runs/adaptive_sparse_attention/20260930_215125_bs1_seq128_lr5e-06_noclr_C/metrics.json
+ create mode 100644 results/kd_runs/adasplash_attention/latest.txt
+ create mode 100644 results/kd_runs/aegis_hybrid/latest.txt
+ create mode 100644 results/methods_comparison_20260930_215122.png
+ create mode 100644 results/methods_comparison_20260930_215125.png
+2026-09-30 22:00:14,375 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: dcdaa5b0
+2026-09-30 22:00:14,378 [INFO] QwenQualitySweep: [1/1] flash_attention3 Timing: eval_time=31.29s
+2026-09-30 22:00:14,378 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 22:00:14,888 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 22:00:14,888 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 22:00:14,903 [INFO] QwenQualitySweep: 
+                           Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+flash_attention3 (efficient-attn)   PASS   90.71%    +0.11% 0.9099                  0            1.00x  429.5 MB               1.46              1.67
+2026-09-30 22:00:14,903 [INFO] QwenQualitySweep: ================================================================================
