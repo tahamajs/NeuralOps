@@ -66,3 +66,24 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 20:31:56,044 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / lora-attention is SUCCESSFUL (acc=90.83% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-lora-attention and Git recording.
 2026-09-30 20:31:56,884 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-lora-attention: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 20:31:56,953 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\lora_attention.md
+[main 39d3f4e2f] feat(benchmark): record successful lora_attention on distilbert-sst2 (Acc: 90.83%, F1: 0.9109)
+ 11 files changed, 315 insertions(+)
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_256/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_256/distilbert_sst2_lora_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_256/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_256/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_256/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_384/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_384/distilbert_sst2_lora_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_384/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_384/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_384/summary.csv
+2026-09-30 20:32:03,472 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: 39d3f4e2
+2026-09-30 20:32:03,474 [INFO] QwenQualitySweep: [1/1] lora_attention Timing: eval_time=31.06s
+2026-09-30 20:32:03,474 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 20:32:03,829 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:32:03,829 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 20:32:03,839 [INFO] QwenQualitySweep: 
+                         Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+lora_attention (efficient-attn)   PASS   90.83%    +0.23% 0.9109                  0            1.00x  447.8 MB               1.83              2.10
+2026-09-30 20:32:03,839 [INFO] QwenQualitySweep: ================================================================================
