@@ -204,7 +204,16 @@ def compute_perplexity(
     device: str = "cuda",
 ) -> float:
     model.eval()
-    text = "\n\n".join(test_dataset["text"])
+    # Slice only the necessary test texts to avoid MemoryError on constrained memory
+    sample_texts = []
+    accum_chars = 0
+    target_chars = max_eval_tokens * 6  # Rough upper bound for token character count
+    for t in test_dataset["text"]:
+        sample_texts.append(t)
+        accum_chars += len(t)
+        if accum_chars >= target_chars:
+            break
+    text = "\n\n".join(sample_texts) if sample_texts else "\n\n".join(test_dataset["text"][:100])
     enc = tokenizer(text, return_tensors="pt", truncation=False)
     input_ids = enc.input_ids
     if input_ids.dim() == 1:

@@ -333,7 +333,9 @@ def main():
     for r in registry.get("runs", []):
         res = r.get("results", {}).get("C", {}) if isinstance(r.get("results"), dict) else {}
         post = res.get("post_ppl") if isinstance(res, dict) and "post_ppl" in res else r.get("post_ppl")
-        if post is not None and isinstance(post, (int, float)) and post == post:
+        steps = r.get("recovery_steps", 0)
+        # Require full runs with at least 500 recovery steps
+        if post is not None and isinstance(post, (int, float)) and post == post and steps >= 500:
             tested.add(r.get("module", ""))
 
     skip = BLACKLIST | DEFAULT_SKIP | tested
