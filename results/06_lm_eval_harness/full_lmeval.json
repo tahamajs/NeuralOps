@@ -1,0 +1,23 @@
+{
+  "module": "full",
+  "model_path": "models/gpt2_wikitext",
+  "rank": 64,
+  "num_fewshot": 0,
+  "tasks": {
+    "hellaswag": {}
+  },
+  "raw_results": {
+    "hellaswag": {
+      "error": "Couldn't reach 'Rowan/hellaswag' on the Hub (OfflineModeIsEnabled)"
+    }
+  },
+  "config": {
+    "batch_size": 4,
+    "limit": 10,
+    "device": "cuda",
+    "no_inject": false,
+    "smoke_test": true,
+    "injection_stats": {}
+  },
+  "timestamp": "2026-09-30T03:28:51"
+}

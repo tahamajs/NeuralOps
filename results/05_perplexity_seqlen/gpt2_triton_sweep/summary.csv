@@ -1,0 +1,4 @@
+module_name,status,perplexity,baseline_ppl,delta_ppl,ppl_ratio,compression_rate,compression_ratio_pct,total_params_before,total_params_after,delta_params,num_injected_attention_layers,num_compressed_layers,num_fallback_layers,lora_params,calibration_time_s,recovery_time_s,peak_vram_mb,latency_ms_per_token,throughput_tok_per_sec,eval_elapsed_s,wall_elapsed_s,error,timestamp
+full,PASS,24.8557,24.8557,0.0,1.0,1.0,0.0,124439808,124439808,0,0,0,0,0,0.0,0.0,584.64,0.1077,9288.09,2.153,2.153,,2026-09-29T07:13:23
+triton_cosformer,FAIL_PPL_DIVERGED,4156.9102,24.8557,4132.0545,167.2417,1.0,0.0,124439808,124439808,0,12,0,0,0,0.676,0.0,545.99,0.2055,4866.7,4.11,7.261,,2026-09-29T07:13:31
+triton_svd_linear_attention,FAIL_PPL_DIVERGED,578.1608,24.8557,553.3051,23.2607,1.1658,14.22,124439808,106745088,-17694720,12,0,0,0,4.396,0.0,511.37,0.1777,5627.76,3.554,10.433,,2026-09-29T07:13:41
