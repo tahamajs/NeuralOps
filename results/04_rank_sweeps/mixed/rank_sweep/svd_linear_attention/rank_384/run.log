@@ -76,3 +76,14 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 21:30:49,775 [INFO] QwenQualitySweep: Step 90/100 took 1.11s (loss=0.0236, bs=32, micro=16)
 2026-09-30 21:30:55,074 [INFO] QwenQualitySweep: Step 95/100 took 0.91s (loss=0.0486, bs=32, micro=16)
 2026-09-30 21:31:00,126 [INFO] QwenQualitySweep: Step 100/100 took 1.04s (loss=0.0053, bs=32, micro=16)
+2026-09-30 21:31:15,047 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\mixed\rank_sweep\svd_linear_attention\rank_384\distilbert_sst2_svd_linear_attention_full_metrics.json
+2026-09-30 21:31:15,358 [INFO] QwenQualitySweep: [1/1] svd_linear_attention -> MODERATE_EXPANSION 90.71% (F1: 0.9101, Peak VRAM: 450.78 MB)
+2026-09-30 21:31:15,358 [INFO] QwenQualitySweep: [Quality Guard] Module 'svd_linear_attention' did not pass quality criteria (status=MODERATE_EXPANSION, acc=90.71%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-30 21:31:15,366 [INFO] QwenQualitySweep: [1/1] svd_linear_attention Timing: eval_time=115.63s
+2026-09-30 21:31:15,366 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 21:31:15,757 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 21:31:15,757 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 21:31:15,765 [INFO] QwenQualitySweep: 
+                               Module             Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+svd_linear_attention (efficient-attn) MODERATE_EXPANSION   90.71%    +0.11% 0.9101                  0            1.00x  450.8 MB              13.24             15.18
+2026-09-30 21:31:15,765 [INFO] QwenQualitySweep: ================================================================================
