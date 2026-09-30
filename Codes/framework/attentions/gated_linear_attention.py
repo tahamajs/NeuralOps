@@ -671,14 +671,13 @@ class GatedLinearAttention(BaseAttention):
             y_chunk = y_prev + y_cur
             denom_chunk = (denom_prev + denom_cur).clamp(min=1e-4)
 
-            lam_prod_chunk = torch.exp(C[:, :, -1:])
+            lam_prod_chunk = torch.exp(C[:, :, -1]).view(B, H, 1, 1)
             C_end = C[:, :, -1:].unsqueeze(-1)
             C_t = C.unsqueeze(-1)
             weight_t = torch.exp((C_end - C_t).clamp(min=-15.0, max=0.0))
             k_w = k_c * weight_t
-            S_new = lam_prod_chunk.unsqueeze(-1).unsqueeze(-1) * S \
-                    + torch.einsum("bhld,bhle->bhde", k_w, v_c)
-            Z_new = lam_prod_chunk.unsqueeze(-1) * Z + k_w.sum(dim=2)
+            S_new = lam_prod_chunk * S + torch.einsum("bhld,bhle->bhde", k_w, v_c)
+            Z_new = lam_prod_chunk.squeeze(-1) * Z + k_w.sum(dim=2)
 
             S = S_new
             Z = Z_new

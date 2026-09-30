@@ -128,7 +128,7 @@ def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=32):
     y = torch.cat(outputs, dim=2)
     if pad_len > 0:
         y = y[:, :, :L, :]
-    return torch.nan_to_num(y, nan=0.0)
+    return torch.nan_to_num(y, nan=0.0).to(q.dtype)
 
 
 def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
@@ -725,8 +725,10 @@ class GatedDeltaNet(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         # ---- Gating ----
-        beta = torch.sigmoid(self.beta_proj(hidden_states)).transpose(1, 2).contiguous()  # (B,H,L)
-        alpha = torch.sigmoid(self.alpha_proj(hidden_states)).transpose(1, 2).contiguous()
+        hs_beta = hidden_states.to(self.beta_proj.weight.dtype)
+        beta = torch.sigmoid(self.beta_proj(hs_beta)).transpose(1, 2).contiguous()  # (B,H,L)
+        hs_alpha = hidden_states.to(self.alpha_proj.weight.dtype)
+        alpha = torch.sigmoid(self.alpha_proj(hs_alpha)).transpose(1, 2).contiguous()
 
         # ---- Mask ----
         eff_mask = encoder_attention_mask if is_cross else attention_mask
@@ -766,7 +768,7 @@ class GatedDeltaNet(BaseAttention):
         # ---- Recombine + SiLU gating ----
         y = torch.nan_to_num(y, nan=0.0, posinf=1e4, neginf=-1e4)
         y = y.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-        gated_y = y * F.silu(z)
+        gated_y = y.to(z.dtype) * F.silu(z)
 
         # ---- Output projection ----
         if self.is_nested_encoder:

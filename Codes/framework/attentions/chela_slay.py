@@ -237,6 +237,7 @@ class ChelaSlayAttention(BaseAttention):
         is_decoder: Optional[bool] = None,
         **kwargs: Any,
     ) -> None:
+        super().__init__(config=config, rank=rank, **kwargs)
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
         # CS-FIX-17: resolve config from source_attn if config is missing

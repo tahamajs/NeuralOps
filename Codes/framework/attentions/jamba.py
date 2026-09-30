@@ -726,7 +726,7 @@ class Jamba2Block(BaseAttention):
 
                 n = torch.linalg.norm(target.weight.data.float()).item()
                 if n < 1e-4:
-                    logger.warning("Jamba2: '%s' near-zero norm (%.2e)", key, n)
+                    raise RuntimeError(f"Jamba2: weight for '{key}' norm too small ({n:.2e})")
 
                 if self.freeze_base:
                     target.freeze_base_weights()
@@ -750,11 +750,15 @@ class Jamba2Block(BaseAttention):
         """JAMBA-FIX-19: emit the tuple layout expected by the host model."""
         fmt = self._return_format
         if fmt == "bert":
-            return (out, attn_weights)
+            return (out, attn_weights) if attn_weights is not None else (out,)
         if fmt == "gpt2":
-            return (out, present, attn_weights)
+            if attn_weights is not None:
+                return (out, present, attn_weights)
+            return (out, present)
         # default 'llama'
-        return (out, attn_weights, present)
+        if attn_weights is not None:
+            return (out, attn_weights, present)
+        return (out, present)
 
     def _normalize_head_mask(self, head_mask: torch.Tensor,
                              attn: torch.Tensor) -> torch.Tensor:
