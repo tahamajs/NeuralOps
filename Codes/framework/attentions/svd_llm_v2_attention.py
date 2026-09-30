@@ -266,12 +266,13 @@ class SVDLLMV2Attention(BaseAttention):
     def _init_random(self) -> None:
         """Initialize orthogonal factor projections with identity scales."""
         def _ortho(t: nn.Parameter) -> None:
-            if t.device.type == "cuda" and t.dtype in (torch.float16, torch.bfloat16):
-                f = torch.empty(t.shape, device=t.device, dtype=torch.float32)
-                nn.init.orthogonal_(f)
-                t.copy_(f.to(dtype=t.dtype))
-            else:
-                nn.init.orthogonal_(t)
+            with torch.no_grad():
+                if t.device.type == "cuda" and t.dtype in (torch.float16, torch.bfloat16):
+                    f = torch.empty(t.shape, device=t.device, dtype=torch.float32)
+                    nn.init.orthogonal_(f)
+                    t.data.copy_(f.to(dtype=t.dtype))
+                else:
+                    nn.init.orthogonal_(t)
 
         _ortho(self.query_u)
         nn.init.ones_(self.query_s)
