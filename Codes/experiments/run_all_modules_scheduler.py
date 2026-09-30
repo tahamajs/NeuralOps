@@ -97,16 +97,29 @@ ALL_COMPRESSORS = [
     'tomoe_compressor', 'tt_compressor', 'uniql_compressor', 'zerokv_neo_compressor'
 ]
 
+IS_WINDOWS = sys.platform.startswith("win")
+
+def run_command_smart(cmd: str, timeout: int = 15) -> str:
+    """Run command locally on Windows or via SSH from Mac."""
+    if IS_WINDOWS:
+        res = subprocess.run(["powershell", "-Command", cmd], capture_output=True, text=True, timeout=timeout)
+        return res.stdout.strip()
+    else:
+        full_cmd = ["ssh", GPU_SSH, cmd]
+        res = subprocess.run(full_cmd, capture_output=True, text=True, timeout=timeout)
+        return res.stdout.strip()
+
 def run_ssh(cmd: str, timeout: int = 15) -> str:
-    """Run an SSH command on the GPU server."""
-    full_cmd = ["ssh", GPU_SSH, cmd]
-    res = subprocess.run(full_cmd, capture_output=True, text=True, timeout=timeout)
-    return res.stdout.strip()
+    """Alias for backwards compatibility."""
+    return run_command_smart(cmd, timeout=timeout)
 
 def get_free_vram_gb() -> float:
     """Query nvidia-smi for free VRAM in GB."""
     try:
-        raw = run_ssh("nvidia-smi --query-gpu=memory.free --format=csv,nounits,noheader", timeout=10)
+        if IS_WINDOWS:
+            raw = subprocess.run(["nvidia-smi", "--query-gpu=memory.free", "--format=csv,nounits,noheader"], capture_output=True, text=True, timeout=10).stdout.strip()
+        else:
+            raw = run_ssh("nvidia-smi --query-gpu=memory.free --format=csv,nounits,noheader", timeout=10)
         return float(raw.splitlines()[0].strip()) / 1024.0
     except Exception as e:
         logger.warning(f"Failed to query VRAM: {e}")
@@ -116,10 +129,10 @@ def get_active_kd_processes() -> List[Dict[str, str]]:
     """Return list of active kd_quick_test python processes."""
     try:
         ps_cmd = (
-            'powershell -Command "Get-WmiObject Win32_Process -Filter \\"CommandLine like \'%kd_quick_test.py%\' and Name = \'python.exe\'\\" | '
-            'Select-Object ProcessId, CommandLine | ConvertTo-Json"'
+            'Get-WmiObject Win32_Process -Filter "CommandLine like \'%kd_quick_test.py%\' and Name = \'python.exe\'" | '
+            'Select-Object ProcessId, CommandLine | ConvertTo-Json'
         )
-        out = run_ssh(ps_cmd, timeout=12)
+        out = run_command_smart(ps_cmd, timeout=12)
         if not out:
             return []
         data = json.loads(out)
@@ -135,10 +148,17 @@ def get_active_kd_processes() -> List[Dict[str, str]]:
         return []
 
 def get_registry_data() -> Dict[str, Any]:
-    """Fetch remote registry.json."""
+    """Fetch registry.json either locally on Windows or via SSH."""
     try:
-        raw = run_ssh(f"powershell -Command \"Get-Content -Raw '{REMOTE_RESULTS}/registry.json'\"", timeout=15)
-        return json.loads(raw)
+        if IS_WINDOWS:
+            reg_path = Path(REMOTE_RESULTS) / "registry.json"
+            if reg_path.exists():
+                with open(reg_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            return {"runs": []}
+        else:
+            raw = run_ssh(f"powershell -Command \"Get-Content -Raw '{REMOTE_RESULTS}/registry.json'\"", timeout=15)
+            return json.loads(raw)
     except Exception as e:
         logger.warning(f"Could not load registry.json: {e}")
         return {"runs": []}
@@ -191,7 +211,8 @@ def launch_kd_run(
 ) -> str:
     """Launch a single KD run detached on Windows server."""
     ts = int(time.time())
-    remote_log = f"{PROJECT_DIR}/logs/kd_sched_{module}_{ts}.log"
+    remote_out = f"{PROJECT_DIR}/logs/kd_sched_{module}_{ts}_out.log"
+    remote_err = f"{PROJECT_DIR}/logs/kd_sched_{module}_{ts}_err.log"
     arg_list = (
         f"Codes/experiments/kd_quick_test.py "
         f"--module {module} --train_scope mamba --methods C "
@@ -202,23 +223,23 @@ def launch_kd_run(
         f"--no-cosine-lr"
     )
     cmd = (
-        f'powershell -Command "Set-Location -Path \'{PROJECT_DIR}\'; '
+        f'Set-Location -Path \'{PROJECT_DIR}\'; '
         f'Start-Process -FilePath \'python\' -ArgumentList \'{arg_list}\' '
         f'-WorkingDirectory \'{PROJECT_DIR}\' '
-        f'-RedirectStandardOutput \'{remote_log}\' -RedirectStandardError \'{remote_log}\'"'
+        f'-RedirectStandardOutput \'{remote_out}\' -RedirectStandardError \'{remote_err}\''
     )
-    run_ssh(cmd, timeout=12)
-    logger.info(f"Launched {module} (steps={recovery_steps}, seq={seq_len}) -> log: {remote_log}")
-    return remote_log
+    run_command_smart(cmd, timeout=12)
+    logger.info(f"Launched {module} (steps={recovery_steps}, seq={seq_len}) -> log: {remote_out}")
+    return remote_out
 
 def kill_kd_processes():
     """Kill all hanging kd_quick_test python processes on the GPU."""
     try:
         ps_cmd = (
-            'powershell -Command "Get-WmiObject Win32_Process -Filter \\"CommandLine like \'%kd_quick_test.py%\' and Name = \'python.exe\'\\" | '
-            'ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"'
+            'Get-WmiObject Win32_Process -Filter "CommandLine like \'%kd_quick_test.py%\' and Name = \'python.exe\'" | '
+            'ForEach-Object { Stop-Process -Id $_.ProcessId -Force }'
         )
-        run_ssh(ps_cmd, timeout=10)
+        run_command_smart(ps_cmd, timeout=10)
     except Exception as e:
         logger.warning(f"Error killing KD processes: {e}")
 
@@ -252,7 +273,9 @@ def wait_for_batch(active_modules: List[str], poll_sec: int = 15, timeout_min: i
     return False
 
 def sync_results():
-    """Pull updated registry and results to local directory."""
+    """Pull updated registry and results to local directory if on remote client."""
+    if IS_WINDOWS:
+        return
     try:
         subprocess.run(["scp", f"{GPU_SSH}:{REMOTE_RESULTS}/registry.json", str(LOCAL_RESULTS / "registry.json")], check=True)
     except Exception as e:
