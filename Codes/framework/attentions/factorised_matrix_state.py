@@ -30,6 +30,15 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
+try:
+    from framework.core.triton_kernels.fms_scan import fms_scan_triton, MAX_REGISTER_DIM
+    HAS_TRITON_FMS = True
+except Exception as _e:
+    logger.warning("FMS Triton unavailable: %s", _e)
+    HAS_TRITON_FMS = False
+    MAX_REGISTER_DIM = 64
+
+
 
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     r"""Expands grouped key/value heads to match query heads."""
@@ -477,6 +486,15 @@ class FactorisedMatrixState(BaseAttention):
         achieving true linear O(L) time and memory complexity without O(L^2) materialization.
         """
         B, H, L, d = q.shape
+
+        if HAS_TRITON_FMS and q.is_cuda and d <= MAX_REGISTER_DIM and mask is None and not reverse:
+            try:
+                decay_scalar = decay.float().clamp(min=1e-4, max=1.0 - 1e-4).squeeze()
+                if decay_scalar.dim() == 0:
+                    decay_scalar = decay_scalar.repeat(H)
+                return fms_scan_triton(q, k, v, decay_scalar).to(q.dtype)
+            except Exception as e:
+                logger.debug("FMS Triton failed, falling back: %s", e)
 
         # Positive kernel feature mapping to guarantee non-negative attention weights
         q_f = F.elu(q.float()) + 1.0
