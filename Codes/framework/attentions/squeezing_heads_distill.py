@@ -1,18 +1,34 @@
 """
-Squeezing Heads Attention Distillation Layer.
-Multi-head attention wrapper designed for knowledge distillation and head capacity compression experiments.
+Squeezing Heads Attention Distillation Layer (v2, Real Head Compression).
 
-Hardened for production use across diverse transformer architectures:
-- DistilBERT (Flat MHA)
-- RoBERTa / BERT (Nested Encoder Self-Attention)
-- GPT-2 (Causal Decoder with Conv1D)
-- Qwen / LLaMA (GQA with Rotary Position Embeddings)
+Multi-head attention wrapper that truly compresses Q/O projections by
+keeping only the top-k most important heads, selected from pretrained Q/K/V.
 
+Fixes (v2):
+  SQ2-FIX-01  Real head compression: Q and O are sized to num_kept_heads,
+              not num_heads. `head_keep_ratio` is derived from `rank`
+              when not explicitly provided.
+  SQ2-FIX-02  Head importance scoring from pretrained weights:
+              score(h) = ||W_q[h]||_F + ||W_k[h]||_F + ||W_v[h]||_F.
+              Top-k heads are selected per layer.
+  SQ2-FIX-03  copy_weights copies only kept head slices.
+  SQ2-FIX-04  KV projections preserve all num_kv_heads (GQA-compatible).
+              Kept Q heads are matched to KV heads via GQA grouping.
+  SQ2-FIX-05  Honest compression reporting: `compression_rate` reflects
+              real parameter reduction, not LoRA addition.
+  SQ2-FIX-06  Nested encoder detection unified.
+  SQ2-FIX-07  Causal mask offset-aware.
+  SQ2-FIX-08  SDPA fast path with correct attn_mask + is_causal.
+  SQ2-FIX-09  Strict output dim check.
+  SQ2-FIX-10  No silent `min()` truncation — shape mismatches raise.
+  SQ2-FIX-11  Idempotency guard.
+  SQ2-FIX-12  head_mask broadcasting safe.
+  SQ2-FIX-13  Dropout applied before head_mask (matches HF).
 """
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -23,6 +39,8 @@ from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
+logger = logging.getLogger(__name__)
+
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if cfg is None:
@@ -32,20 +50,16 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-logger = logging.getLogger(__name__)
-
-
 # ===========================================================================
-# RoPE
+# RoPE (dtype-safe)
 # ===========================================================================
-
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     d = x.shape[-1]
     rotary_dim = 2 * (d // 2)
     if rotary_dim == 0:
         return x
     x1 = x[..., : rotary_dim // 2]
-    x2 = x[..., rotary_dim // 2 : rotary_dim]
+    x2 = x[..., rotary_dim // 2: rotary_dim]
     rotated = torch.cat((-x2, x1), dim=-1)
     if rotary_dim < d:
         return torch.cat((rotated, x[..., rotary_dim:]), dim=-1)
@@ -58,18 +72,15 @@ def apply_rotary_pos_emb(
     cos: torch.Tensor,
     sin: torch.Tensor,
     position_ids: Optional[torch.Tensor] = None,
-    unsqueeze_dim: int = 1,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
-
     if cos.dim() == 2:
         cos = cos.unsqueeze(0).unsqueeze(1)
         sin = sin.unsqueeze(0).unsqueeze(1)
     elif cos.dim() == 3:
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
-
     while cos.dim() < q.dim():
         cos = cos.unsqueeze(0)
         sin = sin.unsqueeze(0)
@@ -87,23 +98,15 @@ def apply_rotary_pos_emb(
     cos_k = cos[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
     sin_k = sin[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
 
-    q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
-    k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
+    q_rot_emb = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
+    k_rot_emb = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
 
-    q_out = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot_embed
-    k_out = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot_embed
+    q_out = torch.cat([q_rot_emb, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot_emb
+    k_out = torch.cat([k_rot_emb, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot_emb
     return q_out, k_out
 
 
-# ===========================================================================
-# Decoder detection helper
-# ===========================================================================
-
-def _detect_decoder(
-    config: Any,
-    is_decoder: Optional[bool],
-    old_attn: Optional[nn.Module],
-) -> bool:
+def _detect_decoder(config, is_decoder, old_attn):
     if is_decoder is not None:
         return bool(is_decoder)
     if config is not None:
@@ -126,24 +129,14 @@ def _detect_decoder(
 # ===========================================================================
 # LoRALinear
 # ===========================================================================
-
 class LoRALinear(nn.Module):
-    """Linear projection with frozen base weights and trainable LoRA adapters."""
-
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        bias: bool = True,
-        lora_rank: int = 0,
-        lora_alpha: float = 1.0,
-        freeze_base: bool = True,
-    ):
+    def __init__(self, in_features, out_features, bias=True,
+                 lora_rank=0, lora_alpha=1.0, freeze_base=True):
         super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.lora_rank = lora_rank
-        self.lora_alpha = lora_alpha
+        self.in_features = int(in_features)
+        self.out_features = int(out_features)
+        self.lora_rank = int(lora_rank)
+        self.lora_alpha = float(lora_alpha)
         self.scaling = lora_alpha / max(1, lora_rank)
 
         self.weight = nn.Parameter(torch.empty(out_features, in_features))
@@ -158,11 +151,10 @@ class LoRALinear(nn.Module):
             bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
             nn.init.uniform_(self.bias, -bound, bound)
 
-        if lora_rank > 0:
+        if self.lora_rank > 0:
             self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
+            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B)
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -172,7 +164,7 @@ class LoRALinear(nn.Module):
             if self.bias is not None:
                 self.bias.requires_grad = False
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x):
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
@@ -183,15 +175,32 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 # Main Attention
 # ===========================================================================
-
-@ATTENTION_REGISTRY.register("squeezing_heads_distiller", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("squeezing_heads_distill", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("squeezing_heads", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("squeezing_heads_module", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("squeezing_heads_distiller",
+                              supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("squeezing_heads_distill",
+                              supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("squeezing_heads",
+                              supports_causal=True, supports_gqa=True)
 class SqueezingHeadsDistiller(BaseAttention):
-    r"""Attention layer wrapper for multi-head distillation and compression studies."""
+    """
+    Attention wrapper that keeps only the top-k most important heads
+    (based on pretrained Q/K/V Frobenius norms) while preserving GQA structure.
 
+    Effective head count:
+        num_kept_heads = round(head_keep_ratio * num_heads)
+        q_head_size   = num_kept_heads * head_dim
+        out_head_size = num_kept_heads * head_dim
+
+    KV projections preserve all num_kv_heads (GQA). Kept Q heads are grouped
+    to matching KV heads via GQA index mapping.
+
+    Parameter reduction:
+        Q : num_heads   * head_dim * hidden  →  num_kept_heads * head_dim * hidden
+        O : hidden * num_heads * head_dim    →  hidden * num_kept_heads * head_dim
+        K/V: unchanged (GQA-compatible)
+    """
     supports_gqa: bool = True
+    supports_causal: bool = True
     is_custom_attention: bool = True
 
     def __init__(
@@ -199,6 +208,7 @@ class SqueezingHeadsDistiller(BaseAttention):
         config: Optional[Any] = None,
         old_attn: Optional[nn.Module] = None,
         rank: Optional[int] = None,
+        head_keep_ratio: Optional[float] = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         is_decoder: Optional[bool] = None,
@@ -206,15 +216,13 @@ class SqueezingHeadsDistiller(BaseAttention):
     ) -> None:
         super().__init__(config, rank)
 
-        # 1. Dimensions
-        self.hidden_size: int = int(_cfg_get(
-            config, "hidden_size", kwargs.get("hidden_size", 768)
-        ))
-        self.num_heads: int = int(_cfg_get(
-            config,
-            "num_attention_heads",
-            _cfg_get(config, "num_heads", kwargs.get("num_attention_heads", 12)),
-        ))
+        # ---- 1. Dimensions ----
+        self.hidden_size = int(_cfg_get(config, "hidden_size",
+                                kwargs.get("hidden_size", 768)))
+        self.num_heads = int(_cfg_get(config, "num_attention_heads",
+                              _cfg_get(config, "num_heads",
+                              kwargs.get("num_attention_heads", 12))))
+
         cfg_hd = _cfg_get(config, "head_dim", None)
         kw_hd = kwargs.get("head_dim", None)
         if cfg_hd is not None:
@@ -233,43 +241,69 @@ class SqueezingHeadsDistiller(BaseAttention):
         else:
             self.head_dim = self.hidden_size // max(1, self.num_heads)
 
-        cfg_kv = _cfg_get(
-            config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None)
-        )
+        cfg_kv = _cfg_get(config, "num_key_value_heads",
+                          _cfg_get(config, "num_kv_heads", None))
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
             self.num_kv_heads = int(kwargs["num_kv_heads"])
         else:
             self.num_kv_heads = self.num_heads
-
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
-        self.kv_repeat: int = max(1, self.num_heads // self.num_kv_heads)
-        self.kv_head_size: int = self.num_kv_heads * self.head_dim
-        self.q_head_size: int = self.num_heads * self.head_dim
-        self.all_head_size: int = self.q_head_size
 
-        # 2. Decoder detection (SQ-FIX: unified helper)
+        # ---- 2. Compute num_kept_heads ----
+        # SQ2-FIX-01: derive head_keep_ratio from `rank` if not explicitly given.
+        if head_keep_ratio is not None:
+            hkr = float(head_keep_ratio)
+        elif rank is not None and rank > 0:
+            # If rank <= num_heads, interpret as "keep this many heads"
+            if rank <= self.num_heads:
+                hkr = float(rank) / float(self.num_heads)
+            else:
+                # Otherwise interpret as "target head_dim"
+                effective_hd = min(int(rank), self.head_dim)
+                hkr = float(effective_hd) / float(self.head_dim)
+        else:
+            hkr = 1.0
+        self.head_keep_ratio = max(1.0 / self.num_heads, min(1.0, hkr))
+
+        self.num_kept_heads = max(
+            1, min(self.num_heads,
+                   int(round(self.num_heads * self.head_keep_ratio)))
+        )
+        self.head_keep_ratio = self.num_kept_heads / self.num_heads
+
+        self.kept_q_head_size = self.num_kept_heads * self.head_dim
+        self.kv_head_size = self.num_kv_heads * self.head_dim
+        self.all_head_size = self.kept_q_head_size
+
+        # GQA mapping: which KV head does each kept Q head map to?
+        # Kept heads are the top-k by importance; we must remember their original indices.
+        self.num_kv_groups = max(1, self.num_heads // self.num_kv_heads)
+        self.kept_head_indices: Optional[torch.Tensor] = None  # filled by copy_weights
+
+        # ---- 3. Decoder detection ----
         self.is_decoder = _detect_decoder(config, is_decoder, old_attn)
         self.is_causal = self.is_decoder
-        self.is_nested_encoder: bool = False
+        self.is_nested_encoder = False
 
         self.lora_rank = int(lora_rank if lora_rank is not None else 16)
         self.lora_alpha = float(lora_alpha)
 
-        # 3. Projections
-        self.q_proj = LoRALinear(self.hidden_size, self.q_head_size, bias=True,
-                                 lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                 freeze_base=True)
-        self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True,
-                                 lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                 freeze_base=True)
-        self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True,
-                                 lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                 freeze_base=True)
-        self.out_proj = LoRALinear(self.q_head_size, self.hidden_size, bias=True,
-                                   lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                   freeze_base=True)
+        # ---- 4. Projections ----
+        # SQ2-FIX-01: Q and O are sized to num_kept_heads, not num_heads.
+        self.q_proj = LoRALinear(self.hidden_size, self.kept_q_head_size,
+                                  bias=True, lora_rank=self.lora_rank,
+                                  lora_alpha=self.lora_alpha, freeze_base=True)
+        self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size,
+                                  bias=True, lora_rank=self.lora_rank,
+                                  lora_alpha=self.lora_alpha, freeze_base=True)
+        self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size,
+                                  bias=True, lora_rank=self.lora_rank,
+                                  lora_alpha=self.lora_alpha, freeze_base=True)
+        self.out_proj = LoRALinear(self.kept_q_head_size, self.hidden_size,
+                                    bias=True, lora_rank=self.lora_rank,
+                                    lora_alpha=self.lora_alpha, freeze_base=True)
 
         dropout_p = float(
             getattr(config, "dropout",
@@ -278,6 +312,7 @@ class SqueezingHeadsDistiller(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
+        # ---- 5. Copy weights from source ----
         src_attn = old_attn if old_attn is not None else kwargs.get("pretrained_attn", None)
         if src_attn is not None:
             self.copy_weights(src_attn)
@@ -307,14 +342,76 @@ class SqueezingHeadsDistiller(BaseAttention):
     def c_proj(self): return self.out_proj
 
     # ------------------------------------------------------------------
-    # copy_weights (SQ-FIX-01, SQ-FIX-05)
+    # Head importance: SQ2-FIX-02
+    # ------------------------------------------------------------------
+    def _compute_head_importance(
+        self,
+        w_q: Optional[torch.Tensor],
+        w_k: Optional[torch.Tensor],
+        w_v: Optional[torch.Tensor],
+    ) -> torch.Tensor:
+        """
+        Compute per-head importance as the sum of Frobenius norms of the
+        corresponding Q, K, V slices.
+
+        Returns: (num_heads,) tensor of importance scores.
+        """
+        H = self.num_heads
+        D = self.head_dim
+        device = None
+        for w in (w_q, w_k, w_v):
+            if w is not None:
+                device = w.device
+                break
+        if device is None:
+            device = torch.device("cpu")
+
+        score = torch.zeros(H, device=device, dtype=torch.float32)
+
+        if w_q is not None and w_q.shape[0] >= H * D:
+            w_q_heads = w_q[: H * D].view(H, D, -1)
+            score += w_q_heads.float().pow(2).sum(dim=(1, 2))
+
+        if w_k is not None and w_k.shape[0] >= self.num_kv_heads * D:
+            # K has num_kv_heads; expand each KV head to the Q heads it serves.
+            w_k_heads = w_k[: self.num_kv_heads * D].view(self.num_kv_heads, D, -1)
+            k_score = w_k_heads.float().pow(2).sum(dim=(1, 2))  # (num_kv_heads,)
+            # Repeat each KV head `num_kv_groups` times to align with Q heads.
+            rep = self.num_kv_groups
+            k_expanded = k_score.repeat_interleave(rep)
+            if k_expanded.numel() < H:
+                k_expanded = k_expanded.repeat(
+                    (H + k_expanded.numel() - 1) // k_expanded.numel()
+                )[:H]
+            else:
+                k_expanded = k_expanded[:H]
+            score += k_expanded
+
+        if w_v is not None and w_v.shape[0] >= self.num_kv_heads * D:
+            w_v_heads = w_v[: self.num_kv_heads * D].view(self.num_kv_heads, D, -1)
+            v_score = w_v_heads.float().pow(2).sum(dim=(1, 2))
+            rep = self.num_kv_groups
+            v_expanded = v_score.repeat_interleave(rep)
+            if v_expanded.numel() < H:
+                v_expanded = v_expanded.repeat(
+                    (H + v_expanded.numel() - 1) // v_expanded.numel()
+                )[:H]
+            else:
+                v_expanded = v_expanded[:H]
+            score += v_expanded
+
+        return score
+
+    # ------------------------------------------------------------------
+    # copy_weights with head selection
     # ------------------------------------------------------------------
     def copy_weights(self, old_attn: nn.Module) -> None:
         with torch.no_grad():
             w_q = b_q = w_k = b_k = w_v = b_v = w_o = b_o = None
 
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
-            has_out_lin = hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj")
+            has_out_lin = any(hasattr(old_attn, a) for a in
+                              ("out_lin", "c_proj", "o_proj"))
             if has_out_lin:
                 self.is_nested_encoder = False
             elif (hasattr(old_attn, "self")
@@ -327,21 +424,24 @@ class SqueezingHeadsDistiller(BaseAttention):
             else:
                 self.is_nested_encoder = False
 
+            # Determine nested container vs flat
             if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
                 src = old_attn.self
                 if hasattr(old_attn.output, "dense"):
-                    w_o = old_attn.output.dense.weight.detach()
-                    b_o = old_attn.output.dense.bias.detach() if old_attn.output.dense.bias is not None else None
+                    dense = old_attn.output.dense
+                    w_o = dense.weight.detach()
+                    b_o = dense.bias.detach() if dense.bias is not None else None
             else:
                 src = old_attn
 
-            # Pattern 1: GPT-2 fused c_attn
+            # ---- Pattern 1: GPT-2 fused c_attn ----
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
                 c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                p_cls = getattr(src.c_attn, "__class__", type(src.c_attn)).__name__
+                p_cls = src.c_attn.__class__.__name__
                 if ("Conv1D" in p_cls) or hasattr(src.c_attn, "nf") or (
-                    c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size
+                    c_attn_w.shape[0] == self.hidden_size
+                    and c_attn_w.shape[1] != self.hidden_size
                 ):
                     c_attn_w = c_attn_w.t().contiguous()
 
@@ -355,15 +455,16 @@ class SqueezingHeadsDistiller(BaseAttention):
                     b_v = c_attn_b[2 * H: 3 * H]
 
                 out_w = src.c_proj.weight.detach()
-                p_proj_cls = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
+                p_proj_cls = src.c_proj.__class__.__name__
                 if ("Conv1D" in p_proj_cls) or hasattr(src.c_proj, "nf") or (
-                    out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size
+                    out_w.shape[0] == self.hidden_size
+                    and out_w.shape[1] != self.hidden_size
                 ):
                     out_w = out_w.t().contiguous()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
-            # Pattern 2: RoBERTa / BERT
+            # ---- Pattern 2: BERT/RoBERTa nested ----
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
@@ -379,7 +480,7 @@ class SqueezingHeadsDistiller(BaseAttention):
                             b_o = proj.bias.detach() if proj.bias is not None else None
                             break
 
-            # Pattern 3: Qwen / LLaMA
+            # ---- Pattern 3: Qwen/LLaMA ----
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.detach()
                 b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
@@ -391,7 +492,7 @@ class SqueezingHeadsDistiller(BaseAttention):
                     w_o = src.o_proj.weight.detach()
                     b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
 
-            # Pattern 4: DistilBERT
+            # ---- Pattern 4: DistilBERT ----
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.detach()
                 b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
@@ -403,25 +504,24 @@ class SqueezingHeadsDistiller(BaseAttention):
                     w_o = src.out_lin.weight.detach()
                     b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
 
-            # Fallback
+            # ---- Fallback: UniversalAdapter ----
             if w_q is None or w_k is None or w_v is None:
                 try:
                     adapter = UniversalAdapter(old_attn)
                     extracted = adapter.extract_qkv_out()
                     if extracted:
-                        if w_q is None: w_q = extracted.get("q_weight")
-                        if b_q is None: b_q = extracted.get("q_bias")
-                        if w_k is None: w_k = extracted.get("k_weight")
-                        if b_k is None: b_k = extracted.get("k_bias")
-                        if w_v is None: w_v = extracted.get("v_weight")
-                        if b_v is None: b_v = extracted.get("v_bias")
+                        w_q = w_q if w_q is not None else extracted.get("q_weight")
+                        b_q = b_q if b_q is not None else extracted.get("q_bias")
+                        w_k = w_k if w_k is not None else extracted.get("k_weight")
+                        b_k = b_k if b_k is not None else extracted.get("k_bias")
+                        w_v = w_v if w_v is not None else extracted.get("v_weight")
+                        b_v = b_v if b_v is not None else extracted.get("v_bias")
                         if w_o is None:
                             w_o = extracted.get("out_weight")
                             b_o = extracted.get("out_bias")
                 except Exception as e:
                     logger.debug("UniversalAdapter fallback failed: %s", e)
 
-            # SQ-FIX-01: raise on missing mandatory projections (no None.shape crash).
             missing = [n for n, w in (("q", w_q), ("k", w_k), ("v", w_v)) if w is None]
             if missing:
                 raise RuntimeError(
@@ -432,104 +532,131 @@ class SqueezingHeadsDistiller(BaseAttention):
             # Frobenius checks
             for name, w in (("w_q", w_q), ("w_k", w_k), ("w_v", w_v)):
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
-                    logger.warning(f"SqueezingHeadsDistiller: {name} near-zero Frobenius norm")
+                    logger.warning("SqueezingHeadsDistiller: %s near-zero Frobenius norm", name)
 
-            # ---- Copy Q ----
+            # ---- Head importance & selection: SQ2-FIX-02 ----
+            importance = self._compute_head_importance(w_q, w_k, w_v)  # (num_heads,)
+            num_kept = self.num_kept_heads
+            if num_kept < self.num_heads:
+                kept_idx, _ = torch.topk(importance, num_kept, largest=True)
+                kept_idx, _ = torch.sort(kept_idx)  # stable
+            else:
+                kept_idx = torch.arange(self.num_heads, device=importance.device)
+            self.kept_head_indices = kept_idx.to(torch.long).cpu()
+
+            logger.debug(
+                "SqueezingHeadsDistiller: keeping %d/%d heads (indices=%s)",
+                num_kept, self.num_heads, kept_idx.tolist(),
+            )
+
+            # ---- Build Q slices for kept heads ----
+            D = self.head_dim
+            H = self.num_heads
+            w_q_heads = w_q[: H * D].view(H, D, -1)  # (H, D, hidden)
+            b_q_heads = None
+            if b_q is not None and b_q.shape[0] >= H * D:
+                b_q_heads = b_q[: H * D].view(H, D)
+
+            kept_q_w = w_q_heads[kept_idx].reshape(num_kept * D, w_q_heads.shape[-1])
             self.q_proj.weight.zero_()
-            m_q_out = min(self.q_head_size, w_q.shape[0])
-            m_q_in = min(self.hidden_size, w_q.shape[1])
-            self.q_proj.weight[:m_q_out, :m_q_in].copy_(w_q[:m_q_out, :m_q_in].to(self.q_proj.weight.dtype))
-            if b_q is not None and self.q_proj.bias is not None:
-                m_bq = min(self.q_proj.bias.shape[0], b_q.shape[0])
+            self.q_proj.weight.copy_(kept_q_w.to(self.q_proj.weight.dtype))
+
+            if b_q_heads is not None and self.q_proj.bias is not None:
+                kept_q_b = b_q_heads[kept_idx].reshape(num_kept * D)
                 self.q_proj.bias.zero_()
-                self.q_proj.bias[:m_bq].copy_(b_q[:m_bq].to(self.q_proj.bias.dtype))
+                self.q_proj.bias.copy_(kept_q_b.to(self.q_proj.bias.dtype))
 
-            # ---- Copy K with optional GQA pooling (SQ-FIX-05) ----
-            self._copy_kv_proj(self.k_proj, w_k, b_k)
-            self._copy_kv_proj(self.v_proj, w_v, b_v)
+            # ---- K, V: copy ALL num_kv_heads (GQA-safe) ----
+            self._copy_kv_full(self.k_proj, w_k, b_k)
+            self._copy_kv_full(self.v_proj, w_v, b_v)
 
-            # ---- Copy O ----
+            # ---- Output projection ----
+            # O must map from kept_q_head_size back to hidden.
             if self.is_nested_encoder:
+                # Nested encoder bypasses out_proj entirely.
                 nn.init.eye_(self.out_proj.weight)
                 if self.out_proj.bias is not None:
                     nn.init.zeros_(self.out_proj.bias)
             elif w_o is not None:
-                if w_o.shape == self.out_proj.weight.shape:
-                    self.out_proj.weight.copy_(w_o.to(self.out_proj.weight.dtype))
-                elif w_o.t().contiguous().shape == self.out_proj.weight.shape:
-                    self.out_proj.weight.copy_(w_o.t().contiguous().to(self.out_proj.weight.dtype))
-                else:
+                # w_o shape: (hidden, num_heads*D). Take kept head columns.
+                if w_o.shape == (self.hidden_size, H * D):
+                    w_o_heads = w_o.view(self.hidden_size, H, D)
+                    kept_o_w = w_o_heads[:, kept_idx, :].reshape(self.hidden_size, num_kept * D)
                     self.out_proj.weight.zero_()
-                    m_out = min(self.hidden_size, w_o.shape[0])
-                    m_in = min(self.q_head_size, w_o.shape[1])
-                    self.out_proj.weight[:m_out, :m_in].copy_(
-                        w_o[:m_out, :m_in].to(self.out_proj.weight.dtype)
+                    self.out_proj.weight.copy_(kept_o_w.to(self.out_proj.weight.dtype))
+                elif w_o.shape == (H * D, self.hidden_size):
+                    # Transposed
+                    w_o_t = w_o.t().contiguous()
+                    w_o_heads = w_o_t.view(self.hidden_size, H, D)
+                    kept_o_w = w_o_heads[:, kept_idx, :].reshape(self.hidden_size, num_kept * D)
+                    self.out_proj.weight.zero_()
+                    self.out_proj.weight.copy_(kept_o_w.to(self.out_proj.weight.dtype))
+                else:
+                    raise RuntimeError(
+                        f"SqueezingHeadsDistiller: unexpected w_o shape "
+                        f"{tuple(w_o.shape)}; expected "
+                        f"({self.hidden_size}, {H * D}) or ({H * D}, {self.hidden_size})."
                     )
                 if b_o is not None and self.out_proj.bias is not None:
-                    m_bo = min(self.out_proj.bias.shape[0], b_o.shape[0])
+                    m = min(self.out_proj.bias.shape[0], b_o.shape[0])
                     self.out_proj.bias.zero_()
-                    self.out_proj.bias[:m_bo].copy_(b_o[:m_bo].to(self.out_proj.bias.dtype))
+                    self.out_proj.bias[:m].copy_(b_o[:m].to(self.out_proj.bias.dtype))
 
-    def _copy_kv_proj(self, target: LoRALinear, w: torch.Tensor, b: Optional[torch.Tensor]) -> None:
-        """Copy KV projection with GQA pooling or principal-slice fallback."""
+    # ------------------------------------------------------------------
+    # K/V copy helper: preserve ALL KV heads
+    # ------------------------------------------------------------------
+    def _copy_kv_full(self, target: LoRALinear, w: torch.Tensor,
+                       b: Optional[torch.Tensor]) -> None:
+        """Copy the full KV projection, sized to num_kv_heads * head_dim.
+
+        Handles source having num_heads heads by mean-pooling to num_kv_heads
+        (i.e., converting MHA → GQA). Never truncates heads silently.
+        """
         target.weight.zero_()
         if b is not None and target.bias is not None:
             target.bias.zero_()
 
-        target_out = target.weight.shape[0]   # kv_head_size
-        target_in = target.weight.shape[1]    # hidden_size
+        target_out = target.weight.shape[0]
+        target_in = target.weight.shape[1]
+        D = self.head_dim
 
-        # Case A: exact match
+        # Case A: exact shape match
         if w.shape[0] == target_out and w.shape[1] == target_in:
             target.weight.copy_(w.to(target.weight.dtype))
             if b is not None and target.bias is not None and b.shape[0] == target_out:
                 target.bias.copy_(b.to(target.bias.dtype))
             return
 
-        # Case B: GQA pooling (SQ-FIX-05): source has more heads, mean-pool them.
-        src_heads_total = w.shape[0]
-        if (src_heads_total > target_out
-                and src_heads_total % target_out == 0
-                and src_heads_total % self.head_dim == 0
-                and target_out % self.head_dim == 0
-                and w.shape[1] >= target_in):
-            rep = src_heads_total // target_out
-            w_slice = w[:, :target_in].contiguous()
-            w_pooled = (
-                w_slice.view(self.num_kv_heads, rep, self.head_dim, target_in)
-                .mean(dim=1)
-                .reshape(target_out, target_in)
-            )
-            target.weight.copy_(w_pooled.to(target.weight.dtype))
-            if b is not None and target.bias is not None:
-                if b.shape[0] == src_heads_total:
-                    b_pooled = (
-                        b.view(self.num_kv_heads, rep, self.head_dim)
-                        .mean(dim=1)
-                        .reshape(target_out)
-                    )
+        # Case B: source has more heads (MHA → GQA pooling)
+        src_out = w.shape[0]
+        if (src_out > target_out
+                and src_out % D == 0
+                and target_out % D == 0):
+            src_heads = src_out // D
+            tgt_heads = target_out // D
+            if src_heads % tgt_heads == 0:
+                rep = src_heads // tgt_heads
+                w_heads = w[:, :target_in].reshape(src_heads, D, target_in)
+                w_pooled = w_heads.view(tgt_heads, rep, D, target_in).mean(dim=1)
+                w_pooled = w_pooled.reshape(target_out, target_in)
+                target.weight.copy_(w_pooled.to(target.weight.dtype))
+                if b is not None and target.bias is not None:
+                    b_heads = b.reshape(src_heads, D)
+                    b_pooled = b_heads.view(tgt_heads, rep, D).mean(dim=1).reshape(target_out)
                     target.bias.copy_(b_pooled.to(target.bias.dtype))
-                else:
-                    m = min(target.bias.shape[0], b.shape[0])
-                    target.bias[:m].copy_(b[:m].to(target.bias.dtype))
-            return
+                return
 
-        # Case C: principal-slice fallback
-        m_out = min(target_out, w.shape[0])
-        m_in = min(target_in, w.shape[1])
-        target.weight[:m_out, :m_in].copy_(w[:m_out, :m_in].to(target.weight.dtype))
-        if b is not None and target.bias is not None:
-            m_b = min(target.bias.shape[0], b.shape[0])
-            target.bias[:m_b].copy_(b[:m_b].to(target.bias.dtype))
+        # Case C: shape mismatch we cannot resolve
+        raise RuntimeError(
+            f"SqueezingHeadsDistiller: cannot map K/V weight from "
+            f"{tuple(w.shape)} to target {tuple(target.weight.shape)}."
+        )
 
     # ------------------------------------------------------------------
-    # Mask helper (SQ-FIX-13)
+    # Mask helper
     # ------------------------------------------------------------------
     @staticmethod
-    def _prepare_valid_mask(
-        attention_mask: Optional[torch.Tensor],
-        B: int, N_kv: int, device: torch.device,
-    ) -> Optional[torch.Tensor]:
+    def _prepare_valid_mask(attention_mask, B, N_kv, device):
         if attention_mask is None:
             return None
         if attention_mask.dim() == 2:
@@ -547,6 +674,23 @@ class SqueezingHeadsDistiller(BaseAttention):
                 v = attention_mask > 0
             return v.any(dim=-2).squeeze(1)
         raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
+
+    # ------------------------------------------------------------------
+    # KV-cache helper
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _read_past_kv(past_key_value, layer_idx=0):
+        if past_key_value is None:
+            return None, None, 0
+        if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
+            idx = min(layer_idx, len(past_key_value.key_cache) - 1)
+            k = past_key_value.key_cache[idx]
+            v = past_key_value.value_cache[idx]
+            return k, v, k.shape[-2]
+        if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
+            k, v = past_key_value[0], past_key_value[1]
+            return k, v, k.shape[-2]
+        return None, None, 0
 
     # ------------------------------------------------------------------
     # Forward
@@ -574,35 +718,29 @@ class SqueezingHeadsDistiller(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         L_kv_new = kv_input.shape[1]
 
-        q = self.q_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k_new = self.k_proj(kv_input).view(B, L_kv_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        v_new = self.v_proj(kv_input).view(B, L_kv_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        # ---- Projections ----
+        q = self.q_proj(hidden_states).view(
+            B, L, self.num_kept_heads, self.head_dim
+        ).transpose(1, 2).contiguous()
+        k_new = self.k_proj(kv_input).view(
+            B, L_kv_new, self.num_kv_heads, self.head_dim
+        ).transpose(1, 2).contiguous()
+        v_new = self.v_proj(kv_input).view(
+            B, L_kv_new, self.num_kv_heads, self.head_dim
+        ).transpose(1, 2).contiguous()
 
-        # ---- RoPE with past offset (SQ-FIX-10) ----
+        # ---- RoPE ----
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings", None)
+        past_k_probe, _, past_len_rope = self._read_past_kv(past_key_value, layer_idx)
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
-            past_len_rope = 0
-            if past_key_value is not None:
-                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
-                    past_len_rope = past_key_value[0].shape[-2]
-                elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
-                    past_len_rope = past_key_value.key_cache[0].shape[-2]
             cos = cos[..., past_len_rope: past_len_rope + L, :]
             sin = sin[..., past_len_rope: past_len_rope + L, :]
             q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin)
 
-        # ---- KV-cache (SQ-FIX-09) ----
-        past_k = past_v = None
-        if past_key_value is not None and not is_cross:
-            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
-                past_k, past_v = past_key_value[0], past_key_value[1]
-            elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
-                idx = min(layer_idx, len(past_key_value.key_cache) - 1)
-                past_k = past_key_value.key_cache[idx]
-                past_v = past_key_value.value_cache[idx]
-
+        # ---- KV cache ----
+        past_k, past_v, past_len = self._read_past_kv(past_key_value, layer_idx)
         if past_k is not None and not is_cross:
             k_cat = torch.cat([past_k, k_new], dim=-2)
             v_cat = torch.cat([past_v, v_new], dim=-2)
@@ -614,12 +752,22 @@ class SqueezingHeadsDistiller(BaseAttention):
             past_key_value.update(k_new, v_new, layer_idx)
 
         N_kv = k_cat.shape[2]
-        past_len = N_kv - L if (self.is_decoder and not is_cross) else 0
 
-        # GQA expansion
+        # ---- GQA expansion ----
+        # kept Q heads map to KV heads via (kept_idx // num_kv_groups).
+        # Here we simply expand KV to num_kv_groups * num_kv_heads, then select
+        # the subset corresponding to kept heads.
         if self.num_kv_heads < self.num_heads:
-            k_cat = repeat_kv(k_cat, self.kv_repeat)
-            v_cat = repeat_kv(v_cat, self.kv_repeat)
+            # Expand KV to full num_heads then gather kept heads.
+            k_full = repeat_kv(k_cat, self.num_kv_groups)  # (B, num_heads, N_kv, D)
+            v_full = repeat_kv(v_cat, self.num_kv_groups)
+            if self.kept_head_indices is not None and self.num_kept_heads < self.num_heads:
+                idx = self.kept_head_indices.to(k_full.device)
+                k_full = k_full.index_select(1, idx)
+                v_full = v_full.index_select(1, idx)
+        else:
+            k_full = k_cat
+            v_full = v_cat
 
         # ---- Mask ----
         eff_mask = encoder_attention_mask if is_cross else attention_mask
@@ -627,12 +775,12 @@ class SqueezingHeadsDistiller(BaseAttention):
 
         scale = 1.0 / math.sqrt(self.head_dim)
 
-        # ---- SDPA fast path with full mask support (SQ-FIX-06) ----
+        # ---- SDPA fast path ----
         use_sdpa = not output_attentions and head_mask is None
         if use_sdpa:
             q_sdp = q.to(torch.float16) if q.dtype == torch.float32 else q
-            k_sdp = k_cat.to(torch.float16) if k_cat.dtype == torch.float32 else k_cat
-            v_sdp = v_cat.to(torch.float16) if v_cat.dtype == torch.float32 else v_cat
+            k_sdp = k_full.to(torch.float16) if k_full.dtype == torch.float32 else k_full
+            v_sdp = v_full.to(torch.float16) if v_full.dtype == torch.float32 else v_full
 
             attn_bias_sdp = None
             if token_valid is not None:
@@ -648,17 +796,17 @@ class SqueezingHeadsDistiller(BaseAttention):
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
                 attn_out = attn_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(
-                    B, L, self.q_head_size
+                    B, L, self.kept_q_head_size
                 )
                 attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
                 attn_probs_ret = None
-            except Exception:
+            except Exception as e:
+                logger.debug("SDPA failed (%s); manual path.", e)
                 use_sdpa = False
 
         if not use_sdpa:
-            scores = torch.matmul(q.float(), k_cat.float().transpose(-2, -1).contiguous()) * scale
+            scores = torch.matmul(q.float(), k_full.float().transpose(-2, -1).contiguous()) * scale
 
-            # Causal mask (SQ-FIX-07: offset-aware for cache)
             if self.is_decoder and not is_cross:
                 if past_len > 0:
                     abs_q = (past_len + torch.arange(L, device=device)).unsqueeze(1)
@@ -675,18 +823,25 @@ class SqueezingHeadsDistiller(BaseAttention):
             probs = F.softmax(scores, dim=-1).to(hidden_states.dtype)
             probs = self.dropout(probs)
 
-            # SQ-FIX-08: head_mask broadcasting to (B, H, 1, 1) or (1, H, 1, 1).
+            # head_mask: apply to (B, num_kept_heads, 1, 1)
             if head_mask is not None:
                 if head_mask.dim() == 1:
-                    head_mask = head_mask.view(1, -1, 1, 1)
+                    hm = head_mask.view(1, -1, 1, 1)
                 elif head_mask.dim() == 2:
-                    head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)  # (B, H, 1, 1)
+                    hm = head_mask.unsqueeze(-1).unsqueeze(-1)
                 elif head_mask.dim() == 3:
-                    head_mask = head_mask[:, :, :1].unsqueeze(-1)     # (B, H, 1, 1)
-                probs = probs * head_mask.to(probs.dtype)
+                    hm = head_mask[:, :, :1].unsqueeze(-1)
+                else:
+                    hm = head_mask
+                if hm.shape[1] != self.num_kept_heads and hm.shape[1] == self.num_heads:
+                    # head_mask is for the FULL head count; select kept heads.
+                    if self.kept_head_indices is not None:
+                        idx = self.kept_head_indices.to(hm.device)
+                        hm = hm.index_select(1, idx)
+                probs = probs * hm.to(probs.dtype)
 
-            attn_out = torch.matmul(probs, v_cat).transpose(1, 2).contiguous().view(
-                B, L, self.q_head_size
+            attn_out = torch.matmul(probs, v_full).transpose(1, 2).contiguous().view(
+                B, L, self.kept_q_head_size
             )
             attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
             attn_probs_ret = probs if output_attentions else None
@@ -699,7 +854,6 @@ class SqueezingHeadsDistiller(BaseAttention):
         else:
             out = self.out_proj(attn_out)
 
-        # SQ-FIX-11: strict dimension check (no silent pad/truncate).
         if out.shape[-1] != hidden_states.shape[-1]:
             raise RuntimeError(
                 f"SqueezingHeadsDistiller: output dim {out.shape[-1]} != "
@@ -712,13 +866,10 @@ class SqueezingHeadsDistiller(BaseAttention):
 # ===========================================================================
 # Injection
 # ===========================================================================
-
 @ATTENTION_REGISTRY.register("squeezing_heads_inject")
 @ATTENTION_REGISTRY.register("squeezing_heads_distill_inject")
 @ATTENTION_REGISTRY.register("squeezing_heads_distiller_inject")
 @ATTENTION_REGISTRY.register("inject_squeezing_heads")
-@ATTENTION_REGISTRY.register("inject_squeezing_heads_distill")
-@ATTENTION_REGISTRY.register("inject_squeezing_heads_distiller")
 def inject_squeezing_heads(
     layer: Any = None,
     model: Any = None,
@@ -730,7 +881,6 @@ def inject_squeezing_heads(
     _depth: int = 0,
     **kwargs: Any,
 ):
-    # SQ-FIX-02: recursion guard.
     if _depth > 8:
         logger.warning("inject_squeezing_heads: max recursion depth exceeded.")
         return None
@@ -745,21 +895,24 @@ def inject_squeezing_heads(
 
     # Whole-model traversal
     layer_list = None
-    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
-        layer_list = target.distilbert.transformer.layer
-    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
-        layer_list = target.roberta.encoder.layer
-    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+    for attr in ("distilbert", "roberta", "bert"):
+        if hasattr(target, attr) and hasattr(getattr(target, attr), "encoder"):
+            layer_list = getattr(target, attr).encoder.layer
+            break
+        if hasattr(target, attr) and hasattr(getattr(target, attr), "transformer"):
+            layer_list = getattr(target, attr).transformer.layer
+            break
+    if layer_list is None and hasattr(target, "transformer") and hasattr(target.transformer, "h"):
         layer_list = target.transformer.h
-    elif hasattr(target, "h") and isinstance(target.h, (nn.ModuleList, list)):
+    if layer_list is None and hasattr(target, "transformer") and hasattr(target.transformer, "layer"):
+        layer_list = target.transformer.layer
+    if layer_list is None and hasattr(target, "h") and isinstance(target.h, (nn.ModuleList, list)):
         layer_list = target.h
-    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+    if layer_list is None and hasattr(target, "model") and hasattr(target.model, "layers"):
         layer_list = target.model.layers
-    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+    if layer_list is None and hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
-        layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+    if layer_list is None and hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -767,13 +920,8 @@ def inject_squeezing_heads(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_squeezing_heads(
-                layer=lyr,
-                model_config=cfg,
-                comp_config=comp_config,
-                layer_idx=idx,
-                total_layers=tot,
-                _depth=_depth + 1,
-                **kwargs,
+                layer=lyr, model_config=cfg, comp_config=comp_config,
+                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
             )
             if res is not None:
                 num_injected += 1
@@ -792,16 +940,12 @@ def inject_squeezing_heads(
         if src is None:
             return None
 
-        # SQ-FIX-03: double-injection guard.
-        if isinstance(src, SqueezingHeadsDistiller):
+        # Idempotency
+        if isinstance(src, SqueezingHeadsDistiller) or "SqueezingHeads" in src.__class__.__name__:
             return None
-        if "SqueezingHeads" in src.__class__.__name__:
+        if isinstance(getattr(src, "inner", None), SqueezingHeadsDistiller):
             return None
-        inner = getattr(src, "inner", None)
-        if isinstance(inner, SqueezingHeadsDistiller):
-            return None
-        wrapped = getattr(src, "_wrapped_attention", None)
-        if isinstance(wrapped, SqueezingHeadsDistiller):
+        if isinstance(getattr(src, "_wrapped_attention", None), SqueezingHeadsDistiller):
             return None
 
         if cfg is None and hasattr(target, "config"):
@@ -809,21 +953,27 @@ def inject_squeezing_heads(
         if cfg is None and hasattr(src, "config"):
             cfg = src.config
 
+        # Extract rank / head_keep_ratio
         rank = kwargs.pop("rank", None)
-        lora_rank = kwargs.pop("lora_rank", None)
-        r = rank if rank is not None else _cfg_get(comp_config, "rank",
-                                                    _cfg_get(comp_config, "svd_rank", None))
-        lr = lora_rank if lora_rank is not None else _cfg_get(comp_config, "lora_rank", 16)
+        if rank is None:
+            rank = _cfg_get(comp_config, "rank",
+                     _cfg_get(comp_config, "svd_rank", None))
+        hkr = kwargs.pop("head_keep_ratio", None)
+        if hkr is None:
+            hkr = _cfg_get(comp_config, "head_keep_ratio", None)
+        lora_rank = kwargs.pop("lora_rank",
+                     _cfg_get(comp_config, "lora_rank", 16))
 
         new_attn = SqueezingHeadsDistiller(
             config=cfg,
             old_attn=src,
-            lora_rank=lr,
-            rank=r,
+            rank=rank,
+            head_keep_ratio=hkr,
+            lora_rank=lora_rank,
             **kwargs,
         )
 
-        # SQ-FIX-12: set is_nested_encoder on every branch.
+        # Splice
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 target.attention.self = new_attn
@@ -850,10 +1000,14 @@ def inject_squeezing_heads(
         return None
 
 
-# Aliases
-inject_squeezing_heads_distill = inject_squeezing_heads
-inject_squeezing_heads_attention = inject_squeezing_heads
-inject_squeezing_heads_distill_attention = inject_squeezing_heads
-inject_squeezing_heads_distiller = inject_squeezing_heads
 SqueezingHeads = SqueezingHeadsDistiller
 SqueezingHeadsAttention = SqueezingHeadsDistiller
+
+
+__all__ = [
+    "SqueezingHeadsDistiller",
+    "SqueezingHeads",
+    "SqueezingHeadsAttention",
+    "inject_squeezing_heads",
+    "apply_rotary_pos_emb",
+]
