@@ -56,3 +56,41 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 20:13:57,185 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / spectron is SUCCESSFUL (acc=79.70% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-spectron and Git recording.
 2026-09-30 20:13:58,023 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-spectron: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 20:13:58,079 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\spectron.md
+[main b7b7da637] feat(benchmark): record successful spectron on distilbert-sst2 (Acc: 79.70%, F1: 0.8031)
+ 35 files changed, 1367 insertions(+), 855 deletions(-)
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_16/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_16/distilbert_sst2_spectron_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_16/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_16/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_16/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_32/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_32/distilbert_sst2_spectron_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_32/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_32/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_32/summary.csv
+ create mode 100644 results/kd_runs/aegis_v6/20260930_195532_bs1_seq128_lr5e-06_noclr_C/README.md
+ create mode 100644 results/kd_runs/aegis_v6/20260930_195532_bs1_seq128_lr5e-06_noclr_C/config.json
+ create mode 100644 results/kd_runs/aegis_v6/20260930_195532_bs1_seq128_lr5e-06_noclr_C/loss_curve_C.png
+ create mode 100644 results/kd_runs/aegis_v6/20260930_195532_bs1_seq128_lr5e-06_noclr_C/methods_comparison.png
+ create mode 100644 results/kd_runs/aegis_v6/20260930_195532_bs1_seq128_lr5e-06_noclr_C/metrics.csv
+ create mode 100644 results/kd_runs/aegis_v6/20260930_195532_bs1_seq128_lr5e-06_noclr_C/metrics.json
+ create mode 100644 results/kd_runs/primal_attention/20260930_190502_bs1_seq128_lr5e-06_noclr_C/README.md
+ create mode 100644 results/kd_runs/primal_attention/20260930_190502_bs1_seq128_lr5e-06_noclr_C/config.json
+ create mode 100644 results/kd_runs/primal_attention/20260930_190502_bs1_seq128_lr5e-06_noclr_C/loss_curve_C.png
+ create mode 100644 results/kd_runs/primal_attention/20260930_190502_bs1_seq128_lr5e-06_noclr_C/methods_comparison.png
+ create mode 100644 results/kd_runs/primal_attention/20260930_190502_bs1_seq128_lr5e-06_noclr_C/metrics.csv
+ create mode 100644 results/kd_runs/primal_attention/20260930_190502_bs1_seq128_lr5e-06_noclr_C/metrics.json
+ create mode 100644 results/methods_comparison_20260930_185557.png
+ create mode 100644 results/methods_comparison_20260930_185602.png
+ create mode 100644 results/methods_comparison_20260930_190016.png
+ create mode 100644 results/methods_comparison_20260930_190502.png
+ create mode 100644 results/methods_comparison_20260930_195532.png
+2026-09-30 20:14:07,086 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: b7b7da63
+2026-09-30 20:14:07,087 [INFO] QwenQualitySweep: [1/1] spectron Timing: eval_time=27.52s
+2026-09-30 20:14:07,088 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 20:14:07,442 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:14:07,442 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 20:14:07,449 [INFO] QwenQualitySweep: 
+                   Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+spectron (efficient-attn)   PASS   79.70%   -10.90% 0.8031                  0            1.24x  403.1 MB               1.86              2.13
+2026-09-30 20:14:07,449 [INFO] QwenQualitySweep: ================================================================================
