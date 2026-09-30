@@ -306,7 +306,7 @@ class SVDLLMV2Attention(BaseAttention):
                 ]
                 W = padded_W
 
-            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            U, S, Vt = torch.linalg.svd(W.float(), full_matrices=False)
             total_energy = (S**2).sum().clamp(min=1e-12)
             cum_energy = torch.cumsum(S**2, dim=0) / total_energy
             r_energy = int((cum_energy < self.energy_threshold).sum().item()) + 1
