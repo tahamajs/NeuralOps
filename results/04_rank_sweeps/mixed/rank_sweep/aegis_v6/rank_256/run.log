@@ -1,0 +1,25 @@
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 53, in <module>
+    from transformers import AutoModelForSequenceClassification, AutoTokenizer
+  File "<frozen importlib._bootstrap>", line 1412, in _handle_fromlist
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\import_utils.py", line 2207, in __getattr__
+    module = self._get_module(self._class_to_module[name])
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\import_utils.py", line 2439, in _get_module
+    return importlib.import_module("." + module_name, self.__name__)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\__init__.py", line 472, in <module>
+    sys.modules[__name__] = _LazyModule(__name__, _file, define_import_structure(_file), module_spec=__spec__)
+                                                         ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\import_utils.py", line 2980, in define_import_structure
+    import_structure = create_import_structure_from_path(module_path)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\import_utils.py", line 2697, in create_import_structure_from_path
+    import_structure[entry.name] = create_import_structure_from_path(entry.path)
+                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\import_utils.py", line 2713, in create_import_structure_from_path
+    with open(os.path.join(module_path, module_name), encoding="utf-8") as f:
+         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen codecs>", line 312, in __init__
+KeyboardInterrupt

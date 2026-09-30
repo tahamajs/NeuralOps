@@ -56,3 +56,22 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 20:18:20,963 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / aegis-v6 is SUCCESSFUL (acc=89.11% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-aegis-v6 and Git recording.
 2026-09-30 20:18:21,626 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-aegis-v6: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 20:18:21,647 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\aegis_v6.md
+[main 2d03adfc3] feat(benchmark): record successful aegis_v6 on distilbert-sst2 (Acc: 89.11%, F1: 0.8977)
+ 9 files changed, 200 insertions(+)
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/aegis_v6/rank_128/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/aegis_v6/rank_128/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/aegis_v6/rank_128/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/aegis_v6/rank_64/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/aegis_v6/rank_64/distilbert_sst2_aegis_v6_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/aegis_v6/rank_64/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/aegis_v6/rank_64/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/aegis_v6/rank_64/summary.csv
+2026-09-30 20:18:28,055 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: f7d55788
+2026-09-30 20:18:28,057 [INFO] QwenQualitySweep: [1/1] aegis_v6 Timing: eval_time=37.75s
+2026-09-30 20:18:28,057 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 20:18:28,366 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:18:28,366 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 20:18:28,381 [INFO] QwenQualitySweep: 
+                   Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+aegis_v6 (efficient-attn)   PASS   89.11%    -1.49% 0.8977                  0            1.11x  524.1 MB               4.71              5.40
+2026-09-30 20:18:28,381 [INFO] QwenQualitySweep: ================================================================================
