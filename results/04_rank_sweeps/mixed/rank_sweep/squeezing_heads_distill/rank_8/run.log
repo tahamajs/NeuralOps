@@ -53,3 +53,16 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 20:36:35,198 [INFO] QwenQualitySweep: Step 50/100 took 0.28s (loss=0.0111, bs=32, micro=16)
 2026-09-30 20:36:36,666 [INFO] QwenQualitySweep: Step 55/100 took 0.22s (loss=0.0029, bs=32, micro=16)
 2026-09-30 20:36:38,291 [INFO] QwenQualitySweep: Step 60/100 took 0.33s (loss=0.2753, bs=32, micro=16)
+2026-09-30 20:36:40,210 [INFO] QwenQualitySweep: Step 65/100 took 0.45s (loss=0.0305, bs=32, micro=16)
+2026-09-30 20:36:42,677 [INFO] QwenQualitySweep: Step 70/100 took 0.49s (loss=0.0128, bs=32, micro=16)
+2026-09-30 20:36:44,638 [INFO] QwenQualitySweep: Step 75/100 took 0.46s (loss=0.0132, bs=32, micro=16)
+2026-09-30 20:36:46,610 [INFO] QwenQualitySweep: Step 80/100 took 0.40s (loss=0.0090, bs=32, micro=16)
+2026-09-30 20:36:48,434 [INFO] QwenQualitySweep: Step 85/100 took 0.27s (loss=0.1463, bs=32, micro=16)
+2026-09-30 20:36:50,096 [INFO] QwenQualitySweep: Step 90/100 took 0.22s (loss=0.0168, bs=32, micro=16)
+2026-09-30 20:36:51,322 [INFO] QwenQualitySweep: Step 95/100 took 0.26s (loss=0.0388, bs=32, micro=16)
+2026-09-30 20:36:52,443 [INFO] QwenQualitySweep: Step 100/100 took 0.24s (loss=0.0042, bs=32, micro=16)
+2026-09-30 20:36:54,592 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\mixed\rank_sweep\squeezing_heads_distill\rank_8\distilbert_sst2_squeezing_heads_distill_full_metrics.json
+2026-09-30 20:36:54,908 [INFO] QwenQualitySweep: [1/1] squeezing_heads_distill -> PASS 90.37% (F1: 0.9056, Peak VRAM: 429.81 MB)
+2026-09-30 20:36:54,965 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / squeezing-heads-distill is SUCCESSFUL (acc=90.37% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-squeezing-heads-distill and Git recording.
+2026-09-30 20:36:56,001 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-squeezing-heads-distill: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
+2026-09-30 20:36:56,062 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\squeezing_heads_distill.md
