@@ -157,3 +157,49 @@ IndexError: tensors used as indices must be long, int, byte or bool tensors
 2026-09-30 20:34:05,429 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / squeezing-heads-distill is SUCCESSFUL (acc=90.37% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-squeezing-heads-distill and Git recording.
 2026-09-30 20:34:06,183 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-squeezing-heads-distill: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 20:34:06,272 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\squeezing_heads_distill.md
+[main 7fc12d981] feat(benchmark): record successful squeezing_heads_distill on distilbert-sst2 (Acc: 90.37%, F1: 0.9056)
+ 36 files changed, 974 insertions(+), 1 deletion(-)
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_128/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_128/distilbert_sst2_fusion_attn_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_128/failed_runs.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_128/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_128/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_128/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_16/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_16/distilbert_sst2_fusion_attn_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_16/failed_runs.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_16/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_16/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_16/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_256/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_256/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_256/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_32/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_32/distilbert_sst2_fusion_attn_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_32/failed_runs.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_32/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_32/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_32/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_384/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_384/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_384/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_64/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_64/distilbert_sst2_fusion_attn_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_64/failed_runs.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_64/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_64/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/fusion_attn/rank_64/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_4/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_4/distilbert_sst2_squeezing_heads_distill_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_4/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_4/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_4/summary.csv
+2026-09-30 20:34:13,263 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: 7fc12d98
+2026-09-30 20:34:13,266 [INFO] QwenQualitySweep: [1/1] squeezing_heads_distill Timing: eval_time=35.12s
+2026-09-30 20:34:13,266 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 20:34:13,831 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:34:13,832 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 20:34:13,848 [INFO] QwenQualitySweep: 
+                 Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+squeezing_heads_distill   PASS   90.37%    -0.23% 0.9056                  6            1.00x  429.8 MB               2.04              2.34
+2026-09-30 20:34:13,849 [INFO] QwenQualitySweep: ================================================================================
