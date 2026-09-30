@@ -333,14 +333,14 @@ class HGRN2Layer(BaseAttention):
                 out = hgrn2_scan_triton(
                     f.contiguous(), iv.contiguous(), res_clip=self.res_clip
                 )
-                # print('[HGRN2] Triton scan used', flush=True)  # debug
+                logger.debug("HGRN2: Triton scan used")
                 return out
             except Exception as e:
                 logger.warning("HGRN2 Triton scan failed, falling back: %s", e)
-                # print(f'[HGRN2] Triton FAILED: {e}', flush=True)
+                logger.debug("HGRN2: Triton FAILED: %s", e)
 
         # --- PyTorch fallback ---
-        print('[HGRN2] PyTorch fallback', flush=True)
+        logger.debug("HGRN2: PyTorch fallback")
         B, L, D = iv.shape
         f_fp32 = f.float()
         iv_fp32 = iv.float()
