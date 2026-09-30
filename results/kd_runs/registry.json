@@ -1222,6 +1222,40 @@
           "ppl_at_step_1500": ""
         }
       }
+    },
+    {
+      "module": "aegis_v5",
+      "timestamp": "20260930_220841",
+      "run_dir": "results/kd_runs/aegis_v5/20260930_220841_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 98.77,
+      "best_recovery_pct": 62.72,
+      "results": {
+        "C": {
+          "pre_ppl": 211.86,
+          "post_ppl": 98.77,
+          "ppl_ratio": 3.1316,
+          "recovery_pct": 62.72,
+          "peak_vram_mb": 1226.31,
+          "train_time_s": 390.53,
+          "s_per_step": 0.7811,
+          "loss_final": 170.1925,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 98.77,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
     }
   ]
 }
