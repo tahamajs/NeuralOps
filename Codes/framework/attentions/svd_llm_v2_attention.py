@@ -265,24 +265,32 @@ class SVDLLMV2Attention(BaseAttention):
 
     def _init_random(self) -> None:
         """Initialize orthogonal factor projections with identity scales."""
-        nn.init.orthogonal_(self.query_u)
+        def _ortho(t: nn.Parameter) -> None:
+            if t.device.type == "cuda" and t.dtype in (torch.float16, torch.bfloat16):
+                f = torch.empty(t.shape, device=t.device, dtype=torch.float32)
+                nn.init.orthogonal_(f)
+                t.copy_(f.to(dtype=t.dtype))
+            else:
+                nn.init.orthogonal_(t)
+
+        _ortho(self.query_u)
         nn.init.ones_(self.query_s)
-        nn.init.orthogonal_(self.query_vh)
+        _ortho(self.query_vh)
         nn.init.zeros_(self.query_bias)
 
-        nn.init.orthogonal_(self.key_u)
+        _ortho(self.key_u)
         nn.init.ones_(self.key_s)
-        nn.init.orthogonal_(self.key_vh)
+        _ortho(self.key_vh)
         nn.init.zeros_(self.key_bias)
 
-        nn.init.orthogonal_(self.value_u)
+        _ortho(self.value_u)
         nn.init.ones_(self.value_s)
-        nn.init.orthogonal_(self.value_vh)
+        _ortho(self.value_vh)
         nn.init.zeros_(self.value_bias)
 
-        nn.init.orthogonal_(self.out_proj_u)
+        _ortho(self.out_proj_u)
         nn.init.ones_(self.out_proj_s)
-        nn.init.orthogonal_(self.out_proj_vh)
+        _ortho(self.out_proj_vh)
         nn.init.zeros_(self.out_proj_bias)
 
     def _decompose_and_set(
