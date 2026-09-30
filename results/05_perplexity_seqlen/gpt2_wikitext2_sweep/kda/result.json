@@ -14,13 +14,13 @@
   "num_compressed_layers": 0,
   "num_fallback_layers": 0,
   "lora_params": 0,
-  "calibration_time_s": 0.606,
+  "calibration_time_s": 0.594,
   "recovery_time_s": 0.0,
   "peak_vram_mb": 908.26,
-  "latency_ms_per_token": 0.5717,
-  "throughput_tok_per_sec": 1749.06,
-  "eval_elapsed_s": 57.174,
-  "wall_elapsed_s": 60.666,
+  "latency_ms_per_token": 0.5715,
+  "throughput_tok_per_sec": 1749.78,
+  "eval_elapsed_s": 57.15,
+  "wall_elapsed_s": 60.596,
   "error": "",
-  "timestamp": "2026-09-28T02:20:49"
+  "timestamp": "2026-09-30T05:33:50"
 }
