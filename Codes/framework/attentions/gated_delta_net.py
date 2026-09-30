@@ -112,14 +112,14 @@ def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=32):
             and q.dtype in (torch.float16, torch.bfloat16, torch.float32)):
         try:
             out = gdn_scan_triton(q_f, k_f, v_f, beta_f, alpha_f).to(q.dtype)
-            print('[GDN] Triton scan used', flush=True)  # debug
+            logger.debug("GDN: Triton scan used")
             return out
         except Exception as e:
             logger.warning("Triton gdn_scan failed, falling back to PyTorch: %s", e)
-            print(f'[GDN] Triton FAILED: {e}', flush=True)
+            logger.debug("GDN: Triton FAILED: %s", e)
 
     # --- PyTorch fallback ---
-    print('[GDN] PyTorch fallback', flush=True)
+    logger.debug("GDN: PyTorch fallback")
     pad_len = (chunk_size - L % chunk_size) % chunk_size
     if pad_len > 0:
         q_f = F.pad(q_f, (0, 0, 0, pad_len))
