@@ -52,3 +52,4 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 21:10:05,962 [INFO] QwenQualitySweep: Step 40/100 took 33.91s (loss=0.1352, bs=32, micro=16)
 2026-09-30 21:12:56,369 [INFO] QwenQualitySweep: Step 45/100 took 32.27s (loss=0.0489, bs=32, micro=16)
 2026-09-30 21:15:32,332 [INFO] QwenQualitySweep: Step 50/100 took 30.65s (loss=0.0175, bs=32, micro=16)
+2026-09-30 21:18:24,459 [INFO] QwenQualitySweep: Step 55/100 took 35.01s (loss=0.0040, bs=32, micro=16)
