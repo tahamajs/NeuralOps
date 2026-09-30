@@ -834,6 +834,6 @@ injected_model = inject_spectron(model=model, spectral_rank=32)
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **84.06%** | -6.54% | 0.8436 | 1.20x | 0 | [svd-linear-attention-distilbert-sst2-spectron](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-spectron) | 2026-09-27 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **79.70%** | -10.90% | 0.8031 | 1.24x | 0 | N/A | 2026-09-30 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **60.50%** | -21.30% | 0.6002 | 1.15x | 6 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **91.90%** | -2.40% | 0.9158 | 1.15x | 6 | N/A | 2026-09-19 |
