@@ -56,3 +56,16 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 20:15:03,402 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / spectron is SUCCESSFUL (acc=88.07% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-spectron and Git recording.
 2026-09-30 20:15:04,203 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-spectron: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 20:15:04,230 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\spectron.md
+[main 7a80040e0] feat(benchmark): record successful spectron on distilbert-sst2 (Acc: 88.07%, F1: 0.8852)
+ 5 files changed, 83 insertions(+), 1 deletion(-)
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_128/distilbert_sst2_spectron_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/spectron/rank_128/summary.csv
+2026-09-30 20:15:11,251 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: 7a80040e
+2026-09-30 20:15:11,253 [INFO] QwenQualitySweep: [1/1] spectron Timing: eval_time=29.36s
+2026-09-30 20:15:11,253 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 20:15:11,709 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:15:11,709 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 20:15:11,717 [INFO] QwenQualitySweep: 
+                   Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+spectron (efficient-attn)   PASS   88.07%    -2.53% 0.8852                  0            1.15x  418.9 MB               1.43              1.63
+2026-09-30 20:15:11,717 [INFO] QwenQualitySweep: ================================================================================
