@@ -1,6 +1,6 @@
 rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-4,squeezing_heads_distill,PASS,90.37,0.9056,0.3083,429.81,1.0,0.0,6,0,75.7,66955010,67544834
-6,squeezing_heads_distill,PASS,90.37,0.9056,0.3102,429.81,1.0,0.0,0,0,95.6,66955010,67544834
-8,squeezing_heads_distill,PASS,90.37,0.9056,0.3102,429.81,1.0,0.0,0,0,75.8,66955010,67544834
-10,squeezing_heads_distill,PASS,90.83,0.9125,0.359,360.76,1.0,0.0,0,0,122.8,66955010,67544834
-12,squeezing_heads_distill,PASS,90.37,0.9056,0.3102,429.81,1.0,0.0,0,0,78.8,66955010,67544834
+4,squeezing_heads_distill,PASS,90.37,0.9056,0.3083,429.81,1.0,0.0,6,0,27.25,66955010,67544834
+6,squeezing_heads_distill,PASS,90.37,0.9056,0.3102,429.81,1.0,0.0,0,0,35.29,66955010,67544834
+8,squeezing_heads_distill,PASS,90.37,0.9056,0.3102,429.81,1.0,0.0,0,0,34.23,66955010,67544834
+10,squeezing_heads_distill,PASS,90.83,0.9125,0.359,360.76,1.0,0.0,0,0,33.74,66955010,67544834
+12,squeezing_heads_distill,PASS,90.37,0.9056,0.3102,429.81,1.0,0.0,0,0,30.11,66955010,67544834
