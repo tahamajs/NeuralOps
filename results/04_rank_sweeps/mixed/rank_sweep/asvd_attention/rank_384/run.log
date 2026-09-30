@@ -128,3 +128,24 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 20:24:17,512 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / asvd-attention is SUCCESSFUL (acc=90.83% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-asvd-attention and Git recording.
 2026-09-30 20:24:18,144 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-asvd-attention: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 20:24:18,168 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\asvd_attention.md
+[main 6928b25b7] feat(benchmark): record successful asvd_attention on distilbert-sst2 (Acc: 90.83%, F1: 0.9107)
+ 12 files changed, 476 insertions(+), 1 deletion(-)
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_256/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_256/distilbert_sst2_asvd_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_256/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_256/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_256/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_384/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_384/distilbert_sst2_asvd_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_384/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_384/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/asvd_attention/rank_384/summary.csv
+2026-09-30 20:24:25,556 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: 6928b25b
+2026-09-30 20:24:25,558 [INFO] QwenQualitySweep: [1/1] asvd_attention Timing: eval_time=102.79s
+2026-09-30 20:24:25,558 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 20:24:25,936 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:24:25,937 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 20:24:25,945 [INFO] QwenQualitySweep: 
+        Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+asvd_attention   PASS   90.83%    +0.23% 0.9107                  6            1.00x  494.6 MB               8.26              9.48
+2026-09-30 20:24:25,945 [INFO] QwenQualitySweep: ================================================================================
