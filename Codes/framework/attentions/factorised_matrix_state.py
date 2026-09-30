@@ -482,8 +482,7 @@ class FactorisedMatrixState(BaseAttention):
     ) -> torch.Tensor:
         r"""
         Chunked associative matrix scan with non-negative ELU+1 feature maps.
-        Maintains recurrent key-value matrix state S_t in R^{d x d} across chunks,
-        achieving true linear O(L) time and memory complexity without O(L^2) materialization.
+        Optimized to prevent VRAM explosions during outer-product state accumulation.
         """
         B, H, L, d = q.shape
 
@@ -496,7 +495,6 @@ class FactorisedMatrixState(BaseAttention):
             except Exception as e:
                 logger.debug("FMS Triton failed, falling back: %s", e)
 
-        # Positive kernel feature mapping to guarantee non-negative attention weights
         q_f = F.elu(q.float()) + 1.0
         k_f = (F.elu(k.float()) + 1.0) / math.sqrt(d)
         v_f = v.float()
@@ -514,26 +512,23 @@ class FactorisedMatrixState(BaseAttention):
             k_f = k_f.flip(dims=[2])
             v_f = v_f.flip(dims=[2])
 
-        # Short sequences (L <= chunk_size) execute exact parallel scan efficiently
         if L <= chunk_size:
             log_decay = torch.log(decay_f)
             idx = torch.arange(L, device=q.device, dtype=torch.float32)
             dist = idx.unsqueeze(1) - idx.unsqueeze(0)
             causal_mask = dist >= 0
-            log_D = dist.unsqueeze(0).unsqueeze(0) * log_decay
-            D = torch.exp(log_D).masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
+            # Memory optimization: compute D without extra unsqueeze where possible
+            D = torch.exp(dist.unsqueeze(0).unsqueeze(0) * log_decay).masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
 
-            scores = torch.matmul(q_f, k_f.transpose(-1, -2).contiguous()) * D
+            # Avoid .contiguous() after transpose if not absolutely required
+            scores = torch.matmul(q_f, k_f.transpose(-1, -2)) * D
             num = torch.matmul(scores, v_f)
             denom = scores.sum(dim=-1, keepdim=True).clamp_min(1e-5)
             y = num / denom
         else:
-            # Chunked linear scan: within each chunk, compute intra-chunk attention;
-            # across chunks, accumulate state S in R^{B x H x d x d} and z in R^{B x H x d}
             num_chunks = math.ceil(L / chunk_size)
             y_chunks = []
             
-            # Recurrent matrix memory state: S is (B, H, d, d), z is (B, H, d, 1)
             S = torch.zeros(B, H, d, d, device=q.device, dtype=torch.float32)
             z = torch.zeros(B, H, d, 1, device=q.device, dtype=torch.float32)
 
@@ -544,57 +539,54 @@ class FactorisedMatrixState(BaseAttention):
                 end = min(start + chunk_size, L)
                 curr_c = end - start
 
-                qc = q_f[:, :, start:end, :]  # (B, H, C, d)
-                kc = k_f[:, :, start:end, :]  # (B, H, C, d)
-                vc = v_f[:, :, start:end, :]  # (B, H, C, d)
+                qc = q_f[:, :, start:end, :]  
+                kc = k_f[:, :, start:end, :]  
+                vc = v_f[:, :, start:end, :]  
 
-                # Intra-chunk decay mask
                 idx_c = torch.arange(curr_c, device=q.device, dtype=torch.float32)
                 dist_c = idx_c.unsqueeze(1) - idx_c.unsqueeze(0)
                 causal_mask_c = dist_c >= 0
-                log_Dc = dist_c.unsqueeze(0).unsqueeze(0) * log_decay
-                Dc = torch.exp(log_Dc).masked_fill(~causal_mask_c.unsqueeze(0).unsqueeze(0), 0.0)
+                Dc = torch.exp(dist_c.unsqueeze(0).unsqueeze(0) * log_decay).masked_fill(~causal_mask_c.unsqueeze(0).unsqueeze(0), 0.0)
 
-                # Intra-chunk numerator and denominator contributions
-                scores_c = torch.matmul(qc, kc.transpose(-1, -2).contiguous()) * Dc
-                num_intra = torch.matmul(scores_c, vc)  # (B, H, C, d)
-                denom_intra = scores_c.sum(dim=-1, keepdim=True)  # (B, H, C, 1)
+                # Intra-chunk
+                scores_c = torch.matmul(qc, kc.transpose(-1, -2)) * Dc
+                num_intra = torch.matmul(scores_c, vc)  
+                denom_intra = scores_c.sum(dim=-1, keepdim=True)  
 
-                # Inter-chunk contribution from accumulated state S
-                # decay_f is (1, H, 1, 1). idx_c is (curr_c,) -> (1, 1, curr_c, 1, 1)
-                # decay from previous chunk boundary to step t in current chunk: decay^(t + 1)
-                decay_from_prev = torch.exp((idx_c + 1).view(1, 1, curr_c, 1, 1) * log_decay.unsqueeze(-1))  # (1, H, curr_c, 1, 1)
+                # Inter-chunk 
+                decay_from_prev = torch.exp((idx_c + 1).view(1, 1, curr_c, 1) * log_decay)  # (1, H, curr_c, 1)
                 
-                # qc is (B, H, curr_c, d) -> (B, H, curr_c, 1, d)
-                # S is (B, H, d, d) -> (B, H, 1, d, d)
-                # qc @ S gives (B, H, curr_c, 1, d)
-                qc_exp = qc.unsqueeze(-2)
-                num_inter = torch.matmul(qc_exp, S.unsqueeze(2))  # (B, H, curr_c, 1, d)
-                num_inter = (num_inter * decay_from_prev).squeeze(-2)  # (B, H, curr_c, d)
-
-                # Denominator inter-chunk: qc @ z gives (B, H, curr_c, 1, 1)
-                denom_inter = torch.matmul(qc_exp, z.unsqueeze(2))  # (B, H, curr_c, 1, 1)
-                denom_inter = (denom_inter * decay_from_prev).squeeze(-2)  # (B, H, curr_c, 1)
+                # MEMORY FIX: Use einsum instead of expanding S to (B, H, curr_c, d, d)
+                # num_inter = (qc @ S) * decay_from_prev
+                # qc: (B, H, C, d), S: (B, H, d, d) -> output: (B, H, C, d)
+                num_inter = torch.einsum('bhcd,bhde->bhce', qc, S)
+                num_inter = num_inter * decay_from_prev 
+                
+                # denom_inter = (qc @ z) * decay_from_prev
+                # qc: (B, H, C, d), z: (B, H, d, 1) -> output: (B, H, C, 1)
+                denom_inter = torch.einsum('bhcd,bhde->bhce', qc, z)
+                denom_inter = denom_inter * decay_from_prev 
 
                 num_c = num_intra + num_inter
                 denom_c = (denom_intra + denom_inter).clamp_min(1e-5)
                 y_chunks.append(num_c / denom_c)
 
-                # Update running state S and z for next chunk
-                # Decay accumulated state across the entire chunk: decay^curr_c
+                # Update state (S, z) for next chunk
                 decay_chunk = torch.exp(float(curr_c) * log_decay)  # (1, H, 1, 1)
+                
+                dist_to_end = (curr_c - 1 - idx_c).view(1, 1, curr_c, 1)
+                decay_to_end = torch.exp(dist_to_end * log_decay)  # (1, H, curr_c, 1)
 
-                # Decay factors for each token in chunk to end of chunk: decay^(curr_c - 1 - t)
-                dist_to_end = (curr_c - 1 - idx_c).view(1, 1, curr_c, 1, 1)
-                decay_to_end = torch.exp(dist_to_end * log_decay.unsqueeze(-1))  # (1, H, curr_c, 1, 1)
-
-                # Outer product kv_t: kc is (B, H, curr_c, d, 1), vc is (B, H, curr_c, 1, d)
-                kc_col = kc.unsqueeze(-1)
-                vc_row = vc.unsqueeze(-2)
-                kv_outer = torch.matmul(kc_col, vc_row)  # (B, H, curr_c, d, d)
-                chunk_S = (kv_outer * decay_to_end).sum(dim=2)  # (B, H, d, d)
-                # decay_to_end is (1, H, curr_c, 1, 1), kc_col is (B, H, curr_c, d, 1) -> product is (B, H, curr_c, d, 1)
-                chunk_z = (kc_col * decay_to_end).sum(dim=2)  # (B, H, d, 1)
+                # MEMORY FIX: Apply decay to keys BEFORE outer product!
+                # Instead of computing a huge (B,H,C,d,d) tensor, we scale kc first.
+                kc_decayed = kc * decay_to_end  # (B, H, C, d)
+                
+                # Now compute the accumulated state over the chunk directly into (B,H,d,d) using einsum
+                # chunk_S = sum_{c} (kc_decayed_c \otimes vc_c)
+                chunk_S = torch.einsum('bhcd,bhce->bhde', kc_decayed, vc)
+                
+                # chunk_z = sum_{c} kc_decayed_c
+                chunk_z = kc_decayed.sum(dim=2).unsqueeze(-1)  # (B, H, d, 1)
 
                 S = S * decay_chunk + chunk_S
                 z = z * decay_chunk + chunk_z
@@ -605,7 +597,6 @@ class FactorisedMatrixState(BaseAttention):
             y = y.flip(dims=[2])
 
         return y.to(q.dtype)
-
     def forward(
         self,
         hidden_states: torch.Tensor,
