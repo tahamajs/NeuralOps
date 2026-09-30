@@ -66,3 +66,14 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 21:52:33,573 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / flash-attention3 is SUCCESSFUL (acc=90.71% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-flash-attention3 and Git recording.
 2026-09-30 21:52:34,525 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-flash-attention3: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 21:52:34,565 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\flash_attention3.md
+[main dc85ae3a8] feat(benchmark): record successful flash_attention3 on distilbert-sst2 (Acc: 90.71%, F1: 0.9099)
+ 4 files changed, 85 insertions(+), 96 deletions(-)
+2026-09-30 21:52:43,515 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: dc85ae3a
+2026-09-30 21:52:43,517 [INFO] QwenQualitySweep: [1/1] flash_attention3 Timing: eval_time=36.09s
+2026-09-30 21:52:43,518 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 21:52:43,912 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 21:52:43,913 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 21:52:43,926 [INFO] QwenQualitySweep: 
+                           Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+flash_attention3 (efficient-attn)   PASS   90.71%    +0.11% 0.9099                  0            1.00x  429.5 MB               1.38              1.58
+2026-09-30 21:52:43,927 [INFO] QwenQualitySweep: ================================================================================

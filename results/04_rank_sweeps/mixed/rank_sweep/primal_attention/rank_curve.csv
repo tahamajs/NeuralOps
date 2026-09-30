@@ -2,6 +2,4 @@ rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_
 16,primal_attention,PASS,87.39,0.8741,0.3748,467.31,1.0,0.0,6,0,64.5,66955010,67544834
 32,primal_attention,PASS,90.37,0.9075,0.3051,469.81,1.0,0.0,6,0,66.18,66955010,67544834
 64,primal_attention,PASS,91.4,0.9171,0.3153,471.81,1.0,0.0,6,0,1906.24,66955010,67544834
-128,primal_attention,ERROR_CODE_0,0.0,0.0,99.0,0.0,1.0,,0,0,241.4,,
-256,primal_attention,ERROR_CODE_0,0.0,0.0,99.0,0.0,1.0,,0,0,241.4,,
-384,primal_attention,ERROR_CODE_0,0.0,0.0,99.0,0.0,1.0,,0,0,241.4,,
+128,primal_attention,ERROR_CODE_0,0.0,0.0,99.0,0.0,1.0,,0,0,601.8,,
