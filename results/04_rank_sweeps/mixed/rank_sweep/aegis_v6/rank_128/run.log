@@ -51,3 +51,8 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 20:18:13,394 [INFO] QwenQualitySweep: Step 40/50 took 0.44s (loss=0.1074, bs=32, micro=16)
 2026-09-30 20:18:15,535 [INFO] QwenQualitySweep: Step 45/50 took 0.43s (loss=0.2108, bs=32, micro=16)
 2026-09-30 20:18:17,606 [INFO] QwenQualitySweep: Step 50/50 took 0.41s (loss=0.1824, bs=32, micro=16)
+2026-09-30 20:18:22,346 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\mixed\rank_sweep\aegis_v6\rank_128\distilbert_sst2_aegis_v6_full_metrics.json
+2026-09-30 20:18:22,604 [INFO] QwenQualitySweep: [1/1] aegis_v6 -> PASS 89.11% (F1: 0.8977, Peak VRAM: 524.12 MB)
+2026-09-30 20:18:22,619 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / aegis-v6 is SUCCESSFUL (acc=89.11% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-aegis-v6 and Git recording.
+2026-09-30 20:18:23,294 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-aegis-v6: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
+2026-09-30 20:18:23,320 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\aegis_v6.md
