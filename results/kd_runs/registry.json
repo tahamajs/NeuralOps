@@ -155,6 +155,169 @@
           "ppl_at_step_1500": ""
         }
       }
+    },
+    {
+      "module": "leka_v3",
+      "timestamp": "20260930_171223",
+      "run_dir": "results/kd_runs/leka_v3/20260930_171223_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 261.47,
+      "best_recovery_pct": 66.21,
+      "results": {
+        "C": {
+          "pre_ppl": 711.96,
+          "post_ppl": 261.47,
+          "ppl_ratio": 8.2901,
+          "recovery_pct": 66.21,
+          "peak_vram_mb": 1235.33,
+          "train_time_s": 395.98,
+          "s_per_step": 0.792,
+          "loss_final": 303.6131,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 261.47,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    },
+    {
+      "module": "svd_linear_attention",
+      "timestamp": "20260930_172006",
+      "run_dir": "results/kd_runs/svd_linear_attention/20260930_172006_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 174.36,
+      "best_recovery_pct": 53.6,
+      "results": {
+        "C": {
+          "pre_ppl": 339.37,
+          "post_ppl": 174.36,
+          "ppl_ratio": 5.5282,
+          "recovery_pct": 53.6,
+          "peak_vram_mb": 1063.7,
+          "train_time_s": 181.45,
+          "s_per_step": 0.3629,
+          "loss_final": 246.4347,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 174.36,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    },
+    {
+      "module": "triton_cosformer",
+      "timestamp": "20260930_172418",
+      "run_dir": "results/kd_runs/triton_cosformer/20260930_172418_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": NaN,
+      "best_recovery_pct": 0.0,
+      "results": {
+        "C": {
+          "pre_ppl": NaN,
+          "post_ppl": NaN,
+          "ppl_ratio": Infinity,
+          "recovery_pct": 0.0,
+          "peak_vram_mb": 0.0,
+          "train_time_s": 0.0,
+          "loss_final": NaN,
+          "error": "not enough values to unpack (expected 3, got 0)"
+        }
+      }
+    },
+    {
+      "module": "leka_v2",
+      "timestamp": "20260930_173114",
+      "run_dir": "results/kd_runs/leka_v2/20260930_173114_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 140.6,
+      "best_recovery_pct": 69.42,
+      "results": {
+        "C": {
+          "pre_ppl": 388.19,
+          "post_ppl": 140.6,
+          "ppl_ratio": 4.4578,
+          "recovery_pct": 69.42,
+          "peak_vram_mb": 1267.21,
+          "train_time_s": 487.97,
+          "s_per_step": 0.9759,
+          "loss_final": 193.8958,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 140.6,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    },
+    {
+      "module": "svd_llm_v2_attention",
+      "timestamp": "20260930_173348",
+      "run_dir": "results/kd_runs/svd_llm_v2_attention/20260930_173348_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 120.41,
+      "best_recovery_pct": 71.14,
+      "results": {
+        "C": {
+          "pre_ppl": 339.46,
+          "post_ppl": 120.41,
+          "ppl_ratio": 3.8177,
+          "recovery_pct": 71.14,
+          "peak_vram_mb": 1132.14,
+          "train_time_s": 263.22,
+          "s_per_step": 0.5264,
+          "loss_final": 180.0523,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 120.41,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
     }
   ]
 }

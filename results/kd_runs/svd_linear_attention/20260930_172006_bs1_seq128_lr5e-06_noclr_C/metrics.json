@@ -1,0 +1,30 @@
+{
+  "module": "svd_linear_attention",
+  "pre_ppl": 339.37,
+  "baseline_ppl": 31.54,
+  "results": {
+    "C": {
+      "method": "C",
+      "pre_ppl": 339.37,
+      "post_ppl": 174.36,
+      "ppl_ratio": 5.5282,
+      "recovery_pct": 53.6,
+      "peak_vram_mb": 1063.7,
+      "train_time_s": 181.45,
+      "s_per_step": 0.3629,
+      "loss_final": 246.4347,
+      "cached": true,
+      "ppl_at_step_250": "",
+      "ppl_at_step_500": 174.36,
+      "ppl_at_step_750": "",
+      "ppl_at_step_1000": "",
+      "ppl_at_step_1250": "",
+      "ppl_at_step_1500": ""
+    }
+  },
+  "best_method": "C",
+  "best_post_ppl": 174.36,
+  "is_ssm_recoverable": true,
+  "recommendation": "MAYBE: Partial recovery achieved. Additional recovery steps or specialized scan kernels needed.",
+  "run_dir": "results/kd_runs/svd_linear_attention/20260930_172006_bs1_seq128_lr5e-06_noclr_C"
+}
