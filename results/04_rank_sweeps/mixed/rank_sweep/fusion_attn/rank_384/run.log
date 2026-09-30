@@ -58,3 +58,17 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 20:34:04,693 [INFO] QwenQualitySweep: Step 75/100 took 0.16s (loss=0.0878, bs=32, micro=16)
 2026-09-30 20:34:05,637 [INFO] QwenQualitySweep: Step 80/100 took 0.17s (loss=0.1027, bs=32, micro=16)
 2026-09-30 20:34:06,537 [INFO] QwenQualitySweep: Step 85/100 took 0.17s (loss=0.2273, bs=32, micro=16)
+2026-09-30 20:34:07,529 [INFO] QwenQualitySweep: Step 90/100 took 0.25s (loss=0.0645, bs=32, micro=16)
+2026-09-30 20:34:08,507 [INFO] QwenQualitySweep: Step 95/100 took 0.21s (loss=0.1301, bs=32, micro=16)
+2026-09-30 20:34:09,475 [INFO] QwenQualitySweep: Step 100/100 took 0.20s (loss=0.0476, bs=32, micro=16)
+2026-09-30 20:34:11,863 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\mixed\rank_sweep\fusion_attn\rank_384\distilbert_sst2_fusion_attn_full_metrics.json
+2026-09-30 20:34:12,149 [INFO] QwenQualitySweep: [1/1] fusion_attn -> MODERATE_EXPANSION 90.60% (F1: 0.9085, Peak VRAM: 430.2 MB)
+2026-09-30 20:34:12,149 [INFO] QwenQualitySweep: [Quality Guard] Module 'fusion_attn' did not pass quality criteria (status=MODERATE_EXPANSION, acc=90.60%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-30 20:34:12,158 [INFO] QwenQualitySweep: [1/1] fusion_attn Timing: eval_time=24.60s
+2026-09-30 20:34:12,158 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 20:34:12,589 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:34:12,590 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 20:34:12,611 [INFO] QwenQualitySweep: 
+                      Module             Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+fusion_attn (efficient-attn) MODERATE_EXPANSION   90.60%    +0.00% 0.9085                  0            1.00x  430.2 MB               1.40              1.60
+2026-09-30 20:34:12,611 [INFO] QwenQualitySweep: ================================================================================

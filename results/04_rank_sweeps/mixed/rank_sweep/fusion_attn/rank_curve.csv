@@ -1,0 +1,7 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+16,fusion_attn,MODERATE_EXPANSION,90.6,0.9085,0.2875,430.2,1.0,0.0,0,0,73.2,66955010,67646222
+32,fusion_attn,MODERATE_EXPANSION,90.6,0.9085,0.2875,430.2,1.0,0.0,0,0,73.3,66955010,67646222
+64,fusion_attn,MODERATE_EXPANSION,90.6,0.9085,0.2876,430.2,1.0,0.0,0,0,73.3,66955010,67646222
+128,fusion_attn,MODERATE_EXPANSION,90.6,0.9085,0.2875,430.2,1.0,0.0,0,0,73.2,66955010,67646222
+256,fusion_attn,MODERATE_EXPANSION,90.6,0.9085,0.2875,430.2,1.0,0.0,0,0,54.5,66955010,67646222
+384,fusion_attn,MODERATE_EXPANSION,90.6,0.9085,0.2875,430.2,1.0,0.0,0,0,55.0,66955010,67646222
