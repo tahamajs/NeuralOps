@@ -16,6 +16,14 @@ import torch.nn.functional as F
 
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
+try:
+    from framework.core.triton_kernels.gdn_scan import gdn_scan_triton, MAX_REGISTER_DIM
+    HAS_TRITON_GDN = True
+except Exception as _e:
+    logging.getLogger(__name__).warning("Triton gdn_scan unavailable: %s", _e)
+    gdn_scan_triton = None
+    HAS_TRITON_GDN = False
+    MAX_REGISTER_DIM = 64
 
 
 # ===========================================================================
@@ -86,6 +94,13 @@ def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=32):
 
     GD-FIX-09: no inner Python overhead beyond the minimal recurrence.
     """
+
+    if HAS_TRITON_GDN and q.is_cuda and q.shape[-1] <= MAX_REGISTER_DIM:
+        try:
+            return gdn_scan_triton(q, k, v, beta, alpha, chunk_size)
+        except Exception as e:
+            logger.warning("Triton gdn_scan failed, falling back to PyTorch: %s", e)
+
     B, H, L, d = q.shape
     device = q.device
 

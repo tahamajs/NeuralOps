@@ -1,29 +1,29 @@
 {
   "module": "mamba_block",
-  "pre_ppl": 4203.45,
+  "pre_ppl": 4585.77,
   "baseline_ppl": 31.54,
   "results": {
     "C": {
       "method": "C",
-      "pre_ppl": 4203.45,
-      "post_ppl": 138.52,
-      "ppl_ratio": 4.3919,
-      "recovery_pct": 97.44,
-      "peak_vram_mb": 5165.48,
-      "train_time_s": 1085.33,
-      "s_per_step": 1.0853,
-      "loss_final": 122.1277,
+      "pre_ppl": 4585.77,
+      "post_ppl": 51.18,
+      "ppl_ratio": 1.6227,
+      "recovery_pct": 99.57,
+      "peak_vram_mb": 5173.37,
+      "train_time_s": 978.62,
+      "s_per_step": 0.9786,
+      "loss_final": 119.7305,
       "cached": true,
       "ppl_at_step_250": "",
-      "ppl_at_step_500": 161.96,
+      "ppl_at_step_500": 107.63,
       "ppl_at_step_750": "",
-      "ppl_at_step_1000": 138.52,
+      "ppl_at_step_1000": 51.18,
       "ppl_at_step_1250": "",
       "ppl_at_step_1500": ""
     }
   },
   "best_method": "C",
-  "best_post_ppl": 138.52,
+  "best_post_ppl": 51.18,
   "is_ssm_recoverable": true,
-  "recommendation": "MAYBE: Partial recovery achieved. Additional recovery steps or specialized scan kernels needed."
+  "recommendation": "YES: SSM can learn from attention. Distillation successfully bridged the architectural gap."
 }
