@@ -1,7 +1,7 @@
 # All Modules KD Results
 
-**Generated:** 2026-09-30T18:59:50.933945  
-**Total modules tested:** 18  
+**Generated:** 2026-09-30T19:04:37.784851  
+**Total modules tested:** 20  
 **Baseline (GPT-2 Teacher):** PPL = `31.54`
 
 ## Results Table
@@ -21,8 +21,10 @@
 | 11 | `aa_svd` | 47.22 | **40.11** | 45.34% | 1.27x | PASS (Excellent) |
 | 12 | `compressed_attention` | 165.59 | **43.2** | 91.3% | 1.37x | PASS (Excellent) |
 | 13 | `factorised_matrix_state` | 3867.96 | **114.52** | 97.84% | 3.63x | PASS (Good) |
-| 14 | `svd_llm_v2_attention` | 339.46 | **120.41** | 71.14% | 3.82x | PASS (Good) |
-| 15 | `leka_v2` | 388.19 | **140.6** | 69.42% | 4.46x | PASS (Good) |
-| 16 | `aegis_v6` | 157.78 | **157.78** | 0.0% | 5.00x | PASS |
-| 17 | `svd_linear_attention` | 339.37 | **173.41** | 53.91% | 5.50x | PASS |
-| 18 | `leka_v3` | 711.96 | **261.47** | 66.21% | 8.29x | PASS |
+| 14 | `res_svd` | 277.4 | **115.3** | 65.93% | 3.66x | PASS (Good) |
+| 15 | `svd_llm_v2_attention` | 339.46 | **120.41** | 71.14% | 3.82x | PASS (Good) |
+| 16 | `leka_v2` | 388.19 | **140.6** | 69.42% | 4.46x | PASS (Good) |
+| 17 | `aegis_v6` | 157.78 | **157.78** | 0.0% | 5.00x | PASS |
+| 18 | `svd_linear_attention` | 339.37 | **173.41** | 53.91% | 5.50x | PASS |
+| 19 | `adaptive_svd_attention` | 339.43 | **184.52** | 50.31% | 5.85x | PASS |
+| 20 | `leka_v3` | 711.96 | **261.47** | 66.21% | 8.29x | PASS |

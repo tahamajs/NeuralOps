@@ -78,6 +78,12 @@
     "recovery_pct": 97.84
   },
   {
+    "module": "res_svd",
+    "pre_ppl": 277.4,
+    "post_ppl": 115.3,
+    "recovery_pct": 65.93
+  },
+  {
     "module": "svd_llm_v2_attention",
     "pre_ppl": 339.46,
     "post_ppl": 120.41,
@@ -100,6 +106,12 @@
     "pre_ppl": 339.37,
     "post_ppl": 173.41,
     "recovery_pct": 53.91
+  },
+  {
+    "module": "adaptive_svd_attention",
+    "pre_ppl": 339.43,
+    "post_ppl": 184.52,
+    "recovery_pct": 50.31
   },
   {
     "module": "leka_v3",
