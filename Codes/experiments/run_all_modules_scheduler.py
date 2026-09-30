@@ -30,34 +30,50 @@ REMOTE_RESULTS = f"{PROJECT_DIR}/results/kd_runs"
 MASTER_MD_PATH = LOCAL_RESULTS / "ALL_MODULES_MASTER.md"
 MASTER_JSON_PATH = LOCAL_RESULTS / "ALL_MODULES_MASTER.json"
 
-# Curated 114 Attention Modules from framework/attentions
-ALL_ATTENTIONS = [
-    'adaptive_span_attention', 'adaptive_sparse_attention', 'adaptive_svd_attention',
-    'adasplash_attention', 'aegis_hybrid', 'aegis_spectron_fp8', 'aegis_v2', 'aegis_v5',
-    'aegis_v6', 'asvd_attention', 'bam_umoe', 'block_transformer_hiba', 'chela_slay',
-    'cluster_attention', 'compressed_attention', 'compressed_mha_attention', 'cosformer',
-    'decay_linear_attention', 'eat', 'expert_choice_moe', 'factorised_matrix_state',
-    'flash_attention3', 'flash_attention3_fp8', 'full_attention', 'fused_svd_kernel',
-    'fusion_attn', 'galerkin_attention', 'gated_delta_net', 'gated_deltanet_block',
-    'gated_linear_attention', 'goldfinch_ahn', 'gqa_attention', 'granite_hybrid',
-    'griffin_ssd', 'halo_regla', 'hamming_attention', 'hgrn2_gated_deltanet', 'hgrn2_layer',
-    'hgrn2_outer', 'hla_attention', 'hybrid_attention', 'hymba_transx', 'infini_attention',
-    'jamba', 'jamba_info', 'kda_attention', 'leka_v1', 'leka_v2', 'leka_v3',
-    'linformer_attention', 'lola_attention', 'lora_attention', 'lsh_attention', 'mamba_block',
-    'mamba_svd_flash', 'minimal_nova', 'mixattention_moska', 'mla_attention', 'moba_attention',
-    'moe_deltakv_paged', 'naive_svd', 'nasc_attention', 'nexus', 'nha_attention',
-    'nsa_attention', 'nystrom_attention', 'optimized_hybrid_attention', 'orion',
-    'padre_attention', 'performer_attention', 'phantom', 'primal_attention',
-    'progressive_token_pruning', 'projection_factorized_attn', 'qcqa_attention',
-    'rala_attention', 'reap_moe', 'regla_attention', 'replace', 'res_svd', 'routing_attention',
-    'rpc_attention', 'salt_attention', 'samba_m3', 'samba_moe', 'selective_ssm', 'simple_ssm',
-    'soa_attn', 'span_expanded_attention', 'spectra_v2', 'spectraformer_attention',
-    'spectral_mamba', 'spectron', 'squeezing_heads_distill', 'svd_attention', 'svd_compressed',
-    'svd_linear_attention', 'svd_linear_decay', 'svd_llm_v2_attention', 'svd_mamba',
-    'svd_projection_attention', 'template_attention', 'tlinformer_attention',
-    'token_compressed_attention', 'tpa_attention',
-    'triton_svd_linear_attention', 'unified_rope', 'upi_stuffed_mamba', 'vig_attention',
-    'vspec', 'wgqa_attention', 'xattention', 'zeros_attention'
+ALREADY_TESTED = {
+    "mamba_block", "factorised_matrix_state", "compressed_attention",
+    "xattention", "gated_delta_net", "direct_svd", "hgrn2_layer",
+    "svd_linear_attention", "leka_v3", "svd_llm_v2_attention",
+    "leka_v2", "galerkin", "galerkin_attention", "spectron", "aegis_v2",
+    "cosformer", "triton_cosformer",  # injection failed, skip
+}
+
+# Curated Attention Modules with priority modules placed first
+PRIORITY_ATTENTIONS = [
+    'aegis_v6', 'adaptive_svd_attention', 'fusion_attn', 'flash_attention3',
+    'squeezing_heads_distill', 'lora_attention', 'gqa_attention',
+    'mamba_svd_flash', 'primal_attention', 'res_svd', 'fused_svd_kernel',
+]
+
+ALL_ATTENTIONS = PRIORITY_ATTENTIONS + [
+    m for m in [
+        'adaptive_span_attention', 'adaptive_sparse_attention', 'adaptive_svd_attention',
+        'adasplash_attention', 'aegis_hybrid', 'aegis_spectron_fp8', 'aegis_v2', 'aegis_v5',
+        'aegis_v6', 'asvd_attention', 'bam_umoe', 'block_transformer_hiba', 'chela_slay',
+        'cluster_attention', 'compressed_attention', 'compressed_mha_attention', 'cosformer',
+        'decay_linear_attention', 'eat', 'expert_choice_moe', 'factorised_matrix_state',
+        'flash_attention3', 'flash_attention3_fp8', 'full_attention', 'fused_svd_kernel',
+        'fusion_attn', 'galerkin_attention', 'gated_delta_net', 'gated_deltanet_block',
+        'gated_linear_attention', 'goldfinch_ahn', 'gqa_attention', 'granite_hybrid',
+        'griffin_ssd', 'halo_regla', 'hamming_attention', 'hgrn2_gated_deltanet', 'hgrn2_layer',
+        'hgrn2_outer', 'hla_attention', 'hybrid_attention', 'hymba_transx', 'infini_attention',
+        'jamba', 'jamba_info', 'kda_attention', 'leka_v1', 'leka_v2', 'leka_v3',
+        'linformer_attention', 'lola_attention', 'lora_attention', 'lsh_attention', 'mamba_block',
+        'mamba_svd_flash', 'minimal_nova', 'mixattention_moska', 'mla_attention', 'moba_attention',
+        'moe_deltakv_paged', 'naive_svd', 'nasc_attention', 'nexus', 'nha_attention',
+        'nsa_attention', 'nystrom_attention', 'optimized_hybrid_attention', 'orion',
+        'padre_attention', 'performer_attention', 'phantom', 'primal_attention',
+        'progressive_token_pruning', 'projection_factorized_attn', 'qcqa_attention',
+        'rala_attention', 'reap_moe', 'regla_attention', 'replace', 'res_svd', 'routing_attention',
+        'rpc_attention', 'salt_attention', 'samba_m3', 'samba_moe', 'selective_ssm', 'simple_ssm',
+        'soa_attn', 'span_expanded_attention', 'spectra_v2', 'spectraformer_attention',
+        'spectral_mamba', 'spectron', 'squeezing_heads_distill', 'svd_attention', 'svd_compressed',
+        'svd_linear_attention', 'svd_linear_decay', 'svd_llm_v2_attention', 'svd_mamba',
+        'svd_projection_attention', 'template_attention', 'tlinformer_attention',
+        'token_compressed_attention', 'tpa_attention',
+        'triton_svd_linear_attention', 'unified_rope', 'upi_stuffed_mamba', 'vig_attention',
+        'vspec', 'wgqa_attention', 'xattention', 'zeros_attention'
+    ] if m not in PRIORITY_ATTENTIONS
 ]
 
 # Curated 76 Compression Modules from framework/compression_engine
@@ -128,9 +144,9 @@ def get_registry_data() -> Dict[str, Any]:
         return {"runs": []}
 
 def get_tested_modules(include_failures: bool = False) -> Set[str]:
-    """Find modules already successfully run in registry."""
+    """Find modules already successfully run in registry or hardcoded ALREADY_TESTED."""
     data = get_registry_data()
-    tested = set()
+    tested = set(ALREADY_TESTED)
     for r in data.get("runs", []):
         mod = r.get("module")
         if not mod:
@@ -139,6 +155,10 @@ def get_tested_modules(include_failures: bool = False) -> Set[str]:
         post_ppl = res.get("post_ppl")
         if post_ppl is not None and not str(post_ppl).lower().startswith("nan"):
             tested.add(mod)
+            if mod == "galerkin":
+                tested.add("galerkin_attention")
+            elif mod == "galerkin_attention":
+                tested.add("galerkin")
         elif include_failures:
             tested.add(mod)
     return tested
@@ -268,6 +288,22 @@ def generate_master_report(all_runs: List[Dict[str, Any]], total_candidates: int
                 "error": res.get("error", "Unknown error or OOM"),
                 "status": "FAIL"
             })
+
+    # Deduplicate valid_runs keeping best post_ppl per module
+    best_valid: Dict[str, Dict[str, Any]] = {}
+    for r in valid_runs:
+        m = r["module"]
+        if m not in best_valid or r["post_ppl"] < best_valid[m]["post_ppl"]:
+            best_valid[m] = r
+    valid_runs = list(best_valid.values())
+
+    # Only report as failed if the module does not have a successful run
+    failed_runs = [f for f in failed_runs if f["module"] not in best_valid]
+    # Deduplicate failed runs by module
+    failed_dict: Dict[str, Dict[str, Any]] = {}
+    for f in failed_runs:
+        failed_dict[f["module"]] = f
+    failed_runs = list(failed_dict.values())
 
     # Sort valid runs by post_ppl ascending
     valid_runs.sort(key=lambda x: x["post_ppl"])
