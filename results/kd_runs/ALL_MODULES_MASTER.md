@@ -1,42 +1,28 @@
-# All Modules Knowledge Distillation (KD) Master Results
+# All Modules KD Results
 
-**Last Updated:** 2026-09-30 18:00:44  
-**Teacher Baseline PPL (GPT-2 on WikiText-2):** `31.54`  
+**Generated:** 2026-09-30T18:59:50.933945  
+**Total modules tested:** 18  
+**Baseline (GPT-2 Teacher):** PPL = `31.54`
 
-## Summary
-- **Total Modules Available:** 113
-- **Total Successfully Tested:** 8
-- **Failed / Incompatible / OOM:** 2
+## Results Table
 
-## Top 10 by Post-KD Perplexity
-
-| Rank | Module | Pre PPL | Post PPL | Ratio to Baseline (31.54) | Recovery % | Step Time | Peak VRAM |
-|:---:|:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| 1 | `galerkin` | 31.54 | **31.65** | 1.00x | 0.00% | 392.5ms | 1452.8 MB |
-| 2 | `xattention` | 47.62 | **36.10** | 1.14x | 71.64% | 558.7ms | 1460.5 MB |
-| 3 | `compressed_attention` | 165.59 | **43.20** | 1.37x | 91.30% | 389.2ms | 1255.3 MB |
-| 4 | `factorised_matrix_state` | 3867.96 | **114.52** | 3.63x | 97.84% | 419.1ms | 1754.5 MB |
-| 5 | `svd_llm_v2_attention` | 339.46 | **120.41** | 3.82x | 71.14% | 526.4ms | 1132.1 MB |
-| 6 | `leka_v2` | 388.19 | **140.60** | 4.46x | 69.42% | 975.9ms | 1267.2 MB |
-| 7 | `svd_linear_attention` | 339.37 | **173.41** | 5.50x | 53.91% | 409.9ms | 1063.2 MB |
-| 8 | `leka_v3` | 711.96 | **261.47** | 8.29x | 66.21% | 792.0ms | 1235.3 MB |
-
-## Full Results Table
-
-| Rank | Module | Pre PPL | Post PPL | Recovery % | Ratio | Step Time | Peak VRAM | Status |
-|:---:|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| 1 | `galerkin` | 31.54 | 31.65 | 0.00% | 1.00x | 392.5ms | 1452.8 MB | PASS |
-| 2 | `xattention` | 47.62 | 36.10 | 71.64% | 1.14x | 558.7ms | 1460.5 MB | PASS |
-| 3 | `compressed_attention` | 165.59 | 43.20 | 91.30% | 1.37x | 389.2ms | 1255.3 MB | PASS |
-| 4 | `factorised_matrix_state` | 3867.96 | 114.52 | 97.84% | 3.63x | 419.1ms | 1754.5 MB | PASS |
-| 5 | `svd_llm_v2_attention` | 339.46 | 120.41 | 71.14% | 3.82x | 526.4ms | 1132.1 MB | PASS |
-| 6 | `leka_v2` | 388.19 | 140.60 | 69.42% | 4.46x | 975.9ms | 1267.2 MB | PASS |
-| 7 | `svd_linear_attention` | 339.37 | 173.41 | 53.91% | 5.50x | 409.9ms | 1063.2 MB | PASS |
-| 8 | `leka_v3` | 711.96 | 261.47 | 66.21% | 8.29x | 792.0ms | 1235.3 MB | PASS |
-
-## Failed / Incompatible Modules
-
-| Module | Failure Reason |
-|:---|:---|
-| `triton_cosformer` | `not enough values to unpack (expected 3, got 0)` |
-| `cosformer` | `Unknown error or OOM` |
+| Rank | Module | Pre PPL | Post PPL | Recovery | Ratio | Status |
+|------|--------|---------|----------|----------|-------|--------|
+| 1 | `lora_attention` | 31.54 | **31.52** | 0.0% | 1.00x | PASS (Excellent) |
+| 2 | `galerkin` | 31.54 | **31.65** | 0.0% | 1.00x | PASS (Excellent) |
+| 3 | `gqa_attention` | 31.54 | **31.65** | 0.0% | 1.00x | PASS (Excellent) |
+| 4 | `fusion_attn` | 31.54 | **31.67** | 0.0% | 1.00x | PASS (Excellent) |
+| 5 | `squeezing_heads_distill` | 31.54 | **31.73** | 0.0% | 1.01x | PASS (Excellent) |
+| 6 | `flash_attention3` | 31.54 | **31.74** | 0.0% | 1.01x | PASS (Excellent) |
+| 7 | `squeezing_heads` | 31.54 | **31.83** | 0.0% | 1.01x | PASS (Excellent) |
+| 8 | `mamba_svd_flash` | 31.54 | **32.03** | 0.0% | 1.02x | PASS (Excellent) |
+| 9 | `asvd_attention` | 39.38 | **34.82** | 58.16% | 1.10x | PASS (Excellent) |
+| 10 | `xattention` | 47.62 | **36.1** | 71.64% | 1.14x | PASS (Excellent) |
+| 11 | `aa_svd` | 47.22 | **40.11** | 45.34% | 1.27x | PASS (Excellent) |
+| 12 | `compressed_attention` | 165.59 | **43.2** | 91.3% | 1.37x | PASS (Excellent) |
+| 13 | `factorised_matrix_state` | 3867.96 | **114.52** | 97.84% | 3.63x | PASS (Good) |
+| 14 | `svd_llm_v2_attention` | 339.46 | **120.41** | 71.14% | 3.82x | PASS (Good) |
+| 15 | `leka_v2` | 388.19 | **140.6** | 69.42% | 4.46x | PASS (Good) |
+| 16 | `aegis_v6` | 157.78 | **157.78** | 0.0% | 5.00x | PASS |
+| 17 | `svd_linear_attention` | 339.37 | **173.41** | 53.91% | 5.50x | PASS |
+| 18 | `leka_v3` | 711.96 | **261.47** | 66.21% | 8.29x | PASS |
