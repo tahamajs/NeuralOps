@@ -208,18 +208,48 @@ def wait_for_batch(procs, poll_sec=30, max_minutes=45):
 
 
 # ===========================================================================
+# Auto git commit & push
+# ===========================================================================
+def auto_git_commit(commit_msg: str):
+    """Automatically commit and push registry and results."""
+    try:
+        subprocess.run(
+            ["git", "add", "results/kd_runs/", "results/kd_comparison_mamba.csv", "results/kd_comparison_mamba.json"],
+            cwd=str(PROJECT_DIR), timeout=15, check=False,
+        )
+        res = subprocess.run(
+            ["git", "commit", "-m", commit_msg],
+            cwd=str(PROJECT_DIR), capture_output=True, text=True, timeout=15,
+        )
+        if "nothing to commit" in res.stdout.lower() or "nothing to commit" in res.stderr.lower():
+            return
+        subprocess.run(["git", "push", "origin", "main"], cwd=str(PROJECT_DIR), timeout=30, check=False)
+        print(f"  [GIT] Auto-committed and pushed: {commit_msg}")
+    except Exception as e:
+        print(f"  [GIT] Auto-commit error (non-fatal): {e}")
+
+
+# ===========================================================================
 # Master report
 # ===========================================================================
 def generate_master_report(all_results, output_dir):
     """Generate ALL_MODULES_MASTER.md and .json."""
     BASELINE = 31.54
 
+    # Also load entire registry so all historical runs are included in master table
+    full_registry = read_registry()
+    combined = list(full_registry.get("runs", [])) + list(all_results)
+
     best = {}
-    for r in all_results:
+    for r in combined:
         m = r.get("module", "")
         res = r.get("results", {}).get("C", {}) if isinstance(r.get("results"), dict) else {}
         post = res.get("post_ppl") if isinstance(res, dict) and "post_ppl" in res else r.get("post_ppl")
         if post is None or (isinstance(post, float) and post != post):
+            continue
+        try:
+            post = float(post)
+        except Exception:
             continue
         if m not in best or post < (best[m].get("post_ppl") or float("inf")):
             best[m] = {
@@ -236,9 +266,9 @@ def generate_master_report(all_results, output_dir):
     )
 
     md = ["# All Modules KD Results\n"]
-    md.append(f"**Generated:** {datetime.now().isoformat()}")
-    md.append(f"**Total modules tested:** {len(sorted_results)}")
-    md.append(f"**Baseline (GPT-2 Teacher):** PPL = {BASELINE}\n")
+    md.append(f"**Generated:** {datetime.now().isoformat()}  ")
+    md.append(f"**Total modules tested:** {len(sorted_results)}  ")
+    md.append(f"**Baseline (GPT-2 Teacher):** PPL = `{BASELINE}`\n")
     md.append("## Results Table\n")
     md.append("| Rank | Module | Pre PPL | Post PPL | Recovery | Ratio | Status |")
     md.append("|------|--------|---------|----------|----------|-------|--------|")
@@ -254,7 +284,7 @@ def generate_master_report(all_results, output_dir):
             ratio = "?"
         status = "PASS (Excellent)" if (isinstance(post, (int, float)) and post < 50) else \
                  "PASS (Good)" if (isinstance(post, (int, float)) and post < 150) else "PASS"
-        md.append(f"| {i} | `{module}` | {pre} | {post} | {rec}% | {ratio} | {status} |")
+        md.append(f"| {i} | `{module}` | {pre} | **{post}** | {rec}% | {ratio} | {status} |")
 
     output_dir.mkdir(parents=True, exist_ok=True)
     md_path = output_dir / "ALL_MODULES_MASTER.md"
@@ -405,9 +435,14 @@ def main():
         i += n_par
         batch_idx += 1
 
+        # Intermediate master report & auto commit after every batch
+        generate_master_report(all_results, PROJECT_DIR / "results" / "kd_runs")
+        auto_git_commit(f"chore(kd): batch {batch_idx} completed ({', '.join(batch)})")
+
     # Final report
     print("\n[4/4] Generating master report...")
     generate_master_report(all_results, PROJECT_DIR / "results" / "kd_runs")
+    auto_git_commit("chore(kd): all batches completed - final master report")
     print("\nAll done!")
 
 
