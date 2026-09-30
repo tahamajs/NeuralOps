@@ -81,6 +81,79 @@ def setup_logging(log_file: Optional[str] = None):
         root.addHandler(fh)
 
 
+def make_run_dir(module_name: str, args: argparse.Namespace) -> Path:
+    """Create a unique run directory based on module name and config."""
+    timestamp = getattr(args, "timestamp", datetime.now().strftime("%Y%m%d_%H%M%S"))
+
+    # Build a short config suffix
+    config_parts = [
+        f"bs{args.batch_size}",
+        f"seq{args.seq_len}",
+        f"lr{args.learning_rate:.0e}",
+    ]
+    if getattr(args, "no_cosine_lr", False):
+        config_parts.append("noclr")
+    if args.methods:
+        config_parts.append("".join(sorted(args.methods)))
+    config_suffix = "_".join(config_parts)
+
+    run_dir = Path("results") / "kd_runs" / module_name / f"{timestamp}_{config_suffix}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    return run_dir
+
+
+def update_registry(module_name: str, run_dir: Path, results: List[Dict[str, Any]], args: argparse.Namespace, baseline_ppl: float):
+    """Maintain a master JSON registry at results/kd_runs/registry.json."""
+    try:
+        registry_path = Path("results") / "kd_runs" / "registry.json"
+        registry_path.parent.mkdir(parents=True, exist_ok=True)
+
+        data = {"runs": []}
+        if registry_path.exists():
+            try:
+                data = json.loads(registry_path.read_text(encoding="utf-8"))
+                if "runs" not in data or not isinstance(data["runs"], list):
+                    data = {"runs": []}
+            except Exception:
+                data = {"runs": []}
+
+        valid_results = [r for r in results if isinstance(r.get("post_ppl"), (int, float)) and np.isfinite(r["post_ppl"])]
+        best_post_ppl = min((r["post_ppl"] for r in valid_results), default=float("nan"))
+        best_recovery = max((r.get("recovery_pct", 0.0) for r in valid_results), default=0.0)
+
+        entry = {
+            "module": module_name,
+            "timestamp": getattr(args, "timestamp", datetime.now().strftime("%Y%m%d_%H%M%S")),
+            "run_dir": str(run_dir).replace("\\", "/"),
+            "methods": args.methods,
+            "batch_size": args.batch_size,
+            "grad_accum_steps": args.grad_accum_steps,
+            "seq_len": args.seq_len,
+            "recovery_steps": args.recovery_steps,
+            "baseline_ppl": baseline_ppl,
+            "best_post_ppl": best_post_ppl,
+            "best_recovery_pct": best_recovery,
+            "results": {r["method"]: {k: v for k, v in r.items() if k != "method"} for r in results},
+        }
+        data["runs"].append(entry)
+        registry_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        LOG.info("Updated global registry at %s", registry_path)
+    except Exception as e:
+        LOG.warning("Failed to update global registry: %s", e)
+
+
+def update_latest_link(module_name: str, run_dir: Path):
+    """Record latest run path in results/kd_runs/<module>/latest.txt."""
+    try:
+        module_dir = Path("results") / "kd_runs" / module_name
+        module_dir.mkdir(parents=True, exist_ok=True)
+        latest_file = module_dir / "latest.txt"
+        latest_file.write_text(str(run_dir.resolve()), encoding="utf-8")
+    except Exception as e:
+        LOG.warning("Failed to update latest.txt for %s: %s", module_name, e)
+
+
+
 # -----------------------------------------------------------------------------
 # Data Loading & Tokenization
 # -----------------------------------------------------------------------------
@@ -301,10 +374,22 @@ def set_train_scope(model, train_scope="all"):
             # Within .attn., inspect the immediate submodule name
             sub = name.split(".attn.", 1)[-1]
 
-            # If it's explicitly a low-rank/SVD decomposed parameter, always train it
-            if any(kw in name for kw in trainable_keywords):
+            # Check if this is an SVD base weight of a FactorisedLinear module.
+            is_svd_base = False
+            if any(name.endswith(sfx) for sfx in (".U", ".S", ".V")):
+                is_svd_base = True
+            elif name.endswith(".bias"):
+                parent_path = name.rsplit(".", 1)[0]
+                parent_mod = dict(model.named_modules()).get(parent_path, None)
+                if parent_mod is not None and (
+                    hasattr(parent_mod, "lora_A") or hasattr(parent_mod, "lora_B")
+                ):
+                    is_svd_base = True
+
+            if is_svd_base:
+                p.requires_grad = False
+            elif any(kw in name for kw in trainable_keywords):
                 p.requires_grad = True
-            # Skip original uncompressed GPT-2 fused projections
             elif sub.startswith(("c_attn.weight", "c_proj.weight", "c_attn.bias", "c_proj.bias")) or sub in ("c_attn", "c_proj"):
                 p.requires_grad = False
             else:
@@ -974,9 +1059,17 @@ def run_kd_method(
                 f'Pre PPL={pre_ppl:.1f}, Post PPL={post_ppl:.1f}, Recovery={recovery_pct:.1f}%'
             )
             plt.tight_layout()
-            plot_path = Path("results") / f"loss_curve_{method_name}_{getattr(args, 'tag', 'run')}.png"
+            if hasattr(args, "run_dir") and args.run_dir:
+                plot_path = Path(args.run_dir) / f"loss_curve_{method_name}.png"
+            else:
+                plot_path = Path("results") / f"loss_curve_{method_name}_{getattr(args, 'tag', 'run')}.png"
             plot_path.parent.mkdir(parents=True, exist_ok=True)
             plt.savefig(plot_path, dpi=120)
+            # Also keep legacy copy in results/
+            legacy_plot = Path("results") / f"loss_curve_{method_name}_{getattr(args, 'tag', 'run')}.png"
+            if plot_path.resolve() != legacy_plot.resolve():
+                legacy_plot.parent.mkdir(parents=True, exist_ok=True)
+                plt.savefig(legacy_plot, dpi=120)
             plt.close(fig)
             LOG.info("Saved loss curve: %s", plot_path)
         except Exception as e:
@@ -1090,6 +1183,11 @@ def main():
     if not args.log_file:
         args.log_file = f"logs/kd_comparison_mamba_{timestamp}.log"
     setup_logging(args.log_file)
+
+    # Create module-specific run directory
+    args.run_dir = make_run_dir(args.module, args)
+    LOG.info("Run directory: %s", args.run_dir)
+    update_latest_link(args.module, args.run_dir)
 
     LOG.info("=" * 70)
     LOG.info("KNOWLEDGE DISTILLATION QUICK TEST: MAMBA_BLOCK RESCUE")
@@ -1214,9 +1312,9 @@ def main():
                 "error": str(e),
             })
 
-    # 6. Save CSV
-    csv_path = Path(args.output_csv)
-    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    # 6. Save CSV (module-specific folder)
+    run_dir = getattr(args, "run_dir", make_run_dir(args.module, args))
+    csv_path = run_dir / "metrics.csv"
     fieldnames = [
         "method", "pre_ppl", "post_ppl", "ppl_ratio", "recovery_pct",
         "peak_vram_mb", "train_time_s", "s_per_step", "loss_final", "cached",
@@ -1229,6 +1327,17 @@ def main():
         for r in results:
             writer.writerow(r)
     LOG.info("Saved CSV results to %s", csv_path)
+
+    # Save config.json with all run arguments
+    config_path = run_dir / "config.json"
+    config_dict = {
+        k: (str(v) if not isinstance(v, (int, float, bool, str, type(None))) else v)
+        for k, v in vars(args).items()
+        if k != "run_dir"
+    }
+    config_dict["run_dir"] = str(run_dir).replace("\\", "/")
+    config_path.write_text(json.dumps(config_dict, indent=2), encoding="utf-8")
+    LOG.info("Saved config to %s", config_path)
 
     # 7. Print Comparison Table
     print_comparison_table(results)
@@ -1266,12 +1375,74 @@ def main():
         "best_post_ppl": best_post_ppl,
         "is_ssm_recoverable": is_recoverable,
         "recommendation": recommendation,
+        "run_dir": str(run_dir).replace("\\", "/"),
     }
 
-    json_path = Path(args.output_json)
-    json_path.parent.mkdir(parents=True, exist_ok=True)
+    json_path = run_dir / "metrics.json"
     json_path.write_text(json.dumps(json_payload, indent=2), encoding="utf-8")
     LOG.info("Saved JSON summary to %s", json_path)
+
+    # Generate README for this run
+    readme_lines = [
+        f"# KD Run: {args.module}",
+        "",
+        f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"**Module:** `{args.module}`",
+        f"**Methods:** {', '.join(args.methods)}",
+        f"**Train scope:** `{args.train_scope}`",
+        "",
+        "## Configuration",
+        "",
+        f"- Batch size: {args.batch_size}",
+        f"- Grad accumulation: {args.grad_accum_steps} (effective batch = {args.batch_size * args.grad_accum_steps})",
+        f"- Sequence length: {args.seq_len}",
+        f"- Recovery steps: {args.recovery_steps}",
+        f"- Learning rate: {args.learning_rate:.2e}",
+        f"- KL temperature: {args.kl_temperature}",
+        f"- LR schedule: {'constant (no cosine)' if args.no_cosine_lr else 'cosine'}",
+        f"- Cache max texts: {args.cache_max_train_texts}",
+        "",
+        "## Results",
+        "",
+    ]
+
+    for r in results:
+        readme_lines.append(f"### Method {r['method']}")
+        readme_lines.append("")
+        pre_val = r.get('pre_ppl', float('nan'))
+        post_val = r.get('post_ppl', float('nan'))
+        rec_val = r.get('recovery_pct', 0.0)
+        ratio_val = r.get('ppl_ratio', float('inf'))
+        s_step = r.get('s_per_step', 0.0)
+        vram_mb = r.get('peak_vram_mb', 0.0)
+        readme_lines.append(f"- Pre-KD PPL: {pre_val:.2f}" if np.isfinite(pre_val) else f"- Pre-KD PPL: {pre_val}")
+        readme_lines.append(f"- Post-KD PPL: {post_val:.2f}" if np.isfinite(post_val) else f"- Post-KD PPL: {post_val}")
+        readme_lines.append(f"- Recovery: {rec_val:.2f}%")
+        readme_lines.append(f"- Post/Baseline ratio: {ratio_val:.3f}x" if np.isfinite(ratio_val) else f"- Post/Baseline ratio: {ratio_val}")
+        readme_lines.append(f"- Step time: {s_step*1000:.0f} ms")
+        readme_lines.append(f"- Peak VRAM: {vram_mb:.0f} MB")
+        readme_lines.append("")
+
+    readme_path = run_dir / "README.md"
+    readme_path.write_text("\n".join(readme_lines), encoding="utf-8")
+    LOG.info("Saved README to %s", readme_path)
+
+    # Maintain global registry of all runs
+    update_registry(args.module, run_dir, results, args, baseline_ppl)
+
+    # Backward compatibility: copy artifacts to legacy output paths
+    try:
+        import shutil
+        legacy_csv = Path(args.output_csv)
+        legacy_csv.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(csv_path, legacy_csv)
+
+        legacy_json = Path(args.output_json)
+        legacy_json.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(json_path, legacy_json)
+        LOG.info("Updated legacy paths: %s and %s", legacy_csv, legacy_json)
+    except Exception as e:
+        LOG.warning("Failed to copy to legacy paths: %s", e)
 
     # Comparison plot
     if HAS_MATPLOTLIB and len(valid_results) > 0:
@@ -1295,8 +1466,12 @@ def main():
             ax.legend()
             ax.grid(True, alpha=0.3, axis='y')
             plt.tight_layout()
-            comparison_path = Path("results") / f"methods_comparison_{timestamp}.png"
+            comparison_path = run_dir / "methods_comparison.png"
             plt.savefig(comparison_path, dpi=120)
+            # Legacy comparison plot
+            legacy_comp_path = Path("results") / f"methods_comparison_{timestamp}.png"
+            legacy_comp_path.parent.mkdir(parents=True, exist_ok=True)
+            plt.savefig(legacy_comp_path, dpi=120)
             plt.close(fig)
             LOG.info("Saved comparison plot: %s", comparison_path)
         except Exception as e:
