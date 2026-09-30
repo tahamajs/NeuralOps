@@ -222,13 +222,45 @@ def launch_kd_run(
         f"--max_grad_norm 0.3 --eval_every 100 --cache_max_train_texts 500 "
         f"--no-cosine-lr"
     )
-    cmd = (
-        f'Set-Location -Path \'{PROJECT_DIR}\'; '
-        f'Start-Process -FilePath \'python\' -ArgumentList \'{arg_list}\' '
-        f'-WorkingDirectory \'{PROJECT_DIR}\' '
-        f'-RedirectStandardOutput \'{remote_out}\' -RedirectStandardError \'{remote_err}\''
-    )
-    run_command_smart(cmd, timeout=12)
+    if IS_WINDOWS:
+        out_f = open(remote_out, "w", encoding="utf-8")
+        err_f = open(remote_err, "w", encoding="utf-8")
+        cmd_args = [
+            sys.executable,
+            "Codes/experiments/kd_quick_test.py",
+            "--module", module,
+            "--train_scope", "mamba",
+            "--methods", "C",
+            "--recovery_steps", str(recovery_steps),
+            "--seq_len", str(seq_len),
+            "--batch_size", str(batch_size),
+            "--grad_accum_steps", str(grad_accum_steps),
+            "--learning_rate", "5e-6",
+            "--kl_temperature", "2.0",
+            "--kl_warmup_steps", "50",
+            "--max_grad_norm", "0.3",
+            "--eval_every", "100",
+            "--cache_max_train_texts", "500",
+            "--no-cosine-lr",
+        ]
+        # DETACHED_PROCESS = 0x00000008, CREATE_NEW_PROCESS_GROUP = 0x00000200
+        flags = 0x00000008 | 0x00000200
+        subprocess.Popen(
+            cmd_args,
+            cwd=PROJECT_DIR,
+            stdout=out_f,
+            stderr=err_f,
+            creationflags=flags,
+            close_fds=True,
+        )
+    else:
+        cmd = (
+            f'Set-Location -Path \'{PROJECT_DIR}\'; '
+            f'Start-Process -FilePath \'python\' -ArgumentList \'{arg_list}\' '
+            f'-WorkingDirectory \'{PROJECT_DIR}\' '
+            f'-RedirectStandardOutput \'{remote_out}\' -RedirectStandardError \'{remote_err}\''
+        )
+        run_command_smart(cmd, timeout=12)
     logger.info(f"Launched {module} (steps={recovery_steps}, seq={seq_len}) -> log: {remote_out}")
     return remote_out
 
