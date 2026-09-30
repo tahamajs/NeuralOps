@@ -124,7 +124,8 @@ class VariationalSpectralGate(nn.Module):
     def forward(
         self, x: torch.Tensor, valid_mask: Optional[torch.Tensor] = None
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        pooled = _masked_mean(x, valid_mask).float()
+        net_dtype = next(self.net.parameters()).dtype
+        pooled = _masked_mean(x, valid_mask).to(net_dtype)
         stats = self.net(pooled)
         mu, log_sigma = stats.chunk(2, dim=-1)
         log_sigma = torch.clamp(log_sigma, min=-10.0, max=2.0)
@@ -150,7 +151,8 @@ class HeadGate(nn.Module):
         nn.init.constant_(self.net[-1].bias, 3.0)
 
     def forward(self, x: torch.Tensor, valid_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
-        pooled = _masked_mean(x, valid_mask).float()
+        net_dtype = next(self.net.parameters()).dtype
+        pooled = _masked_mean(x, valid_mask).to(net_dtype)
         return torch.sigmoid(self.net(pooled)).to(x.dtype)
 
 
@@ -172,7 +174,8 @@ class TokenRouter(nn.Module):
         is_decoder: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         B, N, D = x.shape
-        scores = torch.sigmoid(self.net(x.float()).squeeze(-1))  # (B, N)
+        net_dtype = next(self.net.parameters()).dtype
+        scores = torch.sigmoid(self.net(x.to(net_dtype)).squeeze(-1))  # (B, N)
         if valid_mask is not None:
             scores = scores.masked_fill(~valid_mask, -10000.0)
 
@@ -305,14 +308,20 @@ class DynamicLowRankProjector(nn.Module):
                 self.scaling = sub.lora_scaling
 
     def forward(self, x: torch.Tensor, gate: torch.Tensor) -> torch.Tensor:
-        z = torch.matmul(x, self.V)
-        z = z * self.S.unsqueeze(0).unsqueeze(0) * gate.unsqueeze(1)
-        out = torch.matmul(z, self.U.t().contiguous())
+        v = self.V.to(x.dtype)
+        s = self.S.to(x.dtype)
+        u = self.U.to(x.dtype)
+        g = gate.to(x.dtype)
+        z = torch.matmul(x, v)
+        z = z * s.unsqueeze(0).unsqueeze(0) * g.unsqueeze(1)
+        out = torch.matmul(z, u.t().contiguous())
         if self.bias is not None:
-            out = out + self.bias
+            out = out + self.bias.to(x.dtype)
 
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
+            la = self.lora_A.to(x.dtype)
+            lb = self.lora_B.to(x.dtype)
+            lora_out = F.linear(F.linear(x, la), lb) * self.scaling
             out = out + lora_out
 
         return out

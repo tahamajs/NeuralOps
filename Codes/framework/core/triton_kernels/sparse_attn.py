@@ -67,44 +67,43 @@ if HAS_TRITON:
         n_k_blocks = (N_K + BLOCK_SIZE - 1) // BLOCK_SIZE
 
         for k_blk_idx in range(0, n_k_blocks):
-            if IS_CAUSAL and (k_blk_idx * BLOCK_SIZE > (q_blk_idx + 1) * BLOCK_SIZE - 1):
-                continue
-
-            # Check block mask if present
+            process_block = True
+            if IS_CAUSAL:
+                process_block = process_block and (k_blk_idx <= q_blk_idx)
             if HAS_MASK:
                 mask_val = tl.load(Mask_ptr + q_blk_idx * stride_mq + k_blk_idx * stride_mk)
-                if mask_val == 0:
-                    continue
+                process_block = process_block and (mask_val != 0)
 
-            k_start = k_blk_idx * BLOCK_SIZE
-            offs_k = k_start + tl.arange(0, BLOCK_SIZE)
-            mask_k = offs_k < N_K
+            if process_block:
+                k_start = k_blk_idx * BLOCK_SIZE
+                offs_k = k_start + tl.arange(0, BLOCK_SIZE)
+                mask_k = offs_k < N_K
 
-            k_ptrs = k_base + (offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd)
-            v_ptrs = v_base + (offs_k[:, None] * stride_vn + offs_d[None, :] * stride_vd)
+                k_ptrs = k_base + (offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd)
+                v_ptrs = v_base + (offs_k[:, None] * stride_vn + offs_d[None, :] * stride_vd)
 
-            k = tl.load(k_ptrs, mask=mask_k[:, None], other=0.0)
-            v = tl.load(v_ptrs, mask=mask_k[:, None], other=0.0)
+                k = tl.load(k_ptrs, mask=mask_k[:, None], other=0.0)
+                v = tl.load(v_ptrs, mask=mask_k[:, None], other=0.0)
 
-            # Compute S_ij = Q_i @ K_j^T * sm_scale
-            s = tl.dot(q, tl.trans(k)) * sm_scale
+                # Compute S_ij = Q_i @ K_j^T * sm_scale
+                s = tl.dot(q, tl.trans(k)) * sm_scale
 
-            if IS_CAUSAL:
-                causal_cond = offs_q[:, None] >= offs_k[None, :]
-                s = tl.where(causal_cond & mask_q[:, None] & mask_k[None, :], s, float("-inf"))
-            else:
-                s = tl.where(mask_q[:, None] & mask_k[None, :], s, float("-inf"))
+                if IS_CAUSAL:
+                    causal_cond = offs_q[:, None] >= offs_k[None, :]
+                    s = tl.where(causal_cond & mask_q[:, None] & mask_k[None, :], s, float("-inf"))
+                else:
+                    s = tl.where(mask_q[:, None] & mask_k[None, :], s, float("-inf"))
 
-            # Online safe softmax update
-            m_curr = tl.maximum(m_prev, tl.max(s, axis=1))
-            alpha = tl.exp(m_prev - m_curr)
-            p = tl.exp(s - m_curr[:, None])
+                # Online safe softmax update
+                m_curr = tl.maximum(m_prev, tl.max(s, axis=1))
+                alpha = tl.exp(m_prev - m_curr)
+                p = tl.exp(s - m_curr[:, None])
 
-            l_curr = l_prev * alpha + tl.sum(p, axis=1)
-            acc = acc * alpha[:, None] + tl.dot(p.to(v.dtype), v)
+                l_curr = l_prev * alpha + tl.sum(p, axis=1)
+                acc = acc * alpha[:, None] + tl.dot(p.to(v.dtype), v)
 
-            m_prev = m_curr
-            l_prev = l_curr
+                m_prev = m_curr
+                l_prev = l_curr
 
         # Normalize output
         out = acc / (l_prev[:, None] + 1e-6)

@@ -386,8 +386,9 @@ class HGRN2GatedDeltaNet(BaseAttention):
                 f"{tuple(hgrn_out.shape)} vs {tuple(delta_out.shape)}."
             )
 
-        gamma = torch.sigmoid(self.gate(hidden_states))
-        fused = gamma * hgrn_out + (1.0 - gamma) * delta_out
+        gate_dtype = next(self.gate.parameters()).dtype
+        gamma = torch.sigmoid(self.gate(hidden_states.to(gate_dtype))).to(hidden_states.dtype)
+        fused = gamma * hgrn_out.to(hidden_states.dtype) + (1.0 - gamma) * delta_out.to(hidden_states.dtype)
         out = self.out_proj(fused)
 
         if out.shape[-1] != hidden_states.shape[-1]:

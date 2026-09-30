@@ -749,9 +749,20 @@ def main(argv: Optional[List[str]] = None):
     LOG.info("Loaded %d deprecated modules.", len(deprecated))
 
     # ---- Tokenizer + datasets ----
-    tok_src = args.model_path if Path(args.model_path).exists() else "gpt2"
+    model_p = Path(args.model_path)
+    if not model_p.exists() and (ROOT / args.model_path).exists():
+        model_p = ROOT / args.model_path
+    tok_src = str(model_p) if model_p.exists() else args.model_path
     LOG.info("Loading tokenizer from %s ...", tok_src)
-    tokenizer = AutoTokenizer.from_pretrained(tok_src)
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(tok_src)
+    except Exception as e:
+        if (ROOT / "models" / "gpt2_wikitext").exists():
+            tok_src = str(ROOT / "models" / "gpt2_wikitext")
+            LOG.info("Retrying tokenizer from %s ...", tok_src)
+            tokenizer = AutoTokenizer.from_pretrained(tok_src)
+        else:
+            raise
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 

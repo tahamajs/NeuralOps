@@ -86,17 +86,11 @@ def apply_rotary_pos_emb(
 def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
     orig_dtype = x.dtype
     x = x.float()
-    # Clamp logits to prevent FP16 overflow / NaN loss explosions
-    x = torch.clamp(x, min=-50.0, max=10.0)
     temp = max(temperature, 1e-4)
-    m = x.max(dim=dim, keepdim=True).values
-    e = torch.exp((x - m) / temp)
-    m_scaled = torch.clamp(-m / temp, min=-50.0, max=10.0)
-    denom = e - torch.exp(m_scaled)
-    p = F.relu(denom)
-    p_sum = p.sum(dim=dim, keepdim=True)
-    fallback = F.softmax(x / temp, dim=dim)
-    res = torch.where(p_sum > 1e-5, p / torch.clamp(p_sum, min=1e-5), fallback)
+    # Masked positions (future tokens) are <= -1000.0. Preserve mask while clamping unmasked values.
+    is_masked = x <= -1000.0
+    x_clamped = torch.where(is_masked, torch.full_like(x, -1e4), torch.clamp(x, min=-50.0, max=10.0))
+    res = F.softmax(x_clamped / temp, dim=dim)
     res = torch.nan_to_num(res, nan=0.0)
     return res.to(orig_dtype)
 
@@ -184,12 +178,26 @@ class FactorisedLinear_CUR(nn.Module):
                 C = W[:, col_idx]
                 R = W[row_idx, :]
                 W_intersection = W[row_idx][:, col_idx]
-                U_int = torch.linalg.pinv(W_intersection)
+                U_int = torch.linalg.pinv(W_intersection, rcond=1e-3)
+                C_Uint = C @ U_int
+                rec_norm = float(torch.linalg.norm(C_Uint @ R))
+                orig_norm = float(torch.linalg.norm(W))
 
-                self.down.weight.data.zero_()
-                self.down.weight.data[:rank, :in_dim].copy_(R.to(dtype=self.down.weight.dtype))
-                self.up.weight.data.zero_()
-                self.up.weight.data[:out_dim, :rank].copy_((C @ U_int).to(dtype=self.up.weight.dtype))
+                if rec_norm > 2.0 * orig_norm or not math.isfinite(rec_norm):
+                    # Ill-conditioned CUR intersection -> fallback to stable truncated SVD
+                    U_r = U_full[:, :rank]
+                    S_r = S_full[:rank]
+                    Vt_r = Vt_full[:rank, :]
+                    sqrt_s = torch.sqrt(S_r)
+                    self.down.weight.data.zero_()
+                    self.down.weight.data[:rank, :in_dim].copy_((sqrt_s.unsqueeze(1) * Vt_r).to(dtype=self.down.weight.dtype))
+                    self.up.weight.data.zero_()
+                    self.up.weight.data[:out_dim, :rank].copy_((U_r * sqrt_s.unsqueeze(0)).to(dtype=self.up.weight.dtype))
+                else:
+                    self.down.weight.data.zero_()
+                    self.down.weight.data[:rank, :in_dim].copy_(R.to(dtype=self.down.weight.dtype))
+                    self.up.weight.data.zero_()
+                    self.up.weight.data[:out_dim, :rank].copy_(C_Uint.to(dtype=self.up.weight.dtype))
             except Exception:
                 # SVD fallback
                 nn.init.kaiming_uniform_(self.down.weight, a=math.sqrt(5))
