@@ -67,3 +67,34 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 20:25:41,019 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / gqa-attention is SUCCESSFUL (acc=91.06% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-gqa-attention and Git recording.
 2026-09-30 20:25:41,919 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-gqa-attention: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 20:25:42,003 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\gqa_attention.md
+[main ea669a91f] feat(benchmark): record successful gqa_attention on distilbert-sst2 (Acc: 91.06%, F1: 0.9137)
+ 21 files changed, 1071 insertions(+), 493 deletions(-)
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_128/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_128/distilbert_sst2_gqa_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_128/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_128/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_128/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_16/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_16/distilbert_sst2_gqa_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_16/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_16/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_16/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_32/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_32/distilbert_sst2_gqa_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_32/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_32/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_32/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_64/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_64/distilbert_sst2_gqa_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_64/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_64/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/gqa_attention/rank_64/summary.csv
+2026-09-30 20:25:50,221 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: ea669a91
+2026-09-30 20:25:50,223 [INFO] QwenQualitySweep: [1/1] gqa_attention Timing: eval_time=47.94s
+2026-09-30 20:25:50,224 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 20:25:50,562 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:25:50,562 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 20:25:50,572 [INFO] QwenQualitySweep: 
+       Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+gqa_attention   PASS   91.06%    +0.46% 0.9137                  6            1.00x  449.6 MB               2.54              2.91
+2026-09-30 20:25:50,572 [INFO] QwenQualitySweep: ================================================================================
