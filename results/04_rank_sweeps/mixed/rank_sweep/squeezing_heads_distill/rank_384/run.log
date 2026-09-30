@@ -66,3 +66,24 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 20:28:59,666 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / squeezing-heads-distill is SUCCESSFUL (acc=90.37% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-squeezing-heads-distill and Git recording.
 2026-09-30 20:29:00,978 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-squeezing-heads-distill: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 20:29:01,046 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\squeezing_heads_distill.md
+[main 2e582fdd7] feat(benchmark): record successful squeezing_heads_distill on distilbert-sst2 (Acc: 90.37%, F1: 0.9056)
+ 11 files changed, 309 insertions(+)
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_256/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_256/distilbert_sst2_squeezing_heads_distill_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_256/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_256/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_256/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_384/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_384/distilbert_sst2_squeezing_heads_distill_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_384/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_384/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/squeezing_heads_distill/rank_384/summary.csv
+2026-09-30 20:29:08,693 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: 2e582fdd
+2026-09-30 20:29:08,694 [INFO] QwenQualitySweep: [1/1] squeezing_heads_distill Timing: eval_time=34.72s
+2026-09-30 20:29:08,695 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 20:29:09,049 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:29:09,049 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 20:29:09,056 [INFO] QwenQualitySweep: 
+                                  Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+squeezing_heads_distill (efficient-attn)   PASS   90.37%    -0.23% 0.9056                  0            1.00x  429.8 MB               1.57              1.80
+2026-09-30 20:29:09,057 [INFO] QwenQualitySweep: ================================================================================
