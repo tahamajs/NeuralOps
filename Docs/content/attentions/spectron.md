@@ -834,6 +834,6 @@ injected_model = inject_spectron(model=model, spectral_rank=32)
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **88.07%** | -2.53% | 0.8852 | 1.15x | 0 | N/A | 2026-09-30 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.48%** | -0.12% | 0.9083 | 1.07x | 0 | N/A | 2026-09-30 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **60.50%** | -21.30% | 0.6002 | 1.15x | 6 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **91.90%** | -2.40% | 0.9158 | 1.15x | 6 | N/A | 2026-09-19 |
