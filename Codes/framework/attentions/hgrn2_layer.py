@@ -17,7 +17,13 @@ import torch.nn.functional as F
 from framework.core.adapters import UniversalAdapter
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
-
+try:
+    from framework.core.triton_kernels.hgrn2_scan import hgrn2_scan_triton
+    HAS_TRITON_HGRN2 = True
+except Exception as _e:
+    logging.getLogger(__name__).warning("Triton hgrn2_scan unavailable: %s", _e)
+    hgrn2_scan_triton = None
+    HAS_TRITON_HGRN2 = False
 logger = logging.getLogger(__name__)
 
 
@@ -319,6 +325,11 @@ class HGRN2Layer(BaseAttention):
         iv: torch.Tensor,
         chunk_size: int = 32,
     ) -> torch.Tensor:
+
+        if HAS_TRITON_HGRN2 and f.is_cuda and not torch.is_grad_enabled() is False:
+        # Triton path: faster, supports fp16/bf16/fp32 uniformly
+            return hgrn2_scan_triton(f.contiguous(), iv.contiguous(), res_clip=self.res_clip)
+
         """Parallel chunked log-space associative scan."""
         B, L, D = iv.shape
         f_fp32 = f.float()
@@ -378,16 +389,21 @@ class HGRN2Layer(BaseAttention):
         if self.is_decoder:
             return h_fwd, None
 
-        # Anticausal backward scan for bidirectional encoders
+        if HAS_TRITON_HGRN2 and f.is_cuda:
+            h_fwd = self._scan_direction(f, iv)
+        else:
+            h_fwd = self._scan_direction(f, iv)  # fallback still uses checkpoint inside
+        if self.is_decoder:
+            return h_fwd, None
+        # backward direction
         f_rev = torch.flip(f, dims=[1])
         iv_rev = torch.flip(iv, dims=[1])
-        if self.training:
-            import torch.utils.checkpoint as cp
-            h_rev = cp.checkpoint(self._scan_direction, f_rev, iv_rev, use_reentrant=False)
-        else:
-            h_rev = self._scan_direction(f_rev, iv_rev)
+        h_rev = self._scan_direction(f_rev, iv_rev)
         h_bwd = torch.flip(h_rev, dims=[1])
         return h_fwd, h_bwd
+
+
+
 
     def forward(
         self,
