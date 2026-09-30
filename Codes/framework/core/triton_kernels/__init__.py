@@ -8,6 +8,7 @@ Provides high-performance fused GPU kernels with transparent PyTorch CPU/CUDA fa
   - low_rank: Bottleneck low-rank projections
   - state_update: SSM / RWKV recurrence
   - gqa: Grouped Query Attention head expansion
+  - selective_scan: Triton-accelerated selective scan for Mamba-1
 """
 from __future__ import annotations
 
@@ -27,6 +28,8 @@ from framework.core.triton_kernels import (
     sparse_attn,
     state_update,
 )
+from framework.core.triton_kernels.softplus import softplus
+from framework.core.triton_kernels.selective_scan import selective_scan_fn
 
 __all__ = [
     "HAS_TRITON",
@@ -41,4 +44,6 @@ __all__ = [
     "low_rank_pytorch_fallback",
     "state_update_pytorch_fallback",
     "gqa_pytorch_fallback",
+    "softplus",
+    "selective_scan_fn",
 ]

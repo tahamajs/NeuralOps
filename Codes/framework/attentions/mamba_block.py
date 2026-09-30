@@ -26,11 +26,10 @@ except Exception as e:  # pragma: no cover
     HAS_MAMBA_CUDA = False
 
 try:
-    from mamba_ssm.ops.triton.selective_scan import selective_scan_fn as triton_selective_scan
+    from framework.core.triton_kernels.selective_scan import selective_scan_fn as triton_selective_scan
     HAS_TRITON_MAMBA = True
 except Exception as _e:
-    # mamba-ssm is not installed or does not have Triton selective_scan;
-    # we will use the parallel selective_scan from framework.core.selective_scan
+    logging.getLogger(__name__).warning("Triton selective_scan unavailable: %s", _e)
     triton_selective_scan = None
     HAS_TRITON_MAMBA = False
 
