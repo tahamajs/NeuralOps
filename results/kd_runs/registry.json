@@ -318,6 +318,108 @@
           "ppl_at_step_1500": ""
         }
       }
+    },
+    {
+      "module": "cosformer",
+      "timestamp": "20260930_174658",
+      "run_dir": "results/kd_runs/cosformer/20260930_174658_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": NaN,
+      "best_recovery_pct": 0.0,
+      "results": {
+        "C": {
+          "pre_ppl": NaN,
+          "post_ppl": NaN,
+          "ppl_ratio": Infinity,
+          "recovery_pct": 0.0,
+          "peak_vram_mb": 1207.23,
+          "train_time_s": 59.39,
+          "s_per_step": 0.5939,
+          "loss_final": NaN,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": "",
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    },
+    {
+      "module": "svd_linear_attention",
+      "timestamp": "20260930_174308",
+      "run_dir": "results/kd_runs/svd_linear_attention/20260930_174308_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 173.41,
+      "best_recovery_pct": 53.91,
+      "results": {
+        "C": {
+          "pre_ppl": 339.37,
+          "post_ppl": 173.41,
+          "ppl_ratio": 5.4981,
+          "recovery_pct": 53.91,
+          "peak_vram_mb": 1063.2,
+          "train_time_s": 204.95,
+          "s_per_step": 0.4099,
+          "loss_final": 245.1397,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 173.41,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    },
+    {
+      "module": "galerkin",
+      "timestamp": "20260930_174626",
+      "run_dir": "results/kd_runs/galerkin/20260930_174626_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 31.65,
+      "best_recovery_pct": 0.0,
+      "results": {
+        "C": {
+          "pre_ppl": 31.54,
+          "post_ppl": 31.65,
+          "ppl_ratio": 1.0035,
+          "recovery_pct": 0.0,
+          "peak_vram_mb": 1452.83,
+          "train_time_s": 196.27,
+          "s_per_step": 0.3925,
+          "loss_final": 22.7478,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 31.65,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
     }
   ]
 }
