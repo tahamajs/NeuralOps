@@ -1957,5 +1957,66 @@
         "ppl_at_step_1500": ""
       }
     }
+  },
+  {
+    "module": "hamming_attention",
+    "timestamp": "20260930_235753",
+    "run_dir": "results/kd_runs/hamming_attention/20260930_235753_bs1_seq128_lr5e-06_noclr_C",
+    "methods": [
+      "C"
+    ],
+    "batch_size": 1,
+    "grad_accum_steps": 1,
+    "seq_len": 128,
+    "recovery_steps": 500,
+    "baseline_ppl": 31.54,
+    "best_post_ppl": 83.59,
+    "best_recovery_pct": 91.57,
+    "results": {
+      "C": {
+        "pre_ppl": 648.92,
+        "post_ppl": 83.59,
+        "ppl_ratio": 2.6503,
+        "recovery_pct": 91.57,
+        "peak_vram_mb": 1496.36,
+        "train_time_s": 229.95,
+        "s_per_step": 0.4599,
+        "loss_final": 156.3037,
+        "cached": true,
+        "ppl_at_step_250": "",
+        "ppl_at_step_500": 83.59,
+        "ppl_at_step_750": "",
+        "ppl_at_step_1000": "",
+        "ppl_at_step_1250": "",
+        "ppl_at_step_1500": ""
+      }
+    }
+  },
+  {
+    "module": "hgrn2_gated_deltanet",
+    "timestamp": "20261001_000237",
+    "run_dir": "results/kd_runs/hgrn2_gated_deltanet/20261001_000237_bs1_seq96_lr5e-06_noclr_C",
+    "methods": [
+      "C"
+    ],
+    "batch_size": 1,
+    "grad_accum_steps": 1,
+    "seq_len": 96,
+    "recovery_steps": 300,
+    "baseline_ppl": 34.01,
+    "best_post_ppl": NaN,
+    "best_recovery_pct": 0.0,
+    "results": {
+      "C": {
+        "pre_ppl": NaN,
+        "post_ppl": NaN,
+        "ppl_ratio": Infinity,
+        "recovery_pct": 0.0,
+        "peak_vram_mb": 0.0,
+        "train_time_s": 0.0,
+        "loss_final": NaN,
+        "error": "CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 1.84 GiB is free. Of the allocated memory 877.98 MiB is allocated by PyTorch, and 28.02 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)"
+      }
+    }
   }
 ]

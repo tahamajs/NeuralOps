@@ -1,12 +1,12 @@
 # All Modules Knowledge Distillation (KD) Master Results
 
-**Last Updated:** 2026-09-30 23:57:27  
+**Last Updated:** 2026-10-01 00:04:42  
 **Teacher Baseline PPL (GPT-2 on WikiText-2):** `31.54`  
 
 ## Summary
 - **Total Modules Available:** 113
-- **Total Successfully Tested:** 42
-- **Failed / Incompatible / OOM:** 5
+- **Total Successfully Tested:** 43
+- **Failed / Incompatible / OOM:** 6
 
 ## Top 10 by Post-KD Perplexity
 
@@ -51,24 +51,25 @@
 | 22 | `aa_svd` | 47.22 | 40.11 | 45.34% | 1.27x | 244.7ms | 1334.2 MB | PASS |
 | 23 | `compressed_attention` | 165.59 | 43.20 | 91.30% | 1.37x | 389.2ms | 1255.3 MB | PASS |
 | 24 | `kda_attention` | 2796.78 | 54.56 | 99.17% | 1.73x | 1371.2ms | 1941.5 MB | PASS |
-| 25 | `aegis_spectron_fp8` | 407.77 | 83.79 | 86.11% | 2.66x | 1819.1ms | 1897.8 MB | PASS |
-| 26 | `bam_umoe` | 173.00 | 92.90 | 56.62% | 2.95x | 472.5ms | 1114.2 MB | PASS |
-| 27 | `aegis_v5` | 211.86 | 98.77 | 62.72% | 3.13x | 781.1ms | 1226.3 MB | PASS |
-| 28 | `factorised_matrix_state` | 3867.96 | 114.52 | 97.84% | 3.63x | 419.1ms | 1754.5 MB | PASS |
-| 29 | `res_svd` | 277.40 | 115.30 | 65.93% | 3.66x | 409.1ms | 1149.0 MB | PASS |
-| 30 | `svd_llm_v2_attention` | 339.46 | 120.41 | 71.14% | 3.82x | 526.4ms | 1132.1 MB | PASS |
-| 31 | `decay_linear_attention` | 2492.37 | 131.84 | 95.92% | 4.18x | 968.1ms | 1491.6 MB | PASS |
-| 32 | `leka_v2` | 388.19 | 140.60 | 69.42% | 4.46x | 975.9ms | 1267.2 MB | PASS |
-| 33 | `aegis_v6` | 156.83 | 156.83 | 0.00% | 4.97x | 953.8ms | 1469.6 MB | PASS |
-| 34 | `svd_linear_attention` | 339.37 | 173.41 | 53.91% | 5.50x | 409.9ms | 1063.2 MB | PASS |
-| 35 | `compressed_mha_attention` | 601.87 | 176.91 | 74.51% | 5.61x | 334.9ms | 1110.9 MB | PASS |
-| 36 | `gated_delta_net` | 784.04 | 177.42 | 80.61% | 5.63x | 3169.4ms | 3940.2 MB | PASS |
-| 37 | `adaptive_svd_attention` | 339.43 | 184.52 | 50.31% | 5.85x | 364.4ms | 1077.2 MB | PASS |
-| 38 | `leka_v3` | 711.96 | 261.47 | 66.21% | 8.29x | 792.0ms | 1235.3 MB | PASS |
-| 39 | `fused_svd_kernel` | 339.36 | 281.41 | 18.83% | 8.92x | 5790.3ms | 1053.0 MB | PASS |
-| 40 | `aegis_hybrid` | 371.97 | 431.19 | -17.40% | 13.67x | 707.3ms | 1181.7 MB | PASS |
-| 41 | `gated_deltanet_block` | 1332.05 | 454.39 | 67.61% | 13.36x | 530.7ms | 1747.6 MB | PASS |
-| 42 | `hgrn2_outer` | 12352.75 | 1014.88 | 92.02% | 32.18x | 1066.3ms | 1927.3 MB | PASS |
+| 25 | `hamming_attention` | 648.92 | 83.59 | 91.57% | 2.65x | 459.9ms | 1496.4 MB | PASS |
+| 26 | `aegis_spectron_fp8` | 407.77 | 83.79 | 86.11% | 2.66x | 1819.1ms | 1897.8 MB | PASS |
+| 27 | `bam_umoe` | 173.00 | 92.90 | 56.62% | 2.95x | 472.5ms | 1114.2 MB | PASS |
+| 28 | `aegis_v5` | 211.86 | 98.77 | 62.72% | 3.13x | 781.1ms | 1226.3 MB | PASS |
+| 29 | `factorised_matrix_state` | 3867.96 | 114.52 | 97.84% | 3.63x | 419.1ms | 1754.5 MB | PASS |
+| 30 | `res_svd` | 277.40 | 115.30 | 65.93% | 3.66x | 409.1ms | 1149.0 MB | PASS |
+| 31 | `svd_llm_v2_attention` | 339.46 | 120.41 | 71.14% | 3.82x | 526.4ms | 1132.1 MB | PASS |
+| 32 | `decay_linear_attention` | 2492.37 | 131.84 | 95.92% | 4.18x | 968.1ms | 1491.6 MB | PASS |
+| 33 | `leka_v2` | 388.19 | 140.60 | 69.42% | 4.46x | 975.9ms | 1267.2 MB | PASS |
+| 34 | `aegis_v6` | 156.83 | 156.83 | 0.00% | 4.97x | 953.8ms | 1469.6 MB | PASS |
+| 35 | `svd_linear_attention` | 339.37 | 173.41 | 53.91% | 5.50x | 409.9ms | 1063.2 MB | PASS |
+| 36 | `compressed_mha_attention` | 601.87 | 176.91 | 74.51% | 5.61x | 334.9ms | 1110.9 MB | PASS |
+| 37 | `gated_delta_net` | 784.04 | 177.42 | 80.61% | 5.63x | 3169.4ms | 3940.2 MB | PASS |
+| 38 | `adaptive_svd_attention` | 339.43 | 184.52 | 50.31% | 5.85x | 364.4ms | 1077.2 MB | PASS |
+| 39 | `leka_v3` | 711.96 | 261.47 | 66.21% | 8.29x | 792.0ms | 1235.3 MB | PASS |
+| 40 | `fused_svd_kernel` | 339.36 | 281.41 | 18.83% | 8.92x | 5790.3ms | 1053.0 MB | PASS |
+| 41 | `aegis_hybrid` | 371.97 | 431.19 | -17.40% | 13.67x | 707.3ms | 1181.7 MB | PASS |
+| 42 | `gated_deltanet_block` | 1332.05 | 454.39 | 67.61% | 13.36x | 530.7ms | 1747.6 MB | PASS |
+| 43 | `hgrn2_outer` | 12352.75 | 1014.88 | 92.02% | 32.18x | 1066.3ms | 1927.3 MB | PASS |
 
 ## Failed / Incompatible Modules
 
@@ -79,3 +80,4 @@
 | `chela_slay` | `CUDA error: unknown error` |
 | `gated_linear_attention` | `CUDA error: an illegal memory access was encountered` |
 | `halo_regla` | `Unknown error or OOM` |
+| `hgrn2_gated_deltanet` | `CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8` |
