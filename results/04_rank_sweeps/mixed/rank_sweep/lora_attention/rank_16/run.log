@@ -66,3 +66,34 @@ Skipping attention module 'naive_svd' due to: No module named 'framework.attenti
 2026-09-30 20:30:51,750 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / lora-attention is SUCCESSFUL (acc=90.83% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-lora-attention and Git recording.
 2026-09-30 20:30:53,253 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-distilbert-sst2-lora-attention: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
 2026-09-30 20:30:53,283 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\lora_attention.md
+[main 3b56eb982] feat(benchmark): record successful lora_attention on distilbert-sst2 (Acc: 90.83%, F1: 0.9109)
+ 21 files changed, 1053 insertions(+), 473 deletions(-)
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_128/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_128/distilbert_sst2_lora_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_128/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_128/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_128/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_16/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_16/distilbert_sst2_lora_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_16/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_16/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_16/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_32/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_32/distilbert_sst2_lora_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_32/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_32/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_32/summary.csv
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_64/batch_cache_sst2/meta.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_64/distilbert_sst2_lora_attention_full_metrics.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_64/finetune_metadata.json
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_64/run.log
+ create mode 100644 results/04_rank_sweeps/mixed/rank_sweep/lora_attention/rank_64/summary.csv
+2026-09-30 20:31:01,342 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: 3b56eb98
+2026-09-30 20:31:01,344 [INFO] QwenQualitySweep: [1/1] lora_attention Timing: eval_time=57.28s
+2026-09-30 20:31:01,344 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-30 20:31:01,773 [INFO] QwenQualitySweep: ================================================================================
+2026-09-30 20:31:01,773 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-30 20:31:01,782 [INFO] QwenQualitySweep: 
+                         Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+lora_attention (efficient-attn)   PASS   90.83%    +0.23% 0.9109                  0            1.00x  447.8 MB               3.50              4.01
+2026-09-30 20:31:01,782 [INFO] QwenQualitySweep: ================================================================================
