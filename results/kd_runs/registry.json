@@ -2528,6 +2528,40 @@
           "ppl_at_step_1500": ""
         }
       }
+    },
+    {
+      "module": "cosformer",
+      "timestamp": "20261001_135548",
+      "run_dir": "results/kd_runs/cosformer/20261001_135548_bs2_seq128_lr5e-05_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 2,
+      "grad_accum_steps": 4,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 2532.71,
+      "best_recovery_pct": 93.65,
+      "results": {
+        "C": {
+          "pre_ppl": 39435.26,
+          "post_ppl": 2532.71,
+          "ppl_ratio": 80.3015,
+          "recovery_pct": 93.65,
+          "peak_vram_mb": 1911.3,
+          "train_time_s": 1385.02,
+          "s_per_step": 2.77,
+          "loss_final": 340.1351,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 2532.71,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
     }
   ]
 }

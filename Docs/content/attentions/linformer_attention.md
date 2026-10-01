@@ -247,7 +247,7 @@ def _linformer_fused_kernel(
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **81.77%** | -8.83% | 0.8310 | 1.19x | 0 | [svd-linear-attention-distilbert-sst2-linformer](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-linformer) | 2026-09-27 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **83.37%** | -7.23% | 0.8391 | 1.19x | 6 | N/A | 2026-10-01 |
 | **distilbert** | sst2 | `PASS` | N/A | **90.94%** | N/A | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-linformer](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-linformer) | 2026-09-29 |
 | **roberta** | sst2 | `PASS` | N/A | **75.46%** | N/A | 0.7277 | 1.00x | 0 | [svd-linear-attention-roberta-linformer](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-linformer) | 2026-09-29 |
 | **gpt2** | sst2 | `PASS` | N/A | **57.91%** | N/A | 0.3010 | 1.00x | 0 | [svd-linear-attention-gpt2-linformer](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-linformer) | 2026-09-29 |

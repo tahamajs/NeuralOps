@@ -1,1 +1,1 @@
-D:\SVD_Project\results\kd_runs\cosformer\20261001_135548_bs2_seq128_lr5e-05_noclr_C
+D:\SVD_Project\results\kd_runs\cosformer\20261001_142119_bs2_seq128_lr5e-06_noclr_C
