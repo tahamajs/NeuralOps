@@ -1,30 +1,23 @@
 {
-  "module": "orion",
-  "pre_ppl": 451.57,
+  "module": "regla_attention",
+  "pre_ppl": NaN,
   "baseline_ppl": 31.54,
   "results": {
     "C": {
       "method": "C",
-      "pre_ppl": 451.57,
-      "post_ppl": 250.08,
-      "ppl_ratio": 7.929,
-      "recovery_pct": 47.97,
-      "peak_vram_mb": 1153.44,
-      "train_time_s": 1060.24,
-      "s_per_step": 2.1205,
-      "loss_final": 289.436,
-      "cached": true,
-      "ppl_at_step_250": "",
-      "ppl_at_step_500": 250.08,
-      "ppl_at_step_750": "",
-      "ppl_at_step_1000": "",
-      "ppl_at_step_1250": "",
-      "ppl_at_step_1500": ""
+      "pre_ppl": NaN,
+      "post_ppl": NaN,
+      "ppl_ratio": Infinity,
+      "recovery_pct": 0.0,
+      "peak_vram_mb": 0.0,
+      "train_time_s": 0.0,
+      "loss_final": NaN,
+      "error": "CUDA error: CUBLAS_STATUS_EXECUTION_FAILED when calling `cublasSgemmStridedBatched( handle, opa, opb, m, n, k, &alpha, a, lda, stridea, b, ldb, strideb, &beta, c, ldc, stridec, num_batches)`"
     }
   },
-  "best_method": "C",
-  "best_post_ppl": 250.08,
-  "is_ssm_recoverable": true,
-  "recommendation": "MAYBE: Partial recovery achieved. Additional recovery steps or specialized scan kernels needed.",
-  "run_dir": "results/kd_runs/orion/20261001_112045_bs1_seq128_lr5e-06_noclr_C"
+  "best_method": "None",
+  "best_post_ppl": Infinity,
+  "is_ssm_recoverable": false,
+  "recommendation": "NO: Fundamental mathematical incompatibility between SSM recurrence and pre-trained attention representations.",
+  "run_dir": "results/kd_runs/regla_attention/20261001_125131_bs1_seq128_lr5e-06_noclr_C"
 }
