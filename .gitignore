@@ -348,3 +348,5 @@ paper/_PROGRESS.md
 
 /thesis_final
 results/.DS_Store
+results/baseline_check/**/*.pt  
+results/baseline_check/**/*.bin  
