@@ -1,30 +1,30 @@
 {
-  "module": "kda_attention",
-  "pre_ppl": 2796.78,
+  "module": "aegis_v6_attn",
+  "pre_ppl": 212.2,
   "baseline_ppl": 31.54,
   "results": {
     "C": {
       "method": "C",
-      "pre_ppl": 2796.78,
-      "post_ppl": 77.16,
-      "ppl_ratio": 2.4464,
-      "recovery_pct": 98.35,
-      "peak_vram_mb": 1956.65,
-      "train_time_s": 1556.88,
-      "s_per_step": 1.5569,
-      "loss_final": 99.1577,
+      "pre_ppl": 212.2,
+      "post_ppl": 212.2,
+      "ppl_ratio": 6.728,
+      "recovery_pct": 0.0,
+      "peak_vram_mb": 1465.04,
+      "train_time_s": 423.63,
+      "s_per_step": 0.8473,
+      "loss_final": 329.3093,
       "cached": true,
       "ppl_at_step_250": "",
-      "ppl_at_step_500": 98.24,
+      "ppl_at_step_500": 212.2,
       "ppl_at_step_750": "",
-      "ppl_at_step_1000": 77.16,
+      "ppl_at_step_1000": "",
       "ppl_at_step_1250": "",
       "ppl_at_step_1500": ""
     }
   },
   "best_method": "C",
-  "best_post_ppl": 77.16,
+  "best_post_ppl": 212.2,
   "is_ssm_recoverable": true,
-  "recommendation": "YES: SSM can learn from attention. Distillation successfully bridged the architectural gap.",
-  "run_dir": "results/kd_runs/kda_attention/20261001_000538_bs2_seq128_lr2e-05_C"
+  "recommendation": "MAYBE: Partial recovery achieved. Additional recovery steps or specialized scan kernels needed.",
+  "run_dir": "results/kd_runs/aegis_v6_attn/20261001_103516_bs1_seq128_lr5e-06_noclr_C"
 }
