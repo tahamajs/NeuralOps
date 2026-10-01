@@ -1,7 +1,7 @@
 # All Modules KD Results
 
-**Generated:** 2026-10-01T14:08:08.880819  
-**Total modules tested:** 51  
+**Generated:** 2026-10-01T14:12:53.498823  
+**Total modules tested:** 52  
 **Baseline (GPT-2 Teacher):** PPL = `31.54`
 
 ## Results Table
@@ -49,13 +49,14 @@
 | 39 | `compressed_attention_layer_energy` | 601.81 | **179.38** | 74.08% | 5.69x | PASS |
 | 40 | `adaptive_svd_attention` | 339.43 | **184.52** | 50.31% | 5.85x | PASS |
 | 41 | `aegis_v6_attn` | 212.2 | **212.2** | 0.0% | 6.73x | PASS |
-| 42 | `orion` | 451.57 | **250.08** | 47.97% | 7.93x | PASS |
-| 43 | `leka_v3` | 711.96 | **261.47** | 66.21% | 8.29x | PASS |
-| 44 | `fused_svd_kernel` | 339.36 | **281.41** | 18.83% | 8.92x | PASS |
-| 45 | `aegis_hybrid` | 371.97 | **431.19** | -17.4% | 13.67x | PASS |
-| 46 | `gated_deltanet_block` | 1332.05 | **454.39** | 67.61% | 14.41x | PASS |
-| 47 | `hgrn2_outer` | 12352.75 | **1014.88** | 92.02% | 32.18x | PASS |
-| 48 | `hybrid_attention` | 31.54 | **1198.81** | 0.0% | 38.01x | PASS |
-| 49 | `chela_slay` | 3368.59 | **1346.73** | 60.59% | 42.70x | PASS |
-| 50 | `hla_attention` | 3229.08 | **1750.78** | 46.23% | 55.51x | PASS |
-| 51 | `cosformer` | 39435.26 | **5058.89** | 87.24% | 160.40x | PASS |
+| 42 | `triton_svd_linear_attention` | 489.13 | **226.84** | 57.32% | 7.19x | PASS |
+| 43 | `orion` | 451.57 | **250.08** | 47.97% | 7.93x | PASS |
+| 44 | `leka_v3` | 711.96 | **261.47** | 66.21% | 8.29x | PASS |
+| 45 | `fused_svd_kernel` | 339.36 | **281.41** | 18.83% | 8.92x | PASS |
+| 46 | `aegis_hybrid` | 371.97 | **431.19** | -17.4% | 13.67x | PASS |
+| 47 | `gated_deltanet_block` | 1332.05 | **454.39** | 67.61% | 14.41x | PASS |
+| 48 | `hgrn2_outer` | 12352.75 | **1014.88** | 92.02% | 32.18x | PASS |
+| 49 | `hybrid_attention` | 31.54 | **1198.81** | 0.0% | 38.01x | PASS |
+| 50 | `chela_slay` | 3368.59 | **1346.73** | 60.59% | 42.70x | PASS |
+| 51 | `hla_attention` | 3229.08 | **1750.78** | 46.23% | 55.51x | PASS |
+| 52 | `cosformer` | 39435.26 | **5058.89** | 87.24% | 160.40x | PASS |

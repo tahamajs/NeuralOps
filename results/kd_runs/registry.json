@@ -2494,6 +2494,40 @@
           "ppl_at_step_1500": ""
         }
       }
+    },
+    {
+      "module": "triton_svd_linear_attention",
+      "timestamp": "20261001_140845",
+      "run_dir": "results/kd_runs/triton_svd_linear_attention/20261001_140845_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 226.84,
+      "best_recovery_pct": 57.32,
+      "results": {
+        "C": {
+          "pre_ppl": 489.13,
+          "post_ppl": 226.84,
+          "ppl_ratio": 7.1921,
+          "recovery_pct": 57.32,
+          "peak_vram_mb": 1150.07,
+          "train_time_s": 201.82,
+          "s_per_step": 0.4036,
+          "loss_final": 284.8952,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 226.84,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
     }
   ]
 }

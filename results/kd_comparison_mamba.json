@@ -1,21 +1,21 @@
 {
-  "module": "svd_mamba",
-  "pre_ppl": 74.58,
+  "module": "triton_svd_linear_attention",
+  "pre_ppl": 489.13,
   "baseline_ppl": 31.54,
   "results": {
     "C": {
       "method": "C",
-      "pre_ppl": 74.58,
-      "post_ppl": 47.11,
-      "ppl_ratio": 1.4937,
-      "recovery_pct": 63.82,
-      "peak_vram_mb": 2352.96,
-      "train_time_s": 475.32,
-      "s_per_step": 0.9506,
-      "loss_final": 78.794,
+      "pre_ppl": 489.13,
+      "post_ppl": 226.84,
+      "ppl_ratio": 7.1921,
+      "recovery_pct": 57.32,
+      "peak_vram_mb": 1150.07,
+      "train_time_s": 201.82,
+      "s_per_step": 0.4036,
+      "loss_final": 284.8952,
       "cached": true,
       "ppl_at_step_250": "",
-      "ppl_at_step_500": 47.11,
+      "ppl_at_step_500": 226.84,
       "ppl_at_step_750": "",
       "ppl_at_step_1000": "",
       "ppl_at_step_1250": "",
@@ -23,8 +23,8 @@
     }
   },
   "best_method": "C",
-  "best_post_ppl": 47.11,
+  "best_post_ppl": 226.84,
   "is_ssm_recoverable": true,
-  "recommendation": "YES: SSM can learn from attention. Distillation successfully bridged the architectural gap.",
-  "run_dir": "results/kd_runs/svd_mamba/20261001_135724_bs1_seq128_lr5e-06_noclr_C"
+  "recommendation": "MAYBE: Partial recovery achieved. Additional recovery steps or specialized scan kernels needed.",
+  "run_dir": "results/kd_runs/triton_svd_linear_attention/20261001_140845_bs1_seq128_lr5e-06_noclr_C"
 }
