@@ -234,6 +234,12 @@
     "recovery_pct": 0.0
   },
   {
+    "module": "orion",
+    "pre_ppl": 451.57,
+    "post_ppl": 250.08,
+    "recovery_pct": 47.97
+  },
+  {
     "module": "leka_v3",
     "pre_ppl": 711.96,
     "post_ppl": 261.47,
