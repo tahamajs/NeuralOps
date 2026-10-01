@@ -44,7 +44,8 @@
   "rank": 128,
   "force_rank": false,
   "lora_rank": 16,
-  "max_error": 0.4,
+  "max_error": 0.5,
+  "strict_rank": false,
   "asvd_dynamic_rank": true,
   "asvd_energy_threshold": 0.95,
   "asvd_error_threshold": 0.2,
@@ -258,7 +259,7 @@
   "kvtc_max_error": 0.2,
   "kvtc_target_attention_only": true,
   "kvtc_fallback_to_original": true,
-  "a3_max_error": 0.4,
+  "a3_max_error": 0.5,
   "a3_attention_only": true,
   "output_attentions": false
 }

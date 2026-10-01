@@ -5,7 +5,7 @@
   "dataset": "sst2",
   "accuracy_pct": 82.68,
   "recovery_steps": 50,
-  "timestamp": "2026-09-25T11:58:49.308190",
+  "timestamp": "2026-10-01T14:42:14.751468",
   "performance_metrics": {
     "accuracy_pct": 82.68,
     "f1_score": 0.832,
@@ -14,9 +14,9 @@
     "recall": 0.8265,
     "val_loss": 0.4337,
     "peak_vram_mb": 761.91,
-    "tokens_per_sec": 82313.86,
-    "eval_time_s": 2.71,
-    "latency_ms": 3.11,
+    "tokens_per_sec": 63204.6,
+    "eval_time_s": 3.53,
+    "latency_ms": 4.05,
     "per_class_metrics": {
       "0": {
         "precision": 0.8321,
@@ -49,6 +49,8 @@
     "num_injected_attention_layers": 6,
     "lora_params": 589824,
     "avg_reconstruction_error": null,
+    "weighted_reconstruction_error": null,
+    "calibration_time_s": 0.0,
     "per_layer_reconstruction_errors": {},
     "per_layer_ranks": {
       "distilbert.transformer.layer.0.attention": 64,
