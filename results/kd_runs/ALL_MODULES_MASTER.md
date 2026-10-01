@@ -1,6 +1,6 @@
 # All Modules KD Results
 
-**Generated:** 2026-10-01T13:39:23.226766  
+**Generated:** 2026-10-01T13:45:38.677675  
 **Total modules tested:** 49  
 **Baseline (GPT-2 Teacher):** PPL = `31.54`
 
