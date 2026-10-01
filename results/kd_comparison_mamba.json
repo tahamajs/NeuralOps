@@ -1,23 +1,30 @@
 {
-  "module": "hgrn2_gated_deltanet",
-  "pre_ppl": NaN,
-  "baseline_ppl": 34.01,
+  "module": "kda_attention",
+  "pre_ppl": 2796.78,
+  "baseline_ppl": 31.54,
   "results": {
     "C": {
       "method": "C",
-      "pre_ppl": NaN,
-      "post_ppl": NaN,
-      "ppl_ratio": Infinity,
-      "recovery_pct": 0.0,
-      "peak_vram_mb": 0.0,
-      "train_time_s": 0.0,
-      "loss_final": NaN,
-      "error": "CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 1.84 GiB is free. Of the allocated memory 877.98 MiB is allocated by PyTorch, and 28.02 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)"
+      "pre_ppl": 2796.78,
+      "post_ppl": 77.16,
+      "ppl_ratio": 2.4464,
+      "recovery_pct": 98.35,
+      "peak_vram_mb": 1956.65,
+      "train_time_s": 1556.88,
+      "s_per_step": 1.5569,
+      "loss_final": 99.1577,
+      "cached": true,
+      "ppl_at_step_250": "",
+      "ppl_at_step_500": 98.24,
+      "ppl_at_step_750": "",
+      "ppl_at_step_1000": 77.16,
+      "ppl_at_step_1250": "",
+      "ppl_at_step_1500": ""
     }
   },
-  "best_method": "None",
-  "best_post_ppl": Infinity,
-  "is_ssm_recoverable": false,
-  "recommendation": "NO: Fundamental mathematical incompatibility between SSM recurrence and pre-trained attention representations.",
-  "run_dir": "results/kd_runs/hgrn2_gated_deltanet/20261001_000237_bs1_seq96_lr5e-06_noclr_C"
+  "best_method": "C",
+  "best_post_ppl": 77.16,
+  "is_ssm_recoverable": true,
+  "recommendation": "YES: SSM can learn from attention. Distillation successfully bridged the architectural gap.",
+  "run_dir": "results/kd_runs/kda_attention/20261001_000538_bs2_seq128_lr2e-05_C"
 }

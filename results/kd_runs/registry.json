@@ -2019,6 +2019,169 @@
           "error": "CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 1.84 GiB is free. Of the allocated memory 877.98 MiB is allocated by PyTorch, and 28.02 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)"
         }
       }
+    },
+    {
+      "module": "hla_attention",
+      "timestamp": "20261001_000516",
+      "run_dir": "results/kd_runs/hla_attention/20261001_000516_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 1750.78,
+      "best_recovery_pct": 46.23,
+      "results": {
+        "C": {
+          "pre_ppl": 3229.08,
+          "post_ppl": 1750.78,
+          "ppl_ratio": 55.5098,
+          "recovery_pct": 46.23,
+          "peak_vram_mb": 1495.82,
+          "train_time_s": 277.56,
+          "s_per_step": 0.5551,
+          "loss_final": 511.0927,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 1750.78,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    },
+    {
+      "module": "hybrid_attention",
+      "timestamp": "20261001_001129",
+      "run_dir": "results/kd_runs/hybrid_attention/20261001_001129_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 1198.81,
+      "best_recovery_pct": 0.0,
+      "results": {
+        "C": {
+          "pre_ppl": 31.54,
+          "post_ppl": 1198.81,
+          "ppl_ratio": 38.0092,
+          "recovery_pct": 0.0,
+          "peak_vram_mb": 1639.01,
+          "train_time_s": 253.13,
+          "s_per_step": 0.5063,
+          "loss_final": NaN,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 1198.81,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    },
+    {
+      "module": "hymba_transx",
+      "timestamp": "20261001_001704",
+      "run_dir": "results/kd_runs/hymba_transx/20261001_001704_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": NaN,
+      "best_recovery_pct": 0.0,
+      "results": {
+        "C": {
+          "pre_ppl": NaN,
+          "post_ppl": NaN,
+          "ppl_ratio": Infinity,
+          "recovery_pct": 0.0,
+          "peak_vram_mb": 0.0,
+          "train_time_s": 0.0,
+          "loss_final": NaN,
+          "error": "expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float"
+        }
+      }
+    },
+    {
+      "module": "cosformer",
+      "timestamp": "20261001_000651",
+      "run_dir": "results/kd_runs/cosformer/20261001_000651_bs2_seq128_lr5e-05_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 2,
+      "grad_accum_steps": 4,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 5058.89,
+      "best_recovery_pct": 87.24,
+      "results": {
+        "C": {
+          "pre_ppl": 39435.26,
+          "post_ppl": 5058.89,
+          "ppl_ratio": 160.396,
+          "recovery_pct": 87.24,
+          "peak_vram_mb": 1911.3,
+          "train_time_s": 968.93,
+          "s_per_step": 3.2298,
+          "loss_final": 349.6458,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": "",
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
+    },
+    {
+      "module": "kda_attention",
+      "timestamp": "20261001_000538",
+      "run_dir": "results/kd_runs/kda_attention/20261001_000538_bs2_seq128_lr2e-05_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 2,
+      "grad_accum_steps": 4,
+      "seq_len": 128,
+      "recovery_steps": 1000,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 77.16,
+      "best_recovery_pct": 98.35,
+      "results": {
+        "C": {
+          "pre_ppl": 2796.78,
+          "post_ppl": 77.16,
+          "ppl_ratio": 2.4464,
+          "recovery_pct": 98.35,
+          "peak_vram_mb": 1956.65,
+          "train_time_s": 1556.88,
+          "s_per_step": 1.5569,
+          "loss_final": 99.1577,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 98.24,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": 77.16,
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
     }
   ]
 }

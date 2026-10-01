@@ -1,12 +1,12 @@
 # All Modules Knowledge Distillation (KD) Master Results
 
-**Last Updated:** 2026-10-01 00:04:42  
+**Last Updated:** 2026-10-01 00:17:31  
 **Teacher Baseline PPL (GPT-2 on WikiText-2):** `31.54`  
 
 ## Summary
 - **Total Modules Available:** 113
-- **Total Successfully Tested:** 43
-- **Failed / Incompatible / OOM:** 6
+- **Total Successfully Tested:** 45
+- **Failed / Incompatible / OOM:** 7
 
 ## Top 10 by Post-KD Perplexity
 
@@ -70,6 +70,8 @@
 | 41 | `aegis_hybrid` | 371.97 | 431.19 | -17.40% | 13.67x | 707.3ms | 1181.7 MB | PASS |
 | 42 | `gated_deltanet_block` | 1332.05 | 454.39 | 67.61% | 13.36x | 530.7ms | 1747.6 MB | PASS |
 | 43 | `hgrn2_outer` | 12352.75 | 1014.88 | 92.02% | 32.18x | 1066.3ms | 1927.3 MB | PASS |
+| 44 | `hybrid_attention` | 31.54 | 1198.81 | 0.00% | 38.01x | 506.3ms | 1639.0 MB | PASS |
+| 45 | `hla_attention` | 3229.08 | 1750.78 | 46.23% | 55.51x | 555.1ms | 1495.8 MB | PASS |
 
 ## Failed / Incompatible Modules
 
@@ -81,3 +83,4 @@
 | `gated_linear_attention` | `CUDA error: an illegal memory access was encountered` |
 | `halo_regla` | `Unknown error or OOM` |
 | `hgrn2_gated_deltanet` | `CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8` |
+| `hymba_transx` | `expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != floa` |
