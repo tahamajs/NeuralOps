@@ -276,6 +276,12 @@
     "recovery_pct": 0.0
   },
   {
+    "module": "chela_slay",
+    "pre_ppl": 3368.59,
+    "post_ppl": 1346.73,
+    "recovery_pct": 60.59
+  },
+  {
     "module": "hla_attention",
     "pre_ppl": 3229.08,
     "post_ppl": 1750.78,

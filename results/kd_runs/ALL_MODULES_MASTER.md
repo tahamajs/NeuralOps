@@ -1,7 +1,7 @@
 # All Modules KD Results
 
-**Generated:** 2026-10-01T13:02:39.525996  
-**Total modules tested:** 48  
+**Generated:** 2026-10-01T13:39:23.226766  
+**Total modules tested:** 49  
 **Baseline (GPT-2 Teacher):** PPL = `31.54`
 
 ## Results Table
@@ -54,5 +54,6 @@
 | 44 | `gated_deltanet_block` | 1332.05 | **454.39** | 67.61% | 14.41x | PASS |
 | 45 | `hgrn2_outer` | 12352.75 | **1014.88** | 92.02% | 32.18x | PASS |
 | 46 | `hybrid_attention` | 31.54 | **1198.81** | 0.0% | 38.01x | PASS |
-| 47 | `hla_attention` | 3229.08 | **1750.78** | 46.23% | 55.51x | PASS |
-| 48 | `cosformer` | 39435.26 | **5058.89** | 87.24% | 160.40x | PASS |
+| 47 | `chela_slay` | 3368.59 | **1346.73** | 60.59% | 42.70x | PASS |
+| 48 | `hla_attention` | 3229.08 | **1750.78** | 46.23% | 55.51x | PASS |
+| 49 | `cosformer` | 39435.26 | **5058.89** | 87.24% | 160.40x | PASS |
