@@ -1,21 +1,21 @@
 {
-  "module": "compressed_attention_layer_energy",
-  "pre_ppl": 601.81,
+  "module": "svd_mamba",
+  "pre_ppl": 74.58,
   "baseline_ppl": 31.54,
   "results": {
     "C": {
       "method": "C",
-      "pre_ppl": 601.81,
-      "post_ppl": 179.38,
-      "ppl_ratio": 5.6874,
-      "recovery_pct": 74.08,
-      "peak_vram_mb": 1124.3,
-      "train_time_s": 185.78,
-      "s_per_step": 0.3716,
-      "loss_final": 199.4704,
+      "pre_ppl": 74.58,
+      "post_ppl": 47.11,
+      "ppl_ratio": 1.4937,
+      "recovery_pct": 63.82,
+      "peak_vram_mb": 2352.96,
+      "train_time_s": 475.32,
+      "s_per_step": 0.9506,
+      "loss_final": 78.794,
       "cached": true,
       "ppl_at_step_250": "",
-      "ppl_at_step_500": 179.38,
+      "ppl_at_step_500": 47.11,
       "ppl_at_step_750": "",
       "ppl_at_step_1000": "",
       "ppl_at_step_1250": "",
@@ -23,8 +23,8 @@
     }
   },
   "best_method": "C",
-  "best_post_ppl": 179.38,
+  "best_post_ppl": 47.11,
   "is_ssm_recoverable": true,
-  "recommendation": "MAYBE: Partial recovery achieved. Additional recovery steps or specialized scan kernels needed.",
-  "run_dir": "results/kd_runs/compressed_attention_layer_energy/20261001_134612_bs1_seq128_lr5e-06_noclr_C"
+  "recommendation": "YES: SSM can learn from attention. Distillation successfully bridged the architectural gap.",
+  "run_dir": "results/kd_runs/svd_mamba/20261001_135724_bs1_seq128_lr5e-06_noclr_C"
 }

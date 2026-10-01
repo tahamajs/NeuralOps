@@ -138,6 +138,12 @@
     "recovery_pct": 91.3
   },
   {
+    "module": "svd_mamba",
+    "pre_ppl": 74.58,
+    "post_ppl": 47.11,
+    "recovery_pct": 63.82
+  },
+  {
     "module": "kda_attention",
     "pre_ppl": 2796.78,
     "post_ppl": 54.56,
