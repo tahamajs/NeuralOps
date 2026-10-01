@@ -1,1 +1,1 @@
-D:\SVD_Project\results\kd_runs\goldfinch_ahn\20260930_233633_bs1_seq96_lr5e-06_noclr_C_tw
+D:\SVD_Project\results\kd_runs\goldfinch_ahn\20261001_125259_bs1_seq128_lr5e-06_noclr_C
