@@ -1,23 +1,30 @@
 {
-  "module": "compressed_attention_layer",
-  "pre_ppl": NaN,
+  "module": "compressed_attention_layer_energy",
+  "pre_ppl": 601.81,
   "baseline_ppl": 31.54,
   "results": {
     "C": {
       "method": "C",
-      "pre_ppl": NaN,
-      "post_ppl": NaN,
-      "ppl_ratio": Infinity,
-      "recovery_pct": 0.0,
-      "peak_vram_mb": 0.0,
-      "train_time_s": 0.0,
-      "loss_final": NaN,
-      "error": "expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float"
+      "pre_ppl": 601.81,
+      "post_ppl": 179.38,
+      "ppl_ratio": 5.6874,
+      "recovery_pct": 74.08,
+      "peak_vram_mb": 1124.3,
+      "train_time_s": 185.78,
+      "s_per_step": 0.3716,
+      "loss_final": 199.4704,
+      "cached": true,
+      "ppl_at_step_250": "",
+      "ppl_at_step_500": 179.38,
+      "ppl_at_step_750": "",
+      "ppl_at_step_1000": "",
+      "ppl_at_step_1250": "",
+      "ppl_at_step_1500": ""
     }
   },
-  "best_method": "None",
-  "best_post_ppl": Infinity,
-  "is_ssm_recoverable": false,
-  "recommendation": "NO: Fundamental mathematical incompatibility between SSM recurrence and pre-trained attention representations.",
-  "run_dir": "results/kd_runs/compressed_attention_layer/20261001_134015_bs1_seq128_lr5e-06_noclr_C"
+  "best_method": "C",
+  "best_post_ppl": 179.38,
+  "is_ssm_recoverable": true,
+  "recommendation": "MAYBE: Partial recovery achieved. Additional recovery steps or specialized scan kernels needed.",
+  "run_dir": "results/kd_runs/compressed_attention_layer_energy/20261001_134612_bs1_seq128_lr5e-06_noclr_C"
 }

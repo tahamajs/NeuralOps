@@ -2392,6 +2392,40 @@
           "error": "expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float"
         }
       }
+    },
+    {
+      "module": "compressed_attention_layer_energy",
+      "timestamp": "20261001_134612",
+      "run_dir": "results/kd_runs/compressed_attention_layer_energy/20261001_134612_bs1_seq128_lr5e-06_noclr_C",
+      "methods": [
+        "C"
+      ],
+      "batch_size": 1,
+      "grad_accum_steps": 1,
+      "seq_len": 128,
+      "recovery_steps": 500,
+      "baseline_ppl": 31.54,
+      "best_post_ppl": 179.38,
+      "best_recovery_pct": 74.08,
+      "results": {
+        "C": {
+          "pre_ppl": 601.81,
+          "post_ppl": 179.38,
+          "ppl_ratio": 5.6874,
+          "recovery_pct": 74.08,
+          "peak_vram_mb": 1124.3,
+          "train_time_s": 185.78,
+          "s_per_step": 0.3716,
+          "loss_final": 199.4704,
+          "cached": true,
+          "ppl_at_step_250": "",
+          "ppl_at_step_500": 179.38,
+          "ppl_at_step_750": "",
+          "ppl_at_step_1000": "",
+          "ppl_at_step_1250": "",
+          "ppl_at_step_1500": ""
+        }
+      }
     }
   ]
 }

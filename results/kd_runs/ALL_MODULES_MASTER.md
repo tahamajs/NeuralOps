@@ -1,7 +1,7 @@
 # All Modules KD Results
 
-**Generated:** 2026-10-01T13:45:38.677675  
-**Total modules tested:** 49  
+**Generated:** 2026-10-01T13:56:50.966461  
+**Total modules tested:** 50  
 **Baseline (GPT-2 Teacher):** PPL = `31.54`
 
 ## Results Table
@@ -45,15 +45,16 @@
 | 35 | `svd_linear_attention` | 339.37 | **173.41** | 53.91% | 5.50x | PASS |
 | 36 | `compressed_mha_attention` | 601.87 | **176.91** | 74.51% | 5.61x | PASS |
 | 37 | `gated_delta_net` | 784.04 | **177.42** | 80.61% | 5.63x | PASS |
-| 38 | `adaptive_svd_attention` | 339.43 | **184.52** | 50.31% | 5.85x | PASS |
-| 39 | `aegis_v6_attn` | 212.2 | **212.2** | 0.0% | 6.73x | PASS |
-| 40 | `orion` | 451.57 | **250.08** | 47.97% | 7.93x | PASS |
-| 41 | `leka_v3` | 711.96 | **261.47** | 66.21% | 8.29x | PASS |
-| 42 | `fused_svd_kernel` | 339.36 | **281.41** | 18.83% | 8.92x | PASS |
-| 43 | `aegis_hybrid` | 371.97 | **431.19** | -17.4% | 13.67x | PASS |
-| 44 | `gated_deltanet_block` | 1332.05 | **454.39** | 67.61% | 14.41x | PASS |
-| 45 | `hgrn2_outer` | 12352.75 | **1014.88** | 92.02% | 32.18x | PASS |
-| 46 | `hybrid_attention` | 31.54 | **1198.81** | 0.0% | 38.01x | PASS |
-| 47 | `chela_slay` | 3368.59 | **1346.73** | 60.59% | 42.70x | PASS |
-| 48 | `hla_attention` | 3229.08 | **1750.78** | 46.23% | 55.51x | PASS |
-| 49 | `cosformer` | 39435.26 | **5058.89** | 87.24% | 160.40x | PASS |
+| 38 | `compressed_attention_layer_energy` | 601.81 | **179.38** | 74.08% | 5.69x | PASS |
+| 39 | `adaptive_svd_attention` | 339.43 | **184.52** | 50.31% | 5.85x | PASS |
+| 40 | `aegis_v6_attn` | 212.2 | **212.2** | 0.0% | 6.73x | PASS |
+| 41 | `orion` | 451.57 | **250.08** | 47.97% | 7.93x | PASS |
+| 42 | `leka_v3` | 711.96 | **261.47** | 66.21% | 8.29x | PASS |
+| 43 | `fused_svd_kernel` | 339.36 | **281.41** | 18.83% | 8.92x | PASS |
+| 44 | `aegis_hybrid` | 371.97 | **431.19** | -17.4% | 13.67x | PASS |
+| 45 | `gated_deltanet_block` | 1332.05 | **454.39** | 67.61% | 14.41x | PASS |
+| 46 | `hgrn2_outer` | 12352.75 | **1014.88** | 92.02% | 32.18x | PASS |
+| 47 | `hybrid_attention` | 31.54 | **1198.81** | 0.0% | 38.01x | PASS |
+| 48 | `chela_slay` | 3368.59 | **1346.73** | 60.59% | 42.70x | PASS |
+| 49 | `hla_attention` | 3229.08 | **1750.78** | 46.23% | 55.51x | PASS |
+| 50 | `cosformer` | 39435.26 | **5058.89** | 87.24% | 160.40x | PASS |

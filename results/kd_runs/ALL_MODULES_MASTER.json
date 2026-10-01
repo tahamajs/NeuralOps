@@ -222,6 +222,12 @@
     "recovery_pct": 80.61
   },
   {
+    "module": "compressed_attention_layer_energy",
+    "pre_ppl": 601.81,
+    "post_ppl": 179.38,
+    "recovery_pct": 74.08
+  },
+  {
     "module": "adaptive_svd_attention",
     "pre_ppl": 339.43,
     "post_ppl": 184.52,
