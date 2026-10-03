@@ -98,7 +98,7 @@ python neuralops/benchmarks/run_rank_sweeper.py \
   --model models/base_checkpoints/distilbert_mnli \
   --model_family bert \
   --dataset mnli \
-  --output_base results/rank_sweep_mnli \
+  --output_base results/02_rank_sweeps/rank_sweep_mnli \
   --batch_size 16
 ```
 
@@ -112,7 +112,7 @@ python neuralops/benchmarks/run_quality_sweep.py \
   --dataset c4 \
   --rank 256 \
   --batch_size 8 \
-  --output_dir results/c4_baselines
+  --output_dir results/04_baselines/c4_baselines
 ```
 
 ### D. Multi-Seed Pretrained Fine-Tuning Sweep
@@ -123,7 +123,7 @@ python neuralops/benchmarks/run_multiseed.py \
   --models distilbert \
   --dataset sst2 \
   --seeds 42,123,456,789,999 \
-  --output_dir results/multiseed_rigor_distilbert
+  --output_dir results/05_glue_finetuning/multiseed_rigor_distilbert
 ```
 
 ---
