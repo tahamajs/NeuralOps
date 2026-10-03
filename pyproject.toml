@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neuralops"
+version = "1.0.0"
+description = "SVD Linear Attention & Model Compression Framework for Foundation Models"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "NeuralOps Research Team" }
+]
+keywords = [
+    "deep-learning",
+    "attention-mechanisms",
+    "svd",
+    "model-compression",
+    "efficient-transformers",
+    "state-space-models"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "torch>=2.2.0",
+    "transformers>=4.40.0",
+    "datasets>=2.18.0",
+    "accelerate>=0.28.0",
+    "numpy>=1.24.0",
+    "scipy>=1.10.0",
+    "pandas>=2.0.0",
+    "scikit-learn>=1.3.0",
+    "tqdm>=4.66.0",
+    "pyyaml>=6.0",
+    "psutil>=5.9.0",
+    "filelock>=3.12.0",
+    "packaging>=23.0",
+    "matplotlib>=3.7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "ruff>=0.4.0",
+]
+visualization = [
+    "seaborn>=0.12.0",
+    "plotly>=5.15.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["Codes"]
+
+[tool.pytest.ini_options]
+testpaths = ["Codes/framework/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
