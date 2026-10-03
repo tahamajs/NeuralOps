@@ -60,13 +60,13 @@ MASTER_CSV_COLUMNS: list[str] = [
 
 def save_result(
     result: dict[str, Any] | Any,
-    results_dir: str | Path = "benchmark_results",
+    results_dir: str | Path = "07_misc_tests/benchmark_results",
     csv_filename: str = "master_results.csv",
 ) -> str:
     """
     Append a benchmark result row to the master CSV file.
 
-    1. Master CSV is at benchmark_results/master_results.csv (or results_dir/csv_filename).
+    1. Master CSV is at 07_misc_tests/benchmark_results/master_results.csv (or results_dir/csv_filename).
     2. Header is written only if file doesn't exist.
     3. Each call appends one row using csv.DictWriter with extrasaction='ignore'.
     4. All float fields are rounded to 4 decimal places before writing.
@@ -799,7 +799,7 @@ class ResultsSaver:
 
 def save_result_json(
     result: dict[str, Any] | Any,
-    results_dir: str | Path = "benchmark_results",
+    results_dir: str | Path = "07_misc_tests/benchmark_results",
     filename: str | None = None,
 ) -> str:
     """
@@ -831,7 +831,7 @@ def save_result_json(
 
 def save_trajectories_parquet(
     detailed_results: list[dict[str, Any]],
-    output_dir: str | Path = "results/phase2/trajectories",
+    output_dir: str | Path = "results/06_adhoc_experiments/trajectories",
 ) -> str | None:
     """Writes step-level trajectories (loss, grad_norm, latency) as Apache Parquet."""
     target_dir = Path(output_dir)
