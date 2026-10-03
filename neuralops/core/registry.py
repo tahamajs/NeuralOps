@@ -64,6 +64,10 @@ _COMPRESSOR_FILE_MAP: dict[str, str] = {
     "soka": "soka_compressor",
     "swift_svd_compressor": "swift_svd_act",
     "zerokv_neo": "zerokv_neo_compressor",
+    "dynamic_entropy_svd": "dynamic_rank",
+    "entropy_rank_allocator": "dynamic_rank",
+    "res_svd": "res_svd",
+    "spectral_residual_lora": "res_svd",
 }
 
 
