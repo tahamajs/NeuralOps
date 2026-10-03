@@ -9,7 +9,16 @@ import traceback
 from pathlib import Path
 
 import psutil
-from django.conf import settings
+try:
+    from django.conf import settings
+except Exception:
+    settings = None
+
+
+def _get_media_root() -> Path:
+    if settings is not None and getattr(settings, "configured", False):
+        return Path(getattr(settings, "MEDIA_ROOT", "/tmp"))
+    return Path("/tmp")
 
 try:
     from asgiref.sync import async_to_sync
@@ -77,7 +86,7 @@ def run_training_async(experiment, stop_event: threading.Event) -> None:
     """
     config = experiment.config
     run_id = str(experiment.id)
-    base_dir = Path(settings.MEDIA_ROOT) / "experiments"
+    base_dir = _get_media_root() / "experiments"
 
     def log(msg: str) -> None:
         """Log."""
@@ -158,7 +167,7 @@ def run_training_async(experiment, stop_event: threading.Event) -> None:
 
 def save_artifacts(experiment, final_metrics: dict) -> None:
     """Save model, plots, history, etc. to the experiment's media directory."""
-    output_dir = Path(settings.MEDIA_ROOT) / "experiments" / str(experiment.id)
+    output_dir = _get_media_root() / "experiments" / str(experiment.id)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # History is saved by the saver inside orchestrator, we just add a few extra things
@@ -185,7 +194,7 @@ def save_artifacts(experiment, final_metrics: dict) -> None:
 
     # Copy model if present
     model_src = (
-        Path(settings.MEDIA_ROOT)
+        _get_media_root()
         / "experiments"
         / str(experiment.id)
         / "artifacts"
