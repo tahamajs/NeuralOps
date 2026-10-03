@@ -1,12 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.reap_moe import (
-    REAPMoEAttention,
-    inject_reap_moe,
-    inject_reap_moe_attention,
-)
+from framework.attentions.reap_moe import (REAPMoEAttention, inject_reap_moe,
+                                           inject_reap_moe_attention)
 
 
 class MockConfig:

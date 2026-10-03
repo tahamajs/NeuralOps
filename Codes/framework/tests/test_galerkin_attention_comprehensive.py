@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.galerkin_attention import GalerkinAttention, inject_galerkin
+from framework.attentions.galerkin_attention import (GalerkinAttention,
+                                                     inject_galerkin)
 
 
 class MockConfig:

@@ -1,22 +1,19 @@
+import types
+
 import pytest
 import torch
 import torch.nn as nn
-import types
-
-from framework.attentions.spectral_mamba import (
-    SpectralMambaAttention,
-    SpectralMamba,
-    SpectralMambaConfig,
-    LoRALinear,
-    _rotate_half,
-    apply_rotary_pos_emb,
-    inject_spectral_mamba,
-    spectraformer_inject,
-)
-from framework.attentions.spectral_mamba_attention import (
-    SpectralMambaAttention as SpectralMambaAttentionAlias,
-    inject_spectral_mamba as inject_spectral_mamba_alias,
-)
+from framework.attentions.spectral_mamba import (LoRALinear, SpectralMamba,
+                                                 SpectralMambaAttention,
+                                                 SpectralMambaConfig,
+                                                 _rotate_half,
+                                                 apply_rotary_pos_emb,
+                                                 inject_spectral_mamba,
+                                                 spectraformer_inject)
+from framework.attentions.spectral_mamba_attention import \
+    SpectralMambaAttention as SpectralMambaAttentionAlias
+from framework.attentions.spectral_mamba_attention import \
+    inject_spectral_mamba as inject_spectral_mamba_alias
 
 
 def make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=False, model_type="bert"):

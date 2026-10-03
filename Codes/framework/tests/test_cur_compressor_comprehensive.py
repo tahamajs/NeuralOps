@@ -1,15 +1,11 @@
+import types
+
 import pytest
 import torch
 import torch.nn as nn
-import types
-
 from framework.compression_engine.cur_compressor import (
-    CURCompressor,
-    cur_compressor_factory,
-    CURLinear,
-    compute_leverage_scores,
-    compute_energy_scores,
-)
+    CURCompressor, CURLinear, compute_energy_scores, compute_leverage_scores,
+    cur_compressor_factory)
 
 
 class MockConv1D(nn.Module):

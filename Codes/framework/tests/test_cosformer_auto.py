@@ -1,7 +1,8 @@
+import framework.attentions.cosformer
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.cosformer
+
 
 def test_cosformer_module_present():
     assert hasattr(framework.attentions, 'cosformer')

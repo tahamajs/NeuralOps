@@ -11,14 +11,11 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
-
 from framework.security.config import SecurityConfig
-from framework.security.deserialization import (
-    is_safe_checkpoint_format,
-    safe_load_checkpoint,
-    safe_load_model_weights,
-    safe_save_checkpoint,
-)
+from framework.security.deserialization import (is_safe_checkpoint_format,
+                                                safe_load_checkpoint,
+                                                safe_load_model_weights,
+                                                safe_save_checkpoint)
 
 
 class DummyModel(nn.Module):

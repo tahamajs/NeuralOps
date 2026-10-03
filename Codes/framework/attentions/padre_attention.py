@@ -14,6 +14,7 @@ Production-Hardened with:
 - Safe 4D head mask handling
 - Framework registration and single-layer injection helper
 """
+
 from __future__ import annotations
 
 import logging
@@ -23,7 +24,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
@@ -104,15 +104,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -148,7 +154,9 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            lora_out = (
+                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            )
             out = out + lora_out
         return out
 
@@ -174,8 +182,14 @@ class PADReAttention(BaseAttention):
         self.config = config
         self.comp_config = comp_config or _cfg_get(config, "compression_config", None)
 
-        self.hidden_size = _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
-        if (config is None or not hasattr(config, "hidden_size")) and "hidden_size" not in kwargs and pretrained_attn is not None:
+        self.hidden_size = _cfg_get(
+            config, "hidden_size", kwargs.get("hidden_size", 768)
+        )
+        if (
+            (config is None or not hasattr(config, "hidden_size"))
+            and "hidden_size" not in kwargs
+            and pretrained_attn is not None
+        ):
             for cand in ["q_lin", "query", "q_proj", "c_attn"]:
                 mod = getattr(pretrained_attn, cand, None)
                 if mod is not None and hasattr(mod, "weight"):
@@ -183,7 +197,9 @@ class PADReAttention(BaseAttention):
                     self.hidden_size = w.shape[1] if w.ndim == 2 else self.hidden_size
                     break
 
-        self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+        self.num_heads = _cfg_get(
+            config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
+        )
         self.num_kv_heads = _cfg_get(
             config,
             "num_key_value_heads",
@@ -192,20 +208,48 @@ class PADReAttention(BaseAttention):
         self.head_dim = _cfg_get(
             config,
             "head_dim",
-            kwargs.get("head_dim", self.hidden_size // self.num_heads if self.num_heads > 0 else 64),
+            kwargs.get(
+                "head_dim",
+                self.hidden_size // self.num_heads if self.num_heads > 0 else 64,
+            ),
         )
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
-        self.order = _cfg_get(self.comp_config, "padre_order", _cfg_get(config, "padre_order", kwargs.get("order", order)))
-        self.temperature = _cfg_get(self.comp_config, "padre_temperature", _cfg_get(config, "padre_temperature", kwargs.get("temperature", temperature)))
-        self.max_error = float(_cfg_get(self.comp_config, "max_error", kwargs.get("max_error", 0.20)))
+        self.order = _cfg_get(
+            self.comp_config,
+            "padre_order",
+            _cfg_get(config, "padre_order", kwargs.get("order", order)),
+        )
+        self.temperature = _cfg_get(
+            self.comp_config,
+            "padre_temperature",
+            _cfg_get(
+                config, "padre_temperature", kwargs.get("temperature", temperature)
+            ),
+        )
+        self.max_error = float(
+            _cfg_get(self.comp_config, "max_error", kwargs.get("max_error", 0.20))
+        )
 
         # Causal decoder detection
         is_dec = _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
         model_type = str(_cfg_get(config, "model_type", "")).lower()
-        _mt = (model_type or '').lower()
-        _decoder_prefixes = ('gpt', 'qwen', 'llama', 'mistral', 'gemma', 'phi', 'opt', 'bloom', 'falcon', 'olmo', 'mpt', 'stablelm')
+        _mt = (model_type or "").lower()
+        _decoder_prefixes = (
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
+        )
         if any(_mt.startswith(p) for p in _decoder_prefixes):
             is_dec = True
         if kwargs.get("is_causal", False):
@@ -216,9 +260,17 @@ class PADReAttention(BaseAttention):
         self.effective_parameter_ratio = 1.0
 
         # LoRA config
-        self.lora_rank = _cfg_get(self.comp_config, "lora_rank", _cfg_get(config, "lora_rank", kwargs.get("lora_rank", 16)))
-        self.lora_alpha = _cfg_get(self.comp_config, "lora_alpha", _cfg_get(config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
-        self.freeze_base = (self.lora_rank > 0)
+        self.lora_rank = _cfg_get(
+            self.comp_config,
+            "lora_rank",
+            _cfg_get(config, "lora_rank", kwargs.get("lora_rank", 16)),
+        )
+        self.lora_alpha = _cfg_get(
+            self.comp_config,
+            "lora_alpha",
+            _cfg_get(config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
+        )
+        self.freeze_base = self.lora_rank > 0
 
         self.q_proj = LoRALinear(
             self.hidden_size,
@@ -258,7 +310,9 @@ class PADReAttention(BaseAttention):
         self.key = self.k_proj
         self.value = self.v_proj
 
-        dropout_p = _cfg_get(config, "attention_probs_dropout_prob", kwargs.get("dropout", 0.1))
+        dropout_p = _cfg_get(
+            config, "attention_probs_dropout_prob", kwargs.get("dropout", 0.1)
+        )
         self.dropout = nn.Dropout(dropout_p)
 
         self.stats: dict[str, Any] = {
@@ -273,7 +327,11 @@ class PADReAttention(BaseAttention):
             "effective_parameter_ratio": self.effective_parameter_ratio,
         }
 
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
+        source_attn = (
+            pretrained_attn
+            if pretrained_attn is not None
+            else kwargs.get("source_attn")
+        )
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -286,17 +344,33 @@ class PADReAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        has_out_lin = (
+            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        )
         is_nested = False
         if (
-            hasattr(src, "self")
-            and hasattr(src.self, "query")
-            and hasattr(src, "output")
-            and hasattr(src.output, "dense")
-        ) or (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
-            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
+            (
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
+            )
+            or (
+                cls_name
+                in [
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                ]
+                or (
+                    cls_name.endswith("SelfAttention")
+                    and "distil" not in cls_name.lower()
+                )
+            )
+            and not has_out_lin
+        ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -321,14 +395,27 @@ class PADReAttention(BaseAttention):
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                if (
+                    (c_attn_mod.__class__.__name__ == "Conv1D")
+                    or (base_c.__class__.__name__ == "Conv1D")
+                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
+                ):
                     c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
+                extracted["q"] = (
+                    c_w[:split_size, :],
+                    c_b[:split_size] if c_b is not None else None,
+                )
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (
+                    c_w[2 * split_size :, :],
+                    c_b[2 * split_size :] if c_b is not None else None,
+                )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -336,10 +423,17 @@ class PADReAttention(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    if (
+                        (c_proj_mod.__class__.__name__ == "Conv1D")
+                        or (base_o.__class__.__name__ == "Conv1D")
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
+                    ):
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    extracted["o"] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
 
         # 2. RoBERTa nested encoder
         elif hasattr(src, "self") and hasattr(src.self, "query"):
@@ -351,14 +445,20 @@ class PADReAttention(BaseAttention):
                     w = getattr(base_m, "weight", getattr(mod, "weight", None))
                     b = getattr(base_m, "bias", getattr(mod, "bias", None))
                     if w is not None:
-                        extracted[proj_key] = (w.data.clone(), b.data.clone() if b is not None else None)
+                        extracted[proj_key] = (
+                            w.data.clone(),
+                            b.data.clone() if b is not None else None,
+                        )
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
                 base_o = getattr(out_mod, "base_layer", out_mod)
                 w = getattr(base_o, "weight", getattr(out_mod, "weight", None))
                 b = getattr(base_o, "bias", getattr(out_mod, "bias", None))
                 if w is not None:
-                    extracted["o"] = (w.data.clone(), b.data.clone() if b is not None else None)
+                    extracted["o"] = (
+                        w.data.clone(),
+                        b.data.clone() if b is not None else None,
+                    )
 
         # 3. Flat modules (DistilBERT, Qwen, LLaMA)
         else:
@@ -377,13 +477,21 @@ class PADReAttention(BaseAttention):
                             w = getattr(base_m, "weight", getattr(mod, "weight", None))
                             b = getattr(base_m, "bias", getattr(mod, "bias", None))
                             if w is not None:
-                                extracted[proj_key] = (w.data.clone(), b.data.clone() if b is not None else None)
+                                extracted[proj_key] = (
+                                    w.data.clone(),
+                                    b.data.clone() if b is not None else None,
+                                )
                                 break
 
-        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -392,7 +500,11 @@ class PADReAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing_after:
             logger.warning(
                 "PADReAttention copy_weights failed: missing mandatory projections %s from %s.",
@@ -412,7 +524,11 @@ class PADReAttention(BaseAttention):
         source_lora: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {}
         for proj_key, target_mod in target_map.items():
             mod = None
-            if proj_key == "o" and hasattr(src, "output") and hasattr(src.output, "dense"):
+            if (
+                proj_key == "o"
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
+            ):
                 mod = src.output.dense
             elif hasattr(src, "self"):
                 sub_map = {"q": "query", "k": "key", "v": "value"}
@@ -429,7 +545,9 @@ class PADReAttention(BaseAttention):
                     # In some implementations lora_A is a Parameter, in PEFT it's a ModuleDict/Linear
                     tA = getattr(lA, "weight", lA)
                     tB = getattr(lB, "weight", lB)
-                    if isinstance(tA, (torch.Tensor, nn.Parameter)) and isinstance(tB, (torch.Tensor, nn.Parameter)):
+                    if isinstance(tA, (torch.Tensor, nn.Parameter)) and isinstance(
+                        tB, (torch.Tensor, nn.Parameter)
+                    ):
                         source_lora[proj_key] = (tA.data.clone(), tB.data.clone())
 
         with torch.no_grad():
@@ -444,13 +562,19 @@ class PADReAttention(BaseAttention):
 
                 src_norm = torch.linalg.norm(w.float()).item()
                 if src_norm < 1e-4:
-                    logger.warning(f"Source weight for {proj_key} has near-zero norm {src_norm:.6f} < 1e-4")
+                    logger.warning(
+                        f"Source weight for {proj_key} has near-zero norm {src_norm:.6f} < 1e-4"
+                    )
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
                 elif w.t().contiguous().shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w.t().contiguous())
-                elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0 and w.shape[1] == target_mod.weight.shape[1]:
+                elif (
+                    w.shape[0] < target_mod.weight.shape[0]
+                    and target_mod.weight.shape[0] % w.shape[0] == 0
+                    and w.shape[1] == target_mod.weight.shape[1]
+                ):
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
                 else:
@@ -462,7 +586,10 @@ class PADReAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     if b.shape == target_mod.bias.shape:
                         target_mod.bias.copy_(b)
-                    elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
+                    elif (
+                        b.shape[0] < target_mod.bias.shape[0]
+                        and target_mod.bias.shape[0] % b.shape[0] == 0
+                    ):
                         repeats = target_mod.bias.shape[0] // b.shape[0]
                         target_mod.bias.copy_(b.repeat(repeats))
                     else:
@@ -474,10 +601,16 @@ class PADReAttention(BaseAttention):
 
                 fnorm = torch.linalg.norm(target_mod.weight.float()).item()
                 if fnorm < 1e-4:
-                    logger.warning("Compressor copy_weights warning. Proceeding with initialized weights.")
+                    logger.warning(
+                        "Compressor copy_weights warning. Proceeding with initialized weights."
+                    )
 
                 # Copy source LoRA adapter weights if compatible
-                if proj_key in source_lora and target_mod.lora_A is not None and target_mod.lora_B is not None:
+                if (
+                    proj_key in source_lora
+                    and target_mod.lora_A is not None
+                    and target_mod.lora_B is not None
+                ):
                     slA, slB = source_lora[proj_key]
                     if slA.shape == target_mod.lora_A.shape:
                         target_mod.lora_A.copy_(slA)
@@ -516,9 +649,24 @@ class PADReAttention(BaseAttention):
         """
         B, N, _ = hidden_states.shape
 
-        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        q = (
+            self.q_proj(hidden_states)
+            .view(B, N, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        k = (
+            self.k_proj(hidden_states)
+            .view(B, N, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_proj(hidden_states)
+            .view(B, N, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # Apply RoPE if provided
         if position_embeddings is None:
@@ -539,12 +687,16 @@ class PADReAttention(BaseAttention):
         # Determine invalid mask for padding and causal
         invalid_mask = torch.zeros(B, 1, N, N, device=scores.device, dtype=torch.bool)
         if attention_mask is not None:
-            valid_tok = get_token_valid_mask(attention_mask, B, N, scores.device)  # (B, N) bool
+            valid_tok = get_token_valid_mask(
+                attention_mask, B, N, scores.device
+            )  # (B, N) bool
             invalid_pad = ~valid_tok.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, N)
             invalid_mask = invalid_mask | invalid_pad
 
         if self.is_decoder:
-            causal_mask = torch.tril(torch.ones(N, N, device=scores.device, dtype=torch.bool))
+            causal_mask = torch.tril(
+                torch.ones(N, N, device=scores.device, dtype=torch.bool)
+            )
             invalid_causal = ~causal_mask.unsqueeze(0).unsqueeze(0)  # (1, 1, N, N)
             invalid_mask = invalid_mask | invalid_causal
 
@@ -554,7 +706,9 @@ class PADReAttention(BaseAttention):
         max_scores = masked_for_max.max(dim=-1, keepdim=True).values
         # If all keys are masked, avoid large negative value producing NaN
         thresh = -5e3 if scores.dtype in (torch.float16, torch.bfloat16) else -1e8
-        max_scores = torch.where(max_scores <= thresh, torch.zeros_like(max_scores), max_scores)
+        max_scores = torch.where(
+            max_scores <= thresh, torch.zeros_like(max_scores), max_scores
+        )
 
         scores_centered = (scores - max_scores) / max(self.temperature, 1e-6)
 
@@ -582,7 +736,9 @@ class PADReAttention(BaseAttention):
         attn_weights = self.dropout(attn_weights)
 
         context = torch.matmul(attn_weights, v)
-        context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+        context = (
+            context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+        )
 
         if self.is_nested_encoder:
             output = context
@@ -628,7 +784,9 @@ def inject_padre(
             layer_list = target.model.layers
         elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
             layer_list = target.encoder.layer
-        elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        elif hasattr(target, "layers") and isinstance(
+            target.layers, (nn.ModuleList, list)
+        ):
             layer_list = target.layers
 
         if layer_list is not None:
@@ -664,7 +822,13 @@ def inject_padre(
             **kwargs,
         )
 
-        max_err = float(_cfg_get(comp_config, "max_error", kwargs.get("max_error", getattr(new_attn, "max_error", 0.20))))
+        max_err = float(
+            _cfg_get(
+                comp_config,
+                "max_error",
+                kwargs.get("max_error", getattr(new_attn, "max_error", 0.20)),
+            )
+        )
         output_error = 0.0
         forward_check_success = True
 
@@ -674,7 +838,9 @@ def inject_padre(
                 target_dev = next(new_attn.parameters()).device
                 target_dtype = next(new_attn.parameters()).dtype
                 h_size = getattr(new_attn, "hidden_size", 768)
-                dummy_x = torch.randn(1, 4, h_size, device=target_dev, dtype=target_dtype)
+                dummy_x = torch.randn(
+                    1, 4, h_size, device=target_dev, dtype=target_dtype
+                )
 
                 with torch.no_grad():
                     try:
@@ -686,13 +852,28 @@ def inject_padre(
                     new_res = new_attn(dummy_x)
                     new_out = new_res[0] if isinstance(new_res, tuple) else new_res
 
-                    if orig_out is not None and new_out is not None and orig_out.shape == new_out.shape:
-                        norm_orig = torch.norm(orig_out.float(), p="fro").clamp_min(1e-12)
-                        output_error = float((torch.norm((orig_out - new_out).float(), p="fro") / norm_orig).item())
+                    if (
+                        orig_out is not None
+                        and new_out is not None
+                        and orig_out.shape == new_out.shape
+                    ):
+                        norm_orig = torch.norm(orig_out.float(), p="fro").clamp_min(
+                            1e-12
+                        )
+                        output_error = float(
+                            (
+                                torch.norm((orig_out - new_out).float(), p="fro")
+                                / norm_orig
+                            ).item()
+                        )
                     else:
                         output_error = 0.0
 
-                if max_err is not None and output_error > max_err and not kwargs.get("force_inject", True):
+                if (
+                    max_err is not None
+                    and output_error > max_err
+                    and not kwargs.get("force_inject", True)
+                ):
                     logger.warning(
                         "PADReAttention layer %d output equivalence error %.4f exceeded threshold %.4f. Skipping replacement.",
                         layer_idx,
@@ -701,16 +882,22 @@ def inject_padre(
                     )
                     return None
             except Exception as ex_val:
-                logger.debug("Validation check skipped or failed on layer %d: %s", layer_idx, ex_val)
+                logger.debug(
+                    "Validation check skipped or failed on layer %d: %s",
+                    layer_idx,
+                    ex_val,
+                )
                 forward_check_success = False
 
         if hasattr(new_attn, "stats") and isinstance(new_attn.stats, dict):
-            new_attn.stats.update({
-                "output_equivalence_error": output_error,
-                "forward_check_success": forward_check_success,
-                "layer_idx": layer_idx,
-                "total_layers": total_layers,
-            })
+            new_attn.stats.update(
+                {
+                    "output_equivalence_error": output_error,
+                    "forward_check_success": forward_check_success,
+                    "layer_idx": layer_idx,
+                    "total_layers": total_layers,
+                }
+            )
 
         # Replace attention sub-module in layer
         if hasattr(layer, "attention"):
@@ -734,4 +921,3 @@ def inject_padre(
 
 
 inject_padre_attention = inject_padre
-

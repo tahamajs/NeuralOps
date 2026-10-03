@@ -1,7 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.attentions.SOAFusedAttention import SOAFusedAttention, inject_soa_fused_attn
+from framework.attentions.SOAFusedAttention import (SOAFusedAttention,
+                                                    inject_soa_fused_attn)
 
 
 class MockConfig:

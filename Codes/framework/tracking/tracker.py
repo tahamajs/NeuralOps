@@ -95,9 +95,7 @@ class ExperimentTracker:
         """Log a single metric (scalar)."""
         self._tracker.log_metric(name, value, step)
 
-    def log_metrics(
-        self, metrics: dict[str, float], step: int | None = None
-    ) -> None:
+    def log_metrics(self, metrics: dict[str, float], step: int | None = None) -> None:
         """Log multiple metrics at once."""
         for k, v in metrics.items():
             self._tracker.log_metric(k, v, step)

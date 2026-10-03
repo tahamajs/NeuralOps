@@ -16,14 +16,10 @@ Tests:
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.compression_engine.enlighten_compressor import (
-    ENLightenCompressor,
-    enlighten_factory,
-    vectorized_24_prune,
-    unstructured_prune,
-)
+    ENLightenCompressor, enlighten_factory, unstructured_prune,
+    vectorized_24_prune)
+from framework.core.registry import COMPRESSOR_REGISTRY
 
 
 class DummyLinearModel(nn.Module):

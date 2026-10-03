@@ -1,12 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.res_svd import (
-    ResSVDAttention,
-    inject_res_svd,
-    inject_res_svd_attention,
-)
+from framework.attentions.res_svd import (ResSVDAttention, inject_res_svd,
+                                          inject_res_svd_attention)
 
 
 class MockConfig:

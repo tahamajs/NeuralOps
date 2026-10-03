@@ -20,7 +20,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.compression_engine.aa_svd_compressor import SVDLinear
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
@@ -39,14 +38,25 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 _ATTN_NAMES = {
-    "q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj",
-    "query", "key", "value", "q_lin", "k_lin", "v_lin",
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "c_attn",
+    "c_proj",
+    "query",
+    "key",
+    "value",
+    "q_lin",
+    "k_lin",
+    "v_lin",
 }
 
 
 # ===========================================================================
 # Deprecated single-head SVD attention (backward compat only)
 # ===========================================================================
+
 
 class SVDSingleHead(nn.Module):
     """
@@ -77,12 +87,18 @@ class SVDSingleHead(nn.Module):
         self.svd_rank = int(svd_rank)
         self._pos_encoding: torch.Tensor | None = None
 
-    def _get_pos_encoding(self, seq_len: int, device: torch.device, dtype: torch.dtype) -> torch.Tensor:
-        if (self._pos_encoding is None
-                or self._pos_encoding.shape[1] != seq_len
-                or self._pos_encoding.device != device):
+    def _get_pos_encoding(
+        self, seq_len: int, device: torch.device, dtype: torch.dtype
+    ) -> torch.Tensor:
+        if (
+            self._pos_encoding is None
+            or self._pos_encoding.shape[1] != seq_len
+            or self._pos_encoding.device != device
+        ):
             pe = torch.zeros(seq_len, self.hidden_size, device=device)
-            position = torch.arange(0, seq_len, dtype=torch.float, device=device).unsqueeze(1)
+            position = torch.arange(
+                0, seq_len, dtype=torch.float, device=device
+            ).unsqueeze(1)
             div_term = torch.exp(
                 torch.arange(0, self.hidden_size, 2, dtype=torch.float, device=device)
                 * (-math.log(10000.0) / self.hidden_size)
@@ -111,6 +127,7 @@ class SVDSingleHead(nn.Module):
 # ===========================================================================
 # DirectSVDEncoderLayer (unchanged; kept for backward compat)
 # ===========================================================================
+
 
 class DirectSVDEncoderLayer(nn.Module):
     """Encoder layer that replaces MHA with SVDSingleHead + standard FFN."""
@@ -179,6 +196,7 @@ class DirectSVDEncoderLayer(nn.Module):
 # Main Compressor
 # ===========================================================================
 
+
 @COMPRESSOR_REGISTRY.register("hybrid_svd")
 @COMPRESSOR_REGISTRY.register("hybrid_svd_layer")
 @COMPRESSOR_REGISTRY.register("direct_svd_encoder")
@@ -205,23 +223,34 @@ class HybridSVDCompressor(BaseCompressor):
         cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
-        self.svd_rank = int(_cfg_get(cfg, "hybrid_svd_rank",
-                                     _cfg_get(cfg, "svd_rank",
-                                              _cfg_get(cfg, "rank", svd_rank))))
+        self.svd_rank = int(
+            _cfg_get(
+                cfg,
+                "hybrid_svd_rank",
+                _cfg_get(cfg, "svd_rank", _cfg_get(cfg, "rank", svd_rank)),
+            )
+        )
         self.use_full_layer_replacement = bool(
             _cfg_get(cfg, "use_full_layer_replacement", use_full_layer_replacement)
         )
         self.lora_r = int(_cfg_get(cfg, "lora_r", _cfg_get(cfg, "lora_rank", lora_r)))
         self.lora_alpha = float(_cfg_get(cfg, "lora_alpha", lora_alpha))
-        self.max_error = float(_cfg_get(cfg, "hybrid_svd_max_error",
-                                        _cfg_get(cfg, "max_error", max_error)))
+        self.max_error = float(
+            _cfg_get(cfg, "hybrid_svd_max_error", _cfg_get(cfg, "max_error", max_error))
+        )
         self.target_attention_only = bool(
-            _cfg_get(cfg, "hybrid_svd_target_attention_only",
-                     _cfg_get(cfg, "target_attention_only", target_attention_only))
+            _cfg_get(
+                cfg,
+                "hybrid_svd_target_attention_only",
+                _cfg_get(cfg, "target_attention_only", target_attention_only),
+            )
         )
         self.fallback_to_original = bool(
-            _cfg_get(cfg, "hybrid_svd_fallback_to_original",
-                     _cfg_get(cfg, "fallback_to_original", fallback_to_original))
+            _cfg_get(
+                cfg,
+                "hybrid_svd_fallback_to_original",
+                _cfg_get(cfg, "fallback_to_original", fallback_to_original),
+            )
         )
         self.target_modules = target_modules or _cfg_get(cfg, "target_modules", None)
 
@@ -236,8 +265,18 @@ class HybridSVDCompressor(BaseCompressor):
         name_lower = name.lower()
         if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
             return False
-        if any(skip in name_lower for skip in
-               ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate"]):
+        if any(
+            skip in name_lower
+            for skip in [
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embedding",
+                "router",
+                "gate",
+            ]
+        ):
             return False
 
         if self.target_attention_only:
@@ -272,13 +311,18 @@ class HybridSVDCompressor(BaseCompressor):
         # Freeze non-target layers if attention-only.
         if self.target_attention_only:
             for name, module in self.model.named_modules():
-                if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
+                if any(
+                    part in name.split(".")
+                    for part in ["lora_A", "lora_B", "base_layer"]
+                ):
                     continue
                 target_mod = getattr(module, "base_layer", module)
                 cls_name = target_mod.__class__.__name__.lower()
                 is_linear = isinstance(target_mod, nn.Linear)
                 is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-                if (is_linear or is_conv1d) and not self._is_target_module(name, module):
+                if (is_linear or is_conv1d) and not self._is_target_module(
+                    name, module
+                ):
                     for p in module.parameters():
                         p.requires_grad = False
                     self.skipped_layers.append(name)
@@ -321,11 +365,18 @@ class HybridSVDCompressor(BaseCompressor):
                 U, S, Vt = torch.linalg.svd(W, full_matrices=False)
                 for escalation_step in range(4):
                     sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-                    U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=raw_w.dtype, device=raw_w.device)
-                    V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=raw_w.dtype, device=raw_w.device)
+                    U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
+                        dtype=raw_w.dtype, device=raw_w.device
+                    )
+                    V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(
+                        dtype=raw_w.dtype, device=raw_w.device
+                    )
 
                     W_recon = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vt[:r, :])
-                    err = (torch.norm(W - W_recon, p="fro") / torch.norm(W, p="fro").clamp_min(1e-8)).item()
+                    err = (
+                        torch.norm(W - W_recon, p="fro")
+                        / torch.norm(W, p="fro").clamp_min(1e-8)
+                    ).item()
                     self.layer_errors[name] = float(err)
 
                     if err > self.max_error and r < min(bound_r, max_rank):
@@ -333,7 +384,10 @@ class HybridSVDCompressor(BaseCompressor):
                         if r_new > r:
                             logger.info(
                                 "HybridSVD: %s err=%.4f at rank=%d, escalating to rank=%d",
-                                name, err, r, r_new,
+                                name,
+                                err,
+                                r,
+                                r_new,
                             )
                             r = r_new
                             continue
@@ -341,7 +395,10 @@ class HybridSVDCompressor(BaseCompressor):
                     if err > self.max_error:
                         logger.warning(
                             "HybridSVD: layer %s reconstruction error %.4f > max_error %.4f (final rank=%d)",
-                            name, err, self.max_error, r,
+                            name,
+                            err,
+                            self.max_error,
+                            r,
                         )
                         if self.fallback_to_original:
                             self.fallback_layers.append(name)
@@ -358,9 +415,11 @@ class HybridSVDCompressor(BaseCompressor):
                 existing_lora_A = getattr(module, "lora_A", None)
                 existing_lora_B = getattr(module, "lora_B", None)
                 effective_lora_r = self.lora_r
-                if (existing_lora_A is not None
-                        and hasattr(existing_lora_A, "weight")
-                        and hasattr(existing_lora_A.weight, "shape")):
+                if (
+                    existing_lora_A is not None
+                    and hasattr(existing_lora_A, "weight")
+                    and hasattr(existing_lora_A.weight, "shape")
+                ):
                     try:
                         effective_lora_r = int(existing_lora_A.weight.shape[0])
                     except (AttributeError, IndexError, TypeError):
@@ -377,11 +436,17 @@ class HybridSVDCompressor(BaseCompressor):
                     lora_alpha=self.lora_alpha,
                 )
                 svd_layer.set_low_rank_factors(U_r, V_r)
-                if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None:
+                if (
+                    getattr(target_mod, "bias", None) is not None
+                    and target_mod.bias is not None
+                ):
                     svd_layer.bias.data.copy_(target_mod.bias.data)
 
-                if (existing_lora_A is not None and existing_lora_B is not None
-                        and getattr(svd_layer, "lora_A", None) is not None):
+                if (
+                    existing_lora_A is not None
+                    and existing_lora_B is not None
+                    and getattr(svd_layer, "lora_A", None) is not None
+                ):
                     w_A = getattr(existing_lora_A, "weight", existing_lora_A)
                     w_B = getattr(existing_lora_B, "weight", existing_lora_B)
                     if hasattr(w_A, "data") and hasattr(w_B, "data"):
@@ -422,20 +487,30 @@ class HybridSVDCompressor(BaseCompressor):
                 vocab_size = getattr(cfg, "vocab_size", 1000)
                 max_tok = min(100, vocab_size - 1) if vocab_size > 10 else 2
                 min_tok = min(2, max_tok)
-                dummy = torch.randint(min_tok, max_tok + 1, (1, 8), device=dev, dtype=torch.long)
+                dummy = torch.randint(
+                    min_tok, max_tok + 1, (1, 8), device=dev, dtype=torch.long
+                )
                 attn_mask = torch.ones_like(dummy)
                 try:
                     self.model(input_ids=dummy, attention_mask=attn_mask)
                 except Exception:
                     # Try hidden-states form.
                     first_linear = next(
-                        (m for m in self.model.modules() if isinstance(m, (nn.Linear, SVDLinear))),
+                        (
+                            m
+                            for m in self.model.modules()
+                            if isinstance(m, (nn.Linear, SVDLinear))
+                        ),
                         None,
                     )
-                    in_dim = getattr(first_linear, "in_features",
-                                     getattr(cfg, "hidden_size", 8))
+                    in_dim = getattr(
+                        first_linear, "in_features", getattr(cfg, "hidden_size", 8)
+                    )
                     dummy_float = torch.randn(
-                        1, 8, in_dim, device=dev,
+                        1,
+                        8,
+                        in_dim,
+                        device=dev,
                         dtype=first_p.dtype if first_p is not None else torch.float32,
                     )
                     self.model(dummy_float)
@@ -443,7 +518,9 @@ class HybridSVDCompressor(BaseCompressor):
             logger.warning("HybridSVD post-compression forward check warning: %s", e)
             forward_check_success = False
 
-        effective_ratio = (total_comp_params / total_orig_params) if total_orig_params > 0 else 1.0
+        effective_ratio = (
+            (total_comp_params / total_orig_params) if total_orig_params > 0 else 1.0
+        )
 
         try:
             self._compressed_params = self._count_params(self.model)
@@ -451,33 +528,40 @@ class HybridSVDCompressor(BaseCompressor):
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
         stats = self.get_compression_stats()
-        avg_err = (sum(self.layer_errors.values()) / max(1, len(self.layer_errors))) if self.layer_errors else 0.0
-        stats.update({
-            "replaced_layers_count": replaced_count,
-            "compressed_layers": self.compressed_layers,
-            "fallback_layers": self.fallback_layers,
-            "skipped_layers": self.skipped_layers,
-            "num_compressed": len(self.compressed_layers),
-            "num_fallback": len(self.fallback_layers),
-            "num_skipped": len(self.skipped_layers),
-            "layer_errors": self.layer_errors,
-            "svd_rank": self.svd_rank,
-            "lora_r": self.lora_r,
-            "lora_alpha": self.lora_alpha,
-            "max_error": self.max_error,
-            "target_attention_only": self.target_attention_only,
-            "fallback_to_original": self.fallback_to_original,
-            "avg_reconstruction_error": avg_err,
-            "effective_parameter_ratio": round(effective_ratio, 4),
-            "forward_check_success": forward_check_success,
-            "method": "hybrid_svd",
-        })
+        avg_err = (
+            (sum(self.layer_errors.values()) / max(1, len(self.layer_errors)))
+            if self.layer_errors
+            else 0.0
+        )
+        stats.update(
+            {
+                "replaced_layers_count": replaced_count,
+                "compressed_layers": self.compressed_layers,
+                "fallback_layers": self.fallback_layers,
+                "skipped_layers": self.skipped_layers,
+                "num_compressed": len(self.compressed_layers),
+                "num_fallback": len(self.fallback_layers),
+                "num_skipped": len(self.skipped_layers),
+                "layer_errors": self.layer_errors,
+                "svd_rank": self.svd_rank,
+                "lora_r": self.lora_r,
+                "lora_alpha": self.lora_alpha,
+                "max_error": self.max_error,
+                "target_attention_only": self.target_attention_only,
+                "fallback_to_original": self.fallback_to_original,
+                "avg_reconstruction_error": avg_err,
+                "effective_parameter_ratio": round(effective_ratio, 4),
+                "forward_check_success": forward_check_success,
+                "method": "hybrid_svd",
+            }
+        )
         return self.model, stats
 
 
 # ===========================================================================
 # Factory
 # ===========================================================================
+
 
 @COMPRESSOR_REGISTRY.register("hybrid_svd_factory")
 @COMPRESSOR_REGISTRY.register("hybrid_svd_layer_factory")
@@ -486,28 +570,46 @@ class HybridSVDCompressor(BaseCompressor):
 def hybrid_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Hybrid SVD factory function."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
-    svd_rank = kwargs.pop("svd_rank",
-                _cfg_get(comp_config, "hybrid_svd_rank",
-                _cfg_get(comp_config, "svd_rank",
-                _cfg_get(comp_config, "rank", 128))))
-    use_full = kwargs.pop("use_full_layer_replacement",
-                _cfg_get(comp_config, "use_full_layer_replacement", False))
-    lora_r = kwargs.pop("lora_r",
-              _cfg_get(comp_config, "lora_r",
-              _cfg_get(comp_config, "lora_rank", 16)))
+    svd_rank = kwargs.pop(
+        "svd_rank",
+        _cfg_get(
+            comp_config,
+            "hybrid_svd_rank",
+            _cfg_get(comp_config, "svd_rank", _cfg_get(comp_config, "rank", 128)),
+        ),
+    )
+    use_full = kwargs.pop(
+        "use_full_layer_replacement",
+        _cfg_get(comp_config, "use_full_layer_replacement", False),
+    )
+    lora_r = kwargs.pop(
+        "lora_r",
+        _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 16)),
+    )
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
-    max_error = kwargs.pop("max_error",
-                _cfg_get(comp_config, "hybrid_svd_max_error",
-                _cfg_get(comp_config, "max_error", 0.85)))
+    max_error = kwargs.pop(
+        "max_error",
+        _cfg_get(
+            comp_config,
+            "hybrid_svd_max_error",
+            _cfg_get(comp_config, "max_error", 0.85),
+        ),
+    )
     target_attention_only = kwargs.pop(
         "target_attention_only",
-        _cfg_get(comp_config, "hybrid_svd_target_attention_only",
-                 _cfg_get(comp_config, "target_attention_only", False)),
+        _cfg_get(
+            comp_config,
+            "hybrid_svd_target_attention_only",
+            _cfg_get(comp_config, "target_attention_only", False),
+        ),
     )
     fallback = kwargs.pop(
         "fallback_to_original",
-        _cfg_get(comp_config, "hybrid_svd_fallback_to_original",
-                 _cfg_get(comp_config, "fallback_to_original", True)),
+        _cfg_get(
+            comp_config,
+            "hybrid_svd_fallback_to_original",
+            _cfg_get(comp_config, "fallback_to_original", True),
+        ),
     )
 
     compressor = HybridSVDCompressor(

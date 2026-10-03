@@ -2,11 +2,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.aegis_spectron_fp8 import (
-    AegisSpectronFP8Attention,
-    inject_aegis_spectron_fp8,
-)
+from framework.attentions.aegis_spectron_fp8 import (AegisSpectronFP8Attention,
+                                                     inject_aegis_spectron_fp8)
 from framework.core.registry import ATTENTION_REGISTRY
 
 

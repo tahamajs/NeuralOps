@@ -4,8 +4,8 @@ Comprehensive Master Test Suite for All Attention Mechanisms and Compression Eng
 Tests instantiation, mock forward pass, cross-entropy / loss computation, and gradient backpropagation.
 """
 
-import sys
 import os
+import sys
 from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
@@ -13,14 +13,13 @@ _CODES = _HERE.parent.parent
 sys.path.insert(0, str(_CODES))
 sys.path.insert(0, str(_HERE.parent))
 
-import torch
-import torch.nn as nn
-from transformers import DistilBertConfig
-
 # Import registries
 import framework.attentions
 import framework.compression_engine
+import torch
+import torch.nn as nn
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+from transformers import DistilBertConfig
 
 
 class MockTransformerModel(nn.Module):

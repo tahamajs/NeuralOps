@@ -12,7 +12,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.adapters import UniversalAdapter
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
@@ -24,6 +23,7 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # Helpers
 # ===========================================================================
+
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if cfg is None:
@@ -37,7 +37,7 @@ def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     d = x.shape[-1]
     half = d // 2
     x1 = x[..., :half]
-    x2 = x[..., half:2 * half]
+    x2 = x[..., half : 2 * half]
     rotated = torch.cat((-x2, x1), dim=-1)
     if d % 2 == 1:
         rotated = torch.cat([rotated, x[..., -1:]], dim=-1)
@@ -82,8 +82,16 @@ def apply_rotary_pos_emb(
         sin_k = sin.to(k_rot.dtype)
         q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
         k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
-        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
+        q = (
+            torch.cat([q_rot_embed, q_pass], dim=-1)
+            if q_pass.numel() > 0
+            else q_rot_embed
+        )
+        k = (
+            torch.cat([k_rot_embed, k_pass], dim=-1)
+            if k_pass.numel() > 0
+            else k_rot_embed
+        )
     else:
         cos_cut = cos[..., :head_dim].to(q.dtype)
         sin_cut = sin[..., :head_dim].to(q.dtype)
@@ -98,6 +106,7 @@ def apply_rotary_pos_emb(
 # ===========================================================================
 # TA-01: LoRALinear with device/dtype support
 # ===========================================================================
+
 
 class LoRALinear(nn.Module):
     """Linear projection with frozen base weights and trainable LoRA adapters."""
@@ -134,8 +143,12 @@ class LoRALinear(nn.Module):
             nn.init.uniform_(self.bias, -bound, bound)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, in_features, **factory))
-            self.lora_B = nn.Parameter(torch.empty(out_features, self.lora_rank, **factory))
+            self.lora_A = nn.Parameter(
+                torch.empty(self.lora_rank, in_features, **factory)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty(out_features, self.lora_rank, **factory)
+            )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B)
             self.lora_A.requires_grad = True
@@ -160,6 +173,7 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 # TA-10: single registry key per role
 # ===========================================================================
+
 
 @ATTENTION_REGISTRY.register("template_attention_class")
 @ATTENTION_REGISTRY.register("your_custom_attention_class")
@@ -191,18 +205,34 @@ class YourCustomAttention(BaseAttention):
         # -------- hidden_size inference --------
         dim = None
         if config is not None and not isinstance(config, int):
-            dim = _cfg_get(config, "hidden_size",
-                           _cfg_get(config, "dim",
-                                    _cfg_get(config, "d_model", None)))
+            dim = _cfg_get(
+                config,
+                "hidden_size",
+                _cfg_get(config, "dim", _cfg_get(config, "d_model", None)),
+            )
         if dim is None and src is not None:
             dim = getattr(src, "hidden_size", getattr(src, "embed_dim", None))
-            if dim is None and hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features"):
+            if (
+                dim is None
+                and hasattr(src, "q_proj")
+                and hasattr(src.q_proj, "in_features")
+            ):
                 dim = src.q_proj.in_features
-            elif dim is None and hasattr(src, "q_lin") and hasattr(src.q_lin, "in_features"):
+            elif (
+                dim is None
+                and hasattr(src, "q_lin")
+                and hasattr(src.q_lin, "in_features")
+            ):
                 dim = src.q_lin.in_features
-            elif dim is None and hasattr(src, "query") and hasattr(src.query, "in_features"):
+            elif (
+                dim is None
+                and hasattr(src, "query")
+                and hasattr(src.query, "in_features")
+            ):
                 dim = src.query.in_features
-            elif dim is None and hasattr(src, "c_attn") and hasattr(src.c_attn, "weight"):
+            elif (
+                dim is None and hasattr(src, "c_attn") and hasattr(src.c_attn, "weight")
+            ):
                 w = src.c_attn.weight
                 dim = w.shape[0] if w.shape[0] < w.shape[1] else w.shape[1]
         if dim is None:
@@ -212,13 +242,17 @@ class YourCustomAttention(BaseAttention):
         # -------- num_heads inference (TA-13) --------
         num_heads = None
         if config is not None and not isinstance(config, int):
-            num_heads = _cfg_get(config, "num_attention_heads",
-                                 _cfg_get(config, "n_heads",
-                                          _cfg_get(config, "num_heads", None)))
+            num_heads = _cfg_get(
+                config,
+                "num_attention_heads",
+                _cfg_get(config, "n_heads", _cfg_get(config, "num_heads", None)),
+            )
         if num_heads is None and src is not None:
-            num_heads = getattr(src, "num_heads",
-                                getattr(src, "num_attention_heads",
-                                        getattr(src, "n_head", None)))
+            num_heads = getattr(
+                src,
+                "num_heads",
+                getattr(src, "num_attention_heads", getattr(src, "n_head", None)),
+            )
         if num_heads is None:
             # Fallback: assume head_dim ≈ 64
             num_heads = max(1, self.hidden_size // 64)
@@ -237,11 +271,13 @@ class YourCustomAttention(BaseAttention):
         # -------- num_kv_heads (GQA) --------
         cfg_kv = None
         if config is not None and not isinstance(config, int):
-            cfg_kv = _cfg_get(config, "num_key_value_heads",
-                              _cfg_get(config, "num_kv_heads", None))
+            cfg_kv = _cfg_get(
+                config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None)
+            )
         if cfg_kv is None and src is not None:
-            cfg_kv = getattr(src, "num_key_value_heads",
-                             getattr(src, "num_kv_heads", None))
+            cfg_kv = getattr(
+                src, "num_key_value_heads", getattr(src, "num_kv_heads", None)
+            )
         self.num_kv_heads: int = int(cfg_kv) if cfg_kv is not None else self.num_heads
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
         self.num_key_value_groups: int = max(1, self.num_heads // self.num_kv_heads)
@@ -251,14 +287,26 @@ class YourCustomAttention(BaseAttention):
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.all_head_size: int = self.q_head_size
 
-        self.lora_rank: int = int(kwargs.get(
-            "lora_rank",
-            _cfg_get(config, "lora_rank", lora_rank) if config is not None else lora_rank,
-        ))
-        self.lora_alpha: float = float(kwargs.get(
-            "lora_alpha",
-            _cfg_get(config, "lora_alpha", lora_alpha) if config is not None else lora_alpha,
-        ))
+        self.lora_rank: int = int(
+            kwargs.get(
+                "lora_rank",
+                (
+                    _cfg_get(config, "lora_rank", lora_rank)
+                    if config is not None
+                    else lora_rank
+                ),
+            )
+        )
+        self.lora_alpha: float = float(
+            kwargs.get(
+                "lora_alpha",
+                (
+                    _cfg_get(config, "lora_alpha", lora_alpha)
+                    if config is not None
+                    else lora_alpha
+                ),
+            )
+        )
 
         # -------- decoder detection --------
         if is_decoder is not None:
@@ -268,9 +316,23 @@ class YourCustomAttention(BaseAttention):
             self.is_decoder = (
                 bool(_cfg_get(config, "is_decoder", False))
                 or bool(kwargs.get("is_causal", False))
-                or any(mt.startswith(p) for p in (
-                    "gpt", "qwen", "llama", "mistral", "gemma",
-                    "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
+                or any(
+                    mt.startswith(p)
+                    for p in (
+                        "gpt",
+                        "qwen",
+                        "llama",
+                        "mistral",
+                        "gemma",
+                        "phi",
+                        "opt",
+                        "bloom",
+                        "falcon",
+                        "olmo",
+                        "mpt",
+                        "stablelm",
+                    )
+                )
             )
         else:
             self.is_decoder = bool(kwargs.get("is_causal", False))
@@ -279,20 +341,36 @@ class YourCustomAttention(BaseAttention):
 
         # -------- projections --------
         self.query = LoRALinear(
-            self.hidden_size, self.q_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True,
+            self.hidden_size,
+            self.q_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
         )
         self.key = LoRALinear(
-            self.hidden_size, self.kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True,
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
         )
         self.value = LoRALinear(
-            self.hidden_size, self.kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True,
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
         )
         self.out_proj = LoRALinear(
-            self.q_head_size, self.hidden_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True,
+            self.q_head_size,
+            self.hidden_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
         )
 
         # Aliases
@@ -303,7 +381,9 @@ class YourCustomAttention(BaseAttention):
         # TA-06: rank_proj respects device/dtype
         if rank is not None and rank > 0:
             self.rank_proj: nn.Linear | None = nn.Linear(
-                self.hidden_size, rank, bias=False,
+                self.hidden_size,
+                rank,
+                bias=False,
             )
             nn.init.zeros_(self.rank_proj.weight)
         else:
@@ -311,8 +391,9 @@ class YourCustomAttention(BaseAttention):
 
         dropout_p = 0.1
         if config is not None and not isinstance(config, int):
-            dropout_p = _cfg_get(config, "dropout",
-                                 _cfg_get(config, "attention_probs_dropout_prob", 0.1))
+            dropout_p = _cfg_get(
+                config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1)
+            )
         self.dropout = nn.Dropout(dropout_p)
 
         if pretrained_attn is not None:
@@ -320,19 +401,32 @@ class YourCustomAttention(BaseAttention):
 
     # ------------------------------------------------------------------
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
+
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
+
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
+
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
+
     @property
-    def q_lin(self): return self.query
+    def q_lin(self):
+        return self.query
+
     @property
-    def k_lin(self): return self.key
+    def k_lin(self):
+        return self.key
+
     @property
-    def v_lin(self): return self.value
+    def v_lin(self):
+        return self.value
 
     # ------------------------------------------------------------------
     # copy_weights
@@ -343,10 +437,11 @@ class YourCustomAttention(BaseAttention):
             w_q = b_q = w_k = b_k = w_v = b_v = w_o = b_o = None
 
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
-            if (src_cls_name in ("BertSelfAttention", "RobertaSelfAttention")
-                or (hasattr(old_attn, "query")
-                    and not hasattr(old_attn, "dense")
-                    and not hasattr(old_attn, "out_proj"))):
+            if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
+                hasattr(old_attn, "query")
+                and not hasattr(old_attn, "dense")
+                and not hasattr(old_attn, "out_proj")
+            ):
                 self.is_nested_encoder = True
 
             if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
@@ -354,33 +449,50 @@ class YourCustomAttention(BaseAttention):
                 src = old_attn.self
                 if hasattr(old_attn.output, "dense"):
                     w_o = old_attn.output.dense.weight.detach()
-                    b_o = (old_attn.output.dense.bias.detach()
-                           if old_attn.output.dense.bias is not None else None)
+                    b_o = (
+                        old_attn.output.dense.bias.detach()
+                        if old_attn.output.dense.bias is not None
+                        else None
+                    )
             else:
                 src = old_attn
 
             # Pattern 1: GPT-2 Conv1D fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
-                c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
+                c_attn_b = (
+                    src.c_attn.bias.detach() if src.c_attn.bias is not None else None
+                )
+                if (
+                    c_attn_w.shape[0] == self.hidden_size
+                    and c_attn_w.shape[1] != self.hidden_size
+                ):
                     c_attn_w = c_attn_w.t().contiguous()
-                q_dim, k_dim, v_dim = self.q_head_size, self.kv_head_size, self.kv_head_size
+                q_dim, k_dim, v_dim = (
+                    self.q_head_size,
+                    self.kv_head_size,
+                    self.kv_head_size,
+                )
                 w_q = c_attn_w[:q_dim, :]
-                w_k = c_attn_w[q_dim:q_dim + k_dim, :]
-                w_v = c_attn_w[q_dim + k_dim:q_dim + k_dim + v_dim, :]
+                w_k = c_attn_w[q_dim : q_dim + k_dim, :]
+                w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
                 if c_attn_b is not None:
                     b_q = c_attn_b[:q_dim]
-                    b_k = c_attn_b[q_dim:q_dim + k_dim]
-                    b_v = c_attn_b[q_dim + k_dim:q_dim + k_dim + v_dim]
+                    b_k = c_attn_b[q_dim : q_dim + k_dim]
+                    b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
                 out_w = src.c_proj.weight.detach()
-                if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
+                if (
+                    out_w.shape[0] == self.hidden_size
+                    and out_w.shape[1] != self.hidden_size
+                ):
                     out_w = out_w.t().contiguous()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
             # Pattern 2: RoBERTa / BERT
-            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
+            elif (
+                hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value")
+            ):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
                 w_k = src.key.weight.detach()
@@ -396,7 +508,11 @@ class YourCustomAttention(BaseAttention):
                             break
 
             # Pattern 3: Qwen / LLaMA
-            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
+            elif (
+                hasattr(src, "q_proj")
+                and hasattr(src, "k_proj")
+                and hasattr(src, "v_proj")
+            ):
                 w_q = src.q_proj.weight.detach()
                 b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
                 w_k = src.k_proj.weight.detach()
@@ -405,10 +521,18 @@ class YourCustomAttention(BaseAttention):
                 b_v = src.v_proj.bias.detach() if src.v_proj.bias is not None else None
                 if hasattr(src, "o_proj"):
                     w_o = src.o_proj.weight.detach()
-                    b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
+                    b_o = (
+                        src.o_proj.bias.detach()
+                        if src.o_proj.bias is not None
+                        else None
+                    )
 
             # Pattern 4: DistilBERT
-            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
+            elif (
+                hasattr(src, "q_lin")
+                and hasattr(src, "k_lin")
+                and hasattr(src, "v_lin")
+            ):
                 w_q = src.q_lin.weight.detach()
                 b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
                 w_k = src.k_lin.weight.detach()
@@ -417,7 +541,11 @@ class YourCustomAttention(BaseAttention):
                 b_v = src.v_lin.bias.detach() if src.v_lin.bias is not None else None
                 if hasattr(src, "out_lin"):
                     w_o = src.out_lin.weight.detach()
-                    b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
+                    b_o = (
+                        src.out_lin.bias.detach()
+                        if src.out_lin.bias is not None
+                        else None
+                    )
 
             # Fallback: UniversalAdapter
             if w_q is None or w_k is None or w_v is None:
@@ -435,10 +563,14 @@ class YourCustomAttention(BaseAttention):
                     logger.debug("UniversalAdapter fallback failed: %s", e)
 
             missing = []
-            if w_q is None: missing.append("Q")
-            if w_k is None: missing.append("K")
-            if w_v is None: missing.append("V")
-            if w_o is None and not self.is_nested_encoder: missing.append("O")
+            if w_q is None:
+                missing.append("Q")
+            if w_k is None:
+                missing.append("K")
+            if w_v is None:
+                missing.append("V")
+            if w_o is None and not self.is_nested_encoder:
+                missing.append("O")
             if missing:
                 raise RuntimeError(
                     f"YourCustomAttention.copy_weights: missing {missing} from {type(old_attn).__name__}"
@@ -449,12 +581,16 @@ class YourCustomAttention(BaseAttention):
                     if w.shape == target_layer.weight.shape:
                         target_layer.weight.data.copy_(w.to(target_layer.weight.dtype))
                     elif w.t().contiguous().shape == target_layer.weight.shape:
-                        target_layer.weight.data.copy_(w.t().contiguous().to(target_layer.weight.dtype))
+                        target_layer.weight.data.copy_(
+                            w.t().contiguous().to(target_layer.weight.dtype)
+                        )
                     else:
                         min_0 = min(target_layer.weight.shape[0], w.shape[0])
                         min_1 = min(target_layer.weight.shape[1], w.shape[1])
                         target_layer.weight.data.zero_()
-                        target_layer.weight.data[:min_0, :min_1].copy_(w[:min_0, :min_1].to(target_layer.weight.dtype))
+                        target_layer.weight.data[:min_0, :min_1].copy_(
+                            w[:min_0, :min_1].to(target_layer.weight.dtype)
+                        )
 
                 if b is not None and target_layer.bias is not None:
                     if b.shape == target_layer.bias.shape:
@@ -462,7 +598,9 @@ class YourCustomAttention(BaseAttention):
                     else:
                         min_b = min(target_layer.bias.shape[0], b.shape[0])
                         target_layer.bias.data.zero_()
-                        target_layer.bias.data[:min_b].copy_(b[:min_b].to(target_layer.bias.dtype))
+                        target_layer.bias.data[:min_b].copy_(
+                            b[:min_b].to(target_layer.bias.dtype)
+                        )
                 elif target_layer.bias is not None:
                     target_layer.bias.data.zero_()
 
@@ -473,10 +611,19 @@ class YourCustomAttention(BaseAttention):
                 _copy_layer(self.out_proj, w_o, b_o)
 
             # Frobenius validation
-            for name, layer in (("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj)):
+            for name, layer in (
+                ("q", self.query),
+                ("k", self.key),
+                ("v", self.value),
+                ("o", self.out_proj),
+            ):
                 norm = float(torch.linalg.norm(layer.weight.data.float()).item())
                 if norm < 1e-4:
-                    logger.warning("YourCustomAttention: '%s' weight norm near zero (%.2e)", name, norm)
+                    logger.warning(
+                        "YourCustomAttention: '%s' weight norm near zero (%.2e)",
+                        name,
+                        norm,
+                    )
 
     # ------------------------------------------------------------------
     # Forward
@@ -506,9 +653,24 @@ class YourCustomAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        q = self.query(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k = self.key(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        v = self.value(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        q = (
+            self.query(hidden_states)
+            .view(B, L, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        k = (
+            self.key(hidden_states)
+            .view(B, L, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.value(hidden_states)
+            .view(B, L, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # TA-02: RoPE with past_len offset
         if position_embeddings is None:
@@ -517,12 +679,15 @@ class YourCustomAttention(BaseAttention):
             cos, sin = position_embeddings
             past_len = 0
             if past_key_value is not None:
-                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
+                if (
+                    isinstance(past_key_value, (tuple, list))
+                    and len(past_key_value) >= 1
+                ):
                     past_len = past_key_value[0].shape[-2]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                     past_len = past_key_value.key_cache[0].shape[-2]
-            cos = cos[..., past_len: past_len + L, :]
-            sin = sin[..., past_len: past_len + L, :]
+            cos = cos[..., past_len : past_len + L, :]
+            sin = sin[..., past_len : past_len + L, :]
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
         # GQA expansion
@@ -533,7 +698,11 @@ class YourCustomAttention(BaseAttention):
         scale = 1.0 / math.sqrt(self.head_dim)
 
         # TA-05: unify mask
-        eff_mask = encoder_attention_mask if encoder_attention_mask is not None else attention_mask
+        eff_mask = (
+            encoder_attention_mask
+            if encoder_attention_mask is not None
+            else attention_mask
+        )
         if eff_mask is None:
             eff_mask = kwargs.get("attn_mask")
 
@@ -558,9 +727,7 @@ class YourCustomAttention(BaseAttention):
         # SDPA fast path (TA-03: mask-aware)
         is_causal = self.is_decoder and L > 1
         use_sdpa = (
-            self.rank_proj is None
-            and head_mask is None
-            and not output_attentions
+            self.rank_proj is None and head_mask is None and not output_attentions
         )
 
         if use_sdpa:
@@ -572,17 +739,26 @@ class YourCustomAttention(BaseAttention):
                 attn_bias = None
                 if eff_mask is not None:
                     if eff_mask.dim() == 2:
-                        attn_bias = ((eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0).to(q_sdpa.dtype)
+                        attn_bias = (
+                            (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+                        ).to(q_sdpa.dtype)
                     elif eff_mask.dim() == 4:
                         attn_bias = eff_mask.to(q_sdpa.dtype)
 
                 out_sdpa = F.scaled_dot_product_attention(
-                    q_sdpa, k_sdpa, v_sdpa,
+                    q_sdpa,
+                    k_sdpa,
+                    v_sdpa,
                     attn_mask=attn_bias,
                     is_causal=is_causal and attn_bias is None,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
-                out = out_sdpa.to(dtype).transpose(1, 2).contiguous().view(B, L, self.q_head_size)
+                out = (
+                    out_sdpa.to(dtype)
+                    .transpose(1, 2)
+                    .contiguous()
+                    .view(B, L, self.q_head_size)
+                )
                 out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
                 if self.is_nested_encoder:
@@ -595,20 +771,30 @@ class YourCustomAttention(BaseAttention):
                 logger.debug("SDPA path failed (%s); falling back to explicit.", e)
 
         # Explicit path
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+        scores = (
+            torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+        )
 
         # Low-rank modulation
         if self.rank_proj is not None:
             H_pool = hidden_states.mean(dim=1)
             H_rank = self.rank_proj(H_pool)
-            modulation = 1.0 + torch.tanh(H_rank).mean(dim=-1, keepdim=True).view(B, 1, 1, 1)
+            modulation = 1.0 + torch.tanh(H_rank).mean(dim=-1, keepdim=True).view(
+                B, 1, 1, 1
+            )
             scores = scores * modulation
 
         if is_causal:
-            causal_mask = torch.triu(
-                torch.full((L, L), float("-inf"), device=device, dtype=torch.float32),
-                diagonal=1,
-            ).unsqueeze(0).unsqueeze(0)
+            causal_mask = (
+                torch.triu(
+                    torch.full(
+                        (L, L), float("-inf"), device=device, dtype=torch.float32
+                    ),
+                    diagonal=1,
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
             scores = scores + causal_mask
 
         if valid_mask_2d is not None:
@@ -651,6 +837,7 @@ class YourCustomAttention(BaseAttention):
 # TA-09 / TA-10: injector with recursion guard
 # ===========================================================================
 
+
 @ATTENTION_REGISTRY.register("custom_attn")
 @ATTENTION_REGISTRY.register("template_attention")
 @ATTENTION_REGISTRY.register("low_rank_modulated_attention")
@@ -692,9 +879,15 @@ def inject_custom_attn(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+    elif hasattr(target, "layers") and isinstance(
+        target.layers, (torch.nn.ModuleList, list)
+    ):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -702,9 +895,13 @@ def inject_custom_attn(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_custom_attn(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot,
-                _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 num_injected += 1
@@ -723,9 +920,15 @@ def inject_custom_attn(
             src = target
 
         # Double-injection guard
-        if isinstance(src, YourCustomAttention) or "YourCustomAttention" in src.__class__.__name__:
+        if (
+            isinstance(src, YourCustomAttention)
+            or "YourCustomAttention" in src.__class__.__name__
+        ):
             return None
-        if "DeltaNet" in src.__class__.__name__ or "LinearAttention" in src.__class__.__name__:
+        if (
+            "DeltaNet" in src.__class__.__name__
+            or "LinearAttention" in src.__class__.__name__
+        ):
             return None
 
         if model_config is None and hasattr(target, "config"):

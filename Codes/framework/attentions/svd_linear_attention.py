@@ -41,7 +41,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.adapters import UniversalAdapter
 from framework.core.attention_mask import apply_attention_mask
 from framework.core.base import BaseAttention
@@ -50,6 +49,7 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 try:
     from framework.core.triton_kernels import triton_dispatch
+
     _HAS_TRITON = True
 except Exception:
     triton_dispatch = None
@@ -57,6 +57,7 @@ except Exception:
 
 try:
     from framework.attentions.fused_svd_kernel import FusedSVDLinear, fused_svd_linear
+
     HAS_FUSED_KERNEL = True
 except ImportError:
     HAS_FUSED_KERNEL = False
@@ -86,8 +87,12 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
         w = w.data.clone()
         cls_name = getattr(module, "__class__", type(module)).__name__
         base_cls_name = getattr(base, "__class__", type(base)).__name__
-        if "Conv1D" in cls_name or "Conv1D" in base_cls_name \
-                or hasattr(module, "nf") or hasattr(base, "nf"):
+        if (
+            "Conv1D" in cls_name
+            or "Conv1D" in base_cls_name
+            or hasattr(module, "nf")
+            or hasattr(base, "nf")
+        ):
             w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
@@ -96,7 +101,7 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2:]
+    x2 = x[..., x.shape[-1] // 2 :]
     return torch.cat((-x2, x1), dim=-1)
 
 
@@ -162,7 +167,9 @@ def compute_exponential_decay(
 
 def _normalize_mask(
     mask: torch.Tensor | None,
-    B: int, H: int, N: int,
+    B: int,
+    H: int,
+    N: int,
     dtype: torch.dtype,
     device: torch.device,
 ) -> torch.Tensor | None:
@@ -237,6 +244,7 @@ class SVDLinear(nn.Module):
     Low-rank factorized linear layer:
         y = (x V^T) U^T + b + (alpha / r_lora) (x A^T) B^T
     """
+
     # SVDLA-FIX-12: this is NOT an attention module
     is_custom_attention: bool = False
 
@@ -268,11 +276,17 @@ class SVDLinear(nn.Module):
         self.use_rms_norm = bool(use_rms_norm)
         self.eps = float(eps)
 
-        self.V = nn.Parameter(torch.empty(self.rank, self.in_features, dtype=dtype, device=device))
-        self.U = nn.Parameter(torch.empty(self.out_features, self.rank, dtype=dtype, device=device))
+        self.V = nn.Parameter(
+            torch.empty(self.rank, self.in_features, dtype=dtype, device=device)
+        )
+        self.U = nn.Parameter(
+            torch.empty(self.out_features, self.rank, dtype=dtype, device=device)
+        )
 
         if self.use_rms_norm:
-            self.norm_weight = nn.Parameter(torch.ones(self.rank, dtype=dtype, device=device))
+            self.norm_weight = nn.Parameter(
+                torch.ones(self.rank, dtype=dtype, device=device)
+            )
         else:
             self.register_parameter("norm_weight", None)
 
@@ -281,8 +295,16 @@ class SVDLinear(nn.Module):
             self.V.requires_grad = False
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, dtype=dtype, device=device))
-            self.lora_B = nn.Parameter(torch.empty(self.out_features, self.lora_rank, dtype=dtype, device=device))
+            self.lora_A = nn.Parameter(
+                torch.empty(
+                    self.lora_rank, self.in_features, dtype=dtype, device=device
+                )
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty(
+                    self.out_features, self.lora_rank, dtype=dtype, device=device
+                )
+            )
             self.lora_scaling = self.lora_alpha / max(1, self.lora_rank)
         else:
             self.register_parameter("lora_A", None)
@@ -290,7 +312,9 @@ class SVDLinear(nn.Module):
             self.lora_scaling = 1.0
 
         if bias:
-            self.bias = nn.Parameter(torch.empty(self.out_features, dtype=dtype, device=device))
+            self.bias = nn.Parameter(
+                torch.empty(self.out_features, dtype=dtype, device=device)
+            )
         else:
             self.register_parameter("bias", None)
 
@@ -327,12 +351,15 @@ class SVDLinear(nn.Module):
         """
         if _HAS_TRITON and triton_dispatch is not None:
             try:
-                return triton_dispatch(self.triton_kernel, x, self.U, self.V, bias=self.bias)
+                return triton_dispatch(
+                    self.triton_kernel, x, self.U, self.V, bias=self.bias
+                )
             except Exception as e:
                 logger.warning(
                     "SVDLinear: triton_dispatch('%s') failed (%s); "
                     "falling back to F.linear.",
-                    self.triton_kernel, e,
+                    self.triton_kernel,
+                    e,
                 )
         # Fallback: plain F.linear
         Vx = F.linear(x, self.V)
@@ -364,19 +391,24 @@ class SVDLinear(nn.Module):
             out = F.linear(Vx, self.U, self.bias)
 
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            lora_out = (
+                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            )
             out = out + lora_out
 
         return out
 
-    def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
+    def set_low_rank_factors(
+        self, U_factor: torch.Tensor, V_factor: torch.Tensor
+    ) -> None:
         # SVDLA-FIX-15
         with torch.no_grad():
             r = min(self.rank, U_factor.size(1), V_factor.size(0))
             if r < self.rank:
                 logger.debug(
                     "SVDLinear: factor rank %d < allocated rank %d; zeroing remainder.",
-                    r, self.rank,
+                    r,
+                    self.rank,
                 )
             out_d = min(self.out_features, U_factor.size(0))
             in_d = min(self.in_features, V_factor.size(1))
@@ -390,13 +422,11 @@ class SVDLinear(nn.Module):
             )
 
     def get_orthogonality_loss(self) -> torch.Tensor:
-        U_orth = (
-            torch.matmul(self.U.t().contiguous(), self.U)
-            - torch.eye(self.rank, device=self.U.device, dtype=self.U.dtype)
+        U_orth = torch.matmul(self.U.t().contiguous(), self.U) - torch.eye(
+            self.rank, device=self.U.device, dtype=self.U.dtype
         )
-        V_orth = (
-            torch.matmul(self.V, self.V.t().contiguous())
-            - torch.eye(self.rank, device=self.V.device, dtype=self.V.dtype)
+        V_orth = torch.matmul(self.V, self.V.t().contiguous()) - torch.eye(
+            self.rank, device=self.V.device, dtype=self.V.dtype
         )
         return torch.norm(U_orth, p="fro") + torch.norm(V_orth, p="fro")
 
@@ -404,16 +434,26 @@ class SVDLinear(nn.Module):
 # ===========================================================================
 # SVDLinearAttention
 # ===========================================================================
-@ATTENTION_REGISTRY.register("svd_linear_attn", supports_causal=True,
-                              supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("svd_linear_attention", supports_causal=True,
-                              supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("svd_linear", supports_causal=True,
-                              supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "svd_linear_attn",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
+    "svd_linear_attention",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
+    "svd_linear", supports_causal=True, supports_bidirectional=True, supports_gqa=True
+)
 class SVDLinearAttention(BaseAttention):
     """
     SVD Factorized Linear Attention with optional exponential decay gating.
     """
+
     supports_gqa: bool = True
     supports_causal: bool = True
     supports_bidirectional: bool = True
@@ -421,8 +461,14 @@ class SVDLinearAttention(BaseAttention):
 
     triton_kernel: str = "linear_attn"
 
-    _VALID_MODES = {"exact", "linear", "decay_linear", "linear_decay",
-                    "decay", "gated_linear"}
+    _VALID_MODES = {
+        "exact",
+        "linear",
+        "decay_linear",
+        "linear_decay",
+        "decay",
+        "gated_linear",
+    }
 
     def __init__(
         self,
@@ -442,8 +488,9 @@ class SVDLinearAttention(BaseAttention):
         chunk_size: int = 64,
         **kwargs: Any,
     ) -> None:
-        actual_rank = rank or _cfg_get(config, "svd_rank",
-                                _cfg_get(config, "rank", 192))
+        actual_rank = rank or _cfg_get(
+            config, "svd_rank", _cfg_get(config, "rank", 192)
+        )
         super().__init__(config, rank=actual_rank)
 
         # ---- dimension detection ----
@@ -474,24 +521,43 @@ class SVDLinearAttention(BaseAttention):
                     detected_head_dim = getattr(old_attn, attr)
                     break
 
-        self.hidden_size = int(_cfg_get(
-            config, "hidden_size",
-            kwargs.get("hidden_size", kwargs.get("embed_dim", detected_hidden or 768)),
-        ))
-        self.num_heads = int(_cfg_get(
-            config, "num_attention_heads",
-            _cfg_get(config, "num_heads",
-                     kwargs.get("num_attention_heads",
-                                kwargs.get("num_heads", detected_heads or 12))),
-        ))
-        self.head_dim = int(_cfg_get(
-            config, "head_dim",
-            kwargs.get("head_dim",
-                       detected_head_dim or (self.hidden_size // max(1, self.num_heads))),
-        ))
+        self.hidden_size = int(
+            _cfg_get(
+                config,
+                "hidden_size",
+                kwargs.get(
+                    "hidden_size", kwargs.get("embed_dim", detected_hidden or 768)
+                ),
+            )
+        )
+        self.num_heads = int(
+            _cfg_get(
+                config,
+                "num_attention_heads",
+                _cfg_get(
+                    config,
+                    "num_heads",
+                    kwargs.get(
+                        "num_attention_heads",
+                        kwargs.get("num_heads", detected_heads or 12),
+                    ),
+                ),
+            )
+        )
+        self.head_dim = int(
+            _cfg_get(
+                config,
+                "head_dim",
+                kwargs.get(
+                    "head_dim",
+                    detected_head_dim or (self.hidden_size // max(1, self.num_heads)),
+                ),
+            )
+        )
 
-        cfg_kv = _cfg_get(config, "num_key_value_heads",
-                          _cfg_get(config, "num_kv_heads", None))
+        cfg_kv = _cfg_get(
+            config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None)
+        )
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -512,14 +578,19 @@ class SVDLinearAttention(BaseAttention):
         # SVDLA-FIX-09: normalize mode
         mode_norm = str(mode).strip().lower()
         if mode_norm not in self._VALID_MODES:
-            logger.warning("SVDLinearAttention: unknown mode '%s'; defaulting to 'exact'.", mode)
+            logger.warning(
+                "SVDLinearAttention: unknown mode '%s'; defaulting to 'exact'.", mode
+            )
             mode_norm = "exact"
         self.mode = mode_norm
 
-        self.dropout_rate = float(_cfg_get(
-            config, "attention_probs_dropout_prob",
-            _cfg_get(config, "dropout", 0.1),
-        ))
+        self.dropout_rate = float(
+            _cfg_get(
+                config,
+                "attention_probs_dropout_prob",
+                _cfg_get(config, "dropout", 0.1),
+            )
+        )
         self.eps = float(_cfg_get(config, "linear_attention_eps", 1e-6))
         self.triton_kwargs = {"phi": "elu+1", "eps": self.eps}
 
@@ -530,9 +601,23 @@ class SVDLinearAttention(BaseAttention):
             _mt = str(_cfg_get(config, "model_type", "") or "").lower()
             self.is_decoder = (
                 bool(_cfg_get(config, "is_decoder", False))
-                or any(_mt.startswith(p) for p in
-                       ("gpt", "qwen", "llama", "mistral", "falcon", "bloom",
-                        "opt", "gemma", "phi", "olmo", "mpt", "stablelm"))
+                or any(
+                    _mt.startswith(p)
+                    for p in (
+                        "gpt",
+                        "qwen",
+                        "llama",
+                        "mistral",
+                        "falcon",
+                        "bloom",
+                        "opt",
+                        "gemma",
+                        "phi",
+                        "olmo",
+                        "mpt",
+                        "stablelm",
+                    )
+                )
                 or (old_attn is not None and hasattr(old_attn, "c_attn"))
             )
 
@@ -545,41 +630,65 @@ class SVDLinearAttention(BaseAttention):
             or _cfg_get(config, "use_decay_gating", False)
             or (self.mode in ("decay_linear", "linear_decay", "decay", "gated_linear"))
         )
-        self.decay_activation = str(_cfg_get(config, "decay_activation", decay_activation))
-        self.decay_channel_wise = bool(_cfg_get(config, "decay_channel_wise", decay_channel_wise))
-        self.use_fused_kernel = bool(use_fused_kernel or _cfg_get(config, "use_fused_kernel", False))
-        self.use_rms_norm = bool(use_rms_norm or _cfg_get(config, "use_rms_norm", False))
+        self.decay_activation = str(
+            _cfg_get(config, "decay_activation", decay_activation)
+        )
+        self.decay_channel_wise = bool(
+            _cfg_get(config, "decay_channel_wise", decay_channel_wise)
+        )
+        self.use_fused_kernel = bool(
+            use_fused_kernel or _cfg_get(config, "use_fused_kernel", False)
+        )
+        self.use_rms_norm = bool(
+            use_rms_norm or _cfg_get(config, "use_rms_norm", False)
+        )
         # SVDLA-FIX-07
         self.chunk_size = max(8, int(_cfg_get(config, "chunk_size", chunk_size)))
 
         # ---- projections ----
         self.q_proj = SVDLinear(
-            self.hidden_size, self.q_head_size, rank=self.rank,
-            freeze_svd=freeze_svd, lora_rank=self.lora_rank,
+            self.hidden_size,
+            self.q_head_size,
+            rank=self.rank,
+            freeze_svd=freeze_svd,
+            lora_rank=self.lora_rank,
             lora_alpha=self.lora_alpha,
             use_fused_kernel=self.use_fused_kernel,
-            use_rms_norm=self.use_rms_norm, eps=self.eps,
+            use_rms_norm=self.use_rms_norm,
+            eps=self.eps,
         )
         self.k_proj = SVDLinear(
-            self.hidden_size, self.kv_head_size, rank=self.rank,
-            freeze_svd=freeze_svd, lora_rank=self.lora_rank,
+            self.hidden_size,
+            self.kv_head_size,
+            rank=self.rank,
+            freeze_svd=freeze_svd,
+            lora_rank=self.lora_rank,
             lora_alpha=self.lora_alpha,
             use_fused_kernel=self.use_fused_kernel,
-            use_rms_norm=self.use_rms_norm, eps=self.eps,
+            use_rms_norm=self.use_rms_norm,
+            eps=self.eps,
         )
         self.v_proj = SVDLinear(
-            self.hidden_size, self.kv_head_size, rank=self.rank,
-            freeze_svd=freeze_svd, lora_rank=self.lora_rank,
+            self.hidden_size,
+            self.kv_head_size,
+            rank=self.rank,
+            freeze_svd=freeze_svd,
+            lora_rank=self.lora_rank,
             lora_alpha=self.lora_alpha,
             use_fused_kernel=self.use_fused_kernel,
-            use_rms_norm=self.use_rms_norm, eps=self.eps,
+            use_rms_norm=self.use_rms_norm,
+            eps=self.eps,
         )
         self.out_proj = SVDLinear(
-            self.q_head_size, self.hidden_size, rank=self.rank,
-            freeze_svd=freeze_svd, lora_rank=self.lora_rank,
+            self.q_head_size,
+            self.hidden_size,
+            rank=self.rank,
+            freeze_svd=freeze_svd,
+            lora_rank=self.lora_rank,
             lora_alpha=self.lora_alpha,
             use_fused_kernel=self.use_fused_kernel,
-            use_rms_norm=self.use_rms_norm, eps=self.eps,
+            use_rms_norm=self.use_rms_norm,
+            eps=self.eps,
         )
 
         gate_out_dim = self.all_head_size if self.decay_channel_wise else self.num_heads
@@ -617,19 +726,24 @@ class SVDLinearAttention(BaseAttention):
             else:
                 logger.debug(
                     "SVDLinearAttention: decay_gate bias size mismatch (%d vs %d); zeroing.",
-                    bias_target.numel(), self.decay_gate.bias.numel(),
+                    bias_target.numel(),
+                    self.decay_gate.bias.numel(),
                 )
                 nn.init.zeros_(self.decay_gate.bias)
 
     # ------------------------------------------------------------------
     def _factorize_and_set(
-        self, target_linear: SVDLinear, weight: torch.Tensor,
+        self,
+        target_linear: SVDLinear,
+        weight: torch.Tensor,
         bias: torch.Tensor | None = None,
     ) -> None:
         with torch.no_grad():
             dev = weight.device
             try:
-                U, S, Vt = torch.linalg.svd(weight.detach().float(), full_matrices=False)
+                U, S, Vt = torch.linalg.svd(
+                    weight.detach().float(), full_matrices=False
+                )
             except Exception:
                 U, S, Vt = torch.linalg.svd(
                     weight.detach().cpu().float(), full_matrices=False
@@ -685,25 +799,34 @@ class SVDLinearAttention(BaseAttention):
             elif hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w, c_attn_b = _unpack_weight_bias(src.c_attn)
                 if c_attn_w is not None:
-                    if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
+                    if (
+                        c_attn_w.shape[0] == self.hidden_size
+                        and c_attn_w.shape[1] != self.hidden_size
+                    ):
                         c_attn_w = c_attn_w.t().contiguous()
                     q_dim = self.q_head_size
                     k_dim = self.kv_head_size
                     v_dim = self.kv_head_size
                     w_q = c_attn_w[:q_dim, :]
-                    w_k = c_attn_w[q_dim:q_dim + k_dim, :]
-                    w_v = c_attn_w[q_dim + k_dim:q_dim + k_dim + v_dim, :]
+                    w_k = c_attn_w[q_dim : q_dim + k_dim, :]
+                    w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
                     if c_attn_b is not None:
                         b_q = c_attn_b[:q_dim]
-                        b_k = c_attn_b[q_dim:q_dim + k_dim]
-                        b_v = c_attn_b[q_dim + k_dim:q_dim + k_dim + v_dim]
+                        b_k = c_attn_b[q_dim : q_dim + k_dim]
+                        b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
                 out_w, out_b = _unpack_weight_bias(src.c_proj)
-                if out_w is not None and out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
+                if (
+                    out_w is not None
+                    and out_w.shape[0] == self.hidden_size
+                    and out_w.shape[1] != self.hidden_size
+                ):
                     out_w = out_w.t().contiguous()
                 w_o, b_o = out_w, out_b
 
             # BERT / RoBERTa nested
-            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
+            elif (
+                hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value")
+            ):
                 w_q, b_q = _unpack_weight_bias(src.query)
                 w_k, b_k = _unpack_weight_bias(src.key)
                 w_v, b_v = _unpack_weight_bias(src.value)
@@ -714,7 +837,11 @@ class SVDLinearAttention(BaseAttention):
                             break
 
             # Qwen / LLaMA
-            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
+            elif (
+                hasattr(src, "q_proj")
+                and hasattr(src, "k_proj")
+                and hasattr(src, "v_proj")
+            ):
                 w_q, b_q = _unpack_weight_bias(src.q_proj)
                 w_k, b_k = _unpack_weight_bias(src.k_proj)
                 w_v, b_v = _unpack_weight_bias(src.v_proj)
@@ -722,7 +849,11 @@ class SVDLinearAttention(BaseAttention):
                     w_o, b_o = _unpack_weight_bias(src.o_proj)
 
             # DistilBERT
-            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
+            elif (
+                hasattr(src, "q_lin")
+                and hasattr(src, "k_lin")
+                and hasattr(src, "v_lin")
+            ):
                 w_q, b_q = _unpack_weight_bias(src.q_lin)
                 w_k, b_k = _unpack_weight_bias(src.k_lin)
                 w_v, b_v = _unpack_weight_bias(src.v_lin)
@@ -746,14 +877,18 @@ class SVDLinearAttention(BaseAttention):
 
             # ---- missing check: WARN, do not raise ----
             missing = []
-            if w_q is None: missing.append("q")
-            if w_k is None: missing.append("k")
-            if w_v is None: missing.append("v")
+            if w_q is None:
+                missing.append("q")
+            if w_k is None:
+                missing.append("k")
+            if w_v is None:
+                missing.append("v")
             if missing:
                 logger.warning(
                     "SVDLinearAttention: could not extract %s from %s; "
                     "keeping random init. This will likely reduce quality.",
-                    missing, type(old_attn).__name__,
+                    missing,
+                    type(old_attn).__name__,
                 )
                 return  # early return; projections keep their SVD init
 
@@ -768,7 +903,9 @@ class SVDLinearAttention(BaseAttention):
                 if not math.isfinite(n) or n < 1e-4:
                     logger.warning(
                         "SVDLinearAttention: %s has near-zero/NaN norm (%.2e); "
-                        "proceeding anyway.", name, n,
+                        "proceeding anyway.",
+                        name,
+                        n,
                     )
 
             # ---- factorize Q ----
@@ -783,36 +920,60 @@ class SVDLinearAttention(BaseAttention):
                 w, b = weight, bias
                 if w.shape[0] == self.kv_head_size:
                     return w, b
-                if w.shape[0] > self.kv_head_size and w.shape[0] % self.kv_head_size == 0:
+                if (
+                    w.shape[0] > self.kv_head_size
+                    and w.shape[0] % self.kv_head_size == 0
+                ):
                     rep = w.shape[0] // self.kv_head_size
                     if mode == "slice":
-                        w = w.contiguous().view(self.num_kv_heads, rep, -1)[:, 0, :].contiguous()
+                        w = (
+                            w.contiguous()
+                            .view(self.num_kv_heads, rep, -1)[:, 0, :]
+                            .contiguous()
+                        )
                         if b is not None:
-                            b = b.contiguous().view(self.num_kv_heads, rep, -1)[:, 0, :].contiguous().view(-1)
+                            b = (
+                                b.contiguous()
+                                .view(self.num_kv_heads, rep, -1)[:, 0, :]
+                                .contiguous()
+                                .view(-1)
+                            )
                     elif mode == "first":
-                        w = w[:self.kv_head_size, :].contiguous()
+                        w = w[: self.kv_head_size, :].contiguous()
                         if b is not None:
-                            b = b[:self.kv_head_size].contiguous()
+                            b = b[: self.kv_head_size].contiguous()
                     else:  # mean
                         w = w.contiguous().view(self.num_kv_heads, rep, -1).mean(dim=1)
                         if b is not None:
-                            b = b.contiguous().view(self.num_kv_heads, rep, -1).mean(dim=1).view(-1)
-                elif w.shape[0] < self.kv_head_size and self.kv_head_size % w.shape[0] == 0:
+                            b = (
+                                b.contiguous()
+                                .view(self.num_kv_heads, rep, -1)
+                                .mean(dim=1)
+                                .view(-1)
+                            )
+                elif (
+                    w.shape[0] < self.kv_head_size
+                    and self.kv_head_size % w.shape[0] == 0
+                ):
                     rep = self.kv_head_size // w.shape[0]
                     w = w.repeat(rep, 1)
                     if b is not None:
                         b = b.repeat(rep)
                 else:
                     padded_w = torch.zeros(
-                        self.kv_head_size, w.shape[1],
-                        device=w.device, dtype=w.dtype,
+                        self.kv_head_size,
+                        w.shape[1],
+                        device=w.device,
+                        dtype=w.dtype,
                     )
                     min_rows = min(self.kv_head_size, w.shape[0])
                     padded_w[:min_rows, :] = w[:min_rows, :]
                     w = padded_w
                     if b is not None:
                         padded_b = torch.zeros(
-                            self.kv_head_size, device=b.device, dtype=b.dtype,
+                            self.kv_head_size,
+                            device=b.device,
+                            dtype=b.dtype,
                         )
                         padded_b[:min_rows] = b[:min_rows]
                         b = padded_b
@@ -841,12 +1002,15 @@ class SVDLinearAttention(BaseAttention):
                 if not math.isfinite(n_o) or n_o < 1e-4:
                     logger.warning(
                         "SVDLinearAttention: out_proj has near-zero/NaN norm (%.2e); "
-                        "proceeding anyway.", n_o,
+                        "proceeding anyway.",
+                        n_o,
                     )
                 try:
                     self._factorize_and_set(self.out_proj, w_o, b_o)
                 except Exception as e:
-                    logger.warning("SVDLinearAttention: out_proj factorization failed (%s).", e)
+                    logger.warning(
+                        "SVDLinearAttention: out_proj factorization failed (%s).", e
+                    )
 
     # ------------------------------------------------------------------
     # Forward paths
@@ -881,9 +1045,13 @@ class SVDLinearAttention(BaseAttention):
         decay_logits = self.decay_gate(hidden_states)
         if self.decay_channel_wise:
             decay_logits = decay_logits.view(B, N, H, D_k).permute(0, 2, 1, 3)
-            lambda_decay = compute_exponential_decay(
-                decay_logits, activation=self.decay_activation
-            ).unsqueeze(-1).to(compute_dtype)
+            lambda_decay = (
+                compute_exponential_decay(
+                    decay_logits, activation=self.decay_activation
+                )
+                .unsqueeze(-1)
+                .to(compute_dtype)
+            )
         else:
             decay_logits = decay_logits.permute(0, 2, 1).unsqueeze(-1).unsqueeze(-1)
             lambda_decay = compute_exponential_decay(
@@ -895,7 +1063,9 @@ class SVDLinearAttention(BaseAttention):
             m_dec = mask_expanded
             while m_dec.dim() < lambda_decay.dim():
                 m_dec = m_dec.unsqueeze(-1)
-            lambda_decay = torch.where(m_dec > 0, lambda_decay, torch.ones_like(lambda_decay))
+            lambda_decay = torch.where(
+                m_dec > 0, lambda_decay, torch.ones_like(lambda_decay)
+            )
 
         # ---- chunked scan for non-channel-wise and no past state ----
         if past_state is None and not self.decay_channel_wise:
@@ -922,12 +1092,13 @@ class SVDLinearAttention(BaseAttention):
                 causal_bool = torch.tril(
                     torch.ones(Lc, Lc, dtype=torch.bool, device=qc.device)
                 )
-                M_intra = torch.exp(torch.clamp(log_M_intra, max=0.0)) \
-                          * causal_bool.unsqueeze(0).unsqueeze(0)
+                M_intra = torch.exp(
+                    torch.clamp(log_M_intra, max=0.0)
+                ) * causal_bool.unsqueeze(0).unsqueeze(0)
 
-                aff_intra = torch.matmul(
-                    qc, kc.transpose(-1, -2).contiguous()
-                ) * M_intra
+                aff_intra = (
+                    torch.matmul(qc, kc.transpose(-1, -2).contiguous()) * M_intra
+                )
                 num_intra = torch.matmul(aff_intra, vc)
                 den_intra = aff_intra.sum(dim=-1, keepdim=True)
 
@@ -944,17 +1115,16 @@ class SVDLinearAttention(BaseAttention):
                     torch.clamp(log_gamma_c[:, :, -1:], max=0.0)
                 ).unsqueeze(-1)
                 log_w_to_end = log_gamma_c[:, :, -1:] - log_gamma_c
-                w_to_end = torch.exp(
-                    torch.clamp(log_w_to_end, max=0.0)
-                ).unsqueeze(-1)
+                w_to_end = torch.exp(torch.clamp(log_w_to_end, max=0.0)).unsqueeze(-1)
                 kc_w = kc * w_to_end
 
                 S_chunk = total_chunk_decay * S_chunk + torch.matmul(
                     kc_w.transpose(-1, -2).contiguous(), vc
                 )
-                Z_chunk = total_chunk_decay * Z_chunk + kc_w.sum(
-                    dim=-2, keepdim=True
-                ).transpose(-1, -2).contiguous()
+                Z_chunk = (
+                    total_chunk_decay * Z_chunk
+                    + kc_w.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
+                )
 
             context = torch.cat(outputs, dim=2).to(q.dtype)
             return context, (S_chunk, Z_chunk)
@@ -970,9 +1140,9 @@ class SVDLinearAttention(BaseAttention):
 
         outputs = []
         for t in range(N):
-            qt = phi_q[:, :, t:t + 1, :]
-            kt = phi_k[:, :, t:t + 1, :]
-            vt = v_f[:, :, t:t + 1, :]
+            qt = phi_q[:, :, t : t + 1, :]
+            kt = phi_k[:, :, t : t + 1, :]
+            vt = v_f[:, :, t : t + 1, :]
             lam_t = lambda_decay[:, :, t]
 
             kt_t = kt.transpose(-1, -2).contiguous()
@@ -988,13 +1158,19 @@ class SVDLinearAttention(BaseAttention):
         return context, (S, Z)
 
     def _forward_linear_kernel(
-        self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor,
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
         mask: torch.Tensor | None,
     ) -> torch.Tensor:
         if mask is None and _HAS_TRITON and triton_dispatch is not None:
             try:
                 return triton_dispatch(
-                    self.triton_kernel, q, k, v,
+                    self.triton_kernel,
+                    q,
+                    k,
+                    v,
                     is_causal=self.is_decoder,
                     **self.triton_kwargs,
                 )
@@ -1031,9 +1207,11 @@ class SVDLinearAttention(BaseAttention):
                 Lc = end - start
 
                 aff_intra = torch.matmul(qc, kc.transpose(-1, -2).contiguous())
-                causal_intra = torch.tril(
-                    torch.ones(Lc, Lc, device=q.device, dtype=torch.bool)
-                ).unsqueeze(0).unsqueeze(0)
+                causal_intra = (
+                    torch.tril(torch.ones(Lc, Lc, device=q.device, dtype=torch.bool))
+                    .unsqueeze(0)
+                    .unsqueeze(0)
+                )
                 aff_intra = aff_intra * causal_intra
                 num_intra = torch.matmul(aff_intra, vc)
                 den_intra = aff_intra.sum(dim=-1, keepdim=True)
@@ -1044,21 +1222,20 @@ class SVDLinearAttention(BaseAttention):
                 out_c = (num_intra + num_inter) / (den_intra + den_inter + self.eps)
                 outputs.append(out_c)
 
-                S_chunk = S_chunk + torch.matmul(
-                    kc.transpose(-1, -2).contiguous(), vc
+                S_chunk = S_chunk + torch.matmul(kc.transpose(-1, -2).contiguous(), vc)
+                Z_chunk = (
+                    Z_chunk
+                    + kc.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
                 )
-                Z_chunk = Z_chunk + kc.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
 
             context = torch.cat(outputs, dim=2).to(q.dtype)
         else:
-            kv_state = torch.matmul(
-                phi_k.transpose(-1, -2).contiguous(), v_f
-            )
+            kv_state = torch.matmul(phi_k.transpose(-1, -2).contiguous(), v_f)
             numerator = torch.matmul(phi_q, kv_state)
             k_sum = phi_k.sum(dim=-2, keepdim=True)
-            denominator = torch.matmul(
-                phi_q, k_sum.transpose(-1, -2).contiguous()
-            ) + self.eps
+            denominator = (
+                torch.matmul(phi_q, k_sum.transpose(-1, -2).contiguous()) + self.eps
+            )
             context = (numerator / denominator).to(q.dtype)
 
         return context
@@ -1090,7 +1267,9 @@ class SVDLinearAttention(BaseAttention):
                 if can_use_sdpa:
                     drop_p = self.dropout.p if self.training else 0.0
                     context = F.scaled_dot_product_attention(
-                        q, k, v,
+                        q,
+                        k,
+                        v,
                         attn_mask=sdpa_mask,
                         dropout_p=drop_p,
                         is_causal=is_causal_attn if sdpa_mask is None else False,
@@ -1100,18 +1279,24 @@ class SVDLinearAttention(BaseAttention):
                 pass
 
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores = torch.matmul(
-            q.float(), k.float().transpose(-1, -2).contiguous()
-        ) * scale
+        scores = (
+            torch.matmul(q.float(), k.float().transpose(-1, -2).contiguous()) * scale
+        )
 
         if is_causal_attn:
-            causal_mask = torch.triu(
-                torch.full(
-                    (q.shape[-2], k.shape[-2]), float("-inf"),
-                    device=scores.device, dtype=torch.float32,
-                ),
-                diagonal=1,
-            ).unsqueeze(0).unsqueeze(0)
+            causal_mask = (
+                torch.triu(
+                    torch.full(
+                        (q.shape[-2], k.shape[-2]),
+                        float("-inf"),
+                        device=scores.device,
+                        dtype=torch.float32,
+                    ),
+                    diagonal=1,
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
             scores = scores + causal_mask
 
         if mask is not None:
@@ -1145,9 +1330,11 @@ class SVDLinearAttention(BaseAttention):
         return_state = kwargs.get("return_state", False)
         past_state = kwargs.get("past_state")
 
-        if return_state and (not self.use_decay_gating
-                              and self.mode not in ("decay_linear", "linear_decay",
-                                                    "decay", "gated_linear")):
+        if return_state and (
+            not self.use_decay_gating
+            and self.mode
+            not in ("decay_linear", "linear_decay", "decay", "gated_linear")
+        ):
             raise ValueError(
                 f"return_state=True is only supported in decay/gated modes, "
                 f"got mode='{self.mode}'"
@@ -1164,15 +1351,24 @@ class SVDLinearAttention(BaseAttention):
         kv_len = kv_input.shape[1]
 
         # 1. projections
-        q = self.q_proj(hidden_states).view(
-            B, N, self.num_heads, self.head_dim
-        ).transpose(1, 2).contiguous()
-        k = self.k_proj(kv_input).view(
-            B, kv_len, self.num_kv_heads, self.head_dim
-        ).transpose(1, 2).contiguous()
-        v = self.v_proj(kv_input).view(
-            B, kv_len, self.num_kv_heads, self.head_dim
-        ).transpose(1, 2).contiguous()
+        q = (
+            self.q_proj(hidden_states)
+            .view(B, N, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        k = (
+            self.k_proj(kv_input)
+            .view(B, kv_len, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_proj(kv_input)
+            .view(B, kv_len, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # 2. RoPE
         if position_embeddings is None:
@@ -1192,14 +1388,23 @@ class SVDLinearAttention(BaseAttention):
         # 4. dispatch
         if self.mode == "exact":
             context, attn_probs = self._forward_exact_softmax(
-                q, k, v, eff_mask, is_cross=is_cross,
+                q,
+                k,
+                v,
+                eff_mask,
+                is_cross=is_cross,
                 output_attentions=bool(output_attentions),
             )
         elif self.use_decay_gating or self.mode in (
-            "decay_linear", "linear_decay", "decay", "gated_linear"
+            "decay_linear",
+            "linear_decay",
+            "decay",
+            "gated_linear",
         ):
             context, updated_state = self._forward_decay_gated_linear_kernel(
-                q=q, k=k, v=v,
+                q=q,
+                k=k,
+                v=v,
                 hidden_states=hidden_states,
                 mask=eff_mask,
                 past_state=past_state,
@@ -1255,15 +1460,24 @@ class SVDLinearAttention(BaseAttention):
             x_t = x_t.unsqueeze(1)
 
         B = x_t.shape[0]
-        q = self.q_proj(x_t).view(
-            B, 1, self.num_heads, self.head_dim
-        ).transpose(1, 2).contiguous()
-        k = self.k_proj(x_t).view(
-            B, 1, self.num_kv_heads, self.head_dim
-        ).transpose(1, 2).contiguous()
-        v = self.v_proj(x_t).view(
-            B, 1, self.num_kv_heads, self.head_dim
-        ).transpose(1, 2).contiguous()
+        q = (
+            self.q_proj(x_t)
+            .view(B, 1, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        k = (
+            self.k_proj(x_t)
+            .view(B, 1, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_proj(x_t)
+            .view(B, 1, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         if self.num_kv_heads < self.num_heads:
             k = repeat_kv(k, self.kv_repeat)
@@ -1279,9 +1493,13 @@ class SVDLinearAttention(BaseAttention):
             decay_logits = self.decay_gate(x_t)
             if self.decay_channel_wise:
                 decay_logits = decay_logits.view(B, 1, H, D_k).permute(0, 2, 1, 3)
-                lam_t = compute_exponential_decay(
-                    decay_logits, activation=self.decay_activation
-                ).unsqueeze(-1).squeeze(2)
+                lam_t = (
+                    compute_exponential_decay(
+                        decay_logits, activation=self.decay_activation
+                    )
+                    .unsqueeze(-1)
+                    .squeeze(2)
+                )
             else:
                 decay_logits = decay_logits.permute(0, 2, 1).unsqueeze(-1).unsqueeze(-1)
                 lam_t = compute_exponential_decay(
@@ -1306,7 +1524,12 @@ class SVDLinearAttention(BaseAttention):
         den_t = torch.matmul(phi_q, Z_t) + self.eps
         y_t = num_t / den_t
 
-        context = y_t.transpose(1, 2).contiguous().view(B, 1, self.all_head_size).to(x_t.dtype)
+        context = (
+            y_t.transpose(1, 2)
+            .contiguous()
+            .view(B, 1, self.all_head_size)
+            .to(x_t.dtype)
+        )
         if self.is_nested_encoder:
             out_t = context
         else:
@@ -1391,10 +1614,16 @@ def inject_svd_linear_attention(
             tot = len(layer_list)
             for idx, lyr in enumerate(layer_list):
                 res = inject_svd_linear_attention(
-                    layer=lyr, model_config=cfg, comp_config=comp_config,
-                    layer_idx=idx, total_layers=tot,
-                    lora_rank=lora_rank, rank=rank, mode=mode,
-                    _depth=_depth + 1, **kwargs,
+                    layer=lyr,
+                    model_config=cfg,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    lora_rank=lora_rank,
+                    rank=rank,
+                    mode=mode,
+                    _depth=_depth + 1,
+                    **kwargs,
                 )
                 if res is not None:
                     num_injected += 1
@@ -1412,8 +1641,10 @@ def inject_svd_linear_attention(
         return None
 
     # SVDLA-FIX-04: idempotency guard
-    if isinstance(curr_attn, SVDLinearAttention) \
-            or "SVDLinearAttention" in curr_attn.__class__.__name__:
+    if (
+        isinstance(curr_attn, SVDLinearAttention)
+        or "SVDLinearAttention" in curr_attn.__class__.__name__
+    ):
         return None
 
     is_nested = hasattr(target, "attention") and hasattr(target.attention, "self")

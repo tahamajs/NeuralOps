@@ -1,17 +1,15 @@
+import types
+
 import pytest
 import torch
 import torch.nn as nn
-import types
-
-from framework.attentions.spectron import (
-    SpectronAttention,
-    LowRankSparseLinear,
-    _rotate_half,
-    apply_rotary_pos_emb,
-    inject_spectron_layer,
-    allocate_ranks_spectron,
-)
-from framework.attentions.spectron_attention import SpectronAttention as SpectronAttentionAlias
+from framework.attentions.spectron import (LowRankSparseLinear,
+                                           SpectronAttention, _rotate_half,
+                                           allocate_ranks_spectron,
+                                           apply_rotary_pos_emb,
+                                           inject_spectron_layer)
+from framework.attentions.spectron_attention import \
+    SpectronAttention as SpectronAttentionAlias
 
 
 def make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=False, model_type="bert"):

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import os
 import sys
+
 import pytest
 import torch
 from transformers import DistilBertConfig, DistilBertModel
@@ -15,7 +16,8 @@ if _FRAMEWORK_PARENT not in sys.path:
     sys.path.insert(0, _FRAMEWORK_PARENT)
 
 import framework.attentions
-from framework.core.attention_utils import inject_attention, available_attention_types
+from framework.core.attention_utils import (available_attention_types,
+                                            inject_attention)
 
 
 class TestAttentionInjection:

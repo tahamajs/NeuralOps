@@ -7,17 +7,16 @@ Registered as 'frandi' and 'frandi_compressor'.
 
 from __future__ import annotations
 
-import math
 import logging
+import math
 from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
-from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import adaptive_max_error
+from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
@@ -32,9 +31,21 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 _ATTN_NAMES = {
-    "q_proj", "k_proj", "v_proj", "o_proj",
-    "c_attn", "c_proj", "query", "key", "value",
-    "q_lin", "k_lin", "v_lin", "out_lin", "out_proj", "dense",
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "c_attn",
+    "c_proj",
+    "query",
+    "key",
+    "value",
+    "q_lin",
+    "k_lin",
+    "v_lin",
+    "out_lin",
+    "out_proj",
+    "dense",
 }
 
 
@@ -53,6 +64,7 @@ class FRanDILinear(nn.Module):
       y = (x @ A^T) @ B^T + bias
           + (alpha/r) * (x @ lora_A^T @ lora_B^T)
     """
+
     # FR-FIX-09: NOT an attention module.
     is_custom_attention: bool = False
 
@@ -88,7 +100,9 @@ class FRanDILinear(nn.Module):
         )
         nn.init.xavier_uniform_(self.B.float())
         with torch.no_grad():
-            self.B.data = self.B.data.to(dtype=dtype) if dtype is not None else self.B.data
+            self.B.data = (
+                self.B.data.to(dtype=dtype) if dtype is not None else self.B.data
+            )
 
         if bias:
             self.bias = nn.Parameter(
@@ -109,7 +123,9 @@ class FRanDILinear(nn.Module):
             with torch.no_grad():
                 tmp = self.lora_A.data.float()
                 nn.init.kaiming_uniform_(tmp, a=math.sqrt(5))
-                self.lora_A.data.copy_(tmp.to(dtype=dtype) if dtype is not None else tmp)
+                self.lora_A.data.copy_(
+                    tmp.to(dtype=dtype) if dtype is not None else tmp
+                )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -132,8 +148,11 @@ class FRanDILinear(nn.Module):
     @property
     def weight(self) -> torch.Tensor:
         # FR-FIX-15: cache in eval mode.
-        if not self.training and self._cached_weight is not None \
-                and self._cached_version == self._current_version():
+        if (
+            not self.training
+            and self._cached_weight is not None
+            and self._cached_version == self._current_version()
+        ):
             return self._cached_weight
         W = torch.matmul(self.B.float(), self.A.float()).to(self.A.dtype)
         if not self.training:
@@ -148,8 +167,8 @@ class FRanDILinear(nn.Module):
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
 
-        x_a = F.linear(x_flat, self.A)               # (N, rank)
-        out = F.linear(x_a, self.B, self.bias)       # (N, out)
+        x_a = F.linear(x_flat, self.A)  # (N, rank)
+        out = F.linear(x_a, self.B, self.bias)  # (N, out)
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x_flat, self.lora_A), self.lora_B)
@@ -197,8 +216,8 @@ class FRanDILinear(nn.Module):
         max_rank = min(int(rank), len(S))
         if energy_threshold is None:
             return max(1, max_rank)
-        total_energy = (S ** 2).sum().clamp_min(1e-12)
-        cum_energy = (S ** 2).cumsum(dim=0) / total_energy
+        total_energy = (S**2).sum().clamp_min(1e-12)
+        cum_energy = (S**2).cumsum(dim=0) / total_energy
         idx = torch.where(cum_energy >= energy_threshold)[0]
         if len(idx) > 0:
             return max(1, min(int(idx[0].item()) + 1, max_rank))
@@ -229,7 +248,8 @@ class FRanDILinear(nn.Module):
 
         bias = (
             target_mod.bias.data
-            if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None
+            if getattr(target_mod, "bias", None) is not None
+            and target_mod.bias is not None
             else None
         )
 
@@ -252,16 +272,16 @@ class FRanDILinear(nn.Module):
                 idx = torch.arange(in_f, device=cov_reg.device)
                 cov_reg[idx, idx] += reg
 
-                L = torch.linalg.cholesky(cov_reg)     # (in, in) lower triangular
-                W_tilde = torch.matmul(W_float, L)     # (out, in)
+                L = torch.linalg.cholesky(cov_reg)  # (in, in) lower triangular
+                W_tilde = torch.matmul(W_float, L)  # (out, in)
 
                 U, S, Vt = torch.linalg.svd(W_tilde, full_matrices=False)
                 r = cls._select_rank(S, rank=rank, energy_threshold=energy_threshold)
                 r = max(1, min(r, out_f, in_f))
 
                 sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-                B_data = U[:, :r] * sqrt_S.unsqueeze(0)             # (out, r)
-                A_tilde = sqrt_S.unsqueeze(1) * Vt[:r, :]           # (r, in)
+                B_data = U[:, :r] * sqrt_S.unsqueeze(0)  # (out, r)
+                A_tilde = sqrt_S.unsqueeze(1) * Vt[:r, :]  # (r, in)
 
                 # FR-FIX-10: solve for A such that A @ L = A_tilde.
                 # Transposed: L^T @ A^T = A_tilde^T. L^T is upper triangular.
@@ -270,9 +290,11 @@ class FRanDILinear(nn.Module):
                     A_tilde.t().contiguous(),
                     upper=True,
                 )
-                A_data = A_solved.t().contiguous()                   # (r, in)
+                A_data = A_solved.t().contiguous()  # (r, in)
             except Exception as e:
-                logger.debug("FRanDI whitening failed: %s; falling back to plain SVD", e)
+                logger.debug(
+                    "FRanDI whitening failed: %s; falling back to plain SVD", e
+                )
                 B_data = None
                 A_data = None
 
@@ -305,11 +327,17 @@ class FRanDILinear(nn.Module):
         )
 
         with torch.no_grad():
-            frandi_layer.A.data.copy_(A_data[:r, :].to(dtype=raw_w.dtype, device=raw_w.device))
-            frandi_layer.B.data.copy_(B_data[:, :r].to(dtype=raw_w.dtype, device=raw_w.device))
+            frandi_layer.A.data.copy_(
+                A_data[:r, :].to(dtype=raw_w.dtype, device=raw_w.device)
+            )
+            frandi_layer.B.data.copy_(
+                B_data[:, :r].to(dtype=raw_w.dtype, device=raw_w.device)
+            )
 
             if bias is not None and frandi_layer.bias is not None:
-                frandi_layer.bias.data.copy_(bias.to(dtype=raw_w.dtype, device=raw_w.device))
+                frandi_layer.bias.data.copy_(
+                    bias.to(dtype=raw_w.dtype, device=raw_w.device)
+                )
 
             if (
                 existing_lora_A is not None
@@ -340,6 +368,7 @@ class FRanDICompressor(BaseCompressor):
     """
     FRanDI (Feature-Regression aligned SVD) Compressor.
     """
+
     is_custom_attention: bool = False
 
     def __init__(
@@ -359,32 +388,47 @@ class FRanDICompressor(BaseCompressor):
         num_calibration_batches: int = 16,
         **kwargs: Any,
     ) -> None:
-        super().__init__(model if model is not None else nn.Identity(), name="frandi", **kwargs)
+        super().__init__(
+            model if model is not None else nn.Identity(), name="frandi", **kwargs
+        )
         cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
         self.rank = int(_cfg_get(cfg, "frandi_rank", _cfg_get(cfg, "rank", rank)))
-        self.energy_threshold = (
-            _cfg_get(cfg, "frandi_energy_threshold",
-                     _cfg_get(cfg, "energy_threshold", energy_threshold))
+        self.energy_threshold = _cfg_get(
+            cfg,
+            "frandi_energy_threshold",
+            _cfg_get(cfg, "energy_threshold", energy_threshold),
         )
-        self.calibration_loader = calibration_loader or _cfg_get(cfg, "calibration_loader", None)
+        self.calibration_loader = calibration_loader or _cfg_get(
+            cfg, "calibration_loader", None
+        )
         self.lora_r = int(_cfg_get(cfg, "lora_r", _cfg_get(cfg, "lora_rank", lora_r)))
         self.lora_alpha = float(_cfg_get(cfg, "lora_alpha", lora_alpha))
-        c_max_error = _cfg_get(cfg, "frandi_max_error", _cfg_get(cfg, "max_error", max_error))
+        c_max_error = _cfg_get(
+            cfg, "frandi_max_error", _cfg_get(cfg, "max_error", max_error)
+        )
         if c_max_error is None or c_max_error == 0.5:
             c_max_error = adaptive_max_error(self.rank, 768, 768, "distilbert")
 
         self.max_error = float(c_max_error)
         self.target_attention_only = bool(
-            _cfg_get(cfg, "frandi_target_attention_only",
-                     _cfg_get(cfg, "target_attention_only", target_attention_only))
+            _cfg_get(
+                cfg,
+                "frandi_target_attention_only",
+                _cfg_get(cfg, "target_attention_only", target_attention_only),
+            )
         )
         self.fallback_to_original = bool(
-            _cfg_get(cfg, "frandi_fallback_to_original",
-                     _cfg_get(cfg, "fallback_to_original", fallback_to_original))
+            _cfg_get(
+                cfg,
+                "frandi_fallback_to_original",
+                _cfg_get(cfg, "fallback_to_original", fallback_to_original),
+            )
         )
-        self.skip_attention_qkv = bool(_cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv))
+        self.skip_attention_qkv = bool(
+            _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
+        )
 
         # FR-FIX-12: treat empty list as None.
         tl = target_layers or _cfg_get(cfg, "target_layers", None)
@@ -392,9 +436,9 @@ class FRanDICompressor(BaseCompressor):
             tl = None
         self.target_layers = tl
 
-        self.num_calibration_batches = max(1, int(
-            _cfg_get(cfg, "num_calibration_batches", num_calibration_batches)
-        ))
+        self.num_calibration_batches = max(
+            1, int(_cfg_get(cfg, "num_calibration_batches", num_calibration_batches))
+        )
 
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
@@ -415,15 +459,27 @@ class FRanDICompressor(BaseCompressor):
         if num_kv_heads >= num_heads:
             return False
         name_lower = name.lower()
-        return any(p in name_lower for p in
-                   ("q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"))
+        return any(
+            p in name_lower
+            for p in ("q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn")
+        )
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
             return False
-        if any(skip in name_lower for skip in
-               ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate"]):
+        if any(
+            skip in name_lower
+            for skip in [
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embedding",
+                "router",
+                "gate",
+            ]
+        ):
             return False
 
         if self.target_attention_only:
@@ -484,6 +540,7 @@ class FRanDICompressor(BaseCompressor):
                     else:
                         covariances[layer_name] = covariances[layer_name] + cov
                         counts[layer_name] += x_flat.size(0)
+
             return hook
 
         for name, module in self.model.named_modules():
@@ -500,8 +557,11 @@ class FRanDICompressor(BaseCompressor):
                         break
                     try:
                         if isinstance(batch, dict):
-                            b = {k: v.to(device) for k, v in batch.items()
-                                 if isinstance(v, torch.Tensor)}
+                            b = {
+                                k: v.to(device)
+                                for k, v in batch.items()
+                                if isinstance(v, torch.Tensor)
+                            }
                             _ = self.model(**b)
                         elif isinstance(batch, (list, tuple)):
                             _ = self.model(batch[0].to(device))
@@ -522,7 +582,9 @@ class FRanDICompressor(BaseCompressor):
         return covariances
 
     # ------------------------------------------------------------------
-    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
+    def compress(
+        self, model: nn.Module | None = None
+    ) -> tuple[nn.Module, dict[str, Any]]:
         from framework.core.model_utils import replace_module
 
         if model is not None:
@@ -634,8 +696,11 @@ class FRanDICompressor(BaseCompressor):
                         self.model(dummy)
                     except Exception:
                         first_linear = next(
-                            (m for m in self.model.modules()
-                             if isinstance(m, (nn.Linear, FRanDILinear))),
+                            (
+                                m
+                                for m in self.model.modules()
+                                if isinstance(m, (nn.Linear, FRanDILinear))
+                            ),
                             None,
                         )
                         in_dim = getattr(first_linear, "in_features", 8)
@@ -662,29 +727,32 @@ class FRanDICompressor(BaseCompressor):
 
         avg_err = (
             sum(self.layer_errors.values()) / len(self.layer_errors)
-            if self.layer_errors else 0.0
+            if self.layer_errors
+            else 0.0
         )
-        stats.update({
-            "compressed_layers": self.compressed_layers,
-            "compressed_layer_count": len(self.compressed_layers),
-            "fallback_layers": self.fallback_layers,
-            "fallback_layer_count": len(self.fallback_layers),
-            "skipped_layers": self.skipped_layers,
-            "skipped_layer_count": len(self.skipped_layers),
-            "num_compressed": len(self.compressed_layers),
-            "num_fallback": len(self.fallback_layers),
-            "num_skipped": len(self.skipped_layers),
-            "layer_errors": self.layer_errors,
-            "avg_reconstruction_error": avg_err,
-            "frandi_rank": self.rank,
-            "energy_threshold": self.energy_threshold,
-            "lora_r": self.lora_r,
-            "lora_alpha": self.lora_alpha,
-            "max_error": self.max_error,
-            "effective_parameter_ratio": round(effective_ratio, 4),
-            "forward_check_success": forward_check_success,
-            "method": "frandi",
-        })
+        stats.update(
+            {
+                "compressed_layers": self.compressed_layers,
+                "compressed_layer_count": len(self.compressed_layers),
+                "fallback_layers": self.fallback_layers,
+                "fallback_layer_count": len(self.fallback_layers),
+                "skipped_layers": self.skipped_layers,
+                "skipped_layer_count": len(self.skipped_layers),
+                "num_compressed": len(self.compressed_layers),
+                "num_fallback": len(self.fallback_layers),
+                "num_skipped": len(self.skipped_layers),
+                "layer_errors": self.layer_errors,
+                "avg_reconstruction_error": avg_err,
+                "frandi_rank": self.rank,
+                "energy_threshold": self.energy_threshold,
+                "lora_r": self.lora_r,
+                "lora_alpha": self.lora_alpha,
+                "max_error": self.max_error,
+                "effective_parameter_ratio": round(effective_ratio, 4),
+                "forward_check_success": forward_check_success,
+                "method": "frandi",
+            }
+        )
         logger.info(
             "Compressor frandi finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
             len(self.compressed_layers),
@@ -713,25 +781,33 @@ def frandi_factory(
         comp_config, "frandi_rank", _cfg_get(comp_config, "rank", 8)
     )
     energy = _cfg_get(
-        comp_config, "frandi_energy_threshold",
-        _cfg_get(comp_config, "energy_threshold", None)
+        comp_config,
+        "frandi_energy_threshold",
+        _cfg_get(comp_config, "energy_threshold", None),
     )
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(comp_config, "frandi_max_error",
-                 _cfg_get(comp_config, "max_error", 0.5)),
+        _cfg_get(
+            comp_config, "frandi_max_error", _cfg_get(comp_config, "max_error", 0.5)
+        ),
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",
-        _cfg_get(comp_config, "frandi_target_attention_only",
-                 _cfg_get(comp_config, "target_attention_only", False)),
+        _cfg_get(
+            comp_config,
+            "frandi_target_attention_only",
+            _cfg_get(comp_config, "target_attention_only", False),
+        ),
     )
     fallback = kwargs.pop(
         "fallback_to_original",
-        _cfg_get(comp_config, "frandi_fallback_to_original",
-                 _cfg_get(comp_config, "fallback_to_original", True)),
+        _cfg_get(
+            comp_config,
+            "frandi_fallback_to_original",
+            _cfg_get(comp_config, "fallback_to_original", True),
+        ),
     )
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 

@@ -1,12 +1,11 @@
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
-from types import SimpleNamespace
-from framework.attentions.cluster_attention import (
-    ClusterAttention,
-    inject_cluster,
-    LoRALinear,
-)
+from framework.attentions.cluster_attention import (ClusterAttention,
+                                                    LoRALinear, inject_cluster)
+
 
 def test_cluster_lora_config_independence():
     # 1. config=None, comp_config present

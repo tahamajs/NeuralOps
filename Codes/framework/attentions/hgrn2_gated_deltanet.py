@@ -29,7 +29,6 @@ from typing import Any
 
 import torch
 import torch.nn as nn
-
 from framework.attentions.gated_delta_net import GatedDeltaNet, LoRALinear
 from framework.attentions.hgrn2_layer import HGRN2Layer
 from framework.core.adapters import UniversalAdapter
@@ -57,11 +56,7 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
         w = w.data.clone()
         cls_name = getattr(module, "__class__", type(module)).__name__
         base_cls = getattr(base, "__class__", type(base)).__name__
-        is_conv1d = (
-            hasattr(base, "nf")
-            or "Conv1D" in cls_name
-            or "Conv1D" in base_cls
-        )
+        is_conv1d = hasattr(base, "nf") or "Conv1D" in cls_name or "Conv1D" in base_cls
         if is_conv1d and w.ndim == 2:
             w = w.t().contiguous()
     if b is not None:
@@ -79,6 +74,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
       3. Learnable fusion:
          $Y = \gamma \odot Y_{hgrn} + (1-\gamma) \odot Y_{deltanet}$
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -104,14 +100,18 @@ class HGRN2GatedDeltaNet(BaseAttention):
             if isinstance(config, int):
                 d_model = config
             elif config is not None:
-                d_model = (_cfg_get(config, "hidden_size", None)
-                            or _cfg_get(config, "d_model", None)
-                            or _cfg_get(config, "n_embd", None)
-                            or _cfg_get(config, "dim", None))
+                d_model = (
+                    _cfg_get(config, "hidden_size", None)
+                    or _cfg_get(config, "d_model", None)
+                    or _cfg_get(config, "n_embd", None)
+                    or _cfg_get(config, "dim", None)
+                )
         if d_model is None and old_attn is not None:
-            d_model = (getattr(old_attn, "hidden_size", None)
-                        or getattr(old_attn, "embed_dim", None)
-                        or getattr(old_attn, "all_head_size", None))
+            d_model = (
+                getattr(old_attn, "hidden_size", None)
+                or getattr(old_attn, "embed_dim", None)
+                or getattr(old_attn, "all_head_size", None)
+            )
             if d_model is None:
                 for cand in ("q_proj", "q_lin", "query", "c_attn"):
                     m = getattr(old_attn, cand, None)
@@ -123,17 +123,20 @@ class HGRN2GatedDeltaNet(BaseAttention):
 
         # ---- num_heads ----
         if num_heads is None and config is not None and not isinstance(config, int):
-            num_heads = (_cfg_get(config, "num_attention_heads", None)
-                          or _cfg_get(config, "num_heads", None)
-                          or _cfg_get(config, "n_heads", None)
-                          or _cfg_get(config, "n_head", None))
+            num_heads = (
+                _cfg_get(config, "num_attention_heads", None)
+                or _cfg_get(config, "num_heads", None)
+                or _cfg_get(config, "n_heads", None)
+                or _cfg_get(config, "n_head", None)
+            )
         if num_heads is None and old_attn is not None:
-            num_heads = (getattr(old_attn, "num_heads", None)
-                          or getattr(old_attn, "num_attention_heads", None)
-                          or getattr(old_attn, "n_heads", None))
+            num_heads = (
+                getattr(old_attn, "num_heads", None)
+                or getattr(old_attn, "num_attention_heads", None)
+                or getattr(old_attn, "n_heads", None)
+            )
         if num_heads is None:
-            num_heads = kwargs.get("num_attention_heads",
-                                    kwargs.get("num_heads", 12))
+            num_heads = kwargs.get("num_attention_heads", kwargs.get("num_heads", 12))
 
         self.d_model = int(d_model)
         self.num_heads = int(num_heads)
@@ -143,30 +146,47 @@ class HGRN2GatedDeltaNet(BaseAttention):
             self.is_decoder = bool(is_decoder)
         else:
             model_type = str(_cfg_get(config, "model_type", "")).lower()
-            is_dec = bool(_cfg_get(config, "is_decoder", False)
-                           or _cfg_get(config, "is_causal", False)
-                           or kwargs.get("is_causal", False)
-                           or kwargs.get("is_decoder", False))
-            _dec_pfx = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                         "opt", "bloom", "falcon")
+            is_dec = bool(
+                _cfg_get(config, "is_decoder", False)
+                or _cfg_get(config, "is_causal", False)
+                or kwargs.get("is_causal", False)
+                or kwargs.get("is_decoder", False)
+            )
+            _dec_pfx = (
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+            )
             if any(model_type.startswith(p) for p in _dec_pfx):
                 is_dec = True
             if old_attn is not None:
-                if getattr(old_attn, "is_decoder", False) or hasattr(old_attn, "c_attn"):
+                if getattr(old_attn, "is_decoder", False) or hasattr(
+                    old_attn, "c_attn"
+                ):
                     is_dec = True
             self.is_decoder = bool(is_dec)
 
         # ---- LoRA ----
-        self.lora_rank = int(_cfg_get(comp_config, "lora_rank",
-                              kwargs.get("lora_rank", lora_rank)))
-        self.lora_alpha = float(_cfg_get(comp_config, "lora_alpha",
-                                  kwargs.get("lora_alpha", lora_alpha)))
-        self.freeze_base = (self.lora_rank > 0)
+        self.lora_rank = int(
+            _cfg_get(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank))
+        )
+        self.lora_alpha = float(
+            _cfg_get(comp_config, "lora_alpha", kwargs.get("lora_alpha", lora_alpha))
+        )
+        self.freeze_base = self.lora_rank > 0
 
         # ---- branch kwargs ----
-        sub_kwargs = {k: v for k, v in kwargs.items()
-                       if k not in ("is_decoder", "is_causal",
-                                     "lora_rank", "lora_alpha")}
+        sub_kwargs = {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ("is_decoder", "is_causal", "lora_rank", "lora_alpha")
+        }
 
         # ---- branches ----
         self.hgrn = HGRN2Layer(
@@ -194,12 +214,15 @@ class HGRN2GatedDeltaNet(BaseAttention):
         self.gate = nn.Linear(self.d_model, self.d_model)
         with torch.no_grad():
             self.gate.weight.zero_()
-            self.gate.bias.fill_(0.0)   # sigmoid(0) = 0.5
+            self.gate.bias.fill_(0.0)  # sigmoid(0) = 0.5
 
         # ---- output ----
         self.out_proj = LoRALinear(
-            self.d_model, self.d_model, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.d_model,
+            self.d_model,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
 
@@ -272,12 +295,21 @@ class HGRN2GatedDeltaNet(BaseAttention):
             pass
 
         if w_o is None:
-            for cand in ("out_proj", "out_lin", "o_proj", "output", "proj",
-                          "c_proj", "dense"):
-                for target in (old_attn,
-                                getattr(old_attn, "self", None),
-                                getattr(old_attn, "attention", None),
-                                getattr(old_attn, "output", None)):
+            for cand in (
+                "out_proj",
+                "out_lin",
+                "o_proj",
+                "output",
+                "proj",
+                "c_proj",
+                "dense",
+            ):
+                for target in (
+                    old_attn,
+                    getattr(old_attn, "self", None),
+                    getattr(old_attn, "attention", None),
+                    getattr(old_attn, "output", None),
+                ):
                     if target is not None and hasattr(target, cand):
                         mod = getattr(target, cand)
                         if hasattr(mod, "dense"):
@@ -302,12 +334,11 @@ class HGRN2GatedDeltaNet(BaseAttention):
                     min_r = min(tw.shape[0], w_o.shape[0])
                     min_c = min(tw.shape[1], w_o.shape[1])
                     tw.data.zero_()
-                    tw.data[:min_r, :min_c].copy_(
-                        w_o[:min_r, :min_c].to(tw.dtype)
-                    )
+                    tw.data[:min_r, :min_c].copy_(w_o[:min_r, :min_c].to(tw.dtype))
                     logger.warning(
                         "Out proj shape mismatch: %s → %s.",
-                        tuple(w_o.shape), tuple(tw.shape),
+                        tuple(w_o.shape),
+                        tuple(tw.shape),
                     )
 
                 if b_o is not None and self.out_proj.bias is not None:
@@ -386,8 +417,12 @@ class HGRN2GatedDeltaNet(BaseAttention):
             )
 
         gate_dtype = next(self.gate.parameters()).dtype
-        gamma = torch.sigmoid(self.gate(hidden_states.to(gate_dtype))).to(hidden_states.dtype)
-        fused = gamma * hgrn_out.to(hidden_states.dtype) + (1.0 - gamma) * delta_out.to(hidden_states.dtype)
+        gamma = torch.sigmoid(self.gate(hidden_states.to(gate_dtype))).to(
+            hidden_states.dtype
+        )
+        fused = gamma * hgrn_out.to(hidden_states.dtype) + (1.0 - gamma) * delta_out.to(
+            hidden_states.dtype
+        )
         out = self.out_proj(fused)
 
         if out.shape[-1] != hidden_states.shape[-1]:
@@ -407,9 +442,14 @@ class HGRN2GatedDeltaNet(BaseAttention):
             if isinstance(p, (nn.Parameter, torch.Tensor)):
                 return p.numel() * p.element_size()
             return 0
+
         out = {}
-        for name, m in (("hgrn", self.hgrn), ("deltanet", self.deltanet),
-                         ("out_proj", self.out_proj), ("gate", self.gate)):
+        for name, m in (
+            ("hgrn", self.hgrn),
+            ("deltanet", self.deltanet),
+            ("out_proj", self.out_proj),
+            ("gate", self.gate),
+        ):
             out[name] = sum(_sz(p) for p in m.parameters())
         out["total"] = sum(out.values())
         return out
@@ -471,14 +511,20 @@ def inject_hgrn2_gated_deltanet(
         n = 0
         tot = len(layer_list)
         last = None
-        sub_kwargs = {k: v for k, v in kwargs.items()
-                       if k not in ("lora_rank", "lora_alpha")}
+        sub_kwargs = {
+            k: v for k, v in kwargs.items() if k not in ("lora_rank", "lora_alpha")
+        }
         for idx, lyr in enumerate(layer_list):
             res = inject_hgrn2_gated_deltanet(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot,
-                lora_rank=lora_rank, lora_alpha=lora_alpha,
-                _depth=_depth + 1, **sub_kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                lora_rank=lora_rank,
+                lora_alpha=lora_alpha,
+                _depth=_depth + 1,
+                **sub_kwargs,
             )
             if res is not None:
                 n += 1
@@ -514,8 +560,9 @@ def inject_hgrn2_gated_deltanet(
         cfg = getattr(src_attn, "config", None) or getattr(target, "config", None)
 
     try:
-        sub_kwargs = {k: v for k, v in kwargs.items()
-                       if k not in ("lora_rank", "lora_alpha")}
+        sub_kwargs = {
+            k: v for k, v in kwargs.items() if k not in ("lora_rank", "lora_alpha")
+        }
         new_layer = HGRN2GatedDeltaNet(
             config=cfg,
             old_attn=src_attn,

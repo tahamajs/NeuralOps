@@ -6,11 +6,11 @@ Inspired by: Vertex AI Model Monitoring, Azure ML pipelines, ClearML, and AutoDr
 """
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Any
-from collections.abc import Callable
 
 from framework.core.registry import Registry
 
@@ -158,7 +158,7 @@ class RetrainingOrchestrator:
     def _check_performance(
         self, current: dict[str, float], reference: dict[str, float]
     ) -> RetrainDecision:
-        """ check performance."""
+        """check performance."""
         acc_key = "accuracy" if "accuracy" in current else "eval_accuracy"
         curr_acc = current.get(acc_key, 1.0)
         ref_acc = reference.get(acc_key, 1.0)
@@ -191,7 +191,7 @@ class RetrainingOrchestrator:
         )
 
     def _check_drift(self, drift_report) -> RetrainDecision:
-        """ check drift."""
+        """check drift."""
         n_drifted = getattr(drift_report, "n_features_drifted", 0)
         n_total = getattr(drift_report, "n_features_tested", 1)
         ratio = n_drifted / max(n_total, 1)
@@ -209,7 +209,7 @@ class RetrainingOrchestrator:
         )
 
     def _check_data_volume(self, new_count: int) -> RetrainDecision:
-        """ check data volume."""
+        """check data volume."""
         if new_count >= self.policy.min_new_samples:
             return RetrainDecision(
                 should_retrain=True,
@@ -221,7 +221,7 @@ class RetrainingOrchestrator:
         return RetrainDecision(should_retrain=False, reason="Insufficient new data")
 
     def _check_schedule(self, days_since: int) -> RetrainDecision:
-        """ check schedule."""
+        """check schedule."""
         if days_since >= self.policy.max_days_since_last_train:
             return RetrainDecision(
                 should_retrain=True,

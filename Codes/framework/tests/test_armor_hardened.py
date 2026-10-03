@@ -26,11 +26,9 @@ CODES_DIR = HERE.parent.parent
 if str(CODES_DIR) not in sys.path:
     sys.path.insert(0, str(CODES_DIR))
 
-from framework.compression_engine.armor_pruner import (
-    ARMORPruner,
-    ARMORLinear,
-    armor_pruner_factory,
-)
+from framework.compression_engine.armor_pruner import (ARMORLinear,
+                                                       ARMORPruner,
+                                                       armor_pruner_factory)
 from framework.utils.compat import get_recovery_params
 
 

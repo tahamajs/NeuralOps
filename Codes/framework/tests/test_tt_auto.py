@@ -1,7 +1,8 @@
+import framework.attentions.tt
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.tt
+
 
 def test_tt_module_present():
     assert hasattr(framework.attentions, 'tt')

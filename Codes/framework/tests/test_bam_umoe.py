@@ -1,17 +1,13 @@
 """Unit test suite for BAM-UMoE attention module."""
 
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
-from types import SimpleNamespace
-
-from framework.attentions.bam_umoe import (
-    BAMUMoEBlock,
-    UnifiedMoE,
-    LoRALinear,
-    _rotate_half,
-    inject_bam_umoe,
-)
+from framework.attentions.bam_umoe import (BAMUMoEBlock, LoRALinear,
+                                           UnifiedMoE, _rotate_half,
+                                           inject_bam_umoe)
 from framework.core.registry import ATTENTION_REGISTRY
 
 

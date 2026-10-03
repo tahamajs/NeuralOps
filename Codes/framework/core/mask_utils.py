@@ -2,6 +2,7 @@
 core/mask_utils.py — Unified mask handling for all attention and compression modules.
 Handles 2D/4D, bool/float, additive/multiplicative masks consistently.
 """
+
 from __future__ import annotations
 
 import torch
@@ -12,7 +13,7 @@ def convert_mask_to_additive(
     dtype: torch.dtype = torch.float32,
 ) -> torch.Tensor | None:
     """Convert any mask format to additive form (0 = keep, -inf = mask out).
-    
+
     Handles: 2D (B,L), 4D (B,H,L,L), bool masks, float masks.
     """
     if mask is None:
@@ -55,8 +56,8 @@ def convert_mask_to_bool(
             bool_m = bool_m.squeeze(1).squeeze(1)
         return bool_m
     if attention_mask.dim() == 4:
-        return (attention_mask.squeeze(1).squeeze(1) > 0.5)
-    return (attention_mask > 0.5)
+        return attention_mask.squeeze(1).squeeze(1) > 0.5
+    return attention_mask > 0.5
 
 
 def expand_mask_to_4d(

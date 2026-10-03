@@ -12,12 +12,10 @@ import torch
 import torch.nn as nn
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
-from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import adaptive_max_error
+from framework.core.registry import COMPRESSOR_REGISTRY
 
-from .cur_compressor import (
-    CURLinear,
-)
+from .cur_compressor import CURLinear
 
 logger = logging.getLogger(__name__)
 
@@ -64,14 +62,24 @@ class CURMoECompressor(BaseCompressor):
         cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(model if model is not None else nn.Identity(), name="cur_moe", **kwargs)
+        super().__init__(
+            model if model is not None else nn.Identity(), name="cur_moe", **kwargs
+        )
         c_rank = _cfg_get(cfg, "cur_moe_rank", _cfg_get(cfg, "rank", rank))
         c_min_rank = _cfg_get(cfg, "cur_min_rank", _cfg_get(cfg, "min_rank", min_rank))
         c_method = _cfg_get(cfg, "cur_moe_method", _cfg_get(cfg, "method", method))
-        c_det = _cfg_get(cfg, "cur_deterministic", _cfg_get(cfg, "deterministic", deterministic))
-        c_max_error = _cfg_get(cfg, "cur_moe_max_error", _cfg_get(cfg, "max_error", max_error))
+        c_det = _cfg_get(
+            cfg, "cur_deterministic", _cfg_get(cfg, "deterministic", deterministic)
+        )
+        c_max_error = _cfg_get(
+            cfg, "cur_moe_max_error", _cfg_get(cfg, "max_error", max_error)
+        )
         c_fallback = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
-        c_target_attn = _cfg_get(cfg, "cur_moe_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
+        c_target_attn = _cfg_get(
+            cfg,
+            "cur_moe_target_attention_only",
+            _cfg_get(cfg, "target_attention_only", target_attention_only),
+        )
 
         if c_max_error is None or c_max_error == 0.90:
             c_max_error = adaptive_max_error(c_rank, 768, 768, "distilbert")
@@ -99,14 +107,25 @@ class CURMoECompressor(BaseCompressor):
         target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
         cls_name = target_mod.__class__.__name__.lower()
         wrapper_name = module.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or "conv1d" in wrapper_name or hasattr(module, "nf") or hasattr(target_mod, "nf")
-        has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(module, "base_layer")
+        is_conv1d = (
+            "conv1d" in cls_name
+            or "conv1d" in wrapper_name
+            or hasattr(module, "nf")
+            or hasattr(target_mod, "nf")
+        )
+        has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(
+            module, "base_layer"
+        )
 
         raw_w = target_mod.weight.data
         orig_w = raw_w.t().float() if is_conv1d else raw_w.float()
         norm_orig = torch.norm(orig_w, p="fro").clamp_min(1e-8)
         if norm_orig.item() < 1e-4:
-            logger.warning("CURMoECompressor: Layer %s weight Frobenius norm %.6f < 1e-4, skipping", name, norm_orig.item())
+            logger.warning(
+                "CURMoECompressor: Layer %s weight Frobenius norm %.6f < 1e-4, skipping",
+                name,
+                norm_orig.item(),
+            )
             return False
 
         out_f, in_f = orig_w.shape
@@ -117,7 +136,9 @@ class CURMoECompressor(BaseCompressor):
 
         # Parameter reduction check: r*(in_f + out_f + r) < in_f * out_f
         target_r = min(self.rank, max_rank)
-        while target_r >= self.min_rank and (target_r * (in_f + out_f + target_r)) >= 0.85 * (in_f * out_f):
+        while target_r >= self.min_rank and (
+            target_r * (in_f + out_f + target_r)
+        ) >= 0.85 * (in_f * out_f):
             target_r = int(target_r * 0.8)
 
         if target_r < self.min_rank:
@@ -148,17 +169,23 @@ class CURMoECompressor(BaseCompressor):
                     break
 
                 next_r = min(int(cur_r * 1.5), max_rank - 1)
-                if next_r <= cur_r or (next_r * (in_f + out_f + next_r)) >= 0.85 * (in_f * out_f):
+                if next_r <= cur_r or (next_r * (in_f + out_f + next_r)) >= 0.85 * (
+                    in_f * out_f
+                ):
                     break
                 cur_r = next_r
             except Exception as ex:
-                logger.warning("CURMoECompressor: Error on %s with rank %d: %s", name, cur_r, ex)
+                logger.warning(
+                    "CURMoECompressor: Error on %s with rank %d: %s", name, cur_r, ex
+                )
                 break
 
         if best_err > self.max_error or best_cur_layer is None:
             logger.warning(
                 "CURMoECompressor: Layer %s error %.4f exceeded max_error %.4f",
-                name, best_err, self.max_error
+                name,
+                best_err,
+                self.max_error,
             )
             if self.fallback_to_original:
                 self.fallback_layers.append(name)
@@ -170,24 +197,46 @@ class CURMoECompressor(BaseCompressor):
         new_layer = best_cur_layer
         compressed_layer = new_layer
 
-        has_base_layer = hasattr(module, 'base_layer') or (hasattr(module, 'linear') and (hasattr(module, 'lora_A') or hasattr(module, 'r')))
+        has_base_layer = hasattr(module, "base_layer") or (
+            hasattr(module, "linear")
+            and (hasattr(module, "lora_A") or hasattr(module, "r"))
+        )
         # Preserve existing LoRA adapter weights if the source module has them and not wrapped
-        if not has_base_layer and hasattr(module, 'lora_A') and hasattr(module, 'lora_B') and \
-           module.lora_A is not None and module.lora_B is not None:
-            src_lA = getattr(module.lora_A, 'weight', module.lora_A)
-            src_lB = getattr(module.lora_B, 'weight', module.lora_B)
-            dst_lA = getattr(new_layer, 'lora_A', None)
-            dst_lB = getattr(new_layer, 'lora_B', None)
-            if dst_lA is not None and hasattr(src_lA, 'data') and hasattr(dst_lA, 'data') and src_lA.shape == dst_lA.shape:
+        if (
+            not has_base_layer
+            and hasattr(module, "lora_A")
+            and hasattr(module, "lora_B")
+            and module.lora_A is not None
+            and module.lora_B is not None
+        ):
+            src_lA = getattr(module.lora_A, "weight", module.lora_A)
+            src_lB = getattr(module.lora_B, "weight", module.lora_B)
+            dst_lA = getattr(new_layer, "lora_A", None)
+            dst_lB = getattr(new_layer, "lora_B", None)
+            if (
+                dst_lA is not None
+                and hasattr(src_lA, "data")
+                and hasattr(dst_lA, "data")
+                and src_lA.shape == dst_lA.shape
+            ):
                 dst_lA.data.copy_(src_lA.data)
-            if dst_lB is not None and hasattr(src_lB, 'data') and hasattr(dst_lB, 'data') and src_lB.shape == dst_lB.shape:
+            if (
+                dst_lB is not None
+                and hasattr(src_lB, "data")
+                and hasattr(dst_lB, "data")
+                and src_lB.shape == dst_lB.shape
+            ):
                 dst_lB.data.copy_(src_lB.data)
 
-        if hasattr(module, 'base_layer'):
+        if hasattr(module, "base_layer"):
             module.base_layer = compressed_layer  # put compressed layer inside wrapper
             new_module = module
-        elif hasattr(module, 'linear') and (hasattr(module, 'lora_A') or hasattr(module, 'r')):
-            module.linear = compressed_layer  # put compressed layer inside framework LoRALinear
+        elif hasattr(module, "linear") and (
+            hasattr(module, "lora_A") or hasattr(module, "r")
+        ):
+            module.linear = (
+                compressed_layer  # put compressed layer inside framework LoRALinear
+            )
             new_module = module
         else:
             new_module = compressed_layer
@@ -205,11 +254,13 @@ class CURMoECompressor(BaseCompressor):
         self.compressed_layers.append(name)
         self.layer_errors[name] = float(best_err)
         self.layer_ranks[name] = int(best_r)
-        self.total_orig_decomp_params += (in_f * out_f)
-        self.total_comp_decomp_params += (best_r * (in_f + out_f + best_r))
+        self.total_orig_decomp_params += in_f * out_f
+        self.total_comp_decomp_params += best_r * (in_f + out_f + best_r)
         return True
 
-    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
+    def compress(
+        self, model: nn.Module | None = None
+    ) -> tuple[nn.Module, dict[str, Any]]:
         """Compress expert linear layers in MoE architecture, or fallback to FFN layers."""
         if model is not None:
             self.model = model
@@ -226,7 +277,18 @@ class CURMoECompressor(BaseCompressor):
         # Scan for explicit MoE modules (module.experts or expert submodules)
         for name, module in list(self.model.named_modules()):
             name_lower = name.lower()
-            if any(k in name_lower for k in ["router", "gate", "classifier", "score", "lm_head", "pooler", "embedding"]):
+            if any(
+                k in name_lower
+                for k in [
+                    "router",
+                    "gate",
+                    "classifier",
+                    "score",
+                    "lm_head",
+                    "pooler",
+                    "embedding",
+                ]
+            ):
                 continue
 
             if hasattr(module, "experts"):
@@ -235,7 +297,11 @@ class CURMoECompressor(BaseCompressor):
                     experts_detected = True
                     for exp_idx, expert in enumerate(experts_container):
                         for child_name, child_mod in list(expert.named_children()):
-                            child_full_name = f"{name}.experts.{exp_idx}.{child_name}" if name else f"experts.{exp_idx}.{child_name}"
+                            child_full_name = (
+                                f"{name}.experts.{exp_idx}.{child_name}"
+                                if name
+                                else f"experts.{exp_idx}.{child_name}"
+                            )
                             is_linear_like = (
                                 isinstance(child_mod, nn.Linear)
                                 or "conv1d" in child_mod.__class__.__name__.lower()
@@ -256,26 +322,51 @@ class CURMoECompressor(BaseCompressor):
                     self._compress_single_layer(name, module)
 
         # Fallback to FFN linear layers if no explicit MoE structure was found
-        _ATTN_NAMES = frozenset({
-            "query", "key", "value",
-            "q_lin", "k_lin", "v_lin",
-            "q_proj", "k_proj", "v_proj",
-            "out_lin", "out_proj", "o_proj",
-            "c_attn",
-        })
+        _ATTN_NAMES = frozenset(
+            {
+                "query",
+                "key",
+                "value",
+                "q_lin",
+                "k_lin",
+                "v_lin",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "out_lin",
+                "out_proj",
+                "o_proj",
+                "c_attn",
+            }
+        )
         if len(self.compressed_layers) == 0:
             visited = set()
             for name, module in list(self.model.named_modules()):
-                target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
+                target_mod = getattr(
+                    module, "base_layer", getattr(module, "linear", module)
+                )
                 if id(target_mod) in visited:
                     continue
                 visited.add(id(target_mod))
                 name_lower = name.lower()
-                if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate"]):
+                if any(
+                    skip in name_lower
+                    for skip in [
+                        "classifier",
+                        "score",
+                        "lm_head",
+                        "pooler",
+                        "embedding",
+                        "router",
+                        "gate",
+                    ]
+                ):
                     continue
 
                 last_part = name.split(".")[-1]
-                is_attn_proj = (last_part in _ATTN_NAMES) or any(k in name_lower for k in ("attn", "attention"))
+                is_attn_proj = (last_part in _ATTN_NAMES) or any(
+                    k in name_lower for k in ("attn", "attention")
+                )
 
                 # In target_attention_only mode (or default MoE behavior), we protect attention projections
                 if is_attn_proj:
@@ -296,9 +387,15 @@ class CURMoECompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
-        avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
+        avg_err = (
+            (sum(self.layer_errors.values()) / len(self.layer_errors))
+            if self.layer_errors
+            else 0.0
+        )
         effective_param_ratio = (
-            self.total_comp_decomp_params / self.total_orig_decomp_params if self.total_orig_decomp_params > 0 else 1.0
+            self.total_comp_decomp_params / self.total_orig_decomp_params
+            if self.total_orig_decomp_params > 0
+            else 1.0
         )
         stats.update(
             {
@@ -341,13 +438,38 @@ def cur_moe_factory(
     **kwargs: Any,
 ) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Factory function for CUR-MoE compressor."""
-    effective_rank = kwargs.pop("rank", rank or _cfg_get(comp_config, "cur_moe_rank", _cfg_get(comp_config, "rank", 64)))
+    effective_rank = kwargs.pop(
+        "rank",
+        rank
+        or _cfg_get(comp_config, "cur_moe_rank", _cfg_get(comp_config, "rank", 64)),
+    )
     min_rank = kwargs.pop("min_rank", _cfg_get(comp_config, "min_rank", 8))
-    method = kwargs.pop("method", _cfg_get(comp_config, "cur_moe_method", _cfg_get(comp_config, "method", "leverage")))
-    deterministic = kwargs.pop("deterministic", _cfg_get(comp_config, "deterministic", True))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "cur_moe_max_error", _cfg_get(comp_config, "max_error", 0.90)))
-    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
-    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "cur_moe_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)))
+    method = kwargs.pop(
+        "method",
+        _cfg_get(
+            comp_config, "cur_moe_method", _cfg_get(comp_config, "method", "leverage")
+        ),
+    )
+    deterministic = kwargs.pop(
+        "deterministic", _cfg_get(comp_config, "deterministic", True)
+    )
+    max_error = kwargs.pop(
+        "max_error",
+        _cfg_get(
+            comp_config, "cur_moe_max_error", _cfg_get(comp_config, "max_error", 0.90)
+        ),
+    )
+    fallback = kwargs.pop(
+        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
+    )
+    target_attention_only = kwargs.pop(
+        "target_attention_only",
+        _cfg_get(
+            comp_config,
+            "cur_moe_target_attention_only",
+            _cfg_get(comp_config, "target_attention_only", False),
+        ),
+    )
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = CURMoECompressor(

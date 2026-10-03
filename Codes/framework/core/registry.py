@@ -4,11 +4,9 @@ All framework components (attentions, compressors, trainers, visualizers, etc.)
 are stored in registries, enabling dynamic discovery and plug‑and‑play integration.
 """
 
-from typing import Any
-from collections.abc import Callable
-
-
 import logging
+from collections.abc import Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -96,18 +94,46 @@ class Registry:
             final_key = key if key is not None else obj.__name__
             k = final_key.lower()
             # If key already exists and maps to a class, do not let a plain function overwrite it
-            if k in self._dict and isinstance(self._dict[k], type) and not isinstance(obj, type):
-                logger.debug("Registry '%s': Skipping overwrite of class %s by function %s for key '%s'", self.name, self._dict[k].__name__, obj.__name__, k)
+            if (
+                k in self._dict
+                and isinstance(self._dict[k], type)
+                and not isinstance(obj, type)
+            ):
+                logger.debug(
+                    "Registry '%s': Skipping overwrite of class %s by function %s for key '%s'",
+                    self.name,
+                    self._dict[k].__name__,
+                    obj.__name__,
+                    k,
+                )
                 return obj
 
             self._dict[k] = obj
 
             # Derive capabilities from explicit kwargs or attributes on the registered object
             caps = {
-                "supports_causal": getattr(obj, "supports_causal", True if supports_causal is None else supports_causal),
-                "supports_bidirectional": getattr(obj, "supports_bidirectional", True if supports_bidirectional is None else supports_bidirectional),
-                "supports_cross_attention": getattr(obj, "supports_cross_attention", True if supports_cross_attention is None else supports_cross_attention),
-                "supports_gqa": getattr(obj, "supports_gqa", False if supports_gqa is None else supports_gqa),
+                "supports_causal": getattr(
+                    obj,
+                    "supports_causal",
+                    True if supports_causal is None else supports_causal,
+                ),
+                "supports_bidirectional": getattr(
+                    obj,
+                    "supports_bidirectional",
+                    True if supports_bidirectional is None else supports_bidirectional,
+                ),
+                "supports_cross_attention": getattr(
+                    obj,
+                    "supports_cross_attention",
+                    (
+                        True
+                        if supports_cross_attention is None
+                        else supports_cross_attention
+                    ),
+                ),
+                "supports_gqa": getattr(
+                    obj, "supports_gqa", False if supports_gqa is None else supports_gqa
+                ),
             }
             caps.update(extra_metadata)
             self._metadata[k] = caps
@@ -126,7 +152,9 @@ class Registry:
             return {
                 "supports_causal": getattr(obj, "supports_causal", True),
                 "supports_bidirectional": getattr(obj, "supports_bidirectional", True),
-                "supports_cross_attention": getattr(obj, "supports_cross_attention", True),
+                "supports_cross_attention": getattr(
+                    obj, "supports_cross_attention", True
+                ),
                 "supports_gqa": getattr(obj, "supports_gqa", False),
             }
         return {}
@@ -140,32 +168,42 @@ class Registry:
             canonical = _COMPRESSOR_FILE_MAP.get(k, k)
             try:
                 import framework.compression_engine as _ce
+
                 _ = getattr(_ce, key, None)
                 if k not in self._dict:
                     import importlib
+
                     importlib.import_module(f"framework.compression_engine.{canonical}")
             except ImportError:
                 pass
             except Exception as e:
                 import os
+
                 if os.environ.get("SVD_DEBUG") == "1":
                     raise
-                logger.warning("Error during lazy loading of compressor '%s': %s", key, e)
+                logger.warning(
+                    "Error during lazy loading of compressor '%s': %s", key, e
+                )
         elif self.name == "attentions":
             canonical = _ATTENTION_FILE_MAP.get(k, k)
             try:
                 import framework.attentions as _att
+
                 _ = getattr(_att, key, None)
                 if k not in self._dict:
                     import importlib
+
                     importlib.import_module(f"framework.attentions.{canonical}")
             except ImportError:
                 pass
             except Exception as e:
                 import os
+
                 if os.environ.get("SVD_DEBUG") == "1":
                     raise
-                logger.warning("Error during lazy loading of attention '%s': %s", key, e)
+                logger.warning(
+                    "Error during lazy loading of attention '%s': %s", key, e
+                )
 
     def get(self, key: str) -> Callable | None:
         """Safely retrieve a registered component, or None if not found."""
@@ -185,12 +223,14 @@ class Registry:
 
     def _load_all(self) -> None:
         """Attempt to load all modules in the associated package."""
-        if self._loaded: return
+        if self._loaded:
+            return
         if self.name == "compressors":
             try:
                 pass
             except Exception as e:
                 import os
+
                 if os.environ.get("SVD_DEBUG") == "1":
                     raise
                 logger.warning("Error loading compression_engine: %s", e)
@@ -199,6 +239,7 @@ class Registry:
                 pass
             except Exception as e:
                 import os
+
                 if os.environ.get("SVD_DEBUG") == "1":
                     raise
                 logger.warning("Error loading attentions: %s", e)
@@ -301,7 +342,11 @@ def list_all_components() -> dict:
 def get_evaluatable_modules(include_compressors: bool = True) -> list[str]:
     """Returns all genuine registered attention and compressor architectures, excluding helper aliases."""
     attns = [k for k in ATTENTION_REGISTRY.keys() if not is_helper_module(k)]
-    comps = [k for k in COMPRESSOR_REGISTRY.keys() if not is_helper_module(k)] if include_compressors else []
+    comps = (
+        [k for k in COMPRESSOR_REGISTRY.keys() if not is_helper_module(k)]
+        if include_compressors
+        else []
+    )
     return sorted(list(set(attns + comps)))
 
 
@@ -324,7 +369,15 @@ def is_module_declared_compatible(name: str, family: str) -> tuple[bool, str]:
     if not caps:
         return True, ""
     is_encoder = family in {"bert", "roberta", "distilbert"}
-    is_decoder = family in {"gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral", "falcon"}
+    is_decoder = family in {
+        "gpt",
+        "gpt2",
+        "qwen",
+        "qwen3_5",
+        "llama",
+        "mistral",
+        "falcon",
+    }
     is_enc_dec = family in {"t5"}
     if is_encoder and not caps.get("supports_bidirectional", True):
         return False, "declared_causal_only_incompatible_with_encoder"

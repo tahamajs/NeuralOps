@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.lsh_attention import LSHAttention, inject_lsh_attention
+from framework.attentions.lsh_attention import (LSHAttention,
+                                                inject_lsh_attention)
 
 
 class MockConfig:

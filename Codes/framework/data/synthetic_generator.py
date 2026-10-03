@@ -34,7 +34,7 @@ def generate_zipfian_tokens(
 ) -> torch.Tensor:
     """
     Generates token sequences following a Zipfian power-law distribution.
-    
+
     Ensures that low-index tokens (common stop words, articles) occur with high frequency
     while high-index tokens (rare technical terms) occur sparsely, mirroring natural language.
 
@@ -56,7 +56,7 @@ def generate_zipfian_tokens(
     # FIX: Compute exact Zipfian rank probabilities: P(k) = (1 / k^s) / zeta(s)
     # to simulate authentic natural language entropy and prevent flat uniform noise distortion.
     ranks = np.arange(1, effective_vocab + 1, dtype=np.float64)
-    probs = 1.0 / (ranks ** zipf_param)
+    probs = 1.0 / (ranks**zipf_param)
     probs_sum = np.sum(probs)
     if probs_sum > 0:
         probs /= probs_sum
@@ -103,7 +103,7 @@ def generate_zipfian_markov_tokens(
 
     # FIX: Compute Zipfian unigram prior
     ranks = np.arange(1, effective_vocab + 1, dtype=np.float64)
-    unigram_probs = 1.0 / (ranks ** zipf_param)
+    unigram_probs = 1.0 / (ranks**zipf_param)
     unigram_probs /= unigram_probs.sum()
 
     tokens = np.zeros((num_samples, seq_len), dtype=np.int64)
@@ -239,16 +239,34 @@ class SyntheticClassificationDataset(Dataset):
 
 DEFAULT_DOMAINS: dict[str, dict[str, list[str]]] = {
     "movies": {
-        "pos_adj": ["exceptional", "phenomenal", "brilliant", "masterful", "captivating"],
+        "pos_adj": [
+            "exceptional",
+            "phenomenal",
+            "brilliant",
+            "masterful",
+            "captivating",
+        ],
         "neg_adj": ["disastrous", "tedious", "bland", "lifeless", "confusing"],
         "verbs": ["delivered", "crafted", "executed", "failed", "collapsed"],
         "nouns": ["narrative", "performance", "cinematography", "script", "direction"],
     },
     "tech": {
-        "pos_adj": ["incredible", "seamless", "intuitive", "powerful", "lightning-fast"],
+        "pos_adj": [
+            "incredible",
+            "seamless",
+            "intuitive",
+            "powerful",
+            "lightning-fast",
+        ],
         "neg_adj": ["buggy", "slow", "unreliable", "clunky", "overpriced"],
         "verbs": ["works", "performs", "loads", "crashes", "freezes"],
-        "nouns": ["interface", "performance", "battery life", "screen quality", "processing speed"],
+        "nouns": [
+            "interface",
+            "performance",
+            "battery life",
+            "screen quality",
+            "processing speed",
+        ],
     },
     "restaurants": {
         "pos_adj": ["delicious", "amazing", "flavorful", "fresh", "authentic"],
@@ -257,8 +275,20 @@ DEFAULT_DOMAINS: dict[str, dict[str, list[str]]] = {
         "nouns": ["food", "service", "atmosphere", "presentation", "value"],
     },
     "books": {
-        "pos_adj": ["engaging", "thought-provoking", "well-written", "captivating", "insightful"],
-        "neg_adj": ["boring", "poorly-written", "tedious", "confusing", "disappointing"],
+        "pos_adj": [
+            "engaging",
+            "thought-provoking",
+            "well-written",
+            "captivating",
+            "insightful",
+        ],
+        "neg_adj": [
+            "boring",
+            "poorly-written",
+            "tedious",
+            "confusing",
+            "disappointing",
+        ],
         "verbs": ["writes", "describes", "narrates", "develops", "concludes"],
         "nouns": ["plot", "character", "writing style", "pacing", "dialogue"],
     },
@@ -287,11 +317,17 @@ def _clean_text(text: str) -> str:
     return text
 
 
-def _generate_batch(domain_key: str, size: int, label: int, is_positive: bool) -> list[dict[str, Any]]:
+def _generate_batch(
+    domain_key: str, size: int, label: int, is_positive: bool
+) -> list[dict[str, Any]]:
     vocab = DEFAULT_DOMAINS.get(domain_key, DEFAULT_DOMAINS["movies"])
     templates = TEMPLATES_POS if is_positive else TEMPLATES_NEG
     prep_phrases = (
-        ["with remarkable precision", "with incredible attention to detail", "in every aspect"]
+        [
+            "with remarkable precision",
+            "with incredible attention to detail",
+            "in every aspect",
+        ]
         if is_positive
         else ["with terrible execution", "with poor craftsmanship", "in many ways"]
     )
@@ -323,7 +359,9 @@ def generate_synthetic_data(
     half = num_samples // 2
     pos = _generate_batch(domain, half, label=1, is_positive=True)
     neg = _generate_batch(domain, half, label=0, is_positive=False)
-    df = pd.DataFrame(pos + neg).sample(frac=1, random_state=seed).reset_index(drop=True)
+    df = (
+        pd.DataFrame(pos + neg).sample(frac=1, random_state=seed).reset_index(drop=True)
+    )
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(output_path, index=False)
     logger.info("Generated %d samples to %s", len(df), output_path)
@@ -347,13 +385,23 @@ def run_universal_generation(
         half = total_samples_per_domain // 2
         pos = _generate_batch(domain_key, half, label=1, is_positive=True)
         neg = _generate_batch(domain_key, half, label=0, is_positive=False)
-        df = pd.DataFrame(pos + neg).sample(frac=1, random_state=seed).reset_index(drop=True)
+        df = (
+            pd.DataFrame(pos + neg)
+            .sample(frac=1, random_state=seed)
+            .reset_index(drop=True)
+        )
         df.to_csv(out_dir / f"data_{domain_key}.csv", index=False)
         all_dfs.append(df)
 
     final_df = (
-        pd.concat(all_dfs, ignore_index=True).sample(frac=1, random_state=seed).reset_index(drop=True)
+        pd.concat(all_dfs, ignore_index=True)
+        .sample(frac=1, random_state=seed)
+        .reset_index(drop=True)
     )
     final_df.to_csv(out_dir / "combined_master_dataset.csv", index=False)
-    logger.info("Universal generation complete: %d total samples across %d domains.", len(final_df), len(domains))
+    logger.info(
+        "Universal generation complete: %d total samples across %d domains.",
+        len(final_df),
+        len(domains),
+    )
     return final_df

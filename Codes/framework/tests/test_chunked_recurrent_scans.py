@@ -5,14 +5,15 @@ bidirectional encoders, padding handling, RoPE, and GQA across CPU and GPU.
 """
 import math
 import unittest
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from framework.attentions.gated_delta_net import GatedDeltaNet, chunked_delta_rule_scan
-from framework.attentions.hgrn2_layer import HGRN2Layer
-from framework.attentions.hgrn2_gated_deltanet import HGRN2GatedDeltaNet
+from framework.attentions.gated_delta_net import (GatedDeltaNet,
+                                                  chunked_delta_rule_scan)
 from framework.attentions.gated_deltanet_block import GatedDeltaNetBlock
+from framework.attentions.hgrn2_gated_deltanet import HGRN2GatedDeltaNet
+from framework.attentions.hgrn2_layer import HGRN2Layer
 from framework.attentions.simple_ssm import SimpleSSM
 
 

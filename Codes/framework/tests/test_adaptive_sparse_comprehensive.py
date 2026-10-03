@@ -1,12 +1,11 @@
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
-from types import SimpleNamespace
 from framework.attentions.adaptive_sparse_attention import (
-    AdaptiveSparseAttention,
-    inject_adaptive_sparse,
-    LoRALinear,
-)
+    AdaptiveSparseAttention, LoRALinear, inject_adaptive_sparse)
+
 
 def test_adaptive_sparse_lora_config_independence():
     # 1. config=None, comp_config present

@@ -4,18 +4,13 @@ from types import SimpleNamespace
 import pytest
 import torch
 import torch.nn as nn
-
+from framework.utils.compat import (FamilyModuleWrapper,
+                                    causal_mask_from_attention_mask,
+                                    is_decoder_projection_name,
+                                    maybe_apply_rotary, module_family_support,
+                                    repeat_kv, should_compress_linear,
+                                    wrap_for_family)
 from framework.utils.model_family import ModelAdapter, detect_family
-from framework.utils.compat import (
-    causal_mask_from_attention_mask,
-    is_decoder_projection_name,
-    maybe_apply_rotary,
-    module_family_support,
-    repeat_kv,
-    should_compress_linear,
-    wrap_for_family,
-    FamilyModuleWrapper,
-)
 from framework.utils.qwen_compat import QwenIncompatibleError
 
 
@@ -110,11 +105,13 @@ def test_common_attention_constructors_use_config_geometry():
     # Constructors are intentionally tested without a pretrained source. This
     # catches hard-coded 12-head/768-dimensional projection assumptions while
     # remaining independent of CUDA and model downloads.
-    from framework.attentions.flash_attention3 import FlashAttention3
-    from framework.attentions.cluster_attention import ClusterAttention
-    from framework.attentions.adaptive_sparse_attention import AdaptiveSparseAttention
-    from framework.attentions.adaptive_svd_attention import AdaptiveSVDAttention
+    from framework.attentions.adaptive_sparse_attention import \
+        AdaptiveSparseAttention
+    from framework.attentions.adaptive_svd_attention import \
+        AdaptiveSVDAttention
     from framework.attentions.asvd_attention import ASVDAttention
+    from framework.attentions.cluster_attention import ClusterAttention
+    from framework.attentions.flash_attention3 import FlashAttention3
 
     classes = [FlashAttention3, ClusterAttention, AdaptiveSparseAttention,
                AdaptiveSVDAttention, ASVDAttention]

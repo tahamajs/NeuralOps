@@ -1,13 +1,10 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.rala_attention import (
-    RALALinearAttention,
-    inject_rala,
-    inject_rala_attention,
-    inject_rala_linear_attention,
-)
+from framework.attentions.rala_attention import (RALALinearAttention,
+                                                 inject_rala,
+                                                 inject_rala_attention,
+                                                 inject_rala_linear_attention)
 
 
 class MockConfig:

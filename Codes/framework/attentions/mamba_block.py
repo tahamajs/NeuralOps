@@ -14,18 +14,20 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.registry import ATTENTION_REGISTRY
 
 try:
-    from framework.core.selective_scan import selective_scan, HAS_MAMBA_CUDA
+    from framework.core.selective_scan import HAS_MAMBA_CUDA, selective_scan
 except Exception as e:  # pragma: no cover
     logging.getLogger(__name__).warning("selective_scan import failed: %s", e)
     selective_scan = None  # type: ignore
     HAS_MAMBA_CUDA = False
 
 try:
-    from framework.core.triton_kernels.selective_scan import selective_scan_fn as triton_selective_scan
+    from framework.core.triton_kernels.selective_scan import (
+        selective_scan_fn as triton_selective_scan,
+    )
+
     HAS_TRITON_MAMBA = True
 except Exception as _e:
     logging.getLogger(__name__).warning("Triton selective_scan unavailable: %s", _e)
@@ -41,7 +43,7 @@ logger = logging.getLogger(__name__)
 def _detect_return_format(source_attn: nn.Module | None, is_nested: bool) -> str:
     """MB-12: choose output tuple layout for the host model."""
     if is_nested:
-        return "bert"   # (out, attn_weights)  [2-tuple]
+        return "bert"  # (out, attn_weights)  [2-tuple]
     if source_attn is None:
         return "llama"
     cls = source_attn.__class__.__name__.lower()
@@ -156,12 +158,24 @@ class MambaBlock(nn.Module):
         else:
             _mt = str(getattr(config, "model_type", "") or "").lower() if config else ""
             _dec_prefixes = (
-                "gpt", "qwen", "llama", "mistral", "gemma",
-                "phi", "opt", "bloom", "falcon", "olmo",
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
             )
             self.is_decoder = (
-                bool(getattr(config, "is_decoder", False) or getattr(config, "causal", False))
-                if config else False
+                bool(
+                    getattr(config, "is_decoder", False)
+                    or getattr(config, "causal", False)
+                )
+                if config
+                else False
             ) or any(_mt.startswith(p) for p in _dec_prefixes)
 
         # ---- Projections ----
@@ -181,7 +195,9 @@ class MambaBlock(nn.Module):
         self.out_proj = nn.Linear(self.d_inner, self.d_model, bias=bias)
 
         # ---- S4D-real initialization of A ----
-        A = torch.arange(1, self.d_state + 1, dtype=torch.float32).repeat(self.d_inner, 1)
+        A = torch.arange(1, self.d_state + 1, dtype=torch.float32).repeat(
+            self.d_inner, 1
+        )
         self.A_log = nn.Parameter(torch.log(A))
         self.D = nn.Parameter(torch.ones(self.d_inner))
 
@@ -249,12 +265,16 @@ class MambaBlock(nn.Module):
             return
 
         extracted: dict[str, torch.Tensor | None] = {
-            "q": None, "k": None, "v": None, "o": None
+            "q": None,
+            "k": None,
+            "v": None,
+            "o": None,
         }
 
         # --- 1. UniversalAdapter ---
         try:
             from framework.core.adapters import UniversalAdapter
+
             for proj in ("q", "k", "v", "o"):
                 try:
                     w, _ = UniversalAdapter.get_weight_bias(src, proj)
@@ -281,8 +301,8 @@ class MambaBlock(nn.Module):
                     w = w.t().contiguous()
                 split = w.size(0) // 3
                 extracted["q"] = w[:split, :]
-                extracted["k"] = w[split:2 * split, :]
-                extracted["v"] = w[2 * split:, :]
+                extracted["k"] = w[split : 2 * split, :]
+                extracted["v"] = w[2 * split :, :]
 
         if hasattr(src, "c_proj") and src.c_proj is not None and extracted["o"] is None:
             o = src.c_proj
@@ -329,9 +349,11 @@ class MambaBlock(nn.Module):
 
         # Mark nested encoder for later (MB-05)
         cls_name = src.__class__.__name__
-        if cls_name in ("BertSelfAttention", "RobertaSelfAttention",
-                        "XLMRobertaSelfAttention") \
-                or (nested is not None and hasattr(nested, "query")):
+        if cls_name in (
+            "BertSelfAttention",
+            "RobertaSelfAttention",
+            "XLMRobertaSelfAttention",
+        ) or (nested is not None and hasattr(nested, "query")):
             self.is_nested_encoder = True
 
         # ---- Apply mapping (MB-07, MB-08) ----
@@ -349,24 +371,24 @@ class MambaBlock(nn.Module):
             u, s, vh = torch.linalg.svd(x, full_matrices=False)
             k = min(r, c, s.numel())
 
-            u_r = u[:min(r, M), :k]
-            vh_c = vh[:k, :min(c, N)]
+            u_r = u[: min(r, M), :k]
+            vh_c = vh[:k, : min(c, N)]
             core = (u_r * s[:k].unsqueeze(0)) @ vh_c
 
             out = torch.zeros(r, c, dtype=torch.float32, device=x.device)
-            out[:core.size(0), :core.size(1)] = core
+            out[: core.size(0), : core.size(1)] = core
 
             if r > core.size(0):
                 rem_r = r - core.size(0)
                 reps_r = (rem_r + core.size(0) - 1) // core.size(0)
                 tiled_r = core.repeat(reps_r, 1)[:rem_r, :]
-                out[core.size(0):, :core.size(1)] = tiled_r
+                out[core.size(0) :, : core.size(1)] = tiled_r
 
             if c > core.size(1):
                 rem_c = c - core.size(1)
                 reps_c = (rem_c + core.size(1) - 1) // core.size(1)
-                tiled_c = out[:, :core.size(1)].repeat(1, reps_c)[:, :rem_c]
-                out[:, core.size(1):] = tiled_c
+                tiled_c = out[:, : core.size(1)].repeat(1, reps_c)[:, :rem_c]
+                out[:, core.size(1) :] = tiled_c
 
             return out.to(device=device, dtype=dtype)
 
@@ -383,9 +405,13 @@ class MambaBlock(nn.Module):
                 w_v_p = _to_t(w_v, self.d_inner, self.d_model)
                 if w_v_p is not None:
                     # x_ssm: full projection from W_v
-                    self.in_proj.weight.data[:self.d_inner, :self.d_model].copy_(w_v_p)
+                    self.in_proj.weight.data[: self.d_inner, : self.d_model].copy_(
+                        w_v_p
+                    )
                     # z: scaled copy so the gate starts balanced
-                    self.in_proj.weight.data[self.d_inner:, :self.d_model].copy_(0.5 * w_v_p)
+                    self.in_proj.weight.data[self.d_inner :, : self.d_model].copy_(
+                        0.5 * w_v_p
+                    )
 
             # ---------- x_proj: (dt_rank + 2*d_state, d_inner) ----------
             # rows [0 : dt_rank]                     → dt  (keep init)
@@ -424,9 +450,11 @@ class MambaBlock(nn.Module):
                 self.conv1d.bias.data.zero_()
 
         # ---- Sanity check ----
-        for name, mod in (("in_proj", self.in_proj),
-                          ("x_proj", self.x_proj),
-                          ("out_proj", self.out_proj)):
+        for name, mod in (
+            ("in_proj", self.in_proj),
+            ("x_proj", self.x_proj),
+            ("out_proj", self.out_proj),
+        ):
             n = float(torch.linalg.norm(mod.weight.data.float()).item())
             if n < 1e-6:
                 logger.warning("MambaBlock: '%s' near-zero norm (%.2e)", name, n)
@@ -437,10 +465,9 @@ class MambaBlock(nn.Module):
     # ------------------------------------------------------------------
     # State helpers
     # ------------------------------------------------------------------
-    def _read_state(self, past_state: Any) -> tuple[torch.Tensor | None,
-                                                     torch.Tensor | None,
-                                                     torch.Tensor | None,
-                                                     int]:
+    def _read_state(
+        self, past_state: Any
+    ) -> tuple[torch.Tensor | None, torch.Tensor | None, torch.Tensor | None, int]:
         """Returns (h, conv_state, dt_state, past_len)."""
         if past_state is None:
             return None, None, None, 0
@@ -463,18 +490,18 @@ class MambaBlock(nn.Module):
 
     def _recurrent_scan(
         self,
-        u: torch.Tensor,       # (B, d_inner, L)
-        delta: torch.Tensor,   # (B, d_inner, L)
-        A: torch.Tensor,       # (d_inner, d_state)
-        B_ssm: torch.Tensor,   # (B, d_state, L)
-        C_ssm: torch.Tensor,   # (B, d_state, L)
-        D: torch.Tensor,       # (d_inner,)
+        u: torch.Tensor,  # (B, d_inner, L)
+        delta: torch.Tensor,  # (B, d_inner, L)
+        A: torch.Tensor,  # (d_inner, d_state)
+        B_ssm: torch.Tensor,  # (B, d_state, L)
+        C_ssm: torch.Tensor,  # (B, d_state, L)
+        D: torch.Tensor,  # (d_inner,)
         state: torch.Tensor | None,  # (B, d_inner, d_state)
         chunk_size: int = 32,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Recurrent selective scan with chunked activation checkpointing and bmm.
-        
+
         Fix 1: Split L into chunks of size chunk_size and checkpoint each chunk
                during training to bound autograd memory to O(chunk_size).
         Fix 2: Use torch.bmm instead of torch.einsum inside the loop for cuBLAS
@@ -484,15 +511,20 @@ class MambaBlock(nn.Module):
         d_state = A.shape[1]
 
         target_dtype = u.dtype
-        h = state.to(target_dtype) if state is not None else torch.zeros(
-            B, d_inner, d_state, device=u.device, dtype=target_dtype
+        h = (
+            state.to(target_dtype)
+            if state is not None
+            else torch.zeros(B, d_inner, d_state, device=u.device, dtype=target_dtype)
         )
 
         delta = F.softplus(delta).to(target_dtype)
         delta_a = delta.unsqueeze(-1) * A.view(1, d_inner, 1, d_state).to(target_dtype)
         delta_a = torch.exp(delta_a).to(target_dtype)
-        delta_b_u = (delta.unsqueeze(-1) * B_ssm.permute(0, 2, 1).unsqueeze(1).to(target_dtype)
-                     * u.unsqueeze(-1)).to(target_dtype)
+        delta_b_u = (
+            delta.unsqueeze(-1)
+            * B_ssm.permute(0, 2, 1).unsqueeze(1).to(target_dtype)
+            * u.unsqueeze(-1)
+        ).to(target_dtype)
         C_in = C_ssm.to(target_dtype)
 
         def _scan_chunk(
@@ -506,7 +538,9 @@ class MambaBlock(nn.Module):
             curr_h = h_init
             for i in range(L_c):
                 curr_h = da_c[:, :, i, :] * curr_h + dbu_c[:, :, i, :]
-                c_t = c_c[:, :, i].contiguous().unsqueeze(-1)  # (B, d_state, 1) contiguous for cuBLAS
+                c_t = (
+                    c_c[:, :, i].contiguous().unsqueeze(-1)
+                )  # (B, d_state, 1) contiguous for cuBLAS
                 y_t = torch.bmm(curr_h, c_t).squeeze(-1)  # (B, d_inner)
                 ys_c.append(y_t)
             return torch.stack(ys_c, dim=-1), curr_h
@@ -514,6 +548,7 @@ class MambaBlock(nn.Module):
         # Chunked scan with activation checkpointing during training
         ys_all = []
         import torch.utils.checkpoint as cp
+
         use_cp = self.training and torch.is_grad_enabled()
 
         for s in range(0, L, chunk_size):
@@ -564,7 +599,12 @@ class MambaBlock(nn.Module):
         if HAS_MAMBA_CUDA and selective_scan is not None:
             try:
                 return selective_scan(
-                    u=u, delta=delta, A=A, B=B_ssm, C=C_ssm, D=D,
+                    u=u,
+                    delta=delta,
+                    A=A,
+                    B=B_ssm,
+                    C=C_ssm,
+                    D=D,
                     delta_softplus=True,
                 )
             except Exception as e:
@@ -590,7 +630,12 @@ class MambaBlock(nn.Module):
         if selective_scan is not None:
             try:
                 return selective_scan(
-                    u=u, delta=delta, A=A, B=B_ssm, C=C_ssm, D=D,
+                    u=u,
+                    delta=delta,
+                    A=A,
+                    B=B_ssm,
+                    C=C_ssm,
+                    D=D,
                     delta_softplus=True,
                 )
             except Exception as e:
@@ -628,8 +673,8 @@ class MambaBlock(nn.Module):
         h_prev, conv_prev, _, past_len = self._read_state(past_state)
 
         # ---- 1. Input projection ----
-        xz = self.in_proj(hidden_states)                    # (B, L, 2*d_inner)
-        x_ssm, z = xz.chunk(2, dim=-1)                      # each (B, L, d_inner)
+        xz = self.in_proj(hidden_states)  # (B, L, 2*d_inner)
+        x_ssm, z = xz.chunk(2, dim=-1)  # each (B, L, d_inner)
 
         # ---- 2. Depthwise conv1d with streaming state ----
         if conv_prev is not None:
@@ -641,35 +686,45 @@ class MambaBlock(nn.Module):
         else:
             x_cat = x_ssm
 
-        x_conv_full = self.conv1d(x_cat.transpose(1, 2))    # (B, d_inner, L' + d_conv - 1)
+        x_conv_full = self.conv1d(
+            x_cat.transpose(1, 2)
+        )  # (B, d_inner, L' + d_conv - 1)
         # Take only the L last positions
-        x_conv = x_conv_full[..., -L:].transpose(1, 2)      # (B, L, d_inner)
+        x_conv = x_conv_full[..., -L:].transpose(1, 2)  # (B, L, d_inner)
 
         # New conv state: last (d_conv - 1) tokens of input
         if self.d_conv - 1 <= L:
-            conv_next = x_cat[:, -(self.d_conv - 1):, :].transpose(1, 2).contiguous()
+            conv_next = x_cat[:, -(self.d_conv - 1) :, :].transpose(1, 2).contiguous()
         else:
             # pad with zero if sequence shorter than kernel
             pad = self.d_conv - 1 - L
-            conv_next = torch.cat(
-                [torch.zeros(B, pad, self.d_inner, device=device, dtype=x_cat.dtype),
-                 x_cat],
-                dim=1,
-            ).transpose(1, 2).contiguous()
+            conv_next = (
+                torch.cat(
+                    [
+                        torch.zeros(
+                            B, pad, self.d_inner, device=device, dtype=x_cat.dtype
+                        ),
+                        x_cat,
+                    ],
+                    dim=1,
+                )
+                .transpose(1, 2)
+                .contiguous()
+            )
 
         x_ssm = F.silu(x_conv)
 
         # ---- 3. Selective parameters ----
-        x_dbl = self.x_proj(x_ssm)                          # (B, L, dt_rank + 2*d_state)
+        x_dbl = self.x_proj(x_ssm)  # (B, L, dt_rank + 2*d_state)
         dt, B_ssm, C_ssm = x_dbl.split(
             [self.dt_rank, self.d_state, self.d_state], dim=-1
         )
-        dt = self.dt_proj(dt)                                # (B, L, d_inner)
+        dt = self.dt_proj(dt)  # (B, L, d_inner)
 
-        A = -torch.exp(self.A_log)                           # (d_inner, d_state)
+        A = -torch.exp(self.A_log)  # (d_inner, d_state)
 
         # ---- 4. Selective scan ----
-        u_t = x_ssm.transpose(1, 2)                          # (B, d_inner, L)
+        u_t = x_ssm.transpose(1, 2)  # (B, d_inner, L)
         dt_t = dt.transpose(1, 2)
         B_t = B_ssm.transpose(1, 2)
         C_t = C_ssm.transpose(1, 2)
@@ -680,7 +735,7 @@ class MambaBlock(nn.Module):
         else:
             y, h_next = self._recurrent_scan(u_t, dt_t, A, B_t, C_t, self.D, h_prev)
 
-        y = y.transpose(1, 2)                                # (B, L, d_inner)
+        y = y.transpose(1, 2)  # (B, L, d_inner)
 
         # ---- 5. Bidirectional (encoder only) ----
         if self.bidirectional and not self.is_decoder:
@@ -718,8 +773,11 @@ class MambaBlock(nn.Module):
                 out = out * attention_mask.unsqueeze(-1).to(out.dtype)
             elif attention_mask.dim() == 3:
                 # (B, Lq, Lk) — take the last column (query's validity) or diagonal
-                m = attention_mask.diagonal(dim1=-2, dim2=-1) if attention_mask.size(-1) == L \
+                m = (
+                    attention_mask.diagonal(dim1=-2, dim2=-1)
+                    if attention_mask.size(-1) == L
                     else attention_mask[..., -1]
+                )
                 out = out * m.unsqueeze(-1).to(out.dtype)
             elif attention_mask.dim() == 4:
                 # (B, 1, Lq, Lk) — same reduction
@@ -890,8 +948,10 @@ def inject_mamba(
             spliced = True
 
         if not spliced:
-            logger.error("inject_mamba: no writable attention attribute on %s",
-                         type(target).__name__)
+            logger.error(
+                "inject_mamba: no writable attention attribute on %s",
+                type(target).__name__,
+            )
             return None
 
         # Recompute return format (MB-12)

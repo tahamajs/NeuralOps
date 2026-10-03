@@ -1,7 +1,6 @@
 import pytest
 import torch
 import torch.nn as nn
-
 from framework.attentions.hla_attention import HLAAttention, inject_hla
 
 

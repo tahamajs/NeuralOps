@@ -1,12 +1,11 @@
 import sys
+
 import torch
 import torch.nn as nn
 
 sys.path.insert(0, "Codes")
 
-from framework.attentions.spectra_v2_attention import (
-    SpectraV2Attention,
-)
+from framework.attentions.spectra_v2_attention import SpectraV2Attention
 
 
 def test_basic_construction():

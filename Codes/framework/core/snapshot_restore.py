@@ -55,9 +55,7 @@ class ModelStateSnapshot:
 
         # 2. Tensor restore: load exact state_dict back onto parameters
         device = next(self.model.parameters()).device
-        restored_state = {
-            k: v.to(device) for k, v in self.clean_state_dict.items()
-        }
+        restored_state = {k: v.to(device) for k, v in self.clean_state_dict.items()}
         self.model.load_state_dict(restored_state, strict=False)
 
         # 3. Restore training state

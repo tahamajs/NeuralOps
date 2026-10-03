@@ -3,17 +3,15 @@ Comprehensive Test Suite for Vectorized Huffman Coder & Huffman Compressor.
 Tests roundtrip correctness, compression metrics, fallback LoRA freezing,
 and cross-architecture integration.
 """
-import unittest
-import time
 import math
+import time
+import unittest
+
 import torch
 import torch.nn as nn
-
-from framework.compression_engine.huffman_coder import (
-    HuffmanCoder,
-    HuffmanCompressor,
-    _freeze_base_only,
-)
+from framework.compression_engine.huffman_coder import (HuffmanCoder,
+                                                        HuffmanCompressor,
+                                                        _freeze_base_only)
 
 
 class DummyLoRAModule(nn.Module):

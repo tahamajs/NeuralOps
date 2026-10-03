@@ -15,10 +15,10 @@ Tests:
 
 from __future__ import annotations
 
-import sys
-import os
 import json
+import os
 import shutil
+import sys
 import tempfile
 import unittest
 from typing import Any, Dict
@@ -34,24 +34,21 @@ if project_root not in sys.path:
 
 import framework.attentions
 import framework.compression_engine
-
 import numpy as np
 import torch
 import torch.nn as nn
-from transformers import AutoConfig, DistilBertConfig
-
 from framework.config.experiment_config import DatasetConfig, ExperimentConfig
 from framework.core.adapters import UniversalAdapter
-from framework.core.attention_mask import (
-    apply_attention_mask,
-    create_band_mask,
-    create_causal_mask,
-    get_token_valid_mask,
-)
+from framework.core.attention_mask import (apply_attention_mask,
+                                           create_band_mask,
+                                           create_causal_mask,
+                                           get_token_valid_mask)
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-from framework.utils.replace_attention import replace_attention, UniversalAttentionWrapper
 from framework.trainer.metrics import compute_accuracy, compute_f1
 from framework.utils.profiler import ModelProfiler
+from framework.utils.replace_attention import (UniversalAttentionWrapper,
+                                               replace_attention)
+from transformers import AutoConfig, DistilBertConfig
 
 
 class ToyEncoderBlock(nn.Module):

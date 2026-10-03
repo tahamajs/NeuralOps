@@ -23,7 +23,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.attention_mask import apply_attention_mask, get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
@@ -48,7 +47,11 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
     b = getattr(base, "bias", None)
     if w is not None:
         w = w.data.clone()
-        if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
+        if (
+            (module.__class__.__name__ == "Conv1D")
+            or (base.__class__.__name__ == "Conv1D")
+            or (w.ndim == 2 and w.shape[0] < w.shape[1])
+        ):
             w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
@@ -128,15 +131,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -171,12 +180,28 @@ class LoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         target_dtype = x.dtype
-        w = self.weight.to(target_dtype) if self.weight.dtype != target_dtype else self.weight
-        b = self.bias.to(target_dtype) if (self.bias is not None and self.bias.dtype != target_dtype) else self.bias
+        w = (
+            self.weight.to(target_dtype)
+            if self.weight.dtype != target_dtype
+            else self.weight
+        )
+        b = (
+            self.bias.to(target_dtype)
+            if (self.bias is not None and self.bias.dtype != target_dtype)
+            else self.bias
+        )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            a = self.lora_A.to(target_dtype) if self.lora_A.dtype != target_dtype else self.lora_A
-            bb = self.lora_B.to(target_dtype) if self.lora_B.dtype != target_dtype else self.lora_B
+            a = (
+                self.lora_A.to(target_dtype)
+                if self.lora_A.dtype != target_dtype
+                else self.lora_A
+            )
+            bb = (
+                self.lora_B.to(target_dtype)
+                if self.lora_B.dtype != target_dtype
+                else self.lora_B
+            )
             lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
             out = out + lora_out
         return out.to(target_dtype)
@@ -186,6 +211,7 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register("halo_regla_attention")
 class HALOReGLAAttention(BaseAttention):
     is_custom_attention: bool = True
+
     def __init__(
         self,
         config: Any | None = None,
@@ -201,37 +227,102 @@ class HALOReGLAAttention(BaseAttention):
         # Resolve dim
         dim = None
         if config is not None:
-            dim = _cfg_get(config, "hidden_size", _cfg_get(config, "d_model", _cfg_get(config, "n_embd", _cfg_get(config, "dim", None))))
+            dim = _cfg_get(
+                config,
+                "hidden_size",
+                _cfg_get(
+                    config,
+                    "d_model",
+                    _cfg_get(config, "n_embd", _cfg_get(config, "dim", None)),
+                ),
+            )
         if dim is None and pretrained_attn is not None:
-            dim = getattr(pretrained_attn, "hidden_size", getattr(pretrained_attn, "embed_dim", getattr(pretrained_attn, "all_head_size", None)))
+            dim = getattr(
+                pretrained_attn,
+                "hidden_size",
+                getattr(
+                    pretrained_attn,
+                    "embed_dim",
+                    getattr(pretrained_attn, "all_head_size", None),
+                ),
+            )
             if dim is None:
                 for cand in ("q_proj", "q_lin", "query", "c_attn"):
                     m = getattr(pretrained_attn, cand, None)
                     if m is not None and hasattr(m, "in_features"):
                         dim = m.in_features
                         break
-        dim = dim or kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
+        dim = dim or kwargs.get(
+            "hidden_size", kwargs.get("d_model", kwargs.get("dim", 768))
+        )
 
         # Resolve num_heads
         num_heads = None
         if config is not None:
-            num_heads = _cfg_get(config, "num_attention_heads", _cfg_get(config, "num_heads", _cfg_get(config, "n_heads", _cfg_get(config, "n_head", None))))
+            num_heads = _cfg_get(
+                config,
+                "num_attention_heads",
+                _cfg_get(
+                    config,
+                    "num_heads",
+                    _cfg_get(config, "n_heads", _cfg_get(config, "n_head", None)),
+                ),
+            )
         if num_heads is None and pretrained_attn is not None:
-            num_heads = getattr(pretrained_attn, "num_heads", getattr(pretrained_attn, "num_attention_heads", None))
-        num_heads = num_heads or kwargs.get("num_attention_heads", kwargs.get("num_heads", 12))
+            num_heads = getattr(
+                pretrained_attn,
+                "num_heads",
+                getattr(pretrained_attn, "num_attention_heads", None),
+            )
+        num_heads = num_heads or kwargs.get(
+            "num_attention_heads", kwargs.get("num_heads", 12)
+        )
 
         self.dim: int = int(dim)
         self.num_heads: int = int(num_heads)
-        self.num_kv_heads: int = int(_cfg_get(config, "num_key_value_heads", kwargs.get("num_key_value_heads", self.num_heads)))
-        self.head_dim: int = int(_cfg_get(config, "head_dim", kwargs.get("head_dim", self.dim // max(1, self.num_heads))))
+        self.num_kv_heads: int = int(
+            _cfg_get(
+                config,
+                "num_key_value_heads",
+                kwargs.get("num_key_value_heads", self.num_heads),
+            )
+        )
+        self.head_dim: int = int(
+            _cfg_get(
+                config,
+                "head_dim",
+                kwargs.get("head_dim", self.dim // max(1, self.num_heads)),
+            )
+        )
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
         self.hybrid_ratio: int = hybrid_ratio
 
         model_type = str(_cfg_get(config, "model_type", "")).lower()
-        is_dec = _cfg_get(config, "is_decoder", _cfg_get(config, "is_causal", kwargs.get("is_causal", kwargs.get("is_decoder", False))))
-        _mt = (model_type or '').lower()
-        _decoder_prefixes = ('gpt', 'qwen', 'llama', 'mistral', 'gemma', 'phi', 'opt', 'bloom', 'falcon', 'olmo', 'mpt', 'stablelm')
+        is_dec = _cfg_get(
+            config,
+            "is_decoder",
+            _cfg_get(
+                config,
+                "is_causal",
+                kwargs.get("is_causal", kwargs.get("is_decoder", False)),
+            ),
+        )
+        _mt = (model_type or "").lower()
+        _decoder_prefixes = (
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
+        )
         if any(_mt.startswith(p) for p in _decoder_prefixes):
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
@@ -239,15 +330,55 @@ class HALOReGLAAttention(BaseAttention):
         self.is_nested_encoder: bool = False
 
         comp_config = getattr(config, "compression_config", None)
-        self.lora_rank: int = int(_cfg_get(comp_config, "lora_rank", _cfg_get(config, "lora_rank", kwargs.get("lora_rank", 16))))
-        self.lora_alpha: float = float(_cfg_get(comp_config, "lora_alpha", _cfg_get(config, "lora_alpha", kwargs.get("lora_alpha", 32.0))))
-        self.freeze_base: bool = (self.lora_rank > 0)
+        self.lora_rank: int = int(
+            _cfg_get(
+                comp_config,
+                "lora_rank",
+                _cfg_get(config, "lora_rank", kwargs.get("lora_rank", 16)),
+            )
+        )
+        self.lora_alpha: float = float(
+            _cfg_get(
+                comp_config,
+                "lora_alpha",
+                _cfg_get(config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
+            )
+        )
+        self.freeze_base: bool = self.lora_rank > 0
 
         # Projections
-        self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.k_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.v_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.q_proj = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.k_proj = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.v_proj = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
         self.query = self.q_proj
         self.key = self.k_proj
@@ -256,10 +387,16 @@ class HALOReGLAAttention(BaseAttention):
         self.gate = nn.Linear(self.dim, self.num_heads)
         self.gate.bias.data.fill_(gate_init_bias)
 
-        dropout_p = _cfg_get(config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1))
+        dropout_p = _cfg_get(
+            config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1)
+        )
         self.dropout = nn.Dropout(dropout_p)
 
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
+        source_attn = (
+            pretrained_attn
+            if pretrained_attn is not None
+            else kwargs.get("source_attn")
+        )
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -268,17 +405,33 @@ class HALOReGLAAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        has_out_lin = (
+            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        )
         is_nested = False
         if (
-            hasattr(src, "self")
-            and hasattr(src.self, "query")
-            and hasattr(src, "output")
-            and hasattr(src.output, "dense")
-        ) or (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
-            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
+            (
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
+            )
+            or (
+                cls_name
+                in [
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                ]
+                or (
+                    cls_name.endswith("SelfAttention")
+                    and "distil" not in cls_name.lower()
+                )
+            )
+            and not has_out_lin
+        ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -296,14 +449,27 @@ class HALOReGLAAttention(BaseAttention):
                 if c_w.dim() == 2 and c_w.shape[1] == 3 * self.dim:
                     c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
-                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
+                extracted["q"] = (
+                    c_w[:split_size, :],
+                    c_b[:split_size] if c_b is not None else None,
+                )
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (
+                    c_w[2 * split_size :, :],
+                    c_b[2 * split_size :] if c_b is not None else None,
+                )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 o_w, o_b = _unpack_weight_bias(src.c_proj)
                 if o_w is not None:
-                    if o_w.dim() == 2 and o_w.shape[0] != self.dim and o_w.shape[1] == self.dim:
+                    if (
+                        o_w.dim() == 2
+                        and o_w.shape[0] != self.dim
+                        and o_w.shape[1] == self.dim
+                    ):
                         o_w = o_w.t().contiguous()
                     extracted["o"] = (o_w, o_b)
 
@@ -333,10 +499,15 @@ class HALOReGLAAttention(BaseAttention):
                             extracted[proj_key] = (cw, cb)
                             break
 
-        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -345,9 +516,16 @@ class HALOReGLAAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing_after:
-            logger.debug("HALOReGLAAttention partial weights extracted; missing: %s", missing_after)
+            logger.debug(
+                "HALOReGLAAttention partial weights extracted; missing: %s",
+                missing_after,
+            )
 
         target_map = {
             "q": self.q_proj,
@@ -370,7 +548,10 @@ class HALOReGLAAttention(BaseAttention):
                     target_mod.weight.copy_(w)
                 elif w.t().contiguous().shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w.t().contiguous())
-                elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
+                elif (
+                    w.shape[0] < target_mod.weight.shape[0]
+                    and target_mod.weight.shape[0] % w.shape[0] == 0
+                ):
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
                 else:
@@ -382,7 +563,10 @@ class HALOReGLAAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     if b.shape == target_mod.bias.shape:
                         target_mod.bias.copy_(b)
-                    elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
+                    elif (
+                        b.shape[0] < target_mod.bias.shape[0]
+                        and target_mod.bias.shape[0] % b.shape[0] == 0
+                    ):
                         repeats = target_mod.bias.shape[0] // b.shape[0]
                         target_mod.bias.copy_(b.repeat(repeats))
                     else:
@@ -394,7 +578,9 @@ class HALOReGLAAttention(BaseAttention):
 
                 fnorm = torch.linalg.norm(target_mod.weight.float()).item()
                 if fnorm < 1e-4:
-                    logger.debug("Weight copy for %s has small norm: %.6f", proj_key, fnorm)
+                    logger.debug(
+                        "Weight copy for %s has small norm: %.6f", proj_key, fnorm
+                    )
 
         if self.freeze_base:
             for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
@@ -430,9 +616,21 @@ class HALOReGLAAttention(BaseAttention):
             hidden_states = hidden_states[0]
         B, L, D = hidden_states.shape
 
-        q = self.q_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
-        v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        q = (
+            self.q_proj(hidden_states)
+            .view(B, L, self.num_heads, self.head_dim)
+            .permute(0, 2, 1, 3)
+        )
+        k = (
+            self.k_proj(hidden_states)
+            .view(B, L, self.num_kv_heads, self.head_dim)
+            .permute(0, 2, 1, 3)
+        )
+        v = (
+            self.v_proj(hidden_states)
+            .view(B, L, self.num_kv_heads, self.head_dim)
+            .permute(0, 2, 1, 3)
+        )
 
         # Apply RoPE if provided
         if position_embeddings is None:
@@ -449,11 +647,15 @@ class HALOReGLAAttention(BaseAttention):
 
         # 1. Standard dense softmax stream
         scale = 1.0 / math.sqrt(self.head_dim)
-        dense_scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+        dense_scores = (
+            torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+        )
 
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
         if is_causal:
-            causal_mask = torch.triu(torch.full((L, L), -1e4, device=dense_scores.device), diagonal=1)
+            causal_mask = torch.triu(
+                torch.full((L, L), -1e4, device=dense_scores.device), diagonal=1
+            )
             dense_scores = dense_scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
         if attention_mask is not None:
@@ -486,21 +688,39 @@ class HALOReGLAAttention(BaseAttention):
             linear_out = (num / den) * mask_4d
 
         # 3. Adaptive fusion
-        gate_w = self.gate.weight.to(hidden_states.dtype) if self.gate.weight.dtype != hidden_states.dtype else self.gate.weight
-        gate_b = self.gate.bias.to(hidden_states.dtype) if (self.gate.bias is not None and self.gate.bias.dtype != hidden_states.dtype) else self.gate.bias
+        gate_w = (
+            self.gate.weight.to(hidden_states.dtype)
+            if self.gate.weight.dtype != hidden_states.dtype
+            else self.gate.weight
+        )
+        gate_b = (
+            self.gate.bias.to(hidden_states.dtype)
+            if (
+                self.gate.bias is not None
+                and self.gate.bias.dtype != hidden_states.dtype
+            )
+            else self.gate.bias
+        )
         gate_out = F.linear(hidden_states, gate_w, gate_b)
-        g = torch.sigmoid(gate_out).unsqueeze(1).unsqueeze(-1)  # (B, 1, L, 1) or per-head (B, H, L, 1)
+        g = (
+            torch.sigmoid(gate_out).unsqueeze(1).unsqueeze(-1)
+        )  # (B, 1, L, 1) or per-head (B, H, L, 1)
         if g.shape[1] != self.num_heads:
             g = torch.sigmoid(gate_out).permute(0, 2, 1).unsqueeze(-1)  # (B, H, L, 1)
         g = g.to(hidden_states.dtype)
-        fused = (g * dense_out.to(hidden_states.dtype) + (1.0 - g) * linear_out.to(hidden_states.dtype)).to(hidden_states.dtype)
+        fused = (
+            g * dense_out.to(hidden_states.dtype)
+            + (1.0 - g) * linear_out.to(hidden_states.dtype)
+        ).to(hidden_states.dtype)
 
         # head_mask handling
         if head_mask is not None:
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 fused = fused * head_mask.view(1, self.num_heads, 1, 1).to(fused.dtype)
             elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                fused = fused * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(fused.dtype)
+                fused = fused * head_mask.view(
+                    head_mask.size(0), self.num_heads, 1, 1
+                ).to(fused.dtype)
             elif head_mask.dim() == 4:
                 fused = fused * head_mask.to(fused.dtype)
 
@@ -513,7 +733,9 @@ class HALOReGLAAttention(BaseAttention):
 
         if out_final.shape[-1] != hidden_states.shape[-1]:
             if out_final.shape[-1] < hidden_states.shape[-1]:
-                out_final = F.pad(out_final, (0, hidden_states.shape[-1] - out_final.shape[-1]))
+                out_final = F.pad(
+                    out_final, (0, hidden_states.shape[-1] - out_final.shape[-1])
+                )
             else:
                 out_final = out_final[..., : hidden_states.shape[-1]]
 

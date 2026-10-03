@@ -1,15 +1,12 @@
+import types
+
 import pytest
 import torch
 import torch.nn as nn
-import types
-
-from framework.attentions.unified_rope import (
-    UnifiedRoPE,
-    LoRALinear,
-    _rotate_half,
-    apply_rotary_pos_emb,
-    inject_unified_rope,
-)
+from framework.attentions.unified_rope import (LoRALinear, UnifiedRoPE,
+                                               _rotate_half,
+                                               apply_rotary_pos_emb,
+                                               inject_unified_rope)
 
 
 def make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=False, model_type="bert"):

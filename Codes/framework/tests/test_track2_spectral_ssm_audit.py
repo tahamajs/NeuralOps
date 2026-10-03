@@ -10,9 +10,10 @@ Audits all Spectral, SSM, and Recurrent Attention modules:
 """
 
 import math
-import sys
 import os
+import sys
 import unittest
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -145,7 +146,8 @@ class TestTrack2Modules(unittest.TestCase):
         self._test_module_lifecycle(m, "AegisHybridAttention")
 
     def test_aegis_spectron_fp8(self):
-        from framework.attentions.aegis_spectron_fp8 import AegisSpectronFP8Attention
+        from framework.attentions.aegis_spectron_fp8 import \
+            AegisSpectronFP8Attention
         m = AegisSpectronFP8Attention(config=self.config, pretrained_attn=self.mock_attn)
         self._test_module_lifecycle(m, "AegisSpectronFP8Attention")
 
@@ -180,7 +182,8 @@ class TestTrack2Modules(unittest.TestCase):
         self._test_module_lifecycle(m, "GatedDeltaNet")
 
     def test_gated_deltanet_block(self):
-        from framework.attentions.gated_deltanet_block import GatedDeltaNetBlock
+        from framework.attentions.gated_deltanet_block import \
+            GatedDeltaNetBlock
         m = GatedDeltaNetBlock(config=self.config, d_model=768, num_heads=12)
         m.copy_weights(self.mock_attn)
         self._test_module_lifecycle(m, "GatedDeltaNetBlock")
@@ -192,7 +195,8 @@ class TestTrack2Modules(unittest.TestCase):
         self._test_module_lifecycle(m, "HGRN2Layer")
 
     def test_hgrn2_gated_deltanet(self):
-        from framework.attentions.hgrn2_gated_deltanet import HGRN2GatedDeltaNet
+        from framework.attentions.hgrn2_gated_deltanet import \
+            HGRN2GatedDeltaNet
         m = HGRN2GatedDeltaNet(config=self.config, d_model=768, num_heads=12)
         m.copy_weights(self.mock_attn)
         self._test_module_lifecycle(m, "HGRN2GatedDeltaNet")
@@ -254,7 +258,8 @@ class TestTrack2Modules(unittest.TestCase):
         self._test_module_lifecycle(m, "UPIMambaBlock")
 
     def test_mamba_shedder(self):
-        from framework.compression_engine.mamba_shedder import MambaShedderCompressor
+        from framework.compression_engine.mamba_shedder import \
+            MambaShedderCompressor
         class SimpleBlock(nn.Module):
             def __init__(self, d=768):
                 super().__init__()

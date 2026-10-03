@@ -1,4 +1,5 @@
 import sys
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,9 +7,7 @@ import torch.nn.functional as F
 sys.path.insert(0, "Codes")
 
 from framework.attentions.spectral_mamba_attention import (
-    SpectralMambaAttention,
-    SpectralMamba,
-)
+    SpectralMamba, SpectralMambaAttention)
 
 
 def test_spectral_mamba_forward():

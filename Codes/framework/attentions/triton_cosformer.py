@@ -37,10 +37,9 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseAttention
-from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.gqa_utils import repeat_kv
+from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +47,7 @@ logger = logging.getLogger(__name__)
 try:
     import triton
     import triton.language as tl
+
     HAS_TRITON = True
 except ImportError:
     HAS_TRITON = False
@@ -56,6 +56,7 @@ except ImportError:
 # ============================================================================
 # HELPER FUNCTIONS: RoPE
 # ============================================================================
+
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     x1 = x[..., : x.shape[-1] // 2]
@@ -85,7 +86,9 @@ def apply_rotary_pos_emb(
     k_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
 
     if q_pass.shape[-1] > 0:
-        return torch.cat([q_embed, q_pass], dim=-1), torch.cat([k_embed, k_pass], dim=-1)
+        return torch.cat([q_embed, q_pass], dim=-1), torch.cat(
+            [k_embed, k_pass], dim=-1
+        )
     return q_embed, k_embed
 
 
@@ -97,14 +100,26 @@ if HAS_TRITON:
 
     @triton.jit
     def _triton_chunked_cosformer_fwd_kernel(
-        Q_ptr,              # [B, H, N, D]
-        K_ptr,              # [B, H, N, D]
-        V_ptr,              # [B, H, N, D]
-        Out_ptr,            # [B, H, N, D]
-        stride_qb, stride_qh, stride_qn, stride_qd,
-        stride_kb, stride_kh, stride_kn, stride_kd,
-        stride_vb, stride_vh, stride_vn, stride_vd,
-        stride_ob, stride_oh, stride_on, stride_od,
+        Q_ptr,  # [B, H, N, D]
+        K_ptr,  # [B, H, N, D]
+        V_ptr,  # [B, H, N, D]
+        Out_ptr,  # [B, H, N, D]
+        stride_qb,
+        stride_qh,
+        stride_qn,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kn,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vn,
+        stride_vd,
+        stride_ob,
+        stride_oh,
+        stride_on,
+        stride_od,
         N: tl.constexpr,
         D: tl.constexpr,
         BLOCK_CHUNK: tl.constexpr,
@@ -141,9 +156,15 @@ if HAS_TRITON:
             mask_n = cur_offs_n < N
 
             # 1. Load Q, K, V tiles
-            q_ptrs = q_base + (cur_offs_n[:, None] * stride_qn + offs_d[None, :] * stride_qd)
-            k_ptrs = k_base + (cur_offs_n[:, None] * stride_kn + offs_d[None, :] * stride_kd)
-            v_ptrs = v_base + (cur_offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd)
+            q_ptrs = q_base + (
+                cur_offs_n[:, None] * stride_qn + offs_d[None, :] * stride_qd
+            )
+            k_ptrs = k_base + (
+                cur_offs_n[:, None] * stride_kn + offs_d[None, :] * stride_kd
+            )
+            v_ptrs = v_base + (
+                cur_offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
+            )
 
             q_tile = tl.load(q_ptrs, mask=mask_n[:, None], other=0.0)
             k_tile = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0)
@@ -169,8 +190,12 @@ if HAS_TRITON:
             k_s = phi_k * sin_pos
 
             # 4. Inter-chunk projection from running state:
-            num_inter = tl.dot(q_c.to(tl.float32), S_cos) + tl.dot(q_s.to(tl.float32), S_sin)
-            denom_inter = tl.sum(q_c * Z_cos[None, :], axis=1) + tl.sum(q_s * Z_sin[None, :], axis=1)
+            num_inter = tl.dot(q_c.to(tl.float32), S_cos) + tl.dot(
+                q_s.to(tl.float32), S_sin
+            )
+            denom_inter = tl.sum(q_c * Z_cos[None, :], axis=1) + tl.sum(
+                q_s * Z_sin[None, :], axis=1
+            )
 
             # 5. Intra-chunk causal scores:
             A_cos = tl.dot(q_c.to(tl.float32), tl.trans(k_c.to(tl.float32)))
@@ -178,7 +203,9 @@ if HAS_TRITON:
             A_total = A_cos + A_sin
 
             causal_mask = offs_chunk[:, None] >= offs_chunk[None, :]
-            A_causal = tl.where(causal_mask & (mask_n[:, None] & mask_n[None, :]), A_total, 0.0)
+            A_causal = tl.where(
+                causal_mask & (mask_n[:, None] & mask_n[None, :]), A_total, 0.0
+            )
 
             num_intra = tl.dot(A_causal.to(tl.float32), v_tile.to(tl.float32))
             denom_intra = tl.sum(A_causal, axis=1)
@@ -188,8 +215,12 @@ if HAS_TRITON:
             denom_tot = denom_inter + denom_intra + EPS
             out_tile = num_tot / denom_tot[:, None]
 
-            out_ptrs = out_base + (cur_offs_n[:, None] * stride_on + offs_d[None, :] * stride_od)
-            tl.store(out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_n[:, None])
+            out_ptrs = out_base + (
+                cur_offs_n[:, None] * stride_on + offs_d[None, :] * stride_od
+            )
+            tl.store(
+                out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_n[:, None]
+            )
 
             # 7. Update running state for subsequent chunks
             S_cos += tl.dot(tl.trans(k_c.to(tl.float32)), v_tile.to(tl.float32))
@@ -197,14 +228,28 @@ if HAS_TRITON:
             Z_cos += tl.sum(k_c, axis=0)
             Z_sin += tl.sum(k_s, axis=0)
 
-
     @triton.jit
     def _triton_bidirectional_cosformer_fwd_kernel(
-        Q_ptr, K_ptr, V_ptr, Out_ptr,
-        stride_qb, stride_qh, stride_qn, stride_qd,
-        stride_kb, stride_kh, stride_kn, stride_kd,
-        stride_vb, stride_vh, stride_vn, stride_vd,
-        stride_ob, stride_oh, stride_on, stride_od,
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        Out_ptr,
+        stride_qb,
+        stride_qh,
+        stride_qn,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kn,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vn,
+        stride_vd,
+        stride_ob,
+        stride_oh,
+        stride_on,
+        stride_od,
         N: tl.constexpr,
         D: tl.constexpr,
         BLOCK_M: tl.constexpr,
@@ -272,16 +317,25 @@ if HAS_TRITON:
             q_s = phi_q * tl.sin(pos_angles)[:, None]
 
             num = tl.dot(q_c.to(tl.float32), S_cos) + tl.dot(q_s.to(tl.float32), S_sin)
-            denom = tl.sum(q_c * Z_cos[None, :], axis=1) + tl.sum(q_s * Z_sin[None, :], axis=1) + EPS
+            denom = (
+                tl.sum(q_c * Z_cos[None, :], axis=1)
+                + tl.sum(q_s * Z_sin[None, :], axis=1)
+                + EPS
+            )
 
             out_tile = num / denom[:, None]
-            out_ptrs = out_base + (cur_m[:, None] * stride_on + offs_d[None, :] * stride_od)
-            tl.store(out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_m[:, None])
+            out_ptrs = out_base + (
+                cur_m[:, None] * stride_on + offs_d[None, :] * stride_od
+            )
+            tl.store(
+                out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_m[:, None]
+            )
 
 
 # ============================================================================
 # AUTOGRAD FUNCTION WRAPPER (Training & Inference Differentiability)
 # ============================================================================
+
 
 class _TritonCosformerAutogradFunction(torch.autograd.Function):
     r"""
@@ -301,11 +355,7 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
     ) -> torch.Tensor:
         B, H, N, D = q.shape
 
-        use_triton = (
-            HAS_TRITON
-            and q.is_cuda
-            and D in (32, 64, 128)
-        )
+        use_triton = HAS_TRITON and q.is_cuda and D in (32, 64, 128)
 
         if use_triton:
             out = torch.empty_like(v)
@@ -313,23 +363,64 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
 
             if is_decoder:
                 _triton_chunked_cosformer_fwd_kernel[grid](
-                    q, k, v, out,
-                    q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-                    k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-                    v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-                    out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-                    N=N, D=D, BLOCK_CHUNK=32, EPS=eps, MAX_LENGTH=max_length,
-                    num_stages=2, num_warps=4,
+                    q,
+                    k,
+                    v,
+                    out,
+                    q.stride(0),
+                    q.stride(1),
+                    q.stride(2),
+                    q.stride(3),
+                    k.stride(0),
+                    k.stride(1),
+                    k.stride(2),
+                    k.stride(3),
+                    v.stride(0),
+                    v.stride(1),
+                    v.stride(2),
+                    v.stride(3),
+                    out.stride(0),
+                    out.stride(1),
+                    out.stride(2),
+                    out.stride(3),
+                    N=N,
+                    D=D,
+                    BLOCK_CHUNK=32,
+                    EPS=eps,
+                    MAX_LENGTH=max_length,
+                    num_stages=2,
+                    num_warps=4,
                 )
             else:
                 _triton_bidirectional_cosformer_fwd_kernel[grid](
-                    q, k, v, out,
-                    q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-                    k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-                    v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-                    out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-                    N=N, D=D, BLOCK_M=32, BLOCK_N=32, EPS=eps, MAX_LENGTH=max_length,
-                    num_stages=2, num_warps=4,
+                    q,
+                    k,
+                    v,
+                    out,
+                    q.stride(0),
+                    q.stride(1),
+                    q.stride(2),
+                    q.stride(3),
+                    k.stride(0),
+                    k.stride(1),
+                    k.stride(2),
+                    k.stride(3),
+                    v.stride(0),
+                    v.stride(1),
+                    v.stride(2),
+                    v.stride(3),
+                    out.stride(0),
+                    out.stride(1),
+                    out.stride(2),
+                    out.stride(3),
+                    N=N,
+                    D=D,
+                    BLOCK_M=32,
+                    BLOCK_N=32,
+                    EPS=eps,
+                    MAX_LENGTH=max_length,
+                    num_stages=2,
+                    num_warps=4,
                 )
         else:
             # Strictly O(N * d^2) PyTorch Fallback for CPU / Mac MPS (Zero N x N memory footprint)
@@ -372,7 +463,9 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
                     score_s = torch.matmul(qs_c, ks_c.transpose(-1, -2))
                     scores = score_c + score_s
 
-                    causal_mask = torch.tril(torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool))
+                    causal_mask = torch.tril(
+                        torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool)
+                    )
                     scores = scores.masked_fill(~causal_mask, 0.0)
 
                     intra_num = torch.matmul(scores, v_c)
@@ -400,7 +493,11 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
                 Z_sin = ks.sum(dim=-2, keepdim=True)
 
                 num = torch.matmul(qc, S_cos) + torch.matmul(qs, S_sin)
-                denom = torch.matmul(qc, Z_cos.transpose(-1, -2)) + torch.matmul(qs, Z_sin.transpose(-1, -2)) + eps
+                denom = (
+                    torch.matmul(qc, Z_cos.transpose(-1, -2))
+                    + torch.matmul(qs, Z_sin.transpose(-1, -2))
+                    + eps
+                )
                 out = (num / denom).to(q.dtype)
 
         ctx.save_for_backward(q, k, v)
@@ -410,7 +507,9 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx: Any, grad_out: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, None]:
+    def backward(
+        ctx: Any, grad_out: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, None]:
         q, k, v = ctx.saved_tensors
         is_decoder = ctx.is_decoder
         eps = ctx.eps
@@ -459,7 +558,9 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
                     score_s = torch.matmul(qs_c, ks_c.transpose(-1, -2))
                     scores = score_c + score_s
 
-                    causal_mask = torch.tril(torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool))
+                    causal_mask = torch.tril(
+                        torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool)
+                    )
                     scores = scores.masked_fill(~causal_mask, 0.0)
 
                     intra_num = torch.matmul(scores, v_c)
@@ -484,7 +585,11 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
                 Z_sin = ks.sum(dim=-2, keepdim=True)
 
                 num = torch.matmul(qc, S_cos) + torch.matmul(qs, S_sin)
-                denom = torch.matmul(qc, Z_cos.transpose(-1, -2)) + torch.matmul(qs, Z_sin.transpose(-1, -2)) + eps
+                denom = (
+                    torch.matmul(qc, Z_cos.transpose(-1, -2))
+                    + torch.matmul(qs, Z_sin.transpose(-1, -2))
+                    + eps
+                )
                 out = (num / denom).to(q.dtype)
 
             dq, dk, dv = torch.autograd.grad(
@@ -514,12 +619,16 @@ def triton_cosformer_attention(
 # MODULE DEFINITION & INTEGRATION
 # ============================================================================
 
-@ATTENTION_REGISTRY.register("triton_cosformer", supports_causal=True, supports_bidirectional=True)
+
+@ATTENTION_REGISTRY.register(
+    "triton_cosformer", supports_causal=True, supports_bidirectional=True
+)
 class TritonCosformerAttention(BaseAttention):
     r"""
     Triton-Accelerated Cosformer Linear Attention with Full Autograd Differentiability,
     RoPE support, Pretrained Weight Loading, and Masked Attention.
     """
+
     triton_kernel = "linear_attn"
 
     def __init__(
@@ -535,7 +644,11 @@ class TritonCosformerAttention(BaseAttention):
     ):
         super().__init__()
         self.config = config
-        self.is_decoder = bool(is_decoder or getattr(config, "is_decoder", False) or getattr(config, "is_causal", False))
+        self.is_decoder = bool(
+            is_decoder
+            or getattr(config, "is_decoder", False)
+            or getattr(config, "is_causal", False)
+        )
         self.eps = eps
         self.triton_kwargs = {
             "phi": "elu+1",
@@ -544,9 +657,21 @@ class TritonCosformerAttention(BaseAttention):
             "sin_weight": None,
         }
 
-        self.embed_dim = embed_dim or kwargs.get("hidden_size") or getattr(config, "hidden_size", 768)
-        self.num_heads = num_heads or kwargs.get("num_attention_heads") or getattr(config, "num_attention_heads", 12)
-        self.num_kv_heads = num_kv_heads or kwargs.get("num_kv_heads") or getattr(config, "num_key_value_heads", self.num_heads)
+        self.embed_dim = (
+            embed_dim
+            or kwargs.get("hidden_size")
+            or getattr(config, "hidden_size", 768)
+        )
+        self.num_heads = (
+            num_heads
+            or kwargs.get("num_attention_heads")
+            or getattr(config, "num_attention_heads", 12)
+        )
+        self.num_kv_heads = (
+            num_kv_heads
+            or kwargs.get("num_kv_heads")
+            or getattr(config, "num_key_value_heads", self.num_heads)
+        )
         self.head_dim = kwargs.get("head_dim") or (self.embed_dim // self.num_heads)
 
         # BUG 5 FIX: fixed max_length from config
@@ -661,10 +786,17 @@ class TritonCosformerAttention(BaseAttention):
                         base_mod = getattr(src_mod, "base_layer", src_mod)
                         if base_mod is not None and hasattr(base_mod, "weight"):
                             w = base_mod.weight.data
-                            if w.ndim == 2 and w.shape != target_mod.weight.shape and w.t().shape == target_mod.weight.shape:
+                            if (
+                                w.ndim == 2
+                                and w.shape != target_mod.weight.shape
+                                and w.t().shape == target_mod.weight.shape
+                            ):
                                 w = w.t()
                             target_mod.weight.data.copy_(w)
-                            if getattr(base_mod, "bias", None) is not None and target_mod.bias is not None:
+                            if (
+                                getattr(base_mod, "bias", None) is not None
+                                and target_mod.bias is not None
+                            ):
                                 target_mod.bias.data.copy_(base_mod.bias.data)
                             break
 
@@ -688,9 +820,24 @@ class TritonCosformerAttention(BaseAttention):
             position_embeddings = kwargs.get("position_embeddings")
 
         # 1. Project Q, K, V
-        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        q = (
+            self.q_proj(hidden_states)
+            .view(B, N, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        k = (
+            self.k_proj(hidden_states)
+            .view(B, N, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_proj(hidden_states)
+            .view(B, N, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # 2. BUG 4 FIX: Apply Rotary Position Embeddings (RoPE) if provided
         if position_embeddings is not None:
@@ -713,7 +860,11 @@ class TritonCosformerAttention(BaseAttention):
                 v = v * mask
             elif attention_mask.dim() == 4:
                 if attention_mask.shape[-2] == 1:
-                    mask = attention_mask.squeeze(1).squeeze(1)[:, None, :, None].to(q.dtype)
+                    mask = (
+                        attention_mask.squeeze(1)
+                        .squeeze(1)[:, None, :, None]
+                        .to(q.dtype)
+                    )
                 else:
                     mask = attention_mask[:, 0, -1, :][:, None, :, None].to(q.dtype)
                 if (mask < 0).any():
@@ -740,6 +891,7 @@ class TritonCosformerAttention(BaseAttention):
 # FACTORY INJECTION FUNCTION (For eval_all_models_datasets & run_gpt2_sweep)
 # ============================================================================
 
+
 @ATTENTION_REGISTRY.register("inject_triton_cosformer")
 @ATTENTION_REGISTRY.register("triton_cosformer_inject")
 def inject_triton_cosformer(
@@ -750,4 +902,7 @@ def inject_triton_cosformer(
 ) -> nn.Module | None:
     """Safe factory function to inject TritonCosformerAttention into a model."""
     from framework.core.attention_utils import inject_attention
-    return inject_attention(model, "triton_cosformer", rank=rank, copy_weights=copy_weights, **kwargs)
+
+    return inject_attention(
+        model, "triton_cosformer", rank=rank, copy_weights=copy_weights, **kwargs
+    )

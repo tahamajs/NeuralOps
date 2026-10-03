@@ -27,15 +27,15 @@ from .metrics import (
     compute_pearson_spearman,
     get_task_metrics,
 )
-from .registry import TrainerRegistry
-from .results_manager import ResultsManager
-from .trainer_factory import TRAINER_FACTORY_REGISTRY, get_trainer
 from .optimizers import (
     OPTIMIZER_REGISTRY,
     RiemannianStiefelOptimizer,
     project_stiefel_gradient,
     stiefel_qr_retraction,
 )
+from .registry import TrainerRegistry
+from .results_manager import ResultsManager
+from .trainer_factory import TRAINER_FACTORY_REGISTRY, get_trainer
 from .utils import (
     benchmark_model,
     compute_metrics,
@@ -80,4 +80,3 @@ __all__ = [
     "project_stiefel_gradient",
     "stiefel_qr_retraction",
 ]
-

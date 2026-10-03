@@ -1,7 +1,8 @@
+import framework.attentions.lsh_attention
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.lsh_attention
+
 
 def test_lsh_attention_module_present():
     assert hasattr(framework.attentions, 'lsh_attention')

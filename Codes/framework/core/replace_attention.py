@@ -26,9 +26,9 @@ Bug-fix map (2026 revision):
   RE-22   copy_weights supports GQA when hidden_size != all_head_size.
 """
 
+import inspect
 import logging
 import math
-import inspect
 from argparse import Namespace
 from types import SimpleNamespace
 from typing import Any
@@ -36,7 +36,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.adapters import UniversalAdapter
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
@@ -47,6 +46,7 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # RE-18: config accessor (fixes Pylance "not defined")
 # ===========================================================================
+
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     """Safely retrieve attribute from dict, object, namespace, or None."""
@@ -61,6 +61,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 # RE-04 / RE-05 / RE-17: robust builder
 # ===========================================================================
 
+
 def _build_attention_from_registry(
     attention_name: str,
     hidden_size: int,
@@ -70,7 +71,9 @@ def _build_attention_from_registry(
     """Instantiate an attention module from the registry with signature introspection."""
     attn_cls = ATTENTION_REGISTRY.get(attention_name)
     if attn_cls is None:
-        raise ValueError(f"Attention '{attention_name}' not registered in ATTENTION_REGISTRY.")
+        raise ValueError(
+            f"Attention '{attention_name}' not registered in ATTENTION_REGISTRY."
+        )
     if not callable(attn_cls):
         raise ValueError(f"Attention '{attention_name}' is not callable.")
 
@@ -101,18 +104,22 @@ def _build_attention_from_registry(
         attempts.append(lambda: attn_cls(config=ns, **kwargs_clean))
 
     if "num_attention_heads" in params:
-        attempts.append(lambda: attn_cls(
-            hidden_size=hidden_size,
-            num_attention_heads=num_heads,
-            **kwargs_clean,
-        ))
+        attempts.append(
+            lambda: attn_cls(
+                hidden_size=hidden_size,
+                num_attention_heads=num_heads,
+                **kwargs_clean,
+            )
+        )
 
     if "num_heads" in params:
-        attempts.append(lambda: attn_cls(
-            hidden_size=hidden_size,
-            num_heads=num_heads,
-            **kwargs_clean,
-        ))
+        attempts.append(
+            lambda: attn_cls(
+                hidden_size=hidden_size,
+                num_heads=num_heads,
+                **kwargs_clean,
+            )
+        )
 
     attempts.append(lambda: attn_cls(hidden_size, num_heads, **kwargs_clean))
     attempts.append(lambda: attn_cls(**kwargs_clean))
@@ -131,15 +138,19 @@ def _build_attention_from_registry(
     )
 
 
-def build_attention(attention_name: str, hidden_size: int, num_heads: int,
-                    **kwargs: Any) -> nn.Module:
+def build_attention(
+    attention_name: str, hidden_size: int, num_heads: int, **kwargs: Any
+) -> nn.Module:
     """Public alias."""
-    return _build_attention_from_registry(attention_name, hidden_size, num_heads, **kwargs)
+    return _build_attention_from_registry(
+        attention_name, hidden_size, num_heads, **kwargs
+    )
 
 
 # ===========================================================================
 # RE-16 / RE-20: shared layer replacement
 # ===========================================================================
+
 
 def _replace_layers(
     layers: list[nn.Module],
@@ -165,9 +176,18 @@ def _replace_layers(
     comp_config_obj = SimpleNamespace(**attention_params) if attention_params else None
 
     # RE-20: keep only keys accepted by ReplaceAttention.
-    SAFE_ATTN_KEYS = {"rank", "dropout", "num_heads", "num_attention_heads",
-                      "hidden_size", "num_key_value_heads", "is_decoder"}
-    safe_params = {k: v for k, v in (attention_params or {}).items() if k in SAFE_ATTN_KEYS}
+    SAFE_ATTN_KEYS = {
+        "rank",
+        "dropout",
+        "num_heads",
+        "num_attention_heads",
+        "hidden_size",
+        "num_key_value_heads",
+        "is_decoder",
+    }
+    safe_params = {
+        k: v for k, v in (attention_params or {}).items() if k in SAFE_ATTN_KEYS
+    }
 
     for idx, layer in enumerate(layers):
         old_attn = _get_attn_submodule(layer, attn_attr, model_type)
@@ -188,7 +208,9 @@ def _replace_layers(
             except Exception as e:
                 logger.warning(
                     "Injector '%s' failed for layer %d: %s. Falling back to builder.",
-                    getattr(inject_fn, "__name__", "?"), idx, e,
+                    getattr(inject_fn, "__name__", "?"),
+                    idx,
+                    e,
                 )
 
         if old_attn is None:
@@ -221,7 +243,9 @@ def _replace_layers(
             continue
 
 
-def _get_attn_submodule(layer: nn.Module, attn_attr: str, model_type: str) -> nn.Module | None:
+def _get_attn_submodule(
+    layer: nn.Module, attn_attr: str, model_type: str
+) -> nn.Module | None:
     """Get the innermost attention submodule (unwrap nested BERT/RoBERTa)."""
     container = getattr(layer, attn_attr, None)
     if container is None:
@@ -237,13 +261,15 @@ def _get_attn_submodule(layer: nn.Module, attn_attr: str, model_type: str) -> nn
     return container
 
 
-def _attach_new_attention(layer: nn.Module, attn_attr: str, new_attn: nn.Module | None,
-                          model_type: str) -> None:
+def _attach_new_attention(
+    layer: nn.Module, attn_attr: str, new_attn: nn.Module | None, model_type: str
+) -> None:
     """RE-06: attach with proper guard for nested encoders."""
     if new_attn is None:
         logger.error(
             "Cannot attach None attention to layer %s (attr=%s)",
-            type(layer).__name__, attn_attr
+            type(layer).__name__,
+            attn_attr,
         )
         return
     container = getattr(layer, attn_attr, None)
@@ -290,10 +316,10 @@ def _resolve_class_name(inject_fn: Any, model_type: str) -> str:
         return INJECT_TO_CLASS_MAP[name]
     # Fallback: strip 'inject_' and append '_class'
     if name.startswith("inject_"):
-        candidate = name[len("inject_"):] + "_class"
+        candidate = name[len("inject_") :] + "_class"
         if ATTENTION_REGISTRY.get(candidate) is not None:
             return candidate
-        candidate2 = name[len("inject_"):]
+        candidate2 = name[len("inject_") :]
         if ATTENTION_REGISTRY.get(candidate2) is not None:
             return candidate2
     return "replace_class"
@@ -339,14 +365,13 @@ def _infer_num_heads(old_attn: nn.Module, attn_attr: str, model_type: str) -> in
         q_proj = old_attn.q_proj
         if hasattr(q_proj, "out_features") and old_attn.head_dim > 0:
             return int(q_proj.out_features // old_attn.head_dim)
-    raise ValueError(
-        f"Cannot infer num_heads from {type(old_attn).__name__}"
-    )
+    raise ValueError(f"Cannot infer num_heads from {type(old_attn).__name__}")
 
 
 # ===========================================================================
 # Top-level entry
 # ===========================================================================
+
 
 def replace_attention_in_model(
     model: nn.Module,
@@ -369,33 +394,54 @@ def replace_attention_in_model(
 
     inject_fn = ATTENTION_REGISTRY.get(attention_name)
     if inject_fn is None:
-        raise ValueError(f"Attention '{attention_name}' not registered in ATTENTION_REGISTRY.")
+        raise ValueError(
+            f"Attention '{attention_name}' not registered in ATTENTION_REGISTRY."
+        )
     if not callable(inject_fn):
         raise ValueError(f"Attention '{attention_name}' is not callable.")
 
     cfg = getattr(model, "config", None)
 
     if model_type in ("bert", "roberta", "xlm-roberta", "electra", "deberta"):
-        encoder = getattr(getattr(model, model_type.replace("-", "_"), model), "encoder", None) \
-                  or getattr(getattr(model, "bert", None), "encoder", None)
+        encoder = getattr(
+            getattr(model, model_type.replace("-", "_"), model), "encoder", None
+        ) or getattr(getattr(model, "bert", None), "encoder", None)
         if encoder is None:
             raise AttributeError("Could not locate encoder in model architecture.")
-        _replace_layers(encoder.layer, "attention", inject_fn, cfg, attention_params, model_type)
+        _replace_layers(
+            encoder.layer, "attention", inject_fn, cfg, attention_params, model_type
+        )
 
     elif model_type == "distilbert":
         distilbert = getattr(model, "distilbert", model)
         layers = distilbert.transformer.layer
-        _replace_layers(layers, "attention", inject_fn, cfg, attention_params, model_type)
+        _replace_layers(
+            layers, "attention", inject_fn, cfg, attention_params, model_type
+        )
 
     elif model_type == "gpt2":
         transformer = getattr(model, "transformer", None)
         if transformer is None:
             raise AttributeError("Could not locate transformer in GPT-2 model.")
-        _replace_layers(transformer.h, "attn", inject_fn, cfg, attention_params, model_type)
+        _replace_layers(
+            transformer.h, "attn", inject_fn, cfg, attention_params, model_type
+        )
 
-    elif model_type in ("qwen2", "qwen3", "qwen2_5", "llama", "mistral",
-                        "gemma", "phi", "opt", "bloom", "falcon",
-                        "olmo", "mpt", "stablelm"):
+    elif model_type in (
+        "qwen2",
+        "qwen3",
+        "qwen2_5",
+        "llama",
+        "mistral",
+        "gemma",
+        "phi",
+        "opt",
+        "bloom",
+        "falcon",
+        "olmo",
+        "mpt",
+        "stablelm",
+    ):
         layers = None
         for path in ("model.layers", "transformer.h", "layers", "decoder.layers"):
             obj = model
@@ -409,8 +455,12 @@ def replace_attention_in_model(
                 layers = obj
                 break
         if layers is None:
-            raise AttributeError(f"Could not locate decoder layers for model_type={model_type}.")
-        _replace_layers(layers, "self_attn", inject_fn, cfg, attention_params, model_type)
+            raise AttributeError(
+                f"Could not locate decoder layers for model_type={model_type}."
+            )
+        _replace_layers(
+            layers, "self_attn", inject_fn, cfg, attention_params, model_type
+        )
 
     else:
         raise ValueError(f"Unsupported model type: {model_type}")
@@ -421,6 +471,7 @@ def replace_attention_in_model(
 # ===========================================================================
 # RE-09: robust valid mask helper
 # ===========================================================================
+
 
 def _get_valid_mask(
     attention_mask: torch.Tensor | None,
@@ -440,15 +491,26 @@ def _get_valid_mask(
         return attention_mask > 0
 
     if attention_mask.dim() == 3:
-        v = attention_mask if attention_mask.dtype == torch.bool else (
-            attention_mask > -1e4 if attention_mask.dtype.is_floating_point else attention_mask > 0
+        v = (
+            attention_mask
+            if attention_mask.dtype == torch.bool
+            else (
+                attention_mask > -1e4
+                if attention_mask.dtype.is_floating_point
+                else attention_mask > 0
+            )
         )
         return v.any(dim=1)
 
     if attention_mask.dim() == 4:
-        v = attention_mask if attention_mask.dtype == torch.bool else (
-            attention_mask > -1e4 if attention_mask.dtype.is_floating_point
-            else attention_mask > 0
+        v = (
+            attention_mask
+            if attention_mask.dtype == torch.bool
+            else (
+                attention_mask > -1e4
+                if attention_mask.dtype.is_floating_point
+                else attention_mask > 0
+            )
         )
         v = v.any(dim=-2)  # (B, H, N)
         if v.size(1) == 1:
@@ -483,11 +545,13 @@ def _randomized_svd(W: torch.Tensor, rank: int):
 # RE-07 / RE-19: factorized linear with bias property
 # ===========================================================================
 
+
 class _FactorizedLinear(nn.Module):
     """Optional SVD-factorized linear used when rank > 0."""
 
-    def __init__(self, in_features: int, out_features: int, rank: int,
-                 bias: bool = True) -> None:
+    def __init__(
+        self, in_features: int, out_features: int, rank: int, bias: bool = True
+    ) -> None:
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -500,7 +564,7 @@ class _FactorizedLinear(nn.Module):
         return self.up.weight @ self.down.weight
 
     @property
-    def bias(self):   # RE-19
+    def bias(self):  # RE-19
         return self.up.bias
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -510,6 +574,7 @@ class _FactorizedLinear(nn.Module):
 # ===========================================================================
 # RE-01: ReplaceAttention class (registry under *_class)
 # ===========================================================================
+
 
 @ATTENTION_REGISTRY.register("replace_class")
 @ATTENTION_REGISTRY.register("replace_attention_class")
@@ -521,6 +586,7 @@ class ReplaceAttention(BaseAttention):
     If `rank > 0`, projections are SVD-factorized for parameter reduction.
     If `rank == 0` or None, uses full nn.Linear (identity-baseline behavior).
     """
+
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -550,8 +616,9 @@ class ReplaceAttention(BaseAttention):
         n_heads_candidate = (
             num_heads
             or num_attention_heads
-            or _cfg_get(config, "num_attention_heads",
-                        _cfg_get(config, "num_heads", 12))
+            or _cfg_get(
+                config, "num_attention_heads", _cfg_get(config, "num_heads", 12)
+            )
         )
         self.num_heads = int(n_heads_candidate) if n_heads_candidate else 12
         if self.num_heads <= 0:
@@ -561,8 +628,11 @@ class ReplaceAttention(BaseAttention):
 
         # GQA support (Fix 1)
         self.num_kv_heads = int(
-            _cfg_get(config, "num_key_value_heads",
-                     _cfg_get(config, "num_kv_heads", self.num_heads))
+            _cfg_get(
+                config,
+                "num_key_value_heads",
+                _cfg_get(config, "num_kv_heads", self.num_heads),
+            )
         )
         if self.num_kv_heads <= 0 or self.num_kv_heads > self.num_heads:
             self.num_kv_heads = self.num_heads
@@ -578,10 +648,24 @@ class ReplaceAttention(BaseAttention):
         self.rank = int(rank) if rank and rank > 0 else 0
 
         if self.rank > 0:
-            self.q_proj = _FactorizedLinear(self.hidden_size, self.num_heads * self.head_dim, self.rank, bias=True)
-            self.k_proj = _FactorizedLinear(self.hidden_size, self.num_kv_heads * self.head_dim, self.rank, bias=True)
-            self.v_proj = _FactorizedLinear(self.hidden_size, self.num_kv_heads * self.head_dim, self.rank, bias=True)
-            self.out_proj = _FactorizedLinear(self.all_head_size, self.hidden_size, self.rank, bias=True)
+            self.q_proj = _FactorizedLinear(
+                self.hidden_size, self.num_heads * self.head_dim, self.rank, bias=True
+            )
+            self.k_proj = _FactorizedLinear(
+                self.hidden_size,
+                self.num_kv_heads * self.head_dim,
+                self.rank,
+                bias=True,
+            )
+            self.v_proj = _FactorizedLinear(
+                self.hidden_size,
+                self.num_kv_heads * self.head_dim,
+                self.rank,
+                bias=True,
+            )
+            self.out_proj = _FactorizedLinear(
+                self.all_head_size, self.hidden_size, self.rank, bias=True
+            )
         else:
             self.q_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim)
             self.k_proj = nn.Linear(self.hidden_size, self.num_kv_heads * self.head_dim)
@@ -595,31 +679,56 @@ class ReplaceAttention(BaseAttention):
 
     # Aliases (RE-12)
     @property
-    def query(self): return self.q_proj
+    def query(self):
+        return self.q_proj
+
     @property
-    def key(self): return self.k_proj
+    def key(self):
+        return self.k_proj
+
     @property
-    def value(self): return self.v_proj
+    def value(self):
+        return self.v_proj
+
     @property
-    def q_lin(self): return self.q_proj
+    def q_lin(self):
+        return self.q_proj
+
     @property
-    def k_lin(self): return self.k_proj
+    def k_lin(self):
+        return self.k_proj
+
     @property
-    def v_lin(self): return self.v_proj
+    def v_lin(self):
+        return self.v_proj
+
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
+
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
+
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
+
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
 
     # ------------------------------------------------------------------
     # RE-14 / RE-22: shape-checked weight copy
     # ------------------------------------------------------------------
-    def _copy_into(self, target_proj: nn.Module, w: torch.Tensor | None,
-                   b: torch.Tensor | None, target_out: int, target_in: int) -> None:
+    def _copy_into(
+        self,
+        target_proj: nn.Module,
+        w: torch.Tensor | None,
+        b: torch.Tensor | None,
+        target_out: int,
+        target_in: int,
+    ) -> None:
         if w is None:
             return
         with torch.no_grad():
@@ -631,7 +740,9 @@ class ReplaceAttention(BaseAttention):
                         logger.warning(
                             "Shape mismatch in copy_into: source %s, target (%d, %d). "
                             "Using SVD rank-reduction.",
-                            tuple(W.shape), target_out, target_in
+                            tuple(W.shape),
+                            target_out,
+                            target_in,
                         )
                     if W.shape[0] > 512 and W.shape[1] > 512:
                         U, S, Vh = _randomized_svd(W, target_proj.rank)
@@ -649,7 +760,9 @@ class ReplaceAttention(BaseAttention):
                     )
                     if b is not None and target_proj.up.bias is not None:
                         n = min(b.numel(), target_proj.up.bias.numel())
-                        target_proj.up.bias.data[:n].copy_(b[:n].to(target_proj.up.bias.dtype))
+                        target_proj.up.bias.data[:n].copy_(
+                            b[:n].to(target_proj.up.bias.dtype)
+                        )
                 except Exception as e:
                     logger.error("SVD init failed: %s", e)
             else:
@@ -685,19 +798,24 @@ class ReplaceAttention(BaseAttention):
             b_all = c_attn.bias.data if c_attn.bias is not None else None
 
             # RE-22: handle GQA-aware chunking.
-            hidden = w_all.shape[0] if w_all.shape[0] < w_all.shape[1] else w_all.shape[1]
+            hidden = (
+                w_all.shape[0] if w_all.shape[0] < w_all.shape[1] else w_all.shape[1]
+            )
             if w_all.shape[0] == 3 * hidden or w_all.shape[1] == 3 * hidden:
-                if w_all.shape[1] == 3 * hidden:   # Conv1D (in, 3*out)
+                if w_all.shape[1] == 3 * hidden:  # Conv1D (in, 3*out)
                     chunks = w_all.chunk(3, dim=1)
                     w_q, w_k, w_v = [c.t().contiguous() for c in chunks]
-                else:                               # Linear (3*out, in)
+                else:  # Linear (3*out, in)
                     chunks = w_all.chunk(3, dim=0)
                     w_q, w_k, w_v = chunks[0], chunks[1], chunks[2]
                 if b_all is not None:
                     b_q, b_k, b_v = b_all.chunk(3, dim=0)
 
             w_proj = c_proj.weight.data
-            if w_proj.shape[0] != self.hidden_size and w_proj.shape[1] == self.hidden_size:
+            if (
+                w_proj.shape[0] != self.hidden_size
+                and w_proj.shape[1] == self.hidden_size
+            ):
                 w_o = w_proj.t().contiguous()
             else:
                 w_o = w_proj
@@ -714,7 +832,11 @@ class ReplaceAttention(BaseAttention):
             b_v = s.value.bias.data if s.value.bias is not None else None
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 w_o = src.output.dense.weight.data
-                b_o = src.output.dense.bias.data if src.output.dense.bias is not None else None
+                b_o = (
+                    src.output.dense.bias.data
+                    if src.output.dense.bias is not None
+                    else None
+                )
             self.is_nested_encoder = True
 
         # Pattern 3: Flat query/key/value
@@ -730,7 +852,11 @@ class ReplaceAttention(BaseAttention):
                     proj = getattr(src, attr)
                     if hasattr(proj, "weight"):
                         w_o = proj.weight.data
-                        b_o = proj.bias.data if getattr(proj, "bias", None) is not None else None
+                        b_o = (
+                            proj.bias.data
+                            if getattr(proj, "bias", None) is not None
+                            else None
+                        )
                     break
 
         # Pattern 4: DistilBERT
@@ -746,16 +872,34 @@ class ReplaceAttention(BaseAttention):
                 b_o = src.out_lin.bias.data if src.out_lin.bias is not None else None
 
         # Pattern 5: Qwen / LLaMA
-        elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
+        elif (
+            hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj")
+        ):
             w_q = src.q_proj.weight.data
-            b_q = src.q_proj.bias.data if getattr(src.q_proj, "bias", None) is not None else None
+            b_q = (
+                src.q_proj.bias.data
+                if getattr(src.q_proj, "bias", None) is not None
+                else None
+            )
             w_k = src.k_proj.weight.data
-            b_k = src.k_proj.bias.data if getattr(src.k_proj, "bias", None) is not None else None
+            b_k = (
+                src.k_proj.bias.data
+                if getattr(src.k_proj, "bias", None) is not None
+                else None
+            )
             w_v = src.v_proj.weight.data
-            b_v = src.v_proj.bias.data if getattr(src.v_proj, "bias", None) is not None else None
+            b_v = (
+                src.v_proj.bias.data
+                if getattr(src.v_proj, "bias", None) is not None
+                else None
+            )
             if hasattr(src, "o_proj"):
                 w_o = src.o_proj.weight.data
-                b_o = src.o_proj.bias.data if getattr(src.o_proj, "bias", None) is not None else None
+                b_o = (
+                    src.o_proj.bias.data
+                    if getattr(src.o_proj, "bias", None) is not None
+                    else None
+                )
 
         # Fallback: UniversalAdapter
         if w_q is None or w_k is None or w_v is None:
@@ -772,24 +916,40 @@ class ReplaceAttention(BaseAttention):
             except Exception as e:
                 logger.warning("UniversalAdapter fallback failed: %s", e)
 
-        if getattr(self, '_first_copy_done', False) is False:
+        if getattr(self, "_first_copy_done", False) is False:
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v), ("w_o", w_o)]:
                 if w is not None:
                     norm = float(torch.linalg.norm(w.float()).item())
                     if norm < 1e-4:
-                        logger.warning("Copied weight %s has near-zero Frobenius norm (%.2e)", name, norm)
+                        logger.warning(
+                            "Copied weight %s has near-zero Frobenius norm (%.2e)",
+                            name,
+                            norm,
+                        )
             self._first_copy_done = True
 
-        if w_q is not None and hasattr(self, "q_proj") and hasattr(self.q_proj, "weight"):
+        if (
+            w_q is not None
+            and hasattr(self, "q_proj")
+            and hasattr(self.q_proj, "weight")
+        ):
             if w_q.dtype != self.q_proj.weight.dtype:
                 self.to(w_q.dtype)
 
-        self._copy_into(self.q_proj, w_q, b_q, self.num_heads * self.head_dim, self.hidden_size)
-        self._copy_into(self.k_proj, w_k, b_k, self.num_kv_heads * self.head_dim, self.hidden_size)
-        self._copy_into(self.v_proj, w_v, b_v, self.num_kv_heads * self.head_dim, self.hidden_size)
+        self._copy_into(
+            self.q_proj, w_q, b_q, self.num_heads * self.head_dim, self.hidden_size
+        )
+        self._copy_into(
+            self.k_proj, w_k, b_k, self.num_kv_heads * self.head_dim, self.hidden_size
+        )
+        self._copy_into(
+            self.v_proj, w_v, b_v, self.num_kv_heads * self.head_dim, self.hidden_size
+        )
 
         if not self.is_nested_encoder:
-            self._copy_into(self.out_proj, w_o, b_o, self.hidden_size, self.all_head_size)
+            self._copy_into(
+                self.out_proj, w_o, b_o, self.hidden_size, self.all_head_size
+            )
 
     # ------------------------------------------------------------------
     # Forward
@@ -814,9 +974,24 @@ class ReplaceAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        Q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        K = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        V = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        Q = (
+            self.q_proj(hidden_states)
+            .view(B, N, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        K = (
+            self.k_proj(hidden_states)
+            .view(B, N, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        V = (
+            self.v_proj(hidden_states)
+            .view(B, N, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # Add repeat_kv for GQA:
         if self.num_kv_heads < self.num_heads:
@@ -843,12 +1018,19 @@ class ReplaceAttention(BaseAttention):
                 v_sdpa = V.half() if V.dtype == torch.float32 else V
 
                 out_sdpa = F.scaled_dot_product_attention(
-                    q_sdpa, k_sdpa, v_sdpa,
+                    q_sdpa,
+                    k_sdpa,
+                    v_sdpa,
                     attn_mask=attn_mask_sdpa,
                     is_causal=is_causal and attn_mask_sdpa is None,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
-                out = out_sdpa.to(dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+                out = (
+                    out_sdpa.to(dtype)
+                    .transpose(1, 2)
+                    .contiguous()
+                    .view(B, N, self.all_head_size)
+                )
                 out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
                 if self.is_nested_encoder:
@@ -857,21 +1039,34 @@ class ReplaceAttention(BaseAttention):
                 result = torch.nan_to_num(result, nan=0.0, posinf=1e4, neginf=-1e4)
                 return result, None
             except Exception as e:
-                logger.debug("SDPA path failed (%s); falling back to explicit attention.", e)
+                logger.debug(
+                    "SDPA path failed (%s); falling back to explicit attention.", e
+                )
 
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+        scores = (
+            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+        )
 
         if is_causal:
-            causal = torch.triu(
-                torch.full((N, N), float("-inf"), device=device, dtype=torch.float32),
-                diagonal=1,
-            ).unsqueeze(0).unsqueeze(0)
+            causal = (
+                torch.triu(
+                    torch.full(
+                        (N, N), float("-inf"), device=device, dtype=torch.float32
+                    ),
+                    diagonal=1,
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
             scores = scores + causal
 
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                scores = scores + (attention_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+                scores = (
+                    scores
+                    + (attention_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+                )
             elif attention_mask.dim() == 3:
                 scores = scores + attention_mask.unsqueeze(1).float()
             elif attention_mask.dim() == 4:
@@ -913,6 +1108,7 @@ Replace = ReplaceAttention
 # ===========================================================================
 # RE-01 / RE-08: injector
 # ===========================================================================
+
 
 @ATTENTION_REGISTRY.register("replace_inject")
 @ATTENTION_REGISTRY.register("replace_attention_inject")
@@ -958,7 +1154,11 @@ def inject_replace(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -968,9 +1168,13 @@ def inject_replace(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_replace(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot,
-                _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 num_injected += 1
@@ -989,7 +1193,10 @@ def inject_replace(
         if src is None:
             src = target
 
-        if isinstance(src, ReplaceAttention) or "ReplaceAttention" in src.__class__.__name__:
+        if (
+            isinstance(src, ReplaceAttention)
+            or "ReplaceAttention" in src.__class__.__name__
+        ):
             return None
 
         attn_params = {}

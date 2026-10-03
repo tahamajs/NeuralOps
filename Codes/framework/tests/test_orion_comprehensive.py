@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.orion import ORIONAttention, ORIONConfig, inject_orion_attention
+from framework.attentions.orion import (ORIONAttention, ORIONConfig,
+                                        inject_orion_attention)
 
 
 class MockConfig:

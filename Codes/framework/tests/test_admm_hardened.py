@@ -25,7 +25,8 @@ CODES_DIR = HERE.parent.parent
 if str(CODES_DIR) not in sys.path:
     sys.path.insert(0, str(CODES_DIR))
 
-from framework.compression_engine.admm_compressor import ADMMCompressor, admm_factory
+from framework.compression_engine.admm_compressor import (ADMMCompressor,
+                                                          admm_factory)
 from framework.utils.compat import get_recovery_params
 
 

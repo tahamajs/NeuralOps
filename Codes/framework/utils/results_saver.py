@@ -8,8 +8,8 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from framework.results_saver.saver import ResultsSaver as PrimaryResultsSaver
 from framework.results_saver.backends import huggingface as hf_backend
+from framework.results_saver.saver import ResultsSaver as PrimaryResultsSaver
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,8 @@ class ResultsSaver(PrimaryResultsSaver):
             "run_id": self.run_id,
             "status": "COMPLETED",
             "metrics": metrics,
-            "config": self.config or (self.cfg.to_dict() if hasattr(self.cfg, "to_dict") else str(self.cfg)),
+            "config": self.config
+            or (self.cfg.to_dict() if hasattr(self.cfg, "to_dict") else str(self.cfg)),
         }
         self._write_json("artifacts/run_report.json", report)
         self._save_model_card(self.config or {}, metrics)

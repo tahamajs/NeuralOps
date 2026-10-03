@@ -20,7 +20,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 
@@ -33,6 +32,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SharedSubspace:
     """Shared low-rank subspace for a group of consecutive transformer layers."""
+
     V_k: torch.Tensor
     V_v: torch.Tensor
     mean_k: torch.Tensor
@@ -115,7 +115,7 @@ def reverse_waterfilling(
             break
         benefit = torch.where(
             below_max,
-            weights * (2.0 ** (-2.0 * int_alloc.float())) * (1.0 - 2.0 ** -2.0),
+            weights * (2.0 ** (-2.0 * int_alloc.float())) * (1.0 - 2.0**-2.0),
             torch.tensor(0.0, device=device),
         )
         idx = torch.argmax(benefit)
@@ -153,7 +153,9 @@ def quantize_coefficients(
     q_float = flat / scales.unsqueeze(0)
     q_min = torch.where(bits > 0, -(2.0 ** (bits - 1.0)), torch.zeros_like(bits))
     q_max_signed = torch.where(bits > 0, q_max, torch.zeros_like(bits))
-    q_float = torch.clamp(q_float, min=q_min.unsqueeze(0), max=q_max_signed.unsqueeze(0))
+    q_float = torch.clamp(
+        q_float, min=q_min.unsqueeze(0), max=q_max_signed.unsqueeze(0)
+    )
     q = torch.round(q_float).to(torch.int8)
 
     active_mask = (bits > 0).to(torch.int8).unsqueeze(0)
@@ -177,6 +179,7 @@ def dequantize_coefficients(
 # =========================================================================
 try:
     from transformers.cache_utils import DynamicCache as _HFDynamicCache
+
     _HAS_HF_CACHE = True
 except ImportError:
     _HFDynamicCache = object
@@ -344,7 +347,7 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
 
         # AXKV-FIX-12: sinks are prepended only once — the first time we
         # ever see this layer's cache.
-        is_first_chunk = (len(self._compressed.get(layer_idx, [])) == 0)
+        is_first_chunk = len(self._compressed.get(layer_idx, [])) == 0
         sink_prefix = min(self.sink_tokens, T_new) if is_first_chunk else 0
 
         if sink_prefix > 0:
@@ -361,11 +364,7 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
         # AXKV-FIX-02: preserve_last_token only during prefill (T_new > 1).
         last_k = None
         last_v = None
-        if (
-            self.preserve_last_token
-            and T_new > 1
-            and rest_k.size(2) > 0
-        ):
+        if self.preserve_last_token and T_new > 1 and rest_k.size(2) > 0:
             last_k = rest_k[:, :, -1:, :].to(torch.float32).contiguous()
             last_v = rest_v[:, :, -1:, :].to(torch.float32).contiguous()
             rest_k = rest_k[:, :, :-1, :]
@@ -392,10 +391,14 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
             q_v, s_v = quantize_coefficients(U_v, sub.bit_alloc_v)
 
         entry = {
-            "q_k": q_k, "s_k": s_k,
-            "q_v": q_v, "s_v": s_v,
-            "sink_k": sink_k, "sink_v": sink_v,
-            "last_k": last_k, "last_v": last_v,
+            "q_k": q_k,
+            "s_k": s_k,
+            "q_v": q_v,
+            "s_v": s_v,
+            "sink_k": sink_k,
+            "sink_v": sink_v,
+            "last_k": last_k,
+            "last_v": last_v,
         }
 
         # AXKV-FIX-09: byte accounting
@@ -441,8 +444,12 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
             U_k = dequantize_coefficients(e["q_k"], e["s_k"])
             U_v = dequantize_coefficients(e["q_v"], e["s_v"])
             device = U_k.device
-            rec_k = torch.matmul(U_k, V_k.to(device)) + mean_k.to(device).view(1, 1, 1, -1)
-            rec_v = torch.matmul(U_v, V_v.to(device)) + mean_v.to(device).view(1, 1, 1, -1)
+            rec_k = torch.matmul(U_k, V_k.to(device)) + mean_k.to(device).view(
+                1, 1, 1, -1
+            )
+            rec_v = torch.matmul(U_v, V_v.to(device)) + mean_v.to(device).view(
+                1, 1, 1, -1
+            )
             parts_k.append(rec_k.to(out_dtype))
             parts_v.append(rec_v.to(out_dtype))
 
@@ -519,8 +526,10 @@ def _forward_loss(model: nn.Module, batch: Any, device: torch.device) -> torch.T
       4. Otherwise, use entropy of the logits.
     """
     if isinstance(batch, dict):
-        batch = {k: (v.to(device) if isinstance(v, torch.Tensor) else v)
-                 for k, v in batch.items()}
+        batch = {
+            k: (v.to(device) if isinstance(v, torch.Tensor) else v)
+            for k, v in batch.items()
+        }
         input_ids = batch.get("input_ids")
         outputs = model(**batch)
     else:
@@ -593,17 +602,24 @@ def _collect_calibration_data(
             if t.requires_grad:
                 t.retain_grad()
             captured.setdefault(layer_idx, {})[tag] = t
+
         return _hook
 
     for idx, _, mod in attn_modules:
         k_layer = next(
-            (getattr(mod, a) for a in ("k_proj", "k_lin", "key", "W_k")
-             if hasattr(mod, a)),
+            (
+                getattr(mod, a)
+                for a in ("k_proj", "k_lin", "key", "W_k")
+                if hasattr(mod, a)
+            ),
             None,
         )
         v_layer = next(
-            (getattr(mod, a) for a in ("v_proj", "v_lin", "value", "W_v")
-             if hasattr(mod, a)),
+            (
+                getattr(mod, a)
+                for a in ("v_proj", "v_lin", "value", "W_v")
+                if hasattr(mod, a)
+            ),
             None,
         )
         if k_layer is not None:
@@ -660,14 +676,22 @@ def _collect_calibration_data(
             model.train()
 
     return {
-        "k": {i: torch.cat(k_by_layer[i], 0) if k_by_layer[i] else torch.empty(0)
-              for i in k_by_layer},
-        "v": {i: torch.cat(v_by_layer[i], 0) if v_by_layer[i] else torch.empty(0)
-              for i in v_by_layer},
-        "gk": {i: torch.cat(gk_by_layer[i], 0) if gk_by_layer[i] else torch.empty(0)
-               for i in gk_by_layer},
-        "gv": {i: torch.cat(gv_by_layer[i], 0) if gv_by_layer[i] else torch.empty(0)
-               for i in gv_by_layer},
+        "k": {
+            i: torch.cat(k_by_layer[i], 0) if k_by_layer[i] else torch.empty(0)
+            for i in k_by_layer
+        },
+        "v": {
+            i: torch.cat(v_by_layer[i], 0) if v_by_layer[i] else torch.empty(0)
+            for i in v_by_layer
+        },
+        "gk": {
+            i: torch.cat(gk_by_layer[i], 0) if gk_by_layer[i] else torch.empty(0)
+            for i in gk_by_layer
+        },
+        "gv": {
+            i: torch.cat(gv_by_layer[i], 0) if gv_by_layer[i] else torch.empty(0)
+            for i in gv_by_layer
+        },
     }
 
 
@@ -685,7 +709,7 @@ def _joint_svd_shared_basis(
     Uses a memory-bounded randomized algorithm when N*D is large.
     """
     mean = stack.mean(dim=0, keepdim=True)
-    X = (stack - mean).float()   # (N, D)
+    X = (stack - mean).float()  # (N, D)
 
     N, D = X.shape
     q = min(rank_cap + oversample, min(N, D))
@@ -694,11 +718,11 @@ def _joint_svd_shared_basis(
         if N * D > 5_000_000:
             # Randomized SVD (Halko et al. 2011)
             Omega = torch.randn(D, q, device=X.device, dtype=X.dtype)
-            Y = X @ Omega                          # (N, q)
-            Q, _ = torch.linalg.qr(Y)              # (N, q)
-            B = Q.t() @ X                          # (q, D)
+            Y = X @ Omega  # (N, q)
+            Q, _ = torch.linalg.qr(Y)  # (N, q)
+            B = Q.t() @ X  # (q, D)
             Uhat, S, Vh = torch.linalg.svd(B, full_matrices=False)
-            V = Vh.t().contiguous()                # (D, q)
+            V = Vh.t().contiguous()  # (D, q)
         else:
             _, S, Vh = torch.linalg.svd(X, full_matrices=False)
             V = Vh.t().contiguous()
@@ -719,13 +743,13 @@ def _joint_svd_shared_basis(
         V = torch.randn(D, r, device=X.device, dtype=X.dtype)
         S = torch.ones(r, device=X.device, dtype=X.dtype)
 
-    total = (S ** 2).sum().clamp(min=1e-12)
-    cum = torch.cumsum(S ** 2, 0) / total
+    total = (S**2).sum().clamp(min=1e-12)
+    cum = torch.cumsum(S**2, 0) / total
     hit = (cum >= energy_threshold).nonzero()
     r_energy = int(hit[0].item()) + 1 if hit.numel() > 0 else len(S)
     r = max(4, min(r_energy, rank_cap, S.numel(), V.shape[1]))
 
-    V_r = V[:, :r].t().contiguous()   # (r, D)
+    V_r = V[:, :r].t().contiguous()  # (r, D)
     return V_r, S[:r].contiguous(), mean.squeeze(0)
 
 
@@ -765,7 +789,9 @@ class AATC_XKVCompressor(BaseCompressor):
         self.target_bits = float(_cget("aatc_bits", target_bits_per_component))
         self.energy_threshold = float(_cget("energy_threshold", energy_threshold))
         self.sink_tokens = int(_cget("sink_tokens", sink_tokens))
-        self.preserve_last_token = bool(_cget("preserve_last_token", preserve_last_token))
+        self.preserve_last_token = bool(
+            _cget("preserve_last_token", preserve_last_token)
+        )
 
         self.subspaces: dict[int, SharedSubspace] = {}
         self.layer_to_group: dict[int, int] = {}
@@ -801,12 +827,14 @@ class AATC_XKVCompressor(BaseCompressor):
                 if has_k:
                     has_k = any(
                         isinstance(getattr(mod, a, None), nn.Module)
-                        for a in k_names if hasattr(mod, a)
+                        for a in k_names
+                        if hasattr(mod, a)
                     )
                 if has_v:
                     has_v = any(
                         isinstance(getattr(mod, a, None), nn.Module)
-                        for a in v_names if hasattr(mod, a)
+                        for a in v_names
+                        if hasattr(mod, a)
                     )
                 is_attn = has_k and has_v
 
@@ -831,7 +859,7 @@ class AATC_XKVCompressor(BaseCompressor):
     ) -> None:
         layer_indices = [idx for idx, _, _ in attn_modules]
         G = max(1, self.group_size)
-        groups = [layer_indices[i:i + G] for i in range(0, len(layer_indices), G)]
+        groups = [layer_indices[i : i + G] for i in range(0, len(layer_indices), G)]
 
         for g_id, g_layers in enumerate(groups):
             for l_idx in g_layers:
@@ -877,9 +905,14 @@ class AATC_XKVCompressor(BaseCompressor):
             alloc_v = reverse_waterfilling(S_v.pow(2), sens_v, total_bits_v, 0, 8)
 
             self.subspaces[g_id] = SharedSubspace(
-                V_k=V_k, V_v=V_v, mean_k=mean_k, mean_v=mean_v,
-                bit_alloc_k=alloc_k, bit_alloc_v=alloc_v,
-                group_id=g_id, layer_indices=g_layers,
+                V_k=V_k,
+                V_v=V_v,
+                mean_k=mean_k,
+                mean_v=mean_v,
+                bit_alloc_k=alloc_k,
+                bit_alloc_v=alloc_v,
+                group_id=g_id,
+                layer_indices=g_layers,
             )
 
     # ------------------------------------------------------------------
@@ -889,8 +922,7 @@ class AATC_XKVCompressor(BaseCompressor):
 
         if not attn_modules:
             logger.warning("AATC-XKV: no attention modules found.")
-            self.stats = {"status": "NO_ATTN_MODULES",
-                          "num_compressed_layers": 0}
+            self.stats = {"status": "NO_ATTN_MODULES", "num_compressed_layers": 0}
             return self.model, self.stats
 
         if not self.calib_batches:
@@ -900,7 +932,10 @@ class AATC_XKVCompressor(BaseCompressor):
             self.calib_batches = self._synthetic_calib(device)
 
         calib = _collect_calibration_data(
-            self.model, attn_modules, self.calib_batches, device,
+            self.model,
+            attn_modules,
+            self.calib_batches,
+            device,
         )
         self._build_subspaces(calib, attn_modules)
 
@@ -912,6 +947,7 @@ class AATC_XKVCompressor(BaseCompressor):
         try:
             import transformers
             from packaging import version
+
             if version.parse(transformers.__version__) >= version.parse("4.36.0"):
                 self.model._supports_cache_class = True
         except Exception:
@@ -928,8 +964,7 @@ class AATC_XKVCompressor(BaseCompressor):
             # Compressed: bit_alloc per K component + per V component,
             # per token, per layer
             total_comp_bits += (
-                int(sub.bit_alloc_k.sum().item()) +
-                int(sub.bit_alloc_v.sum().item())
+                int(sub.bit_alloc_k.sum().item()) + int(sub.bit_alloc_v.sum().item())
             ) * n_layers
 
         ratio = total_orig_bits / max(1, total_comp_bits)
@@ -951,7 +986,9 @@ class AATC_XKVCompressor(BaseCompressor):
         self.model.compression_stats = self.stats
         logger.info(
             "AATC-XKV: %d layers, %d groups, theoretical KV compression %.2fx",
-            len(attn_modules), len(self.subspaces), ratio,
+            len(attn_modules),
+            len(self.subspaces),
+            ratio,
         )
         return self.model, self.stats
 
@@ -969,6 +1006,7 @@ class AATC_XKVCompressor(BaseCompressor):
                 sink_tokens=sink_tokens,
                 preserve_last_token=preserve_last,
             )
+
         return factory
 
     # ------------------------------------------------------------------

@@ -36,7 +36,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
@@ -64,6 +63,7 @@ def factorize_dimension_pair(
     components. Pathological splits (e.g. (1, 768)) are rejected in favor of
     (a, b) with a ≈ b.
     """
+
     def get_factors(n: int, k: int) -> list[int]:
         if k == 1:
             return [n]
@@ -108,12 +108,13 @@ class SVDLinearLayer(nn.Module):
     Stores A (out, r) and B (r, in) with bias. Forward: y = (x @ B.T) @ A.T + bias.
     Parameter count: r * (out + in) + out (bias).
     """
+
     is_custom_attention: bool = False
 
     def __init__(
         self,
-        A: torch.Tensor,               # (out, r)
-        B: torch.Tensor,               # (r, in)
+        A: torch.Tensor,  # (out, r)
+        B: torch.Tensor,  # (r, in)
         bias: torch.Tensor | None = None,
         is_conv1d: bool = False,
     ) -> None:
@@ -158,6 +159,7 @@ class TTLinearLayer(nn.Module):
     Forward contracts TT cores with x directly, without materializing W
     for d == 2; for larger d, an optimized generic path is used.
     """
+
     # TT-FIX-01
     is_custom_attention: bool = False
 
@@ -199,10 +201,15 @@ class TTLinearLayer(nn.Module):
         self.tt_rank = int(tt_rank)
 
         if shape is None:
-            self.p_dims, self.q_dims = factorize_dimension_pair(in_features, out_features, 2)
+            self.p_dims, self.q_dims = factorize_dimension_pair(
+                in_features, out_features, 2
+            )
         else:
             self.p_dims, self.q_dims = shape
-            if int(np.prod(self.p_dims)) != in_features or int(np.prod(self.q_dims)) != out_features:
+            if (
+                int(np.prod(self.p_dims)) != in_features
+                or int(np.prod(self.q_dims)) != out_features
+            ):
                 raise ValueError(
                     f"Shape mismatch: p={self.p_dims} prod={np.prod(self.p_dims)} in={in_features}, "
                     f"q={self.q_dims} prod={np.prod(self.q_dims)} out={out_features}"
@@ -225,12 +232,16 @@ class TTLinearLayer(nn.Module):
             r_left = r_right
 
         core_last = nn.Parameter(
-            torch.empty(r_left, self.p_dims[-1], self.q_dims[-1], 1,
-                        dtype=dtype, device=device),
+            torch.empty(
+                r_left, self.p_dims[-1], self.q_dims[-1], 1, dtype=dtype, device=device
+            ),
             requires_grad=False,
         )
-        nn.init.uniform_(core_last, -1.0 / math.sqrt(max(1, r_left * self.p_dims[-1])),
-                         1.0 / math.sqrt(max(1, r_left * self.p_dims[-1])))
+        nn.init.uniform_(
+            core_last,
+            -1.0 / math.sqrt(max(1, r_left * self.p_dims[-1])),
+            1.0 / math.sqrt(max(1, r_left * self.p_dims[-1])),
+        )
         self.cores.append(core_last)
 
         if bias:
@@ -259,15 +270,18 @@ class TTLinearLayer(nn.Module):
 
     def materialize_weight(self) -> torch.Tensor:
         """Reconstruct W ∈ R^{out × in} by contracting TT-cores."""
-        if not self.training and self._cached_weight is not None \
-                and self._cached_version == self._current_version():
+        if (
+            not self.training
+            and self._cached_weight is not None
+            and self._cached_version == self._current_version()
+        ):
             return self._cached_weight
 
-        res = self.cores[0][0]                     # (p0, q0, r1)
+        res = self.cores[0][0]  # (p0, q0, r1)
         for i in range(1, self.d):
-            core = self.cores[i]                   # (r_i, p_i, q_i, r_{i+1})
+            core = self.cores[i]  # (r_i, p_i, q_i, r_{i+1})
             res = torch.tensordot(res, core, dims=([-1], [0]))
-        res = res[..., 0]                          # drop trailing r=1
+        res = res[..., 0]  # drop trailing r=1
 
         q_idx = [2 * k + 1 for k in range(self.d)]
         p_idx = [2 * k for k in range(self.d)]
@@ -334,7 +348,11 @@ class TTLinearLayer(nn.Module):
         elif hasattr(base_layer, "in_features") and hasattr(base_layer, "out_features"):
             in_f = int(base_layer.in_features)
             out_f = int(base_layer.out_features)
-            W = raw_w.t().contiguous().float() if (raw_w.shape == (in_f, out_f)) else raw_w.float().contiguous()
+            W = (
+                raw_w.t().contiguous().float()
+                if (raw_w.shape == (in_f, out_f))
+                else raw_w.float().contiguous()
+            )
         elif is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
             W = raw_w.t().contiguous().float()
@@ -353,14 +371,24 @@ class TTLinearLayer(nn.Module):
         W_tensor = W.view(*(list(q_dims) + list(p_dims)))
         perm = []
         for k in range(d):
-            perm.append(d + k)      # p_k
-            perm.append(k)          # q_k
+            perm.append(d + k)  # p_k
+            perm.append(k)  # q_k
         W_interleaved = W_tensor.permute(*perm).contiguous()
 
-        max_rank = cls._max_rank_for_compression(out_f, in_f, p_dims, q_dims, safety_margin=0.9)
-        rank_cap = min(int(tt_rank), max_rank) if not strict_rank else min(int(tt_rank), max_rank)
+        max_rank = cls._max_rank_for_compression(
+            out_f, in_f, p_dims, q_dims, safety_margin=0.9
+        )
+        rank_cap = (
+            min(int(tt_rank), max_rank)
+            if not strict_rank
+            else min(int(tt_rank), max_rank)
+        )
 
-        bias = base_layer.bias.data if getattr(base_layer, "bias", None) is not None else None
+        bias = (
+            base_layer.bias.data
+            if getattr(base_layer, "bias", None) is not None
+            else None
+        )
 
         # ---- Build the layer with adaptive TT-SVD ----
         layer = cls(
@@ -383,7 +411,7 @@ class TTLinearLayer(nn.Module):
 
                 U, S, Vt = torch.linalg.svd(curr_matrix, full_matrices=False)
                 # Adaptive rank: smallest r with retained energy >= threshold
-                S_sq = S ** 2
+                S_sq = S**2
                 total_energy = S_sq.sum().clamp_min(1e-12)
                 cum = torch.cumsum(S_sq, dim=0) / total_energy
                 r_energy = int((cum >= energy_threshold).nonzero()[0].item()) + 1
@@ -398,16 +426,20 @@ class TTLinearLayer(nn.Module):
                 core_data = U_r.view(r_left, p_i, q_i, r_right)
                 with torch.no_grad():
                     layer.cores[i].data.zero_()
-                    layer.cores[i].data.copy_(core_data.to(dtype=orig_dtype, device=orig_device))
+                    layer.cores[i].data.copy_(
+                        core_data.to(dtype=orig_dtype, device=orig_device)
+                    )
 
-                curr_matrix = (torch.diag(S_r) @ Vt_r)
+                curr_matrix = torch.diag(S_r) @ Vt_r
                 r_left = r_right
 
             p_last, q_last = p_dims[-1], q_dims[-1]
             final_core = curr_matrix.view(r_left, p_last, q_last, 1)
             with torch.no_grad():
                 layer.cores[-1].data.zero_()
-                layer.cores[-1].data.copy_(final_core.to(dtype=orig_dtype, device=orig_device))
+                layer.cores[-1].data.copy_(
+                    final_core.to(dtype=orig_dtype, device=orig_device)
+                )
 
             if bias is not None and layer.bias is not None:
                 with torch.no_grad():
@@ -421,14 +453,19 @@ class TTLinearLayer(nn.Module):
             if rel_err > max_error:
                 logger.info(
                     "TT: rel_err=%.4f > max_error=%.4f, trying SVD fallback",
-                    rel_err, max_error,
+                    rel_err,
+                    max_error,
                 )
                 return None
 
             # Check parameter count
             tt_params = sum(p.numel() for p in layer.parameters())
             if tt_params >= out_f * in_f:
-                logger.info("TT: no parameter reduction (%d >= %d), aborting", tt_params, out_f * in_f)
+                logger.info(
+                    "TT: no parameter reduction (%d >= %d), aborting",
+                    tt_params,
+                    out_f * in_f,
+                )
                 return None
 
             layer.reconstruction_error = float(rel_err)
@@ -490,8 +527,8 @@ def _try_svd_fallback(
 
     best = None
     for r in candidate_ranks:
-        A = (U[:, :r] * S[:r].unsqueeze(0))       # (out, r)
-        B = Vt[:r, :]                              # (r, in)
+        A = U[:, :r] * S[:r].unsqueeze(0)  # (out, r)
+        B = Vt[:r, :]  # (r, in)
         W_rec = A @ B
         rel_err = (torch.norm(W - W_rec) / norm_orig).item()
         if rel_err <= max_error:
@@ -502,7 +539,9 @@ def _try_svd_fallback(
         return None
 
     A, B, err = best
-    bias = base_layer.bias.data if getattr(base_layer, "bias", None) is not None else None
+    bias = (
+        base_layer.bias.data if getattr(base_layer, "bias", None) is not None else None
+    )
     layer = SVDLinearLayer(
         A=A.to(dtype=orig_dtype, device=orig_device),
         B=B.to(dtype=orig_dtype, device=orig_device),
@@ -535,6 +574,7 @@ class TTCompressor(BaseCompressor):
         target_attention_only: Only compress attention projections.
         strict_rank:       Do not exceed tt_rank.
     """
+
     # TT-FIX-01
     is_custom_attention: bool = False
 
@@ -548,12 +588,14 @@ class TTCompressor(BaseCompressor):
         target_layers: list[str] | None = None,
         max_error: float = 0.20,
         energy_threshold: float = 0.995,
-        fallback_policy: str = "svd",     # 'svd' | 'original' | 'none'
+        fallback_policy: str = "svd",  # 'svd' | 'original' | 'none'
         target_attention_only: bool = False,
         strict_rank: bool = False,
         **kwargs: Any,
     ) -> None:
-        super().__init__(model if model is not None else nn.Identity(), name="tt", **kwargs)
+        super().__init__(
+            model if model is not None else nn.Identity(), name="tt", **kwargs
+        )
         comp_cfg = kwargs.get("comp_config", cfg)
         if comp_cfg is not None:
             rank = _cfg_get(comp_cfg, "tt_rank", _cfg_get(comp_cfg, "rank", rank))
@@ -561,14 +603,20 @@ class TTCompressor(BaseCompressor):
             max_error = _cfg_get(comp_cfg, "max_error", max_error)
             energy_threshold = _cfg_get(comp_cfg, "energy_threshold", energy_threshold)
             fallback_policy = _cfg_get(comp_cfg, "fallback_policy", fallback_policy)
-            target_attention_only = _cfg_get(comp_cfg, "target_attention_only", target_attention_only)
+            target_attention_only = _cfg_get(
+                comp_cfg, "target_attention_only", target_attention_only
+            )
             strict_rank = _cfg_get(comp_cfg, "strict_rank", strict_rank)
 
         # kwargs overrides
         for k, caster in (
-            ("rank", int), ("tt_rank", int), ("num_factors", int),
-            ("max_error", float), ("energy_threshold", float),
-            ("strict_rank", bool), ("target_attention_only", bool),
+            ("rank", int),
+            ("tt_rank", int),
+            ("num_factors", int),
+            ("max_error", float),
+            ("energy_threshold", float),
+            ("strict_rank", bool),
+            ("target_attention_only", bool),
         ):
             if k in kwargs and kwargs[k] is not None:
                 if k == "rank":
@@ -611,20 +659,49 @@ class TTCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
-        if any(k in name_l for k in (
-            "classifier", "score", "lm_head", "pooler", "embedding",
-            "layernorm", "rmsnorm", "batchnorm",
-        )):
+        if any(
+            k in name_l
+            for k in (
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embedding",
+                "layernorm",
+                "rmsnorm",
+                "batchnorm",
+            )
+        ):
             return False
 
-        if isinstance(module, (nn.LayerNorm, nn.RMSNorm, nn.Embedding,
-                               nn.BatchNorm1d, nn.BatchNorm2d,
-                               TTLinearLayer, SVDLinearLayer)):
+        if isinstance(
+            module,
+            (
+                nn.LayerNorm,
+                nn.RMSNorm,
+                nn.Embedding,
+                nn.BatchNorm1d,
+                nn.BatchNorm2d,
+                TTLinearLayer,
+                SVDLinearLayer,
+            ),
+        ):
             return False
 
         if self.target_attention_only:
-            attn_kw = ("attn", "attention", "q_proj", "k_proj", "v_proj",
-                       "o_proj", "c_attn", "c_proj", "query", "key", "value")
+            attn_kw = (
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "c_attn",
+                "c_proj",
+                "query",
+                "key",
+                "value",
+            )
             if not any(k in name_l for k in attn_kw):
                 return False
 
@@ -654,7 +731,9 @@ class TTCompressor(BaseCompressor):
         return True
 
     # ------------------------------------------------------------------
-    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
+    def compress(
+        self, model: nn.Module | None = None
+    ) -> tuple[nn.Module, dict[str, Any]]:
         if model is not None:
             self.model = model
             self._original_params = self._count_params(self.model)
@@ -678,7 +757,9 @@ class TTCompressor(BaseCompressor):
 
             if hasattr(base_layer, "nx") and hasattr(base_layer, "nf"):
                 in_f, out_f = int(base_layer.nx), int(base_layer.nf)
-            elif hasattr(base_layer, "in_features") and hasattr(base_layer, "out_features"):
+            elif hasattr(base_layer, "in_features") and hasattr(
+                base_layer, "out_features"
+            ):
                 in_f, out_f = int(base_layer.in_features), int(base_layer.out_features)
             elif is_conv1d:
                 in_f, out_f = raw_w.shape[0], raw_w.shape[1]
@@ -707,7 +788,9 @@ class TTCompressor(BaseCompressor):
             # 2) If TT failed, try SVD fallback
             if chosen_layer is None and self.fallback_policy in ("svd", "original"):
                 svd_layer = _try_svd_fallback(
-                    module, self.max_error, target_rank=self.tt_rank * 4,
+                    module,
+                    self.max_error,
+                    target_rank=self.tt_rank * 4,
                 )
                 if svd_layer is not None:
                     chosen_layer = svd_layer
@@ -733,11 +816,19 @@ class TTCompressor(BaseCompressor):
 
             # Byte accounting (TT-FIX-08)
             o_bytes = raw_w.numel() * raw_w.element_size()
-            if getattr(base_layer, "bias", None) is not None and base_layer.bias is not None:
+            if (
+                getattr(base_layer, "bias", None) is not None
+                and base_layer.bias is not None
+            ):
                 o_bytes += base_layer.bias.numel() * base_layer.bias.element_size()
-            c_bytes = sum(p.numel() * p.element_size() for p in chosen_layer.parameters())
-            c_bytes += sum(b.numel() * b.element_size()
-                           for b in chosen_layer.buffers() if b is not None)
+            c_bytes = sum(
+                p.numel() * p.element_size() for p in chosen_layer.parameters()
+            )
+            c_bytes += sum(
+                b.numel() * b.element_size()
+                for b in chosen_layer.buffers()
+                if b is not None
+            )
 
             orig_bytes += o_bytes
             comp_bytes += c_bytes
@@ -746,12 +837,14 @@ class TTCompressor(BaseCompressor):
             elif method == "svd":
                 self.svd_layers.append(name)
 
-            self.compressed_layers.append({
-                "name": name,
-                "shape": (in_f, out_f),
-                "method": method,
-                "rel_error": float(rel_err) if rel_err is not None else None,
-            })
+            self.compressed_layers.append(
+                {
+                    "name": name,
+                    "shape": (in_f, out_f),
+                    "method": method,
+                    "rel_error": float(rel_err) if rel_err is not None else None,
+                }
+            )
             if rel_err is not None:
                 total_error += float(rel_err)
 
@@ -778,33 +871,40 @@ class TTCompressor(BaseCompressor):
         avg_err = total_error / max(1, len(self.compressed_layers))
         storage_ratio = orig_bytes / comp_bytes if comp_bytes > 0 else 1.0
 
-        stats.update({
-            "compressed_layers": self.compressed_layers,
-            "num_compressed_layers": len(self.compressed_layers),
-            "fallback_layers": fallback_layers,
-            "num_fallback": len(fallback_layers),
-            "tt_layers": self.tt_layers,
-            "svd_layers": self.svd_layers,
-            "num_tt_layers": len(self.tt_layers),
-            "num_svd_layers": len(self.svd_layers),
-            "tt_rank": self.tt_rank,
-            "num_factors": self.num_factors,
-            "avg_reconstruction_error": avg_err,
-            "max_error": self.max_error,
-            "energy_threshold": self.energy_threshold,
-            "fallback_policy": self.fallback_policy,
-            "forward_check_success": forward_ok,
-            "orig_storage_bytes": orig_bytes,
-            "comp_storage_bytes": comp_bytes,
-            "storage_compression_ratio": round(storage_ratio, 3),
-            "storage_reduction_pct": round(100.0 * (1.0 - comp_bytes / max(1, orig_bytes)), 2),
-            "method": "tensor_train_with_svd_fallback",
-        })
+        stats.update(
+            {
+                "compressed_layers": self.compressed_layers,
+                "num_compressed_layers": len(self.compressed_layers),
+                "fallback_layers": fallback_layers,
+                "num_fallback": len(fallback_layers),
+                "tt_layers": self.tt_layers,
+                "svd_layers": self.svd_layers,
+                "num_tt_layers": len(self.tt_layers),
+                "num_svd_layers": len(self.svd_layers),
+                "tt_rank": self.tt_rank,
+                "num_factors": self.num_factors,
+                "avg_reconstruction_error": avg_err,
+                "max_error": self.max_error,
+                "energy_threshold": self.energy_threshold,
+                "fallback_policy": self.fallback_policy,
+                "forward_check_success": forward_ok,
+                "orig_storage_bytes": orig_bytes,
+                "comp_storage_bytes": comp_bytes,
+                "storage_compression_ratio": round(storage_ratio, 3),
+                "storage_reduction_pct": round(
+                    100.0 * (1.0 - comp_bytes / max(1, orig_bytes)), 2
+                ),
+                "method": "tensor_train_with_svd_fallback",
+            }
+        )
         logger.info(
             "TT compressor: %d TT + %d SVD layers, %d fallback, avg_err=%.4f, "
             "storage_ratio=%.2fx",
-            len(self.tt_layers), len(self.svd_layers),
-            len(fallback_layers), avg_err, storage_ratio,
+            len(self.tt_layers),
+            len(self.svd_layers),
+            len(fallback_layers),
+            avg_err,
+            storage_ratio,
         )
         return self.model, stats
 

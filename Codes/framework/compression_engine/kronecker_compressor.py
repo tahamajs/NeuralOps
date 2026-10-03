@@ -8,17 +8,17 @@ Registered as 'kronecker_class', 'kronecker_compressor_class', and (factory)
 from __future__ import annotations
 
 import logging
+import math
 from typing import Any
 
-import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
+
 
 def factorize_dim(dim: int) -> tuple[int, int]:
     """
@@ -41,6 +41,7 @@ def factorize_dim(dim: int) -> tuple[int, int]:
 # ===========================================================================
 # KroneckerLinear
 # ===========================================================================
+
 
 class KroneckerLinear(nn.Module):
     # KL-FIX-01: this is a linear layer, not an attention layer.
@@ -94,22 +95,39 @@ class KroneckerLinear(nn.Module):
         # ---- Parameter allocation ----
         requires_grad = not (self.lora_r > 0)
         self._init_base_parameters(
-            bias=bias, dtype=dtype, device=device,
-            requires_grad=requires_grad, rank=rank,
+            bias=bias,
+            dtype=dtype,
+            device=device,
+            requires_grad=requires_grad,
+            rank=rank,
         )
 
         # ---- LoRA parameters ----
         if self.lora_r > 0:
             # KL-FIX-12: keep LoRA in the same dtype as base parameters.
-            param_dtype = next(self.parameters()).dtype if any(True for _ in self.parameters()) else torch.float32
-            param_device = next(self.parameters()).device if any(True for _ in self.parameters()) else torch.device("cpu")
+            param_dtype = (
+                next(self.parameters()).dtype
+                if any(True for _ in self.parameters())
+                else torch.float32
+            )
+            param_device = (
+                next(self.parameters()).device
+                if any(True for _ in self.parameters())
+                else torch.device("cpu")
+            )
             self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, self.in_features),
-                            dtype=param_dtype, device=param_device)
+                torch.empty(
+                    (self.lora_r, self.in_features),
+                    dtype=param_dtype,
+                    device=param_device,
+                )
             )
             self.lora_B = nn.Parameter(
-                torch.zeros((self.out_features, self.lora_r),
-                            dtype=param_dtype, device=param_device)
+                torch.zeros(
+                    (self.out_features, self.lora_r),
+                    dtype=param_dtype,
+                    device=param_device,
+                )
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -155,7 +173,9 @@ class KroneckerLinear(nn.Module):
             else:
                 self.register_parameter("bias", None)
         else:
-            effective_rank = rank or max(1, min(self.in_features, self.out_features) // 4)
+            effective_rank = rank or max(
+                1, min(self.in_features, self.out_features) // 4
+            )
             self.rank = min(effective_rank, self.in_features, self.out_features)
             self.U = nn.Parameter(
                 torch.empty(self.out_features, self.rank, dtype=dtype, device=device),
@@ -213,7 +233,6 @@ class KroneckerLinear(nn.Module):
         # Fallback: should never happen for a properly initialized layer.
         raise RuntimeError("KroneckerLinear has no valid parameter set.")
 
-
     # ------------------------------------------------------------------
     # Forward
     # ------------------------------------------------------------------
@@ -232,7 +251,7 @@ class KroneckerLinear(nn.Module):
     def _forward_kron(self, x: torch.Tensor) -> torch.Tensor:
         """(A ⊗ B) x computed without materializing the full weight."""
         orig_shape = x.shape
-        x_flat = x.reshape(-1, self.in_features)         # (K, n1 * n2)
+        x_flat = x.reshape(-1, self.in_features)  # (K, n1 * n2)
         K = x_flat.shape[0]
 
         # Step 1: contract with B over n2  ->  (K * n1, m2)
@@ -241,10 +260,20 @@ class KroneckerLinear(nn.Module):
             self.B.t().contiguous(),
         )
         # Step 2: (K, m2, n1) -> (K * m2, n1) @ A^T  ->  (K * m2, m1)
-        x_b = x_b.reshape(K, self.n1, self.m2).transpose(1, 2).contiguous().reshape(K * self.m2, self.n1)
+        x_b = (
+            x_b.reshape(K, self.n1, self.m2)
+            .transpose(1, 2)
+            .contiguous()
+            .reshape(K * self.m2, self.n1)
+        )
         x_a = torch.matmul(x_b, self.A.t().contiguous())
         # Step 3: back to (K, m1 * m2)
-        out = x_a.reshape(K, self.m2, self.m1).transpose(1, 2).contiguous().reshape(K, self.out_features)
+        out = (
+            x_a.reshape(K, self.m2, self.m1)
+            .transpose(1, 2)
+            .contiguous()
+            .reshape(K, self.out_features)
+        )
 
         if self.bias is not None:
             out = out + self.bias
@@ -274,7 +303,9 @@ class KroneckerLinear(nn.Module):
             1,
             min(in_f, out_f, int(0.75 * (in_f * out_f) / max(in_f + out_f, 1))),
         )
-        base_r = rank if rank is not None and rank > 0 else max(1, min(in_f, out_f) // 4)
+        base_r = (
+            rank if rank is not None and rank > 0 else max(1, min(in_f, out_f) // 4)
+        )
         base_r = min(base_r, max_allowed_rank)
 
         try:
@@ -292,7 +323,10 @@ class KroneckerLinear(nn.Module):
                 U_r = U[:, :cand_r] * torch.sqrt(S[:cand_r].unsqueeze(0))
                 V_r = torch.sqrt(S[:cand_r].unsqueeze(1)) * Vt[:cand_r, :]
                 W_cand = torch.matmul(U_r, V_r)
-                err = float(torch.norm(weight.float() - W_cand, p="fro").item() / max(W_norm, 1e-12))
+                err = float(
+                    torch.norm(weight.float() - W_cand, p="fro").item()
+                    / max(W_norm, 1e-12)
+                )
                 best_r = cand_r
                 best_U_r = U_r
                 best_V_r = V_r
@@ -300,8 +334,12 @@ class KroneckerLinear(nn.Module):
                     break
         except Exception:
             best_r = base_r
-            best_U_r = torch.zeros(out_f, best_r, device=target_device, dtype=torch.float32)
-            best_V_r = torch.zeros(best_r, in_f, device=target_device, dtype=torch.float32)
+            best_U_r = torch.zeros(
+                out_f, best_r, device=target_device, dtype=torch.float32
+            )
+            best_V_r = torch.zeros(
+                best_r, in_f, device=target_device, dtype=torch.float32
+            )
 
         self.can_decompose = False
         # KL-FIX-05: clean removal of Kronecker parameters.
@@ -380,21 +418,33 @@ class KroneckerLinear(nn.Module):
             out_features=out_features,
             bias=bias is not None,
             rank=rank,
-            m1=m1, n1=n1, m2=m2, n2=n2,
-            dtype=target_dtype, device=target_device,
+            m1=m1,
+            n1=n1,
+            m2=m2,
+            n2=n2,
+            dtype=target_dtype,
+            device=target_device,
             lora_r=effective_lora_r,
             lora_alpha=effective_lora_alpha,
         )
 
         # Transfer existing LoRA if shapes match.
-        if existing_lora_A is not None and existing_lora_B is not None \
-                and kron_layer.lora_A is not None and kron_layer.lora_B is not None:
+        if (
+            existing_lora_A is not None
+            and existing_lora_B is not None
+            and kron_layer.lora_A is not None
+            and kron_layer.lora_B is not None
+        ):
             w_A = getattr(existing_lora_A, "weight", existing_lora_A)
             w_B = getattr(existing_lora_B, "weight", existing_lora_B)
             if isinstance(w_A, torch.Tensor) and w_A.shape == kron_layer.lora_A.shape:
-                kron_layer.lora_A.data.copy_(w_A.to(kron_layer.lora_A.device, dtype=kron_layer.lora_A.dtype))
+                kron_layer.lora_A.data.copy_(
+                    w_A.to(kron_layer.lora_A.device, dtype=kron_layer.lora_A.dtype)
+                )
             if isinstance(w_B, torch.Tensor) and w_B.shape == kron_layer.lora_B.shape:
-                kron_layer.lora_B.data.copy_(w_B.to(kron_layer.lora_B.device, dtype=kron_layer.lora_B.dtype))
+                kron_layer.lora_B.data.copy_(
+                    w_B.to(kron_layer.lora_B.device, dtype=kron_layer.lora_B.dtype)
+                )
 
         W_norm = torch.norm(weight, p="fro").item()
         err = 1.0
@@ -404,7 +454,9 @@ class KroneckerLinear(nn.Module):
             n1_, n2_ = kron_layer.n1, kron_layer.n2
             try:
                 # Rearrangement for Nearest Kronecker Product.
-                W_tensor = weight.view(m1_, m2_, n1_, n2_).permute(0, 2, 1, 3).contiguous()
+                W_tensor = (
+                    weight.view(m1_, m2_, n1_, n2_).permute(0, 2, 1, 3).contiguous()
+                )
                 W_reordered = W_tensor.view(m1_ * n1_, m2_ * n2_).float()
 
                 U, S, Vt = torch.linalg.svd(W_reordered, full_matrices=False)
@@ -422,9 +474,12 @@ class KroneckerLinear(nn.Module):
                 )
 
                 W_recon = torch.kron(kron_layer.A, kron_layer.B).float()
-                err = float(torch.norm(weight - W_recon, p="fro").item() / max(W_norm, 1e-12))
+                err = float(
+                    torch.norm(weight - W_recon, p="fro").item() / max(W_norm, 1e-12)
+                )
             except Exception as e:
                 import logging
+
                 logging.getLogger(__name__).debug(
                     "KroneckerLinear NKP failed: %s; falling back to SVD.", e
                 )
@@ -443,10 +498,13 @@ class KroneckerLinear(nn.Module):
         # KL-FIX-08: forward sanity check.
         try:
             with torch.no_grad():
-                dummy = torch.randn(2, in_features, device=target_device, dtype=target_dtype)
+                dummy = torch.randn(
+                    2, in_features, device=target_device, dtype=target_dtype
+                )
                 _ = kron_layer(dummy)
         except Exception as e:
             import logging
+
             logging.getLogger(__name__).warning(
                 "KroneckerLinear forward sanity check failed: %s", e
             )
@@ -474,15 +532,28 @@ def _get_device(model: nn.Module) -> torch.device:
 
 
 _ATTN_NAMES = {
-    "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-    "c_attn", "c_proj", "query", "key", "value",
-    "q_lin", "k_lin", "v_lin", "out_lin",
+    "attn",
+    "attention",
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "c_attn",
+    "c_proj",
+    "query",
+    "key",
+    "value",
+    "q_lin",
+    "k_lin",
+    "v_lin",
+    "out_lin",
 }
 
 
 # ===========================================================================
 # Compressor
 # ===========================================================================
+
 
 @COMPRESSOR_REGISTRY.register("kronecker_class")
 @COMPRESSOR_REGISTRY.register("kronecker_compressor_class")
@@ -508,26 +579,32 @@ class KroneckerCompressor(BaseCompressor):
     ) -> None:
         super().__init__(
             model if model is not None else nn.Identity(),
-            name="kronecker", **kwargs,
+            name="kronecker",
+            **kwargs,
         )
         conf = cfg or kwargs.get("comp_config")
 
         rank = _cfg_get(conf, "kronecker_rank", _cfg_get(conf, "rank", rank))
-        max_error = _cfg_get(conf, "kronecker_max_error",
-                             _cfg_get(conf, "max_error", max_error))
+        max_error = _cfg_get(
+            conf, "kronecker_max_error", _cfg_get(conf, "max_error", max_error)
+        )
         fallback_to_original = _cfg_get(
-            conf, "kronecker_fallback_to_original",
+            conf,
+            "kronecker_fallback_to_original",
             _cfg_get(conf, "fallback_to_original", fallback_to_original),
         )
         lora_r = _cfg_get(conf, "lora_r", _cfg_get(conf, "lora_rank", lora_r))
         lora_alpha = _cfg_get(conf, "lora_alpha", lora_alpha)
         target_attention_only = _cfg_get(
-            conf, "kronecker_target_attention_only",
+            conf,
+            "kronecker_target_attention_only",
             _cfg_get(conf, "target_attention_only", target_attention_only),
         )
         skip_attention_qkv = _cfg_get(conf, "skip_attention_qkv", skip_attention_qkv)
         skip_should_compress_filter = _cfg_get(
-            conf, "skip_should_compress_filter", skip_should_compress_filter,
+            conf,
+            "skip_should_compress_filter",
+            skip_should_compress_filter,
         )
         min_layer_dim = _cfg_get(conf, "min_layer_dim", min_layer_dim)
         target_layers = _cfg_get(conf, "target_layers", target_layers)
@@ -560,22 +637,47 @@ class KroneckerCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
-            if any(p in name.lower() for p in
-                   ("q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn")):
+        if (
+            num_heads is not None
+            and num_kv_heads is not None
+            and num_kv_heads < num_heads
+        ):
+            if any(
+                p in name.lower()
+                for p in (
+                    "q_proj",
+                    "k_proj",
+                    "v_proj",
+                    "query",
+                    "key",
+                    "value",
+                    "c_attn",
+                )
+            ):
                 return True
         return False
 
     # KC-FIX-12: debug-enriched target check.
-    def _is_target_module(self, name: str, module: nn.Module, _debug: bool = False) -> bool:
+    def _is_target_module(
+        self, name: str, module: nn.Module, _debug: bool = False
+    ) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
             if _debug:
                 logger.info(f"  [skip] {name}: lora/base_layer part")
             return False
-        if any(skip in name_lower for skip in
-               ("classifier", "score", "lm_head", "pooler",
-                "embedding", "router", "gate")):
+        if any(
+            skip in name_lower
+            for skip in (
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embedding",
+                "router",
+                "gate",
+            )
+        ):
             if _debug:
                 logger.info(f"  [skip] {name}: skip keyword")
             return False
@@ -640,7 +742,9 @@ class KroneckerCompressor(BaseCompressor):
         return True
 
     # ------------------------------------------------------------------
-    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
+    def compress(
+        self, model: nn.Module | None = None
+    ) -> tuple[nn.Module, dict[str, Any]]:
         # KC-FIX-09: idempotence.
         if getattr(self.model, "_kronecker_compressed", False):
             logger.warning("KroneckerCompressor: model already compressed; skipping.")
@@ -672,9 +776,11 @@ class KroneckerCompressor(BaseCompressor):
             for name, module in self.model.named_modules():
                 target_mod = getattr(module, "base_layer", module)
                 cls_lower = target_mod.__class__.__name__.lower()
-                if (isinstance(target_mod, nn.Linear)
-                        or "conv1d" in cls_lower
-                        or hasattr(target_mod, "nf")):
+                if (
+                    isinstance(target_mod, nn.Linear)
+                    or "conv1d" in cls_lower
+                    or hasattr(target_mod, "nf")
+                ):
                     if not self._is_target_module(name, module):
                         for p in module.parameters():
                             p.requires_grad = False
@@ -693,7 +799,10 @@ class KroneckerCompressor(BaseCompressor):
             for name, module in self.model.named_modules():
                 n_scanned += 1
                 self._is_target_module(name, module, _debug=True)
-            logger.warning("KroneckerCompressor diagnostic: %d modules scanned, 0 targets.", n_scanned)
+            logger.warning(
+                "KroneckerCompressor diagnostic: %d modules scanned, 0 targets.",
+                n_scanned,
+            )
             try:
                 return self.model, self.get_compression_stats()
             except Exception:
@@ -736,9 +845,13 @@ class KroneckerCompressor(BaseCompressor):
                     lora_alpha=self.lora_alpha,
                 )
                 W_comp = new_layer.get_weight().float()
-                err = float(torch.norm(W_target - W_comp, p="fro").item() / max(W_norm, 1e-12))
+                err = float(
+                    torch.norm(W_target - W_comp, p="fro").item() / max(W_norm, 1e-12)
+                )
             except Exception as e:
-                logger.warning("KroneckerLinear factorization failed on %s: %s", name, e)
+                logger.warning(
+                    "KroneckerLinear factorization failed on %s: %s", name, e
+                )
                 new_layer = None
                 err = 1.0
 
@@ -748,9 +861,14 @@ class KroneckerCompressor(BaseCompressor):
             if new_layer is None or err > self.max_error:
                 logger.warning(
                     "Kronecker: error %.4f on %s > %.4f. %s",
-                    err, name, self.max_error,
-                    "Falling back." if self.fallback_to_original
-                    else "Keeping original weight.",
+                    err,
+                    name,
+                    self.max_error,
+                    (
+                        "Falling back."
+                        if self.fallback_to_original
+                        else "Keeping original weight."
+                    ),
                 )
                 if self.fallback_to_original:
                     self.fallback_layers.append(name)
@@ -809,16 +927,17 @@ class KroneckerCompressor(BaseCompressor):
 
         # KC-FIX-05: avg_err only over compressed layers.
         compressed_errs = [
-            self.layer_errors[n] for n in self.compressed_layers
+            self.layer_errors[n]
+            for n in self.compressed_layers
             if n in self.layer_errors
         ]
         avg_err = (
-            sum(compressed_errs) / len(compressed_errs)
-            if compressed_errs else 0.0
+            sum(compressed_errs) / len(compressed_errs) if compressed_errs else 0.0
         )
         param_ratio = (
             total_comp_params / max(total_orig_params, 1)
-            if total_orig_params > 0 else 1.0
+            if total_orig_params > 0
+            else 1.0
         )
 
         try:
@@ -826,50 +945,59 @@ class KroneckerCompressor(BaseCompressor):
         except Exception:
             stats = {}
 
-        stats.update({
-            "compressed_layers": self.compressed_layers,
-            "fallback_layers": self.fallback_layers,
-            "skipped_layers": self.skipped_layers,
-            "num_compressed": len(self.compressed_layers),
-            "num_fallback": len(self.fallback_layers),
-            "num_skipped": len(self.skipped_layers),
-            "layer_errors": self.layer_errors,
-            "layer_ranks": self.layer_ranks,
-            "layer_modes": self.layer_modes,
-            "rank": self.rank,
-            "max_error": self.max_error,
-            "fallback_to_original": self.fallback_to_original,
-            "lora_r": self.lora_r,
-            "lora_alpha": self.lora_alpha,
-            "target_attention_only": self.target_attention_only,
-            "forward_check_success": forward_check_success,
-            "avg_reconstruction_error": avg_err,
-            "compressed_layer_count": len(self.compressed_layers),
-            "fallback_layer_count": len(self.fallback_layers),
-            "effective_parameter_ratio": round(param_ratio, 4),
-            "method": "kronecker",
-        })
+        stats.update(
+            {
+                "compressed_layers": self.compressed_layers,
+                "fallback_layers": self.fallback_layers,
+                "skipped_layers": self.skipped_layers,
+                "num_compressed": len(self.compressed_layers),
+                "num_fallback": len(self.fallback_layers),
+                "num_skipped": len(self.skipped_layers),
+                "layer_errors": self.layer_errors,
+                "layer_ranks": self.layer_ranks,
+                "layer_modes": self.layer_modes,
+                "rank": self.rank,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "lora_r": self.lora_r,
+                "lora_alpha": self.lora_alpha,
+                "target_attention_only": self.target_attention_only,
+                "forward_check_success": forward_check_success,
+                "avg_reconstruction_error": avg_err,
+                "compressed_layer_count": len(self.compressed_layers),
+                "fallback_layer_count": len(self.fallback_layers),
+                "effective_parameter_ratio": round(param_ratio, 4),
+                "method": "kronecker",
+            }
+        )
         self.stats = stats
 
         # KC-FIX-09: write stats onto model.
         try:
-            if not hasattr(self.model, "compression_stats") or self.model.compression_stats is None:
+            if (
+                not hasattr(self.model, "compression_stats")
+                or self.model.compression_stats is None
+            ):
                 self.model.compression_stats = {}
-            self.model.compression_stats.update({
-                "num_compressed": len(self.compressed_layers),
-                "num_fallback": len(self.fallback_layers),
-                "compression_method": "kronecker",
-                "effective_parameter_ratio": param_ratio,
-                "avg_reconstruction_error": avg_err,
-            })
+            self.model.compression_stats.update(
+                {
+                    "num_compressed": len(self.compressed_layers),
+                    "num_fallback": len(self.fallback_layers),
+                    "compression_method": "kronecker",
+                    "effective_parameter_ratio": param_ratio,
+                    "avg_reconstruction_error": avg_err,
+                }
+            )
         except Exception:
             pass
 
         self.model._kronecker_compressed = True
         logger.info(
             "Kronecker: %d compressed, %d fallback. param_ratio=%.4f, avg_err=%.4f.",
-            len(self.compressed_layers), len(self.fallback_layers),
-            param_ratio, avg_err,
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            param_ratio,
+            avg_err,
         )
         return self.model, stats
 
@@ -877,6 +1005,7 @@ class KroneckerCompressor(BaseCompressor):
 # ===========================================================================
 # Factory (KC-FIX-02)
 # ===========================================================================
+
 
 @COMPRESSOR_REGISTRY.register("kronecker")
 @COMPRESSOR_REGISTRY.register("kronecker_compressor")
@@ -888,24 +1017,32 @@ def kronecker_factory(
     **kwargs: Any,
 ) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Kronecker compressor factory."""
-    rank = rank or _cfg_get(comp_config, "kronecker_rank",
-                            _cfg_get(comp_config, "rank", 128))
+    rank = rank or _cfg_get(
+        comp_config, "kronecker_rank", _cfg_get(comp_config, "rank", 128)
+    )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(comp_config, "kronecker_max_error",
-                 _cfg_get(comp_config, "max_error", 0.80)),
+        _cfg_get(
+            comp_config, "kronecker_max_error", _cfg_get(comp_config, "max_error", 0.80)
+        ),
     )
     fallback = kwargs.pop(
         "fallback_to_original",
-        _cfg_get(comp_config, "kronecker_fallback_to_original",
-                 _cfg_get(comp_config, "fallback_to_original", True)),
+        _cfg_get(
+            comp_config,
+            "kronecker_fallback_to_original",
+            _cfg_get(comp_config, "fallback_to_original", True),
+        ),
     )
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 16))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
     target_attention_only = kwargs.pop(
         "target_attention_only",
-        _cfg_get(comp_config, "kronecker_target_attention_only",
-                 _cfg_get(comp_config, "target_attention_only", False)),
+        _cfg_get(
+            comp_config,
+            "kronecker_target_attention_only",
+            _cfg_get(comp_config, "target_attention_only", False),
+        ),
     )
     skip_filter = kwargs.pop(
         "skip_should_compress_filter",

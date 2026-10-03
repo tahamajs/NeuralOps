@@ -2,9 +2,7 @@ import pytest
 import torch
 import torch.nn as nn
 from framework.attentions.smart_weighted_ensemble import (
-    SmartWeightedEnsemble,
-    TaskAwareAttention,
-)
+    SmartWeightedEnsemble, TaskAwareAttention)
 
 
 class MockClassifier(nn.Module):

@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.moe_deltakv_paged import MoEDeltaKVPagedAttention, inject_moe_deltakv_paged
+from framework.attentions.moe_deltakv_paged import (MoEDeltaKVPagedAttention,
+                                                    inject_moe_deltakv_paged)
 
 
 class MockConfig:

@@ -10,7 +10,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.attentions.gated_delta_net import GatedDeltaNet
 from framework.core.adapters import UniversalAdapter
 from framework.core.base import BaseAttention
@@ -31,6 +30,7 @@ class GatedDeltaNetBlock(BaseAttention):
     """
 
     is_custom_attention: bool = True
+
     def __init__(
         self,
         config: Any | None = None,
@@ -67,34 +67,61 @@ class GatedDeltaNetBlock(BaseAttention):
             self.attn = None
 
         self.deltanet = GatedDeltaNet(
-            config=config, comp_config=comp_config, d_model=self.d_model, num_heads=self.num_heads, **kwargs
+            config=config,
+            comp_config=comp_config,
+            d_model=self.d_model,
+            num_heads=self.num_heads,
+            **kwargs,
         )
         self.norm = nn.LayerNorm(self.d_model)
-        self.is_nested_encoder: bool = getattr(self.deltanet, "is_nested_encoder", False)
+        self.is_nested_encoder: bool = getattr(
+            self.deltanet, "is_nested_encoder", False
+        )
 
     # Compatibility properties
     @property
-    def query(self) -> Any: return self.deltanet.query
+    def query(self) -> Any:
+        return self.deltanet.query
+
     @property
-    def key(self) -> Any: return self.deltanet.key
+    def key(self) -> Any:
+        return self.deltanet.key
+
     @property
-    def value(self) -> Any: return self.deltanet.value
+    def value(self) -> Any:
+        return self.deltanet.value
+
     @property
-    def q_proj(self) -> Any: return self.deltanet.q_proj
+    def q_proj(self) -> Any:
+        return self.deltanet.q_proj
+
     @property
-    def k_proj(self) -> Any: return self.deltanet.k_proj
+    def k_proj(self) -> Any:
+        return self.deltanet.k_proj
+
     @property
-    def v_proj(self) -> Any: return self.deltanet.v_proj
+    def v_proj(self) -> Any:
+        return self.deltanet.v_proj
+
     @property
-    def out_proj(self) -> Any: return self.deltanet.out_proj
+    def out_proj(self) -> Any:
+        return self.deltanet.out_proj
+
     @property
-    def q_lin(self) -> Any: return self.deltanet.q_lin
+    def q_lin(self) -> Any:
+        return self.deltanet.q_lin
+
     @property
-    def k_lin(self) -> Any: return self.deltanet.k_lin
+    def k_lin(self) -> Any:
+        return self.deltanet.k_lin
+
     @property
-    def v_lin(self) -> Any: return self.deltanet.v_lin
+    def v_lin(self) -> Any:
+        return self.deltanet.v_lin
+
     @property
-    def out_lin(self) -> Any: return self.deltanet.out_lin
+    def out_lin(self) -> Any:
+        return self.deltanet.out_lin
 
     def copy_weights(self, old_attn: Any) -> None:
         """Transfer pretrained weights to either MHA or GatedDeltaNet."""
@@ -128,7 +155,12 @@ class GatedDeltaNetBlock(BaseAttention):
                         qkv_w = torch.cat([w_q, w_k, w_v], dim=0)
                         if qkv_w.shape == self.attn.in_proj_weight.shape:
                             self.attn.in_proj_weight.copy_(qkv_w)
-                        if b_q is not None and b_k is not None and b_v is not None and self.attn.in_proj_bias is not None:
+                        if (
+                            b_q is not None
+                            and b_k is not None
+                            and b_v is not None
+                            and self.attn.in_proj_bias is not None
+                        ):
                             cat_b = torch.cat([b_q, b_k, b_v], dim=0)
                             if cat_b.shape == self.attn.in_proj_bias.shape:
                                 self.attn.in_proj_bias.copy_(cat_b)
@@ -138,11 +170,16 @@ class GatedDeltaNetBlock(BaseAttention):
                         elif w_o.t().shape == self.attn.out_proj.weight.shape:
                             self.attn.out_proj.weight.copy_(w_o.t())
             except (AttributeError, KeyError, RuntimeError, TypeError, ValueError) as e:
-                logger.warning("GatedDeltaNetBlock copy_weights to MultiheadAttention incomplete: %s", e)
+                logger.warning(
+                    "GatedDeltaNetBlock copy_weights to MultiheadAttention incomplete: %s",
+                    e,
+                )
         else:
             if hasattr(self.deltanet, "copy_weights"):
                 self.deltanet.copy_weights(old_attn)
-                self.is_nested_encoder = getattr(self.deltanet, "is_nested_encoder", False)
+                self.is_nested_encoder = getattr(
+                    self.deltanet, "is_nested_encoder", False
+                )
 
     def forward(
         self,
@@ -164,25 +201,41 @@ class GatedDeltaNetBlock(BaseAttention):
             key_padding_mask = None
             if attention_mask is not None:
                 if attention_mask.dim() == 2:
-                    key_padding_mask = (attention_mask == 0)
+                    key_padding_mask = attention_mask == 0
                 elif attention_mask.dim() == 4:
-                    key_padding_mask = (attention_mask[:, 0, 0, :] <= -10000.0)
+                    key_padding_mask = attention_mask[:, 0, 0, :] <= -10000.0
 
             attn_out, attn_weights = self.attn(
-                x, x, x, key_padding_mask=key_padding_mask, need_weights=output_attentions
+                x,
+                x,
+                x,
+                key_padding_mask=key_padding_mask,
+                need_weights=output_attentions,
             )
             if attn_out.shape[-1] != x.shape[-1]:
-                attn_out = F.pad(attn_out, (0, x.shape[-1] - attn_out.shape[-1])) if attn_out.shape[-1] < x.shape[-1] else attn_out[..., :x.shape[-1]]
+                attn_out = (
+                    F.pad(attn_out, (0, x.shape[-1] - attn_out.shape[-1]))
+                    if attn_out.shape[-1] < x.shape[-1]
+                    else attn_out[..., : x.shape[-1]]
+                )
             if self.is_nested_encoder:
                 return attn_out, (attn_weights if output_attentions else None)
             out = self.norm(x + attn_out)
             return out, (attn_weights if output_attentions else None)
         else:
             delta_out, _ = self.deltanet(
-                x, attention_mask=attention_mask, head_mask=head_mask, output_attentions=output_attentions, **kwargs
+                x,
+                attention_mask=attention_mask,
+                head_mask=head_mask,
+                output_attentions=output_attentions,
+                **kwargs,
             )
             if delta_out.shape[-1] != x.shape[-1]:
-                delta_out = F.pad(delta_out, (0, x.shape[-1] - delta_out.shape[-1])) if delta_out.shape[-1] < x.shape[-1] else delta_out[..., :x.shape[-1]]
+                delta_out = (
+                    F.pad(delta_out, (0, x.shape[-1] - delta_out.shape[-1]))
+                    if delta_out.shape[-1] < x.shape[-1]
+                    else delta_out[..., : x.shape[-1]]
+                )
             if self.is_nested_encoder:
                 return delta_out, None
             if getattr(self, "is_nested_encoder", False):
@@ -225,9 +278,15 @@ def inject_gated_deltanet_block(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+    elif hasattr(target, "layers") and isinstance(
+        target.layers, (torch.nn.ModuleList, list)
+    ):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -237,7 +296,11 @@ def inject_gated_deltanet_block(
             res = inject_gated_deltanet_block(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                comp_config=(
+                    comp_config
+                    if "comp_config" in locals() or "comp_config" in kwargs
+                    else None
+                ),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
@@ -265,23 +328,37 @@ def inject_gated_deltanet_block(
     d_model = 64
     num_heads = 4
     if src_attn is not None:
-        cand = getattr(src_attn, "hidden_size", getattr(src_attn, "embed_dim", getattr(src_attn, "all_head_size", None)))
-        if cand is None and hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features"):
+        cand = getattr(
+            src_attn,
+            "hidden_size",
+            getattr(src_attn, "embed_dim", getattr(src_attn, "all_head_size", None)),
+        )
+        if (
+            cand is None
+            and hasattr(src_attn, "q_proj")
+            and hasattr(src_attn.q_proj, "in_features")
+        ):
             cand = src_attn.q_proj.in_features
         if cand is not None:
             d_model = cand
-        num_heads = getattr(src_attn, "num_heads", getattr(src_attn, "num_attention_heads", num_heads))
+        num_heads = getattr(
+            src_attn, "num_heads", getattr(src_attn, "num_attention_heads", num_heads)
+        )
     elif model_config is None and hasattr(layer, "config"):
         model_config = layer.config
     if model_config is not None:
-        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", d_model))
+        d_model = getattr(
+            model_config, "hidden_size", getattr(model_config, "dim", d_model)
+        )
         num_heads = getattr(model_config, "num_attention_heads", num_heads)
     elif hasattr(layer, "config"):
         d_model = getattr(layer.config, "hidden_size", d_model)
         num_heads = getattr(layer.config, "num_attention_heads", num_heads)
 
     try:
-        use_full = getattr(comp_config, "use_full_attention", False) if comp_config else False
+        use_full = (
+            getattr(comp_config, "use_full_attention", False) if comp_config else False
+        )
         new_block = GatedDeltaNetBlock(
             config=model_config,
             comp_config=comp_config,
@@ -316,7 +393,9 @@ def inject_gated_deltanet_block(
             new_block.is_nested_encoder = False
             new_block.deltanet.is_nested_encoder = False
             layer.self_attn = new_block
-        assert new_block.is_nested_encoder == new_block.deltanet.is_nested_encoder, "GatedDeltaNetBlock nested flag desynced"
+        assert (
+            new_block.is_nested_encoder == new_block.deltanet.is_nested_encoder
+        ), "GatedDeltaNetBlock nested flag desynced"
 
         return new_block
     except Exception as e:

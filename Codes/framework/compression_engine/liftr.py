@@ -15,7 +15,6 @@ from typing import Any
 
 import torch
 import torch.nn as nn
-
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 
@@ -31,9 +30,22 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 _ATTN_NAMES = {
-    "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-    "c_attn", "c_proj", "query", "key", "value",
-    "q_lin", "k_lin", "v_lin", "out_lin", "self_attn",
+    "attn",
+    "attention",
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "c_attn",
+    "c_proj",
+    "query",
+    "key",
+    "value",
+    "q_lin",
+    "k_lin",
+    "v_lin",
+    "out_lin",
+    "self_attn",
 }
 
 # LIFTR-FIX-10: safe SiLU reference
@@ -49,8 +61,10 @@ except Exception:
 # Linearized activation
 # ===========================================================================
 
+
 class _LinearizedGELU(nn.Module):
     """f(x) ≈ α · x."""
+
     is_custom_attention: bool = False
 
     def __init__(self, alpha: float = 0.8) -> None:
@@ -68,6 +82,7 @@ class _LinearizedGELU(nn.Module):
 # Linearized attention wrapper
 # ===========================================================================
 
+
 class _LinearizedAttentionWrapper(nn.Module):
     """
     Replaces quadratic softmax attention with sequence-mean of values.
@@ -78,6 +93,7 @@ class _LinearizedAttentionWrapper(nn.Module):
     LIFTR-FIX-02: marked as is_custom_attention = False (this is not an
     attention module from the framework's perspective; it delegates to one).
     """
+
     is_custom_attention: bool = False
 
     def __init__(self, original_attn: nn.Module, layer_name: str = "") -> None:
@@ -143,11 +159,13 @@ class _LinearizedAttentionWrapper(nn.Module):
             x = value
         if x is None:
             # LIFTR-FIX-04: If we truly have no input, delegate to original.
-            return self._delegate(x if x is not None else None,
-                                  attention_mask=attention_mask,
-                                  head_mask=head_mask,
-                                  output_attentions=output_attentions,
-                                  **kwargs)
+            return self._delegate(
+                x if x is not None else None,
+                attention_mask=attention_mask,
+                head_mask=head_mask,
+                output_attentions=output_attentions,
+                **kwargs,
+            )
 
         attn = self.original_attn
         try:
@@ -167,8 +185,11 @@ class _LinearizedAttentionWrapper(nn.Module):
                 return self._format_output(output, output_attentions)
 
             # ---- 2. DistilBERT (q_lin, v_lin, out_lin) ----
-            if (hasattr(attn, "q_lin") and hasattr(attn, "v_lin")
-                    and hasattr(attn, "out_lin")):
+            if (
+                hasattr(attn, "q_lin")
+                and hasattr(attn, "v_lin")
+                and hasattr(attn, "out_lin")
+            ):
                 v = attn.v_lin(x)
                 o_in = getattr(attn.out_lin, "in_features", v.shape[-1])
                 if v.shape[-1] != o_in:
@@ -200,12 +221,18 @@ class _LinearizedAttentionWrapper(nn.Module):
                 return self._format_output(output, output_attentions)
 
         except Exception as e:
-            logger.debug("LIFTR wrapper: mean-attention path failed (%s); delegating.", e)
+            logger.debug(
+                "LIFTR wrapper: mean-attention path failed (%s); delegating.", e
+            )
 
         # ---- LIFTR-FIX-04: fallback to original ----
-        return self._delegate(x, attention_mask=attention_mask,
-                              head_mask=head_mask,
-                              output_attentions=output_attentions, **kwargs)
+        return self._delegate(
+            x,
+            attention_mask=attention_mask,
+            head_mask=head_mask,
+            output_attentions=output_attentions,
+            **kwargs,
+        )
 
     def _delegate(
         self,
@@ -220,8 +247,9 @@ class _LinearizedAttentionWrapper(nn.Module):
             if x is None:
                 # Cannot call — return an empty tensor of the right shape.
                 hs = self._resolve_hidden_size()
-                return self._format_output(torch.zeros(1, 1, hs, dtype=torch.float32),
-                                            output_attentions)
+                return self._format_output(
+                    torch.zeros(1, 1, hs, dtype=torch.float32), output_attentions
+                )
             call_kwargs = {}
             if attention_mask is not None:
                 call_kwargs["attention_mask"] = attention_mask
@@ -240,8 +268,13 @@ class _LinearizedAttentionWrapper(nn.Module):
             if x is not None and x.dim() >= 2:
                 batch, seq = x.shape[0], x.shape[1]
             return self._format_output(
-                torch.zeros(batch, seq, hs, dtype=x.dtype if x is not None else torch.float32,
-                            device=x.device if x is not None else "cpu"),
+                torch.zeros(
+                    batch,
+                    seq,
+                    hs,
+                    dtype=x.dtype if x is not None else torch.float32,
+                    device=x.device if x is not None else "cpu",
+                ),
                 output_attentions,
             )
 
@@ -260,6 +293,7 @@ class _LinearizedAttentionWrapper(nn.Module):
 # Compressor
 # ===========================================================================
 
+
 @COMPRESSOR_REGISTRY.register("liftr_class")
 @COMPRESSOR_REGISTRY.register("liftr_compressor_class")
 class LIFTRCompressor(BaseCompressor):
@@ -267,8 +301,16 @@ class LIFTRCompressor(BaseCompressor):
     is_custom_attention: bool = False
 
     CRITICAL_MODULE_KEYWORDS = [
-        "classifier", "score", "lm_head", "pooler",
-        "embed", "wte", "wpe", "shared", "head", "logits",
+        "classifier",
+        "score",
+        "lm_head",
+        "pooler",
+        "embed",
+        "wte",
+        "wpe",
+        "shared",
+        "head",
+        "logits",
     ]
 
     def __init__(
@@ -286,27 +328,48 @@ class LIFTRCompressor(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         self.cfg = cfg
 
-        self.replace_attention = bool(_cfg_get(
-            cfg, "liftr_replace_attention",
-            _cfg_get(cfg, "replace_attention", replace_attention),
-        ))
-        self.gelu_coefficient = float(_cfg_get(
-            cfg, "liftr_gelu_coefficient",
-            _cfg_get(cfg, "gelu_coefficient", gelu_coefficient),
-        ))
-        self.validation_calibration = bool(_cfg_get(
-            cfg, "validation_calibration", validation_calibration,
-        ))
-        self.calibration_threshold = float(_cfg_get(
-            cfg, "calibration_threshold", calibration_threshold,
-        ))
-        self.target_attention_only = bool(_cfg_get(
-            cfg, "liftr_target_attention_only",
-            _cfg_get(cfg, "target_attention_only", target_attention_only),
-        ))
-        self.skip_should_compress_filter = bool(_cfg_get(
-            cfg, "skip_should_compress_filter", skip_should_compress_filter,
-        ))
+        self.replace_attention = bool(
+            _cfg_get(
+                cfg,
+                "liftr_replace_attention",
+                _cfg_get(cfg, "replace_attention", replace_attention),
+            )
+        )
+        self.gelu_coefficient = float(
+            _cfg_get(
+                cfg,
+                "liftr_gelu_coefficient",
+                _cfg_get(cfg, "gelu_coefficient", gelu_coefficient),
+            )
+        )
+        self.validation_calibration = bool(
+            _cfg_get(
+                cfg,
+                "validation_calibration",
+                validation_calibration,
+            )
+        )
+        self.calibration_threshold = float(
+            _cfg_get(
+                cfg,
+                "calibration_threshold",
+                calibration_threshold,
+            )
+        )
+        self.target_attention_only = bool(
+            _cfg_get(
+                cfg,
+                "liftr_target_attention_only",
+                _cfg_get(cfg, "target_attention_only", target_attention_only),
+            )
+        )
+        self.skip_should_compress_filter = bool(
+            _cfg_get(
+                cfg,
+                "skip_should_compress_filter",
+                skip_should_compress_filter,
+            )
+        )
 
         self.linearized_activations_count = 0
         self.linearized_attentions_count = 0
@@ -325,13 +388,20 @@ class LIFTRCompressor(BaseCompressor):
         """LIFTR-FIX-06: skip already-compressed module types."""
         cls_name = module.__class__.__name__
         return cls_name in (
-            "LSCPrunedLoRALinear", "DynamicSVDLinear", "SVDLinear",
-            "FactorisedLinear", "FactorizedLinear", "LowRankPlusSparseLinear",
+            "LSCPrunedLoRALinear",
+            "DynamicSVDLinear",
+            "SVDLinear",
+            "FactorisedLinear",
+            "FactorizedLinear",
+            "LowRankPlusSparseLinear",
             "_LinearizedAttentionWrapper",
         )
 
     def _linearize_module(
-        self, module: nn.Module, prefix: str = "", _depth: int = 0,
+        self,
+        module: nn.Module,
+        prefix: str = "",
+        _depth: int = 0,
     ) -> None:
         """Recursively replaces activation functions and (optionally) attention blocks."""
         if _depth > 16:
@@ -344,13 +414,19 @@ class LIFTRCompressor(BaseCompressor):
                 continue
 
             if self._is_already_compressed(child):
-                if hasattr(child, "lora_A") or child.__class__.__name__.lower() == "loralinear":
+                if (
+                    hasattr(child, "lora_A")
+                    or child.__class__.__name__.lower() == "loralinear"
+                ):
                     continue
                 if isinstance(child, _LinearizedAttentionWrapper):
                     continue
 
             # Skip LoRA-wrapped modules.
-            if hasattr(child, "lora_A") or child.__class__.__name__.lower() == "loralinear":
+            if (
+                hasattr(child, "lora_A")
+                or child.__class__.__name__.lower() == "loralinear"
+            ):
                 continue
 
             is_attn_layer = any(k in full_name.lower() for k in _ATTN_NAMES)
@@ -379,7 +455,9 @@ class LIFTRCompressor(BaseCompressor):
                 if "norm" in name.lower():
                     self._linearize_module(child, prefix=full_name, _depth=_depth + 1)
                     continue
-                if isinstance(child, (nn.Linear, nn.LayerNorm, nn.RMSNorm, nn.Embedding)):
+                if isinstance(
+                    child, (nn.Linear, nn.LayerNorm, nn.RMSNorm, nn.Embedding)
+                ):
                     self._linearize_module(child, prefix=full_name, _depth=_depth + 1)
                     continue
 
@@ -391,9 +469,13 @@ class LIFTRCompressor(BaseCompressor):
                 if isinstance(child, _LinearizedAttentionWrapper):
                     continue
 
-                if not hasattr(child, "_liftr_skip") and not isinstance(child, _LinearizedAttentionWrapper):
+                if not hasattr(child, "_liftr_skip") and not isinstance(
+                    child, _LinearizedAttentionWrapper
+                ):
                     try:
-                        wrapped = _LinearizedAttentionWrapper(child, layer_name=full_name)
+                        wrapped = _LinearizedAttentionWrapper(
+                            child, layer_name=full_name
+                        )
                         setattr(module, name, wrapped)
                         self.linearized_attentions_count += 1
                         self.replaced_modules.append(full_name)
@@ -426,7 +508,9 @@ class LIFTRCompressor(BaseCompressor):
         if self.validation_calibration:
             try:
                 self.model.eval()
-                dummy_in = torch.randint(0, 100, (1, 8), device=device, dtype=torch.long)
+                dummy_in = torch.randint(
+                    0, 100, (1, 8), device=device, dtype=torch.long
+                )
                 with torch.no_grad():
                     res = self.model(dummy_in)
                     if hasattr(res, "logits"):
@@ -454,7 +538,11 @@ class LIFTRCompressor(BaseCompressor):
         # Post-linearization validation.
         validation_passed = True
         rel_diff = 0.0
-        if (self.validation_calibration and orig_out is not None and dummy_in is not None):
+        if (
+            self.validation_calibration
+            and orig_out is not None
+            and dummy_in is not None
+        ):
             try:
                 with torch.no_grad():
                     res_new = self.model(dummy_in)
@@ -471,7 +559,8 @@ class LIFTRCompressor(BaseCompressor):
                     if rel_diff > self.calibration_threshold:
                         logger.warning(
                             "LIFTR: validation diff %.4f > threshold %.4f.",
-                            rel_diff, self.calibration_threshold,
+                            rel_diff,
+                            self.calibration_threshold,
                         )
                         validation_passed = False
             except Exception as e:
@@ -488,31 +577,34 @@ class LIFTRCompressor(BaseCompressor):
         except Exception:
             stats = {}
 
-        stats.update({
-            "linearized_activations": self.linearized_activations_count,
-            "linearized_attentions": self.linearized_attentions_count,
-            "replace_attention": self.replace_attention,
-            "replaced_modules": self.replaced_modules,
-            "gelu_coefficient": self.gelu_coefficient,
-            "target_attention_only": self.target_attention_only,
-            "validation_calibration": self.validation_calibration,
-            "validation_passed": validation_passed,
-            "calibration_rel_diff": rel_diff,
-            # LIFTR-FIX-08: explicit note.
-            "effective_parameter_ratio": 1.0,
-            "flops_reduction_pct": 0.0,
-            "method": "liftr_linearization",
-            "note": (
-                "LIFTR performs functional linearization (activation & attention). "
-                "It does NOT reduce parameters; original attention submodules are "
-                "retained as `self.original_attn` for safe delegation."
-            ),
-        })
+        stats.update(
+            {
+                "linearized_activations": self.linearized_activations_count,
+                "linearized_attentions": self.linearized_attentions_count,
+                "replace_attention": self.replace_attention,
+                "replaced_modules": self.replaced_modules,
+                "gelu_coefficient": self.gelu_coefficient,
+                "target_attention_only": self.target_attention_only,
+                "validation_calibration": self.validation_calibration,
+                "validation_passed": validation_passed,
+                "calibration_rel_diff": rel_diff,
+                # LIFTR-FIX-08: explicit note.
+                "effective_parameter_ratio": 1.0,
+                "flops_reduction_pct": 0.0,
+                "method": "liftr_linearization",
+                "note": (
+                    "LIFTR performs functional linearization (activation & attention). "
+                    "It does NOT reduce parameters; original attention submodules are "
+                    "retained as `self.original_attn` for safe delegation."
+                ),
+            }
+        )
         self.stats = stats
         self.model._liftr_compressed = True
         logger.info(
             "LIFTR: %d activations linearized, %d attentions wrapped.",
-            self.linearized_activations_count, self.linearized_attentions_count,
+            self.linearized_activations_count,
+            self.linearized_attentions_count,
         )
         return self.model, stats
 
@@ -521,30 +613,40 @@ class LIFTRCompressor(BaseCompressor):
 # Factory
 # ===========================================================================
 
+
 @COMPRESSOR_REGISTRY.register("liftr")
 @COMPRESSOR_REGISTRY.register("liftr_compressor")
 @COMPRESSOR_REGISTRY.register("liftr_factory")
 def liftr_compressor_entry(
-    model: nn.Module, comp_config: Any = None, **kwargs: Any,
+    model: nn.Module,
+    comp_config: Any = None,
+    **kwargs: Any,
 ) -> Any:
     """Factory function for LIFTR compressor."""
     replace_attention = _cfg_get(
-        comp_config, "liftr_replace_attention",
-        _cfg_get(comp_config, "replace_attention",
-                 kwargs.pop("replace_attention", False)),
+        comp_config,
+        "liftr_replace_attention",
+        _cfg_get(
+            comp_config, "replace_attention", kwargs.pop("replace_attention", False)
+        ),
     )
     gelu_coefficient = _cfg_get(
-        comp_config, "liftr_gelu_coefficient",
-        _cfg_get(comp_config, "gelu_coefficient",
-                 kwargs.pop("gelu_coefficient", 0.8)),
+        comp_config,
+        "liftr_gelu_coefficient",
+        _cfg_get(comp_config, "gelu_coefficient", kwargs.pop("gelu_coefficient", 0.8)),
     )
     target_attention_only = _cfg_get(
-        comp_config, "liftr_target_attention_only",
-        _cfg_get(comp_config, "target_attention_only",
-                 kwargs.pop("target_attention_only", False)),
+        comp_config,
+        "liftr_target_attention_only",
+        _cfg_get(
+            comp_config,
+            "target_attention_only",
+            kwargs.pop("target_attention_only", False),
+        ),
     )
     skip_filter = _cfg_get(
-        comp_config, "skip_should_compress_filter",
+        comp_config,
+        "skip_should_compress_filter",
         kwargs.pop("skip_should_compress_filter", False),
     )
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))

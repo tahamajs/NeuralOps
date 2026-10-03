@@ -38,18 +38,18 @@ logger = logging.getLogger("Hgrn2Orchestrator")
 # Bootstrap: resolve project root
 # File: <PROJECT_ROOT>/Codes/framework/runners/run_all_4_hgrn2.py
 # ---------------------------------------------------------------------------
-HERE         = Path(__file__).resolve().parent
-PROJECT_ROOT = HERE.parent.parent.parent   # runners → framework → Codes → root
+HERE = Path(__file__).resolve().parent
+PROJECT_ROOT = HERE.parent.parent.parent  # runners → framework → Codes → root
 os.chdir(PROJECT_ROOT)
 sys.path[:0] = [str(PROJECT_ROOT), str(PROJECT_ROOT / "Codes")]
 
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-MODULE_KEY    = "hgrn2"
-RESULTS_BASE  = PROJECT_ROOT / "results" / "03_unified_runs" / f"unified_{MODULE_KEY}"
-SWEEP_SCRIPT  = PROJECT_ROOT / "Codes" / "framework" / "run_quality_sweep.py"
-DATASET_DIR   = PROJECT_ROOT / "Codes" / "framework" / "data" / "glue_data" / "sst2"
+MODULE_KEY = "hgrn2"
+RESULTS_BASE = PROJECT_ROOT / "results" / "03_unified_runs" / f"unified_{MODULE_KEY}"
+SWEEP_SCRIPT = PROJECT_ROOT / "Codes" / "framework" / "run_quality_sweep.py"
+DATASET_DIR = PROJECT_ROOT / "Codes" / "framework" / "data" / "glue_data" / "sst2"
 PASS_THRESHOLD = 56.0
 
 # ---------------------------------------------------------------------------
@@ -57,64 +57,83 @@ PASS_THRESHOLD = 56.0
 # ---------------------------------------------------------------------------
 MODELS = [
     {
-        "name":              "DistilBERT",
-        "slug":              "distilbert",
-        "model_path":        str(PROJECT_ROOT / "models" / "distilbert_sst2"),
-        "family":            "bert",
+        "name": "DistilBERT",
+        "slug": "distilbert",
+        "model_path": str(PROJECT_ROOT / "models" / "distilbert_sst2"),
+        "family": "bert",
         "parent_checkpoint": None,
     },
     {
-        "name":              "RoBERTa",
-        "slug":              "roberta",
-        "model_path":        str(PROJECT_ROOT / "models" / "roberta_sst2"),
-        "family":            "roberta",
+        "name": "RoBERTa",
+        "slug": "roberta",
+        "model_path": str(PROJECT_ROOT / "models" / "roberta_sst2"),
+        "family": "roberta",
         "parent_checkpoint": str(
-            PROJECT_ROOT / "results" / "01_baselines"
-            / "roberta_sst2_lora_baseline" / "finetuned_model.pt"
+            PROJECT_ROOT
+            / "results"
+            / "01_baselines"
+            / "roberta_sst2_lora_baseline"
+            / "finetuned_model.pt"
         ),
     },
     {
-        "name":              "GPT-2",
-        "slug":              "gpt2",
-        "model_path":        str(PROJECT_ROOT / "models" / "gpt2_sst2"),
-        "family":            "gpt",
+        "name": "GPT-2",
+        "slug": "gpt2",
+        "model_path": str(PROJECT_ROOT / "models" / "gpt2_sst2"),
+        "family": "gpt",
         "parent_checkpoint": str(
-            PROJECT_ROOT / "results" / "01_baselines"
-            / "gpt2_sst2_lora_baseline" / "finetuned_model.pt"
+            PROJECT_ROOT
+            / "results"
+            / "01_baselines"
+            / "gpt2_sst2_lora_baseline"
+            / "finetuned_model.pt"
         ),
     },
     {
-        "name":              "Qwen2.5-0.5B",
-        "slug":              "qwen",
-        "model_path":        str(PROJECT_ROOT / "models" / "qwen2.5_0.5b_sst2"),
-        "family":            "qwen",
+        "name": "Qwen2.5-0.5B",
+        "slug": "qwen",
+        "model_path": str(PROJECT_ROOT / "models" / "qwen2.5_0.5b_sst2"),
+        "family": "qwen",
         "parent_checkpoint": None,
     },
 ]
 
 # Module-specific extra args (append to sweep command if needed)
-EXTRA_ARGS: list[str] = ['--lora_rank', '8', '--rank', '16']
+EXTRA_ARGS: list[str] = ["--lora_rank", "8", "--rank", "16"]
 
 # ---------------------------------------------------------------------------
 # Core: run one model
 # ---------------------------------------------------------------------------
+
 
 def run_model(m: dict) -> dict:
     out_dir = RESULTS_BASE / m["slug"]
     out_dir.mkdir(parents=True, exist_ok=True)
 
     cmd = [
-        sys.executable, "-u", str(SWEEP_SCRIPT),
-        "--model",          m["model_path"],
-        "--model_family",   m["family"],
-        "--dataset",        "sst2",
-        "--dataset_dir",    str(DATASET_DIR),
-        "--output_dir",     str(out_dir),
-        "--modules",        MODULE_KEY,
-        "--batch_size",     "8",
-        "--recovery_steps", "50",
-        "--timeout",        "1200",
-        "--precision",      "fp16",
+        sys.executable,
+        "-u",
+        str(SWEEP_SCRIPT),
+        "--model",
+        m["model_path"],
+        "--model_family",
+        m["family"],
+        "--dataset",
+        "sst2",
+        "--dataset_dir",
+        str(DATASET_DIR),
+        "--output_dir",
+        str(out_dir),
+        "--modules",
+        MODULE_KEY,
+        "--batch_size",
+        "8",
+        "--recovery_steps",
+        "50",
+        "--timeout",
+        "1200",
+        "--precision",
+        "fp16",
         "--defer_export",
         "--fresh",
     ] + EXTRA_ARGS
@@ -124,7 +143,7 @@ def run_model(m: dict) -> dict:
         cmd += ["--parent_checkpoint", ckpt]
 
     logger.info("Starting %-14s …", m["name"])
-    t0   = time.time()
+    t0 = time.time()
     proc = subprocess.run(cmd)
     elapsed = time.time() - t0
     logger.info("Finished %-14s  %.1fs  exit=%d", m["name"], elapsed, proc.returncode)
@@ -148,15 +167,15 @@ def run_model(m: dict) -> dict:
         acc = 0.0
 
     return {
-        "name":         m["name"],
-        "slug":         m["slug"],
-        "family":       m["family"],
-        "out_dir":      out_dir,
-        "exit_code":    proc.returncode,
-        "status":       status,
+        "name": m["name"],
+        "slug": m["slug"],
+        "family": m["family"],
+        "out_dir": out_dir,
+        "exit_code": proc.returncode,
+        "status": status,
         "accuracy_pct": acc,
-        "elapsed_s":    elapsed,
-        "row_data":     row_data,
+        "elapsed_s": elapsed,
+        "row_data": row_data,
     }
 
 
@@ -164,15 +183,19 @@ def run_model(m: dict) -> dict:
 # Reporting
 # ---------------------------------------------------------------------------
 
+
 def print_table(results: list[dict]) -> None:
     W = 90
     print("\n" + "=" * W, flush=True)
     print(f"4-MODEL BENCHMARK — {MODULE_KEY.upper()}", flush=True)
     print("=" * W, flush=True)
-    print(f"{'Model':<14} | {'Status':<10} | {'Accuracy':>8} | {'Elapsed':>7} | {'Comp Rate':<10} | {'Layers':<6}", flush=True)
+    print(
+        f"{'Model':<14} | {'Status':<10} | {'Accuracy':>8} | {'Elapsed':>7} | {'Comp Rate':<10} | {'Layers':<6}",
+        flush=True,
+    )
     print("-" * W, flush=True)
     for r in results:
-        row  = r["row_data"]
+        row = r["row_data"]
         comp = row.get("compression_rate", "N/A")
         svdl = row.get("num_compressed_layers", "N/A")
         print(
@@ -188,16 +211,18 @@ def save_consolidated(results: list[dict]) -> None:
     rows = []
     for r in results:
         row = dict(r["row_data"])
-        row.update({
-            "model_name":   r["name"],
-            "model_slug":   r["slug"],
-            "status":       r["status"],
-            "accuracy_pct": r["accuracy_pct"],
-            "elapsed_s":    r["elapsed_s"],
-        })
+        row.update(
+            {
+                "model_name": r["name"],
+                "model_slug": r["slug"],
+                "status": r["status"],
+                "accuracy_pct": r["accuracy_pct"],
+                "elapsed_s": r["elapsed_s"],
+            }
+        )
         rows.append(row)
 
-    csv_path  = RESULTS_BASE / "4models_summary.csv"
+    csv_path = RESULTS_BASE / "4models_summary.csv"
     json_path = RESULTS_BASE / "4models_summary.json"
 
     if rows:
@@ -210,7 +235,8 @@ def save_consolidated(results: list[dict]) -> None:
     with json_path.open("w", encoding="utf-8") as f:
         json.dump(
             [{k: v for k, v in r.items() if k != "row_data"} for r in results],
-            f, indent=2,
+            f,
+            indent=2,
         )
     logger.info("Consolidated results saved → %s", RESULTS_BASE)
 
@@ -219,28 +245,32 @@ def save_consolidated(results: list[dict]) -> None:
 # HF + Git export (optional, requires hf_git_exporter)
 # ---------------------------------------------------------------------------
 
+
 def export_qualified(results: list[dict]) -> None:
     try:
         from Codes.framework.utils.hf_git_exporter import (
-            find_documentation_file,
-            upload_to_huggingface,
-            update_documentation_table,
             commit_and_push_git,
+            find_documentation_file,
+            update_documentation_table,
+            upload_to_huggingface,
         )
     except ImportError as exc:
         logger.info("hf_git_exporter not available (%s) — skipping HF export.", exc)
         return
 
-    hf_org     = "Hooshaai"
-    doc_path   = find_documentation_file(MODULE_KEY)
+    hf_org = "Hooshaai"
+    doc_path = find_documentation_file(MODULE_KEY)
     pass_count = 0
-    hf_urls:   list[str] = []
+    hf_urls: list[str] = []
 
     for r in results:
         if r["status"] != "PASS" or r["accuracy_pct"] < PASS_THRESHOLD:
             logger.info(
                 "[REJECTED] %s — %s %.2f%% < %.1f%%",
-                r["name"], r["status"], r["accuracy_pct"], PASS_THRESHOLD,
+                r["name"],
+                r["status"],
+                r["accuracy_pct"],
+                PASS_THRESHOLD,
             )
             weights_dir = r["out_dir"] / "checkpoints" / MODULE_KEY
             if weights_dir.exists():
@@ -248,11 +278,11 @@ def export_qualified(results: list[dict]) -> None:
             continue
 
         pass_count += 1
-        slug    = r["slug"]
+        slug = r["slug"]
         out_dir = r["out_dir"]
-        row     = r["row_data"]
+        row = r["row_data"]
         repo_id = f"{hf_org}/svd-linear-attention-{slug}-{MODULE_KEY}"
-        hf_dir  = out_dir / "checkpoints" / MODULE_KEY / "hf_export"
+        hf_dir = out_dir / "checkpoints" / MODULE_KEY / "hf_export"
 
         logger.info("[PASS] %s → %s", r["name"], repo_id)
 
@@ -265,24 +295,27 @@ def export_qualified(results: list[dict]) -> None:
             big.unlink(missing_ok=True)
 
         perf = {
-            "accuracy_pct":   r["accuracy_pct"],
-            "f1_score":       row.get("f1_score", "N/A"),
-            "val_loss":       row.get("val_loss", "N/A"),
-            "peak_vram_mb":   row.get("peak_vram_mb", "N/A"),
+            "accuracy_pct": r["accuracy_pct"],
+            "f1_score": row.get("f1_score", "N/A"),
+            "val_loss": row.get("val_loss", "N/A"),
+            "peak_vram_mb": row.get("peak_vram_mb", "N/A"),
             "tokens_per_sec": row.get("tokens_per_sec", "N/A"),
-            "status":         r["status"],
+            "status": r["status"],
         }
         comp = {
-            "compression_rate":      row.get("compression_rate", "1.0"),
+            "compression_rate": row.get("compression_rate", "1.0"),
             "compression_ratio_pct": row.get("compression_ratio_pct", "0.0"),
             "num_compressed_layers": row.get("num_compressed_layers", "N/A"),
         }
 
         url = upload_to_huggingface(
-            export_dir=hf_dir, repo_id=repo_id,
-            model_name=slug, module_name=MODULE_KEY,
+            export_dir=hf_dir,
+            repo_id=repo_id,
+            model_name=slug,
+            module_name=MODULE_KEY,
             dataset_name="sst2",
-            perf_metrics=perf, comp_metrics=comp,
+            perf_metrics=perf,
+            comp_metrics=comp,
         )
         if url:
             hf_urls.append(url)
@@ -291,9 +324,13 @@ def export_qualified(results: list[dict]) -> None:
         if doc_path and doc_path.exists():
             update_documentation_table(
                 doc_path=doc_path,
-                model_name=slug, module_name=MODULE_KEY, dataset_name="sst2",
-                status=r["status"], baseline_acc=None,
-                acc=r["accuracy_pct"], f1=row.get("f1_score", "N/A"),
+                model_name=slug,
+                module_name=MODULE_KEY,
+                dataset_name="sst2",
+                status=r["status"],
+                baseline_acc=None,
+                acc=r["accuracy_pct"],
+                f1=row.get("f1_score", "N/A"),
                 comp_rate=row.get("compression_rate", "1.00"),
                 num_compressed=row.get("num_compressed_layers", "N/A"),
                 hf_repo_url=url or f"https://huggingface.co/{repo_id}",
@@ -308,13 +345,16 @@ def export_qualified(results: list[dict]) -> None:
     # )
     logger.info(
         "Export done. %d/%d passed. %d repos uploaded.",
-        pass_count, len(results), len(hf_urls),
+        pass_count,
+        len(results),
+        len(hf_urls),
     )
 
 
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     print("=" * 90, flush=True)
@@ -328,12 +368,19 @@ def main() -> None:
             results.append(run_model(m))
         except Exception as exc:
             logger.error("Unhandled error for %s: %s", m["name"], exc)
-            results.append({
-                "name": m["name"], "slug": m["slug"], "family": m["family"],
-                "out_dir": RESULTS_BASE / m["slug"],
-                "exit_code": -1, "status": "CRASH",
-                "accuracy_pct": 0.0, "elapsed_s": 0.0, "row_data": {},
-            })
+            results.append(
+                {
+                    "name": m["name"],
+                    "slug": m["slug"],
+                    "family": m["family"],
+                    "out_dir": RESULTS_BASE / m["slug"],
+                    "exit_code": -1,
+                    "status": "CRASH",
+                    "accuracy_pct": 0.0,
+                    "elapsed_s": 0.0,
+                    "row_data": {},
+                }
+            )
 
     print_table(results)
     save_consolidated(results)

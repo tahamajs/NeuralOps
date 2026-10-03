@@ -38,7 +38,7 @@ class ResultWriter:
         self._dirs = {
             "metrics": self.root / "metrics",
             "history": self.root / "history",
-            "plots":   self.root / "plots",
+            "plots": self.root / "plots",
         }
         for d in self._dirs.values():
             d.mkdir(parents=True, exist_ok=True)
@@ -83,6 +83,7 @@ class ResultWriter:
             keys = sorted({k for entry in log_history for k in entry})
             try:
                 import csv
+
                 with open(csv_path, "w", newline="") as f:
                     writer = csv.DictWriter(f, fieldnames=keys, extrasaction="ignore")
                     writer.writeheader()
@@ -102,6 +103,7 @@ class ResultWriter:
         """Record hardware, runtime, and parameter count metadata."""
         try:
             import torch
+
             cuda_available = torch.cuda.is_available()
             gpu_name = torch.cuda.get_device_name(0) if cuda_available else "N/A"
             mps_available = torch.backends.mps.is_available()
@@ -110,16 +112,16 @@ class ResultWriter:
             gpu_name = "N/A"
 
         info = {
-            "timestamp":       datetime.now().isoformat(),
-            "python_version":  sys.version.split()[0],
-            "platform":        platform.platform(),
-            "device":          device,
-            "cuda_available":  cuda_available,
-            "mps_available":   mps_available,
-            "gpu_name":        gpu_name,
+            "timestamp": datetime.now().isoformat(),
+            "python_version": sys.version.split()[0],
+            "platform": platform.platform(),
+            "device": device,
+            "cuda_available": cuda_available,
+            "mps_available": mps_available,
+            "gpu_name": gpu_name,
             "trainable_params": n_params,
             "elapsed_seconds": round(elapsed_s, 2),
-            "elapsed_human":   _human_time(elapsed_s),
+            "elapsed_human": _human_time(elapsed_s),
         }
         self._write_json(self.root / "system_info.json", info)
 
@@ -130,6 +132,7 @@ class ResultWriter:
         """Generate and save training/validation loss and metric curves."""
         try:
             import matplotlib
+
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
         except ImportError:
@@ -137,7 +140,7 @@ class ResultWriter:
             return
 
         train_steps, train_losses = [], []
-        eval_steps, eval_losses   = [], []
+        eval_steps, eval_losses = [], []
         eval_accs, eval_acc_steps = [], []
 
         for entry in log_history:
@@ -170,7 +173,9 @@ class ResultWriter:
         # Accuracy curve
         if eval_accs:
             fig, ax = plt.subplots(figsize=(10, 5))
-            ax.plot(eval_acc_steps, eval_accs, "g^-", label="Eval Accuracy", linewidth=1.5)
+            ax.plot(
+                eval_acc_steps, eval_accs, "g^-", label="Eval Accuracy", linewidth=1.5
+            )
             ax.set_xlabel("Step")
             ax.set_ylabel("Accuracy")
             ax.set_title("Validation Accuracy")
@@ -185,9 +190,9 @@ class ResultWriter:
     # ------------------------------------------------------------------ #
     def write_summary_md(
         self,
-        exp_name:  str,
-        cfg:       Any,
-        metrics:   dict[str, Any],
+        exp_name: str,
+        cfg: Any,
+        metrics: dict[str, Any],
         elapsed_s: float,
     ) -> None:
         """Write a human-readable SUMMARY.md for quick inspection."""

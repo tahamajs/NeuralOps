@@ -1,7 +1,9 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.attentions.griffin_ssd import GriffinSSDBlock, inject_griffin_ssd
+from framework.attentions.griffin_ssd import (GriffinSSDBlock,
+                                              inject_griffin_ssd)
+
 
 def test_griffin_ssd_standalone():
     block = GriffinSSDBlock(d_model=64, num_heads=4, lora_rank=8, is_decoder=False)

@@ -1,7 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.attentions.flash_attention3 import FlashAttention3, inject_flash_attention3
+from framework.attentions.flash_attention3 import (FlashAttention3,
+                                                   inject_flash_attention3)
 
 
 class MockConfig:

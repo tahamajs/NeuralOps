@@ -19,6 +19,7 @@ Usage:
     python run_baseline_comparison.py --dry_run
     python run_baseline_comparison.py --rank 64
 """
+
 from __future__ import annotations
 
 import argparse
@@ -40,10 +41,12 @@ sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "Codes")]
 from datasets import load_dataset, load_from_disk
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.eval_all_models_datasets import apply_module_to_model
-from framework.run_quality_sweep import prepare_eval_batches, evaluate_comprehensive
+from framework.run_quality_sweep import evaluate_comprehensive, prepare_eval_batches
 
 LOG = logging.getLogger("BaselineComparison")
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
 
 BASELINES = [
     ("dense", "Original uncompressed full-rank baseline"),
@@ -97,20 +100,36 @@ def parse_args():
         description="Run comparative evaluation of literature baselines against proposed method",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--rank", type=int, default=64,
-                        help="Decomposition rank for low-rank methods")
-    parser.add_argument("--output_dir", type=str, default="results/01_baselines/baseline_comparison",
-                        help="Destination directory for outputs")
-    parser.add_argument("--datasets", nargs="*", default=DATASETS,
-                        help="List of datasets to evaluate")
-    parser.add_argument("--batch_size", type=int, default=16,
-                        help="Evaluation batch size")
-    parser.add_argument("--fp16", action="store_true", default=True,
-                        help="Evaluate in FP16 precision")
-    parser.add_argument("--parallel", type=int, default=1,
-                        help="Number of parallel workers (kept 1 for single GPU)")
-    parser.add_argument("--dry_run", action="store_true", default=False,
-                        help="Print planned execution table without running evaluations")
+    parser.add_argument(
+        "--rank", type=int, default=64, help="Decomposition rank for low-rank methods"
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default="results/01_baselines/baseline_comparison",
+        help="Destination directory for outputs",
+    )
+    parser.add_argument(
+        "--datasets", nargs="*", default=DATASETS, help="List of datasets to evaluate"
+    )
+    parser.add_argument(
+        "--batch_size", type=int, default=16, help="Evaluation batch size"
+    )
+    parser.add_argument(
+        "--fp16", action="store_true", default=True, help="Evaluate in FP16 precision"
+    )
+    parser.add_argument(
+        "--parallel",
+        type=int,
+        default=1,
+        help="Number of parallel workers (kept 1 for single GPU)",
+    )
+    parser.add_argument(
+        "--dry_run",
+        action="store_true",
+        default=False,
+        help="Print planned execution table without running evaluations",
+    )
     return parser.parse_args()
 
 
@@ -177,13 +196,28 @@ def main():
                 elif Path(f"Codes/framework/data/glue_data/{ds_name}").exists():
                     val_ds = load_from_disk(f"Codes/framework/data/glue_data/{ds_name}")
                 else:
-                    val_ds = load_dataset("glue" if ds_name != "ag_news" else "ag_news", ds_name if ds_name != "ag_news" else None)
+                    val_ds = load_dataset(
+                        "glue" if ds_name != "ag_news" else "ag_news",
+                        ds_name if ds_name != "ag_news" else None,
+                    )
 
-                val_split = val_ds.get("validation_matched", val_ds.get("validation", val_ds.get("test", None)))
-                eval_batches = prepare_eval_batches(tok, val_split, ds_name, 128, args.batch_size, device)
+                val_split = val_ds.get(
+                    "validation_matched",
+                    val_ds.get("validation", val_ds.get("test", None)),
+                )
+                eval_batches = prepare_eval_batches(
+                    tok, val_split, ds_name, 128, args.batch_size, device
+                )
                 eval_metrics = evaluate_comprehensive(
-                    model, tok, val_split, ds_name, 128, args.batch_size, device,
-                    fp16=args.fp16, precomputed_batches=eval_batches
+                    model,
+                    tok,
+                    val_split,
+                    ds_name,
+                    128,
+                    args.batch_size,
+                    device,
+                    fp16=args.fp16,
+                    precomputed_batches=eval_batches,
                 )
 
                 elapsed = round(time.time() - t0, 2)
@@ -209,7 +243,9 @@ def main():
                     torch.cuda.empty_cache()
 
             except Exception as e:
-                LOG.exception("Baseline %s on %s encountered error: %s", b_name, ds_name, e)
+                LOG.exception(
+                    "Baseline %s on %s encountered error: %s", b_name, ds_name, e
+                )
                 row = {
                     "dataset": ds_name,
                     "method": b_name,

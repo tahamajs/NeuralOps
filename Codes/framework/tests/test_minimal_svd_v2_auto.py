@@ -1,7 +1,8 @@
+import framework.attentions.minimal_svd_v2
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.minimal_svd_v2
+
 
 def test_minimal_svd_v2_module_present():
     assert hasattr(framework.attentions, 'minimal_svd_v2')

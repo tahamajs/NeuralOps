@@ -31,6 +31,7 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 try:
     from framework.utils.model_family import ModelAdapter
+
     _HAS_MODEL_ADAPTER = True
 except Exception:
     ModelAdapter = None
@@ -40,6 +41,7 @@ except Exception:
 # ============================================================================
 # Helpers
 # ============================================================================
+
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if cfg is None:
@@ -59,9 +61,13 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
         w = w.data.clone()
         cls_n = getattr(module, "__class__", type(module)).__name__
         base_n = getattr(base, "__class__", type(base)).__name__
-        if ("Conv1D" in cls_n) or ("Conv1D" in base_n) \
-                or hasattr(module, "nf") or hasattr(base, "nf") \
-                or (w.ndim == 2 and w.shape[0] < w.shape[1]):
+        if (
+            ("Conv1D" in cls_n)
+            or ("Conv1D" in base_n)
+            or hasattr(module, "nf")
+            or hasattr(base, "nf")
+            or (w.ndim == 2 and w.shape[0] < w.shape[1])
+        ):
             w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
@@ -114,7 +120,9 @@ def apply_rotary_pos_emb(
     sin_cut = sin[..., :rotary_dim_even].to(q_rot.dtype)
 
     q_rot_embed = (q_rot * cos_cut) + (_rotate_half(q_rot) * sin_cut)
-    k_rot_embed = (k_rot * cos_cut.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin_cut.to(k_rot.dtype))
+    k_rot_embed = (k_rot * cos_cut.to(k_rot.dtype)) + (
+        _rotate_half(k_rot) * sin_cut.to(k_rot.dtype)
+    )
 
     q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
     k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
@@ -125,6 +133,7 @@ def apply_rotary_pos_emb(
 # ============================================================================
 # LoRALinear
 # ============================================================================
+
 
 class LoRALinear(nn.Module):
     def __init__(
@@ -147,15 +156,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -190,11 +205,17 @@ class LoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
-        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
+        b = (
+            self.bias.to(x.dtype)
+            if (self.bias is not None and self.bias.dtype != x.dtype)
+            else self.bias
+        )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            bb = (
+                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            )
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -203,8 +224,11 @@ class LoRALinear(nn.Module):
 # HammingAttention
 # ============================================================================
 
+
 @ATTENTION_REGISTRY.register("hamming", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("hamming_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "hamming_attention", supports_causal=True, supports_gqa=True
+)
 class HammingAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
@@ -242,18 +266,23 @@ class HammingAttention(BaseAttention):
 
         # Fallback to direct config attributes
         if not hidden_size and config is not None:
-            hidden_size = getattr(config, "hidden_size",
-                          getattr(config, "d_model",
-                          getattr(config, "dim", 0)))
+            hidden_size = getattr(
+                config,
+                "hidden_size",
+                getattr(config, "d_model", getattr(config, "dim", 0)),
+            )
         if not num_heads and config is not None:
-            num_heads = getattr(config, "num_attention_heads",
-                        getattr(config, "num_heads",
-                        getattr(config, "n_heads", 0)))
+            num_heads = getattr(
+                config,
+                "num_attention_heads",
+                getattr(config, "num_heads", getattr(config, "n_heads", 0)),
+            )
 
         # Fallback to source attention module
         if not hidden_size and pretrained_attn is not None:
-            hidden_size = getattr(pretrained_attn, "hidden_size",
-                          getattr(pretrained_attn, "embed_dim", 0))
+            hidden_size = getattr(
+                pretrained_attn, "hidden_size", getattr(pretrained_attn, "embed_dim", 0)
+            )
             if not hidden_size:
                 for cand in ("q_proj", "q_lin", "query", "c_attn"):
                     m = getattr(pretrained_attn, cand, None)
@@ -261,20 +290,31 @@ class HammingAttention(BaseAttention):
                         hidden_size = m.in_features
                         break
                 if not hidden_size:
-                    out_l = getattr(pretrained_attn, "out_lin",
-                            getattr(pretrained_attn, "dense",
-                            getattr(pretrained_attn, "c_proj", None)))
+                    out_l = getattr(
+                        pretrained_attn,
+                        "out_lin",
+                        getattr(
+                            pretrained_attn,
+                            "dense",
+                            getattr(pretrained_attn, "c_proj", None),
+                        ),
+                    )
                     if out_l is not None and hasattr(out_l, "out_features"):
                         hidden_size = out_l.out_features
 
         # Final defaults
-        hidden_size = hidden_size or kwargs.get("hidden_size",
-                                kwargs.get("d_model", 768))
-        num_heads = num_heads or kwargs.get("num_heads",
-                            kwargs.get("num_attention_heads", 12))
-        num_kv_heads = num_kv_heads or _cfg_get(config, "num_key_value_heads",
-                                kwargs.get("num_key_value_heads", num_heads))
-        head_dim = head_dim or kwargs.get("head_dim") or (hidden_size // max(1, num_heads))
+        hidden_size = hidden_size or kwargs.get(
+            "hidden_size", kwargs.get("d_model", 768)
+        )
+        num_heads = num_heads or kwargs.get(
+            "num_heads", kwargs.get("num_attention_heads", 12)
+        )
+        num_kv_heads = num_kv_heads or _cfg_get(
+            config, "num_key_value_heads", kwargs.get("num_key_value_heads", num_heads)
+        )
+        head_dim = (
+            head_dim or kwargs.get("head_dim") or (hidden_size // max(1, num_heads))
+        )
         kv_repeat = kv_repeat or max(1, num_heads // max(1, num_kv_heads))
 
         self.num_heads: int = int(num_heads)
@@ -291,34 +331,79 @@ class HammingAttention(BaseAttention):
 
         # ---- Decoder detection ----
         model_type = str(_cfg_get(config, "model_type", "")).lower()
-        is_dec = _cfg_get(config, "is_decoder",
-                 _cfg_get(config, "is_causal",
-                 kwargs.get("is_causal", kwargs.get("is_decoder", False))))
+        is_dec = _cfg_get(
+            config,
+            "is_decoder",
+            _cfg_get(
+                config,
+                "is_causal",
+                kwargs.get("is_causal", kwargs.get("is_decoder", False)),
+            ),
+        )
         _mt = (model_type or "").lower()
-        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                             "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        _decoder_prefixes = (
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
+        )
         if any(_mt.startswith(p) for p in _decoder_prefixes):
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = bool(is_dec)
         self.is_nested_encoder: bool = False
 
-        self.lora_rank = int(_cfg_get(config, "lora_rank",
-                             kwargs.get("lora_rank", lora_rank)))
+        self.lora_rank = int(
+            _cfg_get(config, "lora_rank", kwargs.get("lora_rank", lora_rank))
+        )
 
         # ---- Projections ----
-        self.q_proj = LoRALinear(self.hidden_size, self.all_head_size,
-                                 bias=True, lora_rank=self.lora_rank, freeze_base=True)
-        self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size,
-                                 bias=True, lora_rank=self.lora_rank, freeze_base=True)
-        self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size,
-                                 bias=True, lora_rank=self.lora_rank, freeze_base=True)
-        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size,
-                                   bias=True, lora_rank=self.lora_rank, freeze_base=True)
+        self.q_proj = LoRALinear(
+            self.hidden_size,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            freeze_base=True,
+        )
+        self.k_proj = LoRALinear(
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            freeze_base=True,
+        )
+        self.v_proj = LoRALinear(
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            freeze_base=True,
+        )
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.hidden_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            freeze_base=True,
+        )
 
-        dropout_p = _cfg_get(config, "dropout",
-                    _cfg_get(config, "hidden_dropout_prob",
-                    _cfg_get(config, "attention_probs_dropout_prob", 0.1)))
+        dropout_p = _cfg_get(
+            config,
+            "dropout",
+            _cfg_get(
+                config,
+                "hidden_dropout_prob",
+                _cfg_get(config, "attention_probs_dropout_prob", 0.1),
+            ),
+        )
         self.dropout = nn.Dropout(dropout_p)
 
         # HAD-FIX-01: rename trainable scalars with `lora_` prefix so that
@@ -339,7 +424,10 @@ class HammingAttention(BaseAttention):
         from framework.core.adapters import UniversalAdapter
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         # 1. UniversalAdapter
@@ -360,18 +448,31 @@ class HammingAttention(BaseAttention):
                 if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
                     weight = weight.t().contiguous()
                 split_size = weight.shape[0] // 3
-                extracted["q"] = (weight[:split_size, :],
-                                  bias_data[:split_size] if bias_data is not None else None)
-                extracted["k"] = (weight[split_size: 2 * split_size, :],
-                                  bias_data[split_size: 2 * split_size] if bias_data is not None else None)
-                extracted["v"] = (weight[2 * split_size:, :],
-                                  bias_data[2 * split_size:] if bias_data is not None else None)
+                extracted["q"] = (
+                    weight[:split_size, :],
+                    bias_data[:split_size] if bias_data is not None else None,
+                )
+                extracted["k"] = (
+                    weight[split_size : 2 * split_size, :],
+                    (
+                        bias_data[split_size : 2 * split_size]
+                        if bias_data is not None
+                        else None
+                    ),
+                )
+                extracted["v"] = (
+                    weight[2 * split_size :, :],
+                    bias_data[2 * split_size :] if bias_data is not None else None,
+                )
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o, b_o = _unpack_weight_bias(src.c_proj)
             if w_o is not None:
-                if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size \
-                        and w_o.shape[1] == self.hidden_size:
+                if (
+                    w_o.dim() == 2
+                    and w_o.shape[0] != self.hidden_size
+                    and w_o.shape[1] == self.hidden_size
+                ):
                     w_o = w_o.t().contiguous()
                 extracted["o"] = (w_o, b_o)
 
@@ -387,8 +488,11 @@ class HammingAttention(BaseAttention):
             if hasattr(s, "value") and extracted["v"][0] is None:
                 extracted["v"] = _unpack_weight_bias(s.value)
 
-        if hasattr(src, "output") and hasattr(src.output, "dense") \
-                and extracted["o"][0] is None:
+        if (
+            hasattr(src, "output")
+            and hasattr(src.output, "dense")
+            and extracted["o"][0] is None
+        ):
             extracted["o"] = _unpack_weight_bias(src.output.dense)
 
         # 4. Flat modules
@@ -409,12 +513,20 @@ class HammingAttention(BaseAttention):
 
         # ---- Nested encoder detection ----
         cls_name = getattr(src, "__class__", type(src)).__name__
-        has_out = any(hasattr(src, a) for a in
-                      ("dense", "out_proj", "out_lin", "c_proj", "o_proj"))
+        has_out = any(
+            hasattr(src, a)
+            for a in ("dense", "out_proj", "out_lin", "c_proj", "o_proj")
+        )
         if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
             self.is_nested_encoder = False
-        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention")
-              or (hasattr(src, "query") and not has_out)) or hasattr(src, "self") and hasattr(src, "output"):
+        elif (
+            (
+                cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+                or (hasattr(src, "query") and not has_out)
+            )
+            or hasattr(src, "self")
+            and hasattr(src, "output")
+        ):
             self.is_nested_encoder = True
         else:
             self.is_nested_encoder = False
@@ -431,8 +543,9 @@ class HammingAttention(BaseAttention):
             if w is not None:
                 n = float(torch.linalg.norm(w.float()).item())
                 if n < 1e-4:
-                    logger.debug("HammingAttention: %s near-zero norm (%.2e)",
-                                 proj_key, n)
+                    logger.debug(
+                        "HammingAttention: %s near-zero norm (%.2e)", proj_key, n
+                    )
         if extracted["o"][0] is not None:
             n = float(torch.linalg.norm(extracted["o"][0].float()).item())
             if n < 1e-4:
@@ -444,8 +557,12 @@ class HammingAttention(BaseAttention):
             return w
 
         with torch.no_grad():
-            for proj_key, target in (("q", self.q_proj), ("k", self.k_proj),
-                                     ("v", self.v_proj), ("o", self.out_proj)):
+            for proj_key, target in (
+                ("q", self.q_proj),
+                ("k", self.k_proj),
+                ("v", self.v_proj),
+                ("o", self.out_proj),
+            ):
                 w, b = extracted[proj_key]
                 if w is not None:
                     in_dim = self.all_head_size if proj_key == "o" else self.hidden_size
@@ -453,9 +570,11 @@ class HammingAttention(BaseAttention):
                     target_w = target.weight
                     out_d, in_d = target_w.shape
                     src_out, src_in = w_oriented.shape
-                    target_w.data[:min(out_d, src_out), :min(in_d, src_in)].copy_(
-                        w_oriented[:min(out_d, src_out), :min(in_d, src_in)]
-                        .to(target_w.dtype))
+                    target_w.data[: min(out_d, src_out), : min(in_d, src_in)].copy_(
+                        w_oriented[: min(out_d, src_out), : min(in_d, src_in)].to(
+                            target_w.dtype
+                        )
+                    )
                     if b is not None and target.bias is not None:
                         b_val = b.data if isinstance(b, nn.Parameter) else b
                         n = min(len(target.bias), len(b_val))
@@ -501,14 +620,27 @@ class HammingAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         Q = self.q_proj(hidden_states).view(B, L_q, H, Dh).transpose(1, 2).contiguous()
-        K = self.k_proj(kv_input).view(B, L_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
-        V = self.v_proj(kv_input).view(B, L_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
+        K = (
+            self.k_proj(kv_input)
+            .view(B, L_k, self.num_kv_heads, Dh)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        V = (
+            self.v_proj(kv_input)
+            .view(B, L_k, self.num_kv_heads, Dh)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # ---- RoPE ----
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross_attention:
-            if isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
+            if (
+                isinstance(position_embeddings, (tuple, list))
+                and len(position_embeddings) >= 2
+            ):
                 cos, sin = position_embeddings[0], position_embeddings[1]
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
 
@@ -528,9 +660,11 @@ class HammingAttention(BaseAttention):
         # HAD-FIX-02: ensure temperature is positive (softmax over -Hamming needs T > 0)
         temp = F.softplus(self.lora_temp) + 1e-3
 
-        scores = temp * (
-            torch.matmul(q_b, k_b.transpose(-2, -1).contiguous()) - Dh
-        ) / (2.0 * math.sqrt(Dh))
+        scores = (
+            temp
+            * (torch.matmul(q_b, k_b.transpose(-2, -1).contiguous()) - Dh)
+            / (2.0 * math.sqrt(Dh))
+        )
 
         # ---- Masking ----
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")
@@ -541,14 +675,19 @@ class HammingAttention(BaseAttention):
                 valid_m = get_token_valid_mask(mask, B, L_k, device)
                 if valid_m is not None:
                     scores = scores.masked_fill(
-                        (~valid_m).unsqueeze(1).unsqueeze(2), -1e4)
+                        (~valid_m).unsqueeze(1).unsqueeze(2), -1e4
+                    )
 
         # ---- Causal mask ----
         if self.is_decoder and not is_cross_attention and L_q > 1:
-            causal_tril = torch.tril(
-                torch.ones((L_q, L_k), device=device, dtype=torch.bool),
-                diagonal=L_k - L_q,
-            ).unsqueeze(0).unsqueeze(0)
+            causal_tril = (
+                torch.tril(
+                    torch.ones((L_q, L_k), device=device, dtype=torch.bool),
+                    diagonal=L_k - L_q,
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
             scores = scores.masked_fill(~causal_tril, -1e4)
 
         scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
@@ -586,6 +725,7 @@ class HammingAttention(BaseAttention):
 # ============================================================================
 # Injection (HAD-FIX-04: recursion guard)
 # ============================================================================
+
 
 @ATTENTION_REGISTRY.register("hamming_attention_inject")
 @ATTENTION_REGISTRY.register("hamming_inject")
@@ -642,9 +782,14 @@ def inject_hamming_attention(
             tot = len(layer_list)
             for idx, lyr in enumerate(layer_list):
                 res = inject_hamming_attention(
-                    layer=lyr, model_config=cfg, comp_config=comp_config,
-                    layer_idx=idx, total_layers=tot, lora_rank=lora_rank,
-                    _depth=_depth + 1, **kwargs,
+                    layer=lyr,
+                    model_config=cfg,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    lora_rank=lora_rank,
+                    _depth=_depth + 1,
+                    **kwargs,
                 )
                 if res is not None:
                     num_injected += 1
@@ -673,8 +818,10 @@ def inject_hamming_attention(
 
     try:
         new_layer = HammingAttention(
-            config=cfg, pretrained_attn=curr_attn,
-            lora_rank=lora_rank, **kwargs,
+            config=cfg,
+            pretrained_attn=curr_attn,
+            lora_rank=lora_rank,
+            **kwargs,
         )
     except Exception as e:
         logger.exception("HammingAttention injection failed: %s", e)

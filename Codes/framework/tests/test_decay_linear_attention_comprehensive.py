@@ -1,7 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.attentions.decay_linear_attention import DecayLinearAttention, inject_decay_linear
+from framework.attentions.decay_linear_attention import (DecayLinearAttention,
+                                                         inject_decay_linear)
 
 
 class MockConfig:

@@ -17,7 +17,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.adapters import UniversalAdapter
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
@@ -45,7 +44,12 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
         w = w.data.clone()
         p_cls = getattr(module, "__class__", type(module)).__name__
         base_cls = getattr(base, "__class__", type(base)).__name__
-        if ("Conv1D" in p_cls) or ("Conv1D" in base_cls) or hasattr(module, "nf") or hasattr(base, "nf"):
+        if (
+            ("Conv1D" in p_cls)
+            or ("Conv1D" in base_cls)
+            or hasattr(module, "nf")
+            or hasattr(base, "nf")
+        ):
             w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
@@ -119,25 +123,41 @@ class SVDLLMV2Attention(BaseAttention):
         actual_rank = (
             rank
             if rank is not None
-            else _cfg_get(comp_config, "rank", _cfg_get(config, "svd_rank", _cfg_get(config, "rank", 192)))
+            else _cfg_get(
+                comp_config,
+                "rank",
+                _cfg_get(config, "svd_rank", _cfg_get(config, "rank", 192)),
+            )
         )
         super().__init__(config, actual_rank)
 
         # 1. Dimensions & Architecture
         self.hidden_size: int = kwargs.get(
             "hidden_size",
-            _cfg_get(config, "hidden_size", _cfg_get(config, "dim", _cfg_get(config, "d_model", 768)))
+            _cfg_get(
+                config,
+                "hidden_size",
+                _cfg_get(config, "dim", _cfg_get(config, "d_model", 768)),
+            ),
         )
         self.num_heads: int = kwargs.get(
             "num_heads",
             kwargs.get(
                 "num_attention_heads",
-                _cfg_get(config, "num_attention_heads", _cfg_get(config, "num_heads", _cfg_get(config, "n_heads", 12)))
-            )
+                _cfg_get(
+                    config,
+                    "num_attention_heads",
+                    _cfg_get(config, "num_heads", _cfg_get(config, "n_heads", 12)),
+                ),
+            ),
         )
 
         cfg_head_dim = _cfg_get(config, "head_dim", None)
-        adapter_head_dim = getattr(getattr(config, "adapter", None), "head_dim", None) if config else None
+        adapter_head_dim = (
+            getattr(getattr(config, "adapter", None), "head_dim", None)
+            if config
+            else None
+        )
         inferred_head_dim = kwargs.get("head_dim", cfg_head_dim or adapter_head_dim)
         if inferred_head_dim is None and old_attn is not None:
             for attr in ("q_proj", "query", "q_lin"):
@@ -146,9 +166,15 @@ class SVDLLMV2Attention(BaseAttention):
                     if hasattr(layer_q, "weight"):
                         inferred_head_dim = layer_q.weight.shape[0] // self.num_heads
                         break
-        self.head_dim: int = int(inferred_head_dim if inferred_head_dim is not None else (self.hidden_size // self.num_heads if self.num_heads > 0 else 64))
+        self.head_dim: int = int(
+            inferred_head_dim
+            if inferred_head_dim is not None
+            else (self.hidden_size // self.num_heads if self.num_heads > 0 else 64)
+        )
 
-        cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
+        cfg_kv = _cfg_get(
+            config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None)
+        )
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -164,13 +190,32 @@ class SVDLLMV2Attention(BaseAttention):
 
         self.rank: int = actual_rank
         self.energy_threshold: float = energy_threshold
-        self.lora_rank: int = _cfg_get(config, "lora_rank", _cfg_get(comp_config, "lora_rank", lora_rank if lora_rank is not None else 16))
-        self.lora_alpha: float = _cfg_get(config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", lora_alpha))
+        self.lora_rank: int = _cfg_get(
+            config,
+            "lora_rank",
+            _cfg_get(
+                comp_config, "lora_rank", lora_rank if lora_rank is not None else 16
+            ),
+        )
+        self.lora_alpha: float = _cfg_get(
+            config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", lora_alpha)
+        )
         self.scaling: float = self.lora_alpha / max(1, self.lora_rank)
 
         # 2. Causal decoder flag detection
         _mt = str(_cfg_get(config, "model_type", "") or "").lower()
-        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "mpt")
+        _decoder_prefixes = (
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "mpt",
+        )
         self.is_decoder = (
             bool(_cfg_get(config, "is_decoder", False))
             or bool(_cfg_get(config, "causal", False))
@@ -185,40 +230,148 @@ class SVDLLMV2Attention(BaseAttention):
 
         # Device & Dtype detection from old_attn
         src_p = next(old_attn.parameters(), None) if old_attn is not None else None
-        target_dtype = kwargs.get("dtype", src_p.dtype if src_p is not None else torch.float32)
-        target_device = kwargs.get("device", src_p.device if src_p is not None else None)
+        target_dtype = kwargs.get(
+            "dtype", src_p.dtype if src_p is not None else torch.float32
+        )
+        target_device = kwargs.get(
+            "device", src_p.device if src_p is not None else None
+        )
 
         # 3. Create parameter buffers for SVD factors
-        self.query_u = nn.Parameter(torch.empty(self.q_head_size, self.rank, device=target_device, dtype=target_dtype))
-        self.query_s = nn.Parameter(torch.empty(self.rank, device=target_device, dtype=torch.float32))
-        self.query_vh = nn.Parameter(torch.empty(self.rank, self.hidden_size, device=target_device, dtype=target_dtype))
-        self.query_bias = nn.Parameter(torch.zeros(self.q_head_size, device=target_device, dtype=target_dtype))
+        self.query_u = nn.Parameter(
+            torch.empty(
+                self.q_head_size, self.rank, device=target_device, dtype=target_dtype
+            )
+        )
+        self.query_s = nn.Parameter(
+            torch.empty(self.rank, device=target_device, dtype=torch.float32)
+        )
+        self.query_vh = nn.Parameter(
+            torch.empty(
+                self.rank, self.hidden_size, device=target_device, dtype=target_dtype
+            )
+        )
+        self.query_bias = nn.Parameter(
+            torch.zeros(self.q_head_size, device=target_device, dtype=target_dtype)
+        )
 
-        self.key_u = nn.Parameter(torch.empty(self.kv_head_size, self.rank, device=target_device, dtype=target_dtype))
-        self.key_s = nn.Parameter(torch.empty(self.rank, device=target_device, dtype=torch.float32))
-        self.key_vh = nn.Parameter(torch.empty(self.rank, self.hidden_size, device=target_device, dtype=target_dtype))
-        self.key_bias = nn.Parameter(torch.zeros(self.kv_head_size, device=target_device, dtype=target_dtype))
+        self.key_u = nn.Parameter(
+            torch.empty(
+                self.kv_head_size, self.rank, device=target_device, dtype=target_dtype
+            )
+        )
+        self.key_s = nn.Parameter(
+            torch.empty(self.rank, device=target_device, dtype=torch.float32)
+        )
+        self.key_vh = nn.Parameter(
+            torch.empty(
+                self.rank, self.hidden_size, device=target_device, dtype=target_dtype
+            )
+        )
+        self.key_bias = nn.Parameter(
+            torch.zeros(self.kv_head_size, device=target_device, dtype=target_dtype)
+        )
 
-        self.value_u = nn.Parameter(torch.empty(self.kv_head_size, self.rank, device=target_device, dtype=target_dtype))
-        self.value_s = nn.Parameter(torch.empty(self.rank, device=target_device, dtype=torch.float32))
-        self.value_vh = nn.Parameter(torch.empty(self.rank, self.hidden_size, device=target_device, dtype=target_dtype))
-        self.value_bias = nn.Parameter(torch.zeros(self.kv_head_size, device=target_device, dtype=target_dtype))
+        self.value_u = nn.Parameter(
+            torch.empty(
+                self.kv_head_size, self.rank, device=target_device, dtype=target_dtype
+            )
+        )
+        self.value_s = nn.Parameter(
+            torch.empty(self.rank, device=target_device, dtype=torch.float32)
+        )
+        self.value_vh = nn.Parameter(
+            torch.empty(
+                self.rank, self.hidden_size, device=target_device, dtype=target_dtype
+            )
+        )
+        self.value_bias = nn.Parameter(
+            torch.zeros(self.kv_head_size, device=target_device, dtype=target_dtype)
+        )
 
-        self.out_proj_u = nn.Parameter(torch.empty(self.hidden_size, self.rank, device=target_device, dtype=target_dtype))
-        self.out_proj_s = nn.Parameter(torch.empty(self.rank, device=target_device, dtype=torch.float32))
-        self.out_proj_vh = nn.Parameter(torch.empty(self.rank, self.q_head_size, device=target_device, dtype=target_dtype))
-        self.out_proj_bias = nn.Parameter(torch.zeros(self.hidden_size, device=target_device, dtype=target_dtype))
+        self.out_proj_u = nn.Parameter(
+            torch.empty(
+                self.hidden_size, self.rank, device=target_device, dtype=target_dtype
+            )
+        )
+        self.out_proj_s = nn.Parameter(
+            torch.empty(self.rank, device=target_device, dtype=torch.float32)
+        )
+        self.out_proj_vh = nn.Parameter(
+            torch.empty(
+                self.rank, self.q_head_size, device=target_device, dtype=target_dtype
+            )
+        )
+        self.out_proj_bias = nn.Parameter(
+            torch.zeros(self.hidden_size, device=target_device, dtype=target_dtype)
+        )
 
         # 4. Trainable LoRA Adapters
         if self.lora_rank > 0:
-            self.q_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.hidden_size, device=target_device, dtype=target_dtype))
-            self.q_lora_B = nn.Parameter(torch.empty(self.q_head_size, self.lora_rank, device=target_device, dtype=target_dtype))
-            self.k_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.hidden_size, device=target_device, dtype=target_dtype))
-            self.k_lora_B = nn.Parameter(torch.empty(self.kv_head_size, self.lora_rank, device=target_device, dtype=target_dtype))
-            self.v_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.hidden_size, device=target_device, dtype=target_dtype))
-            self.v_lora_B = nn.Parameter(torch.empty(self.kv_head_size, self.lora_rank, device=target_device, dtype=target_dtype))
-            self.out_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.q_head_size, device=target_device, dtype=target_dtype))
-            self.out_lora_B = nn.Parameter(torch.empty(self.hidden_size, self.lora_rank, device=target_device, dtype=target_dtype))
+            self.q_lora_A = nn.Parameter(
+                torch.empty(
+                    self.lora_rank,
+                    self.hidden_size,
+                    device=target_device,
+                    dtype=target_dtype,
+                )
+            )
+            self.q_lora_B = nn.Parameter(
+                torch.empty(
+                    self.q_head_size,
+                    self.lora_rank,
+                    device=target_device,
+                    dtype=target_dtype,
+                )
+            )
+            self.k_lora_A = nn.Parameter(
+                torch.empty(
+                    self.lora_rank,
+                    self.hidden_size,
+                    device=target_device,
+                    dtype=target_dtype,
+                )
+            )
+            self.k_lora_B = nn.Parameter(
+                torch.empty(
+                    self.kv_head_size,
+                    self.lora_rank,
+                    device=target_device,
+                    dtype=target_dtype,
+                )
+            )
+            self.v_lora_A = nn.Parameter(
+                torch.empty(
+                    self.lora_rank,
+                    self.hidden_size,
+                    device=target_device,
+                    dtype=target_dtype,
+                )
+            )
+            self.v_lora_B = nn.Parameter(
+                torch.empty(
+                    self.kv_head_size,
+                    self.lora_rank,
+                    device=target_device,
+                    dtype=target_dtype,
+                )
+            )
+            self.out_lora_A = nn.Parameter(
+                torch.empty(
+                    self.lora_rank,
+                    self.q_head_size,
+                    device=target_device,
+                    dtype=target_dtype,
+                )
+            )
+            self.out_lora_B = nn.Parameter(
+                torch.empty(
+                    self.hidden_size,
+                    self.lora_rank,
+                    device=target_device,
+                    dtype=target_dtype,
+                )
+            )
 
             for p_a in (self.q_lora_A, self.k_lora_A, self.v_lora_A, self.out_lora_A):
                 nn.init.kaiming_uniform_(p_a, a=math.sqrt(5))
@@ -238,10 +391,22 @@ class SVDLLMV2Attention(BaseAttention):
 
         # Freeze base SVD parameters
         for p in (
-            self.query_u, self.query_s, self.query_vh, self.query_bias,
-            self.key_u, self.key_s, self.key_vh, self.key_bias,
-            self.value_u, self.value_s, self.value_vh, self.value_bias,
-            self.out_proj_u, self.out_proj_s, self.out_proj_vh, self.out_proj_bias,
+            self.query_u,
+            self.query_s,
+            self.query_vh,
+            self.query_bias,
+            self.key_u,
+            self.key_s,
+            self.key_vh,
+            self.key_bias,
+            self.value_u,
+            self.value_s,
+            self.value_vh,
+            self.value_bias,
+            self.out_proj_u,
+            self.out_proj_s,
+            self.out_proj_vh,
+            self.out_proj_bias,
         ):
             p.requires_grad = False
 
@@ -265,9 +430,13 @@ class SVDLLMV2Attention(BaseAttention):
 
     def _init_random(self) -> None:
         """Initialize orthogonal factor projections with identity scales."""
+
         def _ortho(t: nn.Parameter) -> None:
             with torch.no_grad():
-                if t.device.type == "cuda" and t.dtype in (torch.float16, torch.bfloat16):
+                if t.device.type == "cuda" and t.dtype in (
+                    torch.float16,
+                    torch.bfloat16,
+                ):
                     f = torch.empty(t.shape, device=t.device, dtype=torch.float32)
                     nn.init.orthogonal_(f)
                     t.data.copy_(f.to(dtype=t.dtype))
@@ -309,9 +478,15 @@ class SVDLLMV2Attention(BaseAttention):
                 logger.warning(
                     f"SVDLLMV2 shape mismatch: W={W.shape} vs expected=({u_param.shape[0]}, {vh_param.shape[1]}). Padding/truncating."
                 )
-                padded_W = torch.zeros(u_param.shape[0], vh_param.shape[1], device=W.device, dtype=W.dtype)
-                padded_W[:min(u_param.shape[0], W.shape[0]), :min(vh_param.shape[1], W.shape[1])] = W[
-                    :min(u_param.shape[0], W.shape[0]), :min(vh_param.shape[1], W.shape[1])
+                padded_W = torch.zeros(
+                    u_param.shape[0], vh_param.shape[1], device=W.device, dtype=W.dtype
+                )
+                padded_W[
+                    : min(u_param.shape[0], W.shape[0]),
+                    : min(vh_param.shape[1], W.shape[1]),
+                ] = W[
+                    : min(u_param.shape[0], W.shape[0]),
+                    : min(vh_param.shape[1], W.shape[1]),
                 ]
                 W = padded_W
 
@@ -324,11 +499,17 @@ class SVDLLMV2Attention(BaseAttention):
             u_param.data.zero_()
             s_param.data.zero_()
             vh_param.data.zero_()
-            u_param.data[:, :r] = U[:, :r].to(dtype=u_param.dtype, device=u_param.device)
+            u_param.data[:, :r] = U[:, :r].to(
+                dtype=u_param.dtype, device=u_param.device
+            )
             s_param.data[:r] = S[:r].to(dtype=s_param.dtype, device=s_param.device)
-            vh_param.data[:r, :] = Vt[:r, :].to(dtype=vh_param.dtype, device=vh_param.device)
+            vh_param.data[:r, :] = Vt[:r, :].to(
+                dtype=vh_param.dtype, device=vh_param.device
+            )
             if bias is not None:
-                bias_param.data.copy_(bias.to(dtype=bias_param.dtype, device=bias_param.device))
+                bias_param.data.copy_(
+                    bias.to(dtype=bias_param.dtype, device=bias_param.device)
+                )
 
     def copy_weights(self, old_attn: nn.Module) -> None:
         """Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA."""
@@ -360,7 +541,9 @@ class SVDLLMV2Attention(BaseAttention):
                 w_o, b_o = _unpack_weight_bias(src.c_proj)
 
             # Pattern 2: RoBERTa / BERT separate query, key, value
-            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
+            elif (
+                hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value")
+            ):
                 w_q, b_q = _unpack_weight_bias(src.query)
                 w_k, b_k = _unpack_weight_bias(src.key)
                 w_v, b_v = _unpack_weight_bias(src.value)
@@ -372,7 +555,11 @@ class SVDLLMV2Attention(BaseAttention):
                             break
 
             # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
-            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
+            elif (
+                hasattr(src, "q_proj")
+                and hasattr(src, "k_proj")
+                and hasattr(src, "v_proj")
+            ):
                 w_q, b_q = _unpack_weight_bias(src.q_proj)
                 w_k, b_k = _unpack_weight_bias(src.k_proj)
                 w_v, b_v = _unpack_weight_bias(src.v_proj)
@@ -380,7 +567,11 @@ class SVDLLMV2Attention(BaseAttention):
                     w_o, b_o = _unpack_weight_bias(src.o_proj)
 
             # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
-            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
+            elif (
+                hasattr(src, "q_lin")
+                and hasattr(src, "k_lin")
+                and hasattr(src, "v_lin")
+            ):
                 w_q, b_q = _unpack_weight_bias(src.q_lin)
                 w_k, b_k = _unpack_weight_bias(src.k_lin)
                 w_v, b_v = _unpack_weight_bias(src.v_lin)
@@ -420,14 +611,20 @@ class SVDLLMV2Attention(BaseAttention):
             # Frobenius norm checks
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
-                    logger.warning(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
+                    logger.warning(
+                        f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)"
+                    )
 
             # Decompose and set Q
-            self._decompose_and_set(self.query_u, self.query_s, self.query_vh, self.query_bias, w_q, b_q)
+            self._decompose_and_set(
+                self.query_u, self.query_s, self.query_vh, self.query_bias, w_q, b_q
+            )
 
             # Decompose and set K & V with GQA pooling if needed
             if w_k.shape[0] == self.kv_head_size:
-                self._decompose_and_set(self.key_u, self.key_s, self.key_vh, self.key_bias, w_k, b_k)
+                self._decompose_and_set(
+                    self.key_u, self.key_s, self.key_vh, self.key_bias, w_k, b_k
+                )
             else:
                 rep = w_k.shape[0] // self.kv_head_size
                 w_k_pooled = (
@@ -440,10 +637,19 @@ class SVDLLMV2Attention(BaseAttention):
                     if b_k is not None
                     else None
                 )
-                self._decompose_and_set(self.key_u, self.key_s, self.key_vh, self.key_bias, w_k_pooled, b_k_pooled)
+                self._decompose_and_set(
+                    self.key_u,
+                    self.key_s,
+                    self.key_vh,
+                    self.key_bias,
+                    w_k_pooled,
+                    b_k_pooled,
+                )
 
             if w_v.shape[0] == self.kv_head_size:
-                self._decompose_and_set(self.value_u, self.value_s, self.value_vh, self.value_bias, w_v, b_v)
+                self._decompose_and_set(
+                    self.value_u, self.value_s, self.value_vh, self.value_bias, w_v, b_v
+                )
             else:
                 rep = w_v.shape[0] // self.kv_head_size
                 w_v_pooled = (
@@ -456,13 +662,29 @@ class SVDLLMV2Attention(BaseAttention):
                     if b_v is not None
                     else None
                 )
-                self._decompose_and_set(self.value_u, self.value_s, self.value_vh, self.value_bias, w_v_pooled, b_v_pooled)
+                self._decompose_and_set(
+                    self.value_u,
+                    self.value_s,
+                    self.value_vh,
+                    self.value_bias,
+                    w_v_pooled,
+                    b_v_pooled,
+                )
 
             # Decompose and set Out projection (if not nested encoder)
             if w_o is not None and not self.is_nested_encoder:
                 if torch.norm(w_o.float(), p="fro").item() < 1e-4:
-                    logger.warning("Copied out_proj weight has near-zero Frobenius norm (< 1e-4)")
-                self._decompose_and_set(self.out_proj_u, self.out_proj_s, self.out_proj_vh, self.out_proj_bias, w_o, b_o)
+                    logger.warning(
+                        "Copied out_proj weight has near-zero Frobenius norm (< 1e-4)"
+                    )
+                self._decompose_and_set(
+                    self.out_proj_u,
+                    self.out_proj_s,
+                    self.out_proj_vh,
+                    self.out_proj_bias,
+                    w_o,
+                    b_o,
+                )
 
     def _project(
         self,
@@ -510,13 +732,49 @@ class SVDLLMV2Attention(BaseAttention):
         kv_len = kv_input.shape[1]
 
         # 1. Factorized linear projections with LoRA
-        Q_act = self._project(hidden_states, self.query_vh, self.query_s, self.query_u, self.query_bias, self.q_lora_A, self.q_lora_B)
-        K_act = self._project(kv_input, self.key_vh, self.key_s, self.key_u, self.key_bias, self.k_lora_A, self.k_lora_B)
-        V_act = self._project(kv_input, self.value_vh, self.value_s, self.value_u, self.value_bias, self.v_lora_A, self.v_lora_B)
+        Q_act = self._project(
+            hidden_states,
+            self.query_vh,
+            self.query_s,
+            self.query_u,
+            self.query_bias,
+            self.q_lora_A,
+            self.q_lora_B,
+        )
+        K_act = self._project(
+            kv_input,
+            self.key_vh,
+            self.key_s,
+            self.key_u,
+            self.key_bias,
+            self.k_lora_A,
+            self.k_lora_B,
+        )
+        V_act = self._project(
+            kv_input,
+            self.value_vh,
+            self.value_s,
+            self.value_u,
+            self.value_bias,
+            self.v_lora_A,
+            self.v_lora_B,
+        )
 
-        Q = Q_act.view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        K = K_act.view(batch_size, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        V = V_act.view(batch_size, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        Q = (
+            Q_act.view(batch_size, seq_len, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        K = (
+            K_act.view(batch_size, kv_len, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        V = (
+            V_act.view(batch_size, kv_len, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # 2. RoPE support
         if position_embeddings is None:
@@ -538,44 +796,81 @@ class SVDLLMV2Attention(BaseAttention):
                 _qs = Q.half() if Q.dtype == torch.float32 else Q
                 _ks = K.half() if K.dtype == torch.float32 else K
                 _vs = V.half() if V.dtype == torch.float32 else V
-                _is_causal = getattr(self, 'is_decoder', False) and not is_cross and seq_len > 1
-                _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
-                    _qs, _ks, _vs, is_causal=_is_causal, dropout_p=self.dropout.p if self.training else 0.0
+                _is_causal = (
+                    getattr(self, "is_decoder", False) and not is_cross and seq_len > 1
                 )
-                _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(batch_size, seq_len, self.all_head_size)
-                _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+                _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
+                    _qs,
+                    _ks,
+                    _vs,
+                    is_causal=_is_causal,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                )
+                _sdpa_out = (
+                    _sdpa_out.to(hidden_states.dtype)
+                    .transpose(1, 2)
+                    .contiguous()
+                    .view(batch_size, seq_len, self.all_head_size)
+                )
+                _sdpa_out = torch.nan_to_num(
+                    _sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4
+                )
                 if self.is_nested_encoder:
                     out = _sdpa_out
                 else:
-                    out = self._project(_sdpa_out, self.out_proj_vh, self.out_proj_s, self.out_proj_u, self.out_proj_bias, self.out_lora_A, self.out_lora_B)
+                    out = self._project(
+                        _sdpa_out,
+                        self.out_proj_vh,
+                        self.out_proj_s,
+                        self.out_proj_u,
+                        self.out_proj_bias,
+                        self.out_lora_A,
+                        self.out_lora_B,
+                    )
                 if out.shape[-1] != hidden_states.shape[-1]:
                     if out.shape[-1] < hidden_states.shape[-1]:
                         out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
                     else:
-                        out = out[..., :hidden_states.shape[-1]]
+                        out = out[..., : hidden_states.shape[-1]]
                 return out, None
             except Exception:
                 pass
 
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+        scores = (
+            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+        )
 
         # 5. Masking
         if self.is_decoder and not is_cross and seq_len > 1:
-            causal_mask = torch.triu(
-                torch.full((seq_len, kv_len), float("-inf"), device=scores.device, dtype=torch.float32),
-                diagonal=1,
-            ).unsqueeze(0).unsqueeze(0)
+            causal_mask = (
+                torch.triu(
+                    torch.full(
+                        (seq_len, kv_len),
+                        float("-inf"),
+                        device=scores.device,
+                        dtype=torch.float32,
+                    ),
+                    diagonal=1,
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
             scores = scores + causal_mask
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is not None:
             if eff_mask.dim() == 2:
                 if eff_mask.dtype == torch.bool:
-                    scores = scores.masked_fill(~eff_mask.unsqueeze(1).unsqueeze(2), -10000.0)
+                    scores = scores.masked_fill(
+                        ~eff_mask.unsqueeze(1).unsqueeze(2), -10000.0
+                    )
                 elif torch.is_floating_point(eff_mask) and (eff_mask < 0).any():
                     scores = scores + eff_mask.unsqueeze(1).unsqueeze(2).float()
                 else:
-                    scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+                    scores = (
+                        scores
+                        + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+                    )
             elif eff_mask.dim() == 3:
                 if eff_mask.dtype == torch.bool:
                     scores = scores.masked_fill(~eff_mask.unsqueeze(1), -10000.0)
@@ -602,20 +897,33 @@ class SVDLLMV2Attention(BaseAttention):
             probs = probs * head_mask
 
         # 7. Context computation & Head Merge
-        context = torch.matmul(probs, V).transpose(1, 2).contiguous().view(batch_size, seq_len, self.all_head_size)
+        context = (
+            torch.matmul(probs, V)
+            .transpose(1, 2)
+            .contiguous()
+            .view(batch_size, seq_len, self.all_head_size)
+        )
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         # 8. Output projection (bypassed if nested encoder)
         if self.is_nested_encoder:
             out = context
         else:
-            out = self._project(context, self.out_proj_vh, self.out_proj_s, self.out_proj_u, self.out_proj_bias, self.out_lora_A, self.out_lora_B)
+            out = self._project(
+                context,
+                self.out_proj_vh,
+                self.out_proj_s,
+                self.out_proj_u,
+                self.out_proj_bias,
+                self.out_lora_A,
+                self.out_lora_B,
+            )
 
         if out.shape[-1] != hidden_states.shape[-1]:
             if out.shape[-1] < hidden_states.shape[-1]:
                 out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
             else:
-                out = out[..., :hidden_states.shape[-1]]
+                out = out[..., : hidden_states.shape[-1]]
 
         return out, (probs if output_attentions else None)
 
@@ -660,7 +968,9 @@ def inject_svd_llm_v2(
 
     if layer_list is not None:
         # Pre-test on the first layer before mutating model
-        test_src = getattr(layer_list[0], "attention", getattr(layer_list[0], "self", None))
+        test_src = getattr(
+            layer_list[0], "attention", getattr(layer_list[0], "self", None)
+        )
         if test_src is not None:
             try:
                 test_module = SVDLLMV2Attention(

@@ -13,18 +13,17 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
-from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import (
+    adaptive_max_error,
     apply_24_structured_mask,
     apply_block_mask,
     compute_taylor_first_order_saliency,
     get_calibration_tensors,
     recalibrate_layernorms,
-    adaptive_max_error,
 )
+from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
 
@@ -42,6 +41,7 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # BonsaiPrunedLoRALinear
 # ===========================================================================
+
 
 class BonsaiPrunedLoRALinear(nn.Module):
     """
@@ -64,10 +64,12 @@ class BonsaiPrunedLoRALinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.nf = out_features                # Conv1D compatibility
+        self.nf = out_features  # Conv1D compatibility
         self.lora_r = max(0, int(lora_r))
         self.lora_alpha = float(lora_alpha)
-        self.scaling = (self.lora_alpha / max(1, self.lora_r)) if self.lora_r > 0 else 1.0
+        self.scaling = (
+            (self.lora_alpha / max(1, self.lora_r)) if self.lora_r > 0 else 1.0
+        )
 
         weight_dtype = dtype if dtype is not None else torch.float32
         self.weight = nn.Parameter(
@@ -81,7 +83,9 @@ class BonsaiPrunedLoRALinear(nn.Module):
         )
 
         if bias:
-            self.bias = nn.Parameter(torch.zeros(out_features, dtype=weight_dtype, device=device))
+            self.bias = nn.Parameter(
+                torch.zeros(out_features, dtype=weight_dtype, device=device)
+            )
         else:
             self.register_parameter("bias", None)
 
@@ -90,7 +94,9 @@ class BonsaiPrunedLoRALinear(nn.Module):
                 torch.empty(self.lora_r, in_features, dtype=weight_dtype, device=device)
             )
             self.lora_B = nn.Parameter(
-                torch.empty(out_features, self.lora_r, dtype=weight_dtype, device=device)
+                torch.empty(
+                    out_features, self.lora_r, dtype=weight_dtype, device=device
+                )
             )
             with torch.no_grad():
                 tmp_A = self.lora_A.data.float()
@@ -121,7 +127,9 @@ class BonsaiPrunedLoRALinear(nn.Module):
         out = F.linear(x_flat, W_sparse, self.bias)
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x_flat, self.lora_A), self.lora_B) * self.scaling
+            lora_out = (
+                F.linear(F.linear(x_flat, self.lora_A), self.lora_B) * self.scaling
+            )
             out = out + lora_out
 
         return out.view(*orig_shape[:-1], self.out_features)
@@ -161,6 +169,7 @@ class BonsaiPrunedLoRALinear(nn.Module):
 # BonsaiPruner
 # ===========================================================================
 
+
 @COMPRESSOR_REGISTRY.register("bonsai")
 @COMPRESSOR_REGISTRY.register("bonsai_pruner")
 class BonsaiPruner(BaseCompressor):
@@ -194,30 +203,49 @@ class BonsaiPruner(BaseCompressor):
         calibration_texts: list[str] | None = None,
         device: str | torch.device | None = None,
         cfg: Any | None = None,
-        max_recovery_steps: int = 32,       # BN-FIX-05
-        max_step_size: float = 0.01,        # BN-FIX-06
+        max_recovery_steps: int = 32,  # BN-FIX-05
+        max_step_size: float = 0.01,  # BN-FIX-06
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="bonsai", **kwargs)
         cfg_obj = cfg or kwargs.get("comp_config")
 
-        self.sparsity = max(0.0, min(float(sparsity or getattr(cfg_obj, "sparsity", 0.5)), 0.95))
+        self.sparsity = max(
+            0.0, min(float(sparsity or getattr(cfg_obj, "sparsity", 0.5)), 0.95)
+        )
         self.steps = max(1, int(steps or getattr(cfg_obj, "steps", 8)))
-        raw_recovery = int(recovery_steps if recovery_steps is not None else getattr(cfg_obj, "recovery_steps", 3))
+        raw_recovery = int(
+            recovery_steps
+            if recovery_steps is not None
+            else getattr(cfg_obj, "recovery_steps", 3)
+        )
         self.recovery_steps = max(0, min(raw_recovery, max_recovery_steps))
         self.recovery_lr = float(recovery_lr or getattr(cfg_obj, "recovery_lr", 1e-3))
-        self.structured_24 = bool(structured_24 if structured_24 is not None else getattr(cfg_obj, "structured_24", False))
+        self.structured_24 = bool(
+            structured_24
+            if structured_24 is not None
+            else getattr(cfg_obj, "structured_24", False)
+        )
         self.block_size = block_size or getattr(cfg_obj, "block_size", (4, 4))
-        self.protect_cls = bool(protect_cls if protect_cls is not None else getattr(cfg_obj, "protect_cls", True))
+        self.protect_cls = bool(
+            protect_cls
+            if protect_cls is not None
+            else getattr(cfg_obj, "protect_cls", True)
+        )
         self.target_attention_only = bool(target_attention_only)
         self.skip_attention_qkv = bool(
-            skip_attention_qkv if skip_attention_qkv is not None
+            skip_attention_qkv
+            if skip_attention_qkv is not None
             else getattr(cfg_obj, "skip_attention_qkv", False)
         )
-        self.use_lora = bool(use_lora or getattr(cfg_obj, "use_lora", False) or (lora_r > 0))
+        self.use_lora = bool(
+            use_lora or getattr(cfg_obj, "use_lora", False) or (lora_r > 0)
+        )
         self.lora_r = int(lora_r or getattr(cfg_obj, "lora_r", 0))
         self.lora_alpha = float(lora_alpha or getattr(cfg_obj, "lora_alpha", 1.0))
-        self.adaptive_sparsity = bool(adaptive_sparsity or getattr(cfg_obj, "adaptive_sparsity", False))
+        self.adaptive_sparsity = bool(
+            adaptive_sparsity or getattr(cfg_obj, "adaptive_sparsity", False)
+        )
         self.min_numel = max(1, int(min_numel or getattr(cfg_obj, "min_numel", 16)))
         self.max_recovery_steps = max(1, int(max_recovery_steps))
         self.max_step_size = float(max_step_size)
@@ -227,14 +255,18 @@ class BonsaiPruner(BaseCompressor):
         elif hasattr(cfg_obj, "max_error") and cfg_obj.max_error is not None:
             self.max_error = float(cfg_obj.max_error)
         else:
-            self.max_error = adaptive_max_error(int((1.0 - self.sparsity) * 768), 768, 768, "distilbert")
+            self.max_error = adaptive_max_error(
+                int((1.0 - self.sparsity) * 768), 768, 768, "distilbert"
+            )
 
         self.fallback_to_original = bool(
-            fallback_to_original if fallback_to_original is not None
+            fallback_to_original
+            if fallback_to_original is not None
             else getattr(cfg_obj, "fallback_to_original", True)
         )
         self.recalibrate_ln = bool(
-            recalibrate_ln if recalibrate_ln is not None
+            recalibrate_ln
+            if recalibrate_ln is not None
             else getattr(cfg_obj, "recalibrate_ln", True)
         )
 
@@ -267,20 +299,46 @@ class BonsaiPruner(BaseCompressor):
     # BN-FIX-01: independent filters.
     # ------------------------------------------------------------------
     _ATTN_TOKENS = (
-        "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-        "out_proj", "q_lin", "k_lin", "v_lin", "out_lin",
-        "query", "key", "value", "c_attn", "c_proj",
+        "attn",
+        "attention",
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "out_proj",
+        "q_lin",
+        "k_lin",
+        "v_lin",
+        "out_lin",
+        "query",
+        "key",
+        "value",
+        "c_attn",
+        "c_proj",
     )
 
     _PROTECT_TOKENS = (
-        "router", "gate", "cls", "classifier", "head",
-        "embed", "score", "lm_head", "pooler",
+        "router",
+        "gate",
+        "cls",
+        "classifier",
+        "head",
+        "embed",
+        "score",
+        "lm_head",
+        "pooler",
     )
 
     _QKV_TOKENS = (
-        "query", "key", "value",
-        "q_lin", "k_lin", "v_lin",
-        "q_proj", "k_proj", "v_proj",
+        "query",
+        "key",
+        "value",
+        "q_lin",
+        "k_lin",
+        "v_lin",
+        "q_proj",
+        "k_proj",
+        "v_proj",
         "c_attn",
     )
 
@@ -300,7 +358,9 @@ class BonsaiPruner(BaseCompressor):
             return True
 
         # (b) attention-only mode.
-        if self.target_attention_only and not any(k in name_lower for k in self._ATTN_TOKENS):
+        if self.target_attention_only and not any(
+            k in name_lower for k in self._ATTN_TOKENS
+        ):
             return True
 
         # (c) QKV protection.
@@ -308,8 +368,12 @@ class BonsaiPruner(BaseCompressor):
             last_part = name_lower.split(".")[-1]
             if any(k in last_part for k in self._QKV_TOKENS):
                 return True
-            if module is not None and hasattr(module, "weight") and module.weight.ndim == 2:
-                if ("attn" in name_lower or "attention" in name_lower):
+            if (
+                module is not None
+                and hasattr(module, "weight")
+                and module.weight.ndim == 2
+            ):
+                if "attn" in name_lower or "attention" in name_lower:
                     w_shape = module.weight.shape
                     if w_shape[0] != w_shape[1]:  # GQA asymmetry
                         return True
@@ -335,6 +399,7 @@ class BonsaiPruner(BaseCompressor):
                     if name not in activations:
                         activations[name] = []
                     activations[name].append(inp[0].detach().cpu())
+
             return hook
 
         for name, module in self.model.named_modules():
@@ -370,14 +435,22 @@ class BonsaiPruner(BaseCompressor):
 
                 if not forward_success and isinstance(calib_inputs, dict):
                     try:
-                        subset = {k: calib_inputs[k] for k in ("input_ids", "attention_mask") if k in calib_inputs}
+                        subset = {
+                            k: calib_inputs[k]
+                            for k in ("input_ids", "attention_mask")
+                            if k in calib_inputs
+                        }
                         if subset:
                             self.model(**subset)
                             forward_success = True
                     except Exception as e2:
                         logger.debug("Bonsai calibration strategy 2 failed: %s", e2)
 
-                if not forward_success and isinstance(calib_inputs, dict) and "input_ids" in calib_inputs:
+                if (
+                    not forward_success
+                    and isinstance(calib_inputs, dict)
+                    and "input_ids" in calib_inputs
+                ):
                     try:
                         self.model(calib_inputs["input_ids"])
                         forward_success = True
@@ -386,7 +459,9 @@ class BonsaiPruner(BaseCompressor):
 
                 if not forward_success:
                     try:
-                        dummy = torch.randint(0, 100, (1, 16), device=self.target_device)
+                        dummy = torch.randint(
+                            0, 100, (1, 16), device=self.target_device
+                        )
                         self.model(dummy)
                     except Exception as e4:
                         logger.debug("Bonsai synthetic calibration failed: %s", e4)
@@ -409,7 +484,10 @@ class BonsaiPruner(BaseCompressor):
         try:
             activations_map = self._collect_activations()
         except Exception as e:
-            logger.warning("BonsaiPruner: activation collection failed (%s); proceeding with unweighted pruning.", e)
+            logger.warning(
+                "BonsaiPruner: activation collection failed (%s); proceeding with unweighted pruning.",
+                e,
+            )
             activations_map = {}
 
         self.pruned_layers = []
@@ -441,7 +519,11 @@ class BonsaiPruner(BaseCompressor):
             device = raw_w.device
             is_conv1d = "conv1d" in cls_name.lower() or hasattr(module, "nf")
 
-            W0 = raw_w.t().float().contiguous() if is_conv1d else raw_w.float().contiguous()
+            W0 = (
+                raw_w.t().float().contiguous()
+                if is_conv1d
+                else raw_w.float().contiguous()
+            )
             out_f, in_f = W0.shape
 
             if (out_f * in_f) < self.min_numel:
@@ -462,7 +544,9 @@ class BonsaiPruner(BaseCompressor):
             if self.adaptive_sparsity and X is not None:
                 act_norm = torch.norm(X, p="fro").item() / max(1, X.shape[0])
                 scale_factor = 1.0 / (1.0 + math.log1p(max(0.0, act_norm)))
-                target_sp = max(0.05, min(0.95, self.sparsity * (0.7 + 0.6 * scale_factor)))
+                target_sp = max(
+                    0.05, min(0.95, self.sparsity * (0.7 + 0.6 * scale_factor))
+                )
             else:
                 target_sp = self.sparsity
 
@@ -475,11 +559,15 @@ class BonsaiPruner(BaseCompressor):
                 saliency = compute_taylor_first_order_saliency(W, activations=X)
 
                 if self.structured_24:
-                    W_pruned, final_mask = apply_24_structured_mask(W, saliency=saliency, dim=1)
+                    W_pruned, final_mask = apply_24_structured_mask(
+                        W, saliency=saliency, dim=1
+                    )
                 elif self.block_size != (1, 1):
                     W_pruned, final_mask = apply_block_mask(
-                        W, block_size=self.block_size,
-                        sparsity=current_sp, saliency=saliency,
+                        W,
+                        block_size=self.block_size,
+                        sparsity=current_sp,
+                        saliency=saliency,
                     )
                 else:
                     flat = saliency.reshape(-1)
@@ -510,11 +598,14 @@ class BonsaiPruner(BaseCompressor):
             self.layer_errors[name] = float(rel_err)
             self.layer_sparsities[name] = float(target_sp)
 
-            is_invalid = (not torch.isfinite(W).all()) or (rel_err > (self.max_error or float("inf")))
+            is_invalid = (not torch.isfinite(W).all()) or (
+                rel_err > (self.max_error or float("inf"))
+            )
             if is_invalid:
                 logger.warning(
                     "BonsaiPruner: %s error %.4f (threshold %.4f).",
-                    name, rel_err,
+                    name,
+                    rel_err,
                     self.max_error if self.max_error is not None else float("inf"),
                 )
                 if self.fallback_to_original:
@@ -534,15 +625,21 @@ class BonsaiPruner(BaseCompressor):
                     freeze_base=True,
                 )
                 # BN-FIX-07: copy LoRA data (no shared reference).
-                if hasattr(module, "lora_A") and module.lora_A is not None \
-                        and pruned_lora_layer.lora_A is not None:
+                if (
+                    hasattr(module, "lora_A")
+                    and module.lora_A is not None
+                    and pruned_lora_layer.lora_A is not None
+                ):
                     try:
                         src_A = getattr(module.lora_A, "weight", module.lora_A)
                         pruned_lora_layer.lora_A.data.copy_(src_A.data)
                     except Exception as e:
                         logger.debug("Bonsai LoRA A transfer failed: %s", e)
-                if hasattr(module, "lora_B") and module.lora_B is not None \
-                        and pruned_lora_layer.lora_B is not None:
+                if (
+                    hasattr(module, "lora_B")
+                    and module.lora_B is not None
+                    and pruned_lora_layer.lora_B is not None
+                ):
                     try:
                         src_B = getattr(module.lora_B, "weight", module.lora_B)
                         pruned_lora_layer.lora_B.data.copy_(src_B.data)
@@ -557,9 +654,13 @@ class BonsaiPruner(BaseCompressor):
                 # BN-FIX-08: no_grad for weight mutation.
                 with torch.no_grad():
                     if is_conv1d:
-                        target_mod.weight.data.copy_(W.t().contiguous().to(dtype=dtype, device=device))
+                        target_mod.weight.data.copy_(
+                            W.t().contiguous().to(dtype=dtype, device=device)
+                        )
                     else:
-                        target_mod.weight.data.copy_(W.contiguous().to(dtype=dtype, device=device))
+                        target_mod.weight.data.copy_(
+                            W.contiguous().to(dtype=dtype, device=device)
+                        )
 
             self.pruned_layers.append(name)
 
@@ -580,14 +681,18 @@ class BonsaiPruner(BaseCompressor):
         sanity_check_passed = True
         try:
             with torch.no_grad():
-                dummy = torch.randint(0, 100, (1, 8), device=self.target_device, dtype=torch.long)
+                dummy = torch.randint(
+                    0, 100, (1, 8), device=self.target_device, dtype=torch.long
+                )
                 attn = torch.ones_like(dummy)
                 try:
                     self.model(input_ids=dummy, attention_mask=attn)
                 except Exception:
                     self.model(dummy)
         except Exception as ex:
-            logger.debug("BonsaiPruner post-compression forward sanity check warning: %s", ex)
+            logger.debug(
+                "BonsaiPruner post-compression forward sanity check warning: %s", ex
+            )
             sanity_check_passed = False
 
         try:
@@ -600,33 +705,39 @@ class BonsaiPruner(BaseCompressor):
         except Exception:
             stats = {}
 
-        avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
-        stats.update({
-            "pruned_layers": self.pruned_layers,
-            "pruned_layer_count": len(self.pruned_layers),
-            "protected_layers": self.protected_layers,
-            "protected_layer_count": len(self.protected_layers),
-            "skipped_layers": self.skipped_layers,
-            "skipped_layer_count": len(self.skipped_layers),
-            "fallback_layers": self.fallback_layers,
-            "fallback_layer_count": len(self.fallback_layers),
-            "layer_errors": self.layer_errors,
-            "layer_sparsities": self.layer_sparsities,
-            "avg_reconstruction_error": avg_err,
-            "sanity_check_passed": sanity_check_passed,
-            "steps": self.steps,
-            "recovery_steps": self.recovery_steps,
-            "sparsity_target": self.sparsity,
-            "structured_24": self.structured_24,
-            "protect_cls": self.protect_cls,
-            "skip_attention_qkv": self.skip_attention_qkv,
-            "use_lora": self.use_lora,
-            "lora_r": self.lora_r,
-            "adaptive_sparsity": self.adaptive_sparsity,
-            "max_error": self.max_error,
-            "fallback_to_original": self.fallback_to_original,
-            "method": "bonsai_iterative_pruning_with_gd_recovery",
-        })
+        avg_err = (
+            (sum(self.layer_errors.values()) / len(self.layer_errors))
+            if self.layer_errors
+            else 0.0
+        )
+        stats.update(
+            {
+                "pruned_layers": self.pruned_layers,
+                "pruned_layer_count": len(self.pruned_layers),
+                "protected_layers": self.protected_layers,
+                "protected_layer_count": len(self.protected_layers),
+                "skipped_layers": self.skipped_layers,
+                "skipped_layer_count": len(self.skipped_layers),
+                "fallback_layers": self.fallback_layers,
+                "fallback_layer_count": len(self.fallback_layers),
+                "layer_errors": self.layer_errors,
+                "layer_sparsities": self.layer_sparsities,
+                "avg_reconstruction_error": avg_err,
+                "sanity_check_passed": sanity_check_passed,
+                "steps": self.steps,
+                "recovery_steps": self.recovery_steps,
+                "sparsity_target": self.sparsity,
+                "structured_24": self.structured_24,
+                "protect_cls": self.protect_cls,
+                "skip_attention_qkv": self.skip_attention_qkv,
+                "use_lora": self.use_lora,
+                "lora_r": self.lora_r,
+                "adaptive_sparsity": self.adaptive_sparsity,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "method": "bonsai_iterative_pruning_with_gd_recovery",
+            }
+        )
         self.stats = stats
         logger.info(
             "Compressor bonsai finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
@@ -641,6 +752,7 @@ class BonsaiPruner(BaseCompressor):
 # ===========================================================================
 # Factory
 # ===========================================================================
+
 
 @COMPRESSOR_REGISTRY.register("bonsai")
 @COMPRESSOR_REGISTRY.register("bonsai_pruner")
@@ -659,7 +771,10 @@ def bonsai_factory(
     def _get(key: str, default: Any) -> Any:
         if comp_config is None:
             return kwargs.pop(key, default)
-        return kwargs.pop(key, getattr(comp_config, key, getattr(comp_config, f"bonsai_{key}", default)))
+        return kwargs.pop(
+            key,
+            getattr(comp_config, key, getattr(comp_config, f"bonsai_{key}", default)),
+        )
 
     sparsity = _get("sparsity", 0.5)
     steps = _get("steps", 8)

@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.gated_linear_attention import GatedLinearAttention, inject_gated_linear
+from framework.attentions.gated_linear_attention import (GatedLinearAttention,
+                                                         inject_gated_linear)
 
 
 class MockConfig:

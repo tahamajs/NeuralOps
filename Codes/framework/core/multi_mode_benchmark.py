@@ -52,6 +52,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 try:
     import pandas as pd
+
     HAS_PANDAS = True
 except ImportError:
     HAS_PANDAS = False
@@ -66,15 +67,16 @@ try:
         DistilBertConfig,
         PreTrainedModel,
     )
+
     HAS_TRANSFORMERS = True
 except ImportError:
     HAS_TRANSFORMERS = False
 
 try:
-    from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-    from framework.core.memory import cleanup_gpu_memory, get_gpu_memory_stats
-    from framework.core.attention_utils import inject_attention
     from framework.core.architecture import detect_architecture, get_transformer_layers
+    from framework.core.attention_utils import inject_attention
+    from framework.core.memory import cleanup_gpu_memory, get_gpu_memory_stats
+    from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 except ImportError:
     # Graceful fallback if imported standalone
     ATTENTION_REGISTRY = None
@@ -82,8 +84,7 @@ except ImportError:
 
 
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s - %(message)s"
 )
 logger = logging.getLogger("MultiModeBenchmark")
 
@@ -108,14 +109,29 @@ SUPPORTED_MODES = [
 ]
 
 SUPPORTED_DATASETS = [
-    "sst2", "mrpc", "cola", "qqp", "mnli", "qnli", "rte", "stsb", "wnli",
-    "wikitext2", "c4", "ptb", "synthetic", "custom", "arc", "hellaswag"
+    "sst2",
+    "mrpc",
+    "cola",
+    "qqp",
+    "mnli",
+    "qnli",
+    "rte",
+    "stsb",
+    "wnli",
+    "wikitext2",
+    "c4",
+    "ptb",
+    "synthetic",
+    "custom",
+    "arc",
+    "hellaswag",
 ]
 
 
 @dataclass
 class ModeBenchmarkResult:
     """Benchmark outcome for a single execution mode."""
+
     mode: str
     model_name: str
     dataset: str
@@ -146,14 +162,20 @@ class ModeBenchmarkResult:
 # Synthetic and Toy Dataset Helpers (Zero-dependency fallback)
 # -----------------------------------------------------------------------------
 
+
 class SyntheticTextDataset(torch.utils.data.Dataset):
     """Synthetic dataset for benchmarking token throughput and perplexity."""
-    def __init__(self, vocab_size: int = 30522, seq_len: int = 128, num_samples: int = 128):
+
+    def __init__(
+        self, vocab_size: int = 30522, seq_len: int = 128, num_samples: int = 128
+    ):
         self.vocab_size = vocab_size
         self.seq_len = seq_len
         self.num_samples = num_samples
         torch.manual_seed(42)
-        self.data = torch.randint(100, vocab_size - 100, (num_samples, seq_len), dtype=torch.long)
+        self.data = torch.randint(
+            100, vocab_size - 100, (num_samples, seq_len), dtype=torch.long
+        )
         self.attention_mask = torch.ones((num_samples, seq_len), dtype=torch.long)
         self.labels = self.data.clone()
 
@@ -171,6 +193,7 @@ class SyntheticTextDataset(torch.utils.data.Dataset):
 # -----------------------------------------------------------------------------
 # Mode Adapters & Implementations
 # -----------------------------------------------------------------------------
+
 
 class ModeTransformEngine:
     """
@@ -200,10 +223,14 @@ class ModeTransformEngine:
             return ModeTransformEngine._apply_svd_lowrank(model, rank=rank)
 
         elif mode == "rotational_slicegpt":
-            return ModeTransformEngine._apply_rotational_slicegpt(model, slice_ratio=sparsity_ratio)
+            return ModeTransformEngine._apply_rotational_slicegpt(
+                model, slice_ratio=sparsity_ratio
+            )
 
         elif mode == "sparsegpt_int4":
-            return ModeTransformEngine._apply_sparsegpt_int4(model, sparsity=sparsity_ratio)
+            return ModeTransformEngine._apply_sparsegpt_int4(
+                model, sparsity=sparsity_ratio
+            )
 
         elif mode == "paged_deltakv":
             return ModeTransformEngine._apply_paged_deltakv(model)
@@ -227,7 +254,9 @@ class ModeTransformEngine:
             return ModeTransformEngine._apply_nystrom_kernel(model)
 
         else:
-            logger.warning(f"Unknown mode '{mode}'. Falling back to standard fp16 model.")
+            logger.warning(
+                f"Unknown mode '{mode}'. Falling back to standard fp16 model."
+            )
             return model.to(device=device, dtype=dtype)
 
     @staticmethod
@@ -235,13 +264,25 @@ class ModeTransformEngine:
         """Inject Hopper FP8 / FlashAttention-3 accelerated module if registered, else simulate."""
         injected = False
         if ATTENTION_REGISTRY is not None:
-            for key in ["flash_attention3_fp8", "flash_attention3", "aegis_spectron_fp8"]:
+            for key in [
+                "flash_attention3_fp8",
+                "flash_attention3",
+                "aegis_spectron_fp8",
+            ]:
                 if key in ATTENTION_REGISTRY:
                     try:
                         inject_attention(model, key)
                         injected = True
                         break
-                    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+                    except (
+                        AttributeError,
+                        KeyError,
+                        RuntimeError,
+                        TypeError,
+                        ValueError,
+                        OSError,
+                        ImportError,
+                    ):
                         pass
         if not injected:
             # Emulate FP8 scale quantization on linear layers
@@ -261,24 +302,50 @@ class ModeTransformEngine:
                         inject_attention(model, key, rank=rank)
                         injected = True
                         break
-                    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+                    except (
+                        AttributeError,
+                        KeyError,
+                        RuntimeError,
+                        TypeError,
+                        ValueError,
+                        OSError,
+                        ImportError,
+                    ):
                         pass
         if not injected:
             # Apply low-rank factorization to Linear layers
             for name, module in list(model.named_modules()):
-                if isinstance(module, nn.Linear) and module.in_features >= rank * 2 and module.out_features >= rank * 2:
-                    parent_name, child_name = name.rsplit(".", 1) if "." in name else ("", name)
+                if (
+                    isinstance(module, nn.Linear)
+                    and module.in_features >= rank * 2
+                    and module.out_features >= rank * 2
+                ):
+                    parent_name, child_name = (
+                        name.rsplit(".", 1) if "." in name else ("", name)
+                    )
                     parent = model.get_submodule(parent_name) if parent_name else model
                     # Create SVD factorized sequence
                     U, S, V = torch.svd(module.weight.data.float())
                     r = min(rank, module.in_features, module.out_features)
-                    w_a = (U[:, :r] * torch.sqrt(S[:r])).t()  # (r, out_features) -> wait: W = U S V^T
+                    w_a = (
+                        U[:, :r] * torch.sqrt(S[:r])
+                    ).t()  # (r, out_features) -> wait: W = U S V^T
                     # W approx = U_r * (diag(S_r) * V_r^T)
                     linear_a = nn.Linear(module.in_features, r, bias=False)
-                    linear_b = nn.Linear(r, module.out_features, bias=module.bias is not None)
+                    linear_b = nn.Linear(
+                        r, module.out_features, bias=module.bias is not None
+                    )
                     with torch.no_grad():
-                        linear_a.weight.copy_((torch.sqrt(S[:r]).unsqueeze(1) * V[:, :r].t()).to(module.weight.dtype))
-                        linear_b.weight.copy_((U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)).to(module.weight.dtype))
+                        linear_a.weight.copy_(
+                            (torch.sqrt(S[:r]).unsqueeze(1) * V[:, :r].t()).to(
+                                module.weight.dtype
+                            )
+                        )
+                        linear_b.weight.copy_(
+                            (U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)).to(
+                                module.weight.dtype
+                            )
+                        )
                         if module.bias is not None:
                             linear_b.bias.copy_(module.bias.data)
                     seq = nn.Sequential(linear_a, linear_b)
@@ -286,13 +353,23 @@ class ModeTransformEngine:
         return model
 
     @staticmethod
-    def _apply_rotational_slicegpt(model: nn.Module, slice_ratio: float = 0.5) -> nn.Module:
+    def _apply_rotational_slicegpt(
+        model: nn.Module, slice_ratio: float = 0.5
+    ) -> nn.Module:
         """Apply rotational invariance orthogonal transform and slice channels."""
         if ATTENTION_REGISTRY is not None and "slicegpt" in ATTENTION_REGISTRY:
             try:
                 inject_attention(model, "slicegpt")
                 return model
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+            except (
+                AttributeError,
+                KeyError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+                OSError,
+                ImportError,
+            ):
                 pass
         # Prune / slice 1 - slice_ratio channels
         with torch.no_grad():
@@ -331,7 +408,15 @@ class ModeTransformEngine:
                     try:
                         inject_attention(model, key)
                         return model
-                    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+                    except (
+                        AttributeError,
+                        KeyError,
+                        RuntimeError,
+                        TypeError,
+                        ValueError,
+                        OSError,
+                        ImportError,
+                    ):
                         pass
         for module in model.modules():
             module._mode_tag = "paged_deltakv_cache"
@@ -346,7 +431,15 @@ class ModeTransformEngine:
                     try:
                         inject_attention(model, key)
                         return model
-                    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+                    except (
+                        AttributeError,
+                        KeyError,
+                        RuntimeError,
+                        TypeError,
+                        ValueError,
+                        OSError,
+                        ImportError,
+                    ):
                         pass
         for module in model.modules():
             module._mode_tag = "mamba_ssm_scan"
@@ -361,7 +454,15 @@ class ModeTransformEngine:
                     try:
                         inject_attention(model, key)
                         return model
-                    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+                    except (
+                        AttributeError,
+                        KeyError,
+                        RuntimeError,
+                        TypeError,
+                        ValueError,
+                        OSError,
+                        ImportError,
+                    ):
                         pass
         for module in model.modules():
             module._mode_tag = "moe_block_routing"
@@ -376,7 +477,15 @@ class ModeTransformEngine:
                     try:
                         inject_attention(model, key)
                         return model
-                    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+                    except (
+                        AttributeError,
+                        KeyError,
+                        RuntimeError,
+                        TypeError,
+                        ValueError,
+                        OSError,
+                        ImportError,
+                    ):
                         pass
         for module in model.modules():
             module._mode_tag = "aegis_spectron_hybrid"
@@ -389,7 +498,15 @@ class ModeTransformEngine:
             try:
                 inject_attention(model, "kronecker_tt_lora", rank=rank)
                 return model
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+            except (
+                AttributeError,
+                KeyError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+                OSError,
+                ImportError,
+            ):
                 pass
         for module in model.modules():
             module._mode_tag = "kronecker_tt_adapter"
@@ -402,7 +519,15 @@ class ModeTransformEngine:
             try:
                 inject_attention(model, "cluster_attention")
                 return model
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+            except (
+                AttributeError,
+                KeyError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+                OSError,
+                ImportError,
+            ):
                 pass
         with torch.no_grad():
             for module in model.modules():
@@ -424,7 +549,15 @@ class ModeTransformEngine:
             try:
                 inject_attention(model, "nystrom_attention")
                 return model
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+            except (
+                AttributeError,
+                KeyError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+                OSError,
+                ImportError,
+            ):
                 pass
         for module in model.modules():
             module._mode_tag = "nystrom_landmark_kernel"
@@ -434,6 +567,7 @@ class ModeTransformEngine:
 # -----------------------------------------------------------------------------
 # Main Runner Class
 # -----------------------------------------------------------------------------
+
 
 class MultiModeBenchmarkRunner:
     """
@@ -467,8 +601,14 @@ class MultiModeBenchmarkRunner:
         # CPU kernels do not consistently support half precision.  Falling
         # back here avoids invalid benchmark runs while preserving FP16/BF16
         # on CUDA and supported accelerators.
-        if self.device.type == "cpu" and requested_dtype in (torch.float16, torch.bfloat16):
-            logger.warning("%s is not portable for CPU benchmarking; using float32.", requested_dtype)
+        if self.device.type == "cpu" and requested_dtype in (
+            torch.float16,
+            torch.bfloat16,
+        ):
+            logger.warning(
+                "%s is not portable for CPU benchmarking; using float32.",
+                requested_dtype,
+            )
             requested_dtype = torch.float32
         self.dtype = requested_dtype
         self.batch_size = batch_size
@@ -501,12 +641,18 @@ class MultiModeBenchmarkRunner:
         if HAS_TRANSFORMERS:
             # 1. Try local cache first
             try:
-                tokenizer = AutoTokenizer.from_pretrained(self.model_name_or_path, local_files_only=True)
+                tokenizer = AutoTokenizer.from_pretrained(
+                    self.model_name_or_path, local_files_only=True
+                )
             except Exception:
                 try:
-                    tokenizer = AutoTokenizer.from_pretrained(self.model_name_or_path, use_fast=True)
+                    tokenizer = AutoTokenizer.from_pretrained(
+                        self.model_name_or_path, use_fast=True
+                    )
                 except Exception:
-                    logger.warning(f"Could not load tokenizer for {self.model_name_or_path}.")
+                    logger.warning(
+                        f"Could not load tokenizer for {self.model_name_or_path}."
+                    )
 
             if tokenizer is not None and tokenizer.pad_token is None:
                 tokenizer.pad_token = tokenizer.eos_token
@@ -518,7 +664,15 @@ class MultiModeBenchmarkRunner:
                     local_files_only=True,
                 )
                 return model, tokenizer
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+            except (
+                AttributeError,
+                KeyError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+                OSError,
+                ImportError,
+            ):
                 pass
 
             try:
@@ -526,13 +680,25 @@ class MultiModeBenchmarkRunner:
                     self.model_name_or_path,
                 )
                 return model, tokenizer
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+            except (
+                AttributeError,
+                KeyError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+                OSError,
+                ImportError,
+            ):
                 pass
 
         # Lightweight fallback model for testing / CI
         logger.info("Initializing fallback DistilBert architecture for evaluation.")
         if HAS_TRANSFORMERS:
-            from transformers import DistilBertConfig, DistilBertForSequenceClassification
+            from transformers import (
+                DistilBertConfig,
+                DistilBertForSequenceClassification,
+            )
+
             config = DistilBertConfig(
                 vocab_size=30522,
                 max_position_embeddings=max(512, self.seq_len * 2),
@@ -543,12 +709,14 @@ class MultiModeBenchmarkRunner:
             )
             model = DistilBertForSequenceClassification(config)
         else:
+
             class DummyConfig:
                 vocab_size = 30522
                 hidden_size = 256
                 num_attention_heads = 4
                 num_hidden_layers = 2
                 dim = 256
+
             config = DummyConfig()
 
             # Minimal dummy transformer module
@@ -557,7 +725,9 @@ class MultiModeBenchmarkRunner:
                     super().__init__()
                     self.config = config
                     self.embed = nn.Embedding(30522, d_model)
-                    self.attn = nn.MultiheadAttention(d_model, n_heads, batch_first=True)
+                    self.attn = nn.MultiheadAttention(
+                        d_model, n_heads, batch_first=True
+                    )
                     self.fc = nn.Linear(d_model, 2)
 
                 def forward(self, input_ids, attention_mask=None, labels=None):
@@ -573,7 +743,9 @@ class MultiModeBenchmarkRunner:
 
         return model, tokenizer
 
-    def _get_dataset(self, dataset_name: str, tokenizer: Any | None) -> torch.utils.data.Dataset:
+    def _get_dataset(
+        self, dataset_name: str, tokenizer: Any | None
+    ) -> torch.utils.data.Dataset:
         """Load or build evaluation dataset (cached)."""
         dataset_name = dataset_name.lower()
         if not hasattr(self, "_dataset_cache"):
@@ -583,22 +755,38 @@ class MultiModeBenchmarkRunner:
 
         if dataset_name == "synthetic":
             vocab_size = getattr(tokenizer, "vocab_size", 30522) if tokenizer else 30522
-            dataset = SyntheticTextDataset(vocab_size=vocab_size, seq_len=self.seq_len, num_samples=self.num_samples)
+            dataset = SyntheticTextDataset(
+                vocab_size=vocab_size,
+                seq_len=self.seq_len,
+                num_samples=self.num_samples,
+            )
             self._dataset_cache[dataset_name] = dataset
             return dataset
 
         # 1. Try loading real GLUE dataset via prepare_glue_dataset
         try:
-            from framework.data.prepare_datasets import GLUE_TASK_CONFIG, prepare_glue_dataset
+            from framework.data.prepare_datasets import (
+                GLUE_TASK_CONFIG,
+                prepare_glue_dataset,
+            )
+
             if dataset_name in GLUE_TASK_CONFIG:
-                tok_name = self.model_name_or_path if isinstance(self.model_name_or_path, str) else "bert-base-uncased"
+                tok_name = (
+                    self.model_name_or_path
+                    if isinstance(self.model_name_or_path, str)
+                    else "bert-base-uncased"
+                )
                 splits = prepare_glue_dataset(
                     task_name=dataset_name,
                     tokenizer_name=tok_name,
                     max_seq_len=self.seq_len,
                     use_synthetic_fallback=False,
                 )
-                eval_split = splits.get("validation") or splits.get("test") or splits.get("train")
+                eval_split = (
+                    splits.get("validation")
+                    or splits.get("test")
+                    or splits.get("train")
+                )
                 if eval_split is not None:
                     self._dataset_cache[dataset_name] = eval_split
                     return eval_split
@@ -614,18 +802,29 @@ class MultiModeBenchmarkRunner:
         if dataset_name in {"wikitext2", "wikitext103", "c4", "lm", "ptb"}:
             try:
                 from framework.data.prepare_datasets import prepare_lm_dataset
-                tok_name = self.model_name_or_path if isinstance(self.model_name_or_path, str) else "bert-base-uncased"
+
+                tok_name = (
+                    self.model_name_or_path
+                    if isinstance(self.model_name_or_path, str)
+                    else "bert-base-uncased"
+                )
                 splits = prepare_lm_dataset(
                     dataset_name=dataset_name,
                     tokenizer_name=tok_name,
                     max_seq_len=self.seq_len,
                 )
-                eval_split = splits.get("validation") or splits.get("test") or splits.get("train")
+                eval_split = (
+                    splits.get("validation")
+                    or splits.get("test")
+                    or splits.get("train")
+                )
                 if eval_split is not None:
                     self._dataset_cache[dataset_name] = eval_split
                     return eval_split
             except Exception as e:
-                logger.warning("Could not load real LM dataset '%s': %s", dataset_name, e)
+                logger.warning(
+                    "Could not load real LM dataset '%s': %s", dataset_name, e
+                )
                 if not self.allow_synthetic:
                     raise RuntimeError(
                         f"Genuine dataset '{dataset_name}' could not be loaded ({e}). "
@@ -635,12 +834,17 @@ class MultiModeBenchmarkRunner:
         # 3. Check legacy dataset_loader
         try:
             from framework.data.dataset_loader import ExperimentConfig, load_dataset
+
             exp_conf = ExperimentConfig(
                 dataset_name=dataset_name,
                 max_seq_length=self.seq_len,
             )
             data_dict = load_dataset(exp_conf)
-            eval_split = data_dict.get("validation") or data_dict.get("test") or data_dict.get("train")
+            eval_split = (
+                data_dict.get("validation")
+                or data_dict.get("test")
+                or data_dict.get("train")
+            )
             if eval_split is not None:
                 self._dataset_cache[dataset_name] = eval_split
                 return eval_split
@@ -654,9 +858,14 @@ class MultiModeBenchmarkRunner:
             )
 
         # Explicit fallback to synthetic dataset
-        logger.warning("Falling back to synthetic data for dataset '%s' (--synthetic allowed).", dataset_name)
+        logger.warning(
+            "Falling back to synthetic data for dataset '%s' (--synthetic allowed).",
+            dataset_name,
+        )
         vocab_size = getattr(tokenizer, "vocab_size", 30522) if tokenizer else 30522
-        dataset = SyntheticTextDataset(vocab_size=vocab_size, seq_len=self.seq_len, num_samples=self.num_samples)
+        dataset = SyntheticTextDataset(
+            vocab_size=vocab_size, seq_len=self.seq_len, num_samples=self.num_samples
+        )
         self._dataset_cache[dataset_name] = dataset
         return dataset
 
@@ -667,7 +876,9 @@ class MultiModeBenchmarkRunner:
                 torch.cuda.max_memory_allocated(self.device) / (1024 * 1024),
                 torch.cuda.memory_allocated(self.device) / (1024 * 1024),
             )
-        elif self.device.type == "mps" and hasattr(torch.mps, "current_allocated_memory"):
+        elif self.device.type == "mps" and hasattr(
+            torch.mps, "current_allocated_memory"
+        ):
             try:
                 alloc = torch.mps.current_allocated_memory() / (1024 * 1024)
                 return alloc, alloc
@@ -677,8 +888,13 @@ class MultiModeBenchmarkRunner:
         # CPU / Process RSS fallback
         try:
             import resource
+
             rusage = resource.getrusage(resource.RUSAGE_SELF)
-            rss = rusage.ru_maxrss / (1024 * 1024) if sys.platform == "darwin" else rusage.ru_maxrss / 1024
+            rss = (
+                rusage.ru_maxrss / (1024 * 1024)
+                if sys.platform == "darwin"
+                else rusage.ru_maxrss / 1024
+            )
             return rss, rss
         except (ImportError, OSError) as e:
             logger.debug("RSS memory query failed: %s", e)
@@ -701,7 +917,9 @@ class MultiModeBenchmarkRunner:
         rank: int = 32,
     ) -> ModeBenchmarkResult:
         """Run benchmark for a single execution mode."""
-        logger.info(f"==> Benchmarking Mode: [{mode}] on Dataset: [{dataset_name}] (Device: {self.device})")
+        logger.info(
+            f"==> Benchmarking Mode: [{mode}] on Dataset: [{dataset_name}] (Device: {self.device})"
+        )
         cleanup_gpu_memory()
 
         # Load fresh model copy from cache
@@ -745,7 +963,9 @@ class MultiModeBenchmarkRunner:
                 error_message=str(e),
             )
 
-        num_params = sum(p.numel() for p in model.parameters() if p.requires_grad or True)
+        num_params = sum(
+            p.numel() for p in model.parameters() if p.requires_grad or True
+        )
 
         # Prepare dataset & dataloader
         dataset = self._get_dataset(dataset_name, tokenizer)
@@ -812,7 +1032,11 @@ class MultiModeBenchmarkRunner:
                     logits = out.logits
                     if logits.dim() == 2:
                         # Sequence classification (Batch, NumClasses)
-                        if labels is not None and labels.dim() == 1 and labels.size(0) == logits.size(0):
+                        if (
+                            labels is not None
+                            and labels.dim() == 1
+                            and labels.size(0) == logits.size(0)
+                        ):
                             target = labels.clamp(0, logits.size(-1) - 1)
                         else:
                             target = (input_ids[:, 0] % logits.size(-1)).long()
@@ -820,11 +1044,17 @@ class MultiModeBenchmarkRunner:
                     elif logits.dim() == 3:
                         # Language modeling / Causal / Masked LM (Batch, SeqLen, VocabSize)
                         if logits.size(1) > 1:
-                            shift_logits = logits[:, :-1, :].contiguous().view(-1, logits.size(-1))
+                            shift_logits = (
+                                logits[:, :-1, :].contiguous().view(-1, logits.size(-1))
+                            )
                             shift_labels = input_ids[:, 1:].contiguous().view(-1)
-                            step_loss = F.cross_entropy(shift_logits, shift_labels).item()
+                            step_loss = F.cross_entropy(
+                                shift_logits, shift_labels
+                            ).item()
                         else:
-                            step_loss = F.cross_entropy(logits.view(-1, logits.size(-1)), input_ids.view(-1)).item()
+                            step_loss = F.cross_entropy(
+                                logits.view(-1, logits.size(-1)), input_ids.view(-1)
+                            ).item()
                     else:
                         step_loss = 1.5
                 else:
@@ -896,8 +1126,14 @@ class MultiModeBenchmarkRunner:
             comp_ratio *= 1.5
 
         # Memory savings (%)
-        base_mem = self._baseline_vram_mb if self._baseline_vram_mb and self._baseline_vram_mb > 0 else peak_vram
-        mem_savings_pct = max(0.0, ((base_mem - peak_vram) / max(base_mem, 1e-6)) * 100.0)
+        base_mem = (
+            self._baseline_vram_mb
+            if self._baseline_vram_mb and self._baseline_vram_mb > 0
+            else peak_vram
+        )
+        mem_savings_pct = max(
+            0.0, ((base_mem - peak_vram) / max(base_mem, 1e-6)) * 100.0
+        )
 
         result = ModeBenchmarkResult(
             mode=mode,
@@ -938,7 +1174,9 @@ class MultiModeBenchmarkRunner:
         target_modes = modes or SUPPORTED_MODES
         target_datasets = datasets or ["sst2"]
 
-        logger.info(f"Starting Multi-Mode Benchmark across {len(target_modes)} modes and {len(target_datasets)} datasets.")
+        logger.info(
+            f"Starting Multi-Mode Benchmark across {len(target_modes)} modes and {len(target_datasets)} datasets."
+        )
         logger.info(f"Modes: {target_modes}")
         logger.info(f"Datasets: {target_datasets}")
 
@@ -955,13 +1193,19 @@ class MultiModeBenchmarkRunner:
     def to_dataframe(self) -> Any:
         """Convert results to a pandas DataFrame."""
         if not HAS_PANDAS:
-            raise RuntimeError("pandas is not installed. Please install pandas to export DataFrame.")
+            raise RuntimeError(
+                "pandas is not installed. Please install pandas to export DataFrame."
+            )
         data = [r.to_dict() for r in self.results]
         return pd.DataFrame(data)
 
     def export_json(self, filepath: str | Path | None = None) -> str:
         """Export all benchmark outcomes to structured JSON."""
-        target_file = Path(filepath) if filepath else self.output_dir / "multi_mode_benchmark_results.json"
+        target_file = (
+            Path(filepath)
+            if filepath
+            else self.output_dir / "multi_mode_benchmark_results.json"
+        )
         payload = {
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
             "model_name": self.model_name_or_path,
@@ -981,7 +1225,11 @@ class MultiModeBenchmarkRunner:
         """Export results to CSV file."""
         if not HAS_PANDAS:
             raise RuntimeError("pandas is required for CSV export.")
-        target_file = Path(filepath) if filepath else self.output_dir / "multi_mode_benchmark_results.csv"
+        target_file = (
+            Path(filepath)
+            if filepath
+            else self.output_dir / "multi_mode_benchmark_results.csv"
+        )
         df = self.to_dataframe()
         df.to_csv(target_file, index=False)
         logger.info(f"Exported CSV benchmark results to {target_file}")
@@ -994,23 +1242,32 @@ class MultiModeBenchmarkRunner:
             return
 
         headers = [
-            "Mode", "Dataset", "PPL", "Loss", "Peak VRAM (MB)",
-            "Lat (ms/tok)", "Throughput (tok/s)", "Comp Ratio", "Mem Saved (%)"
+            "Mode",
+            "Dataset",
+            "PPL",
+            "Loss",
+            "Peak VRAM (MB)",
+            "Lat (ms/tok)",
+            "Throughput (tok/s)",
+            "Comp Ratio",
+            "Mem Saved (%)",
         ]
 
         rows = []
         for r in self.results:
-            rows.append([
-                r.mode[:24],
-                r.dataset[:10],
-                f"{r.perplexity:.2f}" if not math.isnan(r.perplexity) else "N/A",
-                f"{r.loss:.3f}" if not math.isnan(r.loss) else "N/A",
-                f"{r.peak_vram_mb:.1f}",
-                f"{r.latency_ms_per_token:.3f}",
-                f"{r.throughput_tokens_per_sec:.1f}",
-                f"{r.compression_ratio:.1f}x",
-                f"{r.memory_savings_pct:.1f}%",
-            ])
+            rows.append(
+                [
+                    r.mode[:24],
+                    r.dataset[:10],
+                    f"{r.perplexity:.2f}" if not math.isnan(r.perplexity) else "N/A",
+                    f"{r.loss:.3f}" if not math.isnan(r.loss) else "N/A",
+                    f"{r.peak_vram_mb:.1f}",
+                    f"{r.latency_ms_per_token:.3f}",
+                    f"{r.throughput_tokens_per_sec:.1f}",
+                    f"{r.compression_ratio:.1f}x",
+                    f"{r.memory_savings_pct:.1f}%",
+                ]
+            )
 
         col_widths = [len(h) for h in headers]
         for row in rows:
@@ -1018,7 +1275,11 @@ class MultiModeBenchmarkRunner:
                 col_widths[i] = max(col_widths[i], len(str(val)))
 
         sep = "+" + "+".join("-" * (w + 2) for w in col_widths) + "+"
-        header_str = "|" + "|".join(f" {h:<{col_widths[i]}} " for i, h in enumerate(headers)) + "|"
+        header_str = (
+            "|"
+            + "|".join(f" {h:<{col_widths[i]}} " for i, h in enumerate(headers))
+            + "|"
+        )
 
         print("\n" + "=" * len(sep))
         print(" MULTI-MODE ATTENTION & INFERENCE BENCHMARK REPORT")
@@ -1027,7 +1288,11 @@ class MultiModeBenchmarkRunner:
         print(header_str)
         print(sep)
         for row in rows:
-            print("|" + "|".join(f" {v:<{col_widths[i]}} " for i, v in enumerate(row)) + "|")
+            print(
+                "|"
+                + "|".join(f" {v:<{col_widths[i]}} " for i, v in enumerate(row))
+                + "|"
+            )
         print(sep + "\n")
 
     @classmethod
@@ -1068,7 +1333,9 @@ class MultiModeBenchmarkRunner:
             or ATTENTION_REGISTRY.get(f"{attention_type}_attention")
         )
         if cls is None:
-            raise ValueError(f"Attention type '{attention_type}' not found in registry. Available: {ATTENTION_REGISTRY.keys()[:10]}...")
+            raise ValueError(
+                f"Attention type '{attention_type}' not found in registry. Available: {ATTENTION_REGISTRY.keys()[:10]}..."
+            )
 
         class DummyConfig:
             def __init__(self, hidden_size=64, num_heads=4, rank=16, **extra):
@@ -1089,7 +1356,9 @@ class MultiModeBenchmarkRunner:
             try:
                 module = cls(cfg, **kwargs).to(self.device)
             except TypeError:
-                module = cls(hidden_size=hidden_size, num_heads=num_heads, **kwargs).to(self.device)
+                module = cls(hidden_size=hidden_size, num_heads=num_heads, **kwargs).to(
+                    self.device
+                )
 
         dummy_x = torch.randn(batch_size, seq_len, hidden_size, device=self.device)
 
@@ -1113,13 +1382,14 @@ class MultiModeBenchmarkRunner:
             "peak_vram_mb": peak_vram,
             "batch_size": batch_size,
             "seq_len": seq_len,
-            "hidden_size": hidden_size
+            "hidden_size": hidden_size,
         }
 
 
 # -----------------------------------------------------------------------------
 # CLI Entrypoint
 # -----------------------------------------------------------------------------
+
 
 def parse_args():
     parser = argparse.ArgumentParser(

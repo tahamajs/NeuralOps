@@ -1,7 +1,8 @@
+import framework.attentions.adasplash_attention
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.adasplash_attention
+
 
 def test_adasplash_attention_module_present():
     assert hasattr(framework.attentions, 'adasplash_attention')

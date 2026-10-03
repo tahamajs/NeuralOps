@@ -28,17 +28,17 @@ Parameter count drops from d_out * d_in to (d_out + d_in) * keep.
 
 from __future__ import annotations
 
-from typing import Any
 import logging
 import math
+from typing import Any
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
-from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import get_calibration_tensors
+from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
 # Real low-rank factorization layer
@@ -95,15 +95,27 @@ class SliceGPTPCALoRALinear(nn.Module):
                 requires_grad=False,
             )
         else:
-            self.register_parameter('bias', None)
+            self.register_parameter("bias", None)
 
         if self.lora_r > 0:
-            self.lora_A = nn.Parameter(torch.empty((self.lora_r, in_features), device=target_device, dtype=torch.float32))
-            self.lora_B = nn.Parameter(torch.zeros((out_features, self.lora_r), device=target_device, dtype=torch.float32))
+            self.lora_A = nn.Parameter(
+                torch.empty(
+                    (self.lora_r, in_features),
+                    device=target_device,
+                    dtype=torch.float32,
+                )
+            )
+            self.lora_B = nn.Parameter(
+                torch.zeros(
+                    (out_features, self.lora_r),
+                    device=target_device,
+                    dtype=torch.float32,
+                )
+            )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
-            self.register_parameter('lora_A', None)
-            self.register_parameter('lora_B', None)
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
 
     @classmethod
     def from_linear(
@@ -113,15 +125,19 @@ class SliceGPTPCALoRALinear(nn.Module):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> SliceGPTPCALoRALinear:
-        base_mod = getattr(linear, 'base_layer', linear)
-        bias = base_mod.bias.detach() if hasattr(base_mod, 'bias') and base_mod.bias is not None else None
-        in_features = getattr(base_mod, 'in_features', sliced_weight.shape[1])
-        out_features = getattr(base_mod, 'out_features', sliced_weight.shape[0])
+        base_mod = getattr(linear, "base_layer", linear)
+        bias = (
+            base_mod.bias.detach()
+            if hasattr(base_mod, "bias") and base_mod.bias is not None
+            else None
+        )
+        in_features = getattr(base_mod, "in_features", sliced_weight.shape[1])
+        out_features = getattr(base_mod, "out_features", sliced_weight.shape[0])
 
-        has_existing_lora = hasattr(linear, 'lora_A') and hasattr(linear, 'lora_B')
+        has_existing_lora = hasattr(linear, "lora_A") and hasattr(linear, "lora_B")
         effective_lora_r = lora_r
-        if has_existing_lora and getattr(linear, 'r', 0) > 0:
-            effective_lora_r = getattr(linear, 'r', lora_r)
+        if has_existing_lora and getattr(linear, "r", 0) > 0:
+            effective_lora_r = getattr(linear, "r", lora_r)
 
         layer = cls(
             in_features=in_features,
@@ -136,21 +152,30 @@ class SliceGPTPCALoRALinear(nn.Module):
 
         if has_existing_lora and layer.lora_r > 0:
             try:
-                if hasattr(linear.lora_A, 'weight') and layer.lora_A is not None:
+                if hasattr(linear.lora_A, "weight") and layer.lora_A is not None:
                     layer.lora_A.data.copy_(linear.lora_A.weight.data)
-                if hasattr(linear.lora_B, 'weight') and layer.lora_B is not None:
+                if hasattr(linear.lora_B, "weight") and layer.lora_B is not None:
                     layer.lora_B.data.copy_(linear.lora_B.weight.data)
             except Exception as e_lora:
-                logger.warning('Could not copy existing LoRA adapters in SliceGPTPCA: %s', e_lora)
+                logger.warning(
+                    "Could not copy existing LoRA adapters in SliceGPTPCA: %s", e_lora
+                )
         return layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight.to(x.dtype), self.bias.to(x.dtype) if self.bias is not None else None)
+        out = F.linear(
+            x,
+            self.weight.to(x.dtype),
+            self.bias.to(x.dtype) if self.bias is not None else None,
+        )
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_delta = F.linear(
-                F.linear(x.float(), self.lora_A),
-                self.lora_B,
-            ) * self.scaling
+            lora_delta = (
+                F.linear(
+                    F.linear(x.float(), self.lora_A),
+                    self.lora_B,
+                )
+                * self.scaling
+            )
             out = out + lora_delta.to(out.dtype)
         return out
 
@@ -163,7 +188,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-@COMPRESSOR_REGISTRY.register('slicegpt_pca')
+@COMPRESSOR_REGISTRY.register("slicegpt_pca")
 class SliceGPTPCACompressor(BaseCompressor):
     """
     Production-hardened SliceGPT PCA-based compressor that performs activation-aware
@@ -193,21 +218,54 @@ class SliceGPTPCACompressor(BaseCompressor):
         cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(model, name='slicegpt_pca', **kwargs)
-        cfg_obj = cfg or kwargs.get('comp_config')
+        super().__init__(model, name="slicegpt_pca", **kwargs)
+        cfg_obj = cfg or kwargs.get("comp_config")
 
         self.calibration_loader = calibration_loader
-        self.sparsity = max(0.0, min(float(sparsity or _cfg_get(cfg_obj, 'slicegpt_pca_sparsity', _cfg_get(cfg_obj, 'sparsity', 0.3))), 0.95))
-        self.tokenizer = tokenizer or getattr(model, 'tokenizer', None) or _cfg_get(cfg_obj, 'tokenizer', None)
-        self.calibration_texts = calibration_texts or _cfg_get(cfg_obj, 'calibration_texts', None)
-        self.skip_attention_qkv = bool(skip_attention_qkv if skip_attention_qkv is not None else _cfg_get(cfg_obj, 'skip_attention_qkv', False))
-        self.target_attention_only = bool(target_attention_only if target_attention_only is not None else _cfg_get(cfg_obj, 'target_attention_only', False))
-        self.use_lora = bool(use_lora or _cfg_get(cfg_obj, 'use_lora', False) or (lora_r > 0))
-        self.lora_r = int(lora_r or _cfg_get(cfg_obj, 'lora_r', 0))
-        self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, 'lora_alpha', 1.0))
-        self.max_error = float(max_error or _cfg_get(cfg_obj, 'max_error', 0.50))
-        self.fallback_to_original = bool(fallback_to_original if fallback_to_original is not None else _cfg_get(cfg_obj, 'fallback_to_original', True))
-        self.min_numel = max(1, int(min_numel or _cfg_get(cfg_obj, 'min_numel', 16)))
+        self.sparsity = max(
+            0.0,
+            min(
+                float(
+                    sparsity
+                    or _cfg_get(
+                        cfg_obj,
+                        "slicegpt_pca_sparsity",
+                        _cfg_get(cfg_obj, "sparsity", 0.3),
+                    )
+                ),
+                0.95,
+            ),
+        )
+        self.tokenizer = (
+            tokenizer
+            or getattr(model, "tokenizer", None)
+            or _cfg_get(cfg_obj, "tokenizer", None)
+        )
+        self.calibration_texts = calibration_texts or _cfg_get(
+            cfg_obj, "calibration_texts", None
+        )
+        self.skip_attention_qkv = bool(
+            skip_attention_qkv
+            if skip_attention_qkv is not None
+            else _cfg_get(cfg_obj, "skip_attention_qkv", False)
+        )
+        self.target_attention_only = bool(
+            target_attention_only
+            if target_attention_only is not None
+            else _cfg_get(cfg_obj, "target_attention_only", False)
+        )
+        self.use_lora = bool(
+            use_lora or _cfg_get(cfg_obj, "use_lora", False) or (lora_r > 0)
+        )
+        self.lora_r = int(lora_r or _cfg_get(cfg_obj, "lora_r", 0))
+        self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, "lora_alpha", 1.0))
+        self.max_error = float(max_error or _cfg_get(cfg_obj, "max_error", 0.50))
+        self.fallback_to_original = bool(
+            fallback_to_original
+            if fallback_to_original is not None
+            else _cfg_get(cfg_obj, "fallback_to_original", True)
+        )
+        self.min_numel = max(1, int(min_numel or _cfg_get(cfg_obj, "min_numel", 16)))
         self.target_modules = target_modules
 
         # Target device derivation
@@ -215,9 +273,17 @@ class SliceGPTPCACompressor(BaseCompressor):
             try:
                 self.target_device = torch.device(device)
             except Exception:
-                self.target_device = next(model.parameters()).device if list(model.parameters()) else torch.device('cpu')
+                self.target_device = (
+                    next(model.parameters()).device
+                    if list(model.parameters())
+                    else torch.device("cpu")
+                )
         else:
-            self.target_device = next(model.parameters()).device if list(model.parameters()) else torch.device('cpu')
+            self.target_device = (
+                next(model.parameters()).device
+                if list(model.parameters())
+                else torch.device("cpu")
+            )
 
         # Diagnostics & Tracking
         self.visited_modules: set[int] = set()
@@ -232,31 +298,71 @@ class SliceGPTPCACompressor(BaseCompressor):
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         """Check if layer belongs to an attention projection in a GQA architecture."""
-        cfg = getattr(self.model, 'config', None)
-        num_heads = getattr(cfg, 'num_attention_heads', None)
-        num_kv_heads = getattr(cfg, 'num_key_value_heads', None)
-        is_gqa = (num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads)
+        cfg = getattr(self.model, "config", None)
+        num_heads = getattr(cfg, "num_attention_heads", None)
+        num_kv_heads = getattr(cfg, "num_key_value_heads", None)
+        is_gqa = (
+            num_heads is not None
+            and num_kv_heads is not None
+            and num_kv_heads < num_heads
+        )
 
         name_l = name.lower()
-        is_attn_qkv = any(p in name_l for p in [
-            'q_proj', 'k_proj', 'v_proj', 'c_attn', 'query', 'key', 'value',
-            'q_lin', 'k_lin', 'v_lin', 'self_attn.q', 'self_attn.k', 'self_attn.v'
-        ])
+        is_attn_qkv = any(
+            p in name_l
+            for p in [
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "c_attn",
+                "query",
+                "key",
+                "value",
+                "q_lin",
+                "k_lin",
+                "v_lin",
+                "self_attn.q",
+                "self_attn.k",
+                "self_attn.v",
+            ]
+        )
         return (is_gqa or self.skip_attention_qkv) and is_attn_qkv
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
         # 1. Protection for critical / pooler / classification / embedding / CLS layers
-        if any(k in name_l for k in [
-            'classifier', 'score', 'lm_head', 'pooler', 'embed', 'embedding',
-            'cls_head', 'head', 'logits_processor'
-        ]):
+        if any(
+            k in name_l
+            for k in [
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embed",
+                "embedding",
+                "cls_head",
+                "head",
+                "logits_processor",
+            ]
+        ):
             self.protected_layers.append(name)
             return False
 
         # Target attention only filter
         if self.target_attention_only:
-            attn_keywords = ['attn', 'attention', 'q_proj', 'k_proj', 'v_proj', 'o_proj', 'c_attn', 'c_proj', 'query', 'key', 'value']
+            attn_keywords = [
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "c_attn",
+                "c_proj",
+                "query",
+                "key",
+                "value",
+            ]
             if not any(k in name_l for k in attn_keywords):
                 return False
 
@@ -266,13 +372,13 @@ class SliceGPTPCACompressor(BaseCompressor):
             return False
 
         # 3. Check linear or Conv1D nature
-        base_mod = getattr(module, 'base_layer', module)
+        base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__
-        raw_w = getattr(base_mod, 'weight', None)
+        raw_w = getattr(base_mod, "weight", None)
         if raw_w is None or not isinstance(raw_w, torch.Tensor):
             return False
 
-        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(base_mod, 'nf')
+        is_conv1d = "conv1d" in cls_name.lower() or hasattr(base_mod, "nf")
         is_linear_like = isinstance(base_mod, nn.Linear) or is_conv1d
         if not is_linear_like:
             return False
@@ -320,6 +426,7 @@ class SliceGPTPCACompressor(BaseCompressor):
                         sum_x[layer_name] += s_x
                         sum_xx[layer_name] += s_xx
                         counts[layer_name] += n
+
             return hook
 
         try:
@@ -337,18 +444,43 @@ class SliceGPTPCACompressor(BaseCompressor):
             with torch.no_grad():
                 try:
                     if isinstance(calib_inputs, dict):
-                        self.model(**{k: v.to(self.target_device) if isinstance(v, torch.Tensor) else v for k, v in calib_inputs.items()})
+                        self.model(
+                            **{
+                                k: (
+                                    v.to(self.target_device)
+                                    if isinstance(v, torch.Tensor)
+                                    else v
+                                )
+                                for k, v in calib_inputs.items()
+                            }
+                        )
                     elif isinstance(calib_inputs, torch.Tensor):
                         self.model(calib_inputs.to(self.target_device))
                     elif isinstance(calib_inputs, (list, tuple)):
-                        self.model(*[t.to(self.target_device) if isinstance(t, torch.Tensor) else t for t in calib_inputs])
+                        self.model(
+                            *[
+                                (
+                                    t.to(self.target_device)
+                                    if isinstance(t, torch.Tensor)
+                                    else t
+                                )
+                                for t in calib_inputs
+                            ]
+                        )
                 except Exception as ex_calib:
-                    logger.debug('SliceGPTPCA primary calibration forward failed (%s); trying synthetic fallback.', ex_calib)
+                    logger.debug(
+                        "SliceGPTPCA primary calibration forward failed (%s); trying synthetic fallback.",
+                        ex_calib,
+                    )
                     try:
-                        dummy_ids = torch.randint(0, 100, (1, 16), device=self.target_device)
+                        dummy_ids = torch.randint(
+                            0, 100, (1, 16), device=self.target_device
+                        )
                         self.model(input_ids=dummy_ids)
                     except Exception as ex_synth:
-                        logger.warning('SliceGPTPCA calibration forward pass skipped: %s', ex_synth)
+                        logger.warning(
+                            "SliceGPTPCA calibration forward pass skipped: %s", ex_synth
+                        )
         finally:
             for h in hooks:
                 try:
@@ -361,24 +493,26 @@ class SliceGPTPCACompressor(BaseCompressor):
         for name, n in counts.items():
             if n > 1:
                 mu = sum_x[name] / float(n)
-                cov = (sum_xx[name] - float(n) * torch.matmul(mu.T, mu)) / float(max(1, n - 1))
+                cov = (sum_xx[name] - float(n) * torch.matmul(mu.T, mu)) / float(
+                    max(1, n - 1)
+                )
                 cov_map[name] = cov
         return cov_map
 
     @staticmethod
     def _detect_lora(module: nn.Module) -> tuple[int, float]:
         """Detect existing LoRA rank and alpha from a wrapped module, if any."""
-        if not hasattr(module, 'lora_A') or module.lora_A is None:
+        if not hasattr(module, "lora_A") or module.lora_A is None:
             return 0, 1.0
         rank = 0
-        la = getattr(module, 'lora_A', None)
+        la = getattr(module, "lora_A", None)
         if la is not None:
-            if hasattr(la, 'weight') and la.weight is not None and la.weight.dim() >= 1:
+            if hasattr(la, "weight") and la.weight is not None and la.weight.dim() >= 1:
                 rank = int(la.weight.shape[0])
             elif isinstance(la, nn.Parameter) and la.dim() >= 1:
                 rank = int(la.shape[0])
         alpha = 1.0
-        for attr in ('lora_alpha', 'alpha'):
+        for attr in ("lora_alpha", "alpha"):
             a = getattr(module, attr, None)
             if a is not None:
                 try:
@@ -402,11 +536,13 @@ class SliceGPTPCACompressor(BaseCompressor):
                 _SVD_IMPORT_ERROR,
             )
             stats = self.get_compression_stats()
-            stats.update({
-                'is_noop': True,
-                'noop_reason': 'svd_linear_import_failed',
-                'method': 'slicegpt_pca_unavailable',
-            })
+            stats.update(
+                {
+                    "is_noop": True,
+                    "noop_reason": "svd_linear_import_failed",
+                    "method": "slicegpt_pca_unavailable",
+                }
+            )
             return self.model, stats
 
         self.layer_errors = {}
@@ -424,22 +560,26 @@ class SliceGPTPCACompressor(BaseCompressor):
         total_params_before = 0
         total_params_after = 0
 
-        target_items = [(n, m) for n, m in self.model.named_modules() if self._is_target_module(n, m)]
+        target_items = [
+            (n, m)
+            for n, m in self.model.named_modules()
+            if self._is_target_module(n, m)
+        ]
 
         for name, module in target_items:
             # Tied weight protection
             mod_id = id(module)
             if mod_id in self.visited_modules:
-                logger.debug('SliceGPTPCA: Skipping tied module %s', name)
+                logger.debug("SliceGPTPCA: Skipping tied module %s", name)
                 self.skipped_layers.append(name)
                 continue
             self.visited_modules.add(mod_id)
 
             try:
-                base_mod = getattr(module, 'base_layer', module)
+                base_mod = getattr(module, "base_layer", module)
                 raw_w = base_mod.weight.data
                 cls_name = base_mod.__class__.__name__
-                is_conv1d = 'conv1d' in cls_name.lower() or hasattr(base_mod, 'nf')
+                is_conv1d = "conv1d" in cls_name.lower() or hasattr(base_mod, "nf")
                 device = raw_w.device
                 dtype = raw_w.dtype
 
@@ -453,18 +593,32 @@ class SliceGPTPCACompressor(BaseCompressor):
                 total_params_before += d_out * d_in
 
                 cov_mat = activations_map.get(name, None)
-                if cov_mat is not None and cov_mat.shape[0] == d_in and cov_mat.shape[1] == d_in:
-                    cov = cov_mat.to(device=device, dtype=torch.float32) + 1e-5 * torch.eye(d_in, device=device)
+                if (
+                    cov_mat is not None
+                    and cov_mat.shape[0] == d_in
+                    and cov_mat.shape[1] == d_in
+                ):
+                    cov = cov_mat.to(
+                        device=device, dtype=torch.float32
+                    ) + 1e-5 * torch.eye(d_in, device=device)
                     try:
                         eigvals, V = torch.linalg.eigh(cov)
                         idx = torch.argsort(eigvals, descending=True)
                         eigvals = eigvals[idx]
                         V = V[:, idx]
-                        eye_diff = torch.norm(torch.matmul(V.T, V) - torch.eye(d_in), p='fro').item()
+                        eye_diff = torch.norm(
+                            torch.matmul(V.T, V) - torch.eye(d_in), p="fro"
+                        ).item()
                         if eye_diff > 1e-2 or torch.isnan(V).any():
-                            raise ValueError(f'Eigh basis non-orthogonal (diff={eye_diff:.4f})')
+                            raise ValueError(
+                                f"Eigh basis non-orthogonal (diff={eye_diff:.4f})"
+                            )
                     except Exception as e_eigh:
-                        logger.debug('SliceGPTPCA: eigh failed on %s (%s); fallback to QR.', name, e_eigh)
+                        logger.debug(
+                            "SliceGPTPCA: eigh failed on %s (%s); fallback to QR.",
+                            name,
+                            e_eigh,
+                        )
                         H = torch.randn(d_in, d_in)
                         V, _ = torch.linalg.qr(H)
                         eigvals = torch.ones(d_in)
@@ -500,8 +654,8 @@ class SliceGPTPCACompressor(BaseCompressor):
                 W_reconstructed = torch.matmul(W_trunc, V.T)
 
                 # Relative Frobenius error validation
-                norm_orig = torch.norm(W, p='fro').clamp_min(1e-8)
-                rel_err = (torch.norm(W - W_reconstructed, p='fro') / norm_orig).item()
+                norm_orig = torch.norm(W, p="fro").clamp_min(1e-8)
+                rel_err = (torch.norm(W - W_reconstructed, p="fro") / norm_orig).item()
                 self.layer_errors[name] = float(rel_err)
 
                 is_invalid = (
@@ -510,8 +664,10 @@ class SliceGPTPCACompressor(BaseCompressor):
                 )
                 if rel_err > self.max_error:
                     logger.warning(
-                        'SliceGPTPCA: reconstruction error %.4f on %s exceeded threshold %.4f.',
-                        rel_err, name, self.max_error
+                        "SliceGPTPCA: reconstruction error %.4f on %s exceeded threshold %.4f.",
+                        rel_err,
+                        name,
+                        self.max_error,
                     )
                     is_invalid = True
 
@@ -532,15 +688,24 @@ class SliceGPTPCACompressor(BaseCompressor):
                 # Factor:
                 #   U_factor  = W_pca[:, :keep]      shape (d_out, keep)
                 #   Vt_factor = V[:, :keep].T        shape (keep, d_in)
-                U_factor = W_pca[:, :effective_keep].contiguous().to(dtype=dtype, device=device)
-                Vt_factor = V[:, :effective_keep].T.contiguous().to(dtype=dtype, device=device)
+                U_factor = (
+                    W_pca[:, :effective_keep]
+                    .contiguous()
+                    .to(dtype=dtype, device=device)
+                )
+                Vt_factor = (
+                    V[:, :effective_keep].T.contiguous().to(dtype=dtype, device=device)
+                )
 
                 factorized_params = effective_keep * (d_out + d_in)
                 # Only apply if it actually reduces parameter count
                 if factorized_params >= d_out * d_in:
                     logger.info(
                         "SliceGPTPCA: keep=%d on %s would not reduce params (%d >= %d). Keeping dense.",
-                        effective_keep, name, factorized_params, d_out * d_in,
+                        effective_keep,
+                        name,
+                        factorized_params,
+                        d_out * d_in,
                     )
                     total_params_after += d_out * d_in
                     continue
@@ -559,7 +724,10 @@ class SliceGPTPCACompressor(BaseCompressor):
                     in_features=d_in,
                     out_features=d_out,
                     rank=effective_keep,
-                    bias=(getattr(base_mod, 'bias', None) is not None and base_mod.bias is not None),
+                    bias=(
+                        getattr(base_mod, "bias", None) is not None
+                        and base_mod.bias is not None
+                    ),
                     dtype=dtype,
                     device=device,
                     lora_r=used_lora_r,
@@ -569,36 +737,41 @@ class SliceGPTPCACompressor(BaseCompressor):
 
                 # Copy bias
                 if (
-                    getattr(base_mod, 'bias', None) is not None
+                    getattr(base_mod, "bias", None) is not None
                     and base_mod.bias is not None
-                    and getattr(svd_layer, 'bias', None) is not None
+                    and getattr(svd_layer, "bias", None) is not None
                 ):
                     svd_layer.bias.data.copy_(base_mod.bias.data)
 
                 # Copy existing LoRA adapters if present
-                if existing_lora_r > 0 and getattr(svd_layer, 'lora_A', None) is not None:
+                if (
+                    existing_lora_r > 0
+                    and getattr(svd_layer, "lora_A", None) is not None
+                ):
                     try:
-                        src_la = getattr(module.lora_A, 'weight', module.lora_A)
-                        src_lb = getattr(module.lora_B, 'weight', module.lora_B)
+                        src_la = getattr(module.lora_A, "weight", module.lora_A)
+                        src_lb = getattr(module.lora_B, "weight", module.lora_B)
                         la_target = svd_layer.lora_A
                         lb_target = svd_layer.lora_B
                         if (
-                            hasattr(src_la, 'data')
+                            hasattr(src_la, "data")
                             and la_target is not None
                             and src_la.shape == la_target.shape
                         ):
                             la_target.data.copy_(src_la.data)
                         if (
-                            hasattr(src_lb, 'data')
+                            hasattr(src_lb, "data")
                             and lb_target is not None
                             and src_lb.shape == lb_target.shape
                         ):
                             lb_target.data.copy_(src_lb.data)
                     except Exception as e_lora:
-                        logger.debug('SliceGPTPCA LoRA copy skipped on %s: %s', name, e_lora)
+                        logger.debug(
+                            "SliceGPTPCA LoRA copy skipped on %s: %s", name, e_lora
+                        )
 
                 # Replace module
-                is_wrapped = hasattr(module, 'base_layer')
+                is_wrapped = hasattr(module, "base_layer")
                 if is_wrapped:
                     module.base_layer = svd_layer
                 else:
@@ -608,11 +781,11 @@ class SliceGPTPCACompressor(BaseCompressor):
                 self.sliced_layers.append(name)
                 sliced_layers_count += 1
                 if effective_keep < d_in:
-                    pruned_features_count += (d_in - effective_keep)
+                    pruned_features_count += d_in - effective_keep
                 total_params_after += factorized_params
 
             except Exception as e_layer:
-                logger.warning('SliceGPTPCA: Failed to compress %s: %s', name, e_layer)
+                logger.warning("SliceGPTPCA: Failed to compress %s: %s", name, e_layer)
                 self.failed_layers.append(name)
                 for p in module.parameters():
                     p.requires_grad = False
@@ -624,52 +797,63 @@ class SliceGPTPCACompressor(BaseCompressor):
                 dummy_input = torch.randint(0, 100, (1, 8), device=self.target_device)
                 self.model(dummy_input)
         except Exception as ex_sanity:
-            logger.warning('SliceGPTPCA post-compression forward sanity check warning: %s', ex_sanity)
+            logger.warning(
+                "SliceGPTPCA post-compression forward sanity check warning: %s",
+                ex_sanity,
+            )
             forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
-        avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
+        avg_err = (
+            (sum(self.layer_errors.values()) / len(self.layer_errors))
+            if self.layer_errors
+            else 0.0
+        )
         compression_rate = (
             total_params_before / max(1, total_params_after)
-            if total_params_after > 0 else 1.0
+            if total_params_after > 0
+            else 1.0
         )
 
         stats = self.get_compression_stats()
-        stats.update({
-            'sliced_layers': self.sliced_layers,
-            'sliced_layer_count': sliced_layers_count,
-            'layer_ranks': self.layer_ranks,
-            'pruned_features': pruned_features_count,
-            'protected_layers': self.protected_layers,
-            'protected_layer_count': len(self.protected_layers),
-            'skipped_layers': self.skipped_layers,
-            'skipped_layer_count': len(self.skipped_layers),
-            'fallback_layers': self.fallback_layers,
-            'fallback_layer_count': len(self.fallback_layers),
-            'failed_layers': self.failed_layers,
-            'failed_layer_count': len(self.failed_layers),
-            'sparsity_target': self.sparsity,
-            'layer_errors': self.layer_errors,
-            'avg_reconstruction_error': avg_err,
-            'forward_check_success': forward_check_success,
-            'skip_attention_qkv': self.skip_attention_qkv,
-            'target_attention_only': self.target_attention_only,
-            'use_lora': self.use_lora,
-            'lora_r': self.lora_r,
-            'total_params_before': total_params_before,
-            'total_params_after': total_params_after,
-            'compression_rate': round(compression_rate, 4),
-            'num_compressed': sliced_layers_count,
-            'num_compressed_layers': sliced_layers_count,
-            'num_fallback': len(self.fallback_layers),
-            'num_fallback_layers': len(self.fallback_layers),
-            'is_noop': (total_params_after >= total_params_before),
-            'noop_reason': (
-                'no_factorizable_layers_or_fallback_all'
-                if total_params_after >= total_params_before else None
-            ),
-            'method': 'slicegpt_pca_real_low_rank_factorization',
-        })
+        stats.update(
+            {
+                "sliced_layers": self.sliced_layers,
+                "sliced_layer_count": sliced_layers_count,
+                "layer_ranks": self.layer_ranks,
+                "pruned_features": pruned_features_count,
+                "protected_layers": self.protected_layers,
+                "protected_layer_count": len(self.protected_layers),
+                "skipped_layers": self.skipped_layers,
+                "skipped_layer_count": len(self.skipped_layers),
+                "fallback_layers": self.fallback_layers,
+                "fallback_layer_count": len(self.fallback_layers),
+                "failed_layers": self.failed_layers,
+                "failed_layer_count": len(self.failed_layers),
+                "sparsity_target": self.sparsity,
+                "layer_errors": self.layer_errors,
+                "avg_reconstruction_error": avg_err,
+                "forward_check_success": forward_check_success,
+                "skip_attention_qkv": self.skip_attention_qkv,
+                "target_attention_only": self.target_attention_only,
+                "use_lora": self.use_lora,
+                "lora_r": self.lora_r,
+                "total_params_before": total_params_before,
+                "total_params_after": total_params_after,
+                "compression_rate": round(compression_rate, 4),
+                "num_compressed": sliced_layers_count,
+                "num_compressed_layers": sliced_layers_count,
+                "num_fallback": len(self.fallback_layers),
+                "num_fallback_layers": len(self.fallback_layers),
+                "is_noop": (total_params_after >= total_params_before),
+                "noop_reason": (
+                    "no_factorizable_layers_or_fallback_all"
+                    if total_params_after >= total_params_before
+                    else None
+                ),
+                "method": "slicegpt_pca_real_low_rank_factorization",
+            }
+        )
         self.stats = stats
 
         logger.info(
@@ -684,7 +868,7 @@ class SliceGPTPCACompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register('slicegpt_pca_factory')
+@COMPRESSOR_REGISTRY.register("slicegpt_pca_factory")
 def slicegpt_pca_factory(
     model: Any,
     comp_config: Any = None,
@@ -696,16 +880,37 @@ def slicegpt_pca_factory(
     Factory function for SliceGPT PCA compressor.
     Returns (compressed_model, stats) if return_stats or return_tuple is True, else compressed_model.
     """
-    sparsity = kwargs.pop('sparsity', _cfg_get(comp_config, 'slicegpt_pca_sparsity', _cfg_get(comp_config, 'sparsity', 0.3)))
-    calibration_texts = kwargs.pop('calibration_texts', _cfg_get(comp_config, 'slicegpt_pca_calib_texts', _cfg_get(comp_config, 'calibration_texts', None)))
-    tokenizer = kwargs.pop('tokenizer', getattr(model, 'tokenizer', None) or _cfg_get(comp_config, 'tokenizer', None))
-    skip_attention_qkv = kwargs.pop('skip_attention_qkv', _cfg_get(comp_config, 'skip_attention_qkv', False))
-    target_attention_only = kwargs.pop('target_attention_only', _cfg_get(comp_config, 'target_attention_only', False))
-    use_lora = kwargs.pop('use_lora', _cfg_get(comp_config, 'use_lora', False))
-    lora_r = kwargs.pop('lora_r', _cfg_get(comp_config, 'lora_r', 0))
-    lora_alpha = kwargs.pop('lora_alpha', _cfg_get(comp_config, 'lora_alpha', 1.0))
-    max_error = kwargs.pop('max_error', _cfg_get(comp_config, 'max_error', 0.50))
-    fallback = kwargs.pop('fallback_to_original', _cfg_get(comp_config, 'fallback_to_original', True))
+    sparsity = kwargs.pop(
+        "sparsity",
+        _cfg_get(
+            comp_config, "slicegpt_pca_sparsity", _cfg_get(comp_config, "sparsity", 0.3)
+        ),
+    )
+    calibration_texts = kwargs.pop(
+        "calibration_texts",
+        _cfg_get(
+            comp_config,
+            "slicegpt_pca_calib_texts",
+            _cfg_get(comp_config, "calibration_texts", None),
+        ),
+    )
+    tokenizer = kwargs.pop(
+        "tokenizer",
+        getattr(model, "tokenizer", None) or _cfg_get(comp_config, "tokenizer", None),
+    )
+    skip_attention_qkv = kwargs.pop(
+        "skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", False)
+    )
+    target_attention_only = kwargs.pop(
+        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
+    )
+    use_lora = kwargs.pop("use_lora", _cfg_get(comp_config, "use_lora", False))
+    lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
+    lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.50))
+    fallback = kwargs.pop(
+        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
+    )
 
     compressor = SliceGPTPCACompressor(
         model,
@@ -723,13 +928,13 @@ def slicegpt_pca_factory(
         **kwargs,
     )
     compressed_model, stats = compressor.compress()
-    if return_stats or return_tuple or kwargs.pop('return_both', False):
+    if return_stats or return_tuple or kwargs.pop("return_both", False):
         return compressed_model, stats
     return compressed_model
 
 
 __all__ = [
-    'SliceGPTPCALoRALinear',
-    'SliceGPTPCACompressor',
-    'slicegpt_pca_factory',
+    "SliceGPTPCALoRALinear",
+    "SliceGPTPCACompressor",
+    "slicegpt_pca_factory",
 ]

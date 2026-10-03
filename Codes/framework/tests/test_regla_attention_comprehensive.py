@@ -1,12 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.regla_attention import (
-    ReGLAAttention,
-    inject_regla,
-    inject_regla_attention,
-)
+from framework.attentions.regla_attention import (ReGLAAttention, inject_regla,
+                                                  inject_regla_attention)
 
 
 class MockConfig:

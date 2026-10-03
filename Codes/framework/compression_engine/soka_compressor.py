@@ -14,11 +14,11 @@ Mathematical Formulation:
 
 from __future__ import annotations
 
-from typing import Any
 import logging
+from typing import Any
+
 import torch
 import torch.nn as nn
-
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
@@ -57,11 +57,17 @@ class LowRankLinear(nn.Module):
 
         # V: [in_features, rank] -> maps x to bottleneck
         # U: [out_features, rank] -> maps bottleneck to output
-        self.V = nn.Parameter(torch.empty((in_features, self.rank), device=device, dtype=dtype))
-        self.U = nn.Parameter(torch.empty((out_features, self.rank), device=device, dtype=dtype))
+        self.V = nn.Parameter(
+            torch.empty((in_features, self.rank), device=device, dtype=dtype)
+        )
+        self.U = nn.Parameter(
+            torch.empty((out_features, self.rank), device=device, dtype=dtype)
+        )
 
         if bias:
-            self.bias = nn.Parameter(torch.zeros(out_features, device=device, dtype=dtype))
+            self.bias = nn.Parameter(
+                torch.zeros(out_features, device=device, dtype=dtype)
+            )
         else:
             self.register_parameter("bias", None)
 
@@ -104,10 +110,16 @@ class LowRankCompressor(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = _cfg_get(cfg, "soka_rank", _cfg_get(cfg, "rank", rank))
-            energy_threshold = _cfg_get(cfg, "soka_energy", _cfg_get(cfg, "energy_threshold", energy_threshold))
+            energy_threshold = _cfg_get(
+                cfg, "soka_energy", _cfg_get(cfg, "energy_threshold", energy_threshold)
+            )
             max_error = _cfg_get(cfg, "max_error", max_error)
-            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
-            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
+            fallback_to_original = _cfg_get(
+                cfg, "fallback_to_original", fallback_to_original
+            )
+            target_attention_only = _cfg_get(
+                cfg, "target_attention_only", target_attention_only
+            )
 
         self.rank = max(1, int(rank))
         self.energy_threshold = energy_threshold
@@ -121,17 +133,36 @@ class LowRankCompressor(BaseCompressor):
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
-        if any(k in name_l for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
+        if any(
+            k in name_l
+            for k in ["classifier", "score", "lm_head", "pooler", "embedding"]
+        ):
             return False
 
         if self.target_attention_only:
-            attn_keywords = ['attn', 'attention', 'q_proj', 'k_proj', 'v_proj', 'o_proj', 'c_attn', 'c_proj', 'query', 'key', 'value']
+            attn_keywords = [
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "c_attn",
+                "c_proj",
+                "query",
+                "key",
+                "value",
+            ]
             if not any(k in name_l for k in attn_keywords):
                 return False
 
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__
-        is_linear_like = isinstance(base_mod, nn.Linear) or "conv1d" in cls_name.lower() or hasattr(base_mod, "nf")
+        is_linear_like = (
+            isinstance(base_mod, nn.Linear)
+            or "conv1d" in cls_name.lower()
+            or hasattr(base_mod, "nf")
+        )
         if not is_linear_like:
             return False
         if isinstance(base_mod, LowRankLinear):
@@ -149,10 +180,10 @@ class LowRankCompressor(BaseCompressor):
 
         if self.energy_threshold is None:
             return max(1, min(self.rank, max_r))
-        total_energy = torch.sum(S ** 2)
+        total_energy = torch.sum(S**2)
         if total_energy <= 0:
             return max(1, min(self.rank, max_r))
-        cum_energy = torch.cumsum(S ** 2, dim=0) / total_energy
+        cum_energy = torch.cumsum(S**2, dim=0) / total_energy
         idx = torch.where(cum_energy >= self.energy_threshold)[0]
         r = idx[0].item() if len(idx) > 0 else len(S)
         return max(1, min(r, max_r))
@@ -175,14 +206,22 @@ class LowRankCompressor(BaseCompressor):
             base_mod = getattr(module, "base_layer", module)
             raw_w = base_mod.weight.data
             cls_name = base_mod.__class__.__name__
-            is_conv1d = "conv1d" in cls_name.lower() or hasattr(base_mod, "nf") or (
-                raw_w.ndim == 2
-                and hasattr(base_mod, "in_features")
-                and base_mod.in_features == raw_w.shape[0]
-                and raw_w.shape[0] < raw_w.shape[1]
+            is_conv1d = (
+                "conv1d" in cls_name.lower()
+                or hasattr(base_mod, "nf")
+                or (
+                    raw_w.ndim == 2
+                    and hasattr(base_mod, "in_features")
+                    and base_mod.in_features == raw_w.shape[0]
+                    and raw_w.shape[0] < raw_w.shape[1]
+                )
             )
 
-            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
+            W = (
+                raw_w.t().contiguous().clone().float()
+                if is_conv1d
+                else raw_w.clone().float()
+            )
             device = raw_w.device
             dtype = raw_w.dtype
             d_out, d_in = W.shape
@@ -203,8 +242,12 @@ class LowRankCompressor(BaseCompressor):
 
                 # Assign factorized weights: W ≈ (U_r sqrt(S)) @ (sqrt(S) V_r^T)
                 # U: [d_out, r], V: [d_in, r]
-                new_layer.U.data = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
-                new_layer.V.data = (Vh[:r, :].T * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
+                new_layer.U.data = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
+                    dtype=dtype, device=device
+                )
+                new_layer.V.data = (Vh[:r, :].T * sqrt_S.unsqueeze(0)).to(
+                    dtype=dtype, device=device
+                )
 
                 if base_mod.bias is not None:
                     new_layer.bias.data.copy_(base_mod.bias.data)
@@ -228,34 +271,48 @@ class LowRankCompressor(BaseCompressor):
 
                 compressed_layer = new_layer
                 # Preserve existing LoRA adapter weights if the source module has them
-                if hasattr(module, 'lora_A') and hasattr(module, 'lora_B') and \
-                   module.lora_A is not None and module.lora_B is not None:
-                    src_lA = getattr(module.lora_A, 'weight', module.lora_A)
-                    src_lB = getattr(module.lora_B, 'weight', module.lora_B)
-                    if hasattr(new_layer, 'lora_A') and new_layer.lora_A is not None:
-                        if hasattr(src_lA, 'data') and src_lA.shape == new_layer.lora_A.shape:
+                if (
+                    hasattr(module, "lora_A")
+                    and hasattr(module, "lora_B")
+                    and module.lora_A is not None
+                    and module.lora_B is not None
+                ):
+                    src_lA = getattr(module.lora_A, "weight", module.lora_A)
+                    src_lB = getattr(module.lora_B, "weight", module.lora_B)
+                    if hasattr(new_layer, "lora_A") and new_layer.lora_A is not None:
+                        if (
+                            hasattr(src_lA, "data")
+                            and src_lA.shape == new_layer.lora_A.shape
+                        ):
                             new_layer.lora_A.data.copy_(src_lA.data)
-                    if hasattr(new_layer, 'lora_B') and new_layer.lora_B is not None:
-                        if hasattr(src_lB, 'data') and src_lB.shape == new_layer.lora_B.shape:
+                    if hasattr(new_layer, "lora_B") and new_layer.lora_B is not None:
+                        if (
+                            hasattr(src_lB, "data")
+                            and src_lB.shape == new_layer.lora_B.shape
+                        ):
                             new_layer.lora_B.data.copy_(src_lB.data)
 
-                if hasattr(module, 'base_layer'):
-                    module.base_layer = compressed_layer  # put compressed layer inside wrapper
+                if hasattr(module, "base_layer"):
+                    module.base_layer = (
+                        compressed_layer  # put compressed layer inside wrapper
+                    )
                     # module itself (LoRALinear wrapper) remains the replacement
                     new_module = module
                 else:
                     new_module = compressed_layer
-                if not hasattr(module, 'base_layer'):
+                if not hasattr(module, "base_layer"):
                     if name == "":
                         self.model = new_module
                     else:
                         replace_module(self.model, name, new_module)
-                self.compressed_layers.append({
-                    "name": name,
-                    "original_shape": (d_out, d_in),
-                    "rank": r,
-                    "error": rel_err,
-                })
+                self.compressed_layers.append(
+                    {
+                        "name": name,
+                        "original_shape": (d_out, d_in),
+                        "rank": r,
+                        "error": rel_err,
+                    }
+                )
             except Exception as e:
                 logger.debug("SVD decomposition error in %s: %s", name, e)
                 for p in module.parameters():
@@ -263,16 +320,18 @@ class LowRankCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
-        stats.update({
-            "total_layers": len(self.compressed_layers),
-            "method": "soka_low_rank_svd",
-            "fixed_rank": self.rank,
-            "energy_threshold": self.energy_threshold,
-            "layer_errors": self.layer_errors,
-            "target_attention_only": self.target_attention_only,
-            "fallback_to_original": self.fallback_to_original,
-            "max_error": self.max_error,
-        })
+        stats.update(
+            {
+                "total_layers": len(self.compressed_layers),
+                "method": "soka_low_rank_svd",
+                "fixed_rank": self.rank,
+                "energy_threshold": self.energy_threshold,
+                "layer_errors": self.layer_errors,
+                "target_attention_only": self.target_attention_only,
+                "fallback_to_original": self.fallback_to_original,
+                "max_error": self.max_error,
+            }
+        )
         self.stats = stats
         return self.model, stats
 
@@ -291,11 +350,22 @@ def soka_factory(
     **kwargs: Any,
 ) -> Any:
     """Factory function for SoKA compressor."""
-    rank = kwargs.pop("rank", _cfg_get(comp_config, "soka_rank", _cfg_get(comp_config, "rank", 8)))
-    energy = kwargs.pop("energy_threshold", _cfg_get(comp_config, "soka_energy", _cfg_get(comp_config, "energy_threshold", None)))
+    rank = kwargs.pop(
+        "rank", _cfg_get(comp_config, "soka_rank", _cfg_get(comp_config, "rank", 8))
+    )
+    energy = kwargs.pop(
+        "energy_threshold",
+        _cfg_get(
+            comp_config, "soka_energy", _cfg_get(comp_config, "energy_threshold", None)
+        ),
+    )
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.5))
-    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
-    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
+    fallback = kwargs.pop(
+        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
+    )
+    target_attention_only = kwargs.pop(
+        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
+    )
 
     compressor = LowRankCompressor(
         model,

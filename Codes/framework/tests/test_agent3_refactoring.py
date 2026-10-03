@@ -10,58 +10,37 @@ Comprehensive Unit Tests for Agent 3 Refactoring:
 from __future__ import annotations
 
 import unittest
+
 import numpy as np
 import torch
 import torch.nn as nn
-
-# 1. LayerNorm / RMSNorm FP32 Accumulator
-from framework.utils.layer_norm_fix import (
-    RMSNorm,
-    LayerNorm,
-    SafeRMSNorm,
-    SafeLayerNorm,
-    fix_layernorm_naming,
-    replace_layernorm_with_safe_norm,
-)
-
-# 2. Synthetic Generator
-from framework.data.synthetic_generator import (
-    generate_zipfian_tokens,
-    generate_zipfian_markov_tokens,
-    compute_empirical_entropy,
-    SyntheticPerplexityDataset,
-    SyntheticClassificationDataset,
-)
-
-# 3. Drift & Wasserstein-2
-from framework.drift.detectors import (
-    matrix_square_root,
-    bures_wasserstein_distance,
-    hessian_wasserstein,
-    wasserstein,
-    DriftDetector,
-    METHOD_REGISTRY,
-)
-from framework.drift.config import DriftConfig
-
 # 4. Layerwise Analyzer
 from framework.analysis.layerwise_analyzer import (
-    LayerwiseAnalyzer,
-    StreamingLayerAccumulator,
-    estimate_intrinsic_dimension,
-)
-
+    LayerwiseAnalyzer, StreamingLayerAccumulator, estimate_intrinsic_dimension)
+# 2. Synthetic Generator
+from framework.data.synthetic_generator import (SyntheticClassificationDataset,
+                                                SyntheticPerplexityDataset,
+                                                compute_empirical_entropy,
+                                                generate_zipfian_markov_tokens,
+                                                generate_zipfian_tokens)
+from framework.drift.config import DriftConfig
+# 3. Drift & Wasserstein-2
+from framework.drift.detectors import (METHOD_REGISTRY, DriftDetector,
+                                       bures_wasserstein_distance,
+                                       hessian_wasserstein, matrix_square_root,
+                                       wasserstein)
+from framework.federated_learning.config import AggregationStrategy, FLConfig
+from framework.federated_learning.strategies import \
+    AGGREGATOR_REGISTRY as FL_REGISTRY
 # 5. Federated Learning Grassmann
 from framework.federated_learning.strategies.grassmann_fedavg import (
-    GrassmannFedAvgAggregator,
-    grassmann_log_map,
-    grassmann_exp_map,
-    grassmann_karcher_mean,
-    grassmann_frechet_mean_spectral,
-    is_orthogonal_basis_tensor,
-)
-from framework.federated_learning.config import FLConfig, AggregationStrategy
-from framework.federated_learning.strategies import AGGREGATOR_REGISTRY as FL_REGISTRY
+    GrassmannFedAvgAggregator, grassmann_exp_map,
+    grassmann_frechet_mean_spectral, grassmann_karcher_mean, grassmann_log_map,
+    is_orthogonal_basis_tensor)
+# 1. LayerNorm / RMSNorm FP32 Accumulator
+from framework.utils.layer_norm_fix import (LayerNorm, RMSNorm, SafeLayerNorm,
+                                            SafeRMSNorm, fix_layernorm_naming,
+                                            replace_layernorm_with_safe_norm)
 
 
 class TestAgent3Refactoring(unittest.TestCase):

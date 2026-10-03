@@ -1,12 +1,9 @@
 import pytest
 import torch
 import torch.nn as nn
-
 from framework.attentions.squeezing_heads_distill import (
-    SqueezingHeadsDistiller,
-    inject_squeezing_heads_distill,
-    inject_squeezing_heads_distill_attention,
-)
+    SqueezingHeadsDistiller, inject_squeezing_heads_distill,
+    inject_squeezing_heads_distill_attention)
 
 
 class MockConfig:

@@ -269,7 +269,7 @@ class ExperimentManager:
         )
 
     def _get_loss_fn(self, cfg) -> Any:
-        """ get loss fn."""
+        """get loss fn."""
         loss_name = getattr(cfg, "loss_type", "cross_entropy")
         loss_cls = LOSS_REGISTRY.get(loss_name)
         if loss_cls:
@@ -277,7 +277,7 @@ class ExperimentManager:
         return None
 
     def _get_optimizer_cls(self, cfg) -> Any:
-        """ get optimizer cls."""
+        """get optimizer cls."""
         opt_name = getattr(cfg, "optimizer_type", "adamw")
         return OPTIMIZER_REGISTRY.get(opt_name)
 
@@ -296,7 +296,7 @@ class ExperimentManager:
 
     @staticmethod
     def _dummy_event() -> Any:
-        """ dummy event."""
+        """dummy event."""
         import threading
 
         return threading.Event()

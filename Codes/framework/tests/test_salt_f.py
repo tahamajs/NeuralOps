@@ -1,13 +1,14 @@
-import torch
-import torch.nn as nn
 import math
 import sys
+
+import torch
+import torch.nn as nn
+
 sys.path.insert(0, "Codes")
 
-from framework.attentions.salt_attention import (
-    SALTAttention, SALTLinear, inject_salt_attention,
-    merge_model_salt,
-)
+from framework.attentions.salt_attention import (SALTAttention, SALTLinear,
+                                                 inject_salt_attention,
+                                                 merge_model_salt)
 
 
 def test_salt_linear_construction():

@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 import sys
 import unittest
+
 import torch
 import torch.nn as nn
 
@@ -22,12 +23,9 @@ _FRAMEWORK_PARENT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."
 if _FRAMEWORK_PARENT not in sys.path:
     sys.path.insert(0, _FRAMEWORK_PARENT)
 
-from framework.compression_engine.adaptive_ranks import (
-    AdaptiveRanksCompressor,
-    adaptive_ranks_factory,
-    _cfg_get,
-)
 from framework.compression_engine.aa_svd_compressor import SVDLinear
+from framework.compression_engine.adaptive_ranks import (
+    AdaptiveRanksCompressor, _cfg_get, adaptive_ranks_factory)
 
 
 class FakeConv1D(nn.Module):

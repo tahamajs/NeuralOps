@@ -17,11 +17,10 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
-from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import adaptive_max_error
+from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
@@ -144,7 +143,9 @@ def allocate_entropy_ranks(
     total_entropy = sum(raw_weights.values())
 
     # Case 1: Parameter Budget Constraint
-    if (total_param_budget is not None or target_param_ratio is not None) and layer_dims:
+    if (
+        total_param_budget is not None or target_param_ratio is not None
+    ) and layer_dims:
         total_orig_params = sum(
             layer_dims[name][0] * layer_dims[name][1] for name in layer_names
         )
@@ -168,9 +169,7 @@ def allocate_entropy_ranks(
                 target_r = int(
                     round(mid_scale * (raw_weights[name] / total_entropy) * 100.0)
                 )
-                r_clamped = max(
-                    per_layer_min[name], min(per_layer_max[name], target_r)
-                )
+                r_clamped = max(per_layer_min[name], min(per_layer_max[name], target_r))
                 candidate_ranks[name] = r_clamped
                 current_params += r_clamped * param_cost_per_rank
 
@@ -260,7 +259,17 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-_ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value"}
+_ATTN_NAMES = {
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "c_attn",
+    "c_proj",
+    "query",
+    "key",
+    "value",
+}
 
 
 class DynamicSVDLinear(nn.Module):
@@ -353,7 +362,7 @@ class DynamicSVDLinear(nn.Module):
             W = raw_w.t().contiguous().float()  # [out_features, in_features]
         else:
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
-            W = raw_w.float()      # [out_features, in_features]
+            W = raw_w.float()  # [out_features, in_features]
 
         target_rank = max(1, min(rank, in_f, out_f))
 
@@ -371,7 +380,7 @@ class DynamicSVDLinear(nn.Module):
         # fallback comparison when the activation-aware path produces higher error.
         U_svd_w, S_svd_w, Vh_svd_w = torch.linalg.svd(W, full_matrices=False)
         sqrt_S_w = torch.sqrt(torch.clamp(S_svd_w[:target_rank], min=1e-12))
-        U_w = U_svd_w[:, :target_rank] * sqrt_S_w.unsqueeze(0)   # [out_f, rank]
+        U_w = U_svd_w[:, :target_rank] * sqrt_S_w.unsqueeze(0)  # [out_f, rank]
         V_w = sqrt_S_w.unsqueeze(1) * Vh_svd_w[:target_rank, :]  # [rank, in_f]
         W_rec_w = U_w @ V_w
         norm_W = torch.norm(W, p="fro").clamp(min=1e-12)
@@ -380,7 +389,11 @@ class DynamicSVDLinear(nn.Module):
         # Default to weight-only unless activation-aware is demonstrably better.
         U_r, V_r = U_w, V_w
 
-        if covariance is not None and covariance.numel() > 0 and covariance.shape[0] == in_f:
+        if (
+            covariance is not None
+            and covariance.numel() > 0
+            and covariance.shape[0] == in_f
+        ):
             # RESEARCH FIX: Activation-aware whitening SVD with eigenvalue clamping lambda_i >= 1e-4
             # NOTE: We only accept the activation-aware result if its reconstruction error is
             # strictly lower than the weight-only baseline. This guards against rank-deficient
@@ -389,23 +402,30 @@ class DynamicSVDLinear(nn.Module):
             cov = covariance.to(device=W.device, dtype=torch.float32)
             try:
                 # Eigen-decomposition with regularized eigenvalue clamping >= 1e-4
-                eigvals, eigvecs = torch.linalg.eigh(cov + 1e-4 * torch.eye(in_f, device=W.device))
+                eigvals, eigvecs = torch.linalg.eigh(
+                    cov + 1e-4 * torch.eye(in_f, device=W.device)
+                )
                 eigvals_clamped = torch.clamp(eigvals, min=1e-4)
-                cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.t().contiguous()
+                cov_sqrt = (
+                    eigvecs
+                    @ torch.diag(torch.sqrt(eigvals_clamped))
+                    @ eigvecs.t().contiguous()
+                )
                 cov_inv_sqrt = (
-                    eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.t().contiguous()
+                    eigvecs
+                    @ torch.diag(1.0 / torch.sqrt(eigvals_clamped))
+                    @ eigvecs.t().contiguous()
                 )
 
                 W_scaled = W @ cov_sqrt
-                U_svd_a, S_svd_a, Vh_svd_a = torch.linalg.svd(W_scaled, full_matrices=False)
+                U_svd_a, S_svd_a, Vh_svd_a = torch.linalg.svd(
+                    W_scaled, full_matrices=False
+                )
 
                 # Truncate and un-whiten right singular factors
                 sqrt_S_a = torch.sqrt(torch.clamp(S_svd_a[:target_rank], min=1e-12))
                 U_a = U_svd_a[:, :target_rank] * sqrt_S_a.unsqueeze(0)
-                V_a = (
-                    sqrt_S_a.unsqueeze(1)
-                    * (Vh_svd_a[:target_rank, :] @ cov_inv_sqrt)
-                )
+                V_a = sqrt_S_a.unsqueeze(1) * (Vh_svd_a[:target_rank, :] @ cov_inv_sqrt)
                 # Symmetrically normalize factor magnitudes
                 norm_u = torch.norm(U_a, p="fro").clamp_min(1e-8)
                 norm_v = torch.norm(V_a, p="fro").clamp_min(1e-8)
@@ -422,7 +442,8 @@ class DynamicSVDLinear(nn.Module):
                     logger.debug(
                         "from_linear: activation-aware SVD accepted "
                         "(err_act=%.4f < err_weight=%.4f).",
-                        err_act_aware, err_weight_only,
+                        err_act_aware,
+                        err_weight_only,
                     )
                 else:
                     # Activation-aware is worse (e.g. due to rank-deficient covariance):
@@ -430,7 +451,8 @@ class DynamicSVDLinear(nn.Module):
                     logger.debug(
                         "from_linear: activation-aware SVD rejected "
                         "(err_act=%.4f >= err_weight=%.4f); using weight-only SVD.",
-                        err_act_aware, err_weight_only,
+                        err_act_aware,
+                        err_weight_only,
                     )
             except Exception as e:
                 logger.warning(
@@ -483,17 +505,29 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         cfg_obj = cfg if cfg is not None else kwargs.get("comp_config")
         self.cfg = cfg_obj
 
-        min_rank = _cfg_get(cfg_obj, "dynamic_min_rank", _cfg_get(cfg_obj, "min_rank", min_rank))
-        max_rank = _cfg_get(cfg_obj, "dynamic_max_rank", _cfg_get(cfg_obj, "max_rank", max_rank))
-        target_rank = _cfg_get(cfg_obj, "dynamic_rank", _cfg_get(cfg_obj, "rank", target_rank))
+        min_rank = _cfg_get(
+            cfg_obj, "dynamic_min_rank", _cfg_get(cfg_obj, "min_rank", min_rank)
+        )
+        max_rank = _cfg_get(
+            cfg_obj, "dynamic_max_rank", _cfg_get(cfg_obj, "max_rank", max_rank)
+        )
+        target_rank = _cfg_get(
+            cfg_obj, "dynamic_rank", _cfg_get(cfg_obj, "rank", target_rank)
+        )
         total_rank_budget = _cfg_get(cfg_obj, "total_rank_budget", total_rank_budget)
         target_param_ratio = _cfg_get(cfg_obj, "target_param_ratio", target_param_ratio)
-        max_error = _cfg_get(cfg_obj, "dynamic_max_error", _cfg_get(cfg_obj, "max_error", max_error))
+        max_error = _cfg_get(
+            cfg_obj, "dynamic_max_error", _cfg_get(cfg_obj, "max_error", max_error)
+        )
         target_attention_only = _cfg_get(
-            cfg_obj, "dynamic_target_attention_only", _cfg_get(cfg_obj, "target_attention_only", target_attention_only)
+            cfg_obj,
+            "dynamic_target_attention_only",
+            _cfg_get(cfg_obj, "target_attention_only", target_attention_only),
         )
         fallback_to_original = _cfg_get(
-            cfg_obj, "dynamic_fallback_to_original", _cfg_get(cfg_obj, "fallback_to_original", fallback_to_original)
+            cfg_obj,
+            "dynamic_fallback_to_original",
+            _cfg_get(cfg_obj, "fallback_to_original", fallback_to_original),
         )
 
         min_rank = max(16, int(min_rank))
@@ -504,11 +538,17 @@ class DynamicEntropySVDCompressor(BaseCompressor):
 
         self.min_rank = min_rank
         self.max_rank = max(min_rank, int(max_rank))
-        self.target_param_ratio = float(target_param_ratio) if target_param_ratio is not None else None
-        self.total_rank_budget = int(total_rank_budget) if total_rank_budget is not None else None
+        self.target_param_ratio = (
+            float(target_param_ratio) if target_param_ratio is not None else None
+        )
+        self.total_rank_budget = (
+            int(total_rank_budget) if total_rank_budget is not None else None
+        )
         self.target_rank = int(target_rank) if target_rank is not None else None
         if max_error is None or max_error == 0.35:
-            max_error = adaptive_max_error(self.target_rank or self.min_rank, 768, 768, "distilbert")
+            max_error = adaptive_max_error(
+                self.target_rank or self.min_rank, 768, 768, "distilbert"
+            )
 
         self.max_error = float(max_error)
         self.target_attention_only = bool(target_attention_only)
@@ -517,7 +557,11 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
         self.target_modules = target_modules
-        self.tokenizer = tokenizer or getattr(model, "tokenizer", None) or getattr(getattr(model, "config", None), "tokenizer", None)
+        self.tokenizer = (
+            tokenizer
+            or getattr(model, "tokenizer", None)
+            or getattr(getattr(model, "config", None), "tokenizer", None)
+        )
 
         self.layer_entropies: dict[str, float] = {}
         self.layer_ranks: dict[str, int] = {}
@@ -531,7 +575,18 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         name_lower = name.lower()
         if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
             return False
-        if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate"]):
+        if any(
+            skip in name_lower
+            for skip in [
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embedding",
+                "router",
+                "gate",
+            ]
+        ):
             return False
 
         target_mod = getattr(module, "base_layer", module)
@@ -540,7 +595,9 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
         if not (is_linear or is_conv1d):
             return False
-        if isinstance(target_mod, DynamicSVDLinear) or isinstance(module, DynamicSVDLinear):
+        if isinstance(target_mod, DynamicSVDLinear) or isinstance(
+            module, DynamicSVDLinear
+        ):
             return False
         if not should_compress_linear(self.model, name):
             return False
@@ -551,7 +608,9 @@ class DynamicEntropySVDCompressor(BaseCompressor):
 
         if self.target_attention_only:
             last_part = name.split(".")[-1]
-            is_attn = (last_part in _ATTN_NAMES) or any(k in name_lower for k in ("attn", "attention"))
+            is_attn = (last_part in _ATTN_NAMES) or any(
+                k in name_lower for k in ("attn", "attention")
+            )
             if not is_attn:
                 return False
 
@@ -638,13 +697,24 @@ class DynamicEntropySVDCompressor(BaseCompressor):
                             "DynamicEntropySVD: real calibration loader used (%d batches).",
                             batch_count,
                         )
-                elif self.calibration_texts is not None and len(self.calibration_texts) > 0:
-                    logger.info("Running calibration forward on %d provided texts.", len(self.calibration_texts))
+                elif (
+                    self.calibration_texts is not None
+                    and len(self.calibration_texts) > 0
+                ):
+                    logger.info(
+                        "Running calibration forward on %d provided texts.",
+                        len(self.calibration_texts),
+                    )
                     if self.tokenizer is not None:
                         text_count = 0
                         for text in self.calibration_texts[:32]:
                             try:
-                                enc = self.tokenizer(text, return_tensors="pt", truncation=True, max_length=128)
+                                enc = self.tokenizer(
+                                    text,
+                                    return_tensors="pt",
+                                    truncation=True,
+                                    max_length=128,
+                                )
                                 enc = {k: v.to(device) for k, v in enc.items()}
                                 self.model(**enc)
                                 text_count += 1
@@ -663,7 +733,10 @@ class DynamicEntropySVDCompressor(BaseCompressor):
                             "Falling back to weight-only SVD."
                         )
         except Exception as e:
-            logger.warning("Activation collection encountered exception (%s); falling back to weight SVD.", e)
+            logger.warning(
+                "Activation collection encountered exception (%s); falling back to weight SVD.",
+                e,
+            )
         finally:
             for h in hooks:
                 h.remove()
@@ -760,7 +833,7 @@ class DynamicEntropySVDCompressor(BaseCompressor):
                 else:
                     out_f, in_f = raw_w.shape[0], raw_w.shape[1]
                 layer_dims[name] = (out_f, in_f)
-                total_orig_decomp_params += (out_f * in_f)
+                total_orig_decomp_params += out_f * in_f
 
         # Freeze uncompressed layers when target_attention_only=True
         if self.target_attention_only:
@@ -792,9 +865,7 @@ class DynamicEntropySVDCompressor(BaseCompressor):
 
         # Step 6: Factorize, validate, and replace each target linear layer
         for name, rank in self.layer_ranks.items():
-            parent_name, child_name = (
-                name.rsplit(".", 1) if "." in name else ("", name)
-            )
+            parent_name, child_name = name.rsplit(".", 1) if "." in name else ("", name)
             if parent_name:
                 parent = self.model.get_submodule(parent_name)
             else:
@@ -825,7 +896,9 @@ class DynamicEntropySVDCompressor(BaseCompressor):
             if err > self.max_error and self.fallback_to_original:
                 logger.warning(
                     "DynamicEntropySVD error %.4f on %s exceeded threshold %.4f; falling back to original.",
-                    err, name, self.max_error
+                    err,
+                    name,
+                    self.max_error,
                 )
                 self.fallback_layers.append(name)
                 for p in module.parameters():
@@ -834,21 +907,28 @@ class DynamicEntropySVDCompressor(BaseCompressor):
                 continue
 
             # If wrapped in LoRALinear, replace the inner base_layer or linear
-            has_base_layer = hasattr(module, "base_layer") or (hasattr(module, "linear") and (hasattr(module, "lora_A") or hasattr(module, "r")))
+            has_base_layer = hasattr(module, "base_layer") or (
+                hasattr(module, "linear")
+                and (hasattr(module, "lora_A") or hasattr(module, "r"))
+            )
             if hasattr(module, "base_layer"):
                 module.base_layer = factorized_layer
-            elif hasattr(module, "linear") and (hasattr(module, "lora_A") or hasattr(module, "r")):
+            elif hasattr(module, "linear") and (
+                hasattr(module, "lora_A") or hasattr(module, "r")
+            ):
                 module.linear = factorized_layer
             else:
                 replace_module(self.model, name, factorized_layer)
 
             if has_base_layer:
                 for p_name, p in module.named_parameters():
-                    if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
+                    if any(
+                        t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")
+                    ):
                         p.requires_grad = True
 
             self.compressed_layers.append(name)
-            total_comp_decomp_params += (rank * (in_f + out_f))
+            total_comp_decomp_params += rank * (in_f + out_f)
 
         # Forward sanity check
         forward_check_success = False
@@ -863,34 +943,39 @@ class DynamicEntropySVDCompressor(BaseCompressor):
             logger.debug("DynamicEntropySVD forward check exception: %s", e)
 
         effective_ratio = (
-            total_comp_decomp_params / total_orig_decomp_params if total_orig_decomp_params > 0 else 1.0
+            total_comp_decomp_params / total_orig_decomp_params
+            if total_orig_decomp_params > 0
+            else 1.0
         )
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers)
+            / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
 
         stats = self.get_compression_stats()
-        stats.update({
-            "layer_entropies": self.layer_entropies,
-            "layer_ranks": self.layer_ranks,
-            "layer_errors": self.layer_errors,
-            "compressed_layers": self.compressed_layers,
-            "compressed_layer_count": len(self.compressed_layers),
-            "fallback_layers": self.fallback_layers,
-            "fallback_layer_count": len(self.fallback_layers),
-            "skipped_layers": self.skipped_layers,
-            "skipped_layer_count": len(self.skipped_layers),
-            "original_layer_count": len(layer_dims),
-            "max_error": self.max_error,
-            "target_attention_only": self.target_attention_only,
-            "fallback_to_original": self.fallback_to_original,
-            "effective_parameter_ratio": round(effective_ratio, 4),
-            "avg_reconstruction_error": avg_err,
-            "forward_check_success": forward_check_success,
-            "method": "dynamic_entropy_svd",
-        })
+        stats.update(
+            {
+                "layer_entropies": self.layer_entropies,
+                "layer_ranks": self.layer_ranks,
+                "layer_errors": self.layer_errors,
+                "compressed_layers": self.compressed_layers,
+                "compressed_layer_count": len(self.compressed_layers),
+                "fallback_layers": self.fallback_layers,
+                "fallback_layer_count": len(self.fallback_layers),
+                "skipped_layers": self.skipped_layers,
+                "skipped_layer_count": len(self.skipped_layers),
+                "original_layer_count": len(layer_dims),
+                "max_error": self.max_error,
+                "target_attention_only": self.target_attention_only,
+                "fallback_to_original": self.fallback_to_original,
+                "effective_parameter_ratio": round(effective_ratio, 4),
+                "avg_reconstruction_error": avg_err,
+                "forward_check_success": forward_check_success,
+                "method": "dynamic_entropy_svd",
+            }
+        )
         self.stats = stats
         logger.info(
             "Compressor dynamic_rank finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
@@ -931,17 +1016,52 @@ def dynamic_entropy_svd_factory(
     """Dynamic Entropy SVD factory function."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     try:
-        min_rank = kwargs.pop("min_rank", _cfg_get(comp_config, "dynamic_min_rank", _cfg_get(comp_config, "min_rank", 16)))
-        max_rank = kwargs.pop("max_rank", _cfg_get(comp_config, "dynamic_max_rank", _cfg_get(comp_config, "max_rank", 128)))
-        target_rank = kwargs.pop("rank", _cfg_get(comp_config, "dynamic_rank", _cfg_get(comp_config, "rank", None)))
-        max_error = kwargs.pop("max_error", _cfg_get(comp_config, "dynamic_max_error", _cfg_get(comp_config, "max_error", 0.35)))
+        min_rank = kwargs.pop(
+            "min_rank",
+            _cfg_get(
+                comp_config, "dynamic_min_rank", _cfg_get(comp_config, "min_rank", 16)
+            ),
+        )
+        max_rank = kwargs.pop(
+            "max_rank",
+            _cfg_get(
+                comp_config, "dynamic_max_rank", _cfg_get(comp_config, "max_rank", 128)
+            ),
+        )
+        target_rank = kwargs.pop(
+            "rank",
+            _cfg_get(comp_config, "dynamic_rank", _cfg_get(comp_config, "rank", None)),
+        )
+        max_error = kwargs.pop(
+            "max_error",
+            _cfg_get(
+                comp_config,
+                "dynamic_max_error",
+                _cfg_get(comp_config, "max_error", 0.35),
+            ),
+        )
         target_attention_only = kwargs.pop(
             "target_attention_only",
-            _cfg_get(comp_config, "dynamic_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
+            _cfg_get(
+                comp_config,
+                "dynamic_target_attention_only",
+                _cfg_get(comp_config, "target_attention_only", False),
+            ),
         )
-        fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "dynamic_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)))
-        target_param_ratio = kwargs.pop("target_param_ratio", _cfg_get(comp_config, "target_param_ratio", None))
-        total_rank_budget = kwargs.pop("total_rank_budget", _cfg_get(comp_config, "total_rank_budget", None))
+        fallback = kwargs.pop(
+            "fallback_to_original",
+            _cfg_get(
+                comp_config,
+                "dynamic_fallback_to_original",
+                _cfg_get(comp_config, "fallback_to_original", True),
+            ),
+        )
+        target_param_ratio = kwargs.pop(
+            "target_param_ratio", _cfg_get(comp_config, "target_param_ratio", None)
+        )
+        total_rank_budget = kwargs.pop(
+            "total_rank_budget", _cfg_get(comp_config, "total_rank_budget", None)
+        )
 
         compressor = DynamicEntropySVDCompressor(
             model,

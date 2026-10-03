@@ -4,14 +4,15 @@ Ensures mathematical correctness, linear complexity, input selectivity, and remo
 """
 
 from __future__ import annotations
+
 import math
+
 import pytest
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from framework.attentions.selective_scan import selective_scan_chunked
 from framework.attentions.mamba_block import MambaBlock
+from framework.attentions.selective_scan import selective_scan_chunked
 from framework.core.registry import ATTENTION_REGISTRY
 
 

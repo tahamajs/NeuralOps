@@ -14,6 +14,7 @@ from django.conf import settings
 try:
     from asgiref.sync import async_to_sync
     from channels.layers import get_channel_layer
+
     HAS_CHANNELS = True
 except ImportError:
     async_to_sync = None
@@ -34,8 +35,8 @@ def broadcast_terminal(msg: str) -> None:
         channel_layer = get_channel_layer()
         if channel_layer and async_to_sync:
             async_to_sync(channel_layer.group_send)(
-            "terminal", {"type": "terminal_message", "data": msg}
-        )
+                "terminal", {"type": "terminal_message", "data": msg}
+            )
     except Exception as e:
         print(f"WS broadcast error: {e}")
 

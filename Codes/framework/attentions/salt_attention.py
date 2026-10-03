@@ -13,11 +13,9 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
-
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +117,9 @@ class SALTLinear(nn.Module):
         self.use_fisher: bool = use_fisher
 
         target_dev = original_weight.device if original_weight is not None else None
-        target_dtype = original_weight.dtype if original_weight is not None else torch.float32
+        target_dtype = (
+            original_weight.dtype if original_weight is not None else torch.float32
+        )
 
         if original_weight is not None:
             W = original_weight.float()
@@ -127,7 +127,11 @@ class SALTLinear(nn.Module):
             W = torch.randn(out_features, in_features) * (1.0 / math.sqrt(in_features))
 
         # Fisher-weighted SVD
-        if use_fisher and fisher_diag is not None and fisher_diag.shape[0] == in_features:
+        if (
+            use_fisher
+            and fisher_diag is not None
+            and fisher_diag.shape[0] == in_features
+        ):
             scale = torch.sqrt(fisher_diag.float().clamp(min=1e-6) + 1e-6)
             # Normalize scale to avoid extreme values
             scale = scale / (scale.norm() / math.sqrt(in_features) + 1e-8)
@@ -146,31 +150,58 @@ class SALTLinear(nn.Module):
 
         r = self.rank
 
-        self.register_buffer("U", U[:, :r].contiguous().to(device=target_dev, dtype=target_dtype))
-        self.register_buffer("Vt", Vt_unw[:r, :].contiguous().to(device=target_dev, dtype=target_dtype))
-        self.register_buffer("S", S[:r].contiguous().to(device=target_dev, dtype=target_dtype))
+        self.register_buffer(
+            "U", U[:, :r].contiguous().to(device=target_dev, dtype=target_dtype)
+        )
+        self.register_buffer(
+            "Vt", Vt_unw[:r, :].contiguous().to(device=target_dev, dtype=target_dtype)
+        )
+        self.register_buffer(
+            "S", S[:r].contiguous().to(device=target_dev, dtype=target_dtype)
+        )
 
-        self.register_buffer("U_init", U[:, :r].contiguous().to(device=target_dev, dtype=target_dtype))
-        self.register_buffer("Vt_init", Vt_unw[:r, :].contiguous().to(device=target_dev, dtype=target_dtype))
-        self.register_buffer("S_init", S[:r].contiguous().to(device=target_dev, dtype=target_dtype))
+        self.register_buffer(
+            "U_init", U[:, :r].contiguous().to(device=target_dev, dtype=target_dtype)
+        )
+        self.register_buffer(
+            "Vt_init",
+            Vt_unw[:r, :].contiguous().to(device=target_dev, dtype=target_dtype),
+        )
+        self.register_buffer(
+            "S_init", S[:r].contiguous().to(device=target_dev, dtype=target_dtype)
+        )
 
         self.gamma = nn.Parameter(torch.ones(r, device=target_dev, dtype=target_dtype))
-        self.A = nn.Parameter(torch.zeros(out_features, r, device=target_dev, dtype=target_dtype))
-        self.B = nn.Parameter(torch.zeros(r, in_features, device=target_dev, dtype=target_dtype))
+        self.A = nn.Parameter(
+            torch.zeros(out_features, r, device=target_dev, dtype=target_dtype)
+        )
+        self.B = nn.Parameter(
+            torch.zeros(r, in_features, device=target_dev, dtype=target_dtype)
+        )
 
         if original_bias is not None:
-            self.bias = nn.Parameter(original_bias.clone().to(device=target_dev, dtype=target_dtype))
+            self.bias = nn.Parameter(
+                original_bias.clone().to(device=target_dev, dtype=target_dtype)
+            )
         else:
-            self.bias = nn.Parameter(torch.zeros(out_features, device=target_dev, dtype=target_dtype))
+            self.bias = nn.Parameter(
+                torch.zeros(out_features, device=target_dev, dtype=target_dtype)
+            )
 
-    def init_gamma_from_sensitivity(self, sensitivity: torch.Tensor | None = None) -> None:
+    def init_gamma_from_sensitivity(
+        self, sensitivity: torch.Tensor | None = None
+    ) -> None:
         """
         Initialize gamma from attention sensitivity per SVD direction.
         If sensitivity is None, initialize to ones.
         """
         if sensitivity is not None and sensitivity.shape[0] == self.rank:
             s_norm = sensitivity / (sensitivity.mean() + 1e-8)
-            self.gamma.data.copy_(torch.sqrt(s_norm.clamp(0.1, 10.0)).to(dtype=self.gamma.dtype, device=self.gamma.device))
+            self.gamma.data.copy_(
+                torch.sqrt(s_norm.clamp(0.1, 10.0)).to(
+                    dtype=self.gamma.dtype, device=self.gamma.device
+                )
+            )
         else:
             self.gamma.data.fill_(1.0)
 
@@ -186,9 +217,11 @@ class SALTLinear(nn.Module):
             bias = self.bias.clone() if self.bias is not None else None
 
         new_linear = nn.Linear(
-            self.in_features, self.out_features,
+            self.in_features,
+            self.out_features,
             bias=bias is not None,
-            device=W.device, dtype=W.dtype,
+            device=W.device,
+            dtype=W.dtype,
         )
         new_linear.weight.data.copy_(W.to(new_linear.weight.dtype))
         if bias is not None:
@@ -210,7 +243,9 @@ class SALTLinear(nn.Module):
         x_vt = F.linear(x, self.Vt.to(dtype=x.dtype))
         x_svd = F.linear(x_vt * adapted_S, self.U.to(dtype=x.dtype))
         # LoRA branch: (x @ B.T) @ A.T
-        x_lora = F.linear(F.linear(x, self.B.to(dtype=x.dtype)), self.A.to(dtype=x.dtype))
+        x_lora = F.linear(
+            F.linear(x, self.B.to(dtype=x.dtype)), self.A.to(dtype=x.dtype)
+        )
         out = x_svd + x_lora
         if self.bias is not None:
             out = out + self.bias.to(dtype=x.dtype)
@@ -230,7 +265,7 @@ def _compute_energy_rank(
     """
     Find smallest rank r where cumulative energy >= threshold.
     """
-    S_sq = S ** 2
+    S_sq = S**2
     total = S_sq.sum()
     if total <= 1e-12:
         return min_r
@@ -240,7 +275,9 @@ def _compute_energy_rank(
     return max(min_r, min(r, max_r))
 
 
-@ATTENTION_REGISTRY.register("salt_f_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "salt_f_attention", supports_causal=True, supports_gqa=True
+)
 @ATTENTION_REGISTRY.register("salt_f", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("salt_attention", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("salt", supports_causal=True, supports_gqa=True)
@@ -266,16 +303,28 @@ class SALTAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        self.num_heads: int = int(_cfg_get(
-            config, "num_attention_heads", _cfg_get(config, "num_heads", kwargs.get("num_attention_heads", 4))
-        ))
-        self.hidden_size: int = int(_cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768)))
-        self.head_dim: int = int(_cfg_get(
-            config, "head_dim", self.hidden_size // self.num_heads if self.num_heads > 0 else 64
-        ))
+        self.num_heads: int = int(
+            _cfg_get(
+                config,
+                "num_attention_heads",
+                _cfg_get(config, "num_heads", kwargs.get("num_attention_heads", 4)),
+            )
+        )
+        self.hidden_size: int = int(
+            _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
+        )
+        self.head_dim: int = int(
+            _cfg_get(
+                config,
+                "head_dim",
+                self.hidden_size // self.num_heads if self.num_heads > 0 else 64,
+            )
+        )
         self.all_head_size: int = self.num_heads * self.head_dim
 
-        cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
+        cfg_kv = _cfg_get(
+            config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None)
+        )
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -287,24 +336,61 @@ class SALTAttention(BaseAttention):
         self.kv_repeat: int = max(1, self.num_heads // self.num_kv_heads)
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
 
-        self.rank: int = rank if rank is not None else int(_cfg_get(config, "salt_rank", _cfg_get(config, "rank", kwargs.pop("rank", 16))))
+        self.rank: int = (
+            rank
+            if rank is not None
+            else int(
+                _cfg_get(
+                    config,
+                    "salt_rank",
+                    _cfg_get(config, "rank", kwargs.pop("rank", 16)),
+                )
+            )
+        )
 
         # Adaptive rank & Fisher flags
         if adaptive_rank is not None:
             self.adaptive_rank = bool(adaptive_rank)
         else:
-            self.adaptive_rank = bool(_cfg_get(config, "adaptive_rank", _cfg_get(config, "salt_adaptive_rank", kwargs.get("adaptive_rank", True))))
+            self.adaptive_rank = bool(
+                _cfg_get(
+                    config,
+                    "adaptive_rank",
+                    _cfg_get(
+                        config, "salt_adaptive_rank", kwargs.get("adaptive_rank", True)
+                    ),
+                )
+            )
 
         if use_fisher is not None:
             self.use_fisher = bool(use_fisher)
         else:
-            self.use_fisher = bool(_cfg_get(config, "use_fisher", _cfg_get(config, "salt_use_fisher", kwargs.get("use_fisher", True))))
+            self.use_fisher = bool(
+                _cfg_get(
+                    config,
+                    "use_fisher",
+                    _cfg_get(config, "salt_use_fisher", kwargs.get("use_fisher", True)),
+                )
+            )
 
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
             _mt = str(_cfg_get(config, "model_type", "") or "").lower()
-            _dec_pfx = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+            _dec_pfx = (
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
+            )
             self.is_decoder = bool(
                 _cfg_get(config, "is_decoder", False)
                 or _cfg_get(config, "causal", False)
@@ -325,20 +411,42 @@ class SALTAttention(BaseAttention):
         self.dropout = nn.Dropout(dropout_p)
 
         self.proj_ranks = self._get_projection_ranks(pretrained_attn, self.rank)
-        self.q_proj = SALTLinear(self.hidden_size, self.all_head_size, self.proj_ranks['q'], use_fisher=self.use_fisher)
-        self.k_proj = SALTLinear(self.hidden_size, self.kv_head_size, self.proj_ranks['k'], use_fisher=self.use_fisher)
-        self.v_proj = SALTLinear(self.hidden_size, self.kv_head_size, self.proj_ranks['v'], use_fisher=self.use_fisher)
-        self.out_proj = SALTLinear(self.all_head_size, self.hidden_size, self.proj_ranks['o'], use_fisher=self.use_fisher)
+        self.q_proj = SALTLinear(
+            self.hidden_size,
+            self.all_head_size,
+            self.proj_ranks["q"],
+            use_fisher=self.use_fisher,
+        )
+        self.k_proj = SALTLinear(
+            self.hidden_size,
+            self.kv_head_size,
+            self.proj_ranks["k"],
+            use_fisher=self.use_fisher,
+        )
+        self.v_proj = SALTLinear(
+            self.hidden_size,
+            self.kv_head_size,
+            self.proj_ranks["v"],
+            use_fisher=self.use_fisher,
+        )
+        self.out_proj = SALTLinear(
+            self.all_head_size,
+            self.hidden_size,
+            self.proj_ranks["o"],
+            use_fisher=self.use_fisher,
+        )
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    def _get_projection_ranks(self, pretrained_attn: nn.Module | None, base_rank: int) -> dict[str, int]:
+    def _get_projection_ranks(
+        self, pretrained_attn: nn.Module | None, base_rank: int
+    ) -> dict[str, int]:
         """
         Compute per-projection rank based on SVD energy.
         Returns dict {'q': r_q, 'k': r_k, 'v': r_v, 'o': r_o}.
         """
-        ranks = {'q': base_rank, 'k': base_rank, 'v': base_rank, 'o': base_rank}
+        ranks = {"q": base_rank, "k": base_rank, "v": base_rank, "o": base_rank}
         if not getattr(self, "adaptive_rank", True):
             return ranks
 
@@ -347,19 +455,21 @@ class SALTAttention(BaseAttention):
 
         try:
             for proj_key, attr_list in [
-                ('q', ['q_proj', 'q_lin', 'query']),
-                ('k', ['k_proj', 'k_lin', 'key']),
-                ('v', ['v_proj', 'v_lin', 'value']),
-                ('o', ['o_proj', 'out_proj', 'out_lin', 'dense']),
+                ("q", ["q_proj", "q_lin", "query"]),
+                ("k", ["k_proj", "k_lin", "key"]),
+                ("v", ["v_proj", "v_lin", "value"]),
+                ("o", ["o_proj", "out_proj", "out_lin", "dense"]),
             ]:
                 for attr in attr_list:
                     if hasattr(pretrained_attn, attr):
                         layer = getattr(pretrained_attn, attr)
-                        target = getattr(layer, 'base_layer', layer)
-                        if hasattr(target, 'weight') and target.weight is not None:
+                        target = getattr(layer, "base_layer", layer)
+                        if hasattr(target, "weight") and target.weight is not None:
                             W = target.weight.data.float()
                             _, S, _ = torch.linalg.svd(W, full_matrices=False)
-                            ranks[proj_key] = _compute_energy_rank(S, 0.95, 8, max(base_rank * 2, 32))
+                            ranks[proj_key] = _compute_energy_rank(
+                                S, 0.95, 8, max(base_rank * 2, 32)
+                            )
                         break
         except Exception as e:
             logger.debug("Per-projection rank computation failed: %s", e)
@@ -398,7 +508,11 @@ class SALTAttention(BaseAttention):
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
         # 2. GPT-2 Fused c_attn Conv1D handling
-        if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+        if hasattr(src, "c_attn") and (
+            extracted["q"][0] is None
+            or extracted["k"][0] is None
+            or extracted["v"][0] is None
+        ):
             weight = src.c_attn.weight.data
             bias = getattr(src.c_attn, "bias", None)
             bias_data = bias.data if bias is not None else None
@@ -409,7 +523,11 @@ class SALTAttention(BaseAttention):
             k_w = weight[split_size : 2 * split_size, :]
             v_w = weight[2 * split_size :, :]
             q_b = bias_data[:split_size] if bias_data is not None else None
-            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
+            k_b = (
+                bias_data[split_size : 2 * split_size]
+                if bias_data is not None
+                else None
+            )
             v_b = bias_data[2 * split_size :] if bias_data is not None else None
             extracted["q"] = (q_w, q_b)
             extracted["k"] = (k_w, k_b)
@@ -417,13 +535,21 @@ class SALTAttention(BaseAttention):
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o = src.c_proj.weight.data
-            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
+            if (
+                w_o.dim() == 2
+                and w_o.shape[0] != self.hidden_size
+                and w_o.shape[1] == self.hidden_size
+            ):
                 w_o = w_o.t().contiguous()
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
         # 3. RoBERTa / BERT Nested Encoder handling
-        if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+        if hasattr(src, "self") and (
+            extracted["q"][0] is None
+            or extracted["k"][0] is None
+            or extracted["v"][0] is None
+        ):
             s = src.self
             if hasattr(s, "query"):
                 extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
@@ -432,7 +558,11 @@ class SALTAttention(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
+        if (
+            hasattr(src, "output")
+            and hasattr(src.output, "dense")
+            and extracted["o"][0] is None
+        ):
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -449,12 +579,27 @@ class SALTAttention(BaseAttention):
                     if hasattr(src, name):
                         layer = getattr(src, name)
                         if hasattr(layer, "weight"):
-                            extracted[proj] = (layer.weight.data, getattr(layer, "bias", None))
+                            extracted[proj] = (
+                                layer.weight.data,
+                                getattr(layer, "bias", None),
+                            )
                             break
 
         # Detect nested encoder architecture
         cls_name = src.__class__.__name__
-        has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+        has_out_proj = any(
+            hasattr(src, attr)
+            for attr in (
+                "dense",
+                "out_proj",
+                "c_proj",
+                "out_lin",
+                "o_proj",
+                "wo",
+                "o",
+                "proj",
+            )
+        )
         self.is_nested_encoder = (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
@@ -465,7 +610,9 @@ class SALTAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            logger.warning("Attention module copy_weights warning. Proceeding with initialized weights.")
+            logger.warning(
+                "Attention module copy_weights warning. Proceeding with initialized weights."
+            )
 
         # Frobenius norm validation
         for proj_key in ["q", "k", "v"]:
@@ -473,12 +620,16 @@ class SALTAttention(BaseAttention):
             if w is not None:
                 norm = torch.linalg.norm(w.float())
                 if norm < 1e-4:
-                    logger.warning(f"SALTAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})")
+                    logger.warning(
+                        f"SALTAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})"
+                    )
 
         if extracted["o"][0] is not None:
             norm_o = torch.linalg.norm(extracted["o"][0].float())
             if norm_o < 1e-4:
-                logger.warning(f"SALTAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})")
+                logger.warning(
+                    f"SALTAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})"
+                )
 
         def _orient(w: torch.Tensor, in_dim: int, out_dim: int) -> torch.Tensor:
             """Handle both nn.Linear [out, in] and Conv1D [in, out]."""
@@ -501,8 +652,12 @@ class SALTAttention(BaseAttention):
                 w_cand = extracted[proj_key][0]
                 if w_cand is not None:
                     try:
-                        _, S_cand, _ = torch.linalg.svd(w_cand.float(), full_matrices=False)
-                        self.proj_ranks[proj_key] = _compute_energy_rank(S_cand, 0.95, 8, max(self.rank * 2, 32))
+                        _, S_cand, _ = torch.linalg.svd(
+                            w_cand.float(), full_matrices=False
+                        )
+                        self.proj_ranks[proj_key] = _compute_energy_rank(
+                            S_cand, 0.95, 8, max(self.rank * 2, 32)
+                        )
                     except Exception:
                         pass
 
@@ -528,36 +683,67 @@ class SALTAttention(BaseAttention):
                         elif src_out > out_dim and src_out % out_dim == 0:
                             rep = src_out // out_dim
                             final_w = w_oriented.view(out_dim, rep, -1).mean(dim=1)
-                            final_b = b.view(out_dim, rep).mean(dim=1) if b is not None else None
+                            final_b = (
+                                b.view(out_dim, rep).mean(dim=1)
+                                if b is not None
+                                else None
+                            )
                         elif src_out < out_dim and out_dim % src_out == 0:
                             rep = out_dim // src_out
                             final_w = w_oriented.repeat(rep, 1)
                             final_b = b.repeat(rep) if b is not None else None
                         else:
-                            final_w = torch.zeros(out_dim, in_dim, device=w.device, dtype=w.dtype)
-                            final_w[:min(out_dim, src_out), :min(in_dim, src_in)] = w_oriented[:min(out_dim, src_out), :min(in_dim, src_in)]
-                            final_b = b[:min(out_dim, len(b))] if b is not None else None
+                            final_w = torch.zeros(
+                                out_dim, in_dim, device=w.device, dtype=w.dtype
+                            )
+                            final_w[: min(out_dim, src_out), : min(in_dim, src_in)] = (
+                                w_oriented[
+                                    : min(out_dim, src_out), : min(in_dim, src_in)
+                                ]
+                            )
+                            final_b = (
+                                b[: min(out_dim, len(b))] if b is not None else None
+                            )
                     else:
                         if src_out == out_dim and src_in == in_dim:
                             final_w = w_oriented
                             final_b = b
                         else:
-                            final_w = torch.zeros(out_dim, in_dim, device=w.device, dtype=w.dtype)
-                            final_w[:min(out_dim, src_out), :min(in_dim, src_in)] = w_oriented[:min(out_dim, src_out), :min(in_dim, src_in)]
-                            final_b = b[:min(out_dim, len(b))] if b is not None else None
+                            final_w = torch.zeros(
+                                out_dim, in_dim, device=w.device, dtype=w.dtype
+                            )
+                            final_w[: min(out_dim, src_out), : min(in_dim, src_in)] = (
+                                w_oriented[
+                                    : min(out_dim, src_out), : min(in_dim, src_in)
+                                ]
+                            )
+                            final_b = (
+                                b[: min(out_dim, len(b))] if b is not None else None
+                            )
 
                     new_linear = SALTLinear(
-                        in_dim, out_dim, proj_r,
-                        original_weight=final_w, original_bias=final_b,
+                        in_dim,
+                        out_dim,
+                        proj_r,
+                        original_weight=final_w,
+                        original_bias=final_b,
                         use_fisher=self.use_fisher,
                     )
                     new_linear.to(device=w.device, dtype=w.dtype)
                     setattr(self, attr, new_linear)
                 elif proj_key == "o" and self.is_nested_encoder:
-                    eye_w = torch.eye(out_dim, in_dim, device=self.out_proj.U.device, dtype=self.out_proj.U.dtype)
+                    eye_w = torch.eye(
+                        out_dim,
+                        in_dim,
+                        device=self.out_proj.U.device,
+                        dtype=self.out_proj.U.dtype,
+                    )
                     new_linear = SALTLinear(
-                        in_dim, out_dim, proj_r,
-                        original_weight=eye_w, original_bias=None,
+                        in_dim,
+                        out_dim,
+                        proj_r,
+                        original_weight=eye_w,
+                        original_bias=None,
                         use_fisher=self.use_fisher,
                     )
                     setattr(self, attr, new_linear)
@@ -590,8 +776,18 @@ class SALTAttention(BaseAttention):
         L_kv = kv_input.shape[1]
 
         Q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
-        K = self.k_proj(kv_input).view(B, L_kv, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
-        V = self.v_proj(kv_input).view(B, L_kv, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
+        K = (
+            self.k_proj(kv_input)
+            .view(B, L_kv, self.num_kv_heads, Dh)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        V = (
+            self.v_proj(kv_input)
+            .view(B, L_kv, self.num_kv_heads, Dh)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -603,39 +799,71 @@ class SALTAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        scale = Dh ** -0.5
+        scale = Dh**-0.5
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is None and head_mask is None and not output_attentions:
             try:
                 _qs = Q.half() if Q.dtype == torch.float32 else Q
                 _ks = K.half() if K.dtype == torch.float32 else K
                 _vs = V.half() if V.dtype == torch.float32 else V
-                _is_causal = getattr(self, 'is_decoder', False) and not is_cross and L > 1
-                _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
-                    _qs, _ks, _vs, is_causal=_is_causal, dropout_p=self.dropout.p if self.training else 0.0
+                _is_causal = (
+                    getattr(self, "is_decoder", False) and not is_cross and L > 1
                 )
-                _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-                _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
-                out = _sdpa_out if getattr(self, 'is_nested_encoder', False) else self.out_proj(_sdpa_out)
+                _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
+                    _qs,
+                    _ks,
+                    _vs,
+                    is_causal=_is_causal,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                )
+                _sdpa_out = (
+                    _sdpa_out.to(hidden_states.dtype)
+                    .transpose(1, 2)
+                    .contiguous()
+                    .view(B, L, self.all_head_size)
+                )
+                _sdpa_out = torch.nan_to_num(
+                    _sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4
+                )
+                out = (
+                    _sdpa_out
+                    if getattr(self, "is_nested_encoder", False)
+                    else self.out_proj(_sdpa_out)
+                )
                 if out.shape[-1] != hidden_states.shape[-1]:
-                    out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1])) if out.shape[-1] < hidden_states.shape[-1] else out[..., :hidden_states.shape[-1]]
+                    out = (
+                        F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
+                        if out.shape[-1] < hidden_states.shape[-1]
+                        else out[..., : hidden_states.shape[-1]]
+                    )
                 return out, None
             except Exception:
                 pass
 
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+        scores = (
+            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+        )
 
         if self.is_decoder and not is_cross and L > 1:
-            causal_mask = torch.triu(
-                torch.full((L, L_kv), float("-inf"), device=device, dtype=torch.float32),
-                diagonal=1,
-            ).unsqueeze(0).unsqueeze(0)
+            causal_mask = (
+                torch.triu(
+                    torch.full(
+                        (L, L_kv), float("-inf"), device=device, dtype=torch.float32
+                    ),
+                    diagonal=1,
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
             scores = scores + causal_mask
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is not None:
             if eff_mask.dim() == 2:
-                scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+                scores = (
+                    scores
+                    + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+                )
             elif eff_mask.dim() == 3:
                 scores = scores + eff_mask.unsqueeze(1).float()
             elif eff_mask.dim() == 4:
@@ -664,7 +892,11 @@ class SALTAttention(BaseAttention):
             out = self.out_proj(context)
 
         if out.shape[-1] != hidden_states.shape[-1]:
-            out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1])) if out.shape[-1] < hidden_states.shape[-1] else out[..., :hidden_states.shape[-1]]
+            out = (
+                F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
+                if out.shape[-1] < hidden_states.shape[-1]
+                else out[..., : hidden_states.shape[-1]]
+            )
 
         return out, (attn if output_attentions else None)
 
@@ -747,7 +979,9 @@ def inject_salt_attention(
         if target is not None:
             for attr in ("attention", "self_attn", "attn", "self"):
                 cand = getattr(target, attr, None)
-                if cand is not None and (isinstance(cand, SALTAttention) or "SALT" in cand.__class__.__name__):
+                if cand is not None and (
+                    isinstance(cand, SALTAttention) or "SALT" in cand.__class__.__name__
+                ):
                     return None
 
         if model_config is None and hasattr(target, "config"):
@@ -755,7 +989,10 @@ def inject_salt_attention(
         if model_config is None and hasattr(src, "config"):
             model_config = src.config
 
-        rank = kwargs.pop("rank", _cfg_get(comp_config, "rank", _cfg_get(comp_config, "salt_rank", 16)))
+        rank = kwargs.pop(
+            "rank",
+            _cfg_get(comp_config, "rank", _cfg_get(comp_config, "salt_rank", 16)),
+        )
         if rank is None:
             rank = 16
 
@@ -813,12 +1050,18 @@ def calibrate_gamma(
     device = next(model.parameters()).device
     if tokenizer is not None and isinstance(calibration_data, list):
         inputs = tokenizer(
-            calibration_data, return_tensors="pt",
-            padding=True, truncation=True, max_length=256
+            calibration_data,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=256,
         )
         inputs = {k: v.to(device) for k, v in inputs.items()}
     elif isinstance(calibration_data, dict):
-        inputs = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in calibration_data.items()}
+        inputs = {
+            k: v.to(device) if isinstance(v, torch.Tensor) else v
+            for k, v in calibration_data.items()
+        }
     elif isinstance(calibration_data, torch.Tensor):
         inputs = calibration_data.to(device)
     else:
@@ -834,6 +1077,7 @@ def calibrate_gamma(
                 g = grad_out[0]
                 if g is not None:
                     grads[mod_name] = g.detach()
+
         return hook
 
     for name, module in model.named_modules():
@@ -853,7 +1097,11 @@ def calibrate_gamma(
         elif hasattr(outputs, "logits") and outputs.logits is not None:
             probs = F.softmax(outputs.logits.float(), dim=-1)
             loss = -(probs * torch.log(probs + 1e-10)).sum(dim=-1).mean()
-        elif isinstance(outputs, (tuple, list)) and len(outputs) > 0 and isinstance(outputs[0], torch.Tensor):
+        elif (
+            isinstance(outputs, (tuple, list))
+            and len(outputs) > 0
+            and isinstance(outputs[0], torch.Tensor)
+        ):
             loss = outputs[0].mean()
         elif isinstance(outputs, torch.Tensor):
             loss = outputs.mean()
@@ -872,14 +1120,13 @@ def calibrate_gamma(
             g = grads[name]  # (..., r) or (..., in_features)
             try:
                 if g.shape[-1] == module.rank:
-                    s = (g ** 2).mean(dim=tuple(range(g.dim() - 1)))
+                    s = (g**2).mean(dim=tuple(range(g.dim() - 1)))
                 else:
                     U = module.U  # (out, r)
                     g_proj = g @ U  # (..., r)
-                    s = (g_proj ** 2).mean(dim=tuple(range(g_proj.dim() - 1)))
+                    s = (g_proj**2).mean(dim=tuple(range(g_proj.dim() - 1)))
 
                 if s.numel() == module.rank:
                     module.init_gamma_from_sensitivity(s)
             except Exception as e:
                 logger.debug("Gamma update failed for %s: %s", name, e)
-

@@ -1,13 +1,15 @@
+import framework.attentions.squeezing_heads_distill
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.squeezing_heads_distill
+
 
 def test_squeezing_heads_distill_module_present():
     assert hasattr(framework.attentions, 'squeezing_heads_distill')
 
 def test_squeezing_heads_distill_injection_safe():
-    from framework.attentions.squeezing_heads_distill import inject_squeezing_heads
+    from framework.attentions.squeezing_heads_distill import \
+        inject_squeezing_heads
     class DummyLayer(nn.Module):
         def __init__(self):
             super().__init__()

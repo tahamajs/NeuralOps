@@ -15,19 +15,14 @@ Verifies all 9 mandatory requirements:
 
 import hashlib
 import math
+
 import pytest
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.compression_engine.aatc_xkv_compressor import (
-    AATC_XKVCompressor,
-    AATC_XKV_CacheCompressor,
-    SharedSubspace,
-    reverse_waterfilling,
-    quantize_to_bits,
-    dequantize_from_bits,
-)
+    AATC_XKV_CacheCompressor, AATC_XKVCompressor, SharedSubspace,
+    dequantize_from_bits, quantize_to_bits, reverse_waterfilling)
 from framework.core.registry import COMPRESSOR_REGISTRY
 
 

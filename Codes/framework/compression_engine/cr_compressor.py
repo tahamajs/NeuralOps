@@ -14,9 +14,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseCompressor
-from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.model_utils import replace_module
 from framework.core.pruning_utils import adaptive_max_error
+from framework.core.registry import COMPRESSOR_REGISTRY
 
 logger = logging.getLogger(__name__)
 
@@ -56,15 +56,21 @@ class CRLinear(nn.Module):
         self.nf = out_features  # Conv1D compatibility
         self.rank = max(1, min(rank, in_features, out_features))
 
-        self.C = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
-        self.P = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
+        self.C = nn.Parameter(
+            torch.empty(out_features, self.rank, dtype=dtype, device=device)
+        )
+        self.P = nn.Parameter(
+            torch.empty(self.rank, in_features, dtype=dtype, device=device)
+        )
 
         bound = 1.0 / math.sqrt(max(1, in_features))
         nn.init.uniform_(self.C, -bound, bound)
         nn.init.uniform_(self.P, -bound, bound)
 
         if bias:
-            self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device))
+            self.bias = nn.Parameter(
+                torch.zeros(out_features, dtype=dtype, device=device)
+            )
         else:
             self.register_parameter("bias", None)
 
@@ -90,7 +96,6 @@ class CRLinear(nn.Module):
         """Materialize full reconstructed weight matrix."""
         return torch.matmul(self.C, self.P)
 
-
     @classmethod
     def from_linear(cls, linear: nn.Linear | Any, rank: int = 64) -> CRLinear:
         """
@@ -98,11 +103,20 @@ class CRLinear(nn.Module):
         """
         target_mod = getattr(linear, "base_layer", getattr(linear, "linear", linear))
         raw_w = target_mod.weight.data
-        bias = target_mod.bias.data if getattr(target_mod, "bias", None) is not None else None
+        bias = (
+            target_mod.bias.data
+            if getattr(target_mod, "bias", None) is not None
+            else None
+        )
         cls_name = target_mod.__class__.__name__.lower()
         wrapper_name = linear.__class__.__name__.lower()
 
-        is_conv1d = "conv1d" in cls_name or "conv1d" in wrapper_name or hasattr(target_mod, "nf") or hasattr(linear, "nf")
+        is_conv1d = (
+            "conv1d" in cls_name
+            or "conv1d" in wrapper_name
+            or hasattr(target_mod, "nf")
+            or hasattr(linear, "nf")
+        )
         if is_conv1d:
             # Conv1D weights are [in_features, out_features] -> transpose to [out_features, in_features]
             W = raw_w.t().contiguous()
@@ -127,17 +141,20 @@ class CRLinear(nn.Module):
         col_idx = None
         try:
             import scipy.linalg
+
             W_np = W_float.cpu().numpy()
             _, _, piv = scipy.linalg.qr(W_np, mode="economic", pivoting=True)
             col_idx = torch.tensor(piv[:r], dtype=torch.long, device=W.device)
         except Exception as e:
-            logger.debug("CRLinear pivoted QR failed; using greedy column selection: %s", e)
+            logger.debug(
+                "CRLinear pivoted QR failed; using greedy column selection: %s", e
+            )
 
         if col_idx is None:
             # Pure PyTorch QRCP-equivalent greedy pivoted column selection
             remaining_cols = list(range(in_f))
             selected_cols = []
-            norms = torch.sum(W_float ** 2, dim=0)
+            norms = torch.sum(W_float**2, dim=0)
 
             for _ in range(r):
                 best_col_idx = int(torch.argmax(norms).item())
@@ -147,11 +164,11 @@ class CRLinear(nn.Module):
                 if len(selected_cols) >= r:
                     break
                 # Orthogonalize remaining columns against selected column
-                v = W_float[:, best_col_idx:best_col_idx+1]
-                v_norm_sq = torch.sum(v ** 2).clamp_min(1e-12)
+                v = W_float[:, best_col_idx : best_col_idx + 1]
+                v_norm_sq = torch.sum(v**2).clamp_min(1e-12)
                 proj = torch.matmul(v.T, W_float) / v_norm_sq
                 W_float = W_float - torch.matmul(v, proj)
-                norms = torch.sum(W_float ** 2, dim=0)
+                norms = torch.sum(W_float**2, dim=0)
                 for sc in selected_cols:
                     norms[sc] = -1.0
 
@@ -217,11 +234,19 @@ class CRCompressor(BaseCompressor):
         target_layers: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(model if model is not None else nn.Identity(), name="cr", **kwargs)
+        super().__init__(
+            model if model is not None else nn.Identity(), name="cr", **kwargs
+        )
         c_rank = _cfg_get(cfg, "cr_rank", _cfg_get(cfg, "rank", rank))
-        c_max_error = _cfg_get(cfg, "cr_max_error", _cfg_get(cfg, "max_error", max_error))
+        c_max_error = _cfg_get(
+            cfg, "cr_max_error", _cfg_get(cfg, "max_error", max_error)
+        )
         c_fallback = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
-        c_target_attn = _cfg_get(cfg, "cr_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
+        c_target_attn = _cfg_get(
+            cfg,
+            "cr_target_attention_only",
+            _cfg_get(cfg, "target_attention_only", target_attention_only),
+        )
 
         if c_max_error is None or c_max_error == 0.20:
             c_max_error = adaptive_max_error(c_rank, 768, 768, "distilbert")
@@ -255,26 +280,61 @@ class CRCompressor(BaseCompressor):
         if not (is_linear or is_conv1d or is_lora):
             return False
 
-        if isinstance(module, CRLinear) or (has_base and isinstance(module.base_layer, CRLinear)):
+        if isinstance(module, CRLinear) or (
+            has_base and isinstance(module.base_layer, CRLinear)
+        ):
             return False
 
         name_lower = name.lower()
-        if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embed", "logits_processor", "pre_classifier", "head"]):
+        if any(
+            skip in name_lower
+            for skip in [
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embed",
+                "logits_processor",
+                "pre_classifier",
+                "head",
+            ]
+        ):
             return False
 
         if self.target_attention_only:
             ffn_patterns = [
-                "ffn", "mlp", "lin1", "lin2", "intermediate",
-                "gate_proj", "up_proj", "down_proj", "c_fc"
+                "ffn",
+                "mlp",
+                "lin1",
+                "lin2",
+                "intermediate",
+                "gate_proj",
+                "up_proj",
+                "down_proj",
+                "c_fc",
             ]
             if any(p in name_lower for p in ffn_patterns):
                 return False
             if "output.dense" in name_lower and "attention" not in name_lower:
                 return False
             attn_patterns = [
-                "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-                "out_lin", "q_lin", "k_lin", "v_lin", "c_attn", "c_proj",
-                "query", "key", "value", "in_proj_qkv", "out_proj"
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "out_lin",
+                "q_lin",
+                "k_lin",
+                "v_lin",
+                "c_attn",
+                "c_proj",
+                "query",
+                "key",
+                "value",
+                "in_proj_qkv",
+                "out_proj",
             ]
             if not any(p in name_lower for p in attn_patterns):
                 return False
@@ -284,7 +344,9 @@ class CRCompressor(BaseCompressor):
 
         return True
 
-    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
+    def compress(
+        self, model: nn.Module | None = None
+    ) -> tuple[nn.Module, dict[str, Any]]:
         """Compress linear layers using interpolative decomposition."""
         if model is not None:
             self.model = model
@@ -301,16 +363,28 @@ class CRCompressor(BaseCompressor):
         for name, module in list(self.model.named_modules()):
             if not self._is_target_module(name, module):
                 if self.target_attention_only:
-                    is_lin_like = isinstance(module, nn.Linear) or "conv1d" in module.__class__.__name__.lower() or hasattr(module, "base_layer")
+                    is_lin_like = (
+                        isinstance(module, nn.Linear)
+                        or "conv1d" in module.__class__.__name__.lower()
+                        or hasattr(module, "base_layer")
+                    )
                     if is_lin_like:
                         for p in module.parameters():
                             p.requires_grad = False
                 continue
 
-            target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
+            target_mod = getattr(
+                module, "base_layer", getattr(module, "linear", module)
+            )
             cls_name = module.__class__.__name__.lower()
-            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf") or hasattr(target_mod, "nf")
-            has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(module, "base_layer")
+            is_conv1d = (
+                "conv1d" in cls_name
+                or hasattr(module, "nf")
+                or hasattr(target_mod, "nf")
+            )
+            has_lora = (
+                hasattr(module, "lora_A") and module.lora_A is not None
+            ) or hasattr(module, "base_layer")
 
             raw_w = target_mod.weight.data
             orig_w = raw_w.t().float() if is_conv1d else raw_w.float()
@@ -345,17 +419,23 @@ class CRCompressor(BaseCompressor):
                         break
 
                     next_r = min(int(cur_r * 1.5), max_rank - 1)
-                    if next_r <= cur_r or next_r * (in_f + out_f) >= 0.85 * (in_f * out_f):
+                    if next_r <= cur_r or next_r * (in_f + out_f) >= 0.85 * (
+                        in_f * out_f
+                    ):
                         break
                     cur_r = next_r
                 except Exception as ex:
-                    logger.debug("CR decomposition error on %s with rank %d: %s", name, cur_r, ex)
+                    logger.debug(
+                        "CR decomposition error on %s with rank %d: %s", name, cur_r, ex
+                    )
                     break
 
             if best_err > self.max_error:
                 logger.warning(
                     "CRCompressor: Layer %s error %.4f exceeded max_error %.4f",
-                    name, best_err, self.max_error
+                    name,
+                    best_err,
+                    self.max_error,
                 )
                 if self.fallback_to_original:
                     self.fallback_layers.append(name)
@@ -368,27 +448,41 @@ class CRCompressor(BaseCompressor):
                 new_layer = best_cr_layer
                 compressed_layer = new_layer
                 # Preserve existing LoRA adapter weights if the source module has them
-                if hasattr(module, 'lora_A') and hasattr(module, 'lora_B') and \
-                   module.lora_A is not None and module.lora_B is not None:
-                    src_lA = getattr(module.lora_A, 'weight', module.lora_A)
-                    src_lB = getattr(module.lora_B, 'weight', module.lora_B)
-                    if hasattr(new_layer, 'lora_A') and new_layer.lora_A is not None:
-                        if hasattr(src_lA, 'data') and src_lA.shape == new_layer.lora_A.shape:
+                if (
+                    hasattr(module, "lora_A")
+                    and hasattr(module, "lora_B")
+                    and module.lora_A is not None
+                    and module.lora_B is not None
+                ):
+                    src_lA = getattr(module.lora_A, "weight", module.lora_A)
+                    src_lB = getattr(module.lora_B, "weight", module.lora_B)
+                    if hasattr(new_layer, "lora_A") and new_layer.lora_A is not None:
+                        if (
+                            hasattr(src_lA, "data")
+                            and src_lA.shape == new_layer.lora_A.shape
+                        ):
                             new_layer.lora_A.data.copy_(src_lA.data)
-                    if hasattr(new_layer, 'lora_B') and new_layer.lora_B is not None:
-                        if hasattr(src_lB, 'data') and src_lB.shape == new_layer.lora_B.shape:
+                    if hasattr(new_layer, "lora_B") and new_layer.lora_B is not None:
+                        if (
+                            hasattr(src_lB, "data")
+                            and src_lB.shape == new_layer.lora_B.shape
+                        ):
                             new_layer.lora_B.data.copy_(src_lB.data)
 
-                if hasattr(module, 'base_layer'):
-                    module.base_layer = compressed_layer  # put compressed layer inside wrapper
+                if hasattr(module, "base_layer"):
+                    module.base_layer = (
+                        compressed_layer  # put compressed layer inside wrapper
+                    )
                     # module itself (LoRALinear wrapper) remains the replacement
                     new_module = module
                 else:
                     new_module = compressed_layer
 
-                if hasattr(module, 'base_layer'):
+                if hasattr(module, "base_layer"):
                     for p_name, p in module.named_parameters():
-                        if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
+                        if any(
+                            t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")
+                        ):
                             p.requires_grad = True
                 else:
                     if name == "":
@@ -399,14 +493,20 @@ class CRCompressor(BaseCompressor):
                 self.compressed_layers.append(name)
                 self.layer_errors[name] = float(best_err)
                 self.layer_ranks[name] = int(best_r)
-                total_orig_decomp_params += (in_f * out_f)
-                total_comp_decomp_params += (best_r * (in_f + out_f))
+                total_orig_decomp_params += in_f * out_f
+                total_comp_decomp_params += best_r * (in_f + out_f)
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
-        avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
+        avg_err = (
+            (sum(self.layer_errors.values()) / len(self.layer_errors))
+            if self.layer_errors
+            else 0.0
+        )
         effective_param_ratio = (
-            total_comp_decomp_params / total_orig_decomp_params if total_orig_decomp_params > 0 else 1.0
+            total_comp_decomp_params / total_orig_decomp_params
+            if total_orig_decomp_params > 0
+            else 1.0
         )
         stats.update(
             {
@@ -449,10 +549,25 @@ def cr_compressor_factory(
     **kwargs: Any,
 ) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Factory function for CR compressor."""
-    effective_rank = kwargs.pop("rank", rank or _cfg_get(comp_config, "cr_rank", _cfg_get(comp_config, "rank", 64)))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "cr_max_error", _cfg_get(comp_config, "max_error", 0.20)))
-    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
-    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "cr_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)))
+    effective_rank = kwargs.pop(
+        "rank",
+        rank or _cfg_get(comp_config, "cr_rank", _cfg_get(comp_config, "rank", 64)),
+    )
+    max_error = kwargs.pop(
+        "max_error",
+        _cfg_get(comp_config, "cr_max_error", _cfg_get(comp_config, "max_error", 0.20)),
+    )
+    fallback = kwargs.pop(
+        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
+    )
+    target_attention_only = kwargs.pop(
+        "target_attention_only",
+        _cfg_get(
+            comp_config,
+            "cr_target_attention_only",
+            _cfg_get(comp_config, "target_attention_only", False),
+        ),
+    )
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     compressor = CRCompressor(
         model,

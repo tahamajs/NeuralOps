@@ -1,7 +1,8 @@
+import framework.attentions.soa_attn
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.soa_attn
+
 
 def test_soa_attn_module_present():
     assert hasattr(framework.attentions, 'soa_attn')

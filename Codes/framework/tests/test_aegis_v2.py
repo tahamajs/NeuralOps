@@ -2,12 +2,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.aegis_v2 import (
-    AegisAttentionV2,
-    _rotate_half,
-    inject_aegis_v2,
-)
+from framework.attentions.aegis_v2 import (AegisAttentionV2, _rotate_half,
+                                           inject_aegis_v2)
 from framework.core.registry import ATTENTION_REGISTRY
 
 

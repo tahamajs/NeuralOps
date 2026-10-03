@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.nexus import NEXUSAttention, NEXUSConfig, inject_nexus_attention
+from framework.attentions.nexus import (NEXUSAttention, NEXUSConfig,
+                                        inject_nexus_attention)
 
 
 class MockConfig:

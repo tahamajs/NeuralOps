@@ -36,12 +36,8 @@ if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
 from framework.compression_engine.kvtc_compressor import (
-    KVTCCompressor,
-    KVTCQuantizedLoRALinear,
-    KVTCStore,
-    SimpleEntropyCoder,
-    kvtc_factory,
-)
+    KVTCCompressor, KVTCQuantizedLoRALinear, KVTCStore, SimpleEntropyCoder,
+    kvtc_factory)
 from framework.core.registry import COMPRESSOR_REGISTRY
 
 

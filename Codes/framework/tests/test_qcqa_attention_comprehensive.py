@@ -1,12 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.qcqa_attention import (
-    QCQAAttention,
-    inject_qcqa,
-    inject_qcqa_attention,
-)
+from framework.attentions.qcqa_attention import (QCQAAttention, inject_qcqa,
+                                                 inject_qcqa_attention)
 
 
 class MockConfig:

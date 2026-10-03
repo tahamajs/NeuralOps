@@ -1,8 +1,10 @@
 import pytest
 import torch
 import torch.nn as nn
+from framework.attentions.hgrn2_gated_deltanet import (
+    HGRN2GatedDeltaNet, inject_hgrn2_gated_deltanet)
 from framework.attentions.hgrn2_layer import HGRN2Layer, inject_hgrn2_layer
-from framework.attentions.hgrn2_gated_deltanet import HGRN2GatedDeltaNet, inject_hgrn2_gated_deltanet
+
 
 def test_hgrn2_layer_standalone():
     layer = HGRN2Layer(d_model=64, is_decoder=False, lora_rank=8)

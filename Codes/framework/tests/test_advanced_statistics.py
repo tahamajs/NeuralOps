@@ -2,12 +2,9 @@
 
 import numpy as np
 import pytest
-from framework.run_quality_sweep import (
-    compute_bh_fdr,
-    compute_bootstrap_ci,
-    compute_confidence_interval_95,
-    compute_t_test_p_value,
-)
+from framework.run_quality_sweep import (compute_bh_fdr, compute_bootstrap_ci,
+                                         compute_confidence_interval_95,
+                                         compute_t_test_p_value)
 
 
 def test_t_test_p_value_identical():

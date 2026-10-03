@@ -1,7 +1,8 @@
+import framework.attentions.regla_attention
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.regla_attention
+
 
 def test_regla_attention_module_present():
     assert hasattr(framework.attentions, 'regla_attention')

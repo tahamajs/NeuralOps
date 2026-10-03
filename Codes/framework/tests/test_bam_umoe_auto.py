@@ -1,7 +1,8 @@
+import framework.attentions.bam_umoe
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.bam_umoe
+
 
 def test_bam_umoe_module_present():
     assert hasattr(framework.attentions, 'bam_umoe')

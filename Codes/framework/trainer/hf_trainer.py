@@ -15,7 +15,7 @@ class HuggingFaceTrainer(BaseTrainer):
         config: dict[str, Any],
         results_manager,
         compute_metrics=None,
-        **kwargs
+        **kwargs,
     ) -> None:
         self.model = model
         self.train_dataset = train_dataset
@@ -63,8 +63,14 @@ class HuggingFaceTrainer(BaseTrainer):
             "eval_strategy": self.config.get("eval_strategy", "epoch"),
             "save_strategy": self.config.get("save_strategy", "epoch"),
             "save_total_limit": self.config.get("save_total_limit", 2),
-            "load_best_model_at_end": self.config.get("load_best_model_at_end", True) if self.eval_dataset is not None else False,
-            "metric_for_best_model": self.config.get("metric_for_best_model", "eval_loss"),
+            "load_best_model_at_end": (
+                self.config.get("load_best_model_at_end", True)
+                if self.eval_dataset is not None
+                else False
+            ),
+            "metric_for_best_model": self.config.get(
+                "metric_for_best_model", "eval_loss"
+            ),
             "fp16": self.config.get("fp16", False),
             "logging_dir": str(self.results_manager.log_dir),
             "logging_steps": self.config.get("logging_steps", 10),
@@ -82,7 +88,7 @@ class HuggingFaceTrainer(BaseTrainer):
             eval_dataset=self.eval_dataset,
             compute_metrics=self.compute_metrics,
             **training_args_dict,
-            **self.kwargs
+            **self.kwargs,
         )
         self._trainer = self.results_manager.wrap_trainer(self._trainer)
         for cb in self._callbacks:

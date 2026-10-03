@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.hgrn2_outer import HGRN2OuterBlock, inject_hgrn2_outer
+from framework.attentions.hgrn2_outer import (HGRN2OuterBlock,
+                                              inject_hgrn2_outer)
 
 
 class MockConfig:

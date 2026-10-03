@@ -1,9 +1,10 @@
+import os
+import sys
+from typing import Optional, Tuple
+
 import pytest
 import torch
 import torch.nn as nn
-from typing import Optional, Tuple
-import os
-import sys
 
 # Add root project dir to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))

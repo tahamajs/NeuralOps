@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.phantom import PHANTOMAttention, PHANTOMConfig, inject_phantom_attention
+from framework.attentions.phantom import (PHANTOMAttention, PHANTOMConfig,
+                                          inject_phantom_attention)
 
 
 class MockConfig:

@@ -15,13 +15,13 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 try:
     from framework.core.gqa_utils import repeat_kv
 except ImportError:
+
     def repeat_kv(h, n_rep):
         if n_rep == 1:
             return h
@@ -77,8 +77,17 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
 # LoRALinear
 # ===========================================================================
 class LoRALinear(nn.Module):
-    def __init__(self, in_features, out_features, bias=True, lora_rank=16,
-                 lora_alpha=32.0, freeze_base=False, device=None, dtype=None):
+    def __init__(
+        self,
+        in_features,
+        out_features,
+        bias=True,
+        lora_rank=16,
+        lora_alpha=32.0,
+        freeze_base=False,
+        device=None,
+        dtype=None,
+    ):
         super().__init__()
         fk = {"device": device, "dtype": dtype}
         self.in_features = in_features
@@ -129,11 +138,17 @@ class LoRALinear(nn.Module):
 
     def forward(self, x):
         w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
-        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
+        b = (
+            self.bias.to(x.dtype)
+            if (self.bias is not None and self.bias.dtype != x.dtype)
+            else self.bias
+        )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            bb = (
+                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            )
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -159,6 +174,7 @@ class TLinFormerAttention(BaseAttention):
     mask over the projected keys cannot enforce causality — the model would
     silently leak future information. Dense causal attention is correct.
     """
+
     # TLF-FIX-04
     is_custom_attention: bool = True
 
@@ -174,7 +190,9 @@ class TLinFormerAttention(BaseAttention):
         comp_config = getattr(config, "compression_config", None)
 
         # ---- hidden size / heads ----
-        self.hidden_size = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
+        self.hidden_size = getattr(
+            config, "hidden_size", kwargs.get("hidden_size", 768)
+        )
         if config is None or not hasattr(config, "hidden_size"):
             if pretrained_attn is not None:
                 for cand in ("q_lin", "query", "q_proj", "c_attn"):
@@ -185,33 +203,72 @@ class TLinFormerAttention(BaseAttention):
                             self.hidden_size = w.shape[1]
                             break
 
-        self.num_heads = int(getattr(config, "num_attention_heads",
-                                       kwargs.get("num_attention_heads", 12)) if config else 12)
-        self.num_kv_heads = int(getattr(config, "num_key_value_heads",
-                                          kwargs.get("num_key_value_heads", self.num_heads)) if config else self.num_heads)
-        self.head_dim = int(getattr(config, "head_dim", None)
-                             or kwargs.get("head_dim")
-                             or (self.hidden_size // max(1, self.num_heads)))
+        self.num_heads = int(
+            getattr(
+                config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
+            )
+            if config
+            else 12
+        )
+        self.num_kv_heads = int(
+            getattr(
+                config,
+                "num_key_value_heads",
+                kwargs.get("num_key_value_heads", self.num_heads),
+            )
+            if config
+            else self.num_heads
+        )
+        self.head_dim = int(
+            getattr(config, "head_dim", None)
+            or kwargs.get("head_dim")
+            or (self.hidden_size // max(1, self.num_heads))
+        )
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         # ---- rank: TLF-FIX-13 clamp to head_dim ----
-        requested_rank = int(_cfg_get(comp_config, "tlinformer_rank",
-                                       getattr(config, "tlinformer_rank", None)
-                                       if config else None)
-                              or kwargs.pop("rank", rank or 64))
+        requested_rank = int(
+            _cfg_get(
+                comp_config,
+                "tlinformer_rank",
+                getattr(config, "tlinformer_rank", None) if config else None,
+            )
+            or kwargs.pop("rank", rank or 64)
+        )
         self.rank = max(1, min(requested_rank, self.head_dim))
 
-        self.max_seq_len = int(getattr(config, "max_position_embeddings",
-                                        kwargs.get("max_seq_len", 2048)) if config else 2048)
+        self.max_seq_len = int(
+            getattr(config, "max_position_embeddings", kwargs.get("max_seq_len", 2048))
+            if config
+            else 2048
+        )
 
         # ---- decoder detection ----
         _mt = (getattr(config, "model_type", "") if config else "").lower()
-        is_dec = bool(getattr(config, "is_decoder", kwargs.get("is_decoder", False)) if config else False)
-        if any(_mt.startswith(p) for p in
-               ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")):
+        is_dec = bool(
+            getattr(config, "is_decoder", kwargs.get("is_decoder", False))
+            if config
+            else False
+        )
+        if any(
+            _mt.startswith(p)
+            for p in (
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
+            )
+        ):
             is_dec = True
         if kwargs.get("is_causal", False):
             is_dec = True
@@ -220,27 +277,59 @@ class TLinFormerAttention(BaseAttention):
         self.is_nested_encoder = False
 
         # ---- LoRA ----
-        self.lora_rank = int(getattr(config, "lora_rank",
-                                      getattr(comp_config, "lora_rank",
-                                              kwargs.get("lora_rank", 16))) if config else 16)
-        self.lora_alpha = float(getattr(config, "lora_alpha",
-                                         getattr(comp_config, "lora_alpha",
-                                                 kwargs.get("lora_alpha", 32.0))) if config else 32.0)
+        self.lora_rank = int(
+            getattr(
+                config,
+                "lora_rank",
+                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)),
+            )
+            if config
+            else 16
+        )
+        self.lora_alpha = float(
+            getattr(
+                config,
+                "lora_alpha",
+                getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
+            )
+            if config
+            else 32.0
+        )
         self.freeze_base = self.lora_rank > 0
 
         # ---- projections ----
-        self.q_proj = LoRALinear(self.hidden_size, self.all_head_size, bias=True,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=self.freeze_base)
-        self.k_proj = LoRALinear(self.hidden_size, self.all_kv_head_size, bias=True,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=self.freeze_base)
-        self.v_proj = LoRALinear(self.hidden_size, self.all_kv_head_size, bias=True,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True,
-                                    lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                    freeze_base=self.freeze_base)
+        self.q_proj = LoRALinear(
+            self.hidden_size,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.k_proj = LoRALinear(
+            self.hidden_size,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.v_proj = LoRALinear(
+            self.hidden_size,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.hidden_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
         # ---- sequence projections (TLF-FIX-06: buffers, not params) ----
         # Shape (rank, max_seq_len):  E @ K projects N → rank
@@ -255,39 +344,69 @@ class TLinFormerAttention(BaseAttention):
         self.register_buffer("proj_k", proj_k, persistent=True)
         self.register_buffer("proj_v", proj_v, persistent=True)
 
-        dropout_p = float(getattr(config, "attention_probs_dropout_prob",
-                                   kwargs.get("dropout", 0.1)) if config else 0.1)
+        dropout_p = float(
+            getattr(config, "attention_probs_dropout_prob", kwargs.get("dropout", 0.1))
+            if config
+            else 0.1
+        )
         self.dropout = nn.Dropout(dropout_p)
 
-        src = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
+        src = (
+            pretrained_attn
+            if pretrained_attn is not None
+            else kwargs.get("source_attn")
+        )
         if src is not None:
             self.copy_weights(src)
 
     # ---- compatibility aliases ----
     @property
-    def query(self): return self.q_proj
+    def query(self):
+        return self.q_proj
+
     @property
-    def key(self): return self.k_proj
+    def key(self):
+        return self.k_proj
+
     @property
-    def value(self): return self.v_proj
+    def value(self):
+        return self.v_proj
+
     @property
-    def q_lin(self): return self.q_proj
+    def q_lin(self):
+        return self.q_proj
+
     @property
-    def k_lin(self): return self.k_proj
+    def k_lin(self):
+        return self.k_proj
+
     @property
-    def v_lin(self): return self.v_proj
+    def v_lin(self):
+        return self.v_proj
+
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
+
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
+
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
+
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
+
     @property
-    def E(self): return self.proj_k
+    def E(self):
+        return self.proj_k
+
     @property
-    def F(self): return self.proj_v
+    def F(self):
+        return self.proj_v
 
     # ------------------------------------------------------------------
     # copy_weights
@@ -299,16 +418,38 @@ class TLinFormerAttention(BaseAttention):
         cls_name = src.__class__.__name__
         has_out_lin = any(hasattr(src, a) for a in ("out_lin", "c_proj", "o_proj"))
         is_nested = False
-        if (hasattr(src, "self") and hasattr(src.self, "query")
-                and hasattr(src, "output") and hasattr(src.output, "dense")) or (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
-                            "XLMRobertaSelfAttention", "ElectraSelfAttention",
-                            "DebertaSelfAttention")
-              or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())) \
-                and not has_out_lin:
+        if (
+            (
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
+            )
+            or (
+                cls_name
+                in (
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                )
+                or (
+                    cls_name.endswith("SelfAttention")
+                    and "distil" not in cls_name.lower()
+                )
+            )
+            and not has_out_lin
+        ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        extracted = {"q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None)}
+        extracted = {
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
+        }
 
         # ---- GPT-2 fused c_attn / c_proj ----
         if hasattr(src, "c_attn") and src.c_attn is not None:
@@ -317,18 +458,27 @@ class TLinFormerAttention(BaseAttention):
             cw = getattr(base_c, "weight", getattr(c, "weight", None))
             if cw is not None:
                 cw = cw.data.clone()
-                is_conv = ("Conv1D" in c.__class__.__name__
-                           or "Conv1D" in base_c.__class__.__name__
-                           or hasattr(c, "nf") or hasattr(base_c, "nf")
-                           or (cw.ndim == 2 and cw.shape[0] < cw.shape[1]))
+                is_conv = (
+                    "Conv1D" in c.__class__.__name__
+                    or "Conv1D" in base_c.__class__.__name__
+                    or hasattr(c, "nf")
+                    or hasattr(base_c, "nf")
+                    or (cw.ndim == 2 and cw.shape[0] < cw.shape[1])
+                )
                 if is_conv:
                     cw = cw.t().contiguous()
                 split = cw.size(0) // 3
                 bmod = getattr(base_c, "bias", getattr(c, "bias", None))
                 cb = bmod.data.clone() if bmod is not None else None
                 extracted["q"] = (cw[:split], cb[:split] if cb is not None else None)
-                extracted["k"] = (cw[split:2*split], cb[split:2*split] if cb is not None else None)
-                extracted["v"] = (cw[2*split:], cb[2*split:] if cb is not None else None)
+                extracted["k"] = (
+                    cw[split : 2 * split],
+                    cb[split : 2 * split] if cb is not None else None,
+                )
+                extracted["v"] = (
+                    cw[2 * split :],
+                    cb[2 * split :] if cb is not None else None,
+                )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 o = src.c_proj
@@ -336,10 +486,13 @@ class TLinFormerAttention(BaseAttention):
                 ow = getattr(base_o, "weight", getattr(o, "weight", None))
                 if ow is not None:
                     ow = ow.data.clone()
-                    is_conv_o = ("Conv1D" in o.__class__.__name__
-                                 or "Conv1D" in base_o.__class__.__name__
-                                 or hasattr(o, "nf") or hasattr(base_o, "nf")
-                                 or (ow.ndim == 2 and ow.shape[0] < ow.shape[1]))
+                    is_conv_o = (
+                        "Conv1D" in o.__class__.__name__
+                        or "Conv1D" in base_o.__class__.__name__
+                        or hasattr(o, "nf")
+                        or hasattr(base_o, "nf")
+                        or (ow.ndim == 2 and ow.shape[0] < ow.shape[1])
+                    )
                     if is_conv_o:
                         ow = ow.t().contiguous()
                     bo = getattr(base_o, "bias", getattr(o, "bias", None))
@@ -351,12 +504,16 @@ class TLinFormerAttention(BaseAttention):
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 m = getattr(s, sub, None)
                 if m is not None and hasattr(m, "weight"):
-                    extracted[key] = (m.weight.data.clone(),
-                                       m.bias.data.clone() if m.bias is not None else None)
+                    extracted[key] = (
+                        m.weight.data.clone(),
+                        m.bias.data.clone() if m.bias is not None else None,
+                    )
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 om = src.output.dense
-                extracted["o"] = (om.weight.data.clone(),
-                                   om.bias.data.clone() if om.bias is not None else None)
+                extracted["o"] = (
+                    om.weight.data.clone(),
+                    om.bias.data.clone() if om.bias is not None else None,
+                )
 
         # ---- flat modules ----
         else:
@@ -371,15 +528,22 @@ class TLinFormerAttention(BaseAttention):
                     if hasattr(src, n):
                         m = getattr(src, n)
                         if m is not None and hasattr(m, "weight"):
-                            extracted[key] = (m.weight.data.clone(),
-                                               m.bias.data.clone() if m.bias is not None else None)
+                            extracted[key] = (
+                                m.weight.data.clone(),
+                                m.bias.data.clone() if m.bias is not None else None,
+                            )
                             break
 
         # ---- UniversalAdapter fallback ----
-        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 ua = UniversalAdapter()
                 for k in missing:
                     w, b = ua.get_weight_bias(src, k)
@@ -388,13 +552,22 @@ class TLinFormerAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing_after:
             raise RuntimeError(
                 f"TLinFormer copy_weights: missing {missing_after} from {src.__class__.__name__}."
             )
 
-        target_map = {"q": self.q_proj, "k": self.k_proj, "v": self.v_proj, "o": self.out_proj}
+        target_map = {
+            "q": self.q_proj,
+            "k": self.k_proj,
+            "v": self.v_proj,
+            "o": self.out_proj,
+        }
 
         with torch.no_grad():
             for key, target in target_map.items():
@@ -410,14 +583,25 @@ class TLinFormerAttention(BaseAttention):
                     w = w.reshape(w.size(0), -1)
 
                 # TLF-FIX-09: log transposition
-                if w.shape != target.weight.shape and w.t().contiguous().shape == target.weight.shape:
-                    logger.debug("TLinFormer: transposing '%s' from %s to %s",
-                                 key, tuple(w.shape), tuple(target.weight.shape))
+                if (
+                    w.shape != target.weight.shape
+                    and w.t().contiguous().shape == target.weight.shape
+                ):
+                    logger.debug(
+                        "TLinFormer: transposing '%s' from %s to %s",
+                        key,
+                        tuple(w.shape),
+                        tuple(target.weight.shape),
+                    )
                     w = w.t().contiguous()
 
                 if w.shape != target.weight.shape:
-                    logger.warning("TLinFormer: '%s' shape mismatch %s vs target %s; truncating.",
-                                   key, tuple(w.shape), tuple(target.weight.shape))
+                    logger.warning(
+                        "TLinFormer: '%s' shape mismatch %s vs target %s; truncating.",
+                        key,
+                        tuple(w.shape),
+                        tuple(target.weight.shape),
+                    )
 
                 out_d = min(target.weight.size(0), w.size(0))
                 in_d = min(target.weight.size(1), w.size(1))
@@ -446,9 +630,21 @@ class TLinFormerAttention(BaseAttention):
                 sub_map = {"q": "query", "k": "key", "v": "value"}
                 src_mod = getattr(src.self, sub_map.get(key, ""), None)
             else:
-                for n in ("q_lin", "q_proj", "query", "k_lin", "k_proj", "key",
-                          "v_lin", "v_proj", "value", "out_lin", "out_proj",
-                          "dense", "o_proj"):
+                for n in (
+                    "q_lin",
+                    "q_proj",
+                    "query",
+                    "k_lin",
+                    "k_proj",
+                    "key",
+                    "v_lin",
+                    "v_proj",
+                    "value",
+                    "out_lin",
+                    "out_proj",
+                    "dense",
+                    "o_proj",
+                ):
                     if hasattr(src, n):
                         cand = getattr(src, n)
                         if key in n:
@@ -457,7 +653,12 @@ class TLinFormerAttention(BaseAttention):
             if src_mod is not None:
                 sA = getattr(src_mod, "lora_A", None)
                 sB = getattr(src_mod, "lora_B", None)
-                if sA is not None and sB is not None and target.lora_A is not None and target.lora_B is not None:
+                if (
+                    sA is not None
+                    and sB is not None
+                    and target.lora_A is not None
+                    and target.lora_B is not None
+                ):
                     wA = getattr(sA, "weight", sA)
                     wB = getattr(sB, "weight", sB)
                     try:
@@ -511,18 +712,19 @@ class TLinFormerAttention(BaseAttention):
         For L > max_seq_len, we log a warning and clip to max_seq_len (no
         interpolate hack).
         """
-        buf = getattr(self, name)                # (rank, max_seq_len)
+        buf = getattr(self, name)  # (rank, max_seq_len)
         r = buf.shape[0]
         if self.max_seq_len < L:
             logger.warning(
                 "TLinFormer: sequence length %d exceeds max_seq_len %d; "
                 "projecting with clipped columns (results may degrade).",
-                L, self.max_seq_len,
+                L,
+                self.max_seq_len,
             )
             L_eff = self.max_seq_len
         else:
             L_eff = L
-        P = buf[:, :L_eff].to(dtype=dtype, device=device)   # (r, L_eff)
+        P = buf[:, :L_eff].to(dtype=dtype, device=device)  # (r, L_eff)
         if L_eff < L:
             # Pad with zeros so matmul over the full sequence still works
             P = F.pad(P, (0, L - L_eff), value=0.0)
@@ -543,15 +745,26 @@ class TLinFormerAttention(BaseAttention):
         output_hidden_states: bool | None = False,
         return_dict: bool | None = True,
         position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
-        *args, **kwargs,
+        *args,
+        **kwargs,
     ):
         B, N, _ = hidden_states.shape
         H, Dh = self.num_heads, self.head_dim
 
         # ---- projections ----
         q = self.q_proj(hidden_states).view(B, N, H, Dh).transpose(1, 2).contiguous()
-        k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
-        v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
+        k = (
+            self.k_proj(hidden_states)
+            .view(B, N, self.num_kv_heads, Dh)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_proj(hidden_states)
+            .view(B, N, self.num_kv_heads, Dh)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # ---- RoPE ----
         if position_embeddings is None:
@@ -566,15 +779,20 @@ class TLinFormerAttention(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         # ---- valid mask ----
-        valid = self._prepare_valid_mask(attention_mask, B, N, hidden_states.device)  # (B, N)
-        key_mask = valid.unsqueeze(1).unsqueeze(2)                                    # (B,1,1,N)
-        q_mask = valid.unsqueeze(1).unsqueeze(-1)                                     # (B,1,N,1)
+        valid = self._prepare_valid_mask(
+            attention_mask, B, N, hidden_states.device
+        )  # (B, N)
+        key_mask = valid.unsqueeze(1).unsqueeze(2)  # (B,1,1,N)
+        q_mask = valid.unsqueeze(1).unsqueeze(-1)  # (B,1,N,1)
 
         scale = 1.0 / math.sqrt(Dh)
 
         # ---- decoder / causal path: dense attention (TLF-FIX-01) ----
         if self.is_decoder:
-            scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+            scores = (
+                torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous())
+                * scale
+            )
             causal = torch.triu(
                 torch.full((N, N), -1e4, device=scores.device, dtype=torch.float32),
                 diagonal=1,
@@ -587,7 +805,9 @@ class TLinFormerAttention(BaseAttention):
             attn = self.dropout(attn)
             # TLF-FIX-03: head_mask correctly
             if head_mask is not None:
-                attn = attn * self._reshape_head_mask(head_mask, B, H, attn.device, attn.dtype)
+                attn = attn * self._reshape_head_mask(
+                    head_mask, B, H, attn.device, attn.dtype
+                )
             ctx = torch.matmul(attn, v)
             # zero-out padded query positions
             ctx = ctx * q_mask.to(ctx.dtype)
@@ -600,14 +820,19 @@ class TLinFormerAttention(BaseAttention):
         # as the base model. Otherwise use the low-rank projection.
         if self.rank >= N:
             # Degenerate case → exact dense attention (safe baseline)
-            scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+            scores = (
+                torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous())
+                * scale
+            )
             # TLF-FIX-10: mask KEYS
             scores = scores.masked_fill(~key_mask, -1e4)
             attn = F.softmax(scores, dim=-1).to(hidden_states.dtype)
             attn = torch.nan_to_num(attn, nan=0.0)
             attn = self.dropout(attn)
             if head_mask is not None:
-                attn = attn * self._reshape_head_mask(head_mask, B, H, attn.device, attn.dtype)
+                attn = attn * self._reshape_head_mask(
+                    head_mask, B, H, attn.device, attn.dtype
+                )
             ctx = torch.matmul(attn, v)
             ctx = ctx * q_mask.to(ctx.dtype)
             ctx = ctx.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
@@ -615,19 +840,26 @@ class TLinFormerAttention(BaseAttention):
             return out, (attn if output_attentions else None)
 
         # Proper LinFormer: N > rank
-        P_k = self._projection_matrix("proj_k", N, hidden_states.dtype, hidden_states.device)   # (r, N)
-        P_v = self._projection_matrix("proj_v", N, hidden_states.dtype, hidden_states.device)   # (r, N)
+        P_k = self._projection_matrix(
+            "proj_k", N, hidden_states.dtype, hidden_states.device
+        )  # (r, N)
+        P_v = self._projection_matrix(
+            "proj_v", N, hidden_states.dtype, hidden_states.device
+        )  # (r, N)
 
         # Mask padded keys before projecting: k_masked = k * key_mask
-        k_for_proj = k * key_mask.to(k.dtype)      # (B, H, N, Dh)
+        k_for_proj = k * key_mask.to(k.dtype)  # (B, H, N, Dh)
         v_for_proj = v * key_mask.to(v.dtype)
 
         # Project sequence dimension: (r, N) @ (B, H, N, Dh) → (B, H, r, Dh)
-        K_proj = torch.matmul(P_k, k_for_proj)     # (B, H, r, Dh)
-        V_proj = torch.matmul(P_v, v_for_proj)     # (B, H, r, Dh)
+        K_proj = torch.matmul(P_k, k_for_proj)  # (B, H, r, Dh)
+        V_proj = torch.matmul(P_v, v_for_proj)  # (B, H, r, Dh)
 
         # scores: (B, H, N, r)
-        scores = torch.matmul(q.float(), K_proj.float().transpose(-2, -1).contiguous()) * scale
+        scores = (
+            torch.matmul(q.float(), K_proj.float().transpose(-2, -1).contiguous())
+            * scale
+        )
 
         # TLF-FIX-10: mask keys (padded positions were zeroed but we still
         # want to explicitly prevent attention to them)
@@ -642,7 +874,9 @@ class TLinFormerAttention(BaseAttention):
 
         # TLF-FIX-03: head_mask correctly
         if head_mask is not None:
-            attn = attn * self._reshape_head_mask(head_mask, B, H, attn.device, attn.dtype)
+            attn = attn * self._reshape_head_mask(
+                head_mask, B, H, attn.device, attn.dtype
+            )
 
         # context: (B, H, N, r) @ (B, H, r, Dh) → (B, H, N, Dh)
         ctx = torch.matmul(attn, V_proj)
@@ -711,7 +945,11 @@ def inject_tlinformer(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -720,8 +958,14 @@ def inject_tlinformer(
         num_injected = 0
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
-            res = inject_tlinformer(layer=lyr, model_config=cfg, comp_config=comp_config,
-                                     layer_idx=idx, total_layers=tot, **kwargs)
+            res = inject_tlinformer(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
             if res is not None:
                 num_injected += 1
         return target if num_injected > 0 else None
@@ -757,22 +1001,32 @@ def inject_tlinformer(
                     new_res = new_attn(dummy)
                     new_out = new_res[0] if isinstance(new_res, tuple) else new_res
 
-                    if orig_out is not None and new_out is not None and orig_out.shape == new_out.shape:
+                    if (
+                        orig_out is not None
+                        and new_out is not None
+                        and orig_out.shape == new_out.shape
+                    ):
                         n_o = torch.norm(orig_out.float(), p="fro").clamp_min(1e-12)
                         output_error = float(
-                            (torch.norm((orig_out - new_out).float(), p="fro") / n_o).item()
+                            (
+                                torch.norm((orig_out - new_out).float(), p="fro") / n_o
+                            ).item()
                         )
 
                 if max_err is not None and output_error > max_err:
                     logger.warning(
                         "TLinFormer layer %d: output error %.4f > max_error %.4f; skipping.",
-                        layer_idx, output_error, max_err,
+                        layer_idx,
+                        output_error,
+                        max_err,
                     )
                     for p in source_module.parameters():
                         p.requires_grad = False
                     return None
             except Exception as ex:
-                logger.debug("TLinFormer validation on layer %d failed: %s", layer_idx, ex)
+                logger.debug(
+                    "TLinFormer validation on layer %d failed: %s", layer_idx, ex
+                )
 
         # splice
         if hasattr(layer, "attention") and hasattr(layer.attention, "self"):

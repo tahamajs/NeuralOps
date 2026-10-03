@@ -1,8 +1,9 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.primal_attention import PrimalAttention, inject_primal, inject_primal_attention
+from framework.attentions.primal_attention import (PrimalAttention,
+                                                   inject_primal,
+                                                   inject_primal_attention)
 
 
 class MockConfig:

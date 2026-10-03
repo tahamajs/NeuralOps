@@ -1,7 +1,8 @@
+import framework.attentions.infini_attention
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.infini_attention
+
 
 def test_infini_attention_module_present():
     assert hasattr(framework.attentions, 'infini_attention')

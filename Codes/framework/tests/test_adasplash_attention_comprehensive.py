@@ -1,7 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.attentions.adasplash_attention import AdaSplashAttention, inject_adasplash
+from framework.attentions.adasplash_attention import (AdaSplashAttention,
+                                                      inject_adasplash)
 
 
 class MockConfig:

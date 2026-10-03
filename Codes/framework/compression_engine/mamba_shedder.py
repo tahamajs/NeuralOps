@@ -30,13 +30,12 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
-from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import (
     apply_24_structured_mask,
     get_calibration_tensors,
 )
+from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
@@ -54,9 +53,22 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 _ATTN_NAMES = {
-    "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-    "c_attn", "c_proj", "query", "key", "value",
-    "q_lin", "k_lin", "v_lin", "out_lin", "self_attn",
+    "attn",
+    "attention",
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "c_attn",
+    "c_proj",
+    "query",
+    "key",
+    "value",
+    "q_lin",
+    "k_lin",
+    "v_lin",
+    "out_lin",
+    "self_attn",
 }
 
 
@@ -80,6 +92,7 @@ class MambaShedderPrunedLinear(nn.Module):
 
     Storage: k * in instead of out * in.
     """
+
     is_custom_attention: bool = False
 
     def __init__(
@@ -112,12 +125,18 @@ class MambaShedderPrunedLinear(nn.Module):
 
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, self.in_features),
-                            dtype=torch.float32, device=W_kept.device)
+                torch.empty(
+                    (self.lora_r, self.in_features),
+                    dtype=torch.float32,
+                    device=W_kept.device,
+                )
             )
             self.lora_B = nn.Parameter(
-                torch.zeros((self.original_out_features, self.lora_r),
-                            dtype=torch.float32, device=W_kept.device)
+                torch.zeros(
+                    (self.original_out_features, self.lora_r),
+                    dtype=torch.float32,
+                    device=W_kept.device,
+                )
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -132,7 +151,7 @@ class MambaShedderPrunedLinear(nn.Module):
         return W
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        h = F.linear(x, self.W_kept, self.bias_kept)     # (..., k)
+        h = F.linear(x, self.W_kept, self.bias_kept)  # (..., k)
         out = torch.zeros(
             *x.shape[:-1],
             self.original_out_features,
@@ -191,20 +210,34 @@ class MambaShedderCompressor(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
 
         if cfg is not None:
-            sparsity = _cfg_get(cfg, "mamba_shedder_sparsity",
-                                _cfg_get(cfg, "sparsity", sparsity))
-            shed_layers = _cfg_get(cfg, "mamba_shedder_shed_layers",
-                                   _cfg_get(cfg, "shed_layers", shed_layers))
-            structured_24 = _cfg_get(cfg, "mamba_shedder_structured_24",
-                                     _cfg_get(cfg, "structured_24", structured_24))
+            sparsity = _cfg_get(
+                cfg, "mamba_shedder_sparsity", _cfg_get(cfg, "sparsity", sparsity)
+            )
+            shed_layers = _cfg_get(
+                cfg,
+                "mamba_shedder_shed_layers",
+                _cfg_get(cfg, "shed_layers", shed_layers),
+            )
+            structured_24 = _cfg_get(
+                cfg,
+                "mamba_shedder_structured_24",
+                _cfg_get(cfg, "structured_24", structured_24),
+            )
             max_error = _cfg_get(cfg, "max_error", max_error)
-            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
-            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
-            max_calibration_batches = _cfg_get(cfg, "max_calibration_batches",
-                                                max_calibration_batches)
+            fallback_to_original = _cfg_get(
+                cfg, "fallback_to_original", fallback_to_original
+            )
+            target_attention_only = _cfg_get(
+                cfg, "target_attention_only", target_attention_only
+            )
+            max_calibration_batches = _cfg_get(
+                cfg, "max_calibration_batches", max_calibration_batches
+            )
             min_layer_dim = _cfg_get(cfg, "min_layer_dim", min_layer_dim)
             skip_should_compress_filter = _cfg_get(
-                cfg, "skip_should_compress_filter", skip_should_compress_filter,
+                cfg,
+                "skip_should_compress_filter",
+                skip_should_compress_filter,
             )
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
@@ -236,8 +269,7 @@ class MambaShedderCompressor(BaseCompressor):
         else:
             first_param = next(iter(model.parameters()), None)
             self.target_device = (
-                first_param.device if first_param is not None
-                else torch.device("cpu")
+                first_param.device if first_param is not None else torch.device("cpu")
             )
 
         self.layer_errors: dict[str, float] = {}
@@ -247,28 +279,38 @@ class MambaShedderCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     # Target check (MS-FIX-16: cached)
     # ------------------------------------------------------------------
-    def _is_target_module(self, name: str, module: nn.Module, _debug: bool = False) -> bool:
+    def _is_target_module(
+        self, name: str, module: nn.Module, _debug: bool = False
+    ) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
-            if _debug: logger.info(f"  [skip] {name}: lora/base_layer part")
+            if _debug:
+                logger.info(f"  [skip] {name}: lora/base_layer part")
             return False
 
         cls_name = module.__class__.__name__
         if cls_name in (
-            "DynamicSVDLinear", "SVDLinear", "SVDLinearLayer",
-            "FactorisedLinear", "FactorizedLinear",
-            "LowRankPlusSparseLinear", "MambaShedderPrunedLinear",
+            "DynamicSVDLinear",
+            "SVDLinear",
+            "SVDLinearLayer",
+            "FactorisedLinear",
+            "FactorizedLinear",
+            "LowRankPlusSparseLinear",
+            "MambaShedderPrunedLinear",
         ):
-            if _debug: logger.info(f"  [skip] {name}: already compressed ({cls_name})")
+            if _debug:
+                logger.info(f"  [skip] {name}: already compressed ({cls_name})")
             return False
 
         if not self.skip_should_compress_filter:
             try:
                 if not should_compress_linear(self.model, name):
-                    if _debug: logger.info(f"  [skip] {name}: should_compress_linear=False")
+                    if _debug:
+                        logger.info(f"  [skip] {name}: should_compress_linear=False")
                     return False
             except Exception as e:
-                if _debug: logger.info(f"  [skip] {name}: should_compress_linear raised {e}")
+                if _debug:
+                    logger.info(f"  [skip] {name}: should_compress_linear raised {e}")
                 return False
 
         base_mod = getattr(module, "base_layer", module)
@@ -279,27 +321,33 @@ class MambaShedderCompressor(BaseCompressor):
             or hasattr(base_mod, "nf")
         )
         if not is_linear_like:
-            if _debug: logger.info(f"  [skip] {name}: not linear-like")
+            if _debug:
+                logger.info(f"  [skip] {name}: not linear-like")
             return False
 
         w = getattr(base_mod, "weight", None)
         if w is None:
-            if _debug: logger.info(f"  [skip] {name}: weight None")
+            if _debug:
+                logger.info(f"  [skip] {name}: weight None")
             return False
         if min(w.shape[0], w.shape[1]) < self.min_layer_dim:
-            if _debug: logger.info(f"  [skip] {name}: dim too small {tuple(w.shape)}")
+            if _debug:
+                logger.info(f"  [skip] {name}: dim too small {tuple(w.shape)}")
             return False
 
         if self.target_attention_only and not any(k in name_lower for k in _ATTN_NAMES):
-            if _debug: logger.info(f"  [skip] {name}: not attention")
+            if _debug:
+                logger.info(f"  [skip] {name}: not attention")
             return False
 
         if self.target_modules is not None:
             ok = any(t in name for t in self.target_modules)
-            if not ok and _debug: logger.info(f"  [skip] {name}: not in target_modules")
+            if not ok and _debug:
+                logger.info(f"  [skip] {name}: not in target_modules")
             return ok
 
-        if _debug: logger.info(f"  [TARGET] {name}: shape={tuple(w.shape)}")
+        if _debug:
+            logger.info(f"  [TARGET] {name}: shape={tuple(w.shape)}")
         return True
 
     # ------------------------------------------------------------------
@@ -317,6 +365,7 @@ class MambaShedderCompressor(BaseCompressor):
                     if inp.dim() >= 2 and inp.shape[0] * inp.shape[1] > 32768:
                         inp = inp.reshape(-1, inp.shape[-1])[:32768].unsqueeze(0)
                     accum.setdefault(layer_name, []).append(inp.cpu())
+
             return hook
 
         target_set = set(target_names)
@@ -392,8 +441,13 @@ class MambaShedderCompressor(BaseCompressor):
         container_attr = None
 
         candidates = [
-            "backbone.layers", "transformer.layer", "transformer.h",
-            "model.layers", "encoder.layer", "layers", "h",
+            "backbone.layers",
+            "transformer.layer",
+            "transformer.h",
+            "model.layers",
+            "encoder.layer",
+            "layers",
+            "h",
         ]
 
         def _resolve(path: str):
@@ -474,20 +528,34 @@ class MambaShedderCompressor(BaseCompressor):
                             hidden = getattr(cfg, "hidden_size", None) if cfg else None
                             if hidden is None:
                                 first_lin = next(
-                                    (m for m in self.model.modules()
-                                     if isinstance(m, nn.Linear)), None
+                                    (
+                                        m
+                                        for m in self.model.modules()
+                                        if isinstance(m, nn.Linear)
+                                    ),
+                                    None,
                                 )
                                 hidden = getattr(first_lin, "in_features", 8)
                             dt = next(self.model.parameters()).dtype
-                            self.model(torch.randn(1, 8, hidden, device=self.target_device, dtype=dt))
+                            self.model(
+                                torch.randn(
+                                    1, 8, hidden, device=self.target_device, dtype=dt
+                                )
+                            )
             except Exception as e:
-                logger.warning("MambaShedder: shedding validation failed (%s); reverting.", e)
+                logger.warning(
+                    "MambaShedder: shedding validation failed (%s); reverting.", e
+                )
                 setattr(container_parent, container_attr, old_container)
                 return 0
 
         shed_done = orig_len - len(new_layers)
-        logger.info("MambaShedder: shed %d layers (%d → %d).",
-                    shed_done, orig_len, len(new_layers))
+        logger.info(
+            "MambaShedder: shed %d layers (%d → %d).",
+            shed_done,
+            orig_len,
+            len(new_layers),
+        )
         self.model._mamba_shed_done = True
         return shed_done
 
@@ -555,7 +623,7 @@ class MambaShedderCompressor(BaseCompressor):
                 try:
                     act_flat = act.reshape(-1, act.shape[-1]).float().to(device)
                     if act_flat.shape[-1] == d_in:
-                        fisher = (act_flat ** 2).mean(dim=0).clamp(min=1e-8)
+                        fisher = (act_flat**2).mean(dim=0).clamp(min=1e-8)
                         sens = fisher.sqrt()
                         used_act_sensitivity = True
                     else:
@@ -624,7 +692,9 @@ class MambaShedderCompressor(BaseCompressor):
                 if rel_err > self.max_error and self.fallback_to_original:
                     logger.warning(
                         "MambaShedder: err %.4f on %s > %.4f; keeping original.",
-                        rel_err, name, self.max_error,
+                        rel_err,
+                        name,
+                        self.max_error,
                     )
                     total_comp_bytes += orig_bytes
                     continue
@@ -632,8 +702,10 @@ class MambaShedderCompressor(BaseCompressor):
                 bias_kept = None
                 if getattr(base_mod, "bias", None) is not None:
                     b_full = base_mod.bias.data.float()
-                    bias_kept = b_full.index_select(0, keep_idx).contiguous().to(
-                        dtype=dtype, device=device
+                    bias_kept = (
+                        b_full.index_select(0, keep_idx)
+                        .contiguous()
+                        .to(dtype=dtype, device=device)
                     )
 
                 # Existing LoRA
@@ -654,21 +726,38 @@ class MambaShedderCompressor(BaseCompressor):
                 )
 
                 # Preserve LoRA weights if shapes match.
-                if (lora_A_src is not None and lora_B_src is not None
-                        and new_layer.lora_A is not None):
+                if (
+                    lora_A_src is not None
+                    and lora_B_src is not None
+                    and new_layer.lora_A is not None
+                ):
                     with torch.no_grad():
-                        src_A = (lora_A_src.weight.data
-                                 if hasattr(lora_A_src, "weight")
-                                 else lora_A_src.data)
-                        src_B = (lora_B_src.weight.data
-                                 if hasattr(lora_B_src, "weight")
-                                 else lora_B_src.data)
-                        if (src_A.shape == new_layer.lora_A.shape
-                                and src_B.shape == new_layer.lora_B.shape):
-                            new_layer.lora_A.copy_(src_A.to(new_layer.lora_A.device,
-                                                              dtype=new_layer.lora_A.dtype))
-                            new_layer.lora_B.copy_(src_B.to(new_layer.lora_B.device,
-                                                              dtype=new_layer.lora_B.dtype))
+                        src_A = (
+                            lora_A_src.weight.data
+                            if hasattr(lora_A_src, "weight")
+                            else lora_A_src.data
+                        )
+                        src_B = (
+                            lora_B_src.weight.data
+                            if hasattr(lora_B_src, "weight")
+                            else lora_B_src.data
+                        )
+                        if (
+                            src_A.shape == new_layer.lora_A.shape
+                            and src_B.shape == new_layer.lora_B.shape
+                        ):
+                            new_layer.lora_A.copy_(
+                                src_A.to(
+                                    new_layer.lora_A.device,
+                                    dtype=new_layer.lora_A.dtype,
+                                )
+                            )
+                            new_layer.lora_B.copy_(
+                                src_B.to(
+                                    new_layer.lora_B.device,
+                                    dtype=new_layer.lora_B.dtype,
+                                )
+                            )
 
                 # Splice with wrapper preservation (MS-FIX-18)
                 if hasattr(module, "base_layer"):
@@ -704,8 +793,12 @@ class MambaShedderCompressor(BaseCompressor):
                         hidden = getattr(cfg, "hidden_size", None) if cfg else None
                         if hidden is None:
                             first_lin = next(
-                                (m for m in self.model.modules()
-                                 if isinstance(m, nn.Linear)), None
+                                (
+                                    m
+                                    for m in self.model.modules()
+                                    if isinstance(m, nn.Linear)
+                                ),
+                                None,
                             )
                             hidden = getattr(first_lin, "in_features", 8)
                         dt = next(self.model.parameters()).dtype
@@ -724,16 +817,15 @@ class MambaShedderCompressor(BaseCompressor):
 
         avg_err = (
             sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
-            if self.layer_errors else 0.0
+            if self.layer_errors
+            else 0.0
         )
 
         storage_ratio = (
-            total_orig_bytes / max(1, total_comp_bytes)
-            if total_comp_bytes > 0 else 1.0
+            total_orig_bytes / max(1, total_comp_bytes) if total_comp_bytes > 0 else 1.0
         )
         effective_ratio = (
-            total_comp_bytes / max(1, total_orig_bytes)
-            if total_orig_bytes > 0 else 1.0
+            total_comp_bytes / max(1, total_orig_bytes) if total_orig_bytes > 0 else 1.0
         )
 
         try:
@@ -741,35 +833,40 @@ class MambaShedderCompressor(BaseCompressor):
         except Exception:
             stats = {}
 
-        stats.update({
-            "pruned_layers": pruned_layers_count,
-            "shed_layers": shed_done,
-            "sparsity_target": self.sparsity,
-            "structured_24": self.structured_24,
-            "max_error": self.max_error,
-            "fallback_to_original": self.fallback_to_original,
-            "avg_reconstruction_error": avg_err,
-            "layer_errors": self.layer_errors,
-            "layer_details": layer_details,
-            "orig_storage_bytes": total_orig_bytes,
-            "comp_storage_bytes": total_comp_bytes,
-            "storage_compression_ratio": round(storage_ratio, 3),
-            "storage_reduction_pct": round(100.0 * (1.0 - effective_ratio), 2),
-            "effective_parameter_ratio": round(effective_ratio, 4),
-            "forward_check_success": forward_check_success,
-            "method": "mamba_shedder_sensitivity",
-            "note": (
-                "Channel pruning now replaces target layers with "
-                "MambaShedderPrunedLinear (real storage reduction). "
-                "2:4 sparsity stores dense weights, so its storage "
-                "compression ratio stays at 1.0."
-            ),
-        })
+        stats.update(
+            {
+                "pruned_layers": pruned_layers_count,
+                "shed_layers": shed_done,
+                "sparsity_target": self.sparsity,
+                "structured_24": self.structured_24,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "avg_reconstruction_error": avg_err,
+                "layer_errors": self.layer_errors,
+                "layer_details": layer_details,
+                "orig_storage_bytes": total_orig_bytes,
+                "comp_storage_bytes": total_comp_bytes,
+                "storage_compression_ratio": round(storage_ratio, 3),
+                "storage_reduction_pct": round(100.0 * (1.0 - effective_ratio), 2),
+                "effective_parameter_ratio": round(effective_ratio, 4),
+                "forward_check_success": forward_check_success,
+                "method": "mamba_shedder_sensitivity",
+                "note": (
+                    "Channel pruning now replaces target layers with "
+                    "MambaShedderPrunedLinear (real storage reduction). "
+                    "2:4 sparsity stores dense weights, so its storage "
+                    "compression ratio stays at 1.0."
+                ),
+            }
+        )
         self.stats = stats
 
         logger.info(
             "MambaShedder: %d pruned, %d shed, avg_err=%.4f, storage=%.2fx.",
-            pruned_layers_count, shed_done, avg_err, storage_ratio,
+            pruned_layers_count,
+            shed_done,
+            avg_err,
+            storage_ratio,
         )
         return self.model, stats
 
@@ -783,22 +880,32 @@ class MambaShedderCompressor(BaseCompressor):
 def mamba_shedder_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     sparsity = kwargs.pop(
         "sparsity",
-        _cfg_get(comp_config, "mamba_shedder_sparsity",
-                 _cfg_get(comp_config, "sparsity", 0.2)),
+        _cfg_get(
+            comp_config,
+            "mamba_shedder_sparsity",
+            _cfg_get(comp_config, "sparsity", 0.2),
+        ),
     )
     shed_layers = kwargs.pop(
         "shed_layers",
-        _cfg_get(comp_config, "mamba_shedder_shed_layers",
-                 _cfg_get(comp_config, "shed_layers", 0)),
+        _cfg_get(
+            comp_config,
+            "mamba_shedder_shed_layers",
+            _cfg_get(comp_config, "shed_layers", 0),
+        ),
     )
     structured_24 = kwargs.pop(
         "structured_24",
-        _cfg_get(comp_config, "mamba_shedder_structured_24",
-                 _cfg_get(comp_config, "structured_24", False)),
+        _cfg_get(
+            comp_config,
+            "mamba_shedder_structured_24",
+            _cfg_get(comp_config, "structured_24", False),
+        ),
     )
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.20))
-    fallback = kwargs.pop("fallback_to_original",
-                          _cfg_get(comp_config, "fallback_to_original", True))
+    fallback = kwargs.pop(
+        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
+    )
     target_attention_only = kwargs.pop(
         "target_attention_only",
         _cfg_get(comp_config, "target_attention_only", False),
@@ -811,8 +918,7 @@ def mamba_shedder_factory(model: Any, comp_config: Any = None, **kwargs: Any) ->
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
     tokenizer = kwargs.pop(
         "tokenizer",
-        getattr(model, "tokenizer", None)
-        or _cfg_get(comp_config, "tokenizer", None),
+        getattr(model, "tokenizer", None) or _cfg_get(comp_config, "tokenizer", None),
     )
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 

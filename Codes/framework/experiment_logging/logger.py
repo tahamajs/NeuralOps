@@ -35,7 +35,12 @@ def get_rank(configured_rank: int | None = None) -> int:
     if configured_rank is not None:
         return int(configured_rank)
 
-    for env_key in ("LOCAL_RANK", "RANK", "SLURM_LOCALID", "OMPI_COMM_WORLD_LOCAL_RANK"):
+    for env_key in (
+        "LOCAL_RANK",
+        "RANK",
+        "SLURM_LOCALID",
+        "OMPI_COMM_WORLD_LOCAL_RANK",
+    ):
         val = os.environ.get(env_key)
         if val is not None:
             try:
@@ -48,7 +53,15 @@ def get_rank(configured_rank: int | None = None) -> int:
 
         if dist.is_available() and dist.is_initialized():
             return dist.get_rank()
-    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+    except (
+        AttributeError,
+        KeyError,
+        RuntimeError,
+        TypeError,
+        ValueError,
+        OSError,
+        ImportError,
+    ):
         pass
 
     return 0
@@ -85,7 +98,15 @@ def shutdown_logging() -> None:
     for listener in _ACTIVE_LISTENERS:
         try:
             listener.stop()
-        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+        except (
+            AttributeError,
+            KeyError,
+            RuntimeError,
+            TypeError,
+            ValueError,
+            OSError,
+            ImportError,
+        ):
             pass
     _ACTIVE_LISTENERS.clear()
 
@@ -133,7 +154,9 @@ def setup_logging(config: LoggingConfig | None = None) -> logging.Logger:
         if cfg.rank_specific_logs:
             fname = f"rank_{rank}.log"
         else:
-            fname = f"{cfg.experiment_name}_{cfg.run_id or ''}_rank_{rank}.log".strip("_")
+            fname = f"{cfg.experiment_name}_{cfg.run_id or ''}_rank_{rank}.log".strip(
+                "_"
+            )
 
         log_file_path = os.path.join(cfg.log_dir, fname)
         fh = RotatingFileHandler(
@@ -151,7 +174,9 @@ def setup_logging(config: LoggingConfig | None = None) -> logging.Logger:
         queue_handler = QueueHandler(log_queue)
         root.addHandler(queue_handler)
 
-        listener = QueueListener(log_queue, *destination_handlers, respect_handler_level=True)
+        listener = QueueListener(
+            log_queue, *destination_handlers, respect_handler_level=True
+        )
         listener.start()
         _ACTIVE_LISTENERS.append(listener)
     else:

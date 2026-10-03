@@ -1,7 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.attentions.block_transformer_hiba import BlockTransformerHIBA, inject_block_transformer_hiba
+from framework.attentions.block_transformer_hiba import (
+    BlockTransformerHIBA, inject_block_transformer_hiba)
 
 
 class MockConfig:

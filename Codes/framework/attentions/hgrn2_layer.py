@@ -12,12 +12,13 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.adapters import UniversalAdapter
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
+
 try:
     from framework.core.triton_kernels.hgrn2_scan import hgrn2_scan_triton
+
     HAS_TRITON_HGRN2 = True
     logger = logging.getLogger(__name__)
     logger.info("HGRN2: Triton scan available")
@@ -67,6 +68,7 @@ class HGRN2Layer(BaseAttention):
     """
 
     is_custom_attention: bool = True
+
     def __init__(
         self,
         config: Any | None = None,
@@ -88,7 +90,15 @@ class HGRN2Layer(BaseAttention):
                 if isinstance(config, int):
                     d_model = config
                 elif config is not None:
-                    d_model = _cfg_get(config, "hidden_size", _cfg_get(config, "d_model", _cfg_get(config, "n_embd", _cfg_get(config, "dim", None))))
+                    d_model = _cfg_get(
+                        config,
+                        "hidden_size",
+                        _cfg_get(
+                            config,
+                            "d_model",
+                            _cfg_get(config, "n_embd", _cfg_get(config, "dim", None)),
+                        ),
+                    )
             if d_model is None:
                 d_model = kwargs.get("dim", 128)
 
@@ -102,7 +112,20 @@ class HGRN2Layer(BaseAttention):
         self.freeze_base: bool = freeze_base
 
         _mt = str(_cfg_get(config, "model_type", "") or "").lower()
-        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        _decoder_prefixes = (
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
+        )
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -117,7 +140,9 @@ class HGRN2Layer(BaseAttention):
         self.is_nested_encoder: bool = False
         self.lora_rank = lora_rank if lora_rank is not None else 16
         self.lora_alpha = lora_alpha
-        self.lora_scaling = (self.lora_alpha / max(1, self.lora_rank)) if self.lora_rank > 0 else 1.0
+        self.lora_scaling = (
+            (self.lora_alpha / max(1, self.lora_rank)) if self.lora_rank > 0 else 1.0
+        )
 
         self.forget_gate = nn.Linear(self.d_model, self.d_model, bias=True)
         self.input_gate = nn.Linear(self.d_model, self.d_model, bias=True)
@@ -137,9 +162,13 @@ class HGRN2Layer(BaseAttention):
 
         # LoRA Adapters
         if self.lora_rank > 0:
-            self.v_lora_A = nn.Parameter(torch.randn(self.lora_rank, self.d_model) * 0.01)
+            self.v_lora_A = nn.Parameter(
+                torch.randn(self.lora_rank, self.d_model) * 0.01
+            )
             self.v_lora_B = nn.Parameter(torch.zeros(self.d_model, self.lora_rank))
-            self.out_lora_A = nn.Parameter(torch.randn(self.lora_rank, self.d_model) * 0.01)
+            self.out_lora_A = nn.Parameter(
+                torch.randn(self.lora_rank, self.d_model) * 0.01
+            )
             self.out_lora_B = nn.Parameter(torch.zeros(self.d_model, self.lora_rank))
         else:
             self.register_parameter("v_lora_A", None)
@@ -234,7 +263,9 @@ class HGRN2Layer(BaseAttention):
                         break
 
         # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
-        elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
+        elif (
+            hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj")
+        ):
             w_q, b_q = _unpack_weight_bias(src.q_proj)
             w_k, b_k = _unpack_weight_bias(src.k_proj)
             w_v, b_v = _unpack_weight_bias(src.v_proj)
@@ -267,7 +298,9 @@ class HGRN2Layer(BaseAttention):
             except Exception as ex:
                 logger.debug("UniversalAdapter fallback failed: %s", ex)
 
-        def _copy_param(target_linear: nn.Linear, w: torch.Tensor | None, b: torch.Tensor | None):
+        def _copy_param(
+            target_linear: nn.Linear, w: torch.Tensor | None, b: torch.Tensor | None
+        ):
             if w is None:
                 return
             with torch.no_grad():
@@ -281,7 +314,8 @@ class HGRN2Layer(BaseAttention):
                     tw.data[:min_r, :min_c].copy_(w[:min_r, :min_c].to(tw.dtype))
                     logger.warning(
                         "Partial weight copy: source %s → target %s",
-                        tuple(w.shape), tuple(tw.shape)
+                        tuple(w.shape),
+                        tuple(tw.shape),
                     )
                 if b is not None and target_linear.bias is not None:
                     tb = target_linear.bias
@@ -356,7 +390,9 @@ class HGRN2Layer(BaseAttention):
             A = torch.cumsum(f_c, dim=1)
             A_diff = A.unsqueeze(2) - A.unsqueeze(1)
             mask = torch.tril(torch.ones(C, C, device=iv.device, dtype=torch.bool))
-            A_diff = torch.where(mask.unsqueeze(0).unsqueeze(-1), A_diff, torch.full_like(A_diff, -1e4))
+            A_diff = torch.where(
+                mask.unsqueeze(0).unsqueeze(-1), A_diff, torch.full_like(A_diff, -1e4)
+            )
             decay_weights = torch.exp(A_diff) * mask.unsqueeze(0).unsqueeze(-1)
             intra = torch.sum(decay_weights * iv_c.unsqueeze(1), dim=2)
             inter = h_prev.unsqueeze(1) * torch.exp(A)
@@ -403,6 +439,7 @@ class HGRN2Layer(BaseAttention):
         # --- PyTorch path with checkpointing ---
         if self.training:
             import torch.utils.checkpoint as cp
+
             h_fwd = cp.checkpoint(self._scan_direction, f, iv, use_reentrant=False)
         else:
             h_fwd = self._scan_direction(f, iv)
@@ -412,14 +449,14 @@ class HGRN2Layer(BaseAttention):
         iv_rev = torch.flip(iv, dims=[1])
         if self.training:
             import torch.utils.checkpoint as cp
-            h_rev = cp.checkpoint(self._scan_direction, f_rev, iv_rev, use_reentrant=False)
+
+            h_rev = cp.checkpoint(
+                self._scan_direction, f_rev, iv_rev, use_reentrant=False
+            )
         else:
             h_rev = self._scan_direction(f_rev, iv_rev)
         h_bwd = torch.flip(h_rev, dims=[1])
         return h_fwd, h_bwd
-
-
-
 
     def forward(
         self,
@@ -454,11 +491,20 @@ class HGRN2Layer(BaseAttention):
         i = torch.sigmoid(self.input_gate(hidden_states)).to(target_dtype)
         input_scale = ((1.0 - f) * i).to(target_dtype)
         v = self.v_proj(hidden_states).to(target_dtype)
-        if self.lora_rank > 0 and self.v_lora_A is not None and self.v_lora_B is not None:
-            v_lora = torch.matmul(
-                torch.matmul(hidden_states, self.v_lora_A.t().contiguous().to(target_dtype)),
-                self.v_lora_B.t().contiguous().to(target_dtype),
-            ) * self.lora_scaling
+        if (
+            self.lora_rank > 0
+            and self.v_lora_A is not None
+            and self.v_lora_B is not None
+        ):
+            v_lora = (
+                torch.matmul(
+                    torch.matmul(
+                        hidden_states, self.v_lora_A.t().contiguous().to(target_dtype)
+                    ),
+                    self.v_lora_B.t().contiguous().to(target_dtype),
+                )
+                * self.lora_scaling
+            )
             v = v + v_lora
 
         z = self.g_proj(hidden_states).to(target_dtype)
@@ -481,22 +527,35 @@ class HGRN2Layer(BaseAttention):
             h_ctx = (h_fwd + h_bwd).to(target_dtype)
 
         # Context stabilization with token self-value preservation
-        sn_dtype = self.state_norm.weight.dtype if hasattr(self.state_norm, 'weight') and self.state_norm.weight is not None else target_dtype
+        sn_dtype = (
+            self.state_norm.weight.dtype
+            if hasattr(self.state_norm, "weight") and self.state_norm.weight is not None
+            else target_dtype
+        )
         h_norm = self.state_norm(h_ctx.to(sn_dtype)).to(target_dtype)
         gated = ((0.5 * v + 0.5 * h_norm) * F.silu(z)).to(target_dtype)
         out = self.out_proj(gated).to(target_dtype)
-        if self.lora_rank > 0 and self.out_lora_A is not None and self.out_lora_B is not None:
-            out_lora = torch.matmul(
-                torch.matmul(gated, self.out_lora_A.t().contiguous().to(target_dtype)),
-                self.out_lora_B.t().contiguous().to(target_dtype),
-            ) * self.lora_scaling
+        if (
+            self.lora_rank > 0
+            and self.out_lora_A is not None
+            and self.out_lora_B is not None
+        ):
+            out_lora = (
+                torch.matmul(
+                    torch.matmul(
+                        gated, self.out_lora_A.t().contiguous().to(target_dtype)
+                    ),
+                    self.out_lora_B.t().contiguous().to(target_dtype),
+                )
+                * self.lora_scaling
+            )
             out = out + out_lora
 
         if out.shape[-1] != hidden_states.shape[-1]:
             if out.shape[-1] < hidden_states.shape[-1]:
                 out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
             else:
-                out = out[..., :hidden_states.shape[-1]]
+                out = out[..., : hidden_states.shape[-1]]
 
         if attention_mask is not None and mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
@@ -600,9 +659,15 @@ def inject_hgrn2_layer(
         return None
 
     if target is not None:
-        if is_nested_target and hasattr(target, "attention") and hasattr(target.attention, "self"):
+        if (
+            is_nested_target
+            and hasattr(target, "attention")
+            and hasattr(target.attention, "self")
+        ):
             target.attention.self = new_layer
-            if hasattr(target.attention, "output") and hasattr(target.attention.output, "dense"):
+            if hasattr(target.attention, "output") and hasattr(
+                target.attention.output, "dense"
+            ):
                 target.attention.output.dense = nn.Identity()
         elif hasattr(target, "attention"):
             target.attention = new_layer

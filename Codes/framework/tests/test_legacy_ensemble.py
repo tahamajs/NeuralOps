@@ -1,5 +1,6 @@
 import sys
 import warnings
+
 import torch
 import torch.nn as nn
 
@@ -11,9 +12,7 @@ def test_legacy_import_works():
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         from framework.attentions.legacy_ensemble import (
-            SmartWeightedEnsemble,
-            TaskAwareAttention,
-        )
+            SmartWeightedEnsemble, TaskAwareAttention)
         assert len(w) >= 1, "Expected DeprecationWarning"
     print("[OK] test_legacy_import_works")
 

@@ -12,7 +12,6 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.adapters import UniversalAdapter
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
@@ -23,11 +22,17 @@ except ImportError:
     try:
         from framework.core.gqa_utils import repeat_kv
     except ImportError:
+
         def repeat_kv(hidden_states, n_rep):
             if n_rep == 1:
                 return hidden_states
             b, h, s, d = hidden_states.shape
-            return hidden_states[:, :, None, :, :].expand(b, h, n_rep, s, d).reshape(b, h * n_rep, s, d)
+            return (
+                hidden_states[:, :, None, :, :]
+                .expand(b, h, n_rep, s, d)
+                .reshape(b, h * n_rep, s, d)
+            )
+
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +52,7 @@ def _rotate_half(x):
     d = x.shape[-1]
     half = d // 2
     x1 = x[..., :half]
-    x2 = x[..., half:2 * half]
+    x2 = x[..., half : 2 * half]
     rotated = torch.cat((-x2, x1), dim=-1)
     if d % 2 == 1:
         rotated = torch.cat([rotated, x[..., -1:]], dim=-1)
@@ -68,17 +73,31 @@ def apply_rotary_pos_emb(q, k, cos, sin):
         sin = sin.unsqueeze(0)
 
     if cos.shape[-2] != q.shape[-2]:
-        raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}")
+        raise ValueError(
+            f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}"
+        )
 
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
-        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
+            _rotate_half(q_rot) * sin.to(q_rot.dtype)
+        )
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
+            _rotate_half(k_rot) * sin.to(k_rot.dtype)
+        )
+        q = (
+            torch.cat([q_rot_embed, q_pass], dim=-1)
+            if q_pass.numel() > 0
+            else q_rot_embed
+        )
+        k = (
+            torch.cat([k_rot_embed, k_pass], dim=-1)
+            if k_pass.numel() > 0
+            else k_rot_embed
+        )
     else:
         cos_cut = cos[..., :head_dim].to(q.dtype)
         sin_cut = sin[..., :head_dim].to(q.dtype)
@@ -93,9 +112,17 @@ def apply_rotary_pos_emb(q, k, cos, sin):
 # LoRALinear
 # ===========================================================================
 class LoRALinear(nn.Module):
-    def __init__(self, in_features, out_features, bias=True,
-                 lora_rank=0, lora_alpha=1.0, freeze_base=True,
-                 device=None, dtype=None):
+    def __init__(
+        self,
+        in_features,
+        out_features,
+        bias=True,
+        lora_rank=0,
+        lora_alpha=1.0,
+        freeze_base=True,
+        device=None,
+        dtype=None,
+    ):
         super().__init__()
         self.in_features = int(in_features)
         self.out_features = int(out_features)
@@ -117,8 +144,12 @@ class LoRALinear(nn.Module):
             nn.init.uniform_(self.bias, -bound, bound)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, in_features, **factory))
-            self.lora_B = nn.Parameter(torch.empty(out_features, self.lora_rank, **factory))
+            self.lora_A = nn.Parameter(
+                torch.empty(self.lora_rank, in_features, **factory)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty(out_features, self.lora_rank, **factory)
+            )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B)
             self.lora_A.requires_grad = True
@@ -134,11 +165,17 @@ class LoRALinear(nn.Module):
 
     def forward(self, x):
         w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
-        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
+        b = (
+            self.bias.to(x.dtype)
+            if (self.bias is not None and self.bias.dtype != x.dtype)
+            else self.bias
+        )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            bb = (
+                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            )
             out = out + F.linear(F.linear(x, a), bb) * self.scaling
         return out
 
@@ -155,9 +192,15 @@ class TokenCompressedAttention(BaseAttention):
 
     def __init__(
         self,
-        config=None, rank=64, compression_ratio=0.5,
-        pretrained_attn=None, lora_rank=None, lora_alpha=None,
-        comp_config=None, is_decoder=None, **kwargs,
+        config=None,
+        rank=64,
+        compression_ratio=0.5,
+        pretrained_attn=None,
+        lora_rank=None,
+        lora_alpha=None,
+        comp_config=None,
+        is_decoder=None,
+        **kwargs,
     ):
         try:
             super().__init__(config, rank)
@@ -169,10 +212,15 @@ class TokenCompressedAttention(BaseAttention):
         # ---- hidden_size ----
         dim = None
         if config is not None and not isinstance(config, int):
-            dim = _cfg_get(config, "hidden_size",
-                  _cfg_get(config, "dim", _cfg_get(config, "d_model", None)))
+            dim = _cfg_get(
+                config,
+                "hidden_size",
+                _cfg_get(config, "dim", _cfg_get(config, "d_model", None)),
+            )
         if dim is None and comp_config is not None:
-            dim = _cfg_get(comp_config, "hidden_size", _cfg_get(comp_config, "dim", None))
+            dim = _cfg_get(
+                comp_config, "hidden_size", _cfg_get(comp_config, "dim", None)
+            )
         if dim is None and src is not None:
             dim = getattr(src, "hidden_size", getattr(src, "embed_dim", None))
             if dim is None:
@@ -192,15 +240,23 @@ class TokenCompressedAttention(BaseAttention):
         # ---- num_heads ----
         num_heads = kwargs.get("num_heads")
         if num_heads is None and config is not None and not isinstance(config, int):
-            num_heads = _cfg_get(config, "num_attention_heads",
-                          _cfg_get(config, "n_heads",
-                          _cfg_get(config, "num_heads", None)))
+            num_heads = _cfg_get(
+                config,
+                "num_attention_heads",
+                _cfg_get(config, "n_heads", _cfg_get(config, "num_heads", None)),
+            )
         if num_heads is None and comp_config is not None:
-            num_heads = _cfg_get(comp_config, "num_attention_heads", _cfg_get(comp_config, "n_heads", None))
+            num_heads = _cfg_get(
+                comp_config,
+                "num_attention_heads",
+                _cfg_get(comp_config, "n_heads", None),
+            )
         if num_heads is None and src is not None:
-            num_heads = getattr(src, "num_heads",
-                        getattr(src, "num_attention_heads",
-                        getattr(src, "n_head", None)))
+            num_heads = getattr(
+                src,
+                "num_heads",
+                getattr(src, "num_attention_heads", getattr(src, "n_head", None)),
+            )
         if num_heads is None:
             num_heads = max(1, self.dim // 64)
         self.num_heads = max(1, int(num_heads))
@@ -218,11 +274,19 @@ class TokenCompressedAttention(BaseAttention):
         # ---- num_kv_heads ----
         cfg_kv = None
         if config is not None and not isinstance(config, int):
-            cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
+            cfg_kv = _cfg_get(
+                config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None)
+            )
         if cfg_kv is None and comp_config is not None:
-            cfg_kv = _cfg_get(comp_config, "num_key_value_heads", _cfg_get(comp_config, "num_kv_heads", None))
+            cfg_kv = _cfg_get(
+                comp_config,
+                "num_key_value_heads",
+                _cfg_get(comp_config, "num_kv_heads", None),
+            )
         if cfg_kv is None and src is not None:
-            cfg_kv = getattr(src, "num_key_value_heads", getattr(src, "num_kv_heads", None))
+            cfg_kv = getattr(
+                src, "num_key_value_heads", getattr(src, "num_kv_heads", None)
+            )
         self.num_kv_heads = int(cfg_kv) if cfg_kv is not None else self.num_heads
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
         self.num_key_value_groups = max(1, self.num_heads // self.num_kv_heads)
@@ -233,10 +297,12 @@ class TokenCompressedAttention(BaseAttention):
         self.all_kv_head_size = self.kv_head_size
 
         # ---- compression ratio ----
-        self.compression_ratio = float(kwargs.get(
-            "compression_ratio",
-            _cfg_get(comp_config, "compression_ratio", compression_ratio),
-        ))
+        self.compression_ratio = float(
+            kwargs.get(
+                "compression_ratio",
+                _cfg_get(comp_config, "compression_ratio", compression_ratio),
+            )
+        )
         self.compression_ratio = max(0.1, min(1.0, self.compression_ratio))
 
         # ---- LoRA config ----
@@ -267,11 +333,22 @@ class TokenCompressedAttention(BaseAttention):
             self.is_decoder = True
         elif config is not None and not isinstance(config, int):
             mt = str(_cfg_get(config, "model_type", "")).lower()
-            self.is_decoder = (
-                bool(_cfg_get(config, "is_decoder", False))
-                or any(mt.startswith(p) for p in (
-                    "gpt", "qwen", "llama", "mistral", "gemma",
-                    "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
+            self.is_decoder = bool(_cfg_get(config, "is_decoder", False)) or any(
+                mt.startswith(p)
+                for p in (
+                    "gpt",
+                    "qwen",
+                    "llama",
+                    "mistral",
+                    "gemma",
+                    "phi",
+                    "opt",
+                    "bloom",
+                    "falcon",
+                    "olmo",
+                    "mpt",
+                    "stablelm",
+                )
             )
         else:
             self.is_decoder = False
@@ -291,18 +368,46 @@ class TokenCompressedAttention(BaseAttention):
                     break
 
         # ---- projections ----
-        self.q_lin = LoRALinear(self.dim, self.q_head_size, bias=True,
-                                 lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                 freeze_base=True, device=proj_device, dtype=proj_dtype)
-        self.k_lin = LoRALinear(self.dim, self.kv_head_size, bias=True,
-                                 lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                 freeze_base=True, device=proj_device, dtype=proj_dtype)
-        self.v_lin = LoRALinear(self.dim, self.kv_head_size, bias=True,
-                                 lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                 freeze_base=True, device=proj_device, dtype=proj_dtype)
-        self.out_lin = LoRALinear(self.q_head_size, self.dim, bias=True,
-                                   lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                   freeze_base=True, device=proj_device, dtype=proj_dtype)
+        self.q_lin = LoRALinear(
+            self.dim,
+            self.q_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+            device=proj_device,
+            dtype=proj_dtype,
+        )
+        self.k_lin = LoRALinear(
+            self.dim,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+            device=proj_device,
+            dtype=proj_dtype,
+        )
+        self.v_lin = LoRALinear(
+            self.dim,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+            device=proj_device,
+            dtype=proj_dtype,
+        )
+        self.out_lin = LoRALinear(
+            self.q_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+            device=proj_device,
+            dtype=proj_dtype,
+        )
 
         self.q_proj = self.q_lin
         self.k_proj = self.k_lin
@@ -324,9 +429,11 @@ class TokenCompressedAttention(BaseAttention):
             nn.init.zeros_(self.score_net[2].bias)
 
         dropout_p = (
-            _cfg_get(config, "dropout",
-                     _cfg_get(config, "attention_probs_dropout_prob", 0.1))
-            if config is not None and not isinstance(config, int) else 0.1
+            _cfg_get(
+                config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1)
+            )
+            if config is not None and not isinstance(config, int)
+            else 0.1
         )
         self.dropout = nn.Dropout(dropout_p)
 
@@ -335,15 +442,24 @@ class TokenCompressedAttention(BaseAttention):
 
     # ---- aliases ----
     @property
-    def dense(self): return self.out_lin
+    def dense(self):
+        return self.out_lin
+
     @property
-    def c_proj(self): return self.out_lin
+    def c_proj(self):
+        return self.out_lin
+
     @property
-    def o_proj(self): return self.out_lin
+    def o_proj(self):
+        return self.out_lin
+
     @property
-    def q_lin_alias(self): return self.q_lin
+    def q_lin_alias(self):
+        return self.q_lin
+
     @property
-    def out_proj_alias(self): return self.out_lin
+    def out_proj_alias(self):
+        return self.out_lin
 
     # ------------------------------------------------------------------
     # copy_weights
@@ -368,7 +484,9 @@ class TokenCompressedAttention(BaseAttention):
                 self.is_nested_encoder = True
                 src = old_attn.self
                 if hasattr(old_attn.output, "dense"):
-                    dense = getattr(old_attn.output.dense, "base_layer", old_attn.output.dense)
+                    dense = getattr(
+                        old_attn.output.dense, "base_layer", old_attn.output.dense
+                    )
                     w_o = dense.weight.detach()
                     b_o = dense.bias.detach() if dense.bias is not None else None
             else:
@@ -383,23 +501,33 @@ class TokenCompressedAttention(BaseAttention):
                 c_proj = _unwrap(src.c_proj)
                 cw = c_attn.weight.detach()
                 cb = c_attn.bias.detach() if c_attn.bias is not None else None
-                if cw.dim() == 2 and cw.shape[0] == self.dim and cw.shape[1] != self.dim:
+                if (
+                    cw.dim() == 2
+                    and cw.shape[0] == self.dim
+                    and cw.shape[1] != self.dim
+                ):
                     cw = cw.t().contiguous()
                 qd, kd, vd = self.q_head_size, self.kv_head_size, self.kv_head_size
                 w_q = cw[:qd]
-                w_k = cw[qd:qd + kd]
-                w_v = cw[qd + kd:qd + kd + vd]
+                w_k = cw[qd : qd + kd]
+                w_v = cw[qd + kd : qd + kd + vd]
                 if cb is not None:
                     b_q = cb[:qd]
-                    b_k = cb[qd:qd + kd]
-                    b_v = cb[qd + kd:qd + kd + vd]
+                    b_k = cb[qd : qd + kd]
+                    b_v = cb[qd + kd : qd + kd + vd]
                 ow = c_proj.weight.detach()
-                if ow.dim() == 2 and ow.shape[0] == self.dim and ow.shape[1] != self.dim:
+                if (
+                    ow.dim() == 2
+                    and ow.shape[0] == self.dim
+                    and ow.shape[1] != self.dim
+                ):
                     ow = ow.t().contiguous()
                 w_o = ow
                 b_o = c_proj.bias.detach() if c_proj.bias is not None else None
 
-            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
+            elif (
+                hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value")
+            ):
                 q_l, k_l, v_l = _unwrap(src.query), _unwrap(src.key), _unwrap(src.value)
                 w_q = q_l.weight.detach()
                 b_q = q_l.bias.detach() if q_l.bias is not None else None
@@ -415,8 +543,16 @@ class TokenCompressedAttention(BaseAttention):
                             b_o = p.bias.detach() if p.bias is not None else None
                             break
 
-            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
-                q_l, k_l, v_l = _unwrap(src.q_proj), _unwrap(src.k_proj), _unwrap(src.v_proj)
+            elif (
+                hasattr(src, "q_proj")
+                and hasattr(src, "k_proj")
+                and hasattr(src, "v_proj")
+            ):
+                q_l, k_l, v_l = (
+                    _unwrap(src.q_proj),
+                    _unwrap(src.k_proj),
+                    _unwrap(src.v_proj),
+                )
                 w_q = q_l.weight.detach()
                 b_q = q_l.bias.detach() if q_l.bias is not None else None
                 w_k = k_l.weight.detach()
@@ -428,8 +564,16 @@ class TokenCompressedAttention(BaseAttention):
                     w_o = o_l.weight.detach()
                     b_o = o_l.bias.detach() if o_l.bias is not None else None
 
-            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
-                q_l, k_l, v_l = _unwrap(src.q_lin), _unwrap(src.k_lin), _unwrap(src.v_lin)
+            elif (
+                hasattr(src, "q_lin")
+                and hasattr(src, "k_lin")
+                and hasattr(src, "v_lin")
+            ):
+                q_l, k_l, v_l = (
+                    _unwrap(src.q_lin),
+                    _unwrap(src.k_lin),
+                    _unwrap(src.v_lin),
+                )
                 w_q = q_l.weight.detach()
                 b_q = q_l.bias.detach() if q_l.bias is not None else None
                 w_k = k_l.weight.detach()
@@ -444,18 +588,26 @@ class TokenCompressedAttention(BaseAttention):
             if w_q is None or w_k is None or w_v is None:
                 try:
                     adapter = UniversalAdapter()
-                    if w_q is None: w_q, b_q = adapter.get_weight_bias(src, "q")
-                    if w_k is None: w_k, b_k = adapter.get_weight_bias(src, "k")
-                    if w_v is None: w_v, b_v = adapter.get_weight_bias(src, "v")
-                    if w_o is None: w_o, b_o = adapter.get_weight_bias(src, "o")
+                    if w_q is None:
+                        w_q, b_q = adapter.get_weight_bias(src, "q")
+                    if w_k is None:
+                        w_k, b_k = adapter.get_weight_bias(src, "k")
+                    if w_v is None:
+                        w_v, b_v = adapter.get_weight_bias(src, "v")
+                    if w_o is None:
+                        w_o, b_o = adapter.get_weight_bias(src, "o")
                 except Exception as e:
                     logger.debug("UniversalAdapter fallback failed: %s", e)
 
             missing = []
-            if w_q is None: missing.append("Q")
-            if w_k is None: missing.append("K")
-            if w_v is None: missing.append("V")
-            if w_o is None and not self.is_nested_encoder: missing.append("O")
+            if w_q is None:
+                missing.append("Q")
+            if w_k is None:
+                missing.append("K")
+            if w_v is None:
+                missing.append("V")
+            if w_o is None and not self.is_nested_encoder:
+                missing.append("O")
             if missing:
                 raise RuntimeError(
                     f"TokenCompressedAttention.copy_weights: missing {missing} from {type(old_attn).__name__}"
@@ -466,19 +618,25 @@ class TokenCompressedAttention(BaseAttention):
                     if w.shape == target_layer.weight.shape:
                         target_layer.weight.data.copy_(w.to(target_layer.weight.dtype))
                     elif w.t().contiguous().shape == target_layer.weight.shape:
-                        target_layer.weight.data.copy_(w.t().contiguous().to(target_layer.weight.dtype))
+                        target_layer.weight.data.copy_(
+                            w.t().contiguous().to(target_layer.weight.dtype)
+                        )
                     else:
                         m0 = min(target_layer.weight.shape[0], w.shape[0])
                         m1 = min(target_layer.weight.shape[1], w.shape[1])
                         target_layer.weight.data.zero_()
-                        target_layer.weight.data[:m0, :m1].copy_(w[:m0, :m1].to(target_layer.weight.dtype))
+                        target_layer.weight.data[:m0, :m1].copy_(
+                            w[:m0, :m1].to(target_layer.weight.dtype)
+                        )
                 if b is not None and target_layer.bias is not None:
                     if b.shape == target_layer.bias.shape:
                         target_layer.bias.data.copy_(b.to(target_layer.bias.dtype))
                     else:
                         mb = min(target_layer.bias.shape[0], b.shape[0])
                         target_layer.bias.data.zero_()
-                        target_layer.bias.data[:mb].copy_(b[:mb].to(target_layer.bias.dtype))
+                        target_layer.bias.data[:mb].copy_(
+                            b[:mb].to(target_layer.bias.dtype)
+                        )
                 elif target_layer.bias is not None:
                     target_layer.bias.data.zero_()
                 target_layer.weight.requires_grad = False
@@ -495,7 +653,11 @@ class TokenCompressedAttention(BaseAttention):
     # Token selection
     # ------------------------------------------------------------------
     def _select_compressed_tokens(
-        self, x, k_tensor, v_tensor, valid_mask_2d,
+        self,
+        x,
+        k_tensor,
+        v_tensor,
+        valid_mask_2d,
     ):
         B, L, D = x.shape
         H_kv, Dh = self.num_kv_heads, self.head_dim
@@ -509,7 +671,11 @@ class TokenCompressedAttention(BaseAttention):
         score_dev = next(self.score_net.parameters()).device
         score_dtype = next(self.score_net.parameters()).dtype
         energy = torch.norm(x_f, p=2, dim=-1)
-        learned = self.score_net(x_f.to(score_dev, score_dtype)).squeeze(-1).to(x_f.device, x_f.dtype)
+        learned = (
+            self.score_net(x_f.to(score_dev, score_dtype))
+            .squeeze(-1)
+            .to(x_f.device, x_f.dtype)
+        )
         total_importance = energy + learned
 
         k_keep = max(2, int(math.ceil(L * self.compression_ratio)))
@@ -527,7 +693,9 @@ class TokenCompressedAttention(BaseAttention):
 
         # TC-22: always keep CLS for decoders
         if self.is_decoder:
-            cls_boost = torch.full((B, 1), 1e4, device=x.device, dtype=total_importance.dtype)
+            cls_boost = torch.full(
+                (B, 1), 1e4, device=x.device, dtype=total_importance.dtype
+            )
             total_importance = torch.cat([cls_boost, total_importance[:, 1:]], dim=-1)
 
         _, top_indices = torch.topk(total_importance, k_keep, dim=-1)
@@ -559,10 +727,13 @@ class TokenCompressedAttention(BaseAttention):
         return_dict=True,
         position_embeddings=None,
         layer_idx=0,
-        *args, **kwargs,
+        *args,
+        **kwargs,
     ):
         if encoder_hidden_states is not None:
-            raise NotImplementedError("TokenCompressedAttention: cross-attention not supported.")
+            raise NotImplementedError(
+                "TokenCompressedAttention: cross-attention not supported."
+            )
 
         B, L, D = hidden_states.shape
         H, H_kv, Dh = self.num_heads, self.num_kv_heads, self.head_dim
@@ -580,12 +751,15 @@ class TokenCompressedAttention(BaseAttention):
             cos, sin = position_embeddings
             past_len = 0
             if past_key_value is not None:
-                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
+                if (
+                    isinstance(past_key_value, (tuple, list))
+                    and len(past_key_value) >= 1
+                ):
                     past_len = past_key_value[0].shape[-2]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                     past_len = past_key_value.key_cache[0].shape[-2]
-            cos = cos[..., past_len: past_len + L, :]
-            sin = sin[..., past_len: past_len + L, :]
+            cos = cos[..., past_len : past_len + L, :]
+            sin = sin[..., past_len : past_len + L, :]
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
         # ---- valid mask ----
@@ -608,13 +782,16 @@ class TokenCompressedAttention(BaseAttention):
                 valid_mask_2d = v_mask.any(dim=-2).squeeze(1)
 
         # ---- TC-23: KV-cache mode bypasses compression ----
-        in_kv_cache_mode = (past_key_value is not None and L == 1)
+        in_kv_cache_mode = past_key_value is not None and L == 1
         if in_kv_cache_mode:
             if H_kv != H:
                 k = repeat_kv(k, self.num_key_value_groups)
                 v = repeat_kv(v, self.num_key_value_groups)
             scale = 1.0 / math.sqrt(Dh)
-            scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+            scores = (
+                torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous())
+                * scale
+            )
             attn = F.softmax(scores, dim=-1).to(dtype)
             attn = torch.nan_to_num(attn, nan=0.0)
             attn = self.dropout(attn)
@@ -626,7 +803,10 @@ class TokenCompressedAttention(BaseAttention):
 
         # ---- Token compression ----
         k_comp, v_comp, top_idx, comp_valid = self._select_compressed_tokens(
-            hidden_states, k, v, valid_mask_2d,
+            hidden_states,
+            k,
+            v,
+            valid_mask_2d,
         )
 
         if H_kv != H:
@@ -634,34 +814,37 @@ class TokenCompressedAttention(BaseAttention):
             v_comp = repeat_kv(v_comp, self.num_key_value_groups)
 
         scale = 1.0 / math.sqrt(Dh)
-        scores = torch.matmul(q.float(), k_comp.float().transpose(-2, -1).contiguous()) * scale
+        scores = (
+            torch.matmul(q.float(), k_comp.float().transpose(-2, -1).contiguous())
+            * scale
+        )
 
         # ---- TC-21: causality with fallback ----
         if self.is_decoder:
             q_pos = torch.arange(L, device=device).view(1, 1, L, 1)
             k_orig = top_idx.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, k_keep)
-            causal_mask = (k_orig > q_pos)              # (B, 1, L, k_keep)
+            causal_mask = k_orig > q_pos  # (B, 1, L, k_keep)
             scores = scores.masked_fill(causal_mask, -1e4)
 
             # TC-21: for queries where all kept tokens are future, force-keep
             # the first kept token (which is CLS = index 0 for decoders,
             # guaranteed by TC-22).
-            all_future = causal_mask.all(dim=-1, keepdim=True)   # (B, 1, L, 1)
+            all_future = causal_mask.all(dim=-1, keepdim=True)  # (B, 1, L, 1)
             if all_future.any():
                 # Un-mask the CLS slot for those queries.
-                cls_pos = (top_idx == 0)
+                cls_pos = top_idx == 0
                 cls_slot = cls_pos.long().argmax(dim=-1, keepdim=True)  # (B, 1)
-                cls_slot = cls_slot.unsqueeze(1)                        # (B, 1, 1, 1)
+                cls_slot = cls_slot.unsqueeze(1)  # (B, 1, 1, 1)
                 cls_slot = cls_slot.expand(-1, 1, L, 1)
                 scores = scores.scatter(-1, cls_slot, 0.0)
 
         if comp_valid is not None:
             # Never mask out the CLS slot even if comp_valid is False,
             # because TC-22 forced it in.
-            cm = comp_valid[:, None, None, :]                       # (B, 1, 1, k_keep)
+            cm = comp_valid[:, None, None, :]  # (B, 1, 1, k_keep)
             if self.is_decoder:
                 # Un-mask CLS position
-                cls_mask = (top_idx == 0)[:, None, None, :]         # (B, 1, 1, k_keep)
+                cls_mask = (top_idx == 0)[:, None, None, :]  # (B, 1, 1, k_keep)
                 cm = cm | cls_mask
             scores = scores.masked_fill(~cm, -1e4)
 
@@ -702,8 +885,15 @@ class TokenCompressedAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("inject_token_compressed_attn")
 @ATTENTION_REGISTRY.register("token_compressed_inject")
 def inject_token_compressed_attn(
-    layer=None, model=None, model_config=None, comp_config=None,
-    layer_idx=0, total_layers=12, old_attn=None, _depth=0, **kwargs,
+    layer=None,
+    model=None,
+    model_config=None,
+    comp_config=None,
+    layer_idx=0,
+    total_layers=12,
+    old_attn=None,
+    _depth=0,
+    **kwargs,
 ):
     if _depth > 8:
         logger.warning("inject_token_compressed_attn: max recursion depth exceeded.")
@@ -730,9 +920,15 @@ def inject_token_compressed_attn(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+    elif hasattr(target, "layers") and isinstance(
+        target.layers, (torch.nn.ModuleList, list)
+    ):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -740,8 +936,13 @@ def inject_token_compressed_attn(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_token_compressed_attn(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 num_injected += 1
@@ -759,9 +960,15 @@ def inject_token_compressed_attn(
         if src is None:
             src = target
 
-        if isinstance(src, TokenCompressedAttention) or "TokenCompressed" in src.__class__.__name__:
+        if (
+            isinstance(src, TokenCompressedAttention)
+            or "TokenCompressed" in src.__class__.__name__
+        ):
             return None
-        if "DeltaNet" in src.__class__.__name__ or "LinearAttention" in src.__class__.__name__:
+        if (
+            "DeltaNet" in src.__class__.__name__
+            or "LinearAttention" in src.__class__.__name__
+        ):
             return None
 
         if model_config is None and hasattr(target, "config"):
@@ -769,14 +976,21 @@ def inject_token_compressed_attn(
         if model_config is None and hasattr(src, "config"):
             model_config = src.config
 
-        comp_ratio = float(kwargs.pop("compression_ratio",
-                                       _cfg_get(comp_config, "compression_ratio", 0.5)))
-        lora_rank = kwargs.pop("lora_rank",
-                                _cfg_get(comp_config, "lora_rank",
-                                         _cfg_get(model_config, "lora_rank", 16)))
-        lora_alpha = kwargs.pop("lora_alpha",
-                                 _cfg_get(comp_config, "lora_alpha",
-                                          _cfg_get(model_config, "lora_alpha", 32.0)))
+        comp_ratio = float(
+            kwargs.pop(
+                "compression_ratio", _cfg_get(comp_config, "compression_ratio", 0.5)
+            )
+        )
+        lora_rank = kwargs.pop(
+            "lora_rank",
+            _cfg_get(comp_config, "lora_rank", _cfg_get(model_config, "lora_rank", 16)),
+        )
+        lora_alpha = kwargs.pop(
+            "lora_alpha",
+            _cfg_get(
+                comp_config, "lora_alpha", _cfg_get(model_config, "lora_alpha", 32.0)
+            ),
+        )
         rank = kwargs.pop("rank", _cfg_get(comp_config, "rank", 32))
 
         new_attn = TokenCompressedAttention(
@@ -810,7 +1024,9 @@ def inject_token_compressed_attn(
 
         return new_attn
     except Exception as e:
-        logger.exception("inject_token_compressed_attn failed at layer %d: %s", layer_idx, e)
+        logger.exception(
+            "inject_token_compressed_attn failed at layer %d: %s", layer_idx, e
+        )
         return None
 
 

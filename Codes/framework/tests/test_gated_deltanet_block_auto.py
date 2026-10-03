@@ -1,13 +1,15 @@
+import framework.attentions.gated_deltanet_block
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.gated_deltanet_block
+
 
 def test_gated_deltanet_block_module_present():
     assert hasattr(framework.attentions, 'gated_deltanet_block')
 
 def test_gated_deltanet_block_injection_safe():
-    from framework.attentions.gated_deltanet_block import inject_gated_deltanet_block
+    from framework.attentions.gated_deltanet_block import \
+        inject_gated_deltanet_block
     class DummyLayer(nn.Module):
         def __init__(self):
             super().__init__()

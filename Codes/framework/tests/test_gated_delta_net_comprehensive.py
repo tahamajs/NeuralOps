@@ -1,13 +1,12 @@
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
-from types import SimpleNamespace
-from framework.attentions.gated_delta_net import (
-    GatedDeltaNet,
-    inject_gated_delta_net,
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
+from framework.attentions.gated_delta_net import (GatedDeltaNet, LoRALinear,
+                                                  apply_rotary_pos_emb,
+                                                  inject_gated_delta_net)
+
 
 def test_gated_delta_net_lora_config_independence():
     # 1. config=None, comp_config present

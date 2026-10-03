@@ -1,7 +1,8 @@
+import framework.attentions.hymba_transx
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.hymba_transx
+
 
 def test_hymba_transx_module_present():
     assert hasattr(framework.attentions, 'hymba_transx')

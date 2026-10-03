@@ -1,6 +1,8 @@
 """Verification: Hardcoded String / Shape Scan."""
-import pytest
 from pathlib import Path
+
+import pytest
+
 
 def test_no_hardcoded_roberta_in_core():
     root = Path(__file__).resolve().parent.parent / "core"

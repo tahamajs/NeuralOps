@@ -3,10 +3,7 @@
 import pytest
 import torch
 from framework.datasets_local.extended_lra_loaders import (
-    ListOpsDataset,
-    SequentialCIFAR10Dataset,
-    get_extended_task_dataset,
-)
+    ListOpsDataset, SequentialCIFAR10Dataset, get_extended_task_dataset)
 
 
 def test_listops_dataset_shapes():

@@ -37,10 +37,9 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseAttention
-from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.gqa_utils import repeat_kv
+from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
 
@@ -88,8 +87,12 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
     if rotary_dim < head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_e = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot_e = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q_rot_e = (q_rot * cos.to(q_rot.dtype)) + (
+            _rotate_half(q_rot) * sin.to(q_rot.dtype)
+        )
+        k_rot_e = (k_rot * cos.to(k_rot.dtype)) + (
+            _rotate_half(k_rot) * sin.to(k_rot.dtype)
+        )
         q = torch.cat([q_rot_e, q_pass], dim=-1)
         k = torch.cat([k_rot_e, k_pass], dim=-1)
     else:
@@ -109,6 +112,7 @@ class FactorisedLoRALinear(nn.Module):
 
     Base factors (U, S, V) are frozen parameters (visible in .parameters()).
     """
+
     is_custom_attention: bool = False
 
     def __init__(
@@ -144,24 +148,24 @@ class FactorisedLoRALinear(nn.Module):
         )
 
         if bias:
-            self.bias = nn.Parameter(torch.zeros(out_features, **fk), requires_grad=False)
+            self.bias = nn.Parameter(
+                torch.zeros(out_features, **fk), requires_grad=False
+            )
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty(self.lora_rank, in_features, **fk)
-            )
-            self.lora_B = nn.Parameter(
-                torch.zeros(out_features, self.lora_rank, **fk)
-            )
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, in_features, **fk))
+            self.lora_B = nn.Parameter(torch.zeros(out_features, self.lora_rank, **fk))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B)
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
-    def set_svd_factors(self, W: torch.Tensor, bias: torch.Tensor | None = None) -> None:
+    def set_svd_factors(
+        self, W: torch.Tensor, bias: torch.Tensor | None = None
+    ) -> None:
         with torch.no_grad():
             W_f = W.float()
             if W_f.shape != (self.out_features, self.in_features):
@@ -174,12 +178,18 @@ class FactorisedLoRALinear(nn.Module):
             self.U.data.zero_()
             self.S.data.zero_()
             self.V.data.zero_()
-            self.U.data[:, :r].copy_(U[:, :r].to(device=self.U.device, dtype=self.U.dtype))
+            self.U.data[:, :r].copy_(
+                U[:, :r].to(device=self.U.device, dtype=self.U.dtype)
+            )
             self.S.data[:r].copy_(S[:r].to(device=self.S.device, dtype=self.S.dtype))
-            self.V.data[:, :r].copy_(Vt[:r, :].t().contiguous().to(device=self.V.device, dtype=self.V.dtype))
+            self.V.data[:, :r].copy_(
+                Vt[:r, :].t().contiguous().to(device=self.V.device, dtype=self.V.dtype)
+            )
             if bias is not None and self.bias is not None:
                 n = min(self.bias.numel(), bias.numel())
-                self.bias.data[:n].copy_(bias[:n].to(device=self.bias.device, dtype=self.bias.dtype))
+                self.bias.data[:n].copy_(
+                    bias[:n].to(device=self.bias.device, dtype=self.bias.dtype)
+                )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_dtype = x.dtype
@@ -191,12 +201,18 @@ class FactorisedLoRALinear(nn.Module):
             out = out + self.bias.float()
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             xa = torch.matmul(x_f, self.lora_A.float().t().contiguous())
-            out = out + torch.matmul(xa, self.lora_B.float().t().contiguous()) * self.lora_scaling
+            out = (
+                out
+                + torch.matmul(xa, self.lora_B.float().t().contiguous())
+                * self.lora_scaling
+            )
         return out.to(orig_dtype)
 
     @property
     def weight(self) -> torch.Tensor:
-        W = (self.U.float() * self.S.float().unsqueeze(0)) @ self.V.float().t().contiguous()
+        W = (
+            self.U.float() * self.S.float().unsqueeze(0)
+        ) @ self.V.float().t().contiguous()
         return W
 
     def freeze_base_weights(self) -> None:
@@ -221,6 +237,7 @@ class UnifiedMoE(nn.Module):
     BAM-FIX-02 / FIX-12: expert hidden dim is `dim // (num_experts * 4)`,
     output dim is configurable (default `head_dim`, small).
     """
+
     is_custom_attention: bool = False
 
     def __init__(
@@ -238,7 +255,9 @@ class UnifiedMoE(nn.Module):
         self.num_experts = max(1, int(num_experts))
         self.top_k = min(max(1, int(top_k)), self.num_experts)
         # BAM-FIX-02: default to dim // 4 for compact output
-        self.out_dim = int(output_dim) if output_dim is not None else max(16, self.dim // 4)
+        self.out_dim = (
+            int(output_dim) if output_dim is not None else max(16, self.dim // 4)
+        )
         self.noise_std = float(noise_std)
 
         self.router_ln = nn.LayerNorm(self.dim)
@@ -246,14 +265,16 @@ class UnifiedMoE(nn.Module):
         nn.init.uniform_(self.router.weight, -0.01, 0.01)
 
         hidden_dim = max(16, int(self.out_dim * expert_hidden_mult))
-        self.experts = nn.ModuleList([
-            nn.Sequential(
-                nn.Linear(self.dim, hidden_dim),
-                nn.GELU(),
-                nn.Linear(hidden_dim, self.out_dim),
-            )
-            for _ in range(self.num_experts)
-        ])
+        self.experts = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Linear(self.dim, hidden_dim),
+                    nn.GELU(),
+                    nn.Linear(hidden_dim, self.out_dim),
+                )
+                for _ in range(self.num_experts)
+            ]
+        )
 
         for exp in self.experts:
             nn.init.normal_(exp[2].weight, std=0.02)
@@ -291,7 +312,8 @@ class UnifiedMoE(nn.Module):
 
         experts_out = torch.stack([exp(x) for exp in self.experts], dim=2)
         topk_out = torch.gather(
-            experts_out, 2,
+            experts_out,
+            2,
             topk_idx.unsqueeze(-1).expand(B, L, self.top_k, self.out_dim),
         )
         out = torch.sum(topk_out * scores.unsqueeze(-1), dim=2)
@@ -309,8 +331,9 @@ class UnifiedMoE(nn.Module):
 # ===========================================================================
 # Main attention
 # ===========================================================================
-@ATTENTION_REGISTRY.register("bam_umoe", supports_causal=True,
-                              supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "bam_umoe", supports_causal=True, supports_bidirectional=True, supports_gqa=True
+)
 class BAMUMoEBlock(BaseAttention):
     is_custom_attention: bool = True
 
@@ -324,19 +347,23 @@ class BAMUMoEBlock(BaseAttention):
         num_layers: int | None = None,
         old_attn: nn.Module | None = None,
         comp_config: Any | None = None,
-        moe_enabled: bool = False,          # BAM-FIX-02
-        svd_rank: int | None = None,     # BAM-FIX-03
+        moe_enabled: bool = False,  # BAM-FIX-02
+        svd_rank: int | None = None,  # BAM-FIX-03
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         **kwargs: Any,
     ) -> None:
         # BAM-FIX-07: config None-safe
         if config is None:
-            class _Cfg: pass
+
+            class _Cfg:
+                pass
+
             config = _Cfg()
             config.hidden_size = kwargs.get("hidden_size", 768)
-            config.num_attention_heads = kwargs.get("num_heads",
-                                                     kwargs.get("num_attention_heads", 12))
+            config.num_attention_heads = kwargs.get(
+                "num_heads", kwargs.get("num_attention_heads", 12)
+            )
             config.head_dim = kwargs.get("head_dim", 64)
             config.model_type = kwargs.get("model_type", "")
 
@@ -345,47 +372,101 @@ class BAMUMoEBlock(BaseAttention):
         except TypeError:
             super().__init__(config)
 
-        self.dim = int(kwargs.get("hidden_size") or
-                        getattr(config, "hidden_size",
-                        getattr(config, "d_model",
-                        getattr(config, "dim", 768))))
+        self.dim = int(
+            kwargs.get("hidden_size")
+            or getattr(
+                config,
+                "hidden_size",
+                getattr(config, "d_model", getattr(config, "dim", 768)),
+            )
+        )
         self.hidden_size = self.dim
-        self.num_heads = int(kwargs.get("num_heads") or kwargs.get("num_attention_heads") or
-                              getattr(config, "num_attention_heads",
-                              getattr(config, "num_heads",
-                              getattr(config, "n_heads", 12))))
-        self.num_kv_heads = int(getattr(config, "num_key_value_heads",
-                                 getattr(config, "num_kv_heads", self.num_heads)))
+        self.num_heads = int(
+            kwargs.get("num_heads")
+            or kwargs.get("num_attention_heads")
+            or getattr(
+                config,
+                "num_attention_heads",
+                getattr(config, "num_heads", getattr(config, "n_heads", 12)),
+            )
+        )
+        self.num_kv_heads = int(
+            getattr(
+                config,
+                "num_key_value_heads",
+                getattr(config, "num_kv_heads", self.num_heads),
+            )
+        )
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
         self.kv_repeat = self.num_heads // self.num_kv_heads
 
         cfg_hd = getattr(config, "head_dim", None)
-        self.head_dim = int(cfg_hd or kwargs.get("head_dim") or
-                             (self.dim // max(1, self.num_heads)))
+        self.head_dim = int(
+            cfg_hd or kwargs.get("head_dim") or (self.dim // max(1, self.num_heads))
+        )
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
-        self.lora_rank = int(getattr(config, "lora_rank",
-                              getattr(comp_config, "lora_rank", lora_rank)
-                              if comp_config is not None else lora_rank))
-        self.lora_alpha = float(getattr(config, "lora_alpha",
-                                 getattr(comp_config, "lora_alpha", lora_alpha)
-                                 if comp_config is not None else lora_alpha))
+        self.lora_rank = int(
+            getattr(
+                config,
+                "lora_rank",
+                (
+                    getattr(comp_config, "lora_rank", lora_rank)
+                    if comp_config is not None
+                    else lora_rank
+                ),
+            )
+        )
+        self.lora_alpha = float(
+            getattr(
+                config,
+                "lora_alpha",
+                (
+                    getattr(comp_config, "lora_alpha", lora_alpha)
+                    if comp_config is not None
+                    else lora_alpha
+                ),
+            )
+        )
         self.freeze_base = self.lora_rank > 0
 
         # BAM-FIX-03: SVD rank for real compression
         default_svd = min(128, self.dim)
-        self.svd_rank = int(getattr(config, "svd_rank",
-                             getattr(comp_config, "svd_rank", svd_rank)
-                             if comp_config is not None else (svd_rank or default_svd)))
+        self.svd_rank = int(
+            getattr(
+                config,
+                "svd_rank",
+                (
+                    getattr(comp_config, "svd_rank", svd_rank)
+                    if comp_config is not None
+                    else (svd_rank or default_svd)
+                ),
+            )
+        )
 
         # Decoder detection
         mt = str(getattr(config, "model_type", "") or "").lower()
-        is_dec = bool(getattr(config, "is_decoder", False)
-                      or getattr(config, "causal", False))
-        if any(mt.startswith(p) for p in
-               ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")):
+        is_dec = bool(
+            getattr(config, "is_decoder", False) or getattr(config, "causal", False)
+        )
+        if any(
+            mt.startswith(p)
+            for p in (
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
+            )
+        ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
@@ -407,23 +488,35 @@ class BAMUMoEBlock(BaseAttention):
         O_rank = min(self.svd_rank, self.all_head_size, self.dim)
 
         self.q_lin = FactorisedLoRALinear(
-            self.dim, self.all_head_size, Q_rank,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_head_size,
+            Q_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             bias=True,
         )
         self.k_lin = FactorisedLoRALinear(
-            self.dim, self.all_kv_head_size, KV_rank,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_kv_head_size,
+            KV_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             bias=True,
         )
         self.v_lin = FactorisedLoRALinear(
-            self.dim, self.all_kv_head_size, KV_rank,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_kv_head_size,
+            KV_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             bias=True,
         )
         self.out_lin = FactorisedLoRALinear(
-            self.all_head_size, self.dim, O_rank,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.all_head_size,
+            self.dim,
+            O_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             bias=True,
         )
 
@@ -439,8 +532,11 @@ class BAMUMoEBlock(BaseAttention):
         else:
             self.qkv_moe = None
 
-        dropout_p = float(getattr(config, "dropout",
-                          getattr(config, "attention_probs_dropout_prob", 0.1)))
+        dropout_p = float(
+            getattr(
+                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
+            )
+        )
         self.dropout = nn.Dropout(dropout_p)
 
         self.layer_id = layer_id
@@ -457,25 +553,44 @@ class BAMUMoEBlock(BaseAttention):
 
     # ---- aliases ----
     @property
-    def q_proj(self): return self.q_lin
+    def q_proj(self):
+        return self.q_lin
+
     @property
-    def k_proj(self): return self.k_lin
+    def k_proj(self):
+        return self.k_lin
+
     @property
-    def v_proj(self): return self.v_lin
+    def v_proj(self):
+        return self.v_lin
+
     @property
-    def o_proj(self): return self.out_lin
+    def o_proj(self):
+        return self.out_lin
+
     @property
-    def query(self): return self.q_lin
+    def query(self):
+        return self.q_lin
+
     @property
-    def key(self): return self.k_lin
+    def key(self):
+        return self.k_lin
+
     @property
-    def value(self): return self.v_lin
+    def value(self):
+        return self.v_lin
+
     @property
-    def dense(self): return self.out_lin
+    def dense(self):
+        return self.out_lin
+
     @property
-    def c_proj(self): return self.out_lin
+    def c_proj(self):
+        return self.out_lin
+
     @property
-    def out_proj(self): return self.out_lin
+    def out_proj(self):
+        return self.out_lin
 
     # ------------------------------------------------------------------
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
@@ -489,25 +604,49 @@ class BAMUMoEBlock(BaseAttention):
             pass
 
         cls_name = pretrained_attn.__class__.__name__
-        has_out_lin = any(hasattr(pretrained_attn, a) for a in
-                          ("out_lin", "c_proj", "o_proj", "out_proj", "dense"))
+        has_out_lin = any(
+            hasattr(pretrained_attn, a)
+            for a in ("out_lin", "c_proj", "o_proj", "out_proj", "dense")
+        )
         is_nested = False
-        if (hasattr(pretrained_attn, "self")
+        if (
+            (
+                hasattr(pretrained_attn, "self")
                 and hasattr(pretrained_attn.self, "query")
                 and hasattr(pretrained_attn, "output")
-                and hasattr(pretrained_attn.output, "dense")) or (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
-                            "XLMRobertaSelfAttention", "ElectraSelfAttention",
-                            "DebertaSelfAttention")
-              or (cls_name.endswith("SelfAttention")
-                  and "distil" not in cls_name.lower())) and not has_out_lin:
+                and hasattr(pretrained_attn.output, "dense")
+            )
+            or (
+                cls_name
+                in (
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                )
+                or (
+                    cls_name.endswith("SelfAttention")
+                    and "distil" not in cls_name.lower()
+                )
+            )
+            and not has_out_lin
+        ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        if hasattr(pretrained_attn, "rotary_emb") and pretrained_attn.rotary_emb is not None:
+        if (
+            hasattr(pretrained_attn, "rotary_emb")
+            and pretrained_attn.rotary_emb is not None
+        ):
             self.rotary_emb = pretrained_attn.rotary_emb
 
-        extracted = {"q": (None, None), "k": (None, None),
-                      "v": (None, None), "o": (None, None)}
+        extracted = {
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
+        }
 
         # GPT-2 fused
         if hasattr(pretrained_attn, "c_attn") and pretrained_attn.c_attn is not None:
@@ -516,48 +655,67 @@ class BAMUMoEBlock(BaseAttention):
             cw = getattr(base_c, "weight", getattr(c, "weight", None))
             if cw is not None:
                 cw = cw.data.clone()
-                is_conv = (c.__class__.__name__ == "Conv1D"
-                            or base_c.__class__.__name__ == "Conv1D"
-                            or (cw.ndim == 2 and cw.shape[0] < cw.shape[1]))
+                is_conv = (
+                    c.__class__.__name__ == "Conv1D"
+                    or base_c.__class__.__name__ == "Conv1D"
+                    or (cw.ndim == 2 and cw.shape[0] < cw.shape[1])
+                )
                 if is_conv:
                     cw = cw.t().contiguous()
                 split = cw.size(0) // 3
                 bmod = getattr(base_c, "bias", getattr(c, "bias", None))
                 cb = bmod.data.clone() if bmod is not None else None
                 extracted["q"] = (cw[:split], cb[:split] if cb is not None else None)
-                extracted["k"] = (cw[split:2*split], cb[split:2*split] if cb is not None else None)
-                extracted["v"] = (cw[2*split:], cb[2*split:] if cb is not None else None)
+                extracted["k"] = (
+                    cw[split : 2 * split],
+                    cb[split : 2 * split] if cb is not None else None,
+                )
+                extracted["v"] = (
+                    cw[2 * split :],
+                    cb[2 * split :] if cb is not None else None,
+                )
 
-            if hasattr(pretrained_attn, "c_proj") and pretrained_attn.c_proj is not None:
+            if (
+                hasattr(pretrained_attn, "c_proj")
+                and pretrained_attn.c_proj is not None
+            ):
                 o = pretrained_attn.c_proj
                 base_o = getattr(o, "base_layer", o)
                 ow = getattr(base_o, "weight", getattr(o, "weight", None))
                 if ow is not None:
                     ow = ow.data.clone()
-                    is_conv_o = (o.__class__.__name__ == "Conv1D"
-                                  or base_o.__class__.__name__ == "Conv1D"
-                                  or (ow.ndim == 2 and ow.shape[0] < ow.shape[1]))
+                    is_conv_o = (
+                        o.__class__.__name__ == "Conv1D"
+                        or base_o.__class__.__name__ == "Conv1D"
+                        or (ow.ndim == 2 and ow.shape[0] < ow.shape[1])
+                    )
                     if is_conv_o:
                         ow = ow.t().contiguous()
                     bo = getattr(base_o, "bias", getattr(o, "bias", None))
                     extracted["o"] = (ow, bo.data.clone() if bo is not None else None)
 
         # Nested BERT / RoBERTa
-        elif hasattr(pretrained_attn, "self") \
-                and hasattr(pretrained_attn.self, "query"):
+        elif hasattr(pretrained_attn, "self") and hasattr(
+            pretrained_attn.self, "query"
+        ):
             s = pretrained_attn.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 m = getattr(s, sub, None)
                 if m is not None and hasattr(m, "weight"):
                     b = getattr(m, "bias", None)
-                    extracted[key] = (m.weight.data.clone(),
-                                       b.data.clone() if b is not None else None)
-            if hasattr(pretrained_attn, "output") \
-                    and hasattr(pretrained_attn.output, "dense"):
+                    extracted[key] = (
+                        m.weight.data.clone(),
+                        b.data.clone() if b is not None else None,
+                    )
+            if hasattr(pretrained_attn, "output") and hasattr(
+                pretrained_attn.output, "dense"
+            ):
                 d = pretrained_attn.output.dense
                 b = getattr(d, "bias", None)
-                extracted["o"] = (d.weight.data.clone(),
-                                   b.data.clone() if b is not None else None)
+                extracted["o"] = (
+                    d.weight.data.clone(),
+                    b.data.clone() if b is not None else None,
+                )
 
         # Flat modules
         else:
@@ -573,16 +731,22 @@ class BAMUMoEBlock(BaseAttention):
                         m = getattr(pretrained_attn, n)
                         if m is not None and hasattr(m, "weight"):
                             b = getattr(m, "bias", None)
-                            extracted[key] = (m.weight.data.clone(),
-                                               b.data.clone() if b is not None else None)
+                            extracted[key] = (
+                                m.weight.data.clone(),
+                                b.data.clone() if b is not None else None,
+                            )
                             break
 
         # UniversalAdapter fallback
-        missing = [k for k, (w, _) in extracted.items()
-                    if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(pretrained_attn, k)
@@ -591,8 +755,11 @@ class BAMUMoEBlock(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [k for k, (w, _) in extracted.items()
-                          if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing_after:
             raise RuntimeError(
                 f"BAMUMoE.copy_weights: missing {missing_after} from "
@@ -604,8 +771,12 @@ class BAMUMoEBlock(BaseAttention):
                 return w.t().contiguous()
             return w
 
-        target_map = {"q": self.q_lin, "k": self.k_lin,
-                       "v": self.v_lin, "o": self.out_lin}
+        target_map = {
+            "q": self.q_lin,
+            "k": self.k_lin,
+            "v": self.v_lin,
+            "o": self.out_lin,
+        }
 
         with torch.no_grad():
             for proj_key, target in target_map.items():
@@ -613,8 +784,12 @@ class BAMUMoEBlock(BaseAttention):
                 if w is None:
                     if proj_key == "o" and self.is_nested_encoder:
                         # Identity for nested encoder bypass
-                        eye = torch.eye(target.out_features, target.in_features,
-                                         device=target.U.device, dtype=target.U.dtype)
+                        eye = torch.eye(
+                            target.out_features,
+                            target.in_features,
+                            device=target.U.device,
+                            dtype=target.U.dtype,
+                        )
                         target.set_svd_factors(eye, None)
                     continue
 
@@ -630,8 +805,10 @@ class BAMUMoEBlock(BaseAttention):
                 in_d = min(target.in_features, w.size(1))
                 if (out_d, in_d) != (target.out_features, target.in_features):
                     padded = torch.zeros(
-                        target.out_features, target.in_features,
-                        device=w.device, dtype=w.dtype,
+                        target.out_features,
+                        target.in_features,
+                        device=w.device,
+                        dtype=w.dtype,
                     )
                     padded[:out_d, :in_d] = w[:out_d, :in_d]
                     w = padded
@@ -687,15 +864,34 @@ class BAMUMoEBlock(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         S = kv_input.shape[1]
 
-        q = self.q_lin(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k = self.k_lin(kv_input).view(B, S, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        v = self.v_lin(kv_input).view(B, S, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        q = (
+            self.q_lin(hidden_states)
+            .view(B, L, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        k = (
+            self.k_lin(kv_input)
+            .view(B, S, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_lin(kv_input)
+            .view(B, S, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # ---- RoPE ----
         cos = kwargs.get("cos")
         sin = kwargs.get("sin")
         pos_emb = kwargs.get("position_embeddings")
-        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2:
+        if (
+            pos_emb is not None
+            and isinstance(pos_emb, (tuple, list))
+            and len(pos_emb) == 2
+        ):
             cos, sin = pos_emb[0], pos_emb[1]
 
         if cos is not None and sin is not None and not is_cross:
@@ -717,11 +913,15 @@ class BAMUMoEBlock(BaseAttention):
 
         # ---- Dense attention (no SDPA shortcut when MoE enabled, to keep mask logic uniform) ----
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+        scores = (
+            torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+        )
 
         if self.is_decoder and not is_cross:
             causal = torch.triu(
-                torch.full((L, S), float("-inf"), device=scores.device, dtype=torch.float32),
+                torch.full(
+                    (L, S), float("-inf"), device=scores.device, dtype=torch.float32
+                ),
                 diagonal=1 + (S - L),
             )
             scores = scores + causal.unsqueeze(0).unsqueeze(1)
@@ -729,7 +929,9 @@ class BAMUMoEBlock(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is not None:
             if eff_mask.dim() == 2:
-                scores = scores.masked_fill((eff_mask == 0).unsqueeze(1).unsqueeze(2), -1e4)
+                scores = scores.masked_fill(
+                    (eff_mask == 0).unsqueeze(1).unsqueeze(2), -1e4
+                )
             elif eff_mask.dim() == 3:
                 scores = scores + eff_mask.unsqueeze(1).float()
             elif eff_mask.dim() == 4:
@@ -827,8 +1029,13 @@ def inject_bam_umoe(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_bam_umoe(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 n_injected += 1
@@ -847,8 +1054,9 @@ def inject_bam_umoe(
                     break
 
     # BAM-FIX-05: idempotency guard
-    if src_attn is not None and (isinstance(src_attn, BAMUMoEBlock)
-                                   or "BAMUMoE" in src_attn.__class__.__name__):
+    if src_attn is not None and (
+        isinstance(src_attn, BAMUMoEBlock) or "BAMUMoE" in src_attn.__class__.__name__
+    ):
         return None
 
     if cfg is None and src_attn is not None:
@@ -867,8 +1075,9 @@ def inject_bam_umoe(
 
     num_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads"))
     if num_heads is None and src_attn is not None:
-        num_heads = getattr(src_attn, "num_heads",
-                            getattr(src_attn, "num_attention_heads", None))
+        num_heads = getattr(
+            src_attn, "num_heads", getattr(src_attn, "num_attention_heads", None)
+        )
     if num_heads is None:
         num_heads = getattr(cfg, "num_attention_heads", 12) if cfg else 12
 
@@ -919,8 +1128,10 @@ def inject_bam_umoe(
             spliced = True
 
         if not spliced:
-            logger.error("inject_bam_umoe: no writable attention attribute on %s",
-                          layer.__class__.__name__)
+            logger.error(
+                "inject_bam_umoe: no writable attention attribute on %s",
+                layer.__class__.__name__,
+            )
             return None
         return new_attn
 

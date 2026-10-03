@@ -1,13 +1,15 @@
 import math
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
-from types import SimpleNamespace
-
 from framework.attentions.adaptive_span_attention import AdaptiveSpanAttention
-from framework.attentions.adaptive_sparse_attention import AdaptiveSparseAttention
+from framework.attentions.adaptive_sparse_attention import \
+    AdaptiveSparseAttention
 from framework.attentions.adaptive_svd_attention import AdaptiveSVDAttention
 from framework.attentions.adasplash_attention import AdaSplashAttention
+
 
 @pytest.fixture
 def t5_config():

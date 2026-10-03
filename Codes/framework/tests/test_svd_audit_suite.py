@@ -31,37 +31,28 @@ sys_path_codes = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "
 if sys_path_codes not in sys.path:
     sys.path.insert(0, sys_path_codes)
 
-from framework.attentions.adaptive_svd_attention import AdaptiveSVDAttention, AdaptiveSVDLinear
+from framework.attentions.adaptive_svd_attention import (AdaptiveSVDAttention,
+                                                         AdaptiveSVDLinear)
 from framework.attentions.asvd_attention import ASVDAttention, ASVDLinear
 from framework.attentions.linformer_attention import LinformerAttention
 from framework.attentions.svd_linear_attention import (
-    SVDLinear,
-    SVDLinearAttention,
-    compute_exponential_decay,
-)
-from framework.compression_engine.adaptive_ranks import AdaptiveRanksCompressor, adaptive_ranks_factory
-from framework.compression_engine.direct_svd import DirectSVDCompressor, direct_svd_factory
-from framework.compression_engine.dobi_svd import (
-    DobiSVDCompressor,
-    DobiSVDLinearLayer,
-    dobi_factory,
-)
+    SVDLinear, SVDLinearAttention, compute_exponential_decay)
+from framework.compression_engine.adaptive_ranks import (
+    AdaptiveRanksCompressor, adaptive_ranks_factory)
+from framework.compression_engine.direct_svd import (DirectSVDCompressor,
+                                                     direct_svd_factory)
+from framework.compression_engine.dobi_svd import (DobiSVDCompressor,
+                                                   DobiSVDLinearLayer,
+                                                   dobi_factory)
 from framework.compression_engine.entropy_budget_allocation import (
-    EntropyBudgetCompressor,
-    entropy_budget_factory,
-)
+    EntropyBudgetCompressor, entropy_budget_factory)
 from framework.compression_engine.erc_svd import ERCCompressor, erc_factory
 from framework.compression_engine.kronecker_tt_lora import (
-    KroneckerTTLoRACompressor,
-    KroneckerTTLoRALayer,
-    kronecker_tt_lora_factory,
-)
-from framework.compression_engine.res_svd import (
-    ResSVDCompressor,
-    ResSVDLinear,
-    SpectralResidualLoRA,
-    res_svd_factory,
-)
+    KroneckerTTLoRACompressor, KroneckerTTLoRALayer, kronecker_tt_lora_factory)
+from framework.compression_engine.res_svd import (ResSVDCompressor,
+                                                  ResSVDLinear,
+                                                  SpectralResidualLoRA,
+                                                  res_svd_factory)
 
 
 class MockMHA(nn.Module):

@@ -16,8 +16,8 @@ from .benchmark_datasets import (
     BenchmarkDatasetRegistry,
     load_benchmark_dataset,
 )
-from .dataset_loader import ExperimentConfig, load_dataset
 from .cached_tensors import get_cached_tokenized_dataset
+from .dataset_loader import ExperimentConfig, load_dataset
 from .glue_loader import (
     GLUE_TASK_KEYS,
     get_num_labels_and_is_regression,
@@ -68,4 +68,3 @@ __all__ = [
     "AUGMENTATION_REGISTRY",
     "random_mask_augment",
 ]
-

@@ -1,7 +1,8 @@
+import framework.attentions.nexus
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.nexus
+
 
 def test_nexus_module_present():
     assert hasattr(framework.attentions, 'nexus')

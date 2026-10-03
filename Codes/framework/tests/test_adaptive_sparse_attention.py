@@ -1,14 +1,11 @@
 import math
 from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
-
 from framework.attentions.adaptive_sparse_attention import (
-    AdaptiveSparseAttention,
-    inject_adaptive_sparse,
-    LoRALinear,
-)
+    AdaptiveSparseAttention, LoRALinear, inject_adaptive_sparse)
 
 
 def test_default_sparsity_per_family():

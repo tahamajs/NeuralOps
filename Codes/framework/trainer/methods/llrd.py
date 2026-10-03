@@ -1,9 +1,9 @@
 """
 LLRD: Layer‑wise Learning Rate Decay.
 """
-from typing import Any
 
 import logging
+from typing import Any
 
 from .registry import register_method
 

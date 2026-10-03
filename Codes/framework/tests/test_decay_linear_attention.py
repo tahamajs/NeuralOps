@@ -1,17 +1,15 @@
 """Comprehensive test suite for Decay Linear Attention (decay_linear_attention.py)."""
 
 import math
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from types import SimpleNamespace
-
-from framework.attentions.decay_linear_attention import (
-    DecayLinearAttention,
-    _rotate_half,
-    inject_decay_linear,
-)
+from framework.attentions.decay_linear_attention import (DecayLinearAttention,
+                                                         _rotate_half,
+                                                         inject_decay_linear)
 from framework.core.registry import ATTENTION_REGISTRY
 
 

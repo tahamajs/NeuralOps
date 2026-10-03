@@ -1,11 +1,12 @@
+import sys
+
 import torch
 import torch.nn as nn
-import sys
+
 sys.path.insert(0, "Codes")
 
 from framework.attentions.svd_sequence_attention import (
-    SVDLinearAttention, LowRankSVDSequenceAttention,
-)
+    LowRankSVDSequenceAttention, SVDLinearAttention)
 
 
 def test_basic_construction():
@@ -100,6 +101,7 @@ def test_registry_keys():
 def test_no_registry_collision_with_other_svd():
     """'svd' key should not be present in this module."""
     from framework.core.registry import ATTENTION_REGISTRY
+
     # We specifically renamed to 'svd_seq' to avoid this collision
     # (test passes as long as no crash occurs on module load)
     print("[OK] test_no_registry_collision_with_other_svd")

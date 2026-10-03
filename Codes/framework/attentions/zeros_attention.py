@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
@@ -121,15 +120,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -165,12 +170,22 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            out = (
+                out
+                + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            )
         return out
 
 
-@ATTENTION_REGISTRY.register("zeros", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("zeros_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "zeros", supports_causal=True, supports_bidirectional=True, supports_gqa=True
+)
+@ATTENTION_REGISTRY.register(
+    "zeros_attention",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
 class ZeroSAttention(BaseAttention):
     supports_causal: bool = True
     supports_bidirectional: bool = True
@@ -199,14 +214,20 @@ class ZeroSAttention(BaseAttention):
             self.is_decoder: bool = getattr(config, "is_decoder", False)
         else:
             self.adapter = None
-            self.hidden_size = _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
-            self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_heads", 12))
+            self.hidden_size = _cfg_get(
+                config, "hidden_size", kwargs.get("hidden_size", 768)
+            )
+            self.num_heads = _cfg_get(
+                config, "num_attention_heads", kwargs.get("num_heads", 12)
+            )
             self.num_kv_heads = _cfg_get(config, "num_key_value_heads", self.num_heads)
             self.head_dim = self.hidden_size // max(1, self.num_heads)
             self.all_head_size = self.num_heads * self.head_dim
             self.kv_head_size = self.num_kv_heads * self.head_dim
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
-            self.is_decoder = bool(_cfg_get(config, "is_decoder", kwargs.get("is_decoder", False)))
+            self.is_decoder = bool(
+                _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
+            )
 
         # Prioritize explicit kwargs
         if "hidden_size" in kwargs:
@@ -223,10 +244,34 @@ class ZeroSAttention(BaseAttention):
         self.is_nested_encoder: bool = False
         self.lora_rank = _cfg_get(config, "lora_rank", lora_rank)
 
-        self.W_q = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
-        self.W_k = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
-        self.W_v = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
-        self.out = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
+        self.W_q = LoRALinear(
+            self.hidden_size,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            freeze_base=True,
+        )
+        self.W_k = LoRALinear(
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            freeze_base=True,
+        )
+        self.W_v = LoRALinear(
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            freeze_base=True,
+        )
+        self.out = LoRALinear(
+            self.all_head_size,
+            self.hidden_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            freeze_base=True,
+        )
 
         dropout_p = _cfg_get(
             config,
@@ -263,7 +308,11 @@ class ZeroSAttention(BaseAttention):
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
         # 2. GPT-2 Fused c_attn Conv1D handling
-        if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+        if hasattr(src, "c_attn") and (
+            extracted["q"][0] is None
+            or extracted["k"][0] is None
+            or extracted["v"][0] is None
+        ):
             weight = src.c_attn.weight.data
             bias = getattr(src.c_attn, "bias", None)
             bias_data = bias.data if bias is not None else None
@@ -274,7 +323,11 @@ class ZeroSAttention(BaseAttention):
             k_w = weight[split_size : 2 * split_size, :]
             v_w = weight[2 * split_size :, :]
             q_b = bias_data[:split_size] if bias_data is not None else None
-            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
+            k_b = (
+                bias_data[split_size : 2 * split_size]
+                if bias_data is not None
+                else None
+            )
             v_b = bias_data[2 * split_size :] if bias_data is not None else None
             extracted["q"] = (q_w, q_b)
             extracted["k"] = (k_w, k_b)
@@ -282,13 +335,21 @@ class ZeroSAttention(BaseAttention):
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o = src.c_proj.weight.data
-            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
+            if (
+                w_o.dim() == 2
+                and w_o.shape[0] != self.hidden_size
+                and w_o.shape[1] == self.hidden_size
+            ):
                 w_o = w_o.t().contiguous()
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
         # 3. RoBERTa / BERT Nested Encoder handling
-        if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+        if hasattr(src, "self") and (
+            extracted["q"][0] is None
+            or extracted["k"][0] is None
+            or extracted["v"][0] is None
+        ):
             s = src.self
             if hasattr(s, "query"):
                 extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
@@ -297,7 +358,11 @@ class ZeroSAttention(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
+        if (
+            hasattr(src, "output")
+            and hasattr(src.output, "dense")
+            and extracted["o"][0] is None
+        ):
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -314,12 +379,28 @@ class ZeroSAttention(BaseAttention):
                     if hasattr(src, name):
                         layer = getattr(src, name)
                         if hasattr(layer, "weight"):
-                            extracted[proj] = (layer.weight.data, getattr(layer, "bias", None))
+                            extracted[proj] = (
+                                layer.weight.data,
+                                getattr(layer, "bias", None),
+                            )
                             break
 
         # Detect nested encoder architecture
         cls_name = src.__class__.__name__
-        has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj", "out"))
+        has_out_proj = any(
+            hasattr(src, attr)
+            for attr in (
+                "dense",
+                "out_proj",
+                "c_proj",
+                "out_lin",
+                "o_proj",
+                "wo",
+                "o",
+                "proj",
+                "out",
+            )
+        )
         self.is_nested_encoder = (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
@@ -332,7 +413,12 @@ class ZeroSAttention(BaseAttention):
 
         # Copy base weights into projection modules
         with torch.no_grad():
-            for proj_key, target in [("q", self.W_q), ("k", self.W_k), ("v", self.W_v), ("o", self.out)]:
+            for proj_key, target in [
+                ("q", self.W_q),
+                ("k", self.W_k),
+                ("v", self.W_v),
+                ("o", self.out),
+            ]:
                 w, b = extracted[proj_key]
                 if w is not None:
                     in_dim = self.all_head_size if proj_key == "o" else self.hidden_size
@@ -340,10 +426,14 @@ class ZeroSAttention(BaseAttention):
                     target_w = target.weight
                     out_d, in_d = target_w.shape
                     src_out, src_in = w_oriented.shape
-                    target_w.data[:min(out_d, src_out), :min(in_d, src_in)].copy_(w_oriented[:min(out_d, src_out), :min(in_d, src_in)])
+                    target_w.data[: min(out_d, src_out), : min(in_d, src_in)].copy_(
+                        w_oriented[: min(out_d, src_out), : min(in_d, src_in)]
+                    )
                     if b is not None and target.bias is not None:
                         b_val = b.data if isinstance(b, nn.Parameter) else b
-                        target.bias.data[:min(len(target.bias), len(b_val))].copy_(b_val[:min(len(target.bias), len(b_val))])
+                        target.bias.data[: min(len(target.bias), len(b_val))].copy_(
+                            b_val[: min(len(target.bias), len(b_val))]
+                        )
                 elif proj_key == "o" and self.is_nested_encoder:
                     min_d = min(target.weight.shape[0], target.weight.shape[1])
                     target.weight.data.zero_()
@@ -360,25 +450,45 @@ class ZeroSAttention(BaseAttention):
             "v": ["v_proj", "v_lin", "value", "W_v"],
             "o": ["o_proj", "out_proj", "out_lin", "dense", "out", "c_proj"],
         }
-        for proj_key, target in [("q", self.W_q), ("k", self.W_k), ("v", self.W_v), ("o", self.out)]:
+        for proj_key, target in [
+            ("q", self.W_q),
+            ("k", self.W_k),
+            ("v", self.W_v),
+            ("o", self.out),
+        ]:
             for name in source_submodules[proj_key]:
                 if hasattr(src, name):
                     sub = getattr(src, name)
-                    if hasattr(sub, "lora_A") and hasattr(sub, "lora_B") and sub.lora_A is not None and sub.lora_B is not None:
+                    if (
+                        hasattr(sub, "lora_A")
+                        and hasattr(sub, "lora_B")
+                        and sub.lora_A is not None
+                        and sub.lora_B is not None
+                    ):
                         src_lA = getattr(sub.lora_A, "weight", sub.lora_A)
                         src_lB = getattr(sub.lora_B, "weight", sub.lora_B)
                         if hasattr(src_lA, "data") and target.lora_A is not None:
-                            if src_lA.shape[0] == target.lora_A.shape[0] and src_lA.shape[1] == target.lora_A.shape[1]:
+                            if (
+                                src_lA.shape[0] == target.lora_A.shape[0]
+                                and src_lA.shape[1] == target.lora_A.shape[1]
+                            ):
                                 target.lora_A.data.copy_(src_lA.data)
                                 target.lora_A.requires_grad = True
                             else:
-                                print(f"Warning: lora_A shape mismatch for {proj_key}; keeping zero-init.")
+                                print(
+                                    f"Warning: lora_A shape mismatch for {proj_key}; keeping zero-init."
+                                )
                         if hasattr(src_lB, "data") and target.lora_B is not None:
-                            if src_lB.shape[0] == target.lora_B.shape[0] and src_lB.shape[1] == target.lora_B.shape[1]:
+                            if (
+                                src_lB.shape[0] == target.lora_B.shape[0]
+                                and src_lB.shape[1] == target.lora_B.shape[1]
+                            ):
                                 target.lora_B.data.copy_(src_lB.data)
                                 target.lora_B.requires_grad = True
                             else:
-                                print(f"Warning: lora_B shape mismatch for {proj_key}; keeping zero-init.")
+                                print(
+                                    f"Warning: lora_B shape mismatch for {proj_key}; keeping zero-init."
+                                )
                         if hasattr(sub, "lora_scaling"):
                             target.lora_scaling = sub.lora_scaling
                         break
@@ -410,26 +520,51 @@ class ZeroSAttention(BaseAttention):
         device = hidden_states.device
 
         Q = self.W_q(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
-        K = self.W_k(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
-        V = self.W_v(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
+        K = (
+            self.W_k(kv_input)
+            .view(B, N_k, self.num_kv_heads, Dh)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        V = (
+            self.W_v(kv_input)
+            .view(B, N_k, self.num_kv_heads, Dh)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # Apply RoPE: Priority 1 = position_embeddings, Priority 2 = rotary_emb fallback
         position_embeddings = kwargs.get("position_embeddings")
-        if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
+        if (
+            position_embeddings is not None
+            and isinstance(position_embeddings, (tuple, list))
+            and len(position_embeddings) >= 2
+        ):
             cos, sin = position_embeddings[0], position_embeddings[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
         elif getattr(self, "rotary_emb", None) is not None:
             try:
-                rotary_out = self.rotary_emb(hidden_states, position_ids=kwargs.get("position_ids"))
+                rotary_out = self.rotary_emb(
+                    hidden_states, position_ids=kwargs.get("position_ids")
+                )
                 if isinstance(rotary_out, tuple) and len(rotary_out) >= 2:
                     cos, sin = rotary_out[0], rotary_out[1]
-                    Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
+                    Q, K = apply_rotary_pos_emb(
+                        Q, K, cos, sin, kwargs.get("position_ids")
+                    )
             except Exception:
                 try:
                     from framework.utils.compat import maybe_apply_rotary
-                    Q, K = maybe_apply_rotary(Q, K, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
+
+                    Q, K = maybe_apply_rotary(
+                        Q,
+                        K,
+                        getattr(self, "adapter", None),
+                        self.rotary_emb,
+                        kwargs.get("position_ids"),
+                    )
                 except Exception as e:
-                    print(f'copy_weights failed: {e}')
+                    print(f"copy_weights failed: {e}")
                     logger.warning(f"copy_weights failed: {e}")
 
         # GQA repeat
@@ -440,7 +575,8 @@ class ZeroSAttention(BaseAttention):
         is_decoder = (
             self.is_decoder
             or getattr(self.config, "is_decoder", False)
-            or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+            or getattr(self.config, "model_type", "")
+            in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
 
         eps = 1e-6
@@ -455,7 +591,9 @@ class ZeroSAttention(BaseAttention):
                 count = torch.cumsum(mask_f, dim=2).clamp(min=1.0)
                 k_running_mean = k_cum_sum / count
             else:
-                step = torch.arange(1, N_k + 1, device=device, dtype=K.dtype).view(1, 1, N_k, 1)
+                step = torch.arange(1, N_k + 1, device=device, dtype=K.dtype).view(
+                    1, 1, N_k, 1
+                )
                 k_cum_sum = torch.cumsum(K, dim=2)
                 k_running_mean = k_cum_sum / step
 
@@ -465,22 +603,32 @@ class ZeroSAttention(BaseAttention):
             k_hat = F.relu(k_centered) + eps  # [B, H, N_k, d]
 
             # Causal linear attention via cumulative states
-            kv = torch.einsum("b h j d, b h j e -> b h j d e", k_hat, V)  # [B, H, N_k, d, d]
+            kv = torch.einsum(
+                "b h j d, b h j e -> b h j d e", k_hat, V
+            )  # [B, H, N_k, d, d]
             kv_cum = torch.cumsum(kv, dim=2)  # [B, H, N_k, d, d]
             k_cum = torch.cumsum(k_hat, dim=2)  # [B, H, N_k, d]
 
             sim = None
             if N_k == L:
-                num = torch.einsum("b h l d, b h l d e -> b h l e", q_hat, kv_cum)  # [B, H, L, d]
+                num = torch.einsum(
+                    "b h l d, b h l d e -> b h l e", q_hat, kv_cum
+                )  # [B, H, L, d]
                 den = (q_hat * k_cum).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
             elif N_k >= L:
                 kv_cum_slice = kv_cum[:, :, -L:, :, :]
                 k_cum_slice = k_cum[:, :, -L:, :]
-                num = torch.einsum("b h l d, b h l d e -> b h l e", q_hat, kv_cum_slice)  # [B, H, L, d]
+                num = torch.einsum(
+                    "b h l d, b h l d e -> b h l e", q_hat, kv_cum_slice
+                )  # [B, H, L, d]
                 den = (q_hat * k_cum_slice).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
             else:
-                sim = torch.matmul(q_hat, k_hat.transpose(-1, -2).contiguous())  # [B, H, L, N_k]
-                causal_mask = torch.tril(torch.ones(L, N_k, device=device, dtype=torch.bool))
+                sim = torch.matmul(
+                    q_hat, k_hat.transpose(-1, -2).contiguous()
+                )  # [B, H, L, N_k]
+                causal_mask = torch.tril(
+                    torch.ones(L, N_k, device=device, dtype=torch.bool)
+                )
                 sim = sim.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
                 num = torch.matmul(sim, V)  # [B, H, L, d]
                 den = sim.sum(dim=-1, keepdim=True)  # [B, H, L, 1]
@@ -499,7 +647,9 @@ class ZeroSAttention(BaseAttention):
             if valid_m is not None:
                 mask_f = valid_m.unsqueeze(1).unsqueeze(-1).to(K.dtype)
                 K = K * mask_f
-                k_mean = K.sum(dim=2, keepdim=True) / mask_f.sum(dim=2, keepdim=True).clamp(min=1.0)
+                k_mean = K.sum(dim=2, keepdim=True) / mask_f.sum(
+                    dim=2, keepdim=True
+                ).clamp(min=1.0)
             else:
                 k_mean = K.mean(dim=2, keepdim=True)
 
@@ -508,13 +658,20 @@ class ZeroSAttention(BaseAttention):
             k_hat = F.relu(k_centered) + eps
 
             S_kv = torch.matmul(k_hat.transpose(-2, -1).contiguous(), V)  # [B, H, d, d]
-            num = torch.matmul(q_hat, S_kv)                  # [B, H, L, d]
-            den = torch.matmul(q_hat, k_hat.sum(dim=2, keepdim=True).transpose(-2, -1).contiguous()) + eps
+            num = torch.matmul(q_hat, S_kv)  # [B, H, L, d]
+            den = (
+                torch.matmul(
+                    q_hat, k_hat.sum(dim=2, keepdim=True).transpose(-2, -1).contiguous()
+                )
+                + eps
+            )
             context = num / den.clamp(min=eps)
             context = self.dropout(context)
 
             if output_attentions:
-                attn_map = torch.matmul(q_hat, k_hat.transpose(-1, -2).contiguous()) / den.clamp(min=eps)
+                attn_map = torch.matmul(
+                    q_hat, k_hat.transpose(-1, -2).contiguous()
+                ) / den.clamp(min=eps)
 
         # Head mask broadcasting across 1D/2D/3D/4D
         if head_mask is not None:
@@ -525,7 +682,10 @@ class ZeroSAttention(BaseAttention):
             elif head_mask.dim() == 3:
                 head_mask = head_mask.unsqueeze(-1)
             elif head_mask.dim() == 4:
-                if head_mask.shape[-1] == head_mask.shape[-2] and head_mask.shape[-1] != context.shape[-1]:
+                if (
+                    head_mask.shape[-1] == head_mask.shape[-2]
+                    and head_mask.shape[-1] != context.shape[-1]
+                ):
                     head_mask = head_mask.mean(dim=-1, keepdim=True)
             context = context * head_mask.to(context.dtype)
 
@@ -573,9 +733,15 @@ def inject_zeros_attention(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+    elif hasattr(target, "layers") and isinstance(
+        target.layers, (torch.nn.ModuleList, list)
+    ):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -585,7 +751,11 @@ def inject_zeros_attention(
             res = inject_zeros_attention(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                comp_config=(
+                    comp_config
+                    if "comp_config" in locals() or "comp_config" in kwargs
+                    else None
+                ),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
@@ -615,9 +785,21 @@ def inject_zeros_attention(
         or _cfg_get(model_config, "dim")
         or getattr(old_attn, "hidden_size", None)
         or getattr(old_attn, "embed_dim", None)
-        or (old_attn.q_proj.in_features if hasattr(old_attn, "q_proj") and hasattr(old_attn.q_proj, "in_features") else None)
-        or (old_attn.q_lin.in_features if hasattr(old_attn, "q_lin") and hasattr(old_attn.q_lin, "in_features") else None)
-        or (old_attn.query.in_features if hasattr(old_attn, "query") and hasattr(old_attn.query, "in_features") else None)
+        or (
+            old_attn.q_proj.in_features
+            if hasattr(old_attn, "q_proj") and hasattr(old_attn.q_proj, "in_features")
+            else None
+        )
+        or (
+            old_attn.q_lin.in_features
+            if hasattr(old_attn, "q_lin") and hasattr(old_attn.q_lin, "in_features")
+            else None
+        )
+        or (
+            old_attn.query.in_features
+            if hasattr(old_attn, "query") and hasattr(old_attn.query, "in_features")
+            else None
+        )
         or 768
     )
     num_heads = (
@@ -631,6 +813,7 @@ def inject_zeros_attention(
 
     if model_config is None:
         import types
+
         model_config = types.SimpleNamespace(
             hidden_size=hidden_size,
             num_attention_heads=num_heads,

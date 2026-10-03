@@ -3,16 +3,17 @@ Unit tests for Fused SVD-Linear Layer with in-SRAM RMSNorm, Autograd backward pa
 and integration into SVDLinear and SVDLinearAttention modules.
 """
 
-from typing import Any
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from framework.attentions.fused_svd_kernel import FusedSVDLinear, fused_svd_linear, HAS_TRITON
-from framework.attentions.svd_linear_attention import SVDLinear, SVDLinearAttention
+from framework.attentions.fused_svd_kernel import (HAS_TRITON, FusedSVDLinear,
+                                                   fused_svd_linear)
+from framework.attentions.svd_linear_attention import (SVDLinear,
+                                                       SVDLinearAttention)
 from framework.compression_engine.svd_linear import SVDLinearLayer
 
 

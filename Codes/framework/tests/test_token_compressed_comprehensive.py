@@ -1,15 +1,11 @@
+import types
+
 import pytest
 import torch
 import torch.nn as nn
-import types
-
 from framework.attentions.token_compressed_attention import (
-    TokenCompressedAttention,
-    LoRALinear,
-    _rotate_half,
-    apply_rotary_pos_emb,
-    inject_token_compressed_attn,
-)
+    LoRALinear, TokenCompressedAttention, _rotate_half, apply_rotary_pos_emb,
+    inject_token_compressed_attn)
 
 
 def make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=False, model_type="bert", lora_rank=16, lora_alpha=32.0):

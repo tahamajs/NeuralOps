@@ -1,13 +1,13 @@
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
-from types import SimpleNamespace
-from framework.attentions.performer_attention import (
-    PerformerAttention,
-    inject_performer,
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
+from framework.attentions.performer_attention import (LoRALinear,
+                                                      PerformerAttention,
+                                                      apply_rotary_pos_emb,
+                                                      inject_performer)
+
 
 def test_performer_lora_config_independence():
     # 1. config=None, comp_config present

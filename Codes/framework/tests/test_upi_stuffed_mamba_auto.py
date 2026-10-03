@@ -1,7 +1,8 @@
+import framework.attentions.upi_stuffed_mamba
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.upi_stuffed_mamba
+
 
 def test_upi_stuffed_mamba_module_present():
     assert hasattr(framework.attentions, 'upi_stuffed_mamba')

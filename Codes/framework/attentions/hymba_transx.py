@@ -13,7 +13,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
@@ -24,6 +23,7 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # RoPE helpers
 # ===========================================================================
+
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     x1 = x[..., : x.shape[-1] // 2]
@@ -50,7 +50,9 @@ def apply_rotary_pos_emb(
         cos = cos.unsqueeze(0)
         sin = sin.unsqueeze(0)
     if cos.shape[-2] != q.shape[-2]:
-        raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}")
+        raise ValueError(
+            f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}"
+        )
 
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
@@ -77,8 +79,11 @@ def apply_rotary_pos_emb(
 # HeadRoPE (internal fallback for encoders without position embeddings)
 # ===========================================================================
 
+
 class HeadRoPE(nn.Module):
-    def __init__(self, head_dim: int, max_seq_len: int = 4096, base: float = 10000.0) -> None:
+    def __init__(
+        self, head_dim: int, max_seq_len: int = 4096, base: float = 10000.0
+    ) -> None:
         super().__init__()
         self.head_dim = head_dim
         self.max_seq_len = max_seq_len
@@ -90,8 +95,12 @@ class HeadRoPE(nn.Module):
         t = torch.arange(seq_len, device=self.inv_freq.device).float()
         freqs = torch.einsum("i,j->ij", t, self.inv_freq)
         emb = torch.cat((freqs, freqs), dim=-1)
-        self.register_buffer("cos_cached", emb.cos().unsqueeze(0).unsqueeze(1), persistent=False)
-        self.register_buffer("sin_cached", emb.sin().unsqueeze(0).unsqueeze(1), persistent=False)
+        self.register_buffer(
+            "cos_cached", emb.cos().unsqueeze(0).unsqueeze(1), persistent=False
+        )
+        self.register_buffer(
+            "sin_cached", emb.sin().unsqueeze(0).unsqueeze(1), persistent=False
+        )
 
     def forward(self, x: torch.Tensor, past_len: int = 0) -> torch.Tensor:
         B, H, L, d = x.shape
@@ -113,15 +122,32 @@ class HeadRoPE(nn.Module):
 # Decoder detection
 # ===========================================================================
 
-def _detect_decoder(config: Any, is_decoder: bool | None, old_attn: nn.Module | None) -> bool:
+
+def _detect_decoder(
+    config: Any, is_decoder: bool | None, old_attn: nn.Module | None
+) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)
     if config is not None:
         if getattr(config, "is_decoder", False) or getattr(config, "causal", False):
             return True
         mt = str(getattr(config, "model_type", "")).lower()
-        if mt.startswith(("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                          "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")):
+        if mt.startswith(
+            (
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
+            )
+        ):
             return True
         arch = getattr(config, "architectures", None)
         if arch and any(("GPT" in str(a) or "CausalLM" in str(a)) for a in arch):
@@ -140,8 +166,22 @@ def _uses_rope(config: Any, old_attn: nn.Module | None) -> bool:
     """Return True if the model expects RoPE (i.e., is a decoder / LLaMA-like)."""
     if config is not None:
         mt = str(getattr(config, "model_type", "")).lower()
-        if mt.startswith(("gpt2", "gpt_neo", "gpt_neox", "llama", "qwen", "mistral",
-                          "gemma", "phi", "mixtral", "gemma2", "qwen2", "qwen3")):
+        if mt.startswith(
+            (
+                "gpt2",
+                "gpt_neo",
+                "gpt_neox",
+                "llama",
+                "qwen",
+                "mistral",
+                "gemma",
+                "phi",
+                "mixtral",
+                "gemma2",
+                "qwen2",
+                "qwen3",
+            )
+        ):
             return True
         if getattr(config, "position_embedding_type", "") == "rotary":
             return True
@@ -154,6 +194,7 @@ def _uses_rope(config: Any, old_attn: nn.Module | None) -> bool:
 # ===========================================================================
 # LoRALinear
 # ===========================================================================
+
 
 class LoRALinear(nn.Module):
     def __init__(
@@ -176,15 +217,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -218,7 +265,9 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            lora_out = (
+                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            )
             out = out + lora_out
         return out
 
@@ -227,8 +276,16 @@ class LoRALinear(nn.Module):
 # HymbaTransX block
 # ===========================================================================
 
-@ATTENTION_REGISTRY.register("hymba_transx", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("hymba_transx_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+
+@ATTENTION_REGISTRY.register(
+    "hymba_transx", supports_causal=True, supports_bidirectional=True, supports_gqa=True
+)
+@ATTENTION_REGISTRY.register(
+    "hymba_transx_attn",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
 class HymbaTransXBlock(BaseAttention):
     r"""HymbaTransX: Hybrid Differential Transformer & State Space Model Block."""
 
@@ -251,49 +308,89 @@ class HymbaTransXBlock(BaseAttention):
         hidden_size = kwargs.get("hidden_size")
         num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
         if hidden_size is None and config is not None:
-            hidden_size = getattr(config, "hidden_size",
-                         getattr(config, "dim",
-                         getattr(config, "d_model",
-                         getattr(config, "n_embd", None))))
+            hidden_size = getattr(
+                config,
+                "hidden_size",
+                getattr(
+                    config,
+                    "dim",
+                    getattr(config, "d_model", getattr(config, "n_embd", None)),
+                ),
+            )
         if hidden_size is None and source_attn is not None:
             for attr in ["hidden_size", "embed_dim", "dim", "d_model"]:
-                if hasattr(source_attn, attr) and getattr(source_attn, attr) is not None:
+                if (
+                    hasattr(source_attn, attr)
+                    and getattr(source_attn, attr) is not None
+                ):
                     hidden_size = getattr(source_attn, attr)
                     break
             if hidden_size is None:
-                out_layer = getattr(source_attn, "out_lin",
-                            getattr(source_attn, "dense",
-                            getattr(source_attn, "c_proj",
-                            getattr(source_attn, "o_proj", None))))
-                hidden_size = getattr(out_layer, "out_features", None) if out_layer is not None else None
+                out_layer = getattr(
+                    source_attn,
+                    "out_lin",
+                    getattr(
+                        source_attn,
+                        "dense",
+                        getattr(
+                            source_attn, "c_proj", getattr(source_attn, "o_proj", None)
+                        ),
+                    ),
+                )
+                hidden_size = (
+                    getattr(out_layer, "out_features", None)
+                    if out_layer is not None
+                    else None
+                )
         hidden_size = int(hidden_size or 768)
 
         if num_heads is None and config is not None:
-            num_heads = getattr(config, "num_attention_heads",
-                       getattr(config, "n_heads",
-                       getattr(config, "num_heads", None)))
+            num_heads = getattr(
+                config,
+                "num_attention_heads",
+                getattr(config, "n_heads", getattr(config, "num_heads", None)),
+            )
         if num_heads is None and source_attn is not None:
-            num_heads = getattr(source_attn, "num_attention_heads",
-                       getattr(source_attn, "n_heads",
-                       getattr(source_attn, "num_heads", None)))
-        num_heads = int(num_heads or (hidden_size // 64 if hidden_size % 64 == 0 else 12))
+            num_heads = getattr(
+                source_attn,
+                "num_attention_heads",
+                getattr(
+                    source_attn, "n_heads", getattr(source_attn, "num_heads", None)
+                ),
+            )
+        num_heads = int(
+            num_heads or (hidden_size // 64 if hidden_size % 64 == 0 else 12)
+        )
 
         self.dim = hidden_size
         self.hidden_size = hidden_size
         self.num_heads = num_heads
-        cfg_kv = getattr(config, "num_key_value_heads",
-                  getattr(config, "num_kv_heads", None)) if config else None
+        cfg_kv = (
+            getattr(
+                config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
+            )
+            if config
+            else None
+        )
         self.num_kv_heads = int(cfg_kv) if cfg_kv is not None else self.num_heads
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
 
-        cfg_head_dim = getattr(config, "head_dim", kwargs.get("head_dim")) if config else kwargs.get("head_dim")
+        cfg_head_dim = (
+            getattr(config, "head_dim", kwargs.get("head_dim"))
+            if config
+            else kwargs.get("head_dim")
+        )
         if cfg_head_dim is None and source_attn is not None:
             for attr in ("q_proj", "query", "q_lin", "W_q1"):
                 mod = getattr(source_attn, attr, None)
                 if mod is not None and hasattr(mod, "weight"):
                     cfg_head_dim = mod.weight.shape[0] // max(1, self.num_heads)
                     break
-        self.head_dim = int(cfg_head_dim) if cfg_head_dim is not None else self.dim // max(1, self.num_heads)
+        self.head_dim = (
+            int(cfg_head_dim)
+            if cfg_head_dim is not None
+            else self.dim // max(1, self.num_heads)
+        )
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // self.num_kv_heads)
@@ -307,35 +404,79 @@ class HymbaTransXBlock(BaseAttention):
         self.use_rope = _uses_rope(config, source_attn) or self.is_decoder
 
         # LoRA config
-        self.lora_rank = int(kwargs.get("lora_rank",
-                            getattr(comp_config, "lora_rank",
-                            getattr(config, "lora_rank", 16) if config else 16)))
-        self.lora_alpha = float(kwargs.get("lora_alpha",
-                              getattr(comp_config, "lora_alpha",
-                              getattr(config, "lora_alpha", 32.0) if config else 32.0)))
-        self.freeze_base = (self.lora_rank > 0)
+        self.lora_rank = int(
+            kwargs.get(
+                "lora_rank",
+                getattr(
+                    comp_config,
+                    "lora_rank",
+                    getattr(config, "lora_rank", 16) if config else 16,
+                ),
+            )
+        )
+        self.lora_alpha = float(
+            kwargs.get(
+                "lora_alpha",
+                getattr(
+                    comp_config,
+                    "lora_alpha",
+                    getattr(config, "lora_alpha", 32.0) if config else 32.0,
+                ),
+            )
+        )
+        self.freeze_base = self.lora_rank > 0
 
         # RoPE and projections
         self.rope = HeadRoPE(self.head_dim) if self.use_rope else None
 
-        self.W_q1 = LoRALinear(self.dim, self.all_head_size, bias=False,
-                               lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                               freeze_base=self.freeze_base)
-        self.W_k1 = LoRALinear(self.dim, self.all_kv_head_size, bias=False,
-                               lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                               freeze_base=self.freeze_base)
-        self.W_q2 = LoRALinear(self.dim, self.all_head_size, bias=False,
-                               lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                               freeze_base=self.freeze_base)
-        self.W_k2 = LoRALinear(self.dim, self.all_kv_head_size, bias=False,
-                               lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                               freeze_base=self.freeze_base)
-        self.W_v = LoRALinear(self.dim, self.all_kv_head_size, bias=False,
-                              lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                              freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True,
-                                   lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                   freeze_base=self.freeze_base)
+        self.W_q1 = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.W_k1 = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.W_q2 = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.W_k2 = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.W_v = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
         # HX-FIX-06: W_q2 and W_k2 are noisy copies of W_q1 and W_k1.
         with torch.no_grad():
@@ -350,7 +491,10 @@ class HymbaTransXBlock(BaseAttention):
         # SSM branch
         try:
             from framework.attentions.simple_ssm import SimpleSSM
-            self.mamba = SimpleSSM(d_model=self.dim, config=config, is_decoder=self.is_decoder)
+
+            self.mamba = SimpleSSM(
+                d_model=self.dim, config=config, is_decoder=self.is_decoder
+            )
         except ImportError:
             self.mamba = None
             logger.warning("HymbaTransX: SimpleSSM not available; SSM branch disabled.")
@@ -359,9 +503,11 @@ class HymbaTransXBlock(BaseAttention):
         self.alpha = nn.Parameter(torch.tensor(1.0))
 
         dropout_p = float(
-            getattr(config, "dropout",
-                    getattr(config, "attention_probs_dropout_prob", 0.1))
-            if config else 0.1
+            getattr(
+                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
+            )
+            if config
+            else 0.1
         )
         self.dropout = nn.Dropout(dropout_p)
 
@@ -372,23 +518,40 @@ class HymbaTransXBlock(BaseAttention):
     # Aliases
     # ------------------------------------------------------------------
     @property
-    def query(self): return self.W_q1
+    def query(self):
+        return self.W_q1
+
     @property
-    def key(self): return self.W_k1
+    def key(self):
+        return self.W_k1
+
     @property
-    def value(self): return self.W_v
+    def value(self):
+        return self.W_v
+
     @property
-    def q_proj(self): return self.W_q1
+    def q_proj(self):
+        return self.W_q1
+
     @property
-    def k_proj(self): return self.W_k1
+    def k_proj(self):
+        return self.W_k1
+
     @property
-    def v_proj(self): return self.W_v
+    def v_proj(self):
+        return self.W_v
+
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
+
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
+
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
 
     # ------------------------------------------------------------------
     # copy_weights
@@ -398,19 +561,39 @@ class HymbaTransXBlock(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        if (hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")):
+        has_out_lin = (
+            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        )
+        if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
             self.is_nested_encoder = False
-        elif (hasattr(src, "self") and hasattr(src.self, "query")
-              and hasattr(src, "output") and hasattr(src.output, "dense")) or cls_name in ("BertSelfAttention", "RobertaSelfAttention",
-                          "XLMRobertaSelfAttention", "ElectraSelfAttention",
-                          "DebertaSelfAttention") or cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower() and not has_out_lin:
+        elif (
+            (
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
+            )
+            or cls_name
+            in (
+                "BertSelfAttention",
+                "RobertaSelfAttention",
+                "XLMRobertaSelfAttention",
+                "ElectraSelfAttention",
+                "DebertaSelfAttention",
+            )
+            or cls_name.endswith("SelfAttention")
+            and "distil" not in cls_name.lower()
+            and not has_out_lin
+        ):
             self.is_nested_encoder = True
         else:
             self.is_nested_encoder = False
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         # 1. GPT-2 fused
@@ -422,14 +605,27 @@ class HymbaTransXBlock(BaseAttention):
                 c_w = c_w.data.clone()
                 cls_c = c_attn_mod.__class__.__name__
                 base_cls_c = base_c.__class__.__name__
-                if "Conv1D" in cls_c or "Conv1D" in base_cls_c or (c_w.ndim == 2 and c_w.shape[1] == 3 * self.dim):
+                if (
+                    "Conv1D" in cls_c
+                    or "Conv1D" in base_cls_c
+                    or (c_w.ndim == 2 and c_w.shape[1] == 3 * self.dim)
+                ):
                     c_w = c_w.t().contiguous()
                 split = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split, :], c_b[:split] if c_b is not None else None)
-                extracted["k"] = (c_w[split: 2 * split, :], c_b[split: 2 * split] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split:, :], c_b[2 * split:] if c_b is not None else None)
+                extracted["q"] = (
+                    c_w[:split, :],
+                    c_b[:split] if c_b is not None else None,
+                )
+                extracted["k"] = (
+                    c_w[split : 2 * split, :],
+                    c_b[split : 2 * split] if c_b is not None else None,
+                )
+                extracted["v"] = (
+                    c_w[2 * split :, :],
+                    c_b[2 * split :] if c_b is not None else None,
+                )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -439,10 +635,21 @@ class HymbaTransXBlock(BaseAttention):
                     o_w = o_w.data.clone()
                     cls_o = c_proj_mod.__class__.__name__
                     base_cls_o = base_o.__class__.__name__
-                    if "Conv1D" in cls_o or "Conv1D" in base_cls_o or (o_w.ndim == 2 and o_w.shape[0] != self.dim and o_w.shape[1] == self.dim):
+                    if (
+                        "Conv1D" in cls_o
+                        or "Conv1D" in base_cls_o
+                        or (
+                            o_w.ndim == 2
+                            and o_w.shape[0] != self.dim
+                            and o_w.shape[1] == self.dim
+                        )
+                    ):
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    extracted["o"] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
 
         # 2. RoBERTa / BERT nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
@@ -450,12 +657,16 @@ class HymbaTransXBlock(BaseAttention):
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 mod = getattr(s, sub, None)
                 if mod is not None and hasattr(mod, "weight"):
-                    extracted[key] = (mod.weight.data.clone(),
-                                      mod.bias.data.clone() if mod.bias is not None else None)
+                    extracted[key] = (
+                        mod.weight.data.clone(),
+                        mod.bias.data.clone() if mod.bias is not None else None,
+                    )
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
-                extracted["o"] = (out_mod.weight.data.clone(),
-                                  out_mod.bias.data.clone() if out_mod.bias is not None else None)
+                extracted["o"] = (
+                    out_mod.weight.data.clone(),
+                    out_mod.bias.data.clone() if out_mod.bias is not None else None,
+                )
 
         # 3. Flat modules
         else:
@@ -470,15 +681,22 @@ class HymbaTransXBlock(BaseAttention):
                     if hasattr(src, name):
                         mod = getattr(src, name)
                         if mod is not None and hasattr(mod, "weight"):
-                            extracted[key] = (mod.weight.data.clone(),
-                                              mod.bias.data.clone() if mod.bias is not None else None)
+                            extracted[key] = (
+                                mod.weight.data.clone(),
+                                mod.bias.data.clone() if mod.bias is not None else None,
+                            )
                             break
 
         # 4. UniversalAdapter fallback
-        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -514,33 +732,53 @@ class HymbaTransXBlock(BaseAttention):
             # W_q1
             wq = _adapt(w_q, self.W_q1.weight.shape)
             if wq is not None:
-                self.W_q1.weight.data.copy_(wq.to(device=self.W_q1.weight.device, dtype=self.W_q1.weight.dtype))
+                self.W_q1.weight.data.copy_(
+                    wq.to(device=self.W_q1.weight.device, dtype=self.W_q1.weight.dtype)
+                )
 
             # W_k1
             wk = _adapt(w_k, self.W_k1.weight.shape)
             if wk is not None:
-                self.W_k1.weight.data.copy_(wk.to(device=self.W_k1.weight.device, dtype=self.W_k1.weight.dtype))
+                self.W_k1.weight.data.copy_(
+                    wk.to(device=self.W_k1.weight.device, dtype=self.W_k1.weight.dtype)
+                )
 
             # W_v
             wv = _adapt(w_v, self.W_v.weight.shape)
             if wv is not None:
-                self.W_v.weight.data.copy_(wv.to(device=self.W_v.weight.device, dtype=self.W_v.weight.dtype))
+                self.W_v.weight.data.copy_(
+                    wv.to(device=self.W_v.weight.device, dtype=self.W_v.weight.dtype)
+                )
 
             # W_o
             if w_o is not None:
                 wo = _adapt(w_o, self.out_proj.weight.shape)
                 if wo is not None:
-                    self.out_proj.weight.data.copy_(wo.to(device=self.out_proj.weight.device, dtype=self.out_proj.weight.dtype))
+                    self.out_proj.weight.data.copy_(
+                        wo.to(
+                            device=self.out_proj.weight.device,
+                            dtype=self.out_proj.weight.dtype,
+                        )
+                    )
                 if b_o is not None and self.out_proj.bias is not None:
                     m = min(self.out_proj.bias.numel(), b_o.numel())
                     self.out_proj.bias.data.zero_()
-                    self.out_proj.bias.data[:m].copy_(b_o[:m].to(device=self.out_proj.bias.device, dtype=self.out_proj.bias.dtype))
+                    self.out_proj.bias.data[:m].copy_(
+                        b_o[:m].to(
+                            device=self.out_proj.bias.device,
+                            dtype=self.out_proj.bias.dtype,
+                        )
+                    )
 
             # HX-FIX-06: W_q2 and W_k2 = noisy copies of W_q1 and W_k1
             noise_q = torch.randn_like(self.W_q2.weight) * 0.01
             noise_k = torch.randn_like(self.W_k2.weight) * 0.01
-            self.W_q2.weight.data.copy_(self.W_q1.weight.data + noise_q.to(self.W_q2.weight.dtype))
-            self.W_k2.weight.data.copy_(self.W_k1.weight.data + noise_k.to(self.W_k2.weight.dtype))
+            self.W_q2.weight.data.copy_(
+                self.W_q1.weight.data + noise_q.to(self.W_q2.weight.dtype)
+            )
+            self.W_k2.weight.data.copy_(
+                self.W_k1.weight.data + noise_k.to(self.W_k2.weight.dtype)
+            )
 
     # ------------------------------------------------------------------
     # Mask helper
@@ -548,7 +786,9 @@ class HymbaTransXBlock(BaseAttention):
     @staticmethod
     def _prepare_valid_mask(
         attention_mask: torch.Tensor | None,
-        B: int, N_kv: int, device: torch.device,
+        B: int,
+        N_kv: int,
+        device: torch.device,
     ) -> torch.Tensor | None:
         if attention_mask is None:
             return None
@@ -588,9 +828,15 @@ class HymbaTransXBlock(BaseAttention):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if encoder_hidden_states is not None:
-            raise NotImplementedError("HymbaTransXBlock does not support cross-attention.")
+            raise NotImplementedError(
+                "HymbaTransXBlock does not support cross-attention."
+            )
 
-        x = hidden_states if hidden_states is not None else kwargs.get("query", kwargs.get("x"))
+        x = (
+            hidden_states
+            if hidden_states is not None
+            else kwargs.get("query", kwargs.get("x"))
+        )
         if x is None and len(args) > 0:
             x = args[0]
         if x is None:
@@ -600,11 +846,36 @@ class HymbaTransXBlock(BaseAttention):
         device = x.device
 
         # Projections
-        q1 = self.W_q1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k1 = self.W_k1(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        q2 = self.W_q2(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k2 = self.W_k2(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        v = self.W_v(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        q1 = (
+            self.W_q1(x)
+            .view(B, L, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        k1 = (
+            self.W_k1(x)
+            .view(B, L, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        q2 = (
+            self.W_q2(x)
+            .view(B, L, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        k2 = (
+            self.W_k2(x)
+            .view(B, L, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.W_v(x)
+            .view(B, L, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # HX-FIX-04: KV-cache.
         past_k1 = past_v = None
@@ -614,7 +885,11 @@ class HymbaTransXBlock(BaseAttention):
             if isinstance(past_key_value, (tuple, list)):
                 # Expect (k1, v, k2)
                 if len(past_key_value) >= 3:
-                    past_k1, past_v, past_k2 = past_key_value[0], past_key_value[1], past_key_value[2]
+                    past_k1, past_v, past_k2 = (
+                        past_key_value[0],
+                        past_key_value[1],
+                        past_key_value[2],
+                    )
                 elif len(past_key_value) >= 2:
                     past_k1, past_v = past_key_value[0], past_key_value[1]
             elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
@@ -656,22 +931,34 @@ class HymbaTransXBlock(BaseAttention):
 
         # Differential attention
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores1 = torch.matmul(q1.float(), k1_cat.float().transpose(-2, -1).contiguous()) * scale
-        scores2 = torch.matmul(q2.float(), k2_cat.float().transpose(-2, -1).contiguous()) * scale
+        scores1 = (
+            torch.matmul(q1.float(), k1_cat.float().transpose(-2, -1).contiguous())
+            * scale
+        )
+        scores2 = (
+            torch.matmul(q2.float(), k2_cat.float().transpose(-2, -1).contiguous())
+            * scale
+        )
 
         # Causal mask (HX-FIX-03: offset-aware for cache)
         if self.is_decoder:
             if past_len > 0:
                 abs_q = (past_len + torch.arange(L, device=device)).unsqueeze(1)
                 abs_k = torch.arange(N_kv, device=device).unsqueeze(0)
-                causal = (abs_k <= abs_q)
+                causal = abs_k <= abs_q
             else:
-                causal = torch.tril(torch.ones(L, N_kv, device=device, dtype=torch.bool))
+                causal = torch.tril(
+                    torch.ones(L, N_kv, device=device, dtype=torch.bool)
+                )
             scores1 = scores1.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
             scores2 = scores2.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
 
         # Padding mask (HX-FIX-12)
-        eff_mask = encoder_attention_mask if encoder_hidden_states is not None else attention_mask
+        eff_mask = (
+            encoder_attention_mask
+            if encoder_hidden_states is not None
+            else attention_mask
+        )
         valid_mask = self._prepare_valid_mask(eff_mask, B, N_kv, device)
         if valid_mask is not None:
             scores1 = scores1.masked_fill(~valid_mask[:, None, None, :].bool(), -1e4)
@@ -700,21 +987,31 @@ class HymbaTransXBlock(BaseAttention):
                 head_mask = head_mask[:, :, :1].unsqueeze(-1)
             diff_attn = diff_attn * head_mask.to(diff_attn.dtype)
 
-        A_out = torch.matmul(diff_attn, v_cat).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+        A_out = (
+            torch.matmul(diff_attn, v_cat)
+            .transpose(1, 2)
+            .contiguous()
+            .view(B, L, self.all_head_size)
+        )
 
         # SSM branch
         if self.mamba is not None:
             if x.requires_grad:
                 from torch.utils.checkpoint import checkpoint
+
                 def _run_mamba(h, m):
                     return self.mamba(h, attention_mask=m)[0]
 
                 if self.is_decoder:
-                    M_out = checkpoint(_run_mamba, x, attention_mask, use_reentrant=False)
+                    M_out = checkpoint(
+                        _run_mamba, x, attention_mask, use_reentrant=False
+                    )
                 else:
                     x_rev = torch.flip(x, dims=[1])
                     mf = checkpoint(_run_mamba, x, attention_mask, use_reentrant=False)
-                    mb = checkpoint(_run_mamba, x_rev, attention_mask, use_reentrant=False)
+                    mb = checkpoint(
+                        _run_mamba, x_rev, attention_mask, use_reentrant=False
+                    )
                     M_out = 0.5 * (mf + torch.flip(mb, dims=[1]))
             else:
                 if self.is_decoder:
@@ -747,6 +1044,7 @@ class HymbaTransXBlock(BaseAttention):
 # ===========================================================================
 # Injection (HX-FIX-09, HX-FIX-10)
 # ===========================================================================
+
 
 @ATTENTION_REGISTRY.register("hymba_transx_inject")
 @ATTENTION_REGISTRY.register("inject_hymba_transx")

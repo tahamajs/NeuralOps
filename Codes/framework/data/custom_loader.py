@@ -5,7 +5,6 @@ Custom dataset loading from CSV, JSON, Parquet files.
 from pathlib import Path
 
 import pandas as pd
-
 from datasets import Dataset, DatasetDict
 
 
@@ -81,7 +80,7 @@ def load_dataset_from_file(
 
 
 def _detect_text_column(df: pd.DataFrame) -> str | None:
-    """ detect text column."""
+    """detect text column."""
     candidates = ["text", "sentence", "prompt", "question", "content", "body"]
     for col in candidates:
         if col in df.columns:
@@ -95,7 +94,7 @@ def _detect_text_column(df: pd.DataFrame) -> str | None:
 
 
 def _detect_label_column(df: pd.DataFrame) -> str | None:
-    """ detect label column."""
+    """detect label column."""
     candidates = ["label", "labels", "class", "target", "gold", "answer"]
     for col in candidates:
         if col in df.columns:

@@ -66,7 +66,7 @@ def get_transformer_layers(model: nn.Module) -> list[nn.Module]:
 
 def get_attention_modules(model: nn.Module) -> list[tuple[str, nn.Module]]:
     """Return (name, module) for all leaf attention sub-modules across any transformer architecture.
-    
+
     Applies strict path-prefix deduplication so parent composite containers are never
     returned alongside their inner leaf attention blocks, preventing accidental deletion
     of LayerNorm, output projections, and residual streams.
@@ -85,12 +85,27 @@ def get_attention_modules(model: nn.Module) -> list[tuple[str, nn.Module]]:
             continue
         if name.endswith(".inner") or name.endswith("._wrapped_attention"):
             continue
-        is_output_submodule = name.endswith(".output") or name.endswith("_output") or "selfoutput" in class_name
+        is_output_submodule = (
+            name.endswith(".output")
+            or name.endswith("_output")
+            or "selfoutput" in class_name
+        )
         if is_output_submodule:
             continue
 
         # Heuristic 1: Module class name indicates attention or linear-recurrent block
-        if any(x in class_name for x in ["attention", "selfattn", "selfattention", "crossattn", "deltanet", "gated_deltanet", "gatedattention"]):
+        if any(
+            x in class_name
+            for x in [
+                "attention",
+                "selfattn",
+                "selfattention",
+                "crossattn",
+                "deltanet",
+                "gated_deltanet",
+                "gatedattention",
+            ]
+        ):
             raw_candidates.append((name, module))
             seen_names.add(name)
             continue
@@ -105,7 +120,9 @@ def get_attention_modules(model: nn.Module) -> list[tuple[str, nn.Module]]:
             or hasattr(module, "qk_proj")
         ):
             # Avoid leaf nn.Linear layers that might happen to match attributes
-            if not isinstance(module, (nn.Linear, nn.LayerNorm, nn.Dropout, nn.Embedding)):
+            if not isinstance(
+                module, (nn.Linear, nn.LayerNorm, nn.Dropout, nn.Embedding)
+            ):
                 raw_candidates.append((name, module))
                 seen_names.add(name)
 
@@ -116,14 +133,20 @@ def get_attention_modules(model: nn.Module) -> list[tuple[str, nn.Module]]:
     leaf_modules: list[tuple[str, nn.Module]] = []
 
     for name, module in raw_candidates:
-        is_parent = any(other != name and other.startswith(name + ".") for other in all_cand_names)
+        is_parent = any(
+            other != name and other.startswith(name + ".") for other in all_cand_names
+        )
         if not is_parent:
             leaf_modules.append((name, module))
 
     # Expected count sanity validation based on model configuration
     cfg = getattr(model, "config", None)
     if cfg is not None:
-        enc_layers = getattr(cfg, "num_hidden_layers", getattr(cfg, "num_layers", getattr(cfg, "n_layer", None)))
+        enc_layers = getattr(
+            cfg,
+            "num_hidden_layers",
+            getattr(cfg, "num_layers", getattr(cfg, "n_layer", None)),
+        )
         is_enc_dec = getattr(cfg, "is_encoder_decoder", False)
         dec_layers = getattr(cfg, "num_decoder_layers", enc_layers) if is_enc_dec else 0
 
@@ -133,8 +156,11 @@ def get_attention_modules(model: nn.Module) -> list[tuple[str, nn.Module]]:
                 logger.warning(
                     "get_attention_modules detected %d modules, expected approximately %d "
                     "(layers=%s, is_encoder_decoder=%s). Detected: %s",
-                    len(leaf_modules), expected_min, enc_layers, is_enc_dec,
-                    [n for n, _ in leaf_modules]
+                    len(leaf_modules),
+                    expected_min,
+                    enc_layers,
+                    is_enc_dec,
+                    [n for n, _ in leaf_modules],
                 )
 
     return leaf_modules

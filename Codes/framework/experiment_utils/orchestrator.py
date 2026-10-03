@@ -6,9 +6,9 @@ Uses the core framework for all ML logic.
 import logging
 import threading
 import traceback
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
-from collections.abc import Callable
 
 from framework.config import Config, load_config
 from framework.data import DataConfig, TaskType, load_dataset, preprocess_function
@@ -112,6 +112,7 @@ class MegaOrchestrator:
             )
             # Add basic callbacks
             from framework.trainer.callbacks import MemoryCallback, TimeCallback
+
             trainer.add_callback(MemoryCallback())
             trainer.add_callback(TimeCallback())
 
@@ -149,13 +150,13 @@ class MegaOrchestrator:
             raise
 
     def _build_experiment_config(self) -> Any:
-        """ build experiment config."""
+        """build experiment config."""
         from framework.data.dataset_loader import ExperimentConfig
 
         return ExperimentConfig(dataset_name=self.cfg.training.task)
 
     def _preprocess_dataset(self, dataset) -> Any:
-        """ preprocess dataset."""
+        """preprocess dataset."""
         task = self.cfg.training.task
         s1, s2 = None, None
         from framework.data.glue_loader import GLUE_TASK_KEYS
@@ -188,7 +189,7 @@ class MegaOrchestrator:
         return tokenized
 
     def _log(self, msg: str) -> None:
-        """ log."""
+        """log."""
         logger.info("[%s] %s", self.run_id[:8], msg)
         if self.log_cb:
             self.log_cb(msg)

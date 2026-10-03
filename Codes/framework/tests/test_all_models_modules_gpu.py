@@ -37,21 +37,18 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-# Framework core imports
-from framework.core.registry import (
-    ATTENTION_REGISTRY,
-    COMPRESSOR_REGISTRY,
-    is_module_declared_compatible,
-)
-from framework.core.attention_utils import inject_attention
-from framework.utils.compat import module_family_support, wrap_for_family
-from framework.utils.qwen_compat import install_qwen_aliases, is_qwen_model
-from framework.utils.model_family import detect_family, ModelAdapter
-from framework.eval_all_models_datasets import get_dataset_batch, _extract_logits_and_loss
-
 # Ensure attention and compression modules are fully registered
 import framework.attentions
 import framework.compression_engine
+from framework.core.attention_utils import inject_attention
+# Framework core imports
+from framework.core.registry import (ATTENTION_REGISTRY, COMPRESSOR_REGISTRY,
+                                     is_module_declared_compatible)
+from framework.eval_all_models_datasets import (_extract_logits_and_loss,
+                                                get_dataset_batch)
+from framework.utils.compat import module_family_support, wrap_for_family
+from framework.utils.model_family import ModelAdapter, detect_family
+from framework.utils.qwen_compat import install_qwen_aliases, is_qwen_model
 
 logging.basicConfig(
     level=logging.INFO,

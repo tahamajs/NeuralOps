@@ -3,15 +3,9 @@ import types
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.utils.compat import (
-    FamilyModuleWrapper,
-    convert_mask,
-    fp32_linalg,
-    install_projection_aliases,
-    module_family_support,
-    wrap_for_family,
-)
+from framework.utils.compat import (FamilyModuleWrapper, convert_mask,
+                                    fp32_linalg, install_projection_aliases,
+                                    module_family_support, wrap_for_family)
 from framework.utils.model_family import ModelAdapter, detect_family
 
 

@@ -1,16 +1,13 @@
-import pytest
 import math
 import warnings
-import torch
-import torch.nn as nn
 from types import SimpleNamespace
 
+import pytest
+import torch
+import torch.nn as nn
 from framework.attentions.triton_svd_linear_attention import (
-    TritonSVDLinearAttention,
-    SVDLinearProjection,
-    triton_linear_attention,
-    inject_triton_svd_linear_attention,
-)
+    SVDLinearProjection, TritonSVDLinearAttention,
+    inject_triton_svd_linear_attention, triton_linear_attention)
 
 
 def test_triton_svd_linear_config_handling():

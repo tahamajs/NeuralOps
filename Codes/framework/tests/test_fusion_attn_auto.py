@@ -1,7 +1,8 @@
+import framework.attentions.fusion_attn
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.fusion_attn
+
 
 def test_fusion_attn_module_present():
     assert hasattr(framework.attentions, 'fusion_attn')

@@ -18,7 +18,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
@@ -80,11 +79,15 @@ class ResSVDLinear(nn.Module):
         # Trainable Residual LoRA Adapters
         if self.residual_rank > 0:
             self.lora_A = nn.Parameter(
-                torch.empty(self.residual_rank, in_features, dtype=dtype, device=device),
+                torch.empty(
+                    self.residual_rank, in_features, dtype=dtype, device=device
+                ),
                 requires_grad=True,
             )
             self.lora_B = nn.Parameter(
-                torch.empty(out_features, self.residual_rank, dtype=dtype, device=device),
+                torch.empty(
+                    out_features, self.residual_rank, dtype=dtype, device=device
+                ),
                 requires_grad=True,
             )
         else:
@@ -124,7 +127,11 @@ class ResSVDLinear(nn.Module):
             base = torch.matmul(self.base_U, self.base_V)
         else:
             base = self.base_weight
-        if self.residual_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+        if (
+            self.residual_rank > 0
+            and self.lora_A is not None
+            and self.lora_B is not None
+        ):
             res = self.scaling * torch.matmul(self.lora_B, self.lora_A)
             return base + res
         return base
@@ -142,7 +149,11 @@ class ResSVDLinear(nn.Module):
             base_out = F.linear(x, self.base_weight)
 
         # Trainable spectral residual LoRA adapter forward
-        if self.residual_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+        if (
+            self.residual_rank > 0
+            and self.lora_A is not None
+            and self.lora_B is not None
+        ):
             res_intermediate = F.linear(x, self.lora_A)
             res_out = self.scaling * F.linear(res_intermediate, self.lora_B)
             out = base_out + res_out
@@ -254,9 +265,7 @@ class ResSVDLinear(nn.Module):
             nn.Linear: Standard dense linear layer with merged weights.
         """
         device = next(self.parameters()).device
-        dtype = (
-            self.base_U.dtype if self.factorize_base else self.base_weight.dtype
-        )
+        dtype = self.base_U.dtype if self.factorize_base else self.base_weight.dtype
 
         merged_linear = nn.Linear(
             self.in_features,
@@ -272,7 +281,11 @@ class ResSVDLinear(nn.Module):
             else:
                 W_base = self.base_weight.float()
 
-            if self.residual_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            if (
+                self.residual_rank > 0
+                and self.lora_A is not None
+                and self.lora_B is not None
+            ):
                 delta_W = self.scaling * (self.lora_B.float() @ self.lora_A.float())
                 W_total = W_base + delta_W
             else:
@@ -297,7 +310,11 @@ class ResSVDLinear(nn.Module):
             else:
                 W_approx = self.base_weight.float()
 
-            if self.residual_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            if (
+                self.residual_rank > 0
+                and self.lora_A is not None
+                and self.lora_B is not None
+            ):
                 W_approx = W_approx + self.scaling * (
                     self.lora_B.float() @ self.lora_A.float()
                 )
@@ -449,7 +466,9 @@ def res_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Mo
     return compressed_model
 
 
-def spectral_residual_lora_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
+def spectral_residual_lora_factory(
+    model: Any, comp_config: Any = None, **kwargs: Any
+) -> nn.Module:
     """Spectral Residual LoRA factory function."""
     compressor = SpectralResidualLoRA(model, comp_config=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
