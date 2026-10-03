@@ -95,32 +95,6 @@ def test_all_attentions(attn_cls, name):
 </dl>
 </section>
 <section>
-<h2 class="section-title" id="header-classes">Classes</h2>
-<dl>
-<dt id="neuralops.tests.test_kernel_quantization_comprehensive.MockConfig"><code class="flex name class">
-<span>class <span class="ident">MockConfig</span></span>
-<span>(</span><span>embed_dim=768, num_heads=8, max_seq_len=128)</span>
-</code></dt>
-<dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class MockConfig:
-    def __init__(self, embed_dim=768, num_heads=8, max_seq_len=128):
-        self.embed_dim = embed_dim
-        self.hidden_size = embed_dim
-        self.num_heads = num_heads
-        self.num_attention_heads = num_heads
-        self.max_position_embeddings = max_seq_len
-        self.max_seq_len = max_seq_len
-        self.attention_dropout = 0.0
-        self.dropout = 0.0
-        self.layer_norm_eps = 1e-12</code></pre>
-</details>
-<div class="desc"></div>
-</dd>
-</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -137,13 +111,6 @@ def test_all_attentions(attn_cls, name):
 <ul class="">
 <li><code><a title="neuralops.tests.test_kernel_quantization_comprehensive.main" href="#neuralops.tests.test_kernel_quantization_comprehensive.main">main</a></code></li>
 <li><code><a title="neuralops.tests.test_kernel_quantization_comprehensive.test_all_attentions" href="#neuralops.tests.test_kernel_quantization_comprehensive.test_all_attentions">test_all_attentions</a></code></li>
-</ul>
-</li>
-<li><h3><a href="#header-classes">Classes</a></h3>
-<ul>
-<li>
-<h4><code><a title="neuralops.tests.test_kernel_quantization_comprehensive.MockConfig" href="#neuralops.tests.test_kernel_quantization_comprehensive.MockConfig">MockConfig</a></code></h4>
-</li>
 </ul>
 </li>
 </ul>

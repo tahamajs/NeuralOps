@@ -317,71 +317,6 @@ evaluation mode.
 <li>torch.nn.modules.module.Module</li>
 </ul>
 </dd>
-<dt id="neuralops.tests.test_adasplash_attention.MockConfig"><code class="flex name class">
-<span>class <span class="ident">MockConfig</span></span>
-</code></dt>
-<dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class MockConfig:
-    hidden_size = 64
-    num_attention_heads = 4
-    num_heads = 4
-    num_key_value_heads = 4
-    head_dim = 16
-    is_decoder = False
-    model_type = &#34;bert&#34;
-    rank = 8
-    alpha = 1.5
-    lora_rank = 4</code></pre>
-</details>
-<div class="desc"></div>
-<h3>Class variables</h3>
-<dl>
-<dt id="neuralops.tests.test_adasplash_attention.MockConfig.alpha"><code class="name">var <span class="ident">alpha</span></code></dt>
-<dd>
-<div class="desc"><p>The type of the None singleton.</p></div>
-</dd>
-<dt id="neuralops.tests.test_adasplash_attention.MockConfig.head_dim"><code class="name">var <span class="ident">head_dim</span></code></dt>
-<dd>
-<div class="desc"><p>The type of the None singleton.</p></div>
-</dd>
-<dt id="neuralops.tests.test_adasplash_attention.MockConfig.hidden_size"><code class="name">var <span class="ident">hidden_size</span></code></dt>
-<dd>
-<div class="desc"><p>The type of the None singleton.</p></div>
-</dd>
-<dt id="neuralops.tests.test_adasplash_attention.MockConfig.is_decoder"><code class="name">var <span class="ident">is_decoder</span></code></dt>
-<dd>
-<div class="desc"><p>The type of the None singleton.</p></div>
-</dd>
-<dt id="neuralops.tests.test_adasplash_attention.MockConfig.lora_rank"><code class="name">var <span class="ident">lora_rank</span></code></dt>
-<dd>
-<div class="desc"><p>The type of the None singleton.</p></div>
-</dd>
-<dt id="neuralops.tests.test_adasplash_attention.MockConfig.model_type"><code class="name">var <span class="ident">model_type</span></code></dt>
-<dd>
-<div class="desc"><p>The type of the None singleton.</p></div>
-</dd>
-<dt id="neuralops.tests.test_adasplash_attention.MockConfig.num_attention_heads"><code class="name">var <span class="ident">num_attention_heads</span></code></dt>
-<dd>
-<div class="desc"><p>The type of the None singleton.</p></div>
-</dd>
-<dt id="neuralops.tests.test_adasplash_attention.MockConfig.num_heads"><code class="name">var <span class="ident">num_heads</span></code></dt>
-<dd>
-<div class="desc"><p>The type of the None singleton.</p></div>
-</dd>
-<dt id="neuralops.tests.test_adasplash_attention.MockConfig.num_key_value_heads"><code class="name">var <span class="ident">num_key_value_heads</span></code></dt>
-<dd>
-<div class="desc"><p>The type of the None singleton.</p></div>
-</dd>
-<dt id="neuralops.tests.test_adasplash_attention.MockConfig.rank"><code class="name">var <span class="ident">rank</span></code></dt>
-<dd>
-<div class="desc"><p>The type of the None singleton.</p></div>
-</dd>
-</dl>
-</dd>
 <dt id="neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud"><code class="flex name class">
 <span>class <span class="ident">TestCopyWeightsFailLoud</span></span>
 </code></dt>
@@ -894,21 +829,6 @@ evaluation mode.
 </li>
 <li>
 <h4><code><a title="neuralops.tests.test_adasplash_attention.DummyRobertaAttn" href="#neuralops.tests.test_adasplash_attention.DummyRobertaAttn">DummyRobertaAttn</a></code></h4>
-</li>
-<li>
-<h4><code><a title="neuralops.tests.test_adasplash_attention.MockConfig" href="#neuralops.tests.test_adasplash_attention.MockConfig">MockConfig</a></code></h4>
-<ul class="two-column">
-<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.alpha" href="#neuralops.tests.test_adasplash_attention.MockConfig.alpha">alpha</a></code></li>
-<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.head_dim" href="#neuralops.tests.test_adasplash_attention.MockConfig.head_dim">head_dim</a></code></li>
-<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.hidden_size" href="#neuralops.tests.test_adasplash_attention.MockConfig.hidden_size">hidden_size</a></code></li>
-<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.is_decoder" href="#neuralops.tests.test_adasplash_attention.MockConfig.is_decoder">is_decoder</a></code></li>
-<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.lora_rank" href="#neuralops.tests.test_adasplash_attention.MockConfig.lora_rank">lora_rank</a></code></li>
-<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.model_type" href="#neuralops.tests.test_adasplash_attention.MockConfig.model_type">model_type</a></code></li>
-<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.num_attention_heads" href="#neuralops.tests.test_adasplash_attention.MockConfig.num_attention_heads">num_attention_heads</a></code></li>
-<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.num_heads" href="#neuralops.tests.test_adasplash_attention.MockConfig.num_heads">num_heads</a></code></li>
-<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.num_key_value_heads" href="#neuralops.tests.test_adasplash_attention.MockConfig.num_key_value_heads">num_key_value_heads</a></code></li>
-<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.rank" href="#neuralops.tests.test_adasplash_attention.MockConfig.rank">rank</a></code></li>
-</ul>
 </li>
 <li>
 <h4><code><a title="neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud" href="#neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud">TestCopyWeightsFailLoud</a></code></h4>

@@ -273,6 +273,47 @@ el.replaceWith(d);
 </dl>
 </section>
 <section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.runners.unified_orchestrator.UnifiedOrchestrator"><code class="flex name class">
+<span>class <span class="ident">UnifiedOrchestrator</span></span>
+<span>(</span><span>default_args: list | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class UnifiedOrchestrator:
+    &#34;&#34;&#34;Class wrapper for NeuralOps Unified Orchestrator.&#34;&#34;&#34;
+
+    def __init__(self, default_args: list | None = None) -&gt; None:
+        self.default_args = default_args or []
+
+    def run(self, module_key: str, args: list | None = None) -&gt; None:
+        merged = list(self.default_args) + (args or [])
+        run_orchestrator(module_key, merged)</code></pre>
+</details>
+<div class="desc"><p>Class wrapper for NeuralOps Unified Orchestrator.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.runners.unified_orchestrator.UnifiedOrchestrator.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self, module_key: str, args: list | None = None) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run(self, module_key: str, args: list | None = None) -&gt; None:
+    merged = list(self.default_args) + (args or [])
+    run_orchestrator(module_key, merged)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -289,6 +330,16 @@ el.replaceWith(d);
 <ul class="">
 <li><code><a title="neuralops.runners.unified_orchestrator.main" href="#neuralops.runners.unified_orchestrator.main">main</a></code></li>
 <li><code><a title="neuralops.runners.unified_orchestrator.run_orchestrator" href="#neuralops.runners.unified_orchestrator.run_orchestrator">run_orchestrator</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.runners.unified_orchestrator.UnifiedOrchestrator" href="#neuralops.runners.unified_orchestrator.UnifiedOrchestrator">UnifiedOrchestrator</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.runners.unified_orchestrator.UnifiedOrchestrator.run" href="#neuralops.runners.unified_orchestrator.UnifiedOrchestrator.run">run</a></code></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

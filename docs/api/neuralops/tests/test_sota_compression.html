@@ -67,13 +67,13 @@ el.replaceWith(d);
     def test_registry_lookups(self) -&gt; None:
         &#34;&#34;&#34;Verify dynamic_entropy_svd, entropy_rank_allocator, res_svd, and spectral_residual_lora.&#34;&#34;&#34;
         # 1. dynamic_entropy_svd
-        self.assertIn(&#34;dynamic_entropy_svd&#34;, COMPRESSOR_REGISTRY)
-        cls_dynamic = COMPRESSOR_REGISTRY.get(&#34;dynamic_entropy_svd&#34;)
+        self.assertIn(&#34;dynamic_entropy_svd_class&#34;, COMPRESSOR_REGISTRY)
+        cls_dynamic = COMPRESSOR_REGISTRY.get(&#34;dynamic_entropy_svd_class&#34;)
         self.assertTrue(issubclass(cls_dynamic, DynamicEntropySVDCompressor))
 
         # 2. entropy_rank_allocator
-        self.assertIn(&#34;entropy_rank_allocator&#34;, COMPRESSOR_REGISTRY)
-        cls_alloc = COMPRESSOR_REGISTRY.get(&#34;entropy_rank_allocator&#34;)
+        self.assertIn(&#34;entropy_rank_allocator_class&#34;, COMPRESSOR_REGISTRY)
+        cls_alloc = COMPRESSOR_REGISTRY.get(&#34;entropy_rank_allocator_class&#34;)
         self.assertTrue(issubclass(cls_alloc, DynamicEntropySVDCompressor))
 
         # 3. res_svd
@@ -107,13 +107,13 @@ not have a method with the specified name.</p></div>
 <pre><code class="python">def test_registry_lookups(self) -&gt; None:
     &#34;&#34;&#34;Verify dynamic_entropy_svd, entropy_rank_allocator, res_svd, and spectral_residual_lora.&#34;&#34;&#34;
     # 1. dynamic_entropy_svd
-    self.assertIn(&#34;dynamic_entropy_svd&#34;, COMPRESSOR_REGISTRY)
-    cls_dynamic = COMPRESSOR_REGISTRY.get(&#34;dynamic_entropy_svd&#34;)
+    self.assertIn(&#34;dynamic_entropy_svd_class&#34;, COMPRESSOR_REGISTRY)
+    cls_dynamic = COMPRESSOR_REGISTRY.get(&#34;dynamic_entropy_svd_class&#34;)
     self.assertTrue(issubclass(cls_dynamic, DynamicEntropySVDCompressor))
 
     # 2. entropy_rank_allocator
-    self.assertIn(&#34;entropy_rank_allocator&#34;, COMPRESSOR_REGISTRY)
-    cls_alloc = COMPRESSOR_REGISTRY.get(&#34;entropy_rank_allocator&#34;)
+    self.assertIn(&#34;entropy_rank_allocator_class&#34;, COMPRESSOR_REGISTRY)
+    cls_alloc = COMPRESSOR_REGISTRY.get(&#34;entropy_rank_allocator_class&#34;)
     self.assertTrue(issubclass(cls_alloc, DynamicEntropySVDCompressor))
 
     # 3. res_svd

@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <meta name="generator" content="pdoc3 0.11.6">
 <title>neuralops.benchmarks API documentation</title>
-<meta name="description" content="NeuralOps Benchmarks &amp; Sweepers Suite.
-Contains experimental sweep drivers, scaling analysis, and multi-seed evaluation harnesses.">
+<meta name="description" content="NeuralOps Benchmarks &amp; Sweepers Suite …">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
@@ -37,13 +36,65 @@ el.replaceWith(d);
 <h1 class="title">Module <code>neuralops.benchmarks</code></h1>
 </header>
 <section id="section-intro">
-<p>NeuralOps Benchmarks &amp; Sweepers Suite.
-Contains experimental sweep drivers, scaling analysis, and multi-seed evaluation harnesses.</p>
+<p>NeuralOps Benchmarks &amp; Sweepers Suite.</p>
+<p>Sweep drivers, scaling analysis, multi-seed evaluation harnesses, and
+GPU profiling utilities for the full NeuralOps benchmark protocol.</p>
+<h2 id="modules">Modules</h2>
+<p>run_all_benchmarks
+Runs the complete benchmark matrix for all registered modules.
+run_gpt2_sweep
+GPT-2-specific quality/speed sweep.
+run_long_context_sweep
+Scaling analysis over sequence lengths 512 – 16384.
+run_multiseed
+Multi-seed robustness evaluation.
+run_multiseed_rigor
+Rigorous multi-seed evaluation with statistical testing.
+run_one_module_isolated
+Isolated single-module benchmark for debugging.
+run_quality_sweep
+Quality-vs-rank Pareto frontier sweep.
+run_rank_sweeper
+Rank ablation sweep across all registered modules.
+run_ruler_benchmark
+RULER long-context benchmark driver.
+run_seqlen_scaling
+Sequence-length scaling experiment.
+run_seqlen_scaling_bench
+Sequence-length scaling with hardware profiling.
+run_whitened_svd
+Whitened SVD compression benchmark.
+launch_parallel_sweep
+Parallel multi-GPU sweep launcher.
+run_all_modules_scheduler
+Priority-queue-based module scheduler.
+kd_quick_test
+Quick knowledge-distillation sanity test.
+gpu_live_probe
+Real-time GPU telemetry probe (run on GPU server).
+harvest_gpu_benchmark_data
+Post-hoc GPU benchmark data harvesting.</p>
+<h2 id="subpackages">Subpackages</h2>
+<p>core
+Shared argument parsing (<code>arguments.py</code>) and stats utilities (<code>stats.py</code>).
+module_sweeps
+Not here — per-module <code>run_all_4_*.py</code> scripts live in
+<code>neuralops.runners.module_sweeps</code>.</p>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
 <dt><code class="name"><a title="neuralops.benchmarks.core" href="core/index.html">neuralops.benchmarks.core</a></code></dt>
+<dd>
+<div class="desc"><p>Shared core utilities for the NeuralOps benchmarks suite …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.benchmarks.gpu_live_probe" href="gpu_live_probe.html">neuralops.benchmarks.gpu_live_probe</a></code></dt>
+<dd>
+<div class="desc"><p>gpu_live_probe.py
+Executed on the GPU server to return real-time GPU telemetry, active running process,
+live training loss trajectory, and log streams …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.benchmarks.harvest_gpu_benchmark_data" href="harvest_gpu_benchmark_data.html">neuralops.benchmarks.harvest_gpu_benchmark_data</a></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -122,7 +173,10 @@ Writes result JSON to &ndash;output_json path …</p></div>
 </article>
 <nav id="sidebar">
 <div class="toc">
-<ul></ul>
+<ul>
+<li><a href="#modules">Modules</a></li>
+<li><a href="#subpackages">Subpackages</a></li>
+</ul>
 </div>
 <ul id="index">
 <li><h3>Super-module</h3>
@@ -133,6 +187,8 @@ Writes result JSON to &ndash;output_json path …</p></div>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
 <li><code><a title="neuralops.benchmarks.core" href="core/index.html">neuralops.benchmarks.core</a></code></li>
+<li><code><a title="neuralops.benchmarks.gpu_live_probe" href="gpu_live_probe.html">neuralops.benchmarks.gpu_live_probe</a></code></li>
+<li><code><a title="neuralops.benchmarks.harvest_gpu_benchmark_data" href="harvest_gpu_benchmark_data.html">neuralops.benchmarks.harvest_gpu_benchmark_data</a></code></li>
 <li><code><a title="neuralops.benchmarks.kd_quick_test" href="kd_quick_test.html">neuralops.benchmarks.kd_quick_test</a></code></li>
 <li><code><a title="neuralops.benchmarks.launch_parallel_sweep" href="launch_parallel_sweep.html">neuralops.benchmarks.launch_parallel_sweep</a></code></li>
 <li><code><a title="neuralops.benchmarks.run_all_benchmarks" href="run_all_benchmarks.html">neuralops.benchmarks.run_all_benchmarks</a></code></li>

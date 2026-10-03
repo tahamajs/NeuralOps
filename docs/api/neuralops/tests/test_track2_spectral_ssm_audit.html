@@ -56,44 +56,6 @@ Audits all Spectral, SSM, and Recurrent Attention modules:
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="neuralops.tests.test_track2_spectral_ssm_audit.MockConfig"><code class="flex name class">
-<span>class <span class="ident">MockConfig</span></span>
-<span>(</span><span>hidden_size=768, num_attention_heads=12, dropout=0.1)</span>
-</code></dt>
-<dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class MockConfig:
-    def __init__(self, hidden_size=768, num_attention_heads=12, dropout=0.1):
-        self.hidden_size = hidden_size
-        self.d_model = hidden_size
-        self.dim = hidden_size
-        self.n_embd = hidden_size
-        self.num_attention_heads = num_attention_heads
-        self.num_heads = num_attention_heads
-        self.n_heads = num_attention_heads
-        self.head_dim = hidden_size // num_attention_heads
-        self.dropout = dropout
-        self.attention_probs_dropout_prob = dropout
-        self.hidden_dropout_prob = dropout
-        self.block_size = 64
-        self.local_window = 64
-        self.window_size = 64
-        self.rank = 64
-        self.lora_r = 64
-        self.svd_energy = 0.95
-        self.rff_features = 128
-        self.kernel_feature_dim = 128
-        self.use_gate = True
-        self.gate_init_bias = 1.8
-        self.d_state = 16
-        self.d_conv = 4
-        self.expand = 1</code></pre>
-</details>
-<div class="desc"></div>
-</dd>
 <dt id="neuralops.tests.test_track2_spectral_ssm_audit.MockMHA"><code class="flex name class">
 <span>class <span class="ident">MockMHA</span></span>
 <span>(</span><span>hidden_size=768)</span>
@@ -837,9 +799,6 @@ not have a method with the specified name.</p></div>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
-<li>
-<h4><code><a title="neuralops.tests.test_track2_spectral_ssm_audit.MockConfig" href="#neuralops.tests.test_track2_spectral_ssm_audit.MockConfig">MockConfig</a></code></h4>
-</li>
 <li>
 <h4><code><a title="neuralops.tests.test_track2_spectral_ssm_audit.MockMHA" href="#neuralops.tests.test_track2_spectral_ssm_audit.MockMHA">MockMHA</a></code></h4>
 </li>

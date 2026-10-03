@@ -905,35 +905,6 @@ evaluation mode.
 <li>torch.nn.modules.module.Module</li>
 </ul>
 </dd>
-<dt id="neuralops.tests.test_aegis_v5.MockConfig"><code class="flex name class">
-<span>class <span class="ident">MockConfig</span></span>
-<span>(</span><span>hidden_size=64,<br>num_attention_heads=4,<br>num_key_value_heads=4,<br>head_dim=16,<br>is_decoder=False,<br>model_type='bert')</span>
-</code></dt>
-<dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class MockConfig:
-    def __init__(
-        self,
-        hidden_size=64,
-        num_attention_heads=4,
-        num_key_value_heads=4,
-        head_dim=16,
-        is_decoder=False,
-        model_type=&#34;bert&#34;,
-    ):
-        self.hidden_size = hidden_size
-        self.num_attention_heads = num_attention_heads
-        self.num_heads = num_attention_heads
-        self.num_key_value_heads = num_key_value_heads
-        self.head_dim = head_dim
-        self.is_decoder = is_decoder
-        self.model_type = model_type</code></pre>
-</details>
-<div class="desc"></div>
-</dd>
 </dl>
 </section>
 </article>
@@ -1001,9 +972,6 @@ evaluation mode.
 </li>
 <li>
 <h4><code><a title="neuralops.tests.test_aegis_v5.DummyRobertaSelfAttn" href="#neuralops.tests.test_aegis_v5.DummyRobertaSelfAttn">DummyRobertaSelfAttn</a></code></h4>
-</li>
-<li>
-<h4><code><a title="neuralops.tests.test_aegis_v5.MockConfig" href="#neuralops.tests.test_aegis_v5.MockConfig">MockConfig</a></code></h4>
 </li>
 </ul>
 </li>

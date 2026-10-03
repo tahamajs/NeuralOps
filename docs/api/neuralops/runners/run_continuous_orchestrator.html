@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.runners.run_continuous_orchestrator API documentation</title>
+<meta name="description" content="Autonomous 48-Hour Continuous GPU Orchestrator.
+Supervises continuous multi-worker execution across all models and modules:
+- Ensures GPU compute …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.runners.run_continuous_orchestrator</code></h1>
+</header>
+<section id="section-intro">
+<p>Autonomous 48-Hour Continuous GPU Orchestrator.
+Supervises continuous multi-worker execution across all models and modules:
+- Ensures GPU compute cores remain continuously loaded (~80-95% utilization).
+- When Category 5B finishes, immediately seamlessly launches the full 48-Hour Pipeline.
+- Performs automated 20-minute audits and updates MASTER_PROJECT_RESULTS.md.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.runners.run_continuous_orchestrator.collect_latest_results"><code class="name flex">
+<span>def <span class="ident">collect_latest_results</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def collect_latest_results():
+    results = []
+    for csv_file in BASE_DIR.glob(&#34;results/batch3_*/*/summary.csv&#34;):
+        try:
+            with open(csv_file, &#34;r&#34;, encoding=&#34;utf-8&#34;) as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    model = &#34;DistilBERT&#34; if &#34;batch3_distilbert&#34; in str(csv_file) else &#34;RoBERTa&#34;
+                    results.append(
+                        {
+                            &#34;module&#34;: row.get(&#34;module_name&#34;, csv_file.parent.name),
+                            &#34;model&#34;: model,
+                            &#34;status&#34;: row.get(&#34;status&#34;, &#34;N/A&#34;),
+                            &#34;acc&#34;: row.get(&#34;accuracy_pct&#34;, &#34;N/A&#34;),
+                            &#34;f1&#34;: row.get(&#34;f1_score&#34;, &#34;N/A&#34;),
+                            &#34;recon&#34;: row.get(&#34;avg_reconstruction_error&#34;, &#34;N/A&#34;),
+                            &#34;vram&#34;: row.get(&#34;peak_vram_mb&#34;, &#34;N/A&#34;),
+                            &#34;speed&#34;: row.get(&#34;tokens_per_sec&#34;, &#34;N/A&#34;),
+                        }
+                    )
+        except Exception:
+            pass
+    return results</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.runners.run_continuous_orchestrator.is_process_running"><code class="name flex">
+<span>def <span class="ident">is_process_running</span></span>(<span>proc_substring)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_process_running(proc_substring):
+    try:
+        out = subprocess.check_output(
+            [&#34;wmic&#34;, &#34;process&#34;, &#34;get&#34;, &#34;commandline&#34;],
+            text=True,
+            timeout=10,
+            stderr=subprocess.DEVNULL,
+        )
+        for line in out.splitlines():
+            if proc_substring in line and &#34;wmic&#34; not in line.lower():
+                return True
+        return False
+    except Exception:
+        return False</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.runners.run_continuous_orchestrator.log"><code class="name flex">
+<span>def <span class="ident">log</span></span>(<span>msg: str)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def log(msg: str):
+    ts = datetime.now(timezone.utc).strftime(&#34;%Y-%m-%dT%H:%M:%SZ&#34;)
+    line = f&#34;[{ts}] {msg}&#34;
+    print(line, flush=True)
+    try:
+        with open(ORCHESTRATOR_LOG, &#34;a&#34;, encoding=&#34;utf-8&#34;) as f:
+            f.write(line + &#34;\n&#34;)
+    except Exception:
+        pass</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.runners.run_continuous_orchestrator.main"><code class="name flex">
+<span>def <span class="ident">main</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def main():
+    log(&#34;============================================================&#34;)
+    log(&#34;Starting Autonomous 48-Hour Continuous GPU Orchestrator&#34;)
+    log(f&#34;Base Directory: {BASE_DIR}&#34;)
+    log(&#34;============================================================&#34;)
+
+    # Check if run_batch3_gpu_sweep.py is currently running
+    if is_process_running(&#34;run_batch3_gpu_sweep.py&#34;):
+        log(&#34;[INFO] Detected active Category 5B runner. Supervising until completion...&#34;)
+        while is_process_running(&#34;run_batch3_gpu_sweep.py&#34;):
+            time.sleep(30)
+        log(
+            &#34;[INFO] Category 5B runner completed! Immediately transitioning to 48-hour master pipeline...&#34;
+        )
+
+    # Launch full 48-hour pipeline
+    log(&#34;[LAUNCH] Starting run_autonomous_48h_pipeline.py...&#34;)
+    cmd = [sys.executable, &#34;-u&#34;, &#34;scripts/run_autonomous_48h_pipeline.py&#34;]
+    env = os.environ.copy()
+    env[&#34;PYTHONPATH&#34;] = (
+        f&#34;neuralops;{env.get(&#39;PYTHONPATH&#39;, &#39;&#39;)}&#34;
+        if os.name == &#34;nt&#34;
+        else f&#34;neuralops:{env.get(&#39;PYTHONPATH&#39;, &#39;&#39;)}&#34;
+    )
+
+    proc = subprocess.Popen(
+        cmd,
+        cwd=str(BASE_DIR),
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
+
+    t0 = time.time()
+    last_audit = t0
+
+    for line in proc.stdout:
+        print(line, end=&#34;&#34;, flush=True)
+        try:
+            with open(ORCHESTRATOR_LOG, &#34;a&#34;, encoding=&#34;utf-8&#34;) as f:
+                f.write(line)
+        except Exception:
+            pass
+
+        # 20-minute audit interval
+        if time.time() - last_audit &gt;= 1200:
+            last_audit = time.time()
+            res = collect_latest_results()
+            log(f&#34;[20-MIN AUDIT] Total completed tasks collected so far: {len(res)}&#34;)
+            try:
+                subprocess.run(
+                    [&#34;git&#34;, &#34;add&#34;, &#34;results&#34;, &#34;MASTER_PROJECT_RESULTS.md&#34;],
+                    cwd=str(BASE_DIR),
+                    check=False,
+                )
+                c_res = subprocess.run(
+                    [
+                        &#34;git&#34;,
+                        &#34;commit&#34;,
+                        &#34;-m&#34;,
+                        f&#34;auto: periodic 20-min results sync ({len(res)} tasks)&#34;,
+                    ],
+                    cwd=str(BASE_DIR),
+                    capture_output=True,
+                    text=True,
+                )
+                if (
+                    &#34;nothing to commit&#34; not in c_res.stdout.lower()
+                    and &#34;clean&#34; not in c_res.stdout.lower()
+                ):
+                    log(f&#34;[AUTO-COMMIT] Committed periodic results sync ({len(res)} tasks)&#34;)
+                    subprocess.run([&#34;git&#34;, &#34;push&#34;, &#34;origin&#34;, &#34;main&#34;], cwd=str(BASE_DIR), timeout=60)
+                    log(&#34;[AUTO-PUSH] Synced results with origin/main&#34;)
+            except Exception as ce:
+                log(f&#34;[AUTO-COMMIT WARNING] {ce}&#34;)
+
+    proc.wait()
+    log(
+        f&#34;[COMPLETED] Autonomous pipeline exited with code {proc.returncode} in {(time.time() - t0) / 3600:.2f} hours.&#34;
+    )</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.runners" href="index.html">neuralops.runners</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.runners.run_continuous_orchestrator.collect_latest_results" href="#neuralops.runners.run_continuous_orchestrator.collect_latest_results">collect_latest_results</a></code></li>
+<li><code><a title="neuralops.runners.run_continuous_orchestrator.is_process_running" href="#neuralops.runners.run_continuous_orchestrator.is_process_running">is_process_running</a></code></li>
+<li><code><a title="neuralops.runners.run_continuous_orchestrator.log" href="#neuralops.runners.run_continuous_orchestrator.log">log</a></code></li>
+<li><code><a title="neuralops.runners.run_continuous_orchestrator.main" href="#neuralops.runners.run_continuous_orchestrator.main">main</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

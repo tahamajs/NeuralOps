@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.runners.run_autonomous_48h_pipeline API documentation</title>
+<meta name="description" content="Autonomous 48-Hour Multi-Stream High-Performance GPU Pipeline.
+Executes all 6 benchmark stages CONCURRENTLY across 6 parallel worker streams:
+Stream …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.runners.run_autonomous_48h_pipeline</code></h1>
+</header>
+<section id="section-intro">
+<p>Autonomous 48-Hour Multi-Stream High-Performance GPU Pipeline.
+Executes all 6 benchmark stages CONCURRENTLY across 6 parallel worker streams:
+Stream 1: Stage 2A — Category 5A SVD Multi-Rank Sweeps on DistilBERT (Batch 128)
+Stream 2: Stage 2B — Category 5A SVD Multi-Rank Sweeps on RoBERTa-base (Batch 64)
+Stream 3: Stage 3
+— Category 1-4 Attention &amp; Linear/SSM Modules (Batch 64)
+Stream 4: Stage 4
+— Cross-Domain Transfer Sweeps: MNLI &amp; AG News (Batch 96)
+Stream 5: Stage 5
+— Long-Context Sequence Length Scaling: N=128..1024 (Batch 32-64)
+Stream 6: Stage 6
+— Statistical Rigor Multi-Seed Sweeps: Seeds 123 &amp; 456 (Batch 64)</p>
+<p>Hardware Targets &amp; Safeguards:
+- GPU Compute Utilization: &gt; 90% sustained (up to 100% SM saturation)
+- VRAM Active Utilization: &gt; 50% capacity (4.0 GB to 6.0 GB strictly enforced)
+- Dynamic VRAM Governor: Holds subprocesses if VRAM &gt; 5800 MB (zero OOM risk)
+- Auto-Commit &amp; Auto-Push: Triggers every 10 completed tasks across all streams
+- 5-Minute Telemetry Monitor: Logs GPU util, VRAM, temp, power, and active workers</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.runners.run_autonomous_48h_pipeline.auto_commit_and_push"><code class="name flex">
+<span>def <span class="ident">auto_commit_and_push</span></span>(<span>msg: str)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def auto_commit_and_push(msg: str):
+    try:
+        subprocess.run(
+            [&#34;git&#34;, &#34;add&#34;, &#34;results&#34;, &#34;MASTER_PROJECT_RESULTS.md&#34;], cwd=str(BASE_DIR), check=False
+        )
+        commit_res = subprocess.run(
+            [&#34;git&#34;, &#34;commit&#34;, &#34;-m&#34;, f&#34;auto(48h-pipeline): {msg}&#34;],
+            cwd=str(BASE_DIR),
+            capture_output=True,
+            text=True,
+        )
+        if (
+            &#34;nothing to commit&#34; not in commit_res.stdout.lower()
+            and &#34;clean&#34; not in commit_res.stdout.lower()
+        ):
+            log(f&#34;[AUTO-COMMIT] {msg}&#34;)
+            push_res = subprocess.run(
+                [&#34;git&#34;, &#34;push&#34;, &#34;origin&#34;, &#34;main&#34;],
+                cwd=str(BASE_DIR),
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+            if push_res.returncode == 0:
+                log(f&#34;[AUTO-PUSH] Synced with origin/main&#34;)
+            else:
+                log(f&#34;[AUTO-PUSH NOTE] Push output: {push_res.stderr.strip()[:100]}&#34;)
+    except Exception as e:
+        log(f&#34;[AUTO-COMMIT EXCEPTION] {e}&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.runners.run_autonomous_48h_pipeline.build_all_streams"><code class="name flex">
+<span>def <span class="ident">build_all_streams</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def build_all_streams():
+    &#34;&#34;&#34;Builds 6 concurrent task streams covering the entire repository.&#34;&#34;&#34;
+    cat5a_all = [
+        &#34;a3_compressor&#34;,
+        &#34;aa_svd_compressor&#34;,
+        &#34;aasvd&#34;,
+        &#34;adaptive_compressor&#34;,
+        &#34;adaptive_ranks&#34;,
+        &#34;adasvd_compressor&#34;,
+        &#34;admm_compressor&#34;,
+        &#34;come&#34;,
+        &#34;compot_compressor&#34;,
+        &#34;cr_compressor&#34;,
+        &#34;cur_compressor&#34;,
+        &#34;cur_linear&#34;,
+        &#34;cure&#34;,
+        &#34;direct_svd&#34;,
+        &#34;dobi_svd&#34;,
+        &#34;erc_svd&#34;,
+        &#34;frandi&#34;,
+        &#34;frandi_compressor&#34;,
+        &#34;gfws_d_compressor&#34;,
+        &#34;grecodec&#34;,
+        &#34;grecodec_compressor&#34;,
+        &#34;hybrid_svd_layer&#34;,
+        &#34;kronecker_compressor&#34;,
+        &#34;kronecker_linear&#34;,
+        &#34;kronecker_tt_lora&#34;,
+        &#34;lsc_compressor&#34;,
+        &#34;mgie_svd&#34;,
+        &#34;mgie_svd_compressor&#34;,
+        &#34;mlorq_compressor&#34;,
+        &#34;modegpt&#34;,
+        &#34;modegpt_compressor&#34;,
+        &#34;nmf_compressor&#34;,
+        &#34;oats&#34;,
+        &#34;oats_compressor&#34;,
+        &#34;rotational_slicegpt_int4&#34;,
+        &#34;rpca&#34;,
+        &#34;rpca_compressor&#34;,
+        &#34;saes_svd&#34;,
+        &#34;saes_svd_compressor&#34;,
+        &#34;saes_svd_v2&#34;,
+        &#34;salr&#34;,
+        &#34;slicegpt&#34;,
+        &#34;slicegpt_compressor&#34;,
+        &#34;slicegpt_pca&#34;,
+        &#34;subspace_projection&#34;,
+        &#34;svd_linear&#34;,
+        &#34;swift_svd_act&#34;,
+        &#34;swift_svd_compressor&#34;,
+        &#34;tt_compressor&#34;,
+        &#34;tt_linear&#34;,
+        &#34;uniql_compressor&#34;,
+    ]
+
+    streams = {}
+
+    # STREAM 1: Stage 2A — Category 5A SVD Multi-Rank Sweeps on DistilBERT (Batch 128)
+    s1_tasks = []
+    for m in cat5a_all:
+        for r in [64, 128, 256, 384]:
+            out = str(
+                BASE_DIR / &#34;results&#34; / &#34;02_rank_sweeps&#34; / &#34;deep_rank_distilbert&#34; / m / f&#34;rank_{r}&#34;
+            )
+            s1_tasks.append(
+                {
+                    &#34;name&#34;: f&#34;Stream 1 (Cat 5A r={r}) | DISTILBERT | {m}&#34;,
+                    &#34;module&#34;: m,
+                    &#34;model&#34;: &#34;models/distilbert_sst2&#34;,
+                    &#34;model_family&#34;: &#34;bert&#34;,
+                    &#34;dataset&#34;: &#34;sst2&#34;,
+                    &#34;rank&#34;: r,
+                    &#34;batch_size&#34;: 128,
+                    &#34;lr&#34;: &#34;2e-4&#34;,
+                    &#34;out_dir&#34;: out,
+                    &#34;summary_file&#34;: f&#34;{out}/summary.csv&#34;,
+                }
+            )
+    streams[&#34;STREAM_1_DISTILBERT_SVD&#34;] = s1_tasks
+
+    # STREAM 2: Stage 2B — Category 5A SVD Multi-Rank Sweeps on RoBERTa-base (Batch 96)
+    s2_tasks = []
+    for m in cat5a_all:
+        for r in [64, 128, 256, 384]:
+            out = str(
+                BASE_DIR / &#34;results&#34; / &#34;02_rank_sweeps&#34; / &#34;deep_rank_roberta&#34; / m / f&#34;rank_{r}&#34;
+            )
+            s2_tasks.append(
+                {
+                    &#34;name&#34;: f&#34;Stream 2 (Cat 5A r={r}) | ROBERTA | {m}&#34;,
+                    &#34;module&#34;: m,
+                    &#34;model&#34;: &#34;models/roberta_sst2&#34;,
+                    &#34;model_family&#34;: &#34;roberta&#34;,
+                    &#34;dataset&#34;: &#34;sst2&#34;,
+                    &#34;rank&#34;: r,
+                    &#34;batch_size&#34;: 96,
+                    &#34;lr&#34;: &#34;5e-5&#34;,
+                    &#34;out_dir&#34;: out,
+                    &#34;summary_file&#34;: f&#34;{out}/summary.csv&#34;,
+                }
+            )
+    streams[&#34;STREAM_2_ROBERTA_SVD&#34;] = s2_tasks
+
+    # STREAM 3: Stage 3 — Full Attention &amp; Linear/SSM Architectures (Batch 64)
+    key_attentions = [
+        &#34;cosformer&#34;,
+        &#34;performer&#34;,
+        &#34;linformer_attention&#34;,
+        &#34;hgrn2_layer&#34;,
+        &#34;gated_deltanet_block&#34;,
+        &#34;simple_ssm&#34;,
+        &#34;samba_m3&#34;,
+        &#34;mamba_svd_flash&#34;,
+        &#34;infini_attention&#34;,
+        &#34;flash3&#34;,
+        &#34;nystrom&#34;,
+        &#34;rala&#34;,
+        &#34;spectron&#34;,
+        &#34;aegis_v1&#34;,
+        &#34;aegis_v2&#34;,
+        &#34;aegis_v6&#34;,
+        &#34;chela_slay&#34;,
+        &#34;nexus&#34;,
+        &#34;moba&#34;,
+        &#34;fused_linear_attention&#34;,
+        &#34;rwkv_attention&#34;,
+        &#34;retention&#34;,
+        &#34;longformer_local&#34;,
+        &#34;bigbird&#34;,
+    ]
+    s3_tasks = []
+    for m in key_attentions:
+        for model_tag, m_path, fam, lr in [
+            (&#34;roberta&#34;, &#34;models/roberta_sst2&#34;, &#34;roberta&#34;, &#34;5e-5&#34;),
+            (&#34;distilbert&#34;, &#34;models/distilbert_sst2&#34;, &#34;bert&#34;, &#34;2e-4&#34;),
+        ]:
+            out = str(BASE_DIR / &#34;results&#34; / &#34;06_adhoc_experiments&#34; / f&#34;attn_{model_tag}&#34; / m)
+            timeout_val = 180 if m == &#34;mamba_svd_flash&#34; else 300
+            s3_tasks.append(
+                {
+                    &#34;name&#34;: f&#34;Stream 3 (Attn) | {model_tag.upper()} | {m}&#34;,
+                    &#34;module&#34;: m,
+                    &#34;model&#34;: m_path,
+                    &#34;model_family&#34;: fam,
+                    &#34;dataset&#34;: &#34;sst2&#34;,
+                    &#34;batch_size&#34;: 64,
+                    &#34;lr&#34;: lr,
+                    &#34;out_dir&#34;: out,
+                    &#34;summary_file&#34;: f&#34;{out}/summary.csv&#34;,
+                    &#34;timeout&#34;: timeout_val,
+                }
+            )
+    streams[&#34;STREAM_3_ATTENTIONS&#34;] = s3_tasks
+
+    # STREAM 4: Stage 4 — Cross-Domain Transfer Sweeps: MNLI &amp; AG News (Batch 64)
+    transfer_mods = [
+        &#34;adasvd_compressor&#34;,
+        &#34;a3_compressor&#34;,
+        &#34;saes_svd_v2&#34;,
+        &#34;direct_svd&#34;,
+        &#34;rpca_compressor&#34;,
+        &#34;kronecker_compressor&#34;,
+        &#34;mlorq_compressor&#34;,
+        &#34;salr&#34;,
+        &#34;oats_compressor&#34;,
+        &#34;cure&#34;,
+        &#34;admm_compressor&#34;,
+    ]
+    s4_tasks = []
+    for m in transfer_mods:
+        out_mnli = str(BASE_DIR / &#34;results&#34; / &#34;06_adhoc_experiments&#34; / &#34;mnli_deep_sweep&#34; / m)
+        s4_tasks.append(
+            {
+                &#34;name&#34;: f&#34;Stream 4 (MNLI) | {m}&#34;,
+                &#34;module&#34;: m,
+                &#34;model&#34;: &#34;models/distilbert_mnli_full&#34;,
+                &#34;model_family&#34;: &#34;bert&#34;,
+                &#34;dataset&#34;: &#34;mnli&#34;,
+                &#34;batch_size&#34;: 64,
+                &#34;lr&#34;: &#34;2e-4&#34;,
+                &#34;out_dir&#34;: out_mnli,
+                &#34;summary_file&#34;: f&#34;{out_mnli}/summary.csv&#34;,
+            }
+        )
+        out_ag = str(BASE_DIR / &#34;results&#34; / &#34;06_adhoc_experiments&#34; / &#34;agnews_deep_sweep&#34; / m)
+        s4_tasks.append(
+            {
+                &#34;name&#34;: f&#34;Stream 4 (AGNews) | {m}&#34;,
+                &#34;module&#34;: m,
+                &#34;model&#34;: &#34;models/distilbert_agnews_full&#34;,
+                &#34;model_family&#34;: &#34;bert&#34;,
+                &#34;dataset&#34;: &#34;agnews&#34;,
+                &#34;batch_size&#34;: 64,
+                &#34;lr&#34;: &#34;2e-4&#34;,
+                &#34;out_dir&#34;: out_ag,
+                &#34;summary_file&#34;: f&#34;{out_ag}/summary.csv&#34;,
+            }
+        )
+    streams[&#34;STREAM_4_TRANSFER&#34;] = s4_tasks
+
+    # STREAM 5: Stage 5 — Long-Context Sequence Length Scaling: N=128..1024 (Batch 32-64)
+    seq_mods = [
+        &#34;linformer_attention&#34;,
+        &#34;cosformer&#34;,
+        &#34;performer&#34;,
+        &#34;simple_ssm&#34;,
+        &#34;hgrn2_layer&#34;,
+        &#34;gated_deltanet_block&#34;,
+    ]
+    s5_tasks = []
+    for m in seq_mods:
+        for seq_len in [128, 256, 512]:
+            bs = 64 if seq_len &lt;= 256 else 32
+            out = str(
+                BASE_DIR / &#34;results&#34; / &#34;06_adhoc_experiments&#34; / &#34;seqlen_48h&#34; / m / f&#34;seq_{seq_len}&#34;
+            )
+            s5_tasks.append(
+                {
+                    &#34;name&#34;: f&#34;Stream 5 (SeqLen {seq_len}) | {m}&#34;,
+                    &#34;module&#34;: m,
+                    &#34;model&#34;: &#34;models/distilbert_sst2&#34;,
+                    &#34;model_family&#34;: &#34;bert&#34;,
+                    &#34;dataset&#34;: &#34;sst2&#34;,
+                    &#34;seq_len&#34;: seq_len,
+                    &#34;batch_size&#34;: bs,
+                    &#34;lr&#34;: &#34;2e-4&#34;,
+                    &#34;out_dir&#34;: out,
+                    &#34;summary_file&#34;: f&#34;{out}/summary.csv&#34;,
+                }
+            )
+    streams[&#34;STREAM_5_SEQLEN_SCALING&#34;] = s5_tasks
+
+    # STREAM 6: Stage 6 — Multi-Seed Robustness Sweeps: Seeds 123 &amp; 456 (Batch 64)
+    s6_tasks = []
+    for m in transfer_mods:
+        for seed in [123, 456]:
+            for model_tag, m_path, fam, lr in [
+                (&#34;distilbert&#34;, &#34;models/distilbert_sst2&#34;, &#34;bert&#34;, &#34;2e-4&#34;),
+                (&#34;roberta&#34;, &#34;models/roberta_sst2&#34;, &#34;roberta&#34;, &#34;5e-5&#34;),
+            ]:
+                out = str(
+                    BASE_DIR
+                    / &#34;results&#34;
+                    / &#34;05_glue_finetuning&#34;
+                    / f&#34;multiseed_rigor_{model_tag}&#34;
+                    / m
+                    / f&#34;seed_{seed}&#34;
+                )
+                s6_tasks.append(
+                    {
+                        &#34;name&#34;: f&#34;Stream 6 (Seed {seed}) | {model_tag.upper()} | {m}&#34;,
+                        &#34;module&#34;: m,
+                        &#34;model&#34;: m_path,
+                        &#34;model_family&#34;: fam,
+                        &#34;dataset&#34;: &#34;sst2&#34;,
+                        &#34;batch_size&#34;: 64,
+                        &#34;seed&#34;: seed,
+                        &#34;lr&#34;: lr,
+                        &#34;out_dir&#34;: out,
+                        &#34;summary_file&#34;: f&#34;{out}/summary.csv&#34;,
+                    }
+                )
+    streams[&#34;STREAM_6_MULTISEED&#34;] = s6_tasks
+
+    return streams</code></pre>
+</details>
+<div class="desc"><p>Builds 6 concurrent task streams covering the entire repository.</p></div>
+</dd>
+<dt id="neuralops.runners.run_autonomous_48h_pipeline.get_vram_and_util"><code class="name flex">
+<span>def <span class="ident">get_vram_and_util</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_vram_and_util():
+    try:
+        out = subprocess.check_output(
+            [
+                &#34;nvidia-smi&#34;,
+                &#34;--query-gpu=memory.used,memory.total,utilization.gpu,temperature.gpu,power.draw&#34;,
+                &#34;--format=csv,noheader,nounits&#34;,
+            ],
+            text=True,
+            timeout=5,
+        )
+        parts = [p.strip() for p in out.strip().split(&#34;,&#34;)]
+        return {
+            &#34;used_mb&#34;: int(parts[0]),
+            &#34;total_mb&#34;: int(parts[1]),
+            &#34;util_pct&#34;: int(parts[2]),
+            &#34;temp_c&#34;: int(parts[3]),
+            &#34;power_w&#34;: float(parts[4]),
+        }
+    except Exception:
+        return {&#34;used_mb&#34;: 0, &#34;total_mb&#34;: 8188, &#34;util_pct&#34;: 0, &#34;temp_c&#34;: 0, &#34;power_w&#34;: 0.0}</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.runners.run_autonomous_48h_pipeline.log"><code class="name flex">
+<span>def <span class="ident">log</span></span>(<span>msg: str)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def log(msg: str):
+    ts = datetime.now(timezone.utc).strftime(&#34;%Y-%m-%dT%H:%M:%SZ&#34;)
+    line = f&#34;[{ts}] {msg}&#34;
+    try:
+        print(line, flush=True)
+    except UnicodeEncodeError:
+        print(line.encode(&#34;ascii&#34;, errors=&#34;replace&#34;).decode(&#34;ascii&#34;), flush=True)
+    try:
+        with open(MASTER_LOG, &#34;a&#34;, encoding=&#34;utf-8&#34;) as f:
+            f.write(line + &#34;\n&#34;)
+    except Exception:
+        pass</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.runners.run_autonomous_48h_pipeline.main"><code class="name flex">
+<span>def <span class="ident">main</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def main():
+    log(&#34;============================================================&#34;)
+    log(&#34;Starting Multi-Worker Dynamic High-Performance GPU Pipeline&#34;)
+    log(&#34;Running 8 Parallel Workers across all remaining tasks (Batch=96-128)&#34;)
+    log(f&#34;Base Directory: {BASE_DIR}&#34;)
+    log(&#34;============================================================&#34;)
+
+    # Start 30-second hardware telemetry &amp; VRAM governor background monitor
+    monitor_thread = threading.Thread(target=vram_governor_loop, daemon=True)
+    monitor_thread.start()
+    log(&#34;[SYSTEM] 30-second adaptive VRAM governor (50%-90% target, max 6 workers) initialized.&#34;)
+
+    all_streams = build_all_streams()
+
+    # Interleave tasks across streams so workers alternate between DistilBERT, RoBERTa, etc.
+    stream_task_lists = list(all_streams.values())
+    combined_tasks = []
+    max_len = max(len(tl) for tl in stream_task_lists)
+    for i in range(max_len):
+        for tl in stream_task_lists:
+            if i &lt; len(tl):
+                combined_tasks.append(tl[i])
+
+    # Filter out already completed or deprecated tasks up front so workers immediately jump to remaining ones
+    pending_tasks = []
+    for t in combined_tasks:
+        if t.get(&#34;module&#34;) in DEPRECATED_MODULES:
+            continue
+        sp = Path(t[&#34;summary_file&#34;])
+        if sp.exists() and sp.stat().st_size &gt; 50:
+            try:
+                with open(sp, &#34;r&#34;, encoding=&#34;utf-8&#34;) as f:
+                    c = f.read()
+                # Recognize all non-empty evaluated statuses (PASS, FAIL, MODERATE_EXPANSION, etc.)
+                if &#34;CRASH_NO_OUTPUT&#34; not in c and len(c.strip().split(&#34;\n&#34;)) &gt;= 2:
+                    continue
+            except Exception:
+                pass
+        pending_tasks.append(t)
+
+    total_tasks = len(combined_tasks)
+    total_pending = len(pending_tasks)
+    log(
+        f&#34;Total Framework Tasks: {total_tasks} | Already Done: {total_tasks - total_pending} | Remaining Pending: {total_pending}&#34;
+    )
+
+    if total_pending == 0:
+        log(&#34;ALL TASKS ACROSS ALL STREAMS ARE COMPLETE!&#34;)
+        return
+
+    t_global_start = time.time()
+
+    # Launch parallel workers pulling from the shared pool of remaining tasks
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        future_map = {
+            executor.submit(run_task_worker, task, total_pending, idx): task[&#34;name&#34;]
+            for idx, task in enumerate(pending_tasks)
+        }
+        for future in as_completed(future_map):
+            t_name = future_map[future]
+            try:
+                res = future.result()
+            except Exception as e:
+                log(f&#34;[TASK EXCEPTION] {t_name}: {e}&#34;)
+
+    total_time_h = (time.time() - t_global_start) / 3600.0
+    log(&#34;============================================================&#34;)
+    log(f&#34;ALL {total_tasks} PIPELINE TASKS COMPLETED IN {total_time_h:.2f} HOURS!&#34;)
+    log(&#34;============================================================&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.runners.run_autonomous_48h_pipeline.run_single_task"><code class="name flex">
+<span>def <span class="ident">run_single_task</span></span>(<span>task)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_single_task(task):
+    summary_path = Path(task[&#34;summary_file&#34;])
+    if summary_path.exists() and summary_path.stat().st_size &gt; 50:
+        try:
+            with open(summary_path, &#34;r&#34;, encoding=&#34;utf-8&#34;) as f:
+                content = f.read()
+            if &#34;CRASH_NO_OUTPUT&#34; not in content and len(content.strip().split(&#34;\n&#34;)) &gt;= 2:
+                log(f&#34;[SKIP] {task[&#39;name&#39;]} already completed ({summary_path})&#34;)
+                return True
+        except Exception:
+            pass
+
+    # Dynamic VRAM governor: Target strictly between 50% (~4,100 MB) and 90% (~7,370 MB)
+    while True:
+        tele = get_vram_and_util()
+        with global_lock:
+            cur_active = active_workers_counter[0]
+            cur_limit = max_allowed_workers[0]
+            # Max 7,370 MB hard ceiling (90% of 8,188 MB)
+            if tele[&#34;used_mb&#34;] &lt; 7370 and cur_active &lt; cur_limit:
+                active_workers_counter[0] += 1
+                break
+        time.sleep(3)
+
+    log(f&#34;============================================================&#34;)
+    log(f&#34;[START] {task[&#39;name&#39;]} (Batch={task.get(&#39;batch_size&#39;, 64)})&#34;)
+    log(f&#34;============================================================&#34;)
+
+    cmd = [
+        sys.executable,
+        task.get(&#34;runner&#34;, &#34;neuralops/benchmarks/run_quality_sweep.py&#34;),
+        &#34;--modules&#34;,
+        task[&#34;module&#34;],
+        &#34;--model&#34;,
+        task[&#34;model&#34;],
+        &#34;--model_family&#34;,
+        task[&#34;model_family&#34;],
+        &#34;--dataset&#34;,
+        task[&#34;dataset&#34;],
+        &#34;--batch_size&#34;,
+        str(task.get(&#34;batch_size&#34;, 64)),
+        &#34;--max_vram_fraction&#34;,
+        &#34;0.45&#34;,
+        &#34;--recovery_steps&#34;,
+        str(task.get(&#34;recovery_steps&#34;, 50)),
+        &#34;--learning_rate&#34;,
+        str(task.get(&#34;lr&#34;, &#34;2e-4&#34;)),
+        &#34;--seed&#34;,
+        str(task.get(&#34;seed&#34;, 42)),
+        &#34;--output_dir&#34;,
+        task[&#34;out_dir&#34;],
+    ]
+
+    if &#34;rank&#34; in task:
+        cmd.extend([&#34;--rank&#34;, str(task[&#34;rank&#34;])])
+    if &#34;seq_len&#34; in task:
+        cmd.extend([&#34;--seq_len&#34;, str(task[&#34;seq_len&#34;])])
+    if &#34;dataset_dir&#34; in task and task[&#34;dataset_dir&#34;]:
+        cmd.extend([&#34;--dataset_dir&#34;, task[&#34;dataset_dir&#34;]])
+
+    env = os.environ.copy()
+    env[&#34;PYTHONPATH&#34;] = (
+        f&#34;.;{env.get(&#39;PYTHONPATH&#39;, &#39;&#39;)}&#34; if os.name == &#34;nt&#34; else f&#34;.:{env.get(&#39;PYTHONPATH&#39;, &#39;&#39;)}&#34;
+    )
+    env[&#34;TORCH_ALLOW_TF32_CUBLAS_OVERRIDE&#34;] = &#34;1&#34;
+    env[&#34;CUDA_LAUNCH_BLOCKING&#34;] = &#34;0&#34;
+    env[&#34;PYTORCH_CUDA_ALLOC_CONF&#34;] = &#34;expandable_segments:True&#34;
+
+    t0 = time.time()
+    try:
+        proc = subprocess.run(
+            cmd,
+            cwd=str(BASE_DIR),
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=task.get(&#34;timeout&#34;, 1800),
+        )
+        elapsed = time.time() - t0
+        success = proc.returncode == 0
+        if success:
+            log(f&#34;[PASS] {task[&#39;name&#39;]} completed in {elapsed:.1f}s&#34;)
+        else:
+            log(f&#34;[FAIL] {task[&#39;name&#39;]} exited with code {proc.returncode} in {elapsed:.1f}s&#34;)
+            lines = proc.stdout.strip().split(&#34;\n&#34;)
+            tail = &#34;\n&#34;.join(lines[-10:])
+            log(f&#34;Tail log:\n{tail}&#34;)
+        return success
+    except subprocess.TimeoutExpired:
+        log(f&#34;[TIMEOUT] {task[&#39;name&#39;]} timed out after {task.get(&#39;timeout&#39;, 1800)}s&#34;)
+        return False
+    except Exception as e:
+        log(f&#34;[EXCEPTION] {task[&#39;name&#39;]}: {e}&#34;)
+        return False
+    finally:
+        with global_lock:
+            active_workers_counter[0] -= 1</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.runners.run_autonomous_48h_pipeline.run_stream_worker"><code class="name flex">
+<span>def <span class="ident">run_stream_worker</span></span>(<span>stream_name, task_list)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_stream_worker(stream_name, task_list):
+    &#34;&#34;&#34;Legacy stream worker kept for modular compatibility.&#34;&#34;&#34;
+    log(f&#34;############################################################&#34;)
+    log(f&#34;### [LAUNCH STREAM] {stream_name}: {len(task_list)} Tasks Queued&#34;)
+    log(f&#34;############################################################&#34;)
+    completed, failed = 0, 0
+    for task in task_list:
+        res = run_single_task(task)
+        if res:
+            completed += 1
+        else:
+            failed += 1
+
+        with global_lock:
+            global_completed_counter[0] += 1
+            cur_global = global_completed_counter[0]
+            if cur_global % 10 == 0:
+                auto_commit_and_push(f&#34;Global 6-Stream Checkpoint ({cur_global} tasks completed)&#34;)
+
+        log(
+            f&#34;[{stream_name} Stream Progress]: {completed}/{len(task_list)} completed ({failed} failed)&#34;
+        )
+
+    log(f&#34;### [STREAM FINISHED] {stream_name} finished all {len(task_list)} tasks.&#34;)
+    auto_commit_and_push(f&#34;{stream_name} stream complete ({completed} passed, {failed} failed)&#34;)
+    return completed, failed</code></pre>
+</details>
+<div class="desc"><p>Legacy stream worker kept for modular compatibility.</p></div>
+</dd>
+<dt id="neuralops.runners.run_autonomous_48h_pipeline.run_task_worker"><code class="name flex">
+<span>def <span class="ident">run_task_worker</span></span>(<span>task, total_pending, task_idx)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_task_worker(task, total_pending, task_idx):
+    &#34;&#34;&#34;Executes a single task in the shared worker pool, updating global accounting.&#34;&#34;&#34;
+    res = run_single_task(task)
+    with global_lock:
+        global_completed_counter[0] += 1
+        cur_global = global_completed_counter[0]
+        if cur_global % 10 == 0:
+            auto_commit_and_push(
+                f&#34;Global 8-Worker Dynamic Checkpoint ({cur_global} tasks completed)&#34;
+            )
+    log(
+        f&#34;[Dynamic Worker Progress]: Task {task_idx + 1}/{total_pending} finished | Global Tasks Recorded: {cur_global}&#34;
+    )
+    return res</code></pre>
+</details>
+<div class="desc"><p>Executes a single task in the shared worker pool, updating global accounting.</p></div>
+</dd>
+<dt id="neuralops.runners.run_autonomous_48h_pipeline.vram_governor_loop"><code class="name flex">
+<span>def <span class="ident">vram_governor_loop</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def vram_governor_loop():
+    &#34;&#34;&#34;
+    Monitors GPU VRAM every 30 seconds and dynamically adapts worker pool:
+      - RTX 4070 (8GB VRAM): Minimum 4,100 MB (50%), Maximum 7,370 MB (90%)
+      - If VRAM drops below 50% -&gt; increase workers by 1 (max 6)
+      - If VRAM exceeds 90% -&gt; decrease workers by 1 (min 2), sleep 30s to settle
+    &#34;&#34;&#34;
+    iteration = 0
+    while True:
+        time.sleep(30)
+        iteration += 1
+        tele = get_vram_and_util()
+        used = tele[&#34;used_mb&#34;]
+        total = tele[&#34;total_mb&#34;]
+        util = tele[&#34;util_pct&#34;]
+        temp = tele[&#34;temp_c&#34;]
+        pwr = tele[&#34;power_w&#34;]
+        vram_pct = (used / total) * 100.0 if total &gt; 0 else 0
+
+        with global_lock:
+            act = active_workers_counter[0]
+            done = global_completed_counter[0]
+            cur_limit = max_allowed_workers[0]
+
+            if vram_pct &lt; 50.0 and act &gt;= cur_limit:
+                new_limit = min(6, cur_limit + 1)
+                if new_limit &gt; cur_limit:
+                    max_allowed_workers[0] = new_limit
+                    log(
+                        f&#34;[VRAM GOVERNOR] VRAM below 50% ({vram_pct:.1f}%) -&gt; increasing max workers to {new_limit}&#34;
+                    )
+            elif vram_pct &gt; 90.0:
+                new_limit = max(2, cur_limit - 1)
+                if new_limit &lt; cur_limit:
+                    max_allowed_workers[0] = new_limit
+                    log(
+                        f&#34;[VRAM GOVERNOR] VRAM above 90% ({vram_pct:.1f}%) -&gt; decreasing max workers to {new_limit}&#34;
+                    )
+
+            cur_limit = max_allowed_workers[0]
+
+        t_line = (
+            f&#34;[30S TELEMETRY] Active: {act}/{cur_limit} workers | Completed: {done} | &#34;
+            f&#34;VRAM: {used}/{total} MB ({vram_pct:.1f}%) | GPU Util: {util}% | &#34;
+            f&#34;Temp: {temp}C | Power: {pwr:.1f}W&#34;
+        )
+        try:
+            print(t_line, flush=True)
+        except UnicodeEncodeError:
+            print(t_line.encode(&#34;ascii&#34;, errors=&#34;replace&#34;).decode(&#34;ascii&#34;), flush=True)
+        try:
+            with open(TELEMETRY_LOG, &#34;a&#34;, encoding=&#34;utf-8&#34;) as f:
+                f.write(t_line + &#34;\n&#34;)
+            if iteration % 10 == 0:  # Every 5 minutes log to master
+                with open(MASTER_LOG, &#34;a&#34;, encoding=&#34;utf-8&#34;) as f:
+                    f.write(t_line + &#34;\n&#34;)
+        except Exception:
+            pass</code></pre>
+</details>
+<div class="desc"><p>Monitors GPU VRAM every 30 seconds and dynamically adapts worker pool:
+- RTX 4070 (8GB VRAM): Minimum 4,100 MB (50%), Maximum 7,370 MB (90%)
+- If VRAM drops below 50% -&gt; increase workers by 1 (max 6)
+- If VRAM exceeds 90% -&gt; decrease workers by 1 (min 2), sleep 30s to settle</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.runners" href="index.html">neuralops.runners</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.runners.run_autonomous_48h_pipeline.auto_commit_and_push" href="#neuralops.runners.run_autonomous_48h_pipeline.auto_commit_and_push">auto_commit_and_push</a></code></li>
+<li><code><a title="neuralops.runners.run_autonomous_48h_pipeline.build_all_streams" href="#neuralops.runners.run_autonomous_48h_pipeline.build_all_streams">build_all_streams</a></code></li>
+<li><code><a title="neuralops.runners.run_autonomous_48h_pipeline.get_vram_and_util" href="#neuralops.runners.run_autonomous_48h_pipeline.get_vram_and_util">get_vram_and_util</a></code></li>
+<li><code><a title="neuralops.runners.run_autonomous_48h_pipeline.log" href="#neuralops.runners.run_autonomous_48h_pipeline.log">log</a></code></li>
+<li><code><a title="neuralops.runners.run_autonomous_48h_pipeline.main" href="#neuralops.runners.run_autonomous_48h_pipeline.main">main</a></code></li>
+<li><code><a title="neuralops.runners.run_autonomous_48h_pipeline.run_single_task" href="#neuralops.runners.run_autonomous_48h_pipeline.run_single_task">run_single_task</a></code></li>
+<li><code><a title="neuralops.runners.run_autonomous_48h_pipeline.run_stream_worker" href="#neuralops.runners.run_autonomous_48h_pipeline.run_stream_worker">run_stream_worker</a></code></li>
+<li><code><a title="neuralops.runners.run_autonomous_48h_pipeline.run_task_worker" href="#neuralops.runners.run_autonomous_48h_pipeline.run_task_worker">run_task_worker</a></code></li>
+<li><code><a title="neuralops.runners.run_autonomous_48h_pipeline.vram_governor_loop" href="#neuralops.runners.run_autonomous_48h_pipeline.vram_governor_loop">vram_governor_loop</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

@@ -193,57 +193,6 @@ el.replaceWith(d);
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="neuralops.tests.test_bam_umoe_comprehensive.DummyDistilBertAttention"><code class="flex name class">
-<span>class <span class="ident">DummyDistilBertAttention</span></span>
-<span>(</span><span>dim=64)</span>
-</code></dt>
-<dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class DummyDistilBertAttention(nn.Module):
-    def __init__(self, dim=64):
-        super().__init__()
-        self.q_lin = nn.Linear(dim, dim)
-        self.k_lin = nn.Linear(dim, dim)
-        self.v_lin = nn.Linear(dim, dim)
-        self.out_lin = nn.Linear(dim, dim)</code></pre>
-</details>
-<div class="desc"><p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing them to be nested in
-a tree structure. You can assign the submodules as regular attributes::</p>
-<pre><code>import torch.nn as nn
-import torch.nn.functional as F
-
-
-class Model(nn.Module):
-    def __init__(self) -&gt; None:
-        super().__init__()
-        self.conv1 = nn.Conv2d(1, 20, 5)
-        self.conv2 = nn.Conv2d(20, 20, 5)
-
-    def forward(self, x):
-        x = F.relu(self.conv1(x))
-        return F.relu(self.conv2(x))
-</code></pre>
-<p>Submodules assigned in this way will be registered, and will also have their
-parameters converted when you call :meth:<code>to</code>, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>As per the example above, an <code>__init__()</code> call to the parent class
-must be made before assignment on the child.</p>
-</div>
-<p>:ivar training: Boolean represents whether this module is in training or
-evaluation mode.
-:vartype training: bool</p>
-<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li>torch.nn.modules.module.Module</li>
-</ul>
-</dd>
 <dt id="neuralops.tests.test_bam_umoe_comprehensive.DummyGPT2Attention"><code class="flex name class">
 <span>class <span class="ident">DummyGPT2Attention</span></span>
 <span>(</span><span>dim=64)</span>
@@ -444,38 +393,6 @@ evaluation mode.
 <li>torch.nn.modules.module.Module</li>
 </ul>
 </dd>
-<dt id="neuralops.tests.test_bam_umoe_comprehensive.MockConfig"><code class="flex name class">
-<span>class <span class="ident">MockConfig</span></span>
-<span>(</span><span>hidden_size=64,<br>num_attention_heads=4,<br>num_key_value_heads=4,<br>head_dim=16,<br>is_decoder=False,<br>model_type='bert',<br>lora_rank=8,<br>lora_alpha=16.0)</span>
-</code></dt>
-<dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class MockConfig:
-    def __init__(
-        self,
-        hidden_size=64,
-        num_attention_heads=4,
-        num_key_value_heads=4,
-        head_dim=16,
-        is_decoder=False,
-        model_type=&#34;bert&#34;,
-        lora_rank=8,
-        lora_alpha=16.0,
-    ):
-        self.hidden_size = hidden_size
-        self.num_attention_heads = num_attention_heads
-        self.num_key_value_heads = num_key_value_heads
-        self.head_dim = head_dim
-        self.is_decoder = is_decoder
-        self.model_type = model_type
-        self.lora_rank = lora_rank
-        self.lora_alpha = lora_alpha</code></pre>
-</details>
-<div class="desc"></div>
-</dd>
 </dl>
 </section>
 </article>
@@ -503,9 +420,6 @@ evaluation mode.
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="neuralops.tests.test_bam_umoe_comprehensive.DummyDistilBertAttention" href="#neuralops.tests.test_bam_umoe_comprehensive.DummyDistilBertAttention">DummyDistilBertAttention</a></code></h4>
-</li>
-<li>
 <h4><code><a title="neuralops.tests.test_bam_umoe_comprehensive.DummyGPT2Attention" href="#neuralops.tests.test_bam_umoe_comprehensive.DummyGPT2Attention">DummyGPT2Attention</a></code></h4>
 </li>
 <li>
@@ -516,9 +430,6 @@ evaluation mode.
 </li>
 <li>
 <h4><code><a title="neuralops.tests.test_bam_umoe_comprehensive.DummyRobertaSelfAttention" href="#neuralops.tests.test_bam_umoe_comprehensive.DummyRobertaSelfAttention">DummyRobertaSelfAttention</a></code></h4>
-</li>
-<li>
-<h4><code><a title="neuralops.tests.test_bam_umoe_comprehensive.MockConfig" href="#neuralops.tests.test_bam_umoe_comprehensive.MockConfig">MockConfig</a></code></h4>
 </li>
 </ul>
 </li>

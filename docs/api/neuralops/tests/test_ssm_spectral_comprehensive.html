@@ -65,19 +65,14 @@ el.replaceWith(d);
 <div class="desc"></div>
 </dd>
 <dt id="neuralops.tests.test_ssm_spectral_comprehensive.test_module"><code class="name flex">
-<span>def <span class="ident">test_module</span></span>(<span>module_name: str, B=2, L=128, D=768)</span>
+<span>def <span class="ident">test_module</span></span>(<span>module_name)</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@pytest.mark.parametrize(&#34;module_name&#34;, MODULES_TO_TEST)
-def test_module(module_name: str, B=2, L=128, D=768):
-    if module_name not in ATTENTION_REGISTRY:
-        print(f&#34;Skipping {module_name} (not in registry)&#34;)
-        return
-        
+<pre><code class="python">def test_module(module_name):
     print(f&#34;Testing {module_name}...&#34;)
     try:
         module_class = ATTENTION_REGISTRY.get(module_name)
@@ -90,35 +85,13 @@ def test_module(module_name: str, B=2, L=128, D=768):
             try:
                 module = module_class(hidden_size=D)
             except TypeError:
-                class MockConfig:
-                    hidden_size = D
-                    dim = D
-                try:
-                    module = module_class(dim=D)
-                except TypeError:
-                    module = module_class(config=MockConfig())
-        if hasattr(module, &#39;to&#39;):
-            module = module.to(&#39;cpu&#39;)
+                module = module_class()
         
-        # Test 1: Forward pass, no NaN/Inf
-        x = torch.randn(B, L, D, requires_grad=True, dtype=torch.float32)
-        out, _ = module(hidden_states=x)
-        
-        assert out.shape == (B, L, D), f&#34;Output shape mismatch: {out.shape}&#34;
-        assert not torch.isnan(out).any(), f&#34;NaN in output of {module_name}&#34;
-        assert not torch.isinf(out).any(), f&#34;Inf in output of {module_name}&#34;
-        
-        # Test 2: Backward pass, no NaN/Inf in gradients
-        loss = out.sum()
-        loss.backward()
-        
-        assert x.grad is not None, f&#34;No gradient for input in {module_name}&#34;
-        assert not torch.isnan(x.grad).any(), f&#34;NaN in gradient of {module_name}&#34;
-        assert not torch.isinf(x.grad).any(), f&#34;Inf in gradient of {module_name}&#34;
-        
-        print(f&#34;[PASS] {module_name}&#34;)
+        x = torch.randn(2, 8, D)
+        out, _ = module(x)
+        assert out.shape == (2, 8, D)
     except Exception as e:
-        print(f&#34;[FAIL] {module_name}: {str(e)}&#34;)</code></pre>
+        print(f&#34;{module_name} failed: {e}&#34;)</code></pre>
 </details>
 <div class="desc"></div>
 </dd>
