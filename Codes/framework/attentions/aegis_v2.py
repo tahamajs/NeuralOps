@@ -403,6 +403,10 @@ def _global_linear_attention_v2(
 # ===========================================================================
 
 @ATTENTION_REGISTRY.register("aegis_v2", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("aegis_v1", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("aegis_v3", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("aegis_v4", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("aegis_v1_module", supports_causal=True, supports_gqa=True)
 class AegisAttentionV2(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
@@ -893,6 +897,9 @@ class AegisAttentionV2(BaseAttention):
 
 @ATTENTION_REGISTRY.register("aegis_v2_inject")
 @ATTENTION_REGISTRY.register("inject_aegis_v2")
+@ATTENTION_REGISTRY.register("inject_aegis_v1")
+@ATTENTION_REGISTRY.register("inject_aegis_v3")
+@ATTENTION_REGISTRY.register("inject_aegis_v4")
 def inject_aegis_v2(
     layer: Any = None,
     model: Any = None,
@@ -1017,4 +1024,10 @@ def inject_aegis_v2(
 
 
 AegisAttentionV2 = AegisAttentionV2
+AegisAttentionV1 = AegisAttentionV2
+AegisAttentionV3 = AegisAttentionV2
+AegisAttentionV4 = AegisAttentionV2
 inject_aegis_into_distilbert_v2 = inject_aegis_v2
+inject_aegis_v1 = inject_aegis_v2
+inject_aegis_v3 = inject_aegis_v2
+inject_aegis_v4 = inject_aegis_v2
