@@ -1,5 +1,6 @@
 import torch.nn as nn
 
+
 class MockConfig:
     def __init__(self, **kwargs):
         self.hidden_size = kwargs.get("hidden_size", kwargs.get("embed_dim", 64))
@@ -12,7 +13,7 @@ class MockConfig:
         self.attention_dropout = self.dropout
         self.is_decoder = kwargs.get("is_decoder", False)
         self.model_type = kwargs.get("model_type", "bert")
-        
+
         # Hyperparams
         self.rank = kwargs.get("rank", 16)
         self.lora_rank = kwargs.get("lora_rank", 16)
@@ -21,7 +22,7 @@ class MockConfig:
         self.k_experts = kwargs.get("k_experts", 2)
         self.svd_rank = kwargs.get("svd_rank", 4)
         self.alpha = kwargs.get("alpha", 1.5)
-        
+
         self.max_position_embeddings = kwargs.get("max_seq_len", 128)
         self.max_seq_len = self.max_position_embeddings
         self.layer_norm_eps = kwargs.get("layer_norm_eps", 1e-12)
@@ -32,6 +33,7 @@ class MockConfig:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+
 class DummyDistilBertAttention(nn.Module):
     def __init__(self, dim=64):
         super().__init__()
@@ -39,6 +41,6 @@ class DummyDistilBertAttention(nn.Module):
         self.k_lin = nn.Linear(dim, dim)
         self.v_lin = nn.Linear(dim, dim)
         self.out_lin = nn.Linear(dim, dim)
-        
+
     def forward(self, hidden_states, *args, **kwargs):
         return (hidden_states, None)
