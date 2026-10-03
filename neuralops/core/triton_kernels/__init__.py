@@ -18,11 +18,7 @@ Provides high-performance fused GPU kernels with transparent PyTorch CPU/CUDA fa
 from __future__ import annotations
 
 from neuralops.core.triton_kernels import (
-    fms_scan,
-    gdn_scan,
-    gla_scan,
     gqa,
-    hgrn2_scan,
     linear_attn,
     low_rank,
     sparse_attn,
@@ -51,23 +47,31 @@ except Exception:
     selective_scan_fn = None
 
 try:
+    from neuralops.core.triton_kernels import fms_scan
     from neuralops.core.triton_kernels.fms_scan import fms_scan_triton
 except Exception:
+    fms_scan = None
     fms_scan_triton = None
 
 try:
+    from neuralops.core.triton_kernels import gdn_scan
     from neuralops.core.triton_kernels.gdn_scan import gdn_scan_triton
 except Exception:
+    gdn_scan = None
     gdn_scan_triton = None
 
 try:
+    from neuralops.core.triton_kernels import gla_scan
     from neuralops.core.triton_kernels.gla_scan import gla_scan_triton
 except Exception:
+    gla_scan = None
     gla_scan_triton = None
 
 try:
+    from neuralops.core.triton_kernels import hgrn2_scan
     from neuralops.core.triton_kernels.hgrn2_scan import hgrn2_scan_triton
 except Exception:
+    hgrn2_scan = None
     hgrn2_scan_triton = None
 
 __all__ = [
