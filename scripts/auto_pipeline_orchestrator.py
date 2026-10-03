@@ -12,8 +12,8 @@ Saves snapshots after each stage and exits cleanly.
 import os, sys, time, subprocess, csv
 from pathlib import Path
 
-ROOT = Path(r"D:\svd_project")
-PYTHON = r"C:\Users\Hadi Schumacher\anaconda3\python.exe"
+ROOT = Path(r"D:\svd_project") if Path(r"D:\svd_project").exists() else Path(__file__).resolve().parent.parent
+PYTHON = sys.executable
 SWEEP_SCRIPT = str(ROOT / "Codes" / "framework" / "run_quality_sweep.py")
 MODEL_DIR = str(ROOT / "models" / "distilbert_mnli_full")
 DATASET_DIR = str(ROOT / "Codes" / "framework" / "data" / "glue_data" / "mnli")

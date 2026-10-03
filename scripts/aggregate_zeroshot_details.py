@@ -7,7 +7,7 @@ import pandas as pd
 from pathlib import Path
 from collections import Counter
 
-ROOT = Path("D:/SVD_Project")
+ROOT = Path("D:/SVD_Project") if Path("D:/SVD_Project").exists() else Path(__file__).resolve().parent.parent
 RESULTS = ROOT / "results" / "zeroshot_parallel"
 AUDIT = ROOT / "audit"
 AUDIT.mkdir(exist_ok=True)

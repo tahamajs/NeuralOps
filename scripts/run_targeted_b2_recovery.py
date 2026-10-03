@@ -1,5 +1,8 @@
 import os, sys, json, time
-sys.path.insert(0, r"D:\SVD_Project")
+from pathlib import Path
+
+repo_root = Path("D:/SVD_Project") if Path("D:/SVD_Project").exists() else Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(repo_root))
 
 MODULES = [
     ("phantom", 16.2531),
@@ -12,7 +15,7 @@ MODULES = [
 ]
 
 # We test recovery behavior for GPT-2 with standard 50 steps at lr=5e-5
-out_dir = r"D:\SVD_Project\audit\verification_2026_09_18\B2_high_diff_recovery"
+out_dir = repo_root / "audit" / "verification_2026_09_18" / "B2_high_diff_recovery"
 os.makedirs(out_dir, exist_ok=True)
 
 results = []

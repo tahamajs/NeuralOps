@@ -263,7 +263,7 @@ def get_best_dataset_result(rows, target_ds):
                     val = float(ppl_str)
                     if val > 0:
                         valid_vals.append(val)
-                except:
+                except Exception:
                     pass
         else:
             acc_str = r.get("accuracy_pct")
@@ -271,7 +271,7 @@ def get_best_dataset_result(rows, target_ds):
                 try:
                     val = float(acc_str)
                     valid_vals.append(val)
-                except:
+                except Exception:
                     pass
     
     if not valid_vals:
@@ -461,7 +461,7 @@ def main():
                     c_val = float(c_str)
                     if c_val > 0:
                         valid_comps.append(c_val)
-                except:
+                except Exception:
                     pass
         compression_ratio = f"{max(valid_comps):.3f}x" if valid_comps else ("1.000x" if all_mod_rows else "N/A")
 

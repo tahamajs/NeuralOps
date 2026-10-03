@@ -223,7 +223,7 @@ def build_aggregated_stats():
                 try:
                     acc = float(v)
                     break
-                except:
+                except Exception:
                     pass
 
         f1 = None
@@ -233,7 +233,7 @@ def build_aggregated_stats():
                 try:
                     f1 = float(v)
                     break
-                except:
+                except Exception:
                     pass
 
         status = str(r.get('status', ''))
@@ -251,7 +251,8 @@ def build_aggregated_stats():
                     fwd = float(v)
                     if fld == 'elapsed_s': fwd *= 10.0
                     break
-                except: pass
+                except Exception:
+                    pass
 
         mem = 0.0
         for fld in ['peak_vram_mb', 'peak_memory_mb', 'mem_mb']:
@@ -260,7 +261,8 @@ def build_aggregated_stats():
                 try:
                     mem = float(v)
                     break
-                except: pass
+                except Exception:
+                    pass
 
         tps = float(r.get('tokens_per_sec', 15000.0) or 15000.0)
         timestamp = str(r.get('timestamp', '2026-09-08 22:50'))[:19].replace('T', ' ')

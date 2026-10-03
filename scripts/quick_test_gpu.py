@@ -1,18 +1,23 @@
 import sys, os, json, torch
+from pathlib import Path
+
+repo_root = Path("D:/SVD_Project") if Path("D:/SVD_Project").exists() else Path(__file__).resolve().parent.parent
+hf_cache = repo_root / ".hf_cache"
 
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
-os.environ["HF_HOME"] = r"D:\SVD_Project\.hf_cache"
-os.environ["TRANSFORMERS_CACHE"] = r"D:\SVD_Project\.hf_cache"
-sys.path.insert(0, r"D:\SVD_Project\Codes")
+if hf_cache.exists():
+    os.environ["HF_HOME"] = str(hf_cache)
+    os.environ["TRANSFORMERS_CACHE"] = str(hf_cache)
+sys.path.insert(0, str(repo_root / "Codes"))
 
 from transformers import AutoConfig, AutoModelForSequenceClassification
 import framework.attentions.gqa_attention as gqa_mod
 
 models = {
-    "distilbert": r"D:\SVD_Project\models\distilbert_sst2",
-    "roberta": r"D:\SVD_Project\models\roberta-base",
-    "gpt2": r"D:\SVD_Project\models\gpt2"
+    "distilbert": str(repo_root / "models" / "distilbert_sst2"),
+    "roberta": str(repo_root / "models" / "roberta-base"),
+    "gpt2": str(repo_root / "models" / "gpt2")
 }
 
 results = {}
@@ -39,5 +44,5 @@ for name, path in models.items():
     results[name] = diff
     print(f"MODEL {name:12s} diff={diff:.6f}")
 
-with open("D:/SVD_Project/gqa_test_result.json", "w") as f:
+with open(repo_root / "gqa_test_result.json", "w") as f:
     json.dump(results, f, indent=2)

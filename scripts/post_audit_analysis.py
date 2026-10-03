@@ -138,7 +138,7 @@ for ref_file in glob.glob("paper/PerModulePaper/*/13_references.tex"):
                 cites_map[k_clean] = []
             if mod not in cites_map[k_clean]:
                 cites_map[k_clean].append(mod)
-    except:
+    except Exception:
         pass
 
 # Module topics
