@@ -100,7 +100,7 @@ def run_orchestrator(module_key: str, extra_args: list):
         row = r["row_data"]
         comp = row.get("compression_rate", "N/A")
         svdl = row.get("num_compressed_layers", "N/A")
-        print(f"{r['name":<14]} | {r['status":<10]} | {r['accuracy_pct":>6.2f]}%   | {r['elapsed_s":>5.1f]}s  | {str(comp):<10} | {str(svdl):<6}", flush=True)
+        print(f"{r['name']:<14} | {r['status']:<10} | {r['accuracy_pct']:>6.2f}%   | {r['elapsed_s']:>5.1f}s  | {str(comp):<10} | {str(svdl):<6}", flush=True)
     print("=" * W, flush=True)
 
     RESULTS_BASE.mkdir(parents=True, exist_ok=True)
