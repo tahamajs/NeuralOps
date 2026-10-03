@@ -178,7 +178,7 @@ def analyze_file(file_path):
             math_latex = r"y = \sum_{i=1}^K G(x)_i \cdot E_i(x), \quad G(x) = \text{Softmax}(\text{TopK}(x W_g, K=2))"
     elif paradigm == 'ssm':
         components = [
-            {"id": "in_proj", "name": "Input SVD / Linear Projection", "role": "Channel Expansion", "shape_transform": "[2 \cdot d_{in} × d_{in}]", "color": "#34d399", "math_latex": r"u_t = \text{SiLU}(x_t W_{in}), \quad W_{in} \in \mathbb{R}^{2 d_{in} \times d_{in}}"},
+            {"id": "in_proj", "name": "Input SVD / Linear Projection", "role": "Channel Expansion", "shape_transform": r"[2 \cdot d_{in} × d_{in}]", "color": "#34d399", "math_latex": r"u_t = \text{SiLU}(x_t W_{in}), \quad W_{in} \in \mathbb{R}^{2 d_{in} \times d_{in}}"},
             {"id": "conv1d", "name": "Depthwise Causal 1D Convolution", "role": "Local Token Mixing", "shape_transform": "[d_{inner} × kernel=4]", "color": "#10b981", "math_latex": r"x'_t = \sum_{k=0}^{K-1} w_k \cdot x_{t-k}"},
             {"id": "ssm_recurrence", "name": "Selective SSM Recurrence Matrix (A, B, C)", "role": "Continuous-Time State Space", "shape_transform": "[d_{state}=16 × d_{inner}]", "color": "#059669", "math_latex": r"h_t = \bar{A} h_{t-1} + \bar{B} x'_t, \quad y_t = C h_t + D x'_t"},
             {"id": "out_proj", "name": "Output Gated Projection", "role": "Dimension Recovery", "shape_transform": "[d_{in} × d_{inner}]", "color": "#047857", "math_latex": r"y_t = u_t \odot (h_t W_{out})"}
@@ -188,8 +188,8 @@ def analyze_file(file_path):
     elif paradigm == 'mla':
         components = [
             {"id": "down_proj_kv", "name": "Latent KV Compression Projection", "role": "KV Cache Reduction", "shape_transform": "[d_c × d_{in}]", "color": "#f59e0b", "math_latex": r"c^{KV}_t = W^{DKV} x_t, \quad c^{KV}_t \in \mathbb{R}^{d_c}, \; d_c \ll d_{in}"},
-            {"id": "up_proj_k", "name": "Key Dequantize / Unpack", "role": "Head Expansion", "shape_transform": "[n_h \cdot d_h × d_c]", "color": "#d97706", "math_latex": r"k^C_t = W^{UK} c^{KV}_t, \quad W^{UK} \in \mathbb{R}^{n_h d_h \times d_c}"},
-            {"id": "up_proj_v", "name": "Value Dequantize / Unpack", "role": "Head Expansion", "shape_transform": "[n_h \cdot d_h × d_c]", "color": "#b45309", "math_latex": r"v^C_t = W^{UV} c^{KV}_t, \quad W^{UV} \in \mathbb{R}^{n_h d_h \times d_c}"},
+            {"id": "up_proj_k", "name": "Key Dequantize / Unpack", "role": "Head Expansion", "shape_transform": r"[n_h \cdot d_h × d_c]", "color": "#d97706", "math_latex": r"k^C_t = W^{UK} c^{KV}_t, \quad W^{UK} \in \mathbb{R}^{n_h d_h \times d_c}"},
+            {"id": "up_proj_v", "name": "Value Dequantize / Unpack", "role": "Head Expansion", "shape_transform": r"[n_h \cdot d_h × d_c]", "color": "#b45309", "math_latex": r"v^C_t = W^{UV} c^{KV}_t, \quad W^{UV} \in \mathbb{R}^{n_h d_h \times d_c}"},
             {"id": "q_rope", "name": "Decoupled RoPE Position Matrix", "role": "Rotary Geometry Injection", "shape_transform": "[d_R × d_{in}]", "color": "#fbbf24", "math_latex": r"q^{rot}_t = \mathcal{R}_{\Theta}(q^{pe}_t), \quad k^{rot}_t = \mathcal{R}_{\Theta}(k^{pe}_t)"}
         ]
         if not math_latex or len(math_latex) < 20:
@@ -197,8 +197,8 @@ def analyze_file(file_path):
     elif paradigm == 'pruning':
         components = [
             {"id": "orthogonal_rot", "name": "Orthogonal Transformation Matrix (Q)", "role": "Energy Concentration", "shape_transform": "[d_{in} × d_{in}] Orthogonal", "color": "#38bdf8", "math_latex": r"X' = X Q, \quad Q^\top Q = I"},
-            {"id": "sliced_linear", "name": "Channel-Sliced Dense Linear Operator", "role": "45% Channel Elimination", "shape_transform": "[0.55 \cdot d_{out} × 0.55 \cdot d_{in}]", "color": "#0ea5e9", "math_latex": r"W_{sliced} = (Q_2^\top W Q_1)_{[:d'_1, :d'_2]}"},
-            {"id": "bias_correct", "name": "Mean Bias Correction Vector", "role": "Representation Recalibration", "shape_transform": "[0.55 \cdot d_{out}]", "color": "#0284c7", "math_latex": r"\mu_{err} = \mathbb{E}[W X] - \mathbb{E}[W_{sliced} X']"}
+            {"id": "sliced_linear", "name": "Channel-Sliced Dense Linear Operator", "role": "45% Channel Elimination", "shape_transform": r"[0.55 \cdot d_{out} × 0.55 \cdot d_{in}]", "color": "#0ea5e9", "math_latex": r"W_{sliced} = (Q_2^\top W Q_1)_{[:d'_1, :d'_2]}"},
+            {"id": "bias_correct", "name": "Mean Bias Correction Vector", "role": "Representation Recalibration", "shape_transform": r"[0.55 \cdot d_{out}]", "color": "#0284c7", "math_latex": r"\mu_{err} = \mathbb{E}[W X] - \mathbb{E}[W_{sliced} X']"}
         ]
         if not math_latex or len(math_latex) < 20:
             math_latex = r"W' = Q_2^\top W Q_1, \quad W_{sliced} = W'[:d'_1, :d'_2], \quad Q^\top Q = I"
@@ -213,7 +213,7 @@ def analyze_file(file_path):
     else:
         components = [
             {"id": "sparse_mask", "name": "Dynamic Top-K Attention Sparsity Mask", "role": "O(N sqrt{N}) Token Filtering", "shape_transform": "[Seq × Seq] Sparse", "color": "#38bdf8", "math_latex": r"M_{ij} = \mathbb{I}(|S_{ij}| \ge \tau), \quad S_{ij} = \frac{q_i k_j^\top}{\sqrt{d}}"},
-            {"id": "kernel_attn", "name": "Linearized Positive Kernel Projection", "role": "Softmax Approximation", "shape_transform": "[\phi(Q) \cdot \phi(K)^T]", "color": "#7dd3fc", "math_latex": r"\text{Attn}(Q,K,V) = \frac{\phi(Q) (\phi(K)^\top V)}{\phi(Q) \sum_j \phi(K_j)^\top}"},
+            {"id": "kernel_attn", "name": "Linearized Positive Kernel Projection", "role": "Softmax Approximation", "shape_transform": r"[\phi(Q) \cdot \phi(K)^T]", "color": "#7dd3fc", "math_latex": r"\text{Attn}(Q,K,V) = \frac{\phi(Q) (\phi(K)^\top V)}{\phi(Q) \sum_j \phi(K_j)^\top}"},
             {"id": "out_norm", "name": "Output Layer Normalization", "role": "Attention Scale Stabilization", "shape_transform": "[d_{in}]", "color": "#bae6fd", "math_latex": r"\text{LN}(y) = \frac{y - \mu}{\sqrt{\sigma^2 + \epsilon}} \odot \gamma + \beta"}
         ]
         if not math_latex or len(math_latex) < 20:
