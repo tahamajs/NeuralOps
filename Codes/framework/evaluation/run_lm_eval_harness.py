@@ -20,7 +20,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Path Setup
@@ -55,7 +55,7 @@ logging.basicConfig(
 LOG = logging.getLogger("LMEvalHarness")
 
 
-def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run LM Evaluation Harness on GPT-2 with an injected attention or compressor module."
     )
@@ -126,16 +126,16 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def extract_task_metrics(raw_task_results: Dict[str, Any]) -> Dict[str, Dict[str, float]]:
+def extract_task_metrics(raw_task_results: dict[str, Any]) -> dict[str, dict[str, float]]:
     """
     Extract key evaluation metrics (acc, acc_norm, exact_match, f1, etc.)
     from the raw lm_eval results structure.
     """
-    extracted: Dict[str, Dict[str, float]] = {}
+    extracted: dict[str, dict[str, float]] = {}
     for task_name, task_dict in raw_task_results.items():
         if not isinstance(task_dict, dict):
             continue
-        metrics: Dict[str, float] = {}
+        metrics: dict[str, float] = {}
         for raw_k, val in task_dict.items():
             if not isinstance(val, (int, float)):
                 continue
@@ -156,7 +156,7 @@ def extract_task_metrics(raw_task_results: Dict[str, Any]) -> Dict[str, Dict[str
     return extracted
 
 
-def print_summary_table(tasks_metrics: Dict[str, Dict[str, float]], module_name: str) -> None:
+def print_summary_table(tasks_metrics: dict[str, dict[str, float]], module_name: str) -> None:
     """Print a clean Markdown-compatible summary table of results."""
     print("\n" + "=" * 65)
     print(f" LM EVALUATION HARNESS SUMMARY: {module_name}")
@@ -176,7 +176,7 @@ def print_summary_table(tasks_metrics: Dict[str, Dict[str, float]], module_name:
     print("=" * 65 + "\n")
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     global torch, AutoModelForCausalLM, AutoTokenizer, ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, apply_module_to_model, HFLM, simple_evaluate, _HAS_LM_EVAL
     args = parse_args(argv)
 
@@ -234,7 +234,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     model = AutoModelForCausalLM.from_pretrained(tok_src)
 
     # Inject module if requested
-    injection_stats: Dict[str, Any] = {}
+    injection_stats: dict[str, Any] = {}
     if not args.no_inject and args.module != "full":
         typ = "attention" if args.module in ATTENTION_REGISTRY else "compressor"
         LOG.info("Injecting %s module '%s' (rank=%d)...", typ, args.module, args.rank)
@@ -277,7 +277,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # Execute simple_evaluate across tasks
     LOG.info("Starting lm_eval.simple_evaluate on tasks: %s", args.tasks)
-    eval_kwargs: Dict[str, Any] = {
+    eval_kwargs: dict[str, Any] = {
         "model": lm,
         "tasks": args.tasks,
     }
@@ -286,7 +286,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.limit is not None:
         eval_kwargs["limit"] = args.limit
 
-    eval_results: Dict[str, Any] = {}
+    eval_results: dict[str, Any] = {}
     try:
         eval_output = simple_evaluate(**eval_kwargs)
         eval_results = eval_output.get("results", {})
@@ -313,7 +313,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / f"{args.module}_lmeval.json"
 
-    payload: Dict[str, Any] = {
+    payload: dict[str, Any] = {
         "module": args.module,
         "model_path": args.model_path,
         "rank": args.rank,

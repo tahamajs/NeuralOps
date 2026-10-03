@@ -3,7 +3,8 @@ SVDAwareTrainer – custom HuggingFace Trainer with SVD compression callbacks.
 """
 
 import gc
-from typing import Any, Callable, Optional
+from typing import Any
+from collections.abc import Callable
 
 import torch
 from transformers import Trainer, TrainingArguments
@@ -14,11 +15,11 @@ class SVDAwareTrainer(Trainer):
 
     def __init__(
         self,
-        visualizer: Optional[Any] = None,
-        pre_train_callback: Optional[Callable] = None,
-        post_train_callback: Optional[Callable] = None,
+        visualizer: Any | None = None,
+        pre_train_callback: Callable | None = None,
+        post_train_callback: Callable | None = None,
         log_attention_maps: bool = False,
-        attention_layers: Optional[list] = None,
+        attention_layers: list | None = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -153,7 +154,7 @@ def create_trainer(
     save_total_limit: int = 2,
     load_best_model_at_end: bool = True,
     metric_for_best_model: str = "eval_loss",
-    compute_metrics: Optional[Callable] = None,
+    compute_metrics: Callable | None = None,
     **kwargs,
 ) -> SVDAwareTrainer:
     """Build and return trainer."""

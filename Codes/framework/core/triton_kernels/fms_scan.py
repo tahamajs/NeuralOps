@@ -17,7 +17,6 @@ Supports head_dim D <= 64.
 
 from __future__ import annotations
 
-import math
 import torch
 import triton
 import triton.language as tl

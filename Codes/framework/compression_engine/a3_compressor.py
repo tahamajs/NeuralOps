@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -63,7 +63,7 @@ class A3FactorizedLinear(nn.Module):
         rank: int,
         bias: bool = True,
         dtype: torch.dtype = torch.float32,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
         lora_rank: int = 0,
         lora_alpha: float = 1.0,
         freeze_base: bool = False,
@@ -153,12 +153,12 @@ class A3FactorizedLinear(nn.Module):
         cls,
         linear: nn.Module,
         rank: int,
-        U_factor: Optional[torch.Tensor] = None,
-        V_factor: Optional[torch.Tensor] = None,
+        U_factor: torch.Tensor | None = None,
+        V_factor: torch.Tensor | None = None,
         lora_rank: int = 0,
         lora_alpha: float = 1.0,
         freeze_base: bool = False,
-    ) -> "A3FactorizedLinear":
+    ) -> A3FactorizedLinear:
         cls_name = linear.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(linear, "nf")
         target_mod = getattr(linear, "base_layer", linear)
@@ -176,9 +176,7 @@ class A3FactorizedLinear(nn.Module):
         if in_f is None or out_f is None:
             w = getattr(target_mod, "weight", None)
             if w is not None and w.ndim == 2:
-                if bias is not None and bias.ndim == 1 and bias.shape[0] == w.shape[1] and bias.shape[0] != w.shape[0]:
-                    in_f, out_f = w.shape[0], w.shape[1]
-                elif is_conv1d:
+                if bias is not None and bias.ndim == 1 and bias.shape[0] == w.shape[1] and bias.shape[0] != w.shape[0] or is_conv1d:
                     in_f, out_f = w.shape[0], w.shape[1]
                 else:
                     out_f, in_f = w.shape[0], w.shape[1]
@@ -242,7 +240,7 @@ class A3Compressor(BaseCompressor):
         model: nn.Module,
         rank: int = 64,
         use_fisher: bool = True,
-        use_energy_weighting: Optional[bool] = None,
+        use_energy_weighting: bool | None = None,
         use_cholesky: bool = False,
         allow_ln_failure: bool = False,
         lora_rank: int = 0,
@@ -253,11 +251,11 @@ class A3Compressor(BaseCompressor):
         max_retries: int = 5,
         fallback_to_original: bool = True,
         normalize_scale: bool = True,
-        tokenizer: Optional[Any] = None,
-        calibration_loader: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
+        tokenizer: Any | None = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
         n_calib: int = 500,
-        device: Optional[Union[str, torch.device]] = None,
+        device: str | torch.device | None = None,
         cov_dtype: str = "float32",  # A3-FIX-08: "float32" or "float16"
         **kwargs: Any,
     ) -> None:
@@ -344,9 +342,9 @@ class A3Compressor(BaseCompressor):
             self.cov_dtype_name = "float32"
         self.cov_dtype = torch.float32 if self.cov_dtype_name == "float32" else torch.float16
 
-        self.stats: Dict[str, Any] = {}
-        self.compressed_layers: List[str] = []
-        self.skipped_layers: List[str] = []
+        self.stats: dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.skipped_layers: list[str] = []
         self.activations_cleared: bool = False
 
         # A3-FIX-06 / A3-FIX-10
@@ -356,7 +354,7 @@ class A3Compressor(BaseCompressor):
         self._comp_storage_bytes: int = 0
 
         # Cached target names for hook filtering
-        self._target_module_names: Optional[List[str]] = None
+        self._target_module_names: list[str] | None = None
 
     # ------------------------------------------------------------------
     # A3-FIX-02: determine target layers once
@@ -415,7 +413,7 @@ class A3Compressor(BaseCompressor):
     # ------------------------------------------------------------------
     # Activation & energy collection
     # ------------------------------------------------------------------
-    def _collect_activations_and_energy(self) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+    def _collect_activations_and_energy(self) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
         """
         Collects (optional covariance, activation energy E[x²]).
 
@@ -437,9 +435,9 @@ class A3Compressor(BaseCompressor):
         if not target_set:
             return {}, {}
 
-        cov_running: Dict[str, torch.Tensor] = {}
-        energy_running: Dict[str, torch.Tensor] = {}
-        count_running: Dict[str, int] = {}
+        cov_running: dict[str, torch.Tensor] = {}
+        energy_running: dict[str, torch.Tensor] = {}
+        count_running: dict[str, int] = {}
         hooks = []
 
         def make_hook(layer_name: str):
@@ -534,8 +532,8 @@ class A3Compressor(BaseCompressor):
         for h in hooks:
             h.remove()
 
-        cov_map: Dict[str, torch.Tensor] = {}
-        energy_map: Dict[str, torch.Tensor] = {}
+        cov_map: dict[str, torch.Tensor] = {}
+        energy_map: dict[str, torch.Tensor] = {}
         for name in count_running:
             n = max(count_running[name], 1)
             if self.use_cholesky and name in cov_running:
@@ -573,7 +571,7 @@ class A3Compressor(BaseCompressor):
     # A3-FIX-04 / A3-FIX-11: dynamic STRS candidates
     # ------------------------------------------------------------------
     @staticmethod
-    def _build_strs_candidates(r_floor: int, r_ceiling: int) -> List[int]:
+    def _build_strs_candidates(r_floor: int, r_ceiling: int) -> list[int]:
         if r_ceiling < r_floor:
             return [r_ceiling]
         # Geometric grid between r_floor and r_ceiling with ~8 points
@@ -637,13 +635,13 @@ class A3Compressor(BaseCompressor):
         self,
         module: nn.Module,
         name: str = "",
-        cov: Optional[torch.Tensor] = None,
-        fisher: Optional[torch.Tensor] = None,
-        rank: Optional[int] = None,
-        activation_energy: Optional[torch.Tensor] = None,
+        cov: torch.Tensor | None = None,
+        fisher: torch.Tensor | None = None,
+        rank: int | None = None,
+        activation_energy: torch.Tensor | None = None,
         lora_rank: int = 0,
         lora_alpha: float = 1.0,
-        X_for_error: Optional[torch.Tensor] = None,
+        X_for_error: torch.Tensor | None = None,
         **kwargs: Any,
     ):
         if fisher is None and activation_energy is not None:
@@ -845,7 +843,7 @@ class A3Compressor(BaseCompressor):
         return factorized_layer, best_err, best_r
 
     # ------------------------------------------------------------------
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         has_calib_sources = (
             self.calibration_loader is not None
             or bool(self.calibration_texts)
@@ -865,8 +863,8 @@ class A3Compressor(BaseCompressor):
 
         factorized_count = 0
         skipped_count = 0
-        layer_stats: Dict[str, Any] = {}
-        layer_param_counts: Dict[str, int] = {}
+        layer_stats: dict[str, Any] = {}
+        layer_param_counts: dict[str, int] = {}
         total_err = 0.0
         self.compressed_layers = []
         self.skipped_layers = []
@@ -1014,7 +1012,7 @@ def a3_compressor_factory(
     comp_config: Any = None,
     rank: int = 64,
     use_fisher: bool = True,
-    use_energy_weighting: Optional[bool] = None,
+    use_energy_weighting: bool | None = None,
     use_cholesky: bool = False,
     allow_ln_failure: bool = False,
     lora_rank: int = 0,

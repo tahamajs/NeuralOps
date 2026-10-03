@@ -2,7 +2,7 @@
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any
 
 from framework.callbacks import CALLBACK_REGISTRY
 
@@ -45,10 +45,10 @@ logger = logging.getLogger(__name__)
 class FullExperimentConfig(ExperimentConfig):
     """Extended configuration with all optional sub‑configs."""
 
-    hpo_config: Dict[str, Any] = field(default_factory=dict)
-    distributed_config: Dict[str, Any] = field(default_factory=dict)
-    tracking_config: Dict[str, Any] = field(default_factory=dict)
-    deployment_config: Dict[str, Any] = field(default_factory=dict)
+    hpo_config: dict[str, Any] = field(default_factory=dict)
+    distributed_config: dict[str, Any] = field(default_factory=dict)
+    tracking_config: dict[str, Any] = field(default_factory=dict)
+    deployment_config: dict[str, Any] = field(default_factory=dict)
 
 
 class ExperimentManager:
@@ -73,7 +73,7 @@ class ExperimentManager:
     # ------------------------------------------------------------------
     # Public entry point
     # ------------------------------------------------------------------
-    def run(self, stop_event: Optional[Any] = None) -> Dict[str, Any]:
+    def run(self, stop_event: Any | None = None) -> dict[str, Any]:
         """
         Execute the full experiment lifecycle.
         Returns a dictionary with final metrics and output paths.
@@ -115,7 +115,7 @@ class ExperimentManager:
         """
         optimizer = HyperOptimizer(self.config.hpo_config)
 
-        def objective(trial_params: Dict[str, Any]) -> float:
+        def objective(trial_params: dict[str, Any]) -> float:
             """Single trial – merge HPO‑suggested params into config."""
             trial_cfg = FullExperimentConfig(**{**self.config.__dict__, **trial_params})
             trial_cfg.hpo_config["enabled"] = False  # prevent recursion
@@ -136,7 +136,7 @@ class ExperimentManager:
     # ------------------------------------------------------------------
     # Single training run (the core)
     # ------------------------------------------------------------------
-    def _run_single(self) -> Dict[str, Any]:
+    def _run_single(self) -> dict[str, Any]:
         """Build and execute one training run from current config."""
         cfg = self.config
         set_seed(cfg.seed)

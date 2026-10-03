@@ -28,7 +28,7 @@ Parameter count drops from d_out * d_in to (d_out + d_in) * keep.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 import logging
 import math
 import torch
@@ -69,11 +69,11 @@ class SliceGPTPCALoRALinear(nn.Module):
         in_features: int,
         out_features: int,
         weight: torch.Tensor,
-        bias: Optional[torch.Tensor] = None,
+        bias: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -112,7 +112,7 @@ class SliceGPTPCALoRALinear(nn.Module):
         sliced_weight: torch.Tensor,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-    ) -> "SliceGPTPCALoRALinear":
+    ) -> SliceGPTPCALoRALinear:
         base_mod = getattr(linear, 'base_layer', linear)
         bias = base_mod.bias.detach() if hasattr(base_mod, 'bias') and base_mod.bias is not None else None
         in_features = getattr(base_mod, 'in_features', sliced_weight.shape[1])
@@ -176,10 +176,10 @@ class SliceGPTPCACompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        calibration_loader: Optional[Any] = None,
+        calibration_loader: Any | None = None,
         sparsity: float = 0.3,
-        tokenizer: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
+        tokenizer: Any | None = None,
+        calibration_texts: list[str] | None = None,
         skip_attention_qkv: bool = False,
         target_attention_only: bool = False,
         use_lora: bool = False,
@@ -188,13 +188,13 @@ class SliceGPTPCACompressor(BaseCompressor):
         max_error: float = 0.50,
         fallback_to_original: bool = True,
         min_numel: int = 16,
-        target_modules: Optional[List[str]] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        cfg: Optional[Any] = None,
+        target_modules: list[str] | None = None,
+        device: str | torch.device | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name='slicegpt_pca', **kwargs)
-        cfg_obj = cfg or kwargs.get('comp_config', None)
+        cfg_obj = cfg or kwargs.get('comp_config')
 
         self.calibration_loader = calibration_loader
         self.sparsity = max(0.0, min(float(sparsity or _cfg_get(cfg_obj, 'slicegpt_pca_sparsity', _cfg_get(cfg_obj, 'sparsity', 0.3))), 0.95))
@@ -220,15 +220,15 @@ class SliceGPTPCACompressor(BaseCompressor):
             self.target_device = next(model.parameters()).device if list(model.parameters()) else torch.device('cpu')
 
         # Diagnostics & Tracking
-        self.visited_modules: Set[int] = set()
-        self.sliced_layers: List[str] = []
-        self.protected_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.failed_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
-        self.stats: Dict[str, Any] = {}
+        self.visited_modules: set[int] = set()
+        self.sliced_layers: list[str] = []
+        self.protected_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.failed_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+        self.stats: dict[str, Any] = {}
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         """Check if layer belongs to an attention projection in a GQA architecture."""
@@ -296,16 +296,16 @@ class SliceGPTPCACompressor(BaseCompressor):
             return any(t in name for t in self.target_modules)
         return True
 
-    def _collect_layer_activations(self) -> Dict[str, torch.Tensor]:
+    def _collect_layer_activations(self) -> dict[str, torch.Tensor]:
         """Capture streaming empirical covariance across target layers to avoid memory spikes."""
         self.model.eval()
-        sum_x: Dict[str, torch.Tensor] = {}
-        sum_xx: Dict[str, torch.Tensor] = {}
-        counts: Dict[str, int] = {}
+        sum_x: dict[str, torch.Tensor] = {}
+        sum_xx: dict[str, torch.Tensor] = {}
+        counts: dict[str, int] = {}
         hooks = []
 
         def make_hook(layer_name: str):
-            def hook(module: nn.Module, inputs: Tuple[torch.Tensor, ...], output: Any):
+            def hook(module: nn.Module, inputs: tuple[torch.Tensor, ...], output: Any):
                 if inputs and isinstance(inputs[0], torch.Tensor):
                     inp = inputs[0].detach()
                     x_flat = inp.reshape(-1, inp.shape[-1]).float()
@@ -357,7 +357,7 @@ class SliceGPTPCACompressor(BaseCompressor):
                     # Fix 5: corrected error message (was "copy_weights failed")
                     logger.warning("SliceGPTPCA hook removal failed: %s", e)
 
-        cov_map: Dict[str, torch.Tensor] = {}
+        cov_map: dict[str, torch.Tensor] = {}
         for name, n in counts.items():
             if n > 1:
                 mu = sum_x[name] / float(n)
@@ -366,7 +366,7 @@ class SliceGPTPCACompressor(BaseCompressor):
         return cov_map
 
     @staticmethod
-    def _detect_lora(module: nn.Module) -> Tuple[int, float]:
+    def _detect_lora(module: nn.Module) -> tuple[int, float]:
         """Detect existing LoRA rank and alpha from a wrapped module, if any."""
         if not hasattr(module, 'lora_A') or module.lora_A is None:
             return 0, 1.0
@@ -388,7 +388,7 @@ class SliceGPTPCACompressor(BaseCompressor):
                 break
         return rank, alpha
 
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """
         Compresses the model using PCA-based principal subspace projection and
         real low-rank factorization (SVDLinear).
@@ -691,7 +691,7 @@ def slicegpt_pca_factory(
     return_stats: bool = False,
     return_tuple: bool = False,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """
     Factory function for SliceGPT PCA compressor.
     Returns (compressed_model, stats) if return_stats or return_tuple is True, else compressed_model.

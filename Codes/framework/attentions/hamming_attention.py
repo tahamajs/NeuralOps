@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 try:
@@ -49,7 +49,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
     if module is None:
         return None, None
     base = getattr(module, "base_layer", module)
@@ -79,8 +79,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -135,8 +135,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -213,12 +213,12 @@ class HammingAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
         distill_temperature: float = 2.0,
         sparsity_ratio: float = 0.0,
         lora_rank: int = 16,
-        pretrained_attn: Optional[nn.Module] = None,
+        pretrained_attn: nn.Module | None = None,
         **kwargs: Any,
     ) -> None:
         try:
@@ -338,7 +338,7 @@ class HammingAttention(BaseAttention):
     def copy_weights(self, src: Any) -> None:
         from framework.core.adapters import UniversalAdapter
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -379,7 +379,7 @@ class HammingAttention(BaseAttention):
         if hasattr(src, "self") and any(
             extracted[k][0] is None for k in ("q", "k", "v")
         ):
-            s = getattr(src, "self")
+            s = src.self
             if hasattr(s, "query") and extracted["q"][0] is None:
                 extracted["q"] = _unpack_weight_bias(s.query)
             if hasattr(s, "key") and extracted["k"][0] is None:
@@ -387,7 +387,7 @@ class HammingAttention(BaseAttention):
             if hasattr(s, "value") and extracted["v"][0] is None:
                 extracted["v"] = _unpack_weight_bias(s.value)
 
-        if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") \
+        if hasattr(src, "output") and hasattr(src.output, "dense") \
                 and extracted["o"][0] is None:
             extracted["o"] = _unpack_weight_bias(src.output.dense)
 
@@ -414,9 +414,7 @@ class HammingAttention(BaseAttention):
         if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
             self.is_nested_encoder = False
         elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention")
-              or (hasattr(src, "query") and not has_out)):
-            self.is_nested_encoder = True
-        elif hasattr(src, "self") and hasattr(src, "output"):
+              or (hasattr(src, "query") and not has_out)) or hasattr(src, "self") and hasattr(src, "output"):
             self.is_nested_encoder = True
         else:
             self.is_nested_encoder = False
@@ -480,18 +478,18 @@ class HammingAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
         is_cross_attention = key_value_states is not None
         kv_input = key_value_states if is_cross_attention else hidden_states
@@ -508,7 +506,7 @@ class HammingAttention(BaseAttention):
 
         # ---- RoPE ----
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross_attention:
             if isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
                 cos, sin = position_embeddings[0], position_embeddings[1]
@@ -535,7 +533,7 @@ class HammingAttention(BaseAttention):
         ) / (2.0 * math.sqrt(Dh))
 
         # ---- Masking ----
-        mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
+        mask = attention_mask if attention_mask is not None else kwargs.get("mask")
         if mask is not None:
             if mask.dim() == 4:
                 scores = scores + mask.to(scores.dtype)
@@ -600,22 +598,22 @@ def inject_hamming_attention(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     lora_rank: int = 16,
     _depth: int = 0,
     **kwargs: Any,
-) -> Optional[Any]:
+) -> Any | None:
     if _depth > 8:
         logger.warning("inject_hamming_attention: max recursion depth exceeded")
         return None
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 
-    cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
+    cfg = model_config or getattr(target, "config", None) or kwargs.get("config")
 
     # Whole-model traversal
     if target is not None and (

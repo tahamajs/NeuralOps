@@ -12,7 +12,7 @@ Hybrid low-rank factorized attention with:
 import logging
 import math
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -45,7 +45,7 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Apply RoPE. cos/sin must already be sliced to the current window."""
     if cos.dim() == 2:
         cos = cos.unsqueeze(0).unsqueeze(0)
@@ -88,8 +88,8 @@ def apply_rotary_pos_emb(
 
 def _detect_decoder(
     config: Any,
-    is_decoder: Optional[bool],
-    old_attn: Optional[nn.Module],
+    is_decoder: bool | None,
+    old_attn: nn.Module | None,
 ) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)
@@ -189,8 +189,8 @@ class FactorisedLinear(nn.Module):
     def decompose_from_weight(
         self,
         weight: torch.Tensor,
-        bias: Optional[torch.Tensor] = None,
-        energy: Optional[float] = None,
+        bias: torch.Tensor | None = None,
+        energy: float | None = None,
     ) -> None:
         with torch.no_grad():
             W = weight.float()
@@ -254,7 +254,7 @@ class FactorisedLinear(nn.Module):
         return base_w
 
     @property
-    def bias(self) -> Optional[torch.Tensor]:
+    def bias(self) -> torch.Tensor | None:
         return self.up.bias
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -279,7 +279,7 @@ def _local_window_attention_v2(
     K: torch.Tensor,
     V: torch.Tensor,
     window: int,
-    token_valid: Optional[torch.Tensor] = None,
+    token_valid: torch.Tensor | None = None,
     is_decoder: bool = False,
     past_len: int = 0,
 ) -> torch.Tensor:
@@ -334,7 +334,7 @@ def _global_linear_attention_v2(
     Q: torch.Tensor,
     K: torch.Tensor,
     V: torch.Tensor,
-    token_valid: Optional[torch.Tensor],
+    token_valid: torch.Tensor | None,
     is_decoder: bool = False,
 ) -> torch.Tensor:
     """
@@ -357,7 +357,7 @@ def _global_linear_attention_v2(
 
     # ---- Causal case: chunked cumsum ----
     if is_decoder:
-        if N != N_k:
+        if N_k != N:
             # Single-token decode: exact non-causal over the full history.
             KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_f)  # (B,H,F,D)
             Z = phi_K.sum(dim=-2, keepdim=True)                           # (B,H,1,F)
@@ -415,8 +415,8 @@ class AegisAttentionV2(BaseAttention):
     def __init__(
         self,
         config: Any = None,
-        pretrained_attn: Optional[nn.Module] = None,
-        is_decoder: Optional[bool] = None,
+        pretrained_attn: nn.Module | None = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         if config is None or not isinstance(config, AegisConfigV2):
@@ -484,7 +484,7 @@ class AegisAttentionV2(BaseAttention):
         self.out_proj = FactorisedLinear(self.all_head_size, self.hidden_size, rank=self.rank)
 
         if config.use_adaptive_pruning:
-            self.prune_gate: Optional[nn.Sequential] = nn.Sequential(
+            self.prune_gate: nn.Sequential | None = nn.Sequential(
                 nn.Linear(self.hidden_size, max(1, self.hidden_size // 4)),
                 nn.ReLU(),
                 nn.Linear(max(1, self.hidden_size // 4), self.num_heads),
@@ -547,7 +547,7 @@ class AegisAttentionV2(BaseAttention):
     def copy_weights(self, old_attn: Any) -> None:
         from framework.core.adapters import UniversalAdapter
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -599,7 +599,7 @@ class AegisAttentionV2(BaseAttention):
         if hasattr(old_attn, "self") and any(
             extracted[k][0] is None for k in ("q", "k", "v")
         ):
-            s = getattr(old_attn, "self")
+            s = old_attn.self
             if hasattr(s, "query"):
                 extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
             if hasattr(s, "key"):
@@ -607,7 +607,7 @@ class AegisAttentionV2(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if hasattr(old_attn, "output") and hasattr(getattr(old_attn, "output"), "dense") \
+        if hasattr(old_attn, "output") and hasattr(old_attn.output, "dense") \
                 and extracted["o"][0] is None:
             dense = old_attn.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
@@ -633,11 +633,9 @@ class AegisAttentionV2(BaseAttention):
         if hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj"):
             self.is_nested_encoder = False
         elif (hasattr(old_attn, "self")
-              and hasattr(getattr(old_attn, "self"), "query")
+              and hasattr(old_attn.self, "query")
               and hasattr(old_attn, "output")
-              and hasattr(getattr(old_attn, "output"), "dense")):
-            self.is_nested_encoder = True
-        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
+              and hasattr(old_attn.output, "dense")) or (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
                            "XLMRobertaSelfAttention", "ElectraSelfAttention")
               or "RobertaSelfAttention" in str(type(old_attn))
               or "BertSelfAttention" in str(type(old_attn))
@@ -695,7 +693,7 @@ class AegisAttentionV2(BaseAttention):
     # ------------------------------------------------------------------
     @classmethod
     def from_distilbert_pretrained(
-        cls, old_attn: nn.Module, model_config: Optional[Any] = None, **kwargs: Any
+        cls, old_attn: nn.Module, model_config: Any | None = None, **kwargs: Any
     ) -> "AegisAttentionV2":
         if model_config is None:
             out_mod = getattr(old_attn, "out_lin", None) or getattr(old_attn, "dense", None)
@@ -723,9 +721,9 @@ class AegisAttentionV2(BaseAttention):
     # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(
-        attention_mask: Optional[torch.Tensor],
+        attention_mask: torch.Tensor | None,
         B: int, N_kv: int, device: torch.device,
-    ) -> Optional[torch.Tensor]:
+    ) -> torch.Tensor | None:
         """Return boolean (B, N_kv): True = key is valid. None if no mask."""
         if attention_mask is None:
             return None
@@ -752,18 +750,18 @@ class AegisAttentionV2(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
         Hkv = self.num_kv_heads
@@ -907,7 +905,7 @@ def inject_aegis_v2(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -917,7 +915,7 @@ def inject_aegis_v2(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

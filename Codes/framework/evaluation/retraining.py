@@ -9,7 +9,8 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
+from collections.abc import Callable
 
 from framework.core.registry import Registry
 
@@ -29,20 +30,20 @@ class TriggerType(Enum):
 class RetrainPolicy:
     """Configuration for when and how to retrain."""
 
-    trigger_types: List[TriggerType] = field(
+    trigger_types: list[TriggerType] = field(
         default_factory=lambda: [TriggerType.DRIFT]
     )
 
     # Drift trigger
     drift_threshold: float = 0.3
-    drift_methods: List[str] = field(default_factory=lambda: ["ks", "psi"])
+    drift_methods: list[str] = field(default_factory=lambda: ["ks", "psi"])
 
     # Performance trigger
     min_accuracy: float = 0.85
     max_accuracy_degradation: float = 0.05
 
     # Schedule trigger
-    schedule_cron: Optional[str] = None  # "0 2 * * 1" for every Monday 2 AM
+    schedule_cron: str | None = None  # "0 2 * * 1" for every Monday 2 AM
     max_days_since_last_train: int = 30
 
     # Data volume trigger
@@ -64,9 +65,9 @@ class RetrainDecision:
 
     should_retrain: bool
     reason: str
-    trigger_type: Optional[TriggerType] = None
+    trigger_type: TriggerType | None = None
     urgency: str = "low"  # "low", "medium", "high", "critical"
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
 
 class RetrainingOrchestrator:
@@ -93,9 +94,9 @@ class RetrainingOrchestrator:
 
     def evaluate(
         self,
-        current_metrics: Optional[Dict[str, float]] = None,
-        reference_metrics: Optional[Dict[str, float]] = None,
-        drift_report: Optional[Any] = None,
+        current_metrics: dict[str, float] | None = None,
+        reference_metrics: dict[str, float] | None = None,
+        drift_report: Any | None = None,
         new_data_count: int = 0,
         days_since_last_train: int = 0,
         manual_request: bool = False,
@@ -155,7 +156,7 @@ class RetrainingOrchestrator:
         return RetrainDecision(should_retrain=False, reason="No triggers met")
 
     def _check_performance(
-        self, current: Dict[str, float], reference: Dict[str, float]
+        self, current: dict[str, float], reference: dict[str, float]
     ) -> RetrainDecision:
         """ check performance."""
         acc_key = "accuracy" if "accuracy" in current else "eval_accuracy"
@@ -237,7 +238,7 @@ class RetrainingOrchestrator:
         training_fn: Callable,
         decision: RetrainDecision,
         **training_kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute retraining and validate the new model."""
         logger.info("Retraining triggered for %s: %s", run_id, decision.reason)
         self._retrain_count_today += 1

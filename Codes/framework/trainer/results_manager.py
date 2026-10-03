@@ -3,7 +3,7 @@ import logging
 import math
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -29,7 +29,7 @@ class ResultsManager:
         self,
         experiment_name: str,
         base_dir: str = "results",
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
         log_to_file: bool = True,
     ) -> None:
         self.experiment_name = experiment_name
@@ -49,7 +49,7 @@ class ResultsManager:
 
         self.logger = self._setup_logger()
         self.metrics_path = self.run_dir / "metrics.jsonl"
-        self.history: List[Dict[str, Any]] = []
+        self.history: list[dict[str, Any]] = []
 
         if config:
             with open(self.run_dir / "config.yaml", "w") as f:
@@ -75,7 +75,7 @@ class ResultsManager:
             logger.addHandler(fh)
         return logger
 
-    def log_metrics(self, metrics: Dict[str, Any], step: Optional[int] = None) -> None:
+    def log_metrics(self, metrics: dict[str, Any], step: int | None = None) -> None:
         """Log metrics."""
         record = {"step": step} if step is not None else {}
         record.update(metrics)
@@ -103,13 +103,13 @@ class ResultsManager:
         """Return the checkpoint dir."""
         return str(self.checkpoint_dir)
 
-    def push_to_hf(self, repo_id: Optional[str] = None) -> None:
+    def push_to_hf(self, repo_id: str | None = None) -> None:
         """Push full run results (models, plots, metrics) to HuggingFace Hub."""
         from framework.results_saver.backends import huggingface as hf_backend
         cfg = {"hf_options": {"repo_id": repo_id}} if repo_id else self.config
         hf_backend.push(self.experiment_name, self.run_dir, cfg)
 
-    def generate_summary_report(self, final_metrics: Optional[Dict[str, Any]] = None) -> None:
+    def generate_summary_report(self, final_metrics: dict[str, Any] | None = None) -> None:
         """Generate structured markdown and json summary reports for the run."""
         def _make_serializable(obj):
             if hasattr(obj, "to_dict") and callable(obj.to_dict):

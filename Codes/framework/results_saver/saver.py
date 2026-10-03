@@ -15,13 +15,13 @@ import tarfile
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from .config import SaveConfig
 
 logger = logging.getLogger(__name__)
 
-MASTER_CSV_COLUMNS: List[str] = [
+MASTER_CSV_COLUMNS: list[str] = [
     "timestamp",
     "track",
     "module_name",
@@ -59,8 +59,8 @@ MASTER_CSV_COLUMNS: List[str] = [
 
 
 def save_result(
-    result: Union[Dict[str, Any], Any],
-    results_dir: Union[str, Path] = "benchmark_results",
+    result: dict[str, Any] | Any,
+    results_dir: str | Path = "benchmark_results",
     csv_filename: str = "master_results.csv",
 ) -> str:
     """
@@ -90,7 +90,7 @@ def save_result(
         row["timestamp"] = datetime.now().isoformat()
 
     # Format fields: round floats to 4 decimal places, None to empty string
-    formatted_row: Dict[str, Any] = {}
+    formatted_row: dict[str, Any] = {}
     for k, v in row.items():
         if isinstance(v, float):
             formatted_row[k] = round(v, 4) if math.isfinite(v) else ""
@@ -131,7 +131,7 @@ def _sanitize_json_value(value: Any) -> Any:
 
 
 @contextlib.contextmanager
-def sqlite_file_lock(lock_file_path: Union[str, Path], timeout: float = 30.0):
+def sqlite_file_lock(lock_file_path: str | Path, timeout: float = 30.0):
     """
     Acquire an exclusive cross-process / multi-GPU file lock to serialize SQLite database writes.
 
@@ -139,7 +139,7 @@ def sqlite_file_lock(lock_file_path: Union[str, Path], timeout: float = 30.0):
     """
     lock_path = Path(lock_file_path)
     lock_path.parent.mkdir(parents=True, exist_ok=True)
-    lock_fd: Optional[int] = None
+    lock_fd: int | None = None
     start_time = time.time()
     try:
         lock_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR)
@@ -205,14 +205,14 @@ class ResultsSaver:
     """
 
     def __init__(
-        self, run_id: str, base_dir: Path, config: Optional[Dict[str, Any]] = None
+        self, run_id: str, base_dir: Path, config: dict[str, Any] | None = None
     ) -> None:
         self.run_id = run_id
         self.base_dir = Path(base_dir)
         self.run_dir = self.base_dir / run_id
         self.cfg = SaveConfig.from_dict(config or {})
         self._init_dirs()
-        self.saved_paths: Dict[str, str] = {}
+        self.saved_paths: dict[str, str] = {}
 
     # ------------------------------------------------------------------
     # Directory setup
@@ -235,7 +235,7 @@ class ResultsSaver:
         for d in dirs:
             d.mkdir(parents=True, exist_ok=True)
 
-    def should_save_heavy(self, final_metrics: Dict[str, Any]) -> bool:
+    def should_save_heavy(self, final_metrics: dict[str, Any]) -> bool:
         """Evaluate if metric meets auto_save_if_better_than threshold."""
         threshold = self.cfg.auto_save_if_better_than
         if threshold is None:
@@ -256,10 +256,10 @@ class ResultsSaver:
 
     def save_to_sqlite(
         self,
-        db_path: Optional[Union[str, Path]] = None,
-        config: Optional[Any] = None,
-        metrics: Optional[Dict[str, Any]] = None,
-        extra_metadata: Optional[Dict[str, Any]] = None,
+        db_path: str | Path | None = None,
+        config: Any | None = None,
+        metrics: dict[str, Any] | None = None,
+        extra_metadata: dict[str, Any] | None = None,
     ) -> str:
         """
         Save run metadata, configuration, and final metrics into SQLite database with multi-GPU write safety.
@@ -323,7 +323,7 @@ class ResultsSaver:
         step: int,
         metric_name: str,
         value: float,
-        db_path: Optional[Union[str, Path]] = None,
+        db_path: str | Path | None = None,
     ) -> None:
         """
         Append a single step metric into SQLite database with multi-GPU concurrency safety.
@@ -363,7 +363,7 @@ class ResultsSaver:
     # ------------------------------------------------------------------
     # Public convenience methods
     # ------------------------------------------------------------------
-    def save_metrics(self, metrics: Dict[str, Any]) -> str:
+    def save_metrics(self, metrics: dict[str, Any]) -> str:
         """Save a dictionary of evaluation/training metrics to JSON and SQLite."""
         self._save_final_metrics(metrics)
         self.save_to_sqlite(metrics=metrics)
@@ -397,8 +397,8 @@ class ResultsSaver:
 
     def save_result(
         self,
-        result: Union[Dict[str, Any], Any],
-        results_dir: Optional[Union[str, Path]] = None,
+        result: dict[str, Any] | Any,
+        results_dir: str | Path | None = None,
         csv_filename: str = "master_results.csv",
     ) -> str:
         """Append a benchmark result to master CSV."""
@@ -484,7 +484,7 @@ class ResultsSaver:
         with open(fp, "w") as f:
             f.write(text)
 
-    def _flatten_config(self, config) -> Dict[str, Any]:
+    def _flatten_config(self, config) -> dict[str, Any]:
         """ flatten config."""
         if hasattr(config, "__dict__"):
             return vars(config)
@@ -547,8 +547,6 @@ class ResultsSaver:
             from framework.analysis.plotting import (
                 plot_accuracy_curves,
                 plot_confusion_matrix,
-                plot_gpu_memory,
-                plot_gradient_flow,
                 plot_loss_curves,
                 plot_lr_schedule,
                 plot_radar_chart,
@@ -709,7 +707,7 @@ class ResultsSaver:
     # ------------------------------------------------------------------
     # Experiment trackers (legacy backends – prefer framework.tracking)
     # ------------------------------------------------------------------
-    def track_all(self, metrics: Dict[str, Any], params: Dict[str, Any]) -> None:
+    def track_all(self, metrics: dict[str, Any], params: dict[str, Any]) -> None:
         """Track all."""
         for t in self.cfg.experiment_trackers:
             try:
@@ -741,7 +739,7 @@ class ResultsSaver:
     # ------------------------------------------------------------------
     # GitHub Release
     # ------------------------------------------------------------------
-    def create_github_release(self, metrics: Dict[str, Any]) -> Optional[str]:
+    def create_github_release(self, metrics: dict[str, Any]) -> str | None:
         """Build and return github release."""
         if not self.cfg.release_options.get("create_github_release"):
             return None
@@ -752,7 +750,7 @@ class ResultsSaver:
     # ------------------------------------------------------------------
     # Notifications
     # ------------------------------------------------------------------
-    def notify(self, success: bool, metrics: Dict[str, Any]) -> None:
+    def notify(self, success: bool, metrics: dict[str, Any]) -> None:
         """Notify."""
         from .backends.notification import notify
 
@@ -760,9 +758,9 @@ class ResultsSaver:
 
 
 def save_result_json(
-    result: Union[Dict[str, Any], Any],
-    results_dir: Union[str, Path] = "benchmark_results",
-    filename: Optional[str] = None,
+    result: dict[str, Any] | Any,
+    results_dir: str | Path = "benchmark_results",
+    filename: str | None = None,
 ) -> str:
     """
     Save complete benchmark result including fine-grained trajectories to JSON.
@@ -792,9 +790,9 @@ def save_result_json(
 
 
 def save_trajectories_parquet(
-    detailed_results: List[Dict[str, Any]],
-    output_dir: Union[str, Path] = "results/phase2/trajectories",
-) -> Optional[str]:
+    detailed_results: list[dict[str, Any]],
+    output_dir: str | Path = "results/phase2/trajectories",
+) -> str | None:
     """Writes step-level trajectories (loss, grad_norm, latency) as Apache Parquet."""
     target_dir = Path(output_dir)
     target_dir.mkdir(parents=True, exist_ok=True)

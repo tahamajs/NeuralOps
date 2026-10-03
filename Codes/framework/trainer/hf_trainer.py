@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .base_trainer import BaseTrainer
 from .registry import TrainerRegistry
@@ -12,7 +12,7 @@ class HuggingFaceTrainer(BaseTrainer):
         model,
         train_dataset,
         eval_dataset,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         results_manager,
         compute_metrics=None,
         **kwargs
@@ -25,7 +25,7 @@ class HuggingFaceTrainer(BaseTrainer):
         self.compute_metrics = compute_metrics
         self.kwargs = kwargs
         self._trainer = None
-        self._callbacks: List[Any] = []
+        self._callbacks: list[Any] = []
 
     def add_callback(self, callback: Any) -> None:
         """Add a callback to the trainer."""

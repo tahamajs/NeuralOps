@@ -25,16 +25,15 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from framework.core.adapters import UniversalAdapter
-from framework.core.attention_mask import apply_attention_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -54,8 +53,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -89,8 +88,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 0,
         lora_alpha: float = 1.0,
         freeze_base: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         fk = {"device": device, "dtype": dtype}
@@ -157,13 +156,13 @@ class HGRN2OuterBlock(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        dim: Optional[Union[int, Any]] = None,
-        num_heads: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        dim: int | Any | None = None,
+        num_heads: int | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         chunk_size: int = 64,
         **kwargs: Any,
     ) -> None:
@@ -257,7 +256,7 @@ class HGRN2OuterBlock(BaseAttention):
         self._orig_storage_bytes: int = 0
         self._comp_storage_bytes: int = 0
 
-        old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn", None))
+        old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn"))
         if old_attn is not None:
             self.copy_weights(old_attn)
 
@@ -548,7 +547,7 @@ class HGRN2OuterBlock(BaseAttention):
     # ------------------------------------------------------------------
     # Storage
     # ------------------------------------------------------------------
-    def storage_bytes(self) -> Dict[str, int]:
+    def storage_bytes(self) -> dict[str, int]:
         return {
             "orig": self._orig_storage_bytes,
             "comp": self._comp_storage_bytes,
@@ -560,14 +559,14 @@ class HGRN2OuterBlock(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
     ):
@@ -585,7 +584,7 @@ class HGRN2OuterBlock(BaseAttention):
         v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # ---- RoPE ----
-        pos_emb = kwargs.get("position_embeddings", None)
+        pos_emb = kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, tuple) and len(pos_emb) == 2:
             cos, sin = pos_emb
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
@@ -688,7 +687,7 @@ def inject_hgrn2_outer(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -698,7 +697,7 @@ def inject_hgrn2_outer(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

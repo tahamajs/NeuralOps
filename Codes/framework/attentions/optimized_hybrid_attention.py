@@ -10,14 +10,14 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # Decoder detection (OHA-FIX-09)
 # ===========================================================================
-def _detect_decoder(config: Any, is_decoder: Optional[bool], src_attn: Optional[nn.Module]) -> bool:
+def _detect_decoder(config: Any, is_decoder: bool | None, src_attn: nn.Module | None) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)
     if config is not None:
@@ -317,9 +317,7 @@ class OptimizedHybridAttention(BaseAttention):
         cls_name = src.__class__.__name__
         has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
-        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            is_nested = True
-        elif (cls_name in ["BertSelfAttention", "RobertaSelfAttention",
+        if hasattr(src, "self") and hasattr(src.self, "query") or (cls_name in ["BertSelfAttention", "RobertaSelfAttention",
                             "XLMRobertaSelfAttention", "ElectraSelfAttention",
                             "DebertaSelfAttention"]
               or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())) \
@@ -364,8 +362,8 @@ class OptimizedHybridAttention(BaseAttention):
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
         # RoBERTa / BERT nested
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            s = getattr(src, "self")
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
+            s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
@@ -373,7 +371,7 @@ class OptimizedHybridAttention(BaseAttention):
                         mod.weight.data.clone(),
                         mod.bias.data.clone() if mod.bias is not None else None,
                     )
-            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
                 extracted["o"] = (out_mod.weight.data.clone(),
                                   out_mod.bias.data.clone() if out_mod.bias is not None else None)
@@ -516,7 +514,7 @@ class OptimizedHybridAttention(BaseAttention):
         V = self.value(hidden_states).view(B, N, self.num_kv_heads, d).permute(0, 2, 1, 3)
 
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
             past_len = 0
@@ -669,7 +667,7 @@ def inject_oha(layer=None, model=None, model_config=None, comp_config=None,
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

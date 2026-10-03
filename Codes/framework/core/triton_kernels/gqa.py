@@ -7,7 +7,7 @@ Efficiently repeats KV heads along the head dimension for multi-query and groupe
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 
@@ -62,7 +62,7 @@ def fwd(
     num_kv_heads: int,
     num_heads: int,
     **kwargs: Any,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Forward entrypoint for GQA head expansion: (k_expanded, v_expanded)."""
     if num_kv_heads == num_heads:
         return k, v
@@ -105,7 +105,7 @@ def bwd(
     num_kv_heads: int,
     num_heads: int,
     **kwargs: Any,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Backward entrypoint: reduces expanded gradients back to num_kv_heads."""
     if num_kv_heads == num_heads:
         return grad_k, grad_v

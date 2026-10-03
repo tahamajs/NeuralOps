@@ -12,7 +12,7 @@ Used by:
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 
@@ -78,7 +78,7 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
         x: torch.Tensor,
         U: torch.Tensor,
         V: torch.Tensor,
-        bias: Optional[torch.Tensor],
+        bias: torch.Tensor | None,
     ) -> torch.Tensor:
         orig_shape = x.shape
         D_in = orig_shape[-1]
@@ -131,7 +131,7 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
         return y.view(*orig_shape[:-1], D_out)
 
     @staticmethod
-    def backward(ctx: Any, grad_out: torch.Tensor) -> Tuple[Optional[torch.Tensor], ...]:
+    def backward(ctx: Any, grad_out: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
         x, U, V, bias = ctx.saved_tensors
         orig_shape = x.shape
         D_in = orig_shape[-1]
@@ -182,7 +182,7 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
         return g_x, g_U, g_V, g_bias
 
 
-def is_supported(x: torch.Tensor, U: torch.Tensor, V: torch.Tensor, bias: Optional[torch.Tensor] = None, **kwargs: Any) -> bool:
+def is_supported(x: torch.Tensor, U: torch.Tensor, V: torch.Tensor, bias: torch.Tensor | None = None, **kwargs: Any) -> bool:
     """Check whether low-rank projection can run on the Triton kernel."""
     suitable, _ = check_triton_suitability(x, "low_rank")
     return suitable and U.is_cuda and V.is_cuda
@@ -192,7 +192,7 @@ def fwd(
     x: torch.Tensor,
     U: torch.Tensor,
     V: torch.Tensor,
-    bias: Optional[torch.Tensor] = None,
+    bias: torch.Tensor | None = None,
     **kwargs: Any,
 ) -> torch.Tensor:
     """Forward entrypoint for fused Triton low-rank projection: y = (x @ V.T) @ U.T + bias."""
@@ -206,9 +206,9 @@ def bwd(
     U: torch.Tensor,
     V: torch.Tensor,
     grad_out: torch.Tensor,
-    bias: Optional[torch.Tensor] = None,
+    bias: torch.Tensor | None = None,
     **kwargs: Any,
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor | None]:
     """Backward entrypoint computing gradients for x, U, V, and bias."""
     x_req = x.detach().requires_grad_(True)
     U_req = U.detach().requires_grad_(True)

@@ -30,7 +30,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import torch
@@ -58,13 +58,13 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 # ===========================================================================
 def factorize_dimension_pair(
     in_features: int, out_features: int, num_factors: int = 2
-) -> Tuple[Tuple[int, ...], Tuple[int, ...]]:
+) -> tuple[tuple[int, ...], tuple[int, ...]]:
     """
     Factorize in_features and out_features into num_factors *balanced* integer
     components. Pathological splits (e.g. (1, 768)) are rejected in favor of
     (a, b) with a ≈ b.
     """
-    def get_factors(n: int, k: int) -> List[int]:
+    def get_factors(n: int, k: int) -> list[int]:
         if k == 1:
             return [n]
         if k == 2:
@@ -114,7 +114,7 @@ class SVDLinearLayer(nn.Module):
         self,
         A: torch.Tensor,               # (out, r)
         B: torch.Tensor,               # (r, in)
-        bias: Optional[torch.Tensor] = None,
+        bias: torch.Tensor | None = None,
         is_conv1d: bool = False,
     ) -> None:
         super().__init__()
@@ -165,8 +165,8 @@ class TTLinearLayer(nn.Module):
     def _max_rank_for_compression(
         out_features: int,
         in_features: int,
-        p_dims: Tuple[int, ...],
-        q_dims: Tuple[int, ...],
+        p_dims: tuple[int, ...],
+        q_dims: tuple[int, ...],
         safety_margin: float = 0.9,
     ) -> int:
         """
@@ -187,9 +187,9 @@ class TTLinearLayer(nn.Module):
         out_features: int,
         tt_rank: int = 16,
         bias: bool = True,
-        shape: Optional[Tuple[Tuple[int, ...], Tuple[int, ...]]] = None,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        shape: tuple[tuple[int, ...], tuple[int, ...]] | None = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -241,7 +241,7 @@ class TTLinearLayer(nn.Module):
         else:
             self.register_parameter("bias", None)
 
-        self._cached_weight: Optional[torch.Tensor] = None
+        self._cached_weight: torch.Tensor | None = None
         self._cached_version: int = -1
 
     # ---- cache management (TT-FIX-06) ----
@@ -308,7 +308,7 @@ class TTLinearLayer(nn.Module):
         max_retries: int = 3,
         energy_threshold: float = 0.995,
         strict_rank: bool = False,
-    ) -> Optional["TTLinearLayer"]:
+    ) -> TTLinearLayer | None:
         """
         Factorize a pretrained Linear/Conv1D into TT-cores with adaptive rank.
 
@@ -449,8 +449,8 @@ TTLinear = TTLinearLayer
 def _try_svd_fallback(
     linear_layer: nn.Module,
     max_error: float,
-    target_rank: Optional[int] = None,
-) -> Optional[SVDLinearLayer]:
+    target_rank: int | None = None,
+) -> SVDLinearLayer | None:
     """
     Attempt low-rank SVD fallback. Returns SVDLinearLayer or None if even
     SVD cannot reach the error threshold.
@@ -540,12 +540,12 @@ class TTCompressor(BaseCompressor):
 
     def __init__(
         self,
-        model: Optional[nn.Module] = None,
-        rank: Optional[int] = None,
+        model: nn.Module | None = None,
+        rank: int | None = None,
         tt_rank: int = 16,
         num_factors: int = 2,
-        cfg: Optional[Any] = None,
-        target_layers: Optional[List[str]] = None,
+        cfg: Any | None = None,
+        target_layers: list[str] | None = None,
         max_error: float = 0.20,
         energy_threshold: float = 0.995,
         fallback_policy: str = "svd",     # 'svd' | 'original' | 'none'
@@ -604,9 +604,9 @@ class TTCompressor(BaseCompressor):
             self.fallback_policy = "svd"
         self.target_attention_only = bool(target_attention_only)
         self.strict_rank = bool(strict_rank)
-        self.compressed_layers: List[Dict[str, Any]] = []
-        self.tt_layers: List[str] = []
-        self.svd_layers: List[str] = []
+        self.compressed_layers: list[dict[str, Any]] = []
+        self.tt_layers: list[str] = []
+        self.svd_layers: list[str] = []
 
     # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
@@ -654,7 +654,7 @@ class TTCompressor(BaseCompressor):
         return True
 
     # ------------------------------------------------------------------
-    def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         if model is not None:
             self.model = model
             self._original_params = self._count_params(self.model)
@@ -662,7 +662,7 @@ class TTCompressor(BaseCompressor):
         self.compressed_layers = []
         self.tt_layers = []
         self.svd_layers = []
-        fallback_layers: List[str] = []
+        fallback_layers: list[str] = []
         total_error = 0.0
         orig_bytes = 0
         comp_bytes = 0
@@ -809,7 +809,7 @@ class TTCompressor(BaseCompressor):
         return self.model, stats
 
     # ------------------------------------------------------------------
-    def compress_linear(self, linear_layer: nn.Module) -> Optional[nn.Module]:
+    def compress_linear(self, linear_layer: nn.Module) -> nn.Module | None:
         """Compress a single layer to TT (or SVD if TT fails)."""
         tt = TTLinearLayer.from_linear(
             linear_layer,
@@ -834,8 +834,8 @@ class TTCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("tt_linear_factory")
 def tt_compressor_factory(
     model: nn.Module,
-    comp_config: Optional[Any] = None,
-    rank: Optional[int] = None,
+    comp_config: Any | None = None,
+    rank: int | None = None,
     **kwargs: Any,
 ) -> Any:
     """TT compressor factory. Falls back to SVD per-layer if TT fails."""

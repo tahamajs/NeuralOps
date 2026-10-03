@@ -11,7 +11,7 @@ Conv1D support, and safe fallback.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -60,23 +60,23 @@ class FLAPCompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        tokenizer: Optional[Any] = None,
+        tokenizer: Any | None = None,
         sparsity: float = 0.2,
         metric_type: str = "WIFV",
         max_error: float = 0.35,
         target_attention_only: bool = False,
         fallback_to_original: bool = True,
-        calibration_loader: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
-        device: Optional[Union[str, torch.device]] = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
         structured_24: bool = False,
-        target_modules: Optional[List[str]] = None,
-        cfg: Optional[Any] = None,
+        target_modules: list[str] | None = None,
+        cfg: Any | None = None,
         num_calibration_batches: int = 8,           # FL-FIX-04
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="flap", **kwargs)
-        cfg = cfg or kwargs.get("comp_config", None)
+        cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
@@ -111,11 +111,11 @@ class FLAPCompressor(BaseCompressor):
             _cfg_get(cfg, "num_calibration_batches", num_calibration_batches)
         ))
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_sparsities: Dict[str, float] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_sparsities: dict[str, float] = {}
         self._compressed_params: int = 0
 
     # ------------------------------------------------------------------
@@ -152,7 +152,7 @@ class FLAPCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     # FL-FIX-04/05: multiple calibration batches, mean-of-variance accumulation
     # ------------------------------------------------------------------
-    def _normalize_calibration_batches(self, calib_inputs: Any) -> List[Any]:
+    def _normalize_calibration_batches(self, calib_inputs: Any) -> list[Any]:
         if calib_inputs is None:
             return []
         if isinstance(calib_inputs, torch.Tensor):
@@ -168,14 +168,14 @@ class FLAPCompressor(BaseCompressor):
             return [calib_inputs]
         return [calib_inputs]
 
-    def _collect_layer_activations(self) -> Dict[str, torch.Tensor]:
+    def _collect_layer_activations(self) -> dict[str, torch.Tensor]:
         """
         Capture per-feature activation variance across calibration batches.
         Returns: {name: variance_tensor of shape (in_features,)}
         """
         self.model.eval()
-        variance_sum: Dict[str, torch.Tensor] = {}
-        batch_count: Dict[str, int] = {}
+        variance_sum: dict[str, torch.Tensor] = {}
+        batch_count: dict[str, int] = {}
         hooks = []
 
         def make_hook(name: str):
@@ -231,7 +231,7 @@ class FLAPCompressor(BaseCompressor):
             for h in hooks:
                 h.remove()
 
-        aggregated: Dict[str, torch.Tensor] = {}
+        aggregated: dict[str, torch.Tensor] = {}
         for name, vsum in variance_sum.items():
             aggregated[name] = (vsum / max(1, batch_count[name])).to(self.target_device)
         return aggregated
@@ -240,7 +240,7 @@ class FLAPCompressor(BaseCompressor):
     def _compute_fluctuation_metric(
         self,
         weight: torch.Tensor,
-        activations: Optional[torch.Tensor],
+        activations: torch.Tensor | None,
     ) -> torch.Tensor:
         """Per-column fluctuation saliency score in fp32."""
         d_out, d_in = weight.shape
@@ -268,7 +268,7 @@ class FLAPCompressor(BaseCompressor):
         return scores
 
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         activations_map = self._collect_layer_activations()
         self.compressed_layers = []
         self.fallback_layers = []

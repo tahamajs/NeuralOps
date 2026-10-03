@@ -13,13 +13,13 @@ Provides shared mathematical routines:
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 import torch
 import torch.nn as nn
 
 
 # Standard diverse default calibration text corpus covering diverse domains (H4)
-DEFAULT_CALIB_TEXTS: List[str] = [
+DEFAULT_CALIB_TEXTS: list[str] = [
     "Transformers rely on multi-head attention mechanisms to capture long-range contextual dependencies.",
     "Singular value decomposition and structured pruning compress weight matrices while preserving salient singular vectors.",
     "Hardware tensor cores execute structured 2:4 sparse matrix multiplications with double the throughput of dense operations.",
@@ -41,13 +41,13 @@ DEFAULT_CALIB_TEXTS: List[str] = [
 
 def get_calibration_tensors(
     model: nn.Module,
-    tokenizer: Optional[Any] = None,
-    calibration_loader: Optional[Any] = None,
-    calibration_texts: Optional[List[str]] = None,
-    device: Optional[torch.device] = None,
+    tokenizer: Any | None = None,
+    calibration_loader: Any | None = None,
+    calibration_texts: list[str] | None = None,
+    device: torch.device | None = None,
     sample_size: int = 8,
     seq_len: int = 32,
-    hidden_dim: Optional[int] = None,
+    hidden_dim: int | None = None,
 ) -> Any:
     """
     Generate or extract calibration inputs for a model.
@@ -110,8 +110,8 @@ def get_calibration_tensors(
 def compute_empirical_hessian(
     activations: torch.Tensor,
     damping: float = 1e-4,
-    device: Optional[torch.device] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    device: torch.device | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Computes empirical Hessian H = (2/N) X^T X + lambda * I and its inverse H^-1
     with multi-tier diagonal damping to prevent singular matrix inversions.
@@ -188,8 +188,8 @@ def compute_empirical_hessian(
 
 def compute_taylor_first_order_saliency(
     weight: torch.Tensor,
-    activations: Optional[torch.Tensor] = None,
-    grad: Optional[torch.Tensor] = None,
+    activations: torch.Tensor | None = None,
+    grad: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
     Computes 1st-order Taylor expansion parameter saliency:
@@ -246,9 +246,9 @@ def compute_hessian_saliency(
 
 def apply_24_structured_mask(
     weight: torch.Tensor,
-    saliency: Optional[torch.Tensor] = None,
+    saliency: torch.Tensor | None = None,
     dim: int = 1,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Applies strict N:M (2:4) structured sparsity mask along the specified dimension.
     In every consecutive block of 4 elements, exactly 2 elements with highest saliency are kept.
@@ -331,10 +331,10 @@ def apply_24_structured_mask(
 
 def apply_block_mask(
     weight: torch.Tensor,
-    block_size: Tuple[int, int] = (4, 4),
+    block_size: tuple[int, int] = (4, 4),
     sparsity: float = 0.5,
-    saliency: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    saliency: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Applies block-structured sparsity by pruning entire (B_r x B_c) blocks based on block Frobenius norm / saliency.
 
@@ -385,12 +385,12 @@ def apply_block_mask(
 
 def recalibrate_layernorms(
     model: nn.Module,
-    calibration_inputs: Optional[Any] = None,
-    tokenizer: Optional[Any] = None,
-    calibration_loader: Optional[Any] = None,
-    calibration_texts: Optional[List[str]] = None,
-    device: Optional[torch.device] = None,
-    target_stds: Optional[Dict[nn.Module, float]] = None,
+    calibration_inputs: Any | None = None,
+    tokenizer: Any | None = None,
+    calibration_loader: Any | None = None,
+    calibration_texts: list[str] | None = None,
+    device: torch.device | None = None,
+    target_stds: dict[nn.Module, float] | None = None,
 ) -> None:
     """
     Recalibrates LayerNorm and RMSNorm scaling parameters post-compression
@@ -419,11 +419,11 @@ def recalibrate_layernorms(
             device=device,
         )
 
-    scales: Dict[nn.Module, float] = {}
+    scales: dict[nn.Module, float] = {}
     hooks = []
 
     def make_hook(mod: nn.Module):
-        def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], out: Any):
+        def hook(module: nn.Module, inp: tuple[torch.Tensor, ...], out: Any):
             if inp and isinstance(inp[0], torch.Tensor):
                 x = inp[0].detach().float()
                 std = torch.sqrt(torch.var(x, dim=-1, keepdim=True) + 1e-6).mean().item()
@@ -471,7 +471,7 @@ def recalibrate_layernorms(
 # FIX APPLIED: Unconditional [CLS] token protection token 0 embeddings
 
 
-def adaptive_max_error(rank: Optional[Union[int, float]], in_features: int, out_features: int, family: Optional[str] = None) -> float:
+def adaptive_max_error(rank: int | float | None, in_features: int, out_features: int, family: str | None = None) -> float:
     """
     Higher error is acceptable when rank is a small fraction
     of matrix size, because LoRA recovery can compensate.

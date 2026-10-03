@@ -162,7 +162,7 @@ def train_task(
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=current_lr, weight_decay=0.01)
     train_loader = DataLoader(train_ds, batch_size=current_batch_size, shuffle=True, num_workers=0)
-    
+
     total_steps = num_epochs * len(train_loader) if max_steps is None else min(max_steps, num_epochs * len(train_loader))
     actual_warmup_steps = warmup_steps if warmup_steps is not None else max(1, int(total_steps * warmup_ratio))
 

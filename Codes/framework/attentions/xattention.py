@@ -13,17 +13,15 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
-from framework.core.triton_kernels import triton_dispatch
 from framework.utils.model_family import ModelAdapter
 
 logger = logging.getLogger(__name__)
@@ -39,7 +37,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 def _extract_valid_token_mask(
-    mask: Optional[torch.Tensor],
+    mask: torch.Tensor | None,
     batch_size: int,
     seq_len: int,
     device: torch.device,
@@ -108,8 +106,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Applies rotary position embeddings safely handling even or odd dimensions and length mismatches."""
     if cos is None or sin is None:
         return q, k
@@ -164,8 +162,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -237,11 +235,11 @@ class XAttention(BaseAttention):
     def __init__(
         self,
         config: Any,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         block_size: int = 32,
         sparsity: float = 0.5,
         lora_rank: int = 16,
-        pretrained_attn: Optional[nn.Module] = None,
+        pretrained_attn: nn.Module | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
@@ -324,7 +322,7 @@ class XAttention(BaseAttention):
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
-        
+
         self.to(target_dtype)
 
     # Properties for universal aliases without polluting state_dict
@@ -360,7 +358,7 @@ class XAttention(BaseAttention):
     def copy_weights(self, src: Any) -> None:
         from framework.core.adapters import UniversalAdapter
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -408,7 +406,7 @@ class XAttention(BaseAttention):
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            s = getattr(src, "self")
+            s = src.self
             if hasattr(s, "query"):
                 q_mod = getattr(s.query, "base_layer", s.query)
                 extracted["q"] = (q_mod.weight.data, getattr(q_mod, "bias", None))
@@ -419,7 +417,7 @@ class XAttention(BaseAttention):
                 v_mod = getattr(s.value, "base_layer", s.value)
                 extracted["v"] = (v_mod.weight.data, getattr(v_mod, "bias", None))
 
-        if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             dense = getattr(src.output.dense, "base_layer", src.output.dense)
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -525,17 +523,17 @@ class XAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
         if key_value_states is not None:
             raise NotImplementedError("XAttention does not support cross-attention")
@@ -552,7 +550,7 @@ class XAttention(BaseAttention):
         V = self.value(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # Apply RoPE: Priority 1 = position_embeddings, Priority 2 = rotary_emb fallback
-        position_embeddings = kwargs.get("position_embeddings", None)
+        position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
             cos, sin = position_embeddings[0], position_embeddings[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
@@ -601,7 +599,7 @@ class XAttention(BaseAttention):
             k_valid[:, :, :N_k, :] = 1.0
 
             # If attention mask is present, factor token validity into K block averaging
-            mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
+            mask = attention_mask if attention_mask is not None else kwargs.get("mask")
             if mask is not None:
                 valid_m = _extract_valid_token_mask(mask, B, N_k, device)
                 k_valid[:, :, :N_k, 0] = k_valid[:, :, :N_k, 0] * valid_m.unsqueeze(1).to(K.dtype)
@@ -652,7 +650,7 @@ class XAttention(BaseAttention):
             scores = scores.masked_fill(~causal_tril, -10000.0)
 
         # Apply attention mask
-        mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
+        mask = attention_mask if attention_mask is not None else kwargs.get("mask")
         if mask is not None:
             if mask.dim() == 4:
                 scores = scores + mask.to(scores.dtype)
@@ -683,7 +681,7 @@ class XAttention(BaseAttention):
         else:
             output = self.out_proj(context)
 
-        output = output 
+        output = output
 
         if attention_mask is not None:
             valid_m = _extract_valid_token_mask(attention_mask, B, N_q, device)
@@ -702,12 +700,12 @@ def inject_xattention(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
 ):
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 
@@ -829,7 +827,7 @@ def inject_xattention(
             else:
                 layer.attention = new_attn
                 return new_attn
-                
+
         if cls_name == "DistilBertLayer":
             layer.attention = new_attn
             return new_attn

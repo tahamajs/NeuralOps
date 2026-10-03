@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -78,7 +78,7 @@ class ADMMMaskedLinear(nn.Module):
         out_features: int,
         bias: bool = True,
         dtype: torch.dtype = torch.float32,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -97,7 +97,7 @@ class ADMMMaskedLinear(nn.Module):
             self.register_parameter("bias", None)
 
     @classmethod
-    def from_linear(cls, linear: nn.Module, mask: torch.Tensor) -> "ADMMMaskedLinear":
+    def from_linear(cls, linear: nn.Module, mask: torch.Tensor) -> ADMMMaskedLinear:
         # AD-FIX-05: handle Conv1D (nn.Module with .nf) as well as nn.Linear.
         raw_w = linear.weight.data
         is_conv1d = "conv1d" in linear.__class__.__name__.lower() or hasattr(linear, "nf")
@@ -146,7 +146,7 @@ class ADMMPruner(BaseCompressor):
         rho: float = 1e-3,
         max_iter: int = 6,
         structured_24: bool = True,
-        block_size: Tuple[int, int] = (4, 4),
+        block_size: tuple[int, int] = (4, 4),
         dynamic_rho: bool = True,
         use_ste: bool = True,
         recalibrate_ln: bool = True,
@@ -154,22 +154,22 @@ class ADMMPruner(BaseCompressor):
         fallback_to_original: bool = True,
         protect_critical: bool = True,
         target_attention_only: bool = False,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         lambda_distill: float = 0.1,
         distill_batch_size: int = 32,
         distill_use_activation: bool = False,
         distill_lr: float = 0.1,
         distill_steps: int = 2,
-        calibration_inputs: Optional[Dict[str, torch.Tensor]] = None,
-        tokenizer: Optional[Any] = None,
-        calibration_loader: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        cfg: Optional[Any] = None,
+        calibration_inputs: dict[str, torch.Tensor] | None = None,
+        tokenizer: Any | None = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="admm_pruner", **kwargs)
-        conf = cfg or kwargs.get("comp_config", None)
+        conf = cfg or kwargs.get("comp_config")
 
         self.sparsity = max(0.0, min(float(_cfg_get(
             conf, "admm_pruner_sparsity",
@@ -240,13 +240,13 @@ class ADMMPruner(BaseCompressor):
         self.comp_config = conf
         self._compressed_params: int = 0
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_sparsities: Dict[str, float] = {}
-        self.layer_actual_sparsities: Dict[str, float] = {}
-        self.layer_distill_losses: Dict[str, float] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_sparsities: dict[str, float] = {}
+        self.layer_actual_sparsities: dict[str, float] = {}
+        self.layer_distill_losses: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
 
     # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
@@ -307,8 +307,8 @@ class ADMMPruner(BaseCompressor):
         return True
 
     # ------------------------------------------------------------------
-    def _collect_calibration_inputs(self, target_names: List[str]) -> Dict[str, torch.Tensor]:
-        collected: Dict[str, List[torch.Tensor]] = {name: [] for name in target_names}
+    def _collect_calibration_inputs(self, target_names: list[str]) -> dict[str, torch.Tensor]:
+        collected: dict[str, list[torch.Tensor]] = {name: [] for name in target_names}
 
         if self.calibration_inputs:
             for name in target_names:
@@ -381,7 +381,7 @@ class ADMMPruner(BaseCompressor):
             if was_training:
                 self.model.train()
 
-        result: Dict[str, torch.Tensor] = {}
+        result: dict[str, torch.Tensor] = {}
         for name, tensor_list in collected.items():
             if tensor_list:
                 result[name] = torch.cat(tensor_list, dim=0)
@@ -390,7 +390,7 @@ class ADMMPruner(BaseCompressor):
     # ------------------------------------------------------------------
     def _project_sparse(
         self, candidate: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Project candidate (typically W + U) onto the sparse constraint set.
         Returns (pruned_tensor, binary_mask).
@@ -425,7 +425,7 @@ class ADMMPruner(BaseCompressor):
             return candidate * mask, mask
 
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers = []
         self.fallback_layers = []
         self.layer_errors = {}

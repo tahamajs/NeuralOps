@@ -26,7 +26,7 @@ from __future__ import annotations
 import logging
 import math
 import threading
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -90,8 +90,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     r"""Applies rotary position embeddings with partial-RoPE dimension slicing."""
     if cos is None or sin is None:
         return q, k
@@ -134,8 +134,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -220,16 +220,16 @@ class CosformerAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
         max_seq_len: int = 512,
         act_fun: str = "relu",
         eps: float = 1e-6,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
-        comp_config: Optional[Any] = None,
-        layer_id: Optional[int] = None,
-        layer_idx: Optional[int] = None,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
+        comp_config: Any | None = None,
+        layer_id: int | None = None,
+        layer_idx: int | None = None,
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
@@ -333,9 +333,7 @@ class CosformerAttention(BaseAttention):
         model_type = getattr(config, "model_type", "").lower() if config is not None else ""
         is_dec = _cfg_get("is_decoder", _cfg_get("is_causal", kwargs.get("is_causal", False)))
         _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "phi", "gemma", "opt", "bloom", "falcon")
-        if any(model_type.startswith(p) for p in _decoder_prefixes):
-            is_dec = True
-        elif hasattr(config, "architectures") and any(
+        if any(model_type.startswith(p) for p in _decoder_prefixes) or hasattr(config, "architectures") and any(
             "GPT" in str(a) or "CausalLM" in str(a)
             for a in (getattr(config, "architectures", []) or [])
         ):
@@ -372,7 +370,7 @@ class CosformerAttention(BaseAttention):
         self.dropout = nn.Dropout(dropout_p)
 
         self.rotary_emb = None
-        self.comp_config: Optional[Any] = comp_config
+        self.comp_config: Any | None = comp_config
         self.triton_kwargs = {
             "phi": "elu+1",
             "eps": self.eps,
@@ -449,7 +447,7 @@ class CosformerAttention(BaseAttention):
         if hasattr(src, "rotary_emb"):
             self.rotary_emb = src.rotary_emb
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -505,8 +503,8 @@ class CosformerAttention(BaseAttention):
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
         # 2. RoBERTa / BERT nested self-attention
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            s = getattr(src, "self")
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
+            s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 base_mod = getattr(mod, "base_layer", mod)
@@ -515,7 +513,7 @@ class CosformerAttention(BaseAttention):
                         base_mod.weight.data.clone(),
                         base_mod.bias.data.clone() if getattr(base_mod, "bias", None) is not None else None,
                     )
-            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
                 base_out = getattr(out_mod, "base_layer", out_mod)
                 extracted["o"] = (
@@ -631,7 +629,7 @@ class CosformerAttention(BaseAttention):
     # ------------------------------------------------------------------
     def _get_cos_sin_weights(
         self, seq_len: int, device: torch.device, dtype: torch.dtype
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         r"""Generate positional cosine and sine factors: [1, 1, seq_len, 1].
 
         Fix 6: Uses seq_len directly (simpler and more numerically stable).
@@ -649,19 +647,19 @@ class CosformerAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_ids: Optional[torch.Tensor] = None,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_ids: torch.Tensor | None = None,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         # ------------------------------------------------------------------
         # 0. Input validation
         # ------------------------------------------------------------------
@@ -689,7 +687,7 @@ class CosformerAttention(BaseAttention):
         # ------------------------------------------------------------------
         # 2. RoPE (only for self-attention, not cross-attention)
         # ------------------------------------------------------------------
-        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         if pos_emb is not None and not is_cross_attention:
             if isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
                 cos, sin = pos_emb[0], pos_emb[1]
@@ -701,7 +699,7 @@ class CosformerAttention(BaseAttention):
                 )
         elif self.rotary_emb is not None and not is_cross_attention:
             rotary_mod = self.rotary_emb
-            pos_ids = position_ids if position_ids is not None else kwargs.get("position_ids", None)
+            pos_ids = position_ids if position_ids is not None else kwargs.get("position_ids")
             if pos_ids is None:
                 pos_ids = torch.arange(N, device=device).unsqueeze(0).expand(B, -1)
             cos, sin = None, None
@@ -761,7 +759,7 @@ class CosformerAttention(BaseAttention):
         # ------------------------------------------------------------------
         # 7. Linear attention — try Triton, fallback to stable Python path
         # ------------------------------------------------------------------
-        is_causal_eval = bool(self.is_decoder and not is_cross_attention and N == kv_len)
+        is_causal_eval = bool(self.is_decoder and not is_cross_attention and kv_len == N)
 
         context = None
         triton_ok = False
@@ -862,7 +860,7 @@ class CosformerAttention(BaseAttention):
 
         return final_out.to(input_dtype), None
 
-    
+
 
     # ------------------------------------------------------------------
     # Causal forward (Fix 8: V masked in last chunk)
@@ -878,7 +876,7 @@ class CosformerAttention(BaseAttention):
         """Chunked causal linear attention. Stable in FP32."""
         chunk_size = max(16, min(64, N // 8))
 
-        if N <= chunk_size:
+        if chunk_size >= N:
             # Single-chunk: explicit causal mask
             causal_mask = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
             score_c = torch.matmul(Q_cos, K_cos.transpose(-1, -2).contiguous())
@@ -1024,9 +1022,9 @@ def inject_cosformer(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
-) -> Optional[Any]:
+) -> Any | None:
     r"""Safe injection factory for CosformerAttention.
 
     Fix 3: Thread-safe recursion depth guard.
@@ -1043,7 +1041,7 @@ def inject_cosformer(
     try:
         target = layer if layer is not None else model
         if target is None:
-            target = kwargs.get("model", kwargs.get("layer", None))
+            target = kwargs.get("model", kwargs.get("layer"))
         if target is None:
             return None
 

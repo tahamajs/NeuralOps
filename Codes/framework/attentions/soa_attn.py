@@ -9,7 +9,7 @@ Hardened for production use across diverse transformer architectures:
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -18,7 +18,7 @@ import torch.nn.functional as F
 from framework.core.adapters import UniversalAdapter
 from framework.core.attention_mask import apply_attention_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class FactorizedLinear(nn.Module):
         return torch.matmul(self.up.weight, self.down.weight)
 
     @property
-    def bias(self) -> Optional[torch.Tensor]:
+    def bias(self) -> torch.Tensor | None:
         return getattr(self.up, "bias", None)
 
     @property
@@ -75,9 +75,9 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
+    position_ids: torch.Tensor | None = None,
     unsqueeze_dim: int = 1,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Applies Rotary Position Embedding (RoPE) with partial dimension support."""
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
@@ -235,20 +235,20 @@ class SOAAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        model_config: Optional[Any] = None,
-        rank: Optional[int] = None,
+        config: Any | None = None,
+        model_config: Any | None = None,
+        rank: int | None = None,
         k_rank: int = 64,
         dropout: float = 0.1,
-        pretrained_attn: Optional[Any] = None,
-        old_attn: Optional[Any] = None,
+        pretrained_attn: Any | None = None,
+        old_attn: Any | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
-        cfg = config or model_config or kwargs.get("config", None)
-        src_attn = pretrained_attn if pretrained_attn is not None else (old_attn if old_attn is not None else kwargs.get("source_attn", None))
+        cfg = config or model_config or kwargs.get("config")
+        src_attn = pretrained_attn if pretrained_attn is not None else (old_attn if old_attn is not None else kwargs.get("source_attn"))
         super().__init__(cfg, rank=k_rank, **kwargs)
 
         # 1. Architecture detection & dimensions
@@ -264,7 +264,7 @@ class SOAAttention(BaseAttention):
         self.num_heads = int(self.num_heads or 12)
 
         # Probe head_dim from source attention if available
-        head_dim = kwargs.get("head_dim", None)
+        head_dim = kwargs.get("head_dim")
         if not head_dim and src_attn is not None:
             for attr in ("q_proj", "query", "q_lin"):
                 mod = getattr(src_attn, attr, None)
@@ -281,9 +281,9 @@ class SOAAttention(BaseAttention):
         self.head_dim = int(head_dim)
 
         cfg_kv = (
-            getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", None))))
+            getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads"))))
             if cfg is not None
-            else kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", None))
+            else kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads"))
         )
         self.num_kv_heads: int = int(cfg_kv) if cfg_kv is not None else self.num_heads
         self.num_key_value_groups: int = max(1, self.num_heads // max(1, self.num_kv_heads))
@@ -348,7 +348,7 @@ class SOAAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        target_dtype = kwargs.get("dtype", None)
+        target_dtype = kwargs.get("dtype")
         if target_dtype is None and src_attn is not None:
             target_dtype = next(src_attn.parameters(), torch.tensor([])).dtype
             if not isinstance(target_dtype, torch.dtype):
@@ -522,7 +522,7 @@ class SOAAttention(BaseAttention):
                 )
 
             # SVD Factorization helper
-            def _factorize_svd(W: torch.Tensor, down: nn.Linear, up: nn.Linear, bias: Optional[torch.Tensor]) -> None:
+            def _factorize_svd(W: torch.Tensor, down: nn.Linear, up: nn.Linear, bias: torch.Tensor | None) -> None:
                 W_f = W.float()
                 U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
                 S = S.clamp(min=1e-6)
@@ -591,24 +591,24 @@ class SOAAttention(BaseAttention):
 
     @classmethod
     def from_distilbert_pretrained(
-        cls, old_attn: nn.Module, model_config: Optional[Any] = None, **kwargs: Any
+        cls, old_attn: nn.Module, model_config: Any | None = None, **kwargs: Any
     ) -> "SOAAttention":
         return cls(model_config=model_config, pretrained_attn=old_attn, **kwargs)
 
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
-    ) -> Union[Tuple[torch.Tensor, Optional[torch.Tensor]], torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None] | torch.Tensor:
         B, N, _ = hidden_states.shape
 
         # Factorized projections
@@ -629,7 +629,7 @@ class SOAAttention(BaseAttention):
         v = v.view(B, N, H_kv, D).transpose(1, 2).contiguous()
 
         # Partial Rotary Position Embeddings (RoPE)
-        pos_emb = kwargs.get("position_embeddings", None)
+        pos_emb = kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, tuple) and len(pos_emb) == 2:
             cos, sin = pos_emb
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
@@ -674,7 +674,7 @@ class SOAAttention(BaseAttention):
             scores = scores + causal_mask
 
         # Standard Attention Mask
-        mask = attention_mask if attention_mask is not None else kwargs.get("attn_mask", None)
+        mask = attention_mask if attention_mask is not None else kwargs.get("attn_mask")
         if mask is not None:
             if mask.dim() == 4 and mask.dtype == torch.bool:
                 scores = scores.masked_fill(~mask, -10000.0)
@@ -709,16 +709,16 @@ class SOAAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("inject_soa")
 @ATTENTION_REGISTRY.register("inject_soa_module")
 def inject_soa_attn(
-    model: Optional[nn.Module] = None,
-    layer: Optional[nn.Module] = None,
+    model: nn.Module | None = None,
+    layer: nn.Module | None = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Any = None,
-    target_layer_idx: Optional[int] = None,
+    target_layer_idx: int | None = None,
     **kwargs: Any,
-) -> Optional[Union[SOAAttention, nn.Module]]:
+) -> SOAAttention | nn.Module | None:
     """Safely replace attention module with hardened SOAAttention across diverse transformer architectures."""
     target = layer if layer is not None else model
     if target is None:
@@ -788,9 +788,9 @@ def inject_soa_attn(
                 return None
             if "SOA" in src_attn.__class__.__name__:
                 return None
-            if hasattr(src_attn, "inner") and isinstance(getattr(src_attn, "inner"), SOAAttention):
+            if hasattr(src_attn, "inner") and isinstance(src_attn.inner, SOAAttention):
                 return None
-            if hasattr(src_attn, "_wrapped_attention") and isinstance(getattr(src_attn, "_wrapped_attention"), SOAAttention):
+            if hasattr(src_attn, "_wrapped_attention") and isinstance(src_attn._wrapped_attention, SOAAttention):
                 return None
 
         if target is not None:
@@ -802,9 +802,9 @@ def inject_soa_attn(
                     return None
                 if "SOA" in cand.__class__.__name__:
                     return None
-                if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), SOAAttention):
+                if hasattr(cand, "inner") and isinstance(cand.inner, SOAAttention):
                     return None
-                if hasattr(cand, "_wrapped_attention") and isinstance(getattr(cand, "_wrapped_attention"), SOAAttention):
+                if hasattr(cand, "_wrapped_attention") and isinstance(cand._wrapped_attention, SOAAttention):
                     return None
 
         # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers

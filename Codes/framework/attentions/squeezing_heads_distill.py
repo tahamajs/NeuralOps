@@ -28,7 +28,7 @@ Fixes (v2):
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -36,7 +36,7 @@ import torch.nn.functional as F
 
 from framework.core.adapters import UniversalAdapter
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -71,8 +71,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
     if cos.dim() == 2:
@@ -205,13 +205,13 @@ class SqueezingHeadsDistiller(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        old_attn: Optional[nn.Module] = None,
-        rank: Optional[int] = None,
-        head_keep_ratio: Optional[float] = None,
+        config: Any | None = None,
+        old_attn: nn.Module | None = None,
+        rank: int | None = None,
+        head_keep_ratio: float | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
@@ -224,7 +224,7 @@ class SqueezingHeadsDistiller(BaseAttention):
                               kwargs.get("num_attention_heads", 12))))
 
         cfg_hd = _cfg_get(config, "head_dim", None)
-        kw_hd = kwargs.get("head_dim", None)
+        kw_hd = kwargs.get("head_dim")
         if cfg_hd is not None:
             self.head_dim = int(cfg_hd)
         elif kw_hd is not None:
@@ -280,7 +280,7 @@ class SqueezingHeadsDistiller(BaseAttention):
         # GQA mapping: which KV head does each kept Q head map to?
         # Kept heads are the top-k by importance; we must remember their original indices.
         self.num_kv_groups = max(1, self.num_heads // self.num_kv_heads)
-        self.kept_head_indices: Optional[torch.Tensor] = None  # filled by copy_weights
+        self.kept_head_indices: torch.Tensor | None = None  # filled by copy_weights
 
         # ---- 3. Decoder detection ----
         self.is_decoder = _detect_decoder(config, is_decoder, old_attn)
@@ -313,7 +313,7 @@ class SqueezingHeadsDistiller(BaseAttention):
         self.dropout = nn.Dropout(dropout_p)
 
         # ---- 5. Copy weights from source ----
-        src_attn = old_attn if old_attn is not None else kwargs.get("pretrained_attn", None)
+        src_attn = old_attn if old_attn is not None else kwargs.get("pretrained_attn")
         if src_attn is not None:
             self.copy_weights(src_attn)
 
@@ -346,9 +346,9 @@ class SqueezingHeadsDistiller(BaseAttention):
     # ------------------------------------------------------------------
     def _compute_head_importance(
         self,
-        w_q: Optional[torch.Tensor],
-        w_k: Optional[torch.Tensor],
-        w_v: Optional[torch.Tensor],
+        w_q: torch.Tensor | None,
+        w_k: torch.Tensor | None,
+        w_v: torch.Tensor | None,
     ) -> torch.Tensor:
         """
         Compute per-head importance as the sum of Frobenius norms of the
@@ -415,11 +415,9 @@ class SqueezingHeadsDistiller(BaseAttention):
             if has_out_lin:
                 self.is_nested_encoder = False
             elif (hasattr(old_attn, "self")
-                  and hasattr(getattr(old_attn, "self"), "query")
+                  and hasattr(old_attn.self, "query")
                   and hasattr(old_attn, "output")
-                  and hasattr(getattr(old_attn, "output"), "dense")):
-                self.is_nested_encoder = True
-            elif src_cls_name in ("BertSelfAttention", "RobertaSelfAttention"):
+                  and hasattr(old_attn.output, "dense")) or src_cls_name in ("BertSelfAttention", "RobertaSelfAttention"):
                 self.is_nested_encoder = True
             else:
                 self.is_nested_encoder = False
@@ -606,7 +604,7 @@ class SqueezingHeadsDistiller(BaseAttention):
     # K/V copy helper: preserve ALL KV heads
     # ------------------------------------------------------------------
     def _copy_kv_full(self, target: LoRALinear, w: torch.Tensor,
-                       b: Optional[torch.Tensor]) -> None:
+                       b: torch.Tensor | None) -> None:
         """Copy the full KV projection, sized to num_kv_heads * head_dim.
 
         Handles source having num_heads heads by mean-pooling to num_kv_heads
@@ -698,19 +696,19 @@ class SqueezingHeadsDistiller(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         layer_idx: int = 0,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, L, _ = hidden_states.shape
         device = hidden_states.device
 
@@ -731,7 +729,7 @@ class SqueezingHeadsDistiller(BaseAttention):
 
         # ---- RoPE ----
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         past_k_probe, _, past_len_rope = self._read_past_kv(past_key_value, layer_idx)
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
@@ -877,7 +875,7 @@ def inject_squeezing_heads(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -887,7 +885,7 @@ def inject_squeezing_heads(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

@@ -12,7 +12,7 @@ Formulation:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 import logging
 
 import torch
@@ -67,23 +67,23 @@ class LiLLaMADistiller(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        tokenizer: Optional[Any] = None,
+        tokenizer: Any | None = None,
         rank: int = 32,
-        calibration_texts: Optional[List[str]] = None,
-        calibration_loader: Optional[Any] = None,
-        device: Optional[Union[str, torch.device]] = None,
+        calibration_texts: list[str] | None = None,
+        calibration_loader: Any | None = None,
+        device: str | torch.device | None = None,
         max_error: float = 0.20,
         fallback_to_original: bool = True,
         skip_attention: bool = False,
         target_attention_only: bool = False,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         min_layer_dim: int = 8,
         skip_should_compress_filter: bool = False,
         max_calibration_batches: int = 8,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="lillama", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = _cfg_get(cfg, "lillama_rank", _cfg_get(cfg, "rank", rank))
             max_error = _cfg_get(cfg, "max_error", max_error)
@@ -121,11 +121,11 @@ class LiLLaMADistiller(BaseCompressor):
             self.target_device = _get_device(model)
 
         # LL-FIX-15: initialize all lists in __init__.
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_details: Dict[str, Any] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_details: dict[str, Any] = {}
+        self.stats: dict[str, Any] = {}
         self._compressed_params: int = 0
 
     # ------------------------------------------------------------------
@@ -224,14 +224,14 @@ class LiLLaMADistiller(BaseCompressor):
     # ------------------------------------------------------------------
     def _collect_io_activations(
         self,
-    ) -> Dict[str, Tuple[torch.Tensor, torch.Tensor]]:
+    ) -> dict[str, tuple[torch.Tensor, torch.Tensor]]:
         """Collect input/output activations across target layers."""
         self.model.eval()
-        activations: Dict[str, Dict[str, List[torch.Tensor]]] = {}
+        activations: dict[str, dict[str, list[torch.Tensor]]] = {}
         hooks = []
 
         def make_hook(layer_name: str):
-            def hook(module: nn.Module, inputs: Tuple[Any, ...], output: Any):
+            def hook(module: nn.Module, inputs: tuple[Any, ...], output: Any):
                 inp = inputs[0].detach() if inputs and isinstance(inputs[0], torch.Tensor) else None
                 if isinstance(output, torch.Tensor):
                     out = output.detach()
@@ -289,7 +289,7 @@ class LiLLaMADistiller(BaseCompressor):
             for h in hooks:
                 h.remove()
 
-        aggregated: Dict[str, Tuple[torch.Tensor, torch.Tensor]] = {}
+        aggregated: dict[str, tuple[torch.Tensor, torch.Tensor]] = {}
         MAX_ACTIVATION_SAMPLES = 512
         for name, data in activations.items():
             if data["in"] and data["out"]:
@@ -305,7 +305,7 @@ class LiLLaMADistiller(BaseCompressor):
         return aggregated
 
     @staticmethod
-    def _normalize_batches(calib_inputs: Any) -> List[Any]:
+    def _normalize_batches(calib_inputs: Any) -> list[Any]:
         if calib_inputs is None:
             return []
         if isinstance(calib_inputs, torch.Tensor):
@@ -326,7 +326,7 @@ class LiLLaMADistiller(BaseCompressor):
     # ------------------------------------------------------------------
     def _factorize(
         self, W: torch.Tensor, rank: int,
-    ) -> Tuple[torch.Tensor, int]:
+    ) -> tuple[torch.Tensor, int]:
         """Return (W_recon, rank_used)."""
         try:
             U, S, Vh = torch.linalg.svd(W, full_matrices=False)
@@ -347,7 +347,7 @@ class LiLLaMADistiller(BaseCompressor):
     # ------------------------------------------------------------------
     # Main compress
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         # LL-FIX-08: idempotence.
         if getattr(self.model, "_lillama_compressed", False):
             logger.warning("LiLLaMA: model already compressed; skipping.")

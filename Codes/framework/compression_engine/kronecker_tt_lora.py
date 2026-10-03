@@ -10,7 +10,7 @@ where (A1 ⊗ A2) is a Kronecker product and TT is a 3-core Tensor-Train.
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -44,8 +44,8 @@ _ATTN_NAMES = {
 # ===========================================================================
 
 def _init_orthogonal_spectral(
-    shape: Tuple[int, ...],
-    shape_2d: Tuple[int, int],
+    shape: tuple[int, ...],
+    shape_2d: tuple[int, int],
     device: torch.device,
     dtype: torch.dtype,
 ) -> torch.Tensor:
@@ -84,8 +84,8 @@ class KroneckerTTLoRALayer(nn.Module):
         n1: int,
         m2: int,
         n2: int,
-        tt_shapes: Tuple[int, int, int],
-        tt_ranks: Tuple[int, int, int, int] = (1, 4, 4, 1),
+        tt_shapes: tuple[int, int, int],
+        tt_ranks: tuple[int, int, int, int] = (1, 4, 4, 1),
         gamma: float = 1.0,
         lora_r: int = 4,
         lora_alpha: float = 8.0,
@@ -161,9 +161,9 @@ class KroneckerTTLoRALayer(nn.Module):
 
     # ------------------------------------------------------------------
     @classmethod
-    def factorize_dimensions(cls, in_f: int, out_f: int) -> Dict[str, Any]:
+    def factorize_dimensions(cls, in_f: int, out_f: int) -> dict[str, Any]:
         """Auto-factorize dims and pick 3-factor TT shape."""
-        def best_factor_pair(dim: int) -> Tuple[int, int]:
+        def best_factor_pair(dim: int) -> tuple[int, int]:
             for d in range(int(math.isqrt(dim)), 0, -1):
                 if dim % d == 0:
                     return d, dim // d
@@ -174,7 +174,7 @@ class KroneckerTTLoRALayer(nn.Module):
 
         total_padded = (m1 * m2) * (n1 * n2)
         c = int(round(total_padded ** (1.0 / 3.0)))
-        best: Optional[Tuple[int, int, int]] = None
+        best: tuple[int, int, int] | None = None
         best_spread = float("inf")
         for d in range(max(1, c - 64), c + 65):
             if total_padded % d != 0:
@@ -196,12 +196,12 @@ class KroneckerTTLoRALayer(nn.Module):
     def from_linear(
         cls,
         base_layer: nn.Module,
-        m1: Optional[int] = None,
-        n1: Optional[int] = None,
-        m2: Optional[int] = None,
-        n2: Optional[int] = None,
-        tt_shapes: Optional[Tuple[int, int, int]] = None,
-        tt_ranks: Tuple[int, int, int, int] = (1, 4, 4, 1),
+        m1: int | None = None,
+        n1: int | None = None,
+        m2: int | None = None,
+        n2: int | None = None,
+        tt_shapes: tuple[int, int, int] | None = None,
+        tt_ranks: tuple[int, int, int, int] = (1, 4, 4, 1),
         gamma: float = 1.0,
         lora_r: int = 4,
         lora_alpha: float = 8.0,
@@ -305,7 +305,7 @@ class KroneckerTTLoRALayer(nn.Module):
         return W
 
     @property
-    def bias(self) -> Optional[torch.Tensor]:
+    def bias(self) -> torch.Tensor | None:
         return getattr(self.base_layer, "bias", None)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -391,7 +391,7 @@ class KroneckerTTLoRACompressor(BaseCompressor):
 
     def __init__(
         self,
-        model: Optional[nn.Module] = None,
+        model: nn.Module | None = None,
         rank: int = 8,
         gamma: float = 1.0,
         lora_r: int = 4,
@@ -402,7 +402,7 @@ class KroneckerTTLoRACompressor(BaseCompressor):
         skip_attention_qkv: bool = False,
         skip_should_compress_filter: bool = False,
         min_layer_dim: int = 8,
-        cfg: Optional[Any] = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -430,11 +430,11 @@ class KroneckerTTLoRACompressor(BaseCompressor):
         self.min_layer_dim = max(1, int(_cfg_get(cfg, "min_layer_dim", min_layer_dim)))
         self.cfg = cfg
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
         self._compressed_params: int = 0
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
@@ -529,7 +529,7 @@ class KroneckerTTLoRACompressor(BaseCompressor):
         )
 
     # ------------------------------------------------------------------
-    def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         # KTL-FIX-08: idempotence.
         if getattr(self.model, "_kronecker_tt_lora_compressed", False):
             logger.warning("KroneckerTTLoRA: model already compressed; skipping.")
@@ -549,7 +549,7 @@ class KroneckerTTLoRACompressor(BaseCompressor):
         self.fallback_layers = []
         self.skipped_layers = []
         self.layer_errors = {}
-        seen_weights: Set[int] = set()
+        seen_weights: set[int] = set()
 
         total_orig_params = 0
         total_comp_params = 0
@@ -751,10 +751,10 @@ class KroneckerTTLoRACompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("kronecker_tt_lora_factory")
 def kronecker_tt_lora_factory(
     model: nn.Module,
-    comp_config: Optional[Any] = None,
-    rank: Optional[int] = None,
+    comp_config: Any | None = None,
+    rank: int | None = None,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Factory for Kronecker-TT-LoRA compressor."""
     rank = rank or _cfg_get(comp_config, "tt_rank", _cfg_get(comp_config, "rank", 8))
     gamma = _cfg_get(comp_config, "gamma", 1.0)

@@ -2,17 +2,16 @@
 Custom dataset loading utilities.
 """
 
-from typing import Dict, Optional, Union
 
 from datasets import Dataset, DatasetDict, load_dataset
 
 
 def load_custom_dataset(
     path: str,
-    split: Optional[str] = None,
-    data_files: Optional[Dict[str, str]] = None,
+    split: str | None = None,
+    data_files: dict[str, str] | None = None,
     **kwargs,
-) -> Union[Dataset, DatasetDict]:
+) -> Dataset | DatasetDict:
     """
     Load any dataset from a local or remote path.
     Supports CSV, JSON, Parquet, text, and HuggingFace hub datasets.

@@ -22,7 +22,7 @@ Registered in COMPRESSOR_REGISTRY as:
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 import logging
 
 import torch
@@ -82,8 +82,8 @@ class KVTCStore:
     def __init__(self, bits: int = 4, pca_energy: float = 0.95) -> None:
         self.bits = int(bits)
         self.pca_energy = float(pca_energy)
-        self.pca_basis_k: Optional[torch.Tensor] = None
-        self.pca_basis_v: Optional[torch.Tensor] = None
+        self.pca_basis_k: torch.Tensor | None = None
+        self.pca_basis_v: torch.Tensor | None = None
 
     def reset(self) -> None:
         """Reset PCA basis to prevent cross-sequence memory leaks."""
@@ -106,7 +106,7 @@ class KVTCStore:
     @torch.no_grad()
     def compress_kv_cache(
         self, k: torch.Tensor, v: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any]]:
+    ) -> tuple[torch.Tensor, torch.Tensor, dict[str, Any]]:
         """
         Transform and quantize dynamic KV cache tensors.
         Returns reconstructed (k_hat, v_hat) and coding statistics.
@@ -137,7 +137,7 @@ class KVTCStore:
         v_hat = torch.matmul(q_v * scale_v, self.pca_basis_v.t().contiguous()).reshape(orig_shape)
 
         mean_h = (h_k + h_v) / 2.0
-        stats: Dict[str, Any] = {
+        stats: dict[str, Any] = {
             "entropy_k_bits": h_k,
             "entropy_v_bits": h_v,
             "mean_entropy_bits": mean_h,
@@ -162,10 +162,10 @@ class KVTCQuantizedLoRALinear(nn.Module):
         int_weight: torch.Tensor,
         scale: torch.Tensor,
         zero_point: torch.Tensor,
-        bias: Optional[torch.Tensor] = None,
+        bias: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
         compute_dtype: torch.dtype = torch.float32,
     ) -> None:
         super().__init__()
@@ -218,7 +218,7 @@ class KVTCQuantizedLoRALinear(nn.Module):
         zero_point: torch.Tensor,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        compute_dtype: Optional[torch.dtype] = None,
+        compute_dtype: torch.dtype | None = None,
     ) -> KVTCQuantizedLoRALinear:
         target_mod = getattr(linear, "base_layer", linear)
         bias = target_mod.bias.detach() if hasattr(target_mod, "bias") and target_mod.bias is not None else None
@@ -304,7 +304,7 @@ class KVTCCompressor(BaseCompressor):
         target_attention_only: bool = False,
         skip_attention_qkv: bool = True,
         min_rank: int = 4,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="kvtc", **kwargs)
@@ -323,11 +323,11 @@ class KVTCCompressor(BaseCompressor):
         self.min_rank = max(1, int(_cfg_get(cfg, "min_rank", min_rank)))
         self.target_modules = target_modules
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
 
     @staticmethod
     def _percentile_clip(W: torch.Tensor, low: float = 0.001, high: float = 0.999) -> torch.Tensor:
@@ -340,7 +340,7 @@ class KVTCCompressor(BaseCompressor):
 
     def _quantize_to_int(
         self, W: torch.Tensor, bits: int
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Quantize continuous tensor to true integer format (torch.int8 or torch.int16).
         Uses signed symmetric quantization around 0:
@@ -381,7 +381,7 @@ class KVTCCompressor(BaseCompressor):
         Uses tensor storage data_ptr() to avoid duplicate counting of shared weights.
         """
         total_bytes = 0
-        seen_ptrs: Set[int] = set()
+        seen_ptrs: set[int] = set()
 
         for p in model.parameters():
             ptr = p.data_ptr()
@@ -436,15 +436,15 @@ class KVTCCompressor(BaseCompressor):
             return True
         return any(t in name for t in self.target_modules)
 
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """Compress linear layers using PCA decorrelation and true integer quantization."""
         total_entropy = 0.0
         self.compressed_layers = []
         self.fallback_layers = []
         self.skipped_layers = []
         self.layer_errors = {}
-        layer_details: Dict[str, Any] = {}
-        seen_weights: Set[int] = set()
+        layer_details: dict[str, Any] = {}
+        seen_weights: set[int] = set()
 
         total_orig_params = 0
         total_comp_params = 0

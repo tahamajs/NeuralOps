@@ -7,7 +7,7 @@ and global token routing, ensuring robust numerical convergence and exact pretra
 [OPTIMIZED FOR ZERO-SHOT BENCHMARKING]
 """
 
-from typing import Any, Optional, Tuple, Union
+from typing import Any
 import math
 import logging
 
@@ -17,7 +17,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.core.attention_mask import apply_attention_mask, get_token_valid_mask
+from framework.core.attention_mask import apply_attention_mask
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.utils.model_family import ModelAdapter
@@ -27,7 +27,7 @@ from framework.utils.compat import maybe_apply_rotary, repeat_kv
 def entmax_bisect(
     scores: torch.Tensor,
     alpha: float = 1.5,
-    valid_mask: Optional[torch.Tensor] = None,
+    valid_mask: torch.Tensor | None = None,
     dim: int = -1,
     n_iter: int = 15,  # FIX: Reduced max iterations from 25 to 15
 ) -> torch.Tensor:
@@ -85,11 +85,11 @@ def entmax_bisect(
         if valid_mask is not None:
             p = p.masked_fill(~valid_mask, 0.0)
         sum_p = p.sum(dim=dim, keepdim=True)
-        
+
         mask = sum_p > 1.0
         tau_lo = torch.where(mask, tau, tau_lo)
         tau_hi = torch.where(mask, tau_hi, tau)
-        
+
         # Early breaking if the bracket is sufficiently small
         if (tau_hi - tau_lo).max() < 1e-3:
             break
@@ -118,7 +118,7 @@ def entmax_bisect(
 
 def entmax15_bisect(
     scores: torch.Tensor,
-    valid_mask: Optional[torch.Tensor] = None,
+    valid_mask: torch.Tensor | None = None,
     dim: int = -1,
     n_iter: int = 15,
 ) -> torch.Tensor:
@@ -136,8 +136,8 @@ class AdaSplashLinear(nn.Module):
         out_features: int,
         lora_rank: int = 16,
         bias: bool = True,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features: int = in_features
@@ -153,7 +153,7 @@ class AdaSplashLinear(nn.Module):
         )
 
         if bias:
-            self.bias: Optional[nn.Parameter] = nn.Parameter(
+            self.bias: nn.Parameter | None = nn.Parameter(
                 torch.empty(out_features, **factory_kwargs),
                 requires_grad=False,
             )
@@ -161,10 +161,10 @@ class AdaSplashLinear(nn.Module):
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_B: Optional[nn.Parameter] = nn.Parameter(
+            self.lora_B: nn.Parameter | None = nn.Parameter(
                 torch.empty((out_features, self.lora_rank), **factory_kwargs)
             )
-            self.lora_A: Optional[nn.Parameter] = nn.Parameter(
+            self.lora_A: nn.Parameter | None = nn.Parameter(
                 torch.empty((self.lora_rank, in_features), **factory_kwargs)
             )
         else:
@@ -216,11 +216,11 @@ class AdaSplashAttention(BaseAttention):
     def __init__(
         self,
         config: Any,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         alpha: float = 1.1,  # FIX: Softened from 1.5 to 1.1 for zero-shot accuracy
         n_iter: int = 15,
         splash_radius: int = 128,  # FIX: Increased from 32 to 128 for healthy context window
-        pretrained_attn: Optional[nn.Module] = None,
+        pretrained_attn: nn.Module | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank, **kwargs)
@@ -309,7 +309,7 @@ class AdaSplashAttention(BaseAttention):
         relative_buckets += torch.where(is_small, relative_position, relative_position_if_large)
         return relative_buckets
 
-    def compute_bias(self, query_length: int, key_length: int, device: Optional[torch.device] = None) -> torch.Tensor:
+    def compute_bias(self, query_length: int, key_length: int, device: torch.device | None = None) -> torch.Tensor:
         if self.relative_attention_bias is not None:
             context_position = torch.arange(query_length, dtype=torch.long, device=device)[:, None]
             memory_position = torch.arange(key_length, dtype=torch.long, device=device)[None, :]
@@ -341,7 +341,7 @@ class AdaSplashAttention(BaseAttention):
             if w is None:
                 # Output projection checks first
                 if proj == "o":
-                    if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+                    if hasattr(src, "output") and hasattr(src.output, "dense"):
                         mod = src.output.dense
                         w = mod.weight
                         b = getattr(mod, "bias", None)
@@ -368,15 +368,15 @@ class AdaSplashAttention(BaseAttention):
                 # GPT-2 Fused c_attn
                 elif hasattr(src, "c_attn") and proj in ["q", "k", "v"]:
                     c_attn_mod = getattr(src.c_attn, "base_layer", src.c_attn)
-                    fused_w = c_attn_mod.weight.T 
+                    fused_w = c_attn_mod.weight.T
                     fused_b = getattr(c_attn_mod, "bias", None)
                     split_size = fused_w.size(0) // 3
                     idx = {"q": 0, "k": 1, "v": 2}[proj]
                     w = fused_w[idx * split_size : (idx + 1) * split_size, :]
                     b = fused_b[idx * split_size : (idx + 1) * split_size] if fused_b is not None else None
                 # RoBERTa / BERT
-                elif proj in ["q", "k", "v"] and hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-                    s = getattr(src, "self")
+                elif proj in ["q", "k", "v"] and hasattr(src, "self") and hasattr(src.self, "query"):
+                    s = src.self
                     name_map = {"q": "query", "k": "key", "v": "value"}
                     mod = getattr(s, name_map[proj])
                     w = mod.weight
@@ -418,12 +418,10 @@ class AdaSplashAttention(BaseAttention):
         is_nested_encoder = False
         if (
             hasattr(src, "self")
-            and hasattr(getattr(src, "self"), "query")
+            and hasattr(src.self, "query")
             and hasattr(src, "output")
-            and hasattr(getattr(src, "output"), "dense")
-        ):
-            is_nested_encoder = True
-        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj:
+            and hasattr(src.output, "dense")
+        ) or (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj:
             is_nested_encoder = True
 
         if not extracted_all:
@@ -486,17 +484,17 @@ class AdaSplashAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
         is_cross_attention = key_value_states is not None
         kv_input = key_value_states if is_cross_attention else hidden_states
@@ -511,7 +509,7 @@ class AdaSplashAttention(BaseAttention):
         k = self.k_proj(kv_input).view(B, L_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
         v = self.v_proj(kv_input).view(B, L_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
-        position_embeddings = kwargs.get("position_embeddings", None)
+        position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
             cos, sin = position_embeddings[0], position_embeddings[1]
             def _rotate_half(x):
@@ -551,13 +549,13 @@ class AdaSplashAttention(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         scale = Dh ** -0.5
-        logits = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale 
+        logits = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
 
-        position_bias = kwargs.get("position_bias", None)
+        position_bias = kwargs.get("position_bias")
         if position_bias is None and self.has_relative_attention_bias:
             position_bias = self.compute_bias(L_q, L_k, device=device)
 
-        mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
+        mask = attention_mask if attention_mask is not None else kwargs.get("mask")
         if mask is not None:
             logits = apply_attention_mask(logits, mask)
 
@@ -634,9 +632,9 @@ def inject_adasplash(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
-) -> Optional[Union[AdaSplashAttention, nn.Module]]:
+) -> AdaSplashAttention | nn.Module | None:
     target = layer if layer is not None else model
     if target is None:
         return None
@@ -696,9 +694,9 @@ def inject_adasplash(
 
         if isinstance(src, AdaSplashAttention) or "AdaSplash" in src.__class__.__name__:
             return None
-        if hasattr(src, "inner") and isinstance(getattr(src, "inner"), AdaSplashAttention):
+        if hasattr(src, "inner") and isinstance(src.inner, AdaSplashAttention):
             return None
-        if hasattr(src, "_wrapped_attention") and isinstance(getattr(src, "_wrapped_attention"), AdaSplashAttention):
+        if hasattr(src, "_wrapped_attention") and isinstance(src._wrapped_attention, AdaSplashAttention):
             return None
 
         if target is not None:
@@ -708,7 +706,7 @@ def inject_adasplash(
                     continue
                 if isinstance(cand, AdaSplashAttention) or "AdaSplash" in cand.__class__.__name__:
                     return None
-                if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), AdaSplashAttention):
+                if hasattr(cand, "inner") and isinstance(cand.inner, AdaSplashAttention):
                     return None
 
         if src is not None and ("DeltaNet" in src.__class__.__name__ or "LinearAttention" in src.__class__.__name__):

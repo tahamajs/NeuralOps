@@ -9,14 +9,14 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -119,8 +119,8 @@ class FactorizedLoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         bias: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = int(in_features)
@@ -156,7 +156,7 @@ class FactorizedLoRALinear(nn.Module):
         return w
 
     @property
-    def bias(self) -> Optional[torch.Tensor]:
+    def bias(self) -> torch.Tensor | None:
         return self.up.bias
 
     def freeze_base_weights(self) -> None:
@@ -188,11 +188,11 @@ class RoutingAttention(BaseAttention):
     def __init__(
         self,
         config: Any = None,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         num_clusters: int = 16,
         n_iters: int = 3,
-        pretrained_attn: Optional[nn.Module] = None,
-        is_decoder: Optional[bool] = None,
+        pretrained_attn: nn.Module | None = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         try:
@@ -286,7 +286,7 @@ class RoutingAttention(BaseAttention):
 
     # ------------------------------------------------------------------
     @staticmethod
-    def _svd_init(w: torch.Tensor, b: Optional[torch.Tensor],
+    def _svd_init(w: torch.Tensor, b: torch.Tensor | None,
                   proj: FactorizedLoRALinear) -> None:
         with torch.no_grad():
             W = w.detach().float()
@@ -328,10 +328,8 @@ class RoutingAttention(BaseAttention):
         cls_name = src.__class__.__name__
         has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
-        if (hasattr(src, "self") and hasattr(getattr(src, "self"), "query")
-                and hasattr(src, "output") and hasattr(getattr(src, "output"), "dense")):
-            is_nested = True
-        elif (cls_name in ["BertSelfAttention", "RobertaSelfAttention",
+        if (hasattr(src, "self") and hasattr(src.self, "query")
+                and hasattr(src, "output") and hasattr(src.output, "dense")) or (cls_name in ["BertSelfAttention", "RobertaSelfAttention",
                            "XLMRobertaSelfAttention", "ElectraSelfAttention",
                            "DebertaSelfAttention"]
               or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
@@ -339,7 +337,7 @@ class RoutingAttention(BaseAttention):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -392,7 +390,7 @@ class RoutingAttention(BaseAttention):
                         mod.weight.data.clone(),
                         mod.bias.data.clone() if mod.bias is not None else None,
                     )
-            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
                 extracted["o"] = (
                     out_mod.weight.data.clone(),
@@ -473,7 +471,7 @@ class RoutingAttention(BaseAttention):
     # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(
-        attention_mask: Optional[torch.Tensor],
+        attention_mask: torch.Tensor | None,
         B: int, L: int, device: torch.device,
     ) -> torch.Tensor:
         if attention_mask is None:
@@ -542,11 +540,11 @@ class RoutingAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
         layer_idx: int = 0,
         *args: Any,
         **kwargs: Any,
@@ -563,7 +561,7 @@ class RoutingAttention(BaseAttention):
 
         # --- RoPE ---
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
             past_len = 0
@@ -706,13 +704,13 @@ class RoutingAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("routing_inject")
 @ATTENTION_REGISTRY.register("inject_routing")
 def inject_routing(
-    model: Optional[nn.Module] = None,
-    layer: Optional[nn.Module] = None,
-    model_config: Optional[Any] = None,
-    comp_config: Optional[Any] = None,
+    model: nn.Module | None = None,
+    layer: nn.Module | None = None,
+    model_config: Any | None = None,
+    comp_config: Any | None = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -722,7 +720,7 @@ def inject_routing(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

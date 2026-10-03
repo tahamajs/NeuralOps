@@ -10,7 +10,7 @@ Three-branch attention with spectral entropy routing:
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -31,7 +31,7 @@ def fp8_cast_simulate(
     x: torch.Tensor,
     format: str = "e4m3",
     per_channel: bool = False,
-    use_ste: Optional[bool] = None,
+    use_ste: bool | None = None,
 ) -> torch.Tensor:
     """
     Simulate FP8 quantization error via dynamic scaling + cast-dequantize roundtrip.
@@ -71,7 +71,7 @@ def fp8_cast_simulate(
     scale = max_val / amax
     x_scaled = (x_f * scale).clamp(min=-max_val, max=max_val)
 
-    x_dequant: Optional[torch.Tensor] = None
+    x_dequant: torch.Tensor | None = None
 
     if torch_dtype is not None:
         try:
@@ -100,8 +100,8 @@ def fp8_cast_simulate(
 
 def _detect_decoder(
     config: Any,
-    is_decoder: Optional[bool],
-    old_attn: Optional[nn.Module],
+    is_decoder: bool | None,
+    old_attn: nn.Module | None,
 ) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)
@@ -163,8 +163,8 @@ class FactorizedLinear(nn.Module):
         rank: int = 128,
         lora_rank: int = 32,
         bias: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = int(in_features)
@@ -212,7 +212,7 @@ class FactorizedLinear(nn.Module):
         return w
 
     @property
-    def bias(self) -> Optional[torch.Tensor]:
+    def bias(self) -> torch.Tensor | None:
         return self.lin2.bias
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -244,7 +244,7 @@ class SpectronSpectralEntropyRouter(nn.Module):
             torch.tensor(config.router_init_bias, dtype=self.h_proj.bias.dtype)
         )
 
-    def forward(self, X: torch.Tensor, token_valid: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, X: torch.Tensor, token_valid: torch.Tensor | None = None) -> torch.Tensor:
         B, N, D = X.shape
 
         with torch.no_grad():
@@ -274,12 +274,12 @@ def _local_window_attention(
     K: torch.Tensor,
     V: torch.Tensor,
     window: int,
-    token_valid: Optional[torch.Tensor],
+    token_valid: torch.Tensor | None,
     is_decoder: bool,
     past_len: int,
     dropout_p: float,
     training: bool,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     B, h, N, d = Q.shape
     N_k = K.shape[2]
     radius = window // 2
@@ -408,11 +408,11 @@ class AegisSpectronFP8Attention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        hidden_size: Optional[int] = None,
-        num_heads: Optional[int] = None,
-        pretrained_attn: Optional[nn.Module] = None,
-        is_decoder: Optional[bool] = None,
+        config: Any | None = None,
+        hidden_size: int | None = None,
+        num_heads: int | None = None,
+        pretrained_attn: nn.Module | None = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ):
         if not isinstance(config, AegisSpectronFP8Config):
@@ -534,7 +534,7 @@ class AegisSpectronFP8Attention(BaseAttention):
     # SVD init of FactorizedLinear
     # ------------------------------------------------------------------
     @staticmethod
-    def _svd_init(w: torch.Tensor, b: Optional[torch.Tensor], proj: FactorizedLinear) -> None:
+    def _svd_init(w: torch.Tensor, b: torch.Tensor | None, proj: FactorizedLinear) -> None:
         with torch.no_grad():
             W = w.detach().float()
             if W.ndim != 2:
@@ -568,9 +568,9 @@ class AegisSpectronFP8Attention(BaseAttention):
     # ------------------------------------------------------------------
     def _extract_proj_weights(
         self, old_attn: nn.Module
-    ) -> Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]]:
+    ) -> dict[str, tuple[torch.Tensor | None, torch.Tensor | None]]:
         from framework.core.adapters import UniversalAdapter
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -629,7 +629,7 @@ class AegisSpectronFP8Attention(BaseAttention):
 
         # 4. BERT output.dense
         if (hasattr(old_attn, "output")
-                and hasattr(getattr(old_attn, "output"), "dense")
+                and hasattr(old_attn.output, "dense")
                 and extracted["o"][0] is None):
             d = old_attn.output.dense
             extracted["o"] = (d.weight.data, getattr(d, "bias", None))
@@ -671,9 +671,7 @@ class AegisSpectronFP8Attention(BaseAttention):
         if hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj"):
             self.is_nested_encoder = False
         elif (hasattr(old_attn, "self") and hasattr(old_attn.self, "query")
-              and hasattr(old_attn, "output") and hasattr(old_attn.output, "dense")):
-            self.is_nested_encoder = True
-        elif cls_name in ("BertSelfAttention", "RobertaSelfAttention",
+              and hasattr(old_attn, "output") and hasattr(old_attn.output, "dense")) or cls_name in ("BertSelfAttention", "RobertaSelfAttention",
                           "XLMRobertaSelfAttention", "ElectraSelfAttention") \
                 or (cls_name.endswith("SelfAttention") and not has_out):
             self.is_nested_encoder = True
@@ -727,9 +725,9 @@ class AegisSpectronFP8Attention(BaseAttention):
     # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(
-        attention_mask: Optional[torch.Tensor],
+        attention_mask: torch.Tensor | None,
         B: int, N_kv: int, device: torch.device,
-    ) -> Optional[torch.Tensor]:
+    ) -> torch.Tensor | None:
         if attention_mask is None:
             return None
         if attention_mask.dim() == 2:
@@ -754,9 +752,9 @@ class AegisSpectronFP8Attention(BaseAttention):
     def _local_branch(
         self,
         Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor,
-        token_valid: Optional[torch.Tensor],
+        token_valid: torch.Tensor | None,
         past_len: int,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         return _local_window_attention(
             Q, K, V,
             window=self.config.window_size,
@@ -773,7 +771,7 @@ class AegisSpectronFP8Attention(BaseAttention):
     def _global_branch(
         self,
         Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor,
-        token_valid: Optional[torch.Tensor],
+        token_valid: torch.Tensor | None,
     ) -> torch.Tensor:
         """
         Returns context with the same shape as Q: (B, h, N, d).
@@ -829,7 +827,7 @@ class AegisSpectronFP8Attention(BaseAttention):
     # Branch: linear recurrence (SP-FIX-05)
     # ------------------------------------------------------------------
     def _linear_branch(
-        self, X: torch.Tensor, token_valid: Optional[torch.Tensor],
+        self, X: torch.Tensor, token_valid: torch.Tensor | None,
     ) -> torch.Tensor:
         if self.linear_in is not None:
             X = self.linear_in(X)
@@ -861,15 +859,15 @@ class AegisSpectronFP8Attention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -903,7 +901,7 @@ class AegisSpectronFP8Attention(BaseAttention):
 
         # RoPE with past_len offset (SP-FIX-09).
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             past_len_rope = 0
@@ -984,7 +982,7 @@ class AegisSpectronFP8Attention(BaseAttention):
     def _apply_rope(
         q: torch.Tensor, k: torch.Tensor,
         cos: torch.Tensor, sin: torch.Tensor,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         def _rotate_half(x: torch.Tensor) -> torch.Tensor:
             d = x.shape[-1]
             h = d // 2
@@ -1035,7 +1033,7 @@ def inject_aegis_spectron_fp8(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -1045,7 +1043,7 @@ def inject_aegis_spectron_fp8(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 
@@ -1112,7 +1110,7 @@ def inject_aegis_spectron_fp8(
         n_kv_heads = getattr(model_config, "num_key_value_heads",
                      getattr(model_config, "num_kv_heads", n_heads)) if model_config is not None else n_heads
 
-        is_dec = _detect_decoder(model_config, kwargs.get("is_decoder", None), old_attn)
+        is_dec = _detect_decoder(model_config, kwargs.get("is_decoder"), old_attn)
 
         cfg = AegisSpectronFP8Config(
             hidden_size=h_size,

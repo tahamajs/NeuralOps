@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import math
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -64,8 +64,8 @@ class FRanDILinear(nn.Module):
         bias: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -115,7 +115,7 @@ class FRanDILinear(nn.Module):
             self.register_parameter("lora_B", None)
 
         # FR-FIX-15: weight cache
-        self._cached_weight: Optional[torch.Tensor] = None
+        self._cached_weight: torch.Tensor | None = None
         self._cached_version: int = -1
 
     # ---- cache management ----
@@ -178,7 +178,7 @@ class FRanDILinear(nn.Module):
         self.lora_B.data.zero_()
         self._cached_weight = None
 
-    def merge_and_unload(self) -> "FRanDILinear":
+    def merge_and_unload(self) -> FRanDILinear:
         self.merge()
         return self
 
@@ -191,7 +191,7 @@ class FRanDILinear(nn.Module):
     def _select_rank(
         S: torch.Tensor,
         rank: int = 8,
-        energy_threshold: Optional[float] = None,
+        energy_threshold: float | None = None,
     ) -> int:
         # FR-FIX-11: cap at `rank` even when energy threshold is used.
         max_rank = min(int(rank), len(S))
@@ -207,13 +207,13 @@ class FRanDILinear(nn.Module):
     @classmethod
     def from_linear(
         cls,
-        linear: Union[nn.Linear, Any],
+        linear: nn.Linear | Any,
         rank: int = 8,
-        energy_threshold: Optional[float] = None,
-        cov_matrix: Optional[torch.Tensor] = None,
+        energy_threshold: float | None = None,
+        cov_matrix: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-    ) -> "FRanDILinear":
+    ) -> FRanDILinear:
         target_mod = getattr(linear, "base_layer", linear)
         cls_name = target_mod.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
@@ -236,8 +236,8 @@ class FRanDILinear(nn.Module):
         existing_lora_A = getattr(linear, "lora_A", None)
         existing_lora_B = getattr(linear, "lora_B", None)
 
-        B_data: Optional[torch.Tensor] = None
-        A_data: Optional[torch.Tensor] = None
+        B_data: torch.Tensor | None = None
+        A_data: torch.Tensor | None = None
         r: int = 1
 
         # ---- Whitening path ----
@@ -344,23 +344,23 @@ class FRanDICompressor(BaseCompressor):
 
     def __init__(
         self,
-        model: Optional[nn.Module] = None,
+        model: nn.Module | None = None,
         rank: int = 8,
-        energy_threshold: Optional[float] = None,
-        calibration_loader: Optional[Any] = None,
+        energy_threshold: float | None = None,
+        calibration_loader: Any | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         max_error: float = 0.5,
         target_attention_only: bool = False,
         fallback_to_original: bool = True,
         skip_attention_qkv: bool = False,
-        cfg: Optional[Any] = None,
-        target_layers: Optional[List[str]] = None,
+        cfg: Any | None = None,
+        target_layers: list[str] | None = None,
         num_calibration_batches: int = 16,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="frandi", **kwargs)
-        cfg = cfg or kwargs.get("comp_config", None)
+        cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
         self.rank = int(_cfg_get(cfg, "frandi_rank", _cfg_get(cfg, "rank", rank)))
@@ -396,10 +396,10 @@ class FRanDICompressor(BaseCompressor):
             _cfg_get(cfg, "num_calibration_batches", num_calibration_batches)
         ))
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
         self._compressed_params: int = 0
 
     # ------------------------------------------------------------------
@@ -453,12 +453,12 @@ class FRanDICompressor(BaseCompressor):
     # ------------------------------------------------------------------
     # FR-FIX-04: bounded calibration loop, FR-FIX-14: fp32 accumulation
     # ------------------------------------------------------------------
-    def _collect_covariances(self) -> Dict[str, torch.Tensor]:
+    def _collect_covariances(self) -> dict[str, torch.Tensor]:
         if self.calibration_loader is None or not hasattr(self.model, "named_modules"):
             return {}
 
-        covariances: Dict[str, torch.Tensor] = {}
-        counts: Dict[str, int] = {}
+        covariances: dict[str, torch.Tensor] = {}
+        counts: dict[str, int] = {}
         hooks = []
 
         def make_hook(layer_name: str):
@@ -522,7 +522,7 @@ class FRanDICompressor(BaseCompressor):
         return covariances
 
     # ------------------------------------------------------------------
-    def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         from framework.core.model_utils import replace_module
 
         if model is not None:
@@ -704,10 +704,10 @@ class FRanDICompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("frandi_compressor_factory")
 def frandi_factory(
     model: nn.Module,
-    comp_config: Optional[Any] = None,
-    rank: Optional[int] = None,
+    comp_config: Any | None = None,
+    rank: int | None = None,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Factory function for FRanDI compressor."""
     effective_rank = rank or _cfg_get(
         comp_config, "frandi_rank", _cfg_get(comp_config, "rank", 8)

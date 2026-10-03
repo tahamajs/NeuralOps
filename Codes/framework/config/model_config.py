@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import List
 
 
 @dataclass
@@ -11,4 +10,4 @@ class ModelConfig:
     trust_remote_code: bool = False
     cache_dir: str = "./cache"
     fix_layernorm_naming: bool = True
-    variants: List[str] = field(default_factory=list)
+    variants: list[str] = field(default_factory=list)

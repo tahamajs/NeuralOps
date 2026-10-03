@@ -3,7 +3,7 @@ Simple data validation – missing values, infinite, zero variance, schema check
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any
 
 import numpy as np
 
@@ -12,15 +12,15 @@ import numpy as np
 class ValidationReport:
     checks_passed: int
     checks_failed: int
-    issues: List[Dict[str, Any]]
+    issues: list[dict[str, Any]]
     is_valid: bool
 
 
 class DataValidator:
-    def __init__(self, schema: Dict[str, Any] = None) -> None:
+    def __init__(self, schema: dict[str, Any] = None) -> None:
         self.schema = schema or {}
 
-    def validate(self, dataset: Dict[str, np.ndarray]) -> ValidationReport:
+    def validate(self, dataset: dict[str, np.ndarray]) -> ValidationReport:
         """Validate."""
         issues = []
         for col, values in dataset.items():

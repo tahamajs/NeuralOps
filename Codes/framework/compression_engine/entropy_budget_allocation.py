@@ -6,7 +6,7 @@ Registered as 'entropy_budget' and 'entropy_budget_allocation'.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -56,19 +56,19 @@ class EntropyBudgetCompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        calibration_loader: Optional[Any] = None,
+        calibration_loader: Any | None = None,
         total_budget_ratio: float = 0.7,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         eps: float = 1e-6,
         max_error: float = 0.35,
         target_attention_only: bool = False,
         fallback_to_original: bool = True,
-        target_modules: Optional[List[str]] = None,
-        cfg: Optional[Any] = None,
+        target_modules: list[str] | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="entropy_budget", **kwargs)
-        cfg = cfg or kwargs.get("comp_config", None)
+        cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
         self.calibration_loader = calibration_loader or _cfg_get(cfg, "calibration_loader", None)
@@ -92,11 +92,11 @@ class EntropyBudgetCompressor(BaseCompressor):
         )
         self.target_modules = target_modules
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_ranks: Dict[str, int] = {}
-        self.layer_errors: Dict[str, float] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_ranks: dict[str, int] = {}
+        self.layer_errors: dict[str, float] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_lower = name.lower()
@@ -135,17 +135,17 @@ class EntropyBudgetCompressor(BaseCompressor):
 
         return True
 
-    def collect_covariances(self) -> Dict[str, torch.Tensor]:
+    def collect_covariances(self) -> dict[str, torch.Tensor]:
         """Collect empirical input activation covariances with double-precision accumulation."""
         if self.calibration_loader is None:
             return {}
 
-        activations: Dict[str, torch.Tensor] = {}
-        sample_counts: Dict[str, int] = {}
+        activations: dict[str, torch.Tensor] = {}
+        sample_counts: dict[str, int] = {}
         hooks = []
 
         def get_hook(name: str):
-            def hook(module: nn.Module, inp: Tuple[Any, ...], outp: Any) -> None:
+            def hook(module: nn.Module, inp: tuple[Any, ...], outp: Any) -> None:
                 if not inp or inp[0] is None:
                     return
                 x = inp[0].detach()
@@ -203,14 +203,14 @@ class EntropyBudgetCompressor(BaseCompressor):
             for h in hooks:
                 h.remove()
 
-        normalized_covs: Dict[str, torch.Tensor] = {}
+        normalized_covs: dict[str, torch.Tensor] = {}
         for name, cov in activations.items():
             cnt = max(1, sample_counts.get(name, 1))
             normalized_covs[name] = cov / cnt
 
         return normalized_covs
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Compress model using whitened entropy budget allocation and covariance-aligned singular vectors."""
         self.compressed_layers = []
         self.fallback_layers = []

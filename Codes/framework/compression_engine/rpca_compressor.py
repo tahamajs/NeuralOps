@@ -6,8 +6,7 @@ Registered in COMPRESSOR_REGISTRY as 'rpca', 'rpca_factory', and 'rpca_compresso
 from __future__ import annotations
 
 import logging
-import math
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -55,16 +54,16 @@ class RPCACompressor(BaseCompressor):
         use_lora: bool = False,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         max_error: float = 0.50,
         fallback_to_original: bool = True,
         min_numel: int = 16,
-        device: Optional[Union[str, torch.device]] = None,
-        cfg: Optional[Any] = None,
+        device: str | torch.device | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name='rpca', **kwargs)
-        cfg_obj = cfg or kwargs.get('comp_config', None)
+        cfg_obj = cfg or kwargs.get('comp_config')
 
         self.rank = int(rank or _cfg_get(cfg_obj, 'rpca_rank', _cfg_get(cfg_obj, 'rank', 64)))
         self.mu = float(mu or _cfg_get(cfg_obj, 'rpca_mu', _cfg_get(cfg_obj, 'mu', 1e-3)))
@@ -90,14 +89,14 @@ class RPCACompressor(BaseCompressor):
             self.target_device = next(model.parameters()).device if list(model.parameters()) else torch.device('cpu')
 
         # Diagnostics & Tracking
-        self.visited_modules: Set[int] = set()
-        self.compressed_layers: List[str] = []
-        self.protected_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.failed_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.replaced_layers: List[Dict[str, Any]] = []
+        self.visited_modules: set[int] = set()
+        self.compressed_layers: list[str] = []
+        self.protected_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.failed_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.replaced_layers: list[dict[str, Any]] = []
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         """Check if layer belongs to an attention projection in a GQA architecture."""
@@ -105,7 +104,7 @@ class RPCACompressor(BaseCompressor):
         num_heads = getattr(cfg, 'num_attention_heads', None)
         num_kv_heads = getattr(cfg, 'num_key_value_heads', None)
         is_gqa = (num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads)
-        
+
         name_l = name.lower()
         is_attn_qkv = any(p in name_l for p in [
             'q_proj', 'k_proj', 'v_proj', 'c_attn', 'query', 'key', 'value',
@@ -165,7 +164,7 @@ class RPCACompressor(BaseCompressor):
         self,
         layer: nn.Module,
         rank: int,
-    ) -> Optional[SVDLinear]:
+    ) -> SVDLinear | None:
         """Decompose a single linear layer via RPCA and return factorized SVDLinear with LoRA."""
         base_layer = getattr(layer, 'base_layer', layer)
         raw_w = base_layer.weight.data
@@ -274,7 +273,7 @@ class RPCACompressor(BaseCompressor):
         svd_layer.reconstruction_error = rel_err
         return svd_layer
 
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """Compress all linear layers in the model using RPCA decomposition."""
         self.layer_errors = {}
         self.replaced_layers = []
@@ -370,7 +369,7 @@ def rpca_compressor_factory(
     return_stats: bool = False,
     return_tuple: bool = False,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """RPCA factory function returning (compressed_model, stats) when requested."""
     rank = kwargs.pop('rank', _cfg_get(comp_config, 'rpca_rank', _cfg_get(comp_config, 'rank', 64)))
     mu = kwargs.pop('mu', _cfg_get(comp_config, 'rpca_mu', _cfg_get(comp_config, 'mu', 1e-3)))

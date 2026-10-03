@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -30,7 +30,6 @@ import torch.nn.functional as F
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
-from framework.core.triton_kernels import triton_dispatch
 
 logger = logging.getLogger(__name__)
 
@@ -63,8 +62,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     r"""Applies rotary position embeddings with partial-RoPE dimension slicing."""
     if cos is None or sin is None:
         return q, k
@@ -104,8 +103,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -180,15 +179,15 @@ class DecayLinearAttention(BaseAttention):
     triton_kernel: str = "linear_attn"
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        d_model: Optional[Union[int, Any]] = None,
-        num_heads: Optional[int] = None,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
-        comp_config: Optional[Any] = None,
-        layer_id: Optional[int] = None,
-        layer_idx: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        d_model: int | Any | None = None,
+        num_heads: int | None = None,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
+        comp_config: Any | None = None,
+        layer_id: int | None = None,
+        layer_idx: int | None = None,
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
@@ -261,9 +260,7 @@ class DecayLinearAttention(BaseAttention):
         model_type = getattr(config, "model_type", "").lower() if config is not None else ""
         is_dec = _cfg_get("is_decoder", _cfg_get("is_causal", kwargs.get("is_causal", False)))
         _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "phi", "gemma", "opt", "bloom", "falcon")
-        if any(model_type.startswith(p) for p in _decoder_prefixes):
-            is_dec = True
-        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+        if any(model_type.startswith(p) for p in _decoder_prefixes) or hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
@@ -284,7 +281,7 @@ class DecayLinearAttention(BaseAttention):
         nn.init.zeros_(self.decay_gate.bias)
 
         self.rotary_emb = None
-        self.comp_config: Optional[Any] = comp_config
+        self.comp_config: Any | None = comp_config
         self.triton_kwargs = {"phi": "elu+1", "eps": 1e-6}
 
         if source_attn is not None:
@@ -327,12 +324,10 @@ class DecayLinearAttention(BaseAttention):
         has_out_lin = hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj") or hasattr(old_attn, "dense")
         if (
             hasattr(old_attn, "self")
-            and hasattr(getattr(old_attn, "self"), "query")
+            and hasattr(old_attn.self, "query")
             and hasattr(old_attn, "output")
-            and hasattr(getattr(old_attn, "output"), "dense")
-        ):
-            self.is_nested_encoder = True
-        elif (
+            and hasattr(old_attn.output, "dense")
+        ) or (
             cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
         ) and not has_out_lin:
@@ -341,7 +336,7 @@ class DecayLinearAttention(BaseAttention):
         if hasattr(old_attn, "rotary_emb"):
             self.rotary_emb = old_attn.rotary_emb
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -381,14 +376,14 @@ class DecayLinearAttention(BaseAttention):
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
         # 2. RoBERTa / BERT nested self-attention
-        elif hasattr(old_attn, "self") and hasattr(getattr(old_attn, "self"), "query"):
-            s = getattr(old_attn, "self")
+        elif hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
+            s = old_attn.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 base_mod = getattr(mod, "base_layer", mod)
                 if base_mod is not None and hasattr(base_mod, "weight"):
                     extracted[proj_key] = (base_mod.weight.data.clone(), base_mod.bias.data.clone() if getattr(base_mod, "bias", None) is not None else None)
-            if hasattr(old_attn, "output") and hasattr(getattr(old_attn, "output"), "dense"):
+            if hasattr(old_attn, "output") and hasattr(old_attn.output, "dense"):
                 out_mod = old_attn.output.dense
                 base_out = getattr(out_mod, "base_layer", out_mod)
                 extracted["o"] = (base_out.weight.data.clone(), base_out.bias.data.clone() if getattr(base_out, "bias", None) is not None else None)
@@ -481,7 +476,7 @@ class DecayLinearAttention(BaseAttention):
         k: torch.Tensor,
         v: torch.Tensor,
         lambdas: torch.Tensor,
-        mask: Optional[torch.Tensor] = None,
+        mask: torch.Tensor | None = None,
         reverse: bool = False,
         chunk_size: int = 32,
     ) -> torch.Tensor:
@@ -511,7 +506,7 @@ class DecayLinearAttention(BaseAttention):
         log_lambdas = torch.log(lambdas_f)
         cum_log = torch.cumsum(log_lambdas, dim=-1)
 
-        if L <= chunk_size:
+        if chunk_size >= L:
             log_decay = cum_log.unsqueeze(-1) - cum_log.unsqueeze(-2)
             decay = torch.exp(log_decay.clamp(max=0.0))
             causal_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
@@ -605,19 +600,19 @@ class DecayLinearAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_ids: Optional[torch.Tensor] = None,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_ids: torch.Tensor | None = None,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
@@ -707,12 +702,12 @@ def inject_decay_linear(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
 ):
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

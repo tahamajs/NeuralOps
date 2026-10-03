@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -45,8 +45,8 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 def compute_resilient_taylor_saliency(
     weight: torch.Tensor,
-    grad: Optional[torch.Tensor] = None,
-    activations: Optional[torch.Tensor] = None,
+    grad: torch.Tensor | None = None,
+    activations: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
     Resilient Taylor saliency with three-tier fallback:
@@ -111,9 +111,9 @@ class ARMORLinear(nn.Module):
         out_features: int,
         rank: int,
         bias: bool = True,
-        lora_alpha: Optional[float] = None,
+        lora_alpha: float | None = None,
         dtype: torch.dtype = torch.float32,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -148,12 +148,12 @@ class ARMORLinear(nn.Module):
     @classmethod
     def from_linear(
         cls,
-        linear: Union[nn.Linear, Any],
+        linear: nn.Linear | Any,
         mask: torch.Tensor,
         lora_A: torch.Tensor,
         lora_B: torch.Tensor,
-        lora_alpha: Optional[float] = None,
-    ) -> "ARMORLinear":
+        lora_alpha: float | None = None,
+    ) -> ARMORLinear:
         cls_name = linear.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(linear, "nf")
         raw_w = linear.weight.data
@@ -255,22 +255,22 @@ class ARMORPruner(BaseCompressor):
         structured_24: bool = True,
         decouple: bool = True,
         recalibrate_ln: bool = True,
-        lora_alpha: Optional[float] = None,
+        lora_alpha: float | None = None,
         max_error: float = 0.35,
         fallback_to_original: bool = True,
         target_attention_only: bool = False,
         skip_attention_qkv: bool = False,
         skip_attention_output: bool = False,
-        target_modules: Optional[List[str]] = None,
-        tokenizer: Optional[Any] = None,
-        calibration_loader: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        cfg: Optional[Any] = None,
+        target_modules: list[str] | None = None,
+        tokenizer: Any | None = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="armor_pruner", **kwargs)
-        conf = cfg or kwargs.get("comp_config", None)
+        conf = cfg or kwargs.get("comp_config")
 
         self.block_size = int(
             _cfg_get(conf, "armor_block_size", _cfg_get(conf, "block_size", block_size))
@@ -352,13 +352,13 @@ class ARMORPruner(BaseCompressor):
         self.comp_config = conf
         self._compressed_params: int = 0
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_actual_sparsities: Dict[str, float] = {}
-        self.layer_effective_ratios: Dict[str, float] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_actual_sparsities: dict[str, float] = {}
+        self.layer_effective_ratios: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
 
     # ------------------------------------------------------------------
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
@@ -486,13 +486,13 @@ class ARMORPruner(BaseCompressor):
         return True
 
     # ------------------------------------------------------------------
-    def _collect_activations(self) -> Dict[str, torch.Tensor]:
+    def _collect_activations(self) -> dict[str, torch.Tensor]:
         """
         AR-FIX-12: Collect per-channel mean |x| instead of full activation tensors.
         Returns {layer_name: (in_features,) float32 tensor}.
         """
         self.model.eval()
-        activations: Dict[str, List[torch.Tensor]] = {}
+        activations: dict[str, list[torch.Tensor]] = {}
         hooks = []
 
         def make_hook(layer_name: str):
@@ -555,7 +555,7 @@ class ARMORPruner(BaseCompressor):
                 h.remove()
 
         # Aggregate per layer by mean over batches.
-        aggregated: Dict[str, torch.Tensor] = {}
+        aggregated: dict[str, torch.Tensor] = {}
         for name, lst in activations.items():
             if lst:
                 stacked = torch.stack([t.float() for t in lst], dim=0)
@@ -563,7 +563,7 @@ class ARMORPruner(BaseCompressor):
         return aggregated
 
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         act_map = self._collect_activations()
         self.compressed_layers = []
         self.fallback_layers = []

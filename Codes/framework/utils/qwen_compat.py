@@ -7,7 +7,7 @@ implementations.  It does not replace Qwen's rotary or causal attention.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Iterable, Optional
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -56,8 +56,8 @@ def qwen_config_proxy(model_or_config: Any) -> QwenConfigProxy:
     config = getattr(model_or_config, "config", model_or_config)
     if hasattr(config, "text_config"):
         config = config.text_config
-    hidden = int(getattr(config, "hidden_size"))
-    heads = int(getattr(config, "num_attention_heads"))
+    hidden = int(config.hidden_size)
+    heads = int(config.num_attention_heads)
     return QwenConfigProxy(
         source=config,
         hidden_size=hidden,
@@ -89,7 +89,7 @@ def install_qwen_aliases(model: nn.Module) -> nn.Module:
     return model
 
 
-def qwen_projection(module: nn.Module, legacy: str, native: str) -> Optional[nn.Module]:
+def qwen_projection(module: nn.Module, legacy: str, native: str) -> nn.Module | None:
     """Return a projection under either its legacy or native spelling."""
     value = getattr(module, native, None)
     if value is None:
@@ -97,8 +97,8 @@ def qwen_projection(module: nn.Module, legacy: str, native: str) -> Optional[nn.
     return value
 
 
-def qwen_attention_mask(mask: Optional[torch.Tensor], *, causal: bool = True,
-                        expects_bidirectional: bool = False) -> Optional[torch.Tensor]:
+def qwen_attention_mask(mask: torch.Tensor | None, *, causal: bool = True,
+                        expects_bidirectional: bool = False) -> torch.Tensor | None:
     """Adapt masks only for modules that explicitly request another contract.
 
     Native Qwen attention keeps its prepared causal 4-D additive mask. A

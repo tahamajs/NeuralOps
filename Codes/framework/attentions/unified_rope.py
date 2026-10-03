@@ -9,7 +9,7 @@ Hardened for production use across diverse transformer architectures:
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -18,7 +18,7 @@ import torch.nn.functional as F
 from framework.core.adapters import UniversalAdapter
 from framework.core.attention_mask import apply_attention_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -50,9 +50,9 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
+    position_ids: torch.Tensor | None = None,
     unsqueeze_dim: int = 1,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Applies Rotary Position Embedding (RoPE) with partial dimension and independent seq-len support."""
     if cos is None or sin is None:
         return q, k
@@ -162,22 +162,22 @@ class UnifiedRoPE(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        dim: Optional[int] = None,
-        num_heads: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        dim: int | None = None,
+        num_heads: int | None = None,
         max_seq_len: int = 4096,
         base: int = 10000,
         dropout: float = 0.1,
-        pretrained_attn: Optional[nn.Module] = None,
+        pretrained_attn: nn.Module | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config=config, rank=rank)
 
-        src = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn", None)
+        src = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn")
 
         if dim is None:
             if config is not None and not isinstance(config, int):
@@ -394,7 +394,7 @@ class UnifiedRoPE(BaseAttention):
                         if hasattr(src, attr):
                             proj_layer = getattr(src, attr)
                             if hasattr(proj_layer, "dense"):
-                                proj_layer = getattr(proj_layer, "dense")
+                                proj_layer = proj_layer.dense
                             if hasattr(proj_layer, "weight"):
                                 w_o = proj_layer.weight.detach()
                                 b_o = proj_layer.bias.detach() if proj_layer.bias is not None else None
@@ -417,7 +417,7 @@ class UnifiedRoPE(BaseAttention):
                         if hasattr(src, attr):
                             proj_layer = getattr(src, attr)
                             if hasattr(proj_layer, "dense"):
-                                proj_layer = getattr(proj_layer, "dense")
+                                proj_layer = proj_layer.dense
                             if hasattr(proj_layer, "weight"):
                                 w_o = proj_layer.weight.detach()
                                 b_o = proj_layer.bias.detach() if proj_layer.bias is not None else None
@@ -510,17 +510,17 @@ class UnifiedRoPE(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
-    ) -> Union[Tuple[torch.Tensor, Optional[torch.Tensor]], torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None] | torch.Tensor:
         """Forward pass computing RoPE attention, returning (output, attention_weights)."""
         B, L, _ = hidden_states.shape
 
@@ -529,7 +529,7 @@ class UnifiedRoPE(BaseAttention):
         v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # Apply RoPE
-        pos_emb = kwargs.get("position_embeddings", None)
+        pos_emb = kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, tuple) and len(pos_emb) == 2:
             cos, sin = pos_emb
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
@@ -553,7 +553,7 @@ class UnifiedRoPE(BaseAttention):
             )
             scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
-        mask = attention_mask if attention_mask is not None else kwargs.get("attn_mask", None)
+        mask = attention_mask if attention_mask is not None else kwargs.get("attn_mask")
         if mask is not None:
             scores = apply_attention_mask(scores, mask)
 
@@ -599,12 +599,12 @@ def inject_unified_rope(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
 ):
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

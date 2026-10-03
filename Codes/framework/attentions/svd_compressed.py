@@ -25,7 +25,7 @@ import argparse
 import logging
 import os
 import warnings
-from typing import Optional, Tuple, Any, Union, List, Dict
+from typing import Any
 
 import numpy as np
 import math
@@ -103,13 +103,13 @@ def compute_cumulative_entropy(
 
 
 def lagrangian_rank_allocation(
-    weight_matrices: List[np.ndarray],
+    weight_matrices: list[np.ndarray],
     target_budget: int,
-    layer_proj_names: List[str],
+    layer_proj_names: list[str],
     max_rank_factor: float = 0.5,
-    lambda_bracket: Tuple[float, float] = (1e-5, 10.0),
+    lambda_bracket: tuple[float, float] = (1e-5, 10.0),
     num_lambda_steps: int = 100,
-) -> Dict[str, int]:
+) -> dict[str, int]:
     r"""Allocate per-projection ranks under global parameter constraint via binary search on Lagrange multiplier."""
     cost_table = []
     param_table = []
@@ -177,9 +177,9 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
+    position_ids: torch.Tensor | None = None,
     unsqueeze_dim: int = 1,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Applies Rotary Position Embedding (RoPE) with partial dimension and independent seq-len support."""
     if cos is None or sin is None:
         return q, k
@@ -217,7 +217,7 @@ def apply_rotary_pos_emb(
     return q_out, k_out
 
 
-def _unpack_weight_bias(proj: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+def _unpack_weight_bias(proj: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
     if proj is None:
         return None, None
     if hasattr(proj, "base_layer"):
@@ -246,19 +246,19 @@ class SVDCompressedAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        old_attn: Optional[Any] = None,
+        config: Any | None = None,
+        old_attn: Any | None = None,
         dropout: float = 0.1,
         layer_idx: int = 0,
-        ranks: Optional[Dict[str, int]] = None,
+        ranks: dict[str, int] | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         add_sparse: bool = False,
         sparsity_level: float = 0.7,
         **kwargs: Any,
     ) -> None:
-        model_config = config or kwargs.get("model_config", None)
+        model_config = config or kwargs.get("model_config")
         super().__init__(model_config)
         # 1. Dimensions & Architecture
         self.hidden_size: int = int(_cfg_get(
@@ -303,7 +303,7 @@ class SVDCompressedAttention(BaseAttention):
         self.is_nested_encoder: bool = False
         default_r = int(_cfg_get(model_config, "svd_rank", _cfg_get(model_config, "rank", 64)))
         default_r = max(1, min(default_r, self.hidden_size, self.all_head_size))
-        self.ranks: Dict[str, int] = {}
+        self.ranks: dict[str, int] = {}
         for k in ("q", "k", "v", "o"):
             val = ranks.get(k, default_r) if ranks else default_r
             self.ranks[k] = max(1, min(int(val), self.hidden_size, self.all_head_size))
@@ -380,7 +380,7 @@ class SVDCompressedAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(float(dropout_p) if dropout_p is not None else 0.1)
 
-        src_attn = old_attn or kwargs.get("pretrained_attn", None)
+        src_attn = old_attn or kwargs.get("pretrained_attn")
         src_p = next(src_attn.parameters(), None) if src_attn is not None else None
         target_dtype = kwargs.get("dtype", src_p.dtype if src_p is not None else torch.float32)
         target_device = kwargs.get("device", src_p.device if src_p is not None else None)
@@ -396,7 +396,7 @@ class SVDCompressedAttention(BaseAttention):
             self.to(target_dtype)
 
     def _set_factorised_weights(
-        self, W_tensor: torch.Tensor, bias_tensor: Optional[torch.Tensor], down: nn.Linear, up: nn.Linear, rank: int
+        self, W_tensor: torch.Tensor, bias_tensor: torch.Tensor | None, down: nn.Linear, up: nn.Linear, rank: int
     ) -> None:
         with torch.no_grad():
             W = W_tensor.float()
@@ -606,18 +606,18 @@ class SVDCompressedAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, N, _ = hidden_states.shape
         # Defensive device alignment
         if self.q_down.weight.device != hidden_states.device:
@@ -674,7 +674,7 @@ class SVDCompressedAttention(BaseAttention):
 
         # 2. RoPE support
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
@@ -741,7 +741,7 @@ class SVDCompressedAttention(BaseAttention):
 # =============================================================================
 
 
-def gather_all_attention_weights(model: Any) -> Tuple[List[np.ndarray], List[str]]:
+def gather_all_attention_weights(model: Any) -> tuple[list[np.ndarray], list[str]]:
     r"""Gather attention projection weights and layer names across model layers."""
     weights = []
     names = []
@@ -758,7 +758,7 @@ def gather_all_attention_weights(model: Any) -> Tuple[List[np.ndarray], List[str
 
 def inject_all_layers(
     model: Any = None,
-    rank_dict: Optional[Dict[str, int]] = None,
+    rank_dict: dict[str, int] | None = None,
     dropout: float = 0.1,
     add_sparse: bool = False,
     sparsity: float = 0.0,
@@ -796,7 +796,7 @@ def inject_all_layers(
 # 5. GLUE data loading
 # =============================================================================
 
-GLUE_TASK_KEYS: Dict[str, Tuple[str, Optional[str]]] = {
+GLUE_TASK_KEYS: dict[str, tuple[str, str | None]] = {
     "cola": ("sentence", None),
     "sst2": ("sentence", None),
     "mrpc": ("sentence1", "sentence2"),
@@ -831,7 +831,7 @@ def load_glue_local(task_name: str) -> Any:
     return DatasetDict(splits)
 
 
-def get_num_labels_and_is_regression(task: str) -> Tuple[int, bool]:
+def get_num_labels_and_is_regression(task: str) -> tuple[int, bool]:
     r"""Return class count and regression indicator for GLUE task."""
     if task == "stsb":
         return 1, True
@@ -853,10 +853,10 @@ def preprocess_function(
     examples: Any,
     tokenizer: Any,
     sent1_key: str,
-    sent2_key: Optional[str],
+    sent2_key: str | None,
     max_length: int,
     is_regression: bool,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     r"""Preprocess and tokenize dataset sequence examples."""
     if sent2_key is None:
         t = tokenizer(
@@ -879,7 +879,7 @@ def preprocess_function(
     return t
 
 
-def compute_metrics(eval_pred: Any) -> Dict[str, float]:
+def compute_metrics(eval_pred: Any) -> dict[str, float]:
     r"""Compute classification evaluation accuracy."""
     logits, labels = eval_pred
     preds = logits.argmax(-1)
@@ -1021,16 +1021,16 @@ def main() -> None:
 @ATTENTION_REGISTRY.register("inject_svd_compressed")
 @ATTENTION_REGISTRY.register("inject_svd_compressed_attention")
 def inject_svd_compressed(
-    model: Optional[nn.Module] = None,
-    layer: Optional[nn.Module] = None,
-    model_config: Optional[Any] = None,
-    comp_config: Optional[Any] = None,
+    model: nn.Module | None = None,
+    layer: nn.Module | None = None,
+    model_config: Any | None = None,
+    comp_config: Any | None = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[Any] = None,
-    lora_rank: Optional[int] = None,
+    old_attn: Any | None = None,
+    lora_rank: int | None = None,
     **kwargs: Any,
-) -> Optional[Union[SVDCompressedAttention, nn.Module]]:
+) -> SVDCompressedAttention | nn.Module | None:
     r"""Bridge helper safely injecting SVDCompressedAttention into a transformer layer or model."""
     target = layer if layer is not None else model
     if target is None:
@@ -1095,9 +1095,9 @@ def inject_svd_compressed(
                 return None
             if "SVDCompressed" in src_attn.__class__.__name__:
                 return None
-            if hasattr(src_attn, "inner") and isinstance(getattr(src_attn, "inner"), SVDCompressedAttention):
+            if hasattr(src_attn, "inner") and isinstance(src_attn.inner, SVDCompressedAttention):
                 return None
-            if hasattr(src_attn, "_wrapped_attention") and isinstance(getattr(src_attn, "_wrapped_attention"), SVDCompressedAttention):
+            if hasattr(src_attn, "_wrapped_attention") and isinstance(src_attn._wrapped_attention, SVDCompressedAttention):
                 return None
 
         if target is not None:
@@ -1109,9 +1109,9 @@ def inject_svd_compressed(
                     return None
                 if "SVDCompressed" in cand.__class__.__name__:
                     return None
-                if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), SVDCompressedAttention):
+                if hasattr(cand, "inner") and isinstance(cand.inner, SVDCompressedAttention):
                     return None
-                if hasattr(cand, "_wrapped_attention") and isinstance(getattr(cand, "_wrapped_attention"), SVDCompressedAttention):
+                if hasattr(cand, "_wrapped_attention") and isinstance(cand._wrapped_attention, SVDCompressedAttention):
                     return None
 
         # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers

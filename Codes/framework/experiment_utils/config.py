@@ -1,7 +1,7 @@
 # framework/experiment/config.py
 import argparse
 from dataclasses import dataclass, fields
-from typing import Any, Dict, Optional
+from typing import Any
 
 import yaml
 
@@ -12,7 +12,7 @@ class ExperimentConfig:
     model_name: str = "distilbert-base-uncased"
     attn_type: str = "full"
     method: str = "baseline"
-    compressor: Optional[str] = None
+    compressor: str | None = None
     task: str = "sst2"
     max_len: int = 128
     batch_size: int = 32
@@ -22,10 +22,10 @@ class ExperimentConfig:
     seed: int = 42
     output_dir: str = "./experiments"
     log_dir: str = "./logs"
-    exp_name: Optional[str] = None
+    exp_name: str | None = None
     trainer_type: str = "hf"  # "hf", "unsloth", "custom_loop", "rl"
     attn_implementation: str = "full"  # actual attention key from ATTENTION_REGISTRY
-    compressor: Optional[str] = None  # compressor key from COMPRESSOR_REGISTRY
+    compressor: str | None = None  # compressor key from COMPRESSOR_REGISTRY
     method: str = "baseline"  # method key from METHOD_REGISTRY
 
     # Method‑specific
@@ -39,7 +39,7 @@ class ExperimentConfig:
     dislora_beta: float = 0.5
     dislora_capacity_factor: float = 1.0
     log_base_dir: str = "./logs"  # <-- add this line (default same as log_dir)
-    run_id: Optional[str] = None  # <-- add this
+    run_id: str | None = None  # <-- add this
 
     fisher_num_batches: int = 20
     fisher_sample_size: int = 200
@@ -49,7 +49,7 @@ class ExperimentConfig:
     fisher_scale_max: float = 2.0
     use_lion: bool = False
     gradient_checkpointing: bool = False
-    early_stopping_patience: Optional[int] = None
+    early_stopping_patience: int | None = None
     max_grad_norm: float = 1.0
     num_seeds: int = 1
 
@@ -61,18 +61,18 @@ class ExperimentConfig:
     k_late: int = 12
     use_gate: bool = True
     progressive: bool = True
-    config: Optional[str] = None  # for YAML file path
-    glue_base_path: Optional[str] = None  # path to local GLUE parquet files
+    config: str | None = None  # for YAML file path
+    glue_base_path: str | None = None  # path to local GLUE parquet files
     compression_rank: int = 64  # rank for SVD compression
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """To dict."""
         return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
 
 
-def load_yaml_config(path: str) -> Dict[str, Any]:
+def load_yaml_config(path: str) -> dict[str, Any]:
     """Load yaml config from disk or config."""
-    with open(path, "r") as f:
+    with open(path) as f:
         return yaml.safe_load(f)
 
 

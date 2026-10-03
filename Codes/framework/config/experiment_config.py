@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import Dict, List
 
 
 @dataclass
@@ -13,11 +12,11 @@ class DatasetConfig:
 
 @dataclass
 class ExperimentConfig:
-    base_models: Dict[str, str] = field(
+    base_models: dict[str, str] = field(
         default_factory=lambda: {"bert": "bert-base-uncased"}
     )
-    svd_ranks: List[int] = field(default_factory=lambda: [8, 16, 32])
-    datasets: List[DatasetConfig] = field(default_factory=list)
+    svd_ranks: list[int] = field(default_factory=lambda: [8, 16, 32])
+    datasets: list[DatasetConfig] = field(default_factory=list)
     min_samples: int = 10
     max_samples: int = 200
     batch_size: int = 4
@@ -27,7 +26,7 @@ class ExperimentConfig:
     val_split: float = 0.2
     seed: int = 42
     gradient_accumulation_steps: int = 1
-    
+
     # Advanced Training & Linear-Time Scalability Options
     optimizer_type: str = "adamw"           # Options: adamw, sgd, adafactor
     lr_scheduler_type: str = "linear"       # Options: linear, cosine, cosine_with_restarts
@@ -41,6 +40,6 @@ class ExperimentConfig:
     output_dir: str = "./results"
     plots_dir: str = "./plots/comprehensive"
     log_dir: str = "./logs"
-    selected_models: List[str] = field(default_factory=list)
-    selected_datasets: List[str] = field(default_factory=list)
-    selected_ranks: List[int] = field(default_factory=list)
+    selected_models: list[str] = field(default_factory=list)
+    selected_datasets: list[str] = field(default_factory=list)
+    selected_ranks: list[int] = field(default_factory=list)

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -36,8 +36,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
     if cos.dim() == 2:
@@ -113,7 +113,7 @@ class HeadRoPE(nn.Module):
 # Decoder detection
 # ===========================================================================
 
-def _detect_decoder(config: Any, is_decoder: Optional[bool], old_attn: Optional[nn.Module]) -> bool:
+def _detect_decoder(config: Any, is_decoder: bool | None, old_attn: nn.Module | None) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)
     if config is not None:
@@ -136,7 +136,7 @@ def _detect_decoder(config: Any, is_decoder: Optional[bool], old_attn: Optional[
     return False
 
 
-def _uses_rope(config: Any, old_attn: Optional[nn.Module]) -> bool:
+def _uses_rope(config: Any, old_attn: nn.Module | None) -> bool:
     """Return True if the model expects RoPE (i.e., is a decoder / LLaMA-like)."""
     if config is not None:
         mt = str(getattr(config, "model_type", "")).lower()
@@ -164,8 +164,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -236,13 +236,13 @@ class HymbaTransXBlock(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = 64,
-        num_heads: Optional[int] = None,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
-        comp_config: Optional[Any] = None,
-        is_decoder: Optional[bool] = None,
+        config: Any | None = None,
+        rank: int | None = 64,
+        num_heads: int | None = None,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
+        comp_config: Any | None = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
@@ -286,7 +286,7 @@ class HymbaTransXBlock(BaseAttention):
         self.num_kv_heads = int(cfg_kv) if cfg_kv is not None else self.num_heads
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
 
-        cfg_head_dim = getattr(config, "head_dim", kwargs.get("head_dim", None)) if config else kwargs.get("head_dim", None)
+        cfg_head_dim = getattr(config, "head_dim", kwargs.get("head_dim")) if config else kwargs.get("head_dim")
         if cfg_head_dim is None and source_attn is not None:
             for attr in ("q_proj", "query", "q_lin", "W_q1"):
                 mod = getattr(source_attn, attr, None)
@@ -401,19 +401,15 @@ class HymbaTransXBlock(BaseAttention):
         has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         if (hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")):
             self.is_nested_encoder = False
-        elif (hasattr(src, "self") and hasattr(getattr(src, "self"), "query")
-              and hasattr(src, "output") and hasattr(getattr(src, "output"), "dense")):
-            self.is_nested_encoder = True
-        elif cls_name in ("BertSelfAttention", "RobertaSelfAttention",
+        elif (hasattr(src, "self") and hasattr(src.self, "query")
+              and hasattr(src, "output") and hasattr(src.output, "dense")) or cls_name in ("BertSelfAttention", "RobertaSelfAttention",
                           "XLMRobertaSelfAttention", "ElectraSelfAttention",
-                          "DebertaSelfAttention"):
-            self.is_nested_encoder = True
-        elif cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower() and not has_out_lin:
+                          "DebertaSelfAttention") or cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower() and not has_out_lin:
             self.is_nested_encoder = True
         else:
             self.is_nested_encoder = False
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -449,14 +445,14 @@ class HymbaTransXBlock(BaseAttention):
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
         # 2. RoBERTa / BERT nested
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            s = getattr(src, "self")
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
+            s = src.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 mod = getattr(s, sub, None)
                 if mod is not None and hasattr(mod, "weight"):
                     extracted[key] = (mod.weight.data.clone(),
                                       mod.bias.data.clone() if mod.bias is not None else None)
-            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
                 extracted["o"] = (out_mod.weight.data.clone(),
                                   out_mod.bias.data.clone() if out_mod.bias is not None else None)
@@ -551,9 +547,9 @@ class HymbaTransXBlock(BaseAttention):
     # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(
-        attention_mask: Optional[torch.Tensor],
+        attention_mask: torch.Tensor | None,
         B: int, N_kv: int, device: torch.device,
-    ) -> Optional[torch.Tensor]:
+    ) -> torch.Tensor | None:
         if attention_mask is None:
             return None
         if attention_mask.dim() == 2:
@@ -578,23 +574,23 @@ class HymbaTransXBlock(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         layer_idx: int = 0,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if encoder_hidden_states is not None:
             raise NotImplementedError("HymbaTransXBlock does not support cross-attention.")
 
-        x = hidden_states if hidden_states is not None else kwargs.get("query", kwargs.get("x", None))
+        x = hidden_states if hidden_states is not None else kwargs.get("query", kwargs.get("x"))
         if x is None and len(args) > 0:
             x = args[0]
         if x is None:
@@ -761,10 +757,10 @@ def inject_hymba_transx(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
-) -> Optional[Any]:
+) -> Any | None:
     if _depth > 8:
         logger.warning("inject_hymba_transx: max recursion depth exceeded, aborting.")
         return None

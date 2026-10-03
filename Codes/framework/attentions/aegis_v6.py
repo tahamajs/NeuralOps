@@ -5,8 +5,7 @@ AEGIS-Attention V6 (Final-Final Corrected).
 
 import logging
 import math
-from types import SimpleNamespace
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -90,7 +89,7 @@ class AegisConfigV3:
         self.kernel_clamp_min = kwargs.get("kernel_clamp_min", -20.0)
         self.kernel_clamp_max = kwargs.get("kernel_clamp_max", 8.0)
         self.kernel_use_float64 = kwargs.get("kernel_use_float64", False)
-        self.kernel_seed = kwargs.get("kernel_seed", None)
+        self.kernel_seed = kwargs.get("kernel_seed")
         self.fusion_gate_bias = kwargs.get("fusion_gate_bias", 1.8)
         self.is_decoder = kwargs.get("is_decoder", False)
         self.chunk_size = kwargs.get("chunk_size", 64)
@@ -123,8 +122,8 @@ class FactorisedLinear(nn.Module):
         out_features: int,
         svd_rank: int,
         lora_rank: int,
-        pretrained_weight: Optional[torch.Tensor] = None,
-        pretrained_bias: Optional[torch.Tensor] = None,
+        pretrained_weight: torch.Tensor | None = None,
+        pretrained_bias: torch.Tensor | None = None,
     ):
         super().__init__()
 
@@ -177,7 +176,7 @@ class FactorisedLinear(nn.Module):
     def decompose_from_weight(
         self,
         weight: torch.Tensor,
-        bias: Optional[torch.Tensor] = None,
+        bias: torch.Tensor | None = None,
     ) -> None:
         with torch.no_grad():
             W = weight.float()
@@ -245,11 +244,11 @@ class FactorisedLinear(nn.Module):
 
     # Backward-compat aliases for code that still refers to A / B.
     @property
-    def A(self) -> Optional[nn.Parameter]:
+    def A(self) -> nn.Parameter | None:
         return self.lora_B
 
     @property
-    def B(self) -> Optional[nn.Parameter]:
+    def B(self) -> nn.Parameter | None:
         return self.lora_A
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -268,7 +267,7 @@ class FactorisedLinear(nn.Module):
 
         return out.to(orig_dtype)
 
-    
+
 # ===========================================================================
 # Kernel feature map
 # ===========================================================================
@@ -521,7 +520,7 @@ class AegisAttentionV3(BaseAttention):
 
     def _prepare_valid_mask(
         self,
-        attention_mask: Optional[torch.Tensor],
+        attention_mask: torch.Tensor | None,
         B: int,
         N_q: int,
         N_kv: int,
@@ -674,7 +673,7 @@ class AegisAttentionV3(BaseAttention):
         # Causal linear attention  — FIX-C3, FIX-C4
         # ------------------------------------------------------------------
     def _causal_linear_attention(self, Q, K, V, valid, q_gate, in_gate,
-                                chunk_size: Optional[int] = None):
+                                chunk_size: int | None = None):
         """
         Chunked causal linear attention.
 
@@ -707,7 +706,7 @@ class AegisAttentionV3(BaseAttention):
         V = V * valid_k
 
         # ---- Case: decode with cache (N != N_k) ----
-        if N != N_k:
+        if N_k != N:
             # FIX: For single-token decode (N==1), non-causal over full history is EXACT.
             # For multi-token decode, fall back to exact sliding-window attention
             # rather than the inaccurate non-causal approximation.
@@ -876,11 +875,9 @@ class AegisAttentionV3(BaseAttention):
         if hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj"):
             self.is_nested_encoder = False
         elif (hasattr(old_attn, "self")
-              and hasattr(getattr(old_attn, "self"), "query")
+              and hasattr(old_attn.self, "query")
               and hasattr(old_attn, "output")
-              and hasattr(getattr(old_attn, "output"), "dense")):
-            self.is_nested_encoder = True
-        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
+              and hasattr(old_attn.output, "dense")) or (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
                            "XLMRobertaSelfAttention", "ElectraSelfAttention")
               or "RobertaSelfAttention" in str(type(old_attn))
               or "BertSelfAttention" in str(type(old_attn))
@@ -933,14 +930,14 @@ class AegisAttentionV3(BaseAttention):
                 extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
         if hasattr(old_attn, "self") and any(extracted[k][0] is None for k in ("q", "k", "v")):
-            s = getattr(old_attn, "self")
+            s = old_attn.self
             if hasattr(s, "query"): extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
             if hasattr(s, "key"):   extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
             if hasattr(s, "value"): extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
         if self.is_nested_encoder:
             extracted["o"] = (None, None)
-        elif (hasattr(old_attn, "output") and hasattr(getattr(old_attn, "output"), "dense")
+        elif (hasattr(old_attn, "output") and hasattr(old_attn.output, "dense")
               and extracted["o"][0] is None):
             dense = old_attn.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
@@ -1012,7 +1009,7 @@ def inject_aegis_v6(layer=None, model=None, model_config=None, comp_config=None,
         return None
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

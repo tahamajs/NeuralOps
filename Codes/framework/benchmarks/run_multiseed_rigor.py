@@ -15,13 +15,11 @@ from __future__ import annotations
 import argparse
 import csv
 import logging
-import os
 import subprocess
 import sys
 import time
 import statistics
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 logging.basicConfig(
     level=logging.INFO,
@@ -132,12 +130,12 @@ def parse_args():
     return parser.parse_args()
 
 
-def is_run_completed(summary_csv_path: Path) -> Tuple[bool, Optional[dict]]:
+def is_run_completed(summary_csv_path: Path) -> tuple[bool, dict | None]:
     """Check if a run has already completed with a valid PASS status."""
     if not summary_csv_path.exists():
         return False, None
     try:
-        with open(summary_csv_path, "r", encoding="utf-8", newline="") as f:
+        with open(summary_csv_path, encoding="utf-8", newline="") as f:
             reader = csv.DictReader(f)
             row = next(reader, None)
             if row is None:
@@ -215,9 +213,9 @@ def run_single_module_seed(
 
 
 def aggregate_results(
-    models: List[str],
-    all_modules: List[str],
-    seeds: List[int],
+    models: list[str],
+    all_modules: list[str],
+    seeds: list[int],
     output_root: Path,
 ) -> None:
     """Aggregate all multi-seed runs into summary CSV and markdown report."""
@@ -303,9 +301,9 @@ def aggregate_results(
     md_lines = [
         "# Multi-Seed Statistical Rigor Evaluation Report",
         "",
-        f"- **Evaluation Dataset**: SST-2 validation set (N=872)",
+        "- **Evaluation Dataset**: SST-2 validation set (N=872)",
         f"- **Seeds**: `{seeds}`",
-        f"- **Recovery Fine-Tuning**: 50 steps (AdamW, FP16)",
+        "- **Recovery Fine-Tuning**: 50 steps (AdamW, FP16)",
         f"- **Generated Timestamp**: `{time.strftime('%Y-%m-%d %H:%M:%S')}`",
         "",
         "## Summary Table (Mean ± Std Across Deterministic Seeds)",

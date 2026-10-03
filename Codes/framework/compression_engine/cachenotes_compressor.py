@@ -19,7 +19,7 @@ import hashlib
 import logging
 import math
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -29,7 +29,6 @@ from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import (
-    get_calibration_tensors,
     recalibrate_layernorms,
 )
 from framework.utils.compat import should_compress_linear
@@ -62,11 +61,11 @@ class CacheNotesLoRALinear(nn.Module):
         in_features: int,
         out_features: int,
         weight: torch.Tensor,
-        bias: Optional[torch.Tensor] = None,
+        bias: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -222,7 +221,7 @@ class CPTGenerator(nn.Module):
             indices.append(h % (self.vocab_size - 1) + 1)
         return torch.tensor(indices, dtype=torch.long, device=device)
 
-    def forward(self, task: str, d: int, device: Optional[torch.device] = None) -> torch.Tensor:
+    def forward(self, task: str, d: int, device: torch.device | None = None) -> torch.Tensor:
         """
         Generate a per-feature importance modulation vector of size d in [0.1, 2.0].
         """
@@ -258,15 +257,15 @@ class CacheNotesKVCache:
         task_type: str = "qa",
         keep_ratio: float = 0.3,
         num_sinks: int = 4,
-        cpt_generator: Optional[CPTGenerator] = None,
+        cpt_generator: CPTGenerator | None = None,
     ) -> None:
         self.max_cache_len = int(max_cache_len)
         self.task_type = task_type
         self.keep_ratio = float(keep_ratio)
         self.num_sinks = int(num_sinks)
         self.cpt_generator = cpt_generator
-        self.k_cache: Optional[torch.Tensor] = None
-        self.v_cache: Optional[torch.Tensor] = None
+        self.k_cache: torch.Tensor | None = None
+        self.v_cache: torch.Tensor | None = None
 
     def reset(self) -> None:
         """Clear cache state to prevent memory leaks across sequences."""
@@ -279,7 +278,7 @@ class CacheNotesKVCache:
         new_k: torch.Tensor,
         new_v: torch.Tensor,
         is_new_sequence: bool = False,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Append new KV tokens and apply task-aware retention when exceeding capacity.
         Shapes: (B, H, N, D).
@@ -364,7 +363,7 @@ class CacheNotesCompressor(BaseCompressor):
         self,
         model: nn.Module,
         task_type: str = "qa",
-        task_description: Optional[str] = None,
+        task_description: str | None = None,
         use_learned_cpt: bool = True,
         keep_ratio: float = 0.5,
         max_error: float = 0.35,
@@ -375,15 +374,15 @@ class CacheNotesCompressor(BaseCompressor):
         lora_alpha: float = 1.0,
         skip_attention_qkv: bool = True,
         recalibrate_ln: bool = True,
-        tokenizer: Optional[Any] = None,
-        calibration_loader: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        target_modules: Optional[List[str]] = None,
+        tokenizer: Any | None = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
+        target_modules: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="cachenotes", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
 
         task_type = str(_cfg_get(cfg, "cachenotes_task", _cfg_get(cfg, "task_type", task_type)))
         task_description = str(
@@ -429,8 +428,8 @@ class CacheNotesCompressor(BaseCompressor):
         self.target_modules = target_modules
 
         self.tokenizer = tokenizer or kwargs.get("tokenizer", getattr(model, "tokenizer", None))
-        self.calibration_loader = calibration_loader or kwargs.get("calibration_loader", None)
-        self.calibration_texts = calibration_texts or kwargs.get("calibration_texts", None)
+        self.calibration_loader = calibration_loader or kwargs.get("calibration_loader")
+        self.calibration_texts = calibration_texts or kwargs.get("calibration_texts")
         self.target_device = (
             torch.device(device)
             if device is not None
@@ -442,12 +441,12 @@ class CacheNotesCompressor(BaseCompressor):
         self.cpt_generator = CPTGenerator().to(self.target_device)
         self.cpt_generator_trained = False
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.actual_ranks: Dict[str, int] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.actual_ranks: dict[str, int] = {}
+        self.stats: dict[str, Any] = {}
 
     def get_importance(self, d: int, device: torch.device) -> torch.Tensor:
         """
@@ -462,8 +461,8 @@ class CacheNotesCompressor(BaseCompressor):
 
     def train_cpt_generator(
         self,
-        task_descriptions: Optional[List[str]] = None,
-        sample_layers: Optional[List[Tuple[str, nn.Module]]] = None,
+        task_descriptions: list[str] | None = None,
+        sample_layers: list[tuple[str, nn.Module]] | None = None,
         epochs: int = 5,
         lr: float = 1e-4,
     ) -> float:
@@ -539,14 +538,14 @@ class CacheNotesCompressor(BaseCompressor):
         logger.info("CPT generator trained successfully over %d steps with avg loss %.4f", steps, avg_loss)
         return avg_loss
 
-    def save_cpt_generator(self, path: Union[str, Path]) -> None:
+    def save_cpt_generator(self, path: str | Path) -> None:
         """Save CPT generator state dict to file."""
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         torch.save(self.cpt_generator.state_dict(), path)
         logger.info("Saved CPT generator checkpoint to %s", path)
 
-    def load_cpt_generator(self, path: Union[str, Path]) -> bool:
+    def load_cpt_generator(self, path: str | Path) -> bool:
         """Load CPT generator state dict from file."""
         path = Path(path)
         if path.exists():
@@ -636,7 +635,7 @@ class CacheNotesCompressor(BaseCompressor):
             return any(t in name for t in self.target_modules)
         return True
 
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """Compress linear layers using task-guided CPT-weighted low-rank SVD."""
         # Auto-train learnable CPT generator if active and untrained
         if self.use_learned_cpt and not self.cpt_generator_trained:

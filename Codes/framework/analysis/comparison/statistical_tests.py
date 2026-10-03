@@ -24,7 +24,7 @@ References:
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -88,7 +88,7 @@ def compute_aligned_ranks(scores_matrix: np.ndarray) -> np.ndarray:
 # ═════════════════════════════════════════════════════════════════════
 
 
-def friedman_test(scores_matrix: np.ndarray) -> Dict[str, float]:
+def friedman_test(scores_matrix: np.ndarray) -> dict[str, float]:
     """
     Friedman test – the classic omnibus test for comparing k algorithms
     over N datasets.  H0: all algorithms perform equivalently.
@@ -118,7 +118,7 @@ def friedman_test(scores_matrix: np.ndarray) -> Dict[str, float]:
     }
 
 
-def friedman_aligned_ranks_test(scores_matrix: np.ndarray) -> Dict[str, float]:
+def friedman_aligned_ranks_test(scores_matrix: np.ndarray) -> dict[str, float]:
     """
     Friedman Aligned Ranks test – more powerful than the standard Friedman test.
 
@@ -149,7 +149,7 @@ def friedman_aligned_ranks_test(scores_matrix: np.ndarray) -> Dict[str, float]:
     }
 
 
-def quade_test(scores_matrix: np.ndarray) -> Dict[str, float]:
+def quade_test(scores_matrix: np.ndarray) -> dict[str, float]:
     """
     Quade test – weighted ranking test that gives more weight to datasets
     where larger differences between algorithms exist.
@@ -234,8 +234,8 @@ def nemenyi_posthoc(
 
 
 def bonferroni_dunn_posthoc(
-    p_values: Optional[np.ndarray] = None, k: int = 0, n: int = 0, alpha: float = 0.05
-) -> Dict[str, Any]:
+    p_values: np.ndarray | None = None, k: int = 0, n: int = 0, alpha: float = 0.05
+) -> dict[str, Any]:
     """
     Bonferroni-Dunn post-hoc: control method vs. all others.
 
@@ -246,7 +246,7 @@ def bonferroni_dunn_posthoc(
     return {"adjusted_alpha": alpha / (k - 1), "method": "Bonferroni-Dunn"}
 
 
-def holm_correction(p_values: Union[List[float], np.ndarray]) -> np.ndarray:
+def holm_correction(p_values: list[float] | np.ndarray) -> np.ndarray:
     """
     Holm step-down correction – controls family-wise error rate.
     More powerful than Bonferroni.
@@ -264,7 +264,7 @@ def holm_correction(p_values: Union[List[float], np.ndarray]) -> np.ndarray:
     return adjusted
 
 
-def hochberg_correction(p_values: Union[List[float], np.ndarray]) -> np.ndarray:
+def hochberg_correction(p_values: list[float] | np.ndarray) -> np.ndarray:
     """
     Hochberg step‑up correction – generally more powerful than Holm.
 
@@ -281,7 +281,7 @@ def hochberg_correction(p_values: Union[List[float], np.ndarray]) -> np.ndarray:
     return adjusted
 
 
-def finner_correction(p_values: Union[List[float], np.ndarray]) -> np.ndarray:
+def finner_correction(p_values: list[float] | np.ndarray) -> np.ndarray:
     """
     Finner step‑down correction – most powerful but less common.
 
@@ -298,7 +298,7 @@ def finner_correction(p_values: Union[List[float], np.ndarray]) -> np.ndarray:
     return adjusted
 
 
-def hommel_correction(p_values: Union[List[float], np.ndarray]) -> np.ndarray:
+def hommel_correction(p_values: list[float] | np.ndarray) -> np.ndarray:
     """
     Hommel correction – stagewise rejective procedure.
 
@@ -318,7 +318,7 @@ def hommel_correction(p_values: Union[List[float], np.ndarray]) -> np.ndarray:
 
 
 def holland_copenhaver_correction(
-    p_values: Union[List[float], np.ndarray],
+    p_values: list[float] | np.ndarray,
 ) -> np.ndarray:
     """
     Holland & Copenhaver correction – improved sequentially rejective Bonferroni.
@@ -394,7 +394,7 @@ def bergmann_hommel_posthoc(
 
 def wilcoxon_signed_rank_test(
     scores_a: np.ndarray, scores_b: np.ndarray
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Wilcoxon signed-rank test – the recommended test for comparing
     two classifiers over multiple datasets (Demšar 2006).
@@ -415,7 +415,7 @@ def wilcoxon_signed_rank_test(
     }
 
 
-def sign_test(scores_a: np.ndarray, scores_b: np.ndarray) -> Dict[str, Any]:
+def sign_test(scores_a: np.ndarray, scores_b: np.ndarray) -> dict[str, Any]:
     """
     Simple sign test – counts wins/losses with binomial distribution.
     Less powerful than Wilcoxon but assumption‑free.
@@ -438,7 +438,7 @@ def sign_test(scores_a: np.ndarray, scores_b: np.ndarray) -> Dict[str, Any]:
 
 def mcnemar_test(
     y_true: np.ndarray, pred_a: np.ndarray, pred_b: np.ndarray
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     McNemar's test for comparing two classifiers on a single test set.
     Uses a 2x2 contingency table of correct/incorrect predictions.
@@ -474,7 +474,7 @@ def mcnemar_test(
 # ═════════════════════════════════════════════════════════════════════
 
 
-def cohens_d(a: np.ndarray, b: np.ndarray, paired: bool = True) -> Dict[str, float]:
+def cohens_d(a: np.ndarray, b: np.ndarray, paired: bool = True) -> dict[str, float]:
     """
     Cohen's d – standardised mean difference.
 
@@ -501,7 +501,7 @@ def cohens_d(a: np.ndarray, b: np.ndarray, paired: bool = True) -> Dict[str, flo
     return {"cohens_d": round(d, 4), "magnitude": magnitude}
 
 
-def hedges_g(a: np.ndarray, b: np.ndarray, paired: bool = True) -> Dict[str, float]:
+def hedges_g(a: np.ndarray, b: np.ndarray, paired: bool = True) -> dict[str, float]:
     """
     Hedges' g – bias‑corrected Cohen's d for small samples.
 
@@ -520,7 +520,7 @@ def hedges_g(a: np.ndarray, b: np.ndarray, paired: bool = True) -> Dict[str, flo
     return {"hedges_g": round(g, 4), "magnitude": magnitude}
 
 
-def cliffs_delta(a: np.ndarray, b: np.ndarray) -> Dict[str, float]:
+def cliffs_delta(a: np.ndarray, b: np.ndarray) -> dict[str, float]:
     """
     Cliff's delta – non‑parametric effect size for ordinal data.
     Measures the probability that a randomly selected value from group A
@@ -546,7 +546,7 @@ def cliffs_delta(a: np.ndarray, b: np.ndarray) -> Dict[str, float]:
     return {"cliffs_delta": round(delta, 4), "magnitude": magnitude}
 
 
-def vargha_delaney_a12(a: np.ndarray, b: np.ndarray) -> Dict[str, float]:
+def vargha_delaney_a12(a: np.ndarray, b: np.ndarray) -> dict[str, float]:
     """
     Vargha-Delaney's A12 – stochastic superiority measure.
     A12 = P(X > Y) + 0.5 * P(X = Y)
@@ -572,7 +572,7 @@ def vargha_delaney_a12(a: np.ndarray, b: np.ndarray) -> Dict[str, float]:
     return {"vargha_delaney_A12": round(a12, 4), "magnitude": magnitude}
 
 
-def glass_rank_biserial(a: np.ndarray, b: np.ndarray) -> Dict[str, float]:
+def glass_rank_biserial(a: np.ndarray, b: np.ndarray) -> dict[str, float]:
     """
     Glass rank-biserial correlation – effect size for Mann‑Whitney / Wilcoxon.
     r_rb = 2 * (A12 - 0.5)
@@ -596,7 +596,7 @@ def bayesian_correlated_ttest(
     runs: int = 1,
     nsamples: int = 50000,
     seed: int = 42,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Bayesian correlated t‑test for k‑fold cross‑validation results.
 
@@ -646,7 +646,7 @@ def bayesian_signed_rank_test(
     rope: float = 0.01,
     nsamples: int = 50000,
     seed: int = 42,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Bayesian signed‑rank test – Bayesian equivalent of Wilcoxon.
 
@@ -706,10 +706,10 @@ def bayesian_signed_rank_test(
 
 def run_full_statistical_analysis(
     scores_matrix: np.ndarray,
-    algorithm_names: Optional[List[str]] = None,
+    algorithm_names: list[str] | None = None,
     alpha: float = 0.05,
     generate_posthoc: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Run the complete statistical pipeline recommended by Demšar (2006)
     and extended by García & Herrera (2008, 2010):

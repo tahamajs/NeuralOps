@@ -9,8 +9,8 @@ all 32+ layer activations simultaneously in VRAM, eliminating streaming OOM cras
 from __future__ import annotations
 
 import gc
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple, Union
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 import torch
@@ -26,17 +26,17 @@ class StreamingLayerAccumulator:
     """
     total_tokens: int = 0
     total_batches: int = 0
-    running_mean_vector: Optional[np.ndarray] = None
+    running_mean_vector: np.ndarray | None = None
     max_activation: float = 0.0
     sum_outlier_count_6sigma: int = 0
     total_elements: int = 0
-    
+
     # Online moments for kurtosis and variance
     sum_m2: float = 0.0
     sum_m4: float = 0.0
-    
+
     # Covariance sketch for effective rank (subsampled rank estimation)
-    cov_matrix: Optional[np.ndarray] = None
+    cov_matrix: np.ndarray | None = None
     cov_samples: int = 0
 
     def update(self, act_tensor: torch.Tensor) -> None:
@@ -47,7 +47,7 @@ class StreamingLayerAccumulator:
         # FIX: Compute outlier and spectral metrics dynamically per layer and immediately free activations
         with torch.no_grad():
             act_f32 = act_tensor.detach().float()
-            
+
             # Flatten to [N, D]
             if act_f32.ndim == 3:
                 b, s, d = act_f32.shape
@@ -86,7 +86,7 @@ class StreamingLayerAccumulator:
             centered = act_cpu - mu
             m2 = float(np.mean(centered ** 2))
             m4 = float(np.mean(centered ** 4))
-            
+
             self.sum_m2 += m2 * global_elem
             self.sum_m4 += m4 * global_elem
 
@@ -155,15 +155,15 @@ class LayerwiseAnalyzer:
         self,
         model: nn.Module,
         tokenizer: Any,
-        device: Optional[Union[str, torch.device]] = None,
+        device: str | torch.device | None = None,
     ) -> None:
         self.model = model
         self.tokenizer = tokenizer
         self.device = str(device) if device is not None else self._get_device()
         self.model.to(self.device)
         self.model.eval()
-        self.layer_accumulators: List[StreamingLayerAccumulator] = []
-        self.hooks: List[torch.utils.hooks.RemovableHandle] = []
+        self.layer_accumulators: list[StreamingLayerAccumulator] = []
+        self.hooks: list[torch.utils.hooks.RemovableHandle] = []
 
     def _get_device(self) -> str:
         """Detect best available compute device."""
@@ -173,7 +173,7 @@ class LayerwiseAnalyzer:
             return "mps"
         return "cpu"
 
-    def _find_transformer_layers(self) -> List[Tuple[str, nn.Module]]:
+    def _find_transformer_layers(self) -> list[tuple[str, nn.Module]]:
         """Identify candidate Transformer / Encoder / Decoder block modules."""
         target_layers = []
         for name, module in self.model.named_modules():
@@ -196,7 +196,7 @@ class LayerwiseAnalyzer:
                 parts = name.split(".")
                 if parts[-1].isdigit():
                     target_layers.append((name, module))
-        
+
         # Fallback: if no digit-indexed layers found, look for any layer module
         if not target_layers:
             for name, module in self.model.named_modules():
@@ -210,7 +210,7 @@ class LayerwiseAnalyzer:
         """Registers streaming forward hooks on all model transformer layers."""
         self.remove_hooks()
         layers = self._find_transformer_layers()
-        
+
         num_layers = len(layers)
         self.layer_accumulators = [StreamingLayerAccumulator() for _ in range(num_layers)]
 
@@ -238,7 +238,7 @@ class LayerwiseAnalyzer:
             torch.cuda.empty_cache()
         gc.collect()
 
-    def analyze(self, texts: List[str], batch_size: int = 8) -> Dict[str, Any]:
+    def analyze(self, texts: list[str], batch_size: int = 8) -> dict[str, Any]:
         """
         Executes streaming layerwise analysis on input text corpus.
 
@@ -265,7 +265,7 @@ class LayerwiseAnalyzer:
                 inputs = {k: v.to(self.device) for k, v in encoded.items()}
                 with torch.no_grad():
                     self.model(**inputs)
-                
+
                 # Cleanup batch inputs
                 del inputs, encoded
                 if torch.cuda.is_available():
@@ -309,7 +309,7 @@ class LayerwiseAnalyzer:
         max_outliers = [acc.max_activation for acc in self.layer_accumulators]
         outlier_ratios = [acc.compute_outlier_ratio() for acc in self.layer_accumulators]
         kurtosis_scores = [acc.compute_kurtosis() for acc in self.layer_accumulators]
-        
+
         # Estimate intrinsic dimension using mean vectors
         stacked_means = np.stack(mean_vectors) if num_layers > 1 else np.zeros((1, 128))
         intrinsic_dims = [
@@ -345,9 +345,9 @@ def estimate_intrinsic_dimension(hidden_states: np.ndarray, k: int = 5) -> float
     if hidden_states.ndim == 1:
         return 1.0
     N, D = hidden_states.shape
-    if N < k + 1:
+    if k + 1 > N:
         return float(min(N, D))
-    
+
     from scipy.spatial.distance import pdist, squareform
 
     try:
@@ -357,7 +357,7 @@ def estimate_intrinsic_dimension(hidden_states: np.ndarray, k: int = 5) -> float
         valid = kth_dists > 1e-10
         if not valid.any():
             return float(D)
-        
+
         # Maximum likelihood estimation of intrinsic dimension
         log_ratios = np.log(kth_dists[valid] / (kth_dists[valid][:, None] + 1e-12))
         id_estimate = -1.0 / (np.mean(log_ratios) + 1e-12)

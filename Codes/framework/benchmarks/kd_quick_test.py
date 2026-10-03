@@ -25,12 +25,11 @@ import hashlib
 import json
 import logging
 import math
-import os
 import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import torch
@@ -56,7 +55,6 @@ for p in [str(PROJECT_ROOT), str(PROJECT_ROOT / "Codes")]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from framework.core.registry import ATTENTION_REGISTRY
 from framework.eval_all_models_datasets import apply_module_to_model
 
 LOG = logging.getLogger("MambaKD")
@@ -65,7 +63,7 @@ LOG = logging.getLogger("MambaKD")
 # -----------------------------------------------------------------------------
 # Logging Setup
 # -----------------------------------------------------------------------------
-def setup_logging(log_file: Optional[str] = None):
+def setup_logging(log_file: str | None = None):
     root = logging.getLogger()
     root.setLevel(logging.INFO)
     for h in list(root.handlers):
@@ -102,7 +100,7 @@ def make_run_dir(module_name: str, args: argparse.Namespace) -> Path:
     return run_dir
 
 
-def update_registry(module_name: str, run_dir: Path, results: List[Dict[str, Any]], args: argparse.Namespace, baseline_ppl: float):
+def update_registry(module_name: str, run_dir: Path, results: list[dict[str, Any]], args: argparse.Namespace, baseline_ppl: float):
     """Maintain a master JSON registry at results/kd_runs/registry.json."""
     try:
         registry_path = Path("results") / "kd_runs" / "registry.json"
@@ -163,7 +161,7 @@ def build_train_chunks(
     max_train_texts: int = 5000,
     seq_len: int = 256,
 ) -> torch.Tensor:
-    texts: List[str] = []
+    texts: list[str] = []
     for item in train_dataset["text"]:
         t = item.strip()
         if len(t) > 20:
@@ -174,7 +172,7 @@ def build_train_chunks(
     if not texts:
         texts = ["The quick brown fox jumps over the lazy dog."] * 512
 
-    all_ids: List[int] = []
+    all_ids: list[int] = []
     eos_id = tokenizer.eos_token_id or tokenizer.pad_token_id or 0
     for t in texts:
         ids = tokenizer(t, add_special_tokens=False).input_ids
@@ -295,9 +293,9 @@ def compute_kl_divergence(
 
 
 def compute_hidden_mse(
-    student_hidden_states: Tuple[torch.Tensor, ...],
-    teacher_hidden_states: Tuple[torch.Tensor, ...],
-    projection_adapter: Optional[HiddenProjectionAdapter] = None,
+    student_hidden_states: tuple[torch.Tensor, ...],
+    teacher_hidden_states: tuple[torch.Tensor, ...],
+    projection_adapter: HiddenProjectionAdapter | None = None,
 ) -> torch.Tensor:
     losses = []
     # Compare matching layer representations (skip index 0 = embeddings)
@@ -308,8 +306,8 @@ def compute_hidden_mse(
 
 
 def compute_attention_mse(
-    student_attentions: Optional[Tuple[torch.Tensor, ...]],
-    teacher_attentions: Optional[Tuple[torch.Tensor, ...]],
+    student_attentions: tuple[torch.Tensor, ...] | None,
+    teacher_attentions: tuple[torch.Tensor, ...] | None,
     device: str,
 ) -> torch.Tensor:
     if student_attentions is None or teacher_attentions is None:
@@ -332,7 +330,7 @@ def compute_method_d_loss(
     kl_weight: float = 0.5,
     hidden_weight: float = 0.4,
     ce_weight: float = 0.1,
-    projection_adapter: Optional[HiddenProjectionAdapter] = None,
+    projection_adapter: HiddenProjectionAdapter | None = None,
 ) -> torch.Tensor:
     # 1. Softer KL divergence with configurable temperature and warmup weight
     loss_kl = compute_kl_divergence(student_out.logits, teacher_out.logits, temperature=kl_temperature)
@@ -458,9 +456,9 @@ def set_train_scope(model, train_scope="all"):
 class CachedTeacherOutput:
     def __init__(
         self,
-        logits: Optional[torch.Tensor] = None,
-        hidden_states: Optional[Tuple[torch.Tensor, ...]] = None,
-        attentions: Optional[Tuple[torch.Tensor, ...]] = None,
+        logits: torch.Tensor | None = None,
+        hidden_states: tuple[torch.Tensor, ...] | None = None,
+        attentions: tuple[torch.Tensor, ...] | None = None,
     ):
         self.logits = logits
         self.hidden_states = hidden_states
@@ -472,7 +470,7 @@ def get_cache_hash(
     tokenizer_name: str,
     seq_len: int,
     num_chunks: int,
-    methods: List[str],
+    methods: list[str],
     include_attn: bool,
 ) -> str:
     cache_key_data = {
@@ -492,7 +490,7 @@ def is_cache_valid(
     cache_dir: Path,
     expected_chunks: int,
     expected_seq_len: int,
-    methods: List[str],
+    methods: list[str],
     include_attn: bool = False,
 ) -> bool:
     manifest_path = cache_dir / "manifest.json"
@@ -524,7 +522,7 @@ def build_teacher_cache(
     tokenizer,
     train_chunks: torch.Tensor,
     cache_dir: Path,
-    methods: List[str],
+    methods: list[str],
     device: str,
     seq_len: int,
     include_attn: bool = False,
@@ -552,12 +550,12 @@ def build_teacher_cache(
     teacher.to(device)
 
     eval_batch_size = min(8, n_chunks)
-    
+
     # Determine shapes from config to pre-allocate buffers directly (avoids torch.cat memory duplication)
     vocab_size = getattr(getattr(teacher, "config", None), "vocab_size", len(tokenizer))
     num_layers = getattr(getattr(teacher, "config", None), "n_layer", 12) + 1  # +1 for embeddings
     hidden_dim = getattr(getattr(teacher, "config", None), "n_embd", 768)
-    
+
     logits_buffer = torch.empty((n_chunks, seq_len, vocab_size), dtype=torch.float16) if need_logits else None
     hidden_buffer = torch.empty((num_layers, n_chunks, seq_len, hidden_dim), dtype=torch.float16) if need_hidden else None
     attn_buffer = None
@@ -596,7 +594,7 @@ def build_teacher_cache(
                 for l, a in enumerate(out.attentions):
                     attn_buffer[l, start_idx:end_idx] = a.detach().to(torch.float16).cpu()
 
-    manifest: Dict[str, Any] = {
+    manifest: dict[str, Any] = {
         "n_chunks": n_chunks,
         "seq_len": seq_len,
         "vocab_size": vocab_size,
@@ -655,7 +653,7 @@ def build_teacher_cache(
     return manifest_path
 
 
-def load_teacher_cache(cache_dir: Path) -> Dict[str, Any]:
+def load_teacher_cache(cache_dir: Path) -> dict[str, Any]:
     """
     Loads cached outputs. Returns a dict:
       {
@@ -671,7 +669,7 @@ def load_teacher_cache(cache_dir: Path) -> Dict[str, Any]:
         raise FileNotFoundError(f"Cache manifest not found at {manifest_path}")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
-    cache: Dict[str, Any] = {
+    cache: dict[str, Any] = {
         "manifest": manifest,
         "logits": None,
         "hidden_states": None,
@@ -712,7 +710,7 @@ def load_teacher_cache(cache_dir: Path) -> Dict[str, Any]:
 
 
 def can_use_cache_for_method(
-    cache: Optional[Dict[str, Any]],
+    cache: dict[str, Any] | None,
     method_name: str,
     include_attn: bool = False,
 ) -> bool:
@@ -743,9 +741,9 @@ def run_kd_method(
     train_chunks: torch.Tensor,
     test_dataset: Any,
     args: argparse.Namespace,
-    teacher_cache: Optional[Dict[str, Any]] = None,
+    teacher_cache: dict[str, Any] | None = None,
     baseline_ppl: float = 21.71,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     LOG.info("=" * 70)
     LOG.info(f"STARTING METHOD {method_name}")
     LOG.info("=" * 70)
@@ -879,8 +877,8 @@ def run_kd_method(
     scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
 
     # Training state
-    ppl_history: Dict[int, float] = {}
-    loss_history: List[Tuple[int, float]] = []
+    ppl_history: dict[int, float] = {}
+    loss_history: list[tuple[int, float]] = []
     current_seq_len = args.seq_len
     num_chunks = len(train_chunks)
     chunk_idx = 0
@@ -1173,7 +1171,7 @@ def run_kd_method(
 # -----------------------------------------------------------------------------
 # Comparison Table & Recommendations
 # -----------------------------------------------------------------------------
-def print_comparison_table(results: List[Dict[str, Any]]):
+def print_comparison_table(results: list[dict[str, Any]]):
     try:
         if hasattr(sys.stdout, "reconfigure"):
             sys.stdout.reconfigure(encoding="utf-8")
@@ -1353,7 +1351,7 @@ def main():
         teacher_cache = load_teacher_cache(cache_dir)
 
     # 5. Run Each Method Sequentially
-    results: List[Dict[str, Any]] = []
+    results: list[dict[str, Any]] = []
     for method in args.methods:
         try:
             res = run_kd_method(

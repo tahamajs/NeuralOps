@@ -7,7 +7,7 @@ Registered in COMPRESSOR_REGISTRY as 'cur' and 'cur_compressor'.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import math
 import torch
@@ -17,14 +17,13 @@ from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import adaptive_max_error
-from framework.utils.compat import should_compress_linear
 
 try:
     from transformers.pytorch_utils import Conv1D
 except ImportError:
     Conv1D = None
 
-def compute_leverage_scores(W: torch.Tensor, rank: int) -> Tuple[torch.Tensor, torch.Tensor]:
+def compute_leverage_scores(W: torch.Tensor, rank: int) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Compute exact statistical leverage scores from the top-k singular vectors of W.
     W: shape (out_features, in_features)
@@ -44,7 +43,7 @@ def compute_leverage_scores(W: torch.Tensor, rank: int) -> Tuple[torch.Tensor, t
     return col_scores, row_scores
 
 
-def compute_energy_scores(W: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+def compute_energy_scores(W: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Compute Frobenius energy sampling probabilities for columns and rows.
     """
@@ -106,8 +105,8 @@ class CURLinear(nn.Module):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         freeze_skeletons: bool = False,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -184,14 +183,14 @@ class CURLinear(nn.Module):
     @classmethod
     def from_linear(
         cls,
-        linear: Union[nn.Linear, Any],
+        linear: nn.Linear | Any,
         rank: int = 64,
         method: str = "leverage",
         deterministic: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         freeze_skeletons: bool = False,
-    ) -> "CURLinear":
+    ) -> CURLinear:
         """
         Construct CURLinear from existing nn.Linear or Conv1D using leverage scores or energy sampling.
         """
@@ -300,7 +299,7 @@ class CURCompressor(BaseCompressor):
 
     def __init__(
         self,
-        model: Optional[nn.Module] = None,
+        model: nn.Module | None = None,
         rank: int = 64,
         min_rank: int = 8,
         method: str = "leverage",
@@ -312,9 +311,9 @@ class CURCompressor(BaseCompressor):
         lora_alpha: float = 1.0,
         freeze_skeletons: bool = False,
         target_attention_only: bool = False,
-        target_names: Optional[List[str]] = None,
-        exclude_names: Optional[List[str]] = None,
-        cfg: Optional[Any] = None,
+        target_names: list[str] | None = None,
+        exclude_names: list[str] | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="cur", **kwargs)
@@ -349,10 +348,10 @@ class CURCompressor(BaseCompressor):
             "lm_head", "classifier", "head", "score", "pooler", "embedding", "router", "gate"
         ])
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         """Identify candidate linear/Conv1D/LoRALinear layers."""
@@ -400,7 +399,7 @@ class CURCompressor(BaseCompressor):
 
         return True
 
-    def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         """Replace eligible Linear and Conv1D layers with CURLinear."""
         if model is not None:
             self.model = model
@@ -410,7 +409,7 @@ class CURCompressor(BaseCompressor):
         self.fallback_layers = []
         self.layer_errors = {}
         self.layer_ranks = {}
-        visited_weight_ids: Set[int] = set()
+        visited_weight_ids: set[int] = set()
 
         total_orig_decomp_params = 0
         total_comp_decomp_params = 0
@@ -587,7 +586,7 @@ class CURCompressor(BaseCompressor):
         )
         return self.model, stats
 
-    def compress_linear(self, linear: Union[nn.Linear, Any]) -> CURLinear:
+    def compress_linear(self, linear: nn.Linear | Any) -> CURLinear:
         """Compress a single linear layer into CURLinear."""
         return CURLinear.from_linear(
             linear,
@@ -609,10 +608,10 @@ class CURCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("cur_compressor_factory")
 def cur_compressor_factory(
     model: nn.Module,
-    comp_config: Optional[Any] = None,
-    rank: Optional[int] = None,
+    comp_config: Any | None = None,
+    rank: int | None = None,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Factory function for CUR compression."""
     effective_rank = kwargs.pop("rank", rank or _cfg_get(comp_config, "cur_rank", _cfg_get(comp_config, "rank", 64)))
     min_rank = kwargs.pop("min_rank", _cfg_get(comp_config, "min_rank", 8))

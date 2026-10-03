@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -63,9 +63,9 @@ class SwiftSVDActivationCompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        tokenizer: Optional[Any] = None,
-        calibration_loader: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
+        tokenizer: Any | None = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
         rank: int = 64,
         max_error: float = 0.50,
         fallback_to_original: bool = True,
@@ -74,14 +74,14 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         lora_alpha: float = 1.0,
         skip_attention_qkv: bool = False,
         min_rank: int = 4,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         num_calibration_batches: int = 8,
         max_calibration_tokens: int = 32768,
         use_fp64_cross_cov: bool = True,     # SW-FIX-16
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="swift_svd_act", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = _cfg_get(cfg, "swift_svd_act_rank", _cfg_get(cfg, "rank", rank))
             tokenizer = _cfg_get(cfg, "tokenizer", tokenizer)
@@ -122,12 +122,12 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         self.num_calibration_batches = max(1, int(num_calibration_batches))
         self.max_calibration_tokens = max(1, int(max_calibration_tokens))
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.replaced_layers: List[Dict[str, Any]] = []
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.replaced_layers: list[dict[str, Any]] = []
+        self.stats: dict[str, Any] = {}
         self._compressed_params: int = 0
         self._orig_storage_bytes: int = 0
         self._comp_storage_bytes: int = 0
@@ -197,7 +197,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
     # Calibration batch normalization (SW-FIX-02)
     # ------------------------------------------------------------------
     @staticmethod
-    def _normalize_calibration_batches(calib_inputs: Any) -> List[Any]:
+    def _normalize_calibration_batches(calib_inputs: Any) -> list[Any]:
         """
         Convert whatever `get_calibration_tensors` returns into a list of batches.
 
@@ -241,19 +241,19 @@ class SwiftSVDActivationCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     # Activation collection (SW-FIX-04, SW-FIX-07, SW-FIX-16)
     # ------------------------------------------------------------------
-    def _collect_activations(self) -> Dict[str, Tuple[torch.Tensor, int]]:
+    def _collect_activations(self) -> dict[str, tuple[torch.Tensor, int]]:
         """
         Collect activations and accumulate cross-covariance C = E[Y^T X] per layer.
 
         Returns {name: (cross_cov_fp32, n_tokens)}.
         cross_cov shape: [out_features, in_features] in fp32 on CPU.
         """
-        accum: Dict[str, Dict[str, Any]] = {}
+        accum: dict[str, dict[str, Any]] = {}
         hooks = []
         compute_dtype = torch.float64 if self.use_fp64_cross_cov else torch.float32
 
         def make_hook(layer_name: str):
-            def hook(module: nn.Module, inp: Tuple[Any, ...], outp: Any) -> None:
+            def hook(module: nn.Module, inp: tuple[Any, ...], outp: Any) -> None:
                 if not inp or inp[0] is None:
                     return
                 x_in = inp[0].detach()
@@ -348,7 +348,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
             for h in hooks:
                 h.remove()
 
-        aggregated: Dict[str, Tuple[torch.Tensor, int]] = {}
+        aggregated: dict[str, tuple[torch.Tensor, int]] = {}
         for name, data in accum.items():
             n = max(1, data["n"])
             cov = (data["cov"] / n).float()
@@ -412,8 +412,8 @@ class SwiftSVDActivationCompressor(BaseCompressor):
     def compress_linear(
         self,
         layer: nn.Module,
-        act_pair: Optional[Tuple[torch.Tensor, int]] = None,
-    ) -> Optional[SVDLinear]:
+        act_pair: tuple[torch.Tensor, int] | None = None,
+    ) -> SVDLinear | None:
         base_layer = getattr(layer, "base_layer", layer)
         raw_w = base_layer.weight.data
         cls_name = base_layer.__class__.__name__.lower()
@@ -425,8 +425,8 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         r = self._select_rank(in_f, out_f)
         device = raw_w.device
         dtype = raw_w.dtype
-        A: Optional[torch.Tensor] = None
-        B: Optional[torch.Tensor] = None
+        A: torch.Tensor | None = None
+        B: torch.Tensor | None = None
 
         # ---- Activation subspace projection ----
         if act_pair is not None:
@@ -540,14 +540,14 @@ class SwiftSVDActivationCompressor(BaseCompressor):
     # Weight-sharing detection
     # ------------------------------------------------------------------
     @staticmethod
-    def _get_weight_tensor(module: nn.Module) -> Optional[torch.Tensor]:
+    def _get_weight_tensor(module: nn.Module) -> torch.Tensor | None:
         base = getattr(module, "base_layer", module)
         return getattr(base, "weight", None)
 
     # ------------------------------------------------------------------
     # Main compress
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers = []
         self.fallback_layers = []
         self.skipped_layers = []
@@ -555,9 +555,9 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         self.replaced_layers = []
         self._orig_storage_bytes = 0
         self._comp_storage_bytes = 0
-        seen_weights: Set[int] = set()
+        seen_weights: set[int] = set()
 
-        target_layers: List[Tuple[str, nn.Module]] = []
+        target_layers: list[tuple[str, nn.Module]] = []
         for name, mod in list(self.model.named_modules()):
             if not self._is_target_module(name, mod):
                 continue

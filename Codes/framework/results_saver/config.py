@@ -3,7 +3,7 @@ SaveConfig – dataclass that controls all aspects of result persistence.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -20,10 +20,10 @@ class SaveConfig:
     create_model_version: bool = True
 
     # ── Auto‑save threshold ────────────────────────────────────
-    auto_save_if_better_than: Optional[float] = None
+    auto_save_if_better_than: float | None = None
 
     # ── Plot options (passed to framework.analysis.plotting) ──
-    plot_options: Dict[str, Any] = field(
+    plot_options: dict[str, Any] = field(
         default_factory=lambda: {
             "loss_curve": True,
             "accuracy_curve": True,
@@ -45,35 +45,35 @@ class SaveConfig:
     )
 
     # ── Storage backends (local, s3, gcp, azure, hf_hub, etc.) ─
-    storage_backends: List[str] = field(default_factory=lambda: ["local"])
+    storage_backends: list[str] = field(default_factory=lambda: ["local"])
 
     # ── Git / DVC ──────────────────────────────────────────────
-    git_options: Dict[str, Any] = field(default_factory=dict)
-    dvc_options: Dict[str, Any] = field(default_factory=dict)
+    git_options: dict[str, Any] = field(default_factory=dict)
+    dvc_options: dict[str, Any] = field(default_factory=dict)
 
     # ── Experiment trackers (wandb, mlflow, neptune, etc.) ─────
-    experiment_trackers: List[str] = field(default_factory=list)
+    experiment_trackers: list[str] = field(default_factory=list)
 
     # ── Model export formats (onnx, torchscript, tflite, ...) ─
-    model_export_formats: List[str] = field(default_factory=list)
+    model_export_formats: list[str] = field(default_factory=list)
 
     # ── Model registries (hf_hub, oci, ...) ────────────────────
-    model_registries: List[str] = field(default_factory=list)
+    model_registries: list[str] = field(default_factory=list)
 
     # ── Metadata store (openmetadata, etc.) ────────────────────
-    metadata_store: Optional[str] = None
+    metadata_store: str | None = None
 
     # ── Docker / OCI options ───────────────────────────────────
-    docker_options: Dict[str, Any] = field(default_factory=dict)
+    docker_options: dict[str, Any] = field(default_factory=dict)
 
     # ── GitHub Release options ─────────────────────────────────
-    release_options: Dict[str, Any] = field(default_factory=dict)
+    release_options: dict[str, Any] = field(default_factory=dict)
 
     # ── Notifications (slack, email, etc.) ────────────────────
-    notification: Dict[str, Any] = field(default_factory=dict)
+    notification: dict[str, Any] = field(default_factory=dict)
 
     # ── Cloud credentials / endpoints (for S3, GCP, etc.) ─────
-    cloud_options: Dict[str, Any] = field(default_factory=dict)
+    cloud_options: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, d: Any) -> "SaveConfig":

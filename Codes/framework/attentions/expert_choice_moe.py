@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -55,8 +55,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     r"""Applies rotary position embeddings with partial-RoPE dimension slicing."""
     if cos is None or sin is None:
         return q, k
@@ -96,8 +96,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -215,7 +215,7 @@ class ExpertChoiceMoE(nn.Module):
         x_flat = x.view(-1, D)
         T = x_flat.size(0)
 
-        if D == self.d_model:
+        if self.d_model == D:
             logits = self.router(self.router_ln(x_flat))
         else:
             normed = F.layer_norm(x_flat, (D,))
@@ -265,15 +265,15 @@ class ExpertChoiceMoEAttention(BaseAttention):
     is_custom_attention: bool = True
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = 64,
+        config: Any | None = None,
+        rank: int | None = 64,
         n_experts: int = 2,
         capacity_factor: float = 1.0,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
-        comp_config: Optional[Any] = None,
-        layer_id: Optional[int] = None,
-        layer_idx: Optional[int] = None,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
+        comp_config: Any | None = None,
+        layer_id: int | None = None,
+        layer_idx: int | None = None,
         moe_init_gate: float = 0.0,
         **kwargs: Any,
     ) -> None:
@@ -320,9 +320,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
         model_type = getattr(config, "model_type", "").lower()
         is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False)))
         decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
-        if any(model_type.startswith(p) for p in decoder_prefixes):
-            is_dec = True
-        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+        if any(model_type.startswith(p) for p in decoder_prefixes) or hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
@@ -345,7 +343,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
 
         self.rotary_emb = None
-        self.comp_config: Optional[Any] = comp_config
+        self.comp_config: Any | None = comp_config
 
         if source_attn is not None:
             self.copy_weights(source_attn)
@@ -388,12 +386,10 @@ class ExpertChoiceMoEAttention(BaseAttention):
         is_nested = False
         if (
             hasattr(pretrained_attn, "self")
-            and hasattr(getattr(pretrained_attn, "self"), "query")
+            and hasattr(pretrained_attn.self, "query")
             and hasattr(pretrained_attn, "output")
-            and hasattr(getattr(pretrained_attn, "output"), "dense")
-        ):
-            is_nested = True
-        elif (
+            and hasattr(pretrained_attn.output, "dense")
+        ) or (
             cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
         ) and not has_out_lin:
@@ -403,7 +399,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
         if hasattr(pretrained_attn, "rotary_emb"):
             self.rotary_emb = pretrained_attn.rotary_emb
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -444,13 +440,13 @@ class ExpertChoiceMoEAttention(BaseAttention):
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
         # 2. RoBERTa / BERT nested self-attention
-        elif hasattr(pretrained_attn, "self") and hasattr(getattr(pretrained_attn, "self"), "query"):
-            s = getattr(pretrained_attn, "self")
+        elif hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
+            s = pretrained_attn.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
                     extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
-            if hasattr(pretrained_attn, "output") and hasattr(getattr(pretrained_attn, "output"), "dense"):
+            if hasattr(pretrained_attn, "output") and hasattr(pretrained_attn.output, "dense"):
                 out_mod = pretrained_attn.output.dense
                 extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
 
@@ -534,19 +530,19 @@ class ExpertChoiceMoEAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_ids: Optional[torch.Tensor] = None,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_ids: torch.Tensor | None = None,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, L, D = hidden_states.shape
 
         is_cross_attention = encoder_hidden_states is not None
@@ -667,12 +663,12 @@ def inject_expert_choice_moe(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
 ):
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

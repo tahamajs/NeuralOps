@@ -5,7 +5,10 @@ Called by run_quality_sweep.py via subprocess.Popen.
 Writes result JSON to --output_json path and exits with code 0 or 1.
 """
 from __future__ import annotations
-import argparse, json, sys, traceback
+import argparse
+import json
+import sys
+import traceback
 from pathlib import Path
 from datetime import datetime
 

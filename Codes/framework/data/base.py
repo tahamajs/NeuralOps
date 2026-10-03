@@ -1,7 +1,8 @@
 """
 Base data utilities: configuration, task‑aware preprocessing, DataLoader creation.
 """
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 
@@ -23,27 +24,27 @@ class TaskType(Enum):
 @dataclass
 class DataConfig:
     task_type: TaskType = TaskType.SINGLE_CLASSIFICATION
-    task_name: Optional[str] = None
+    task_name: str | None = None
     max_length: int = 128
     padding: Any = "max_length"
     truncation: bool = True
     return_tensors: str = "pt"
-    text_column: Optional[str] = None
-    text_column_1: Optional[str] = None
-    text_column_2: Optional[str] = None
-    label_column: Optional[str] = None
+    text_column: str | None = None
+    text_column_1: str | None = None
+    text_column_2: str | None = None
+    label_column: str | None = None
     batch_size: int = 16
     shuffle: bool = True
     num_workers: int = 0
     mlm_probability: float = 0.15
-    question_column: Optional[str] = None
-    context_column: Optional[str] = None
-    answer_column: Optional[str] = None
-    tokens_column: Optional[str] = None
-    tags_column: Optional[str] = None
-    custom_preprocess: Optional[Callable] = None
-    max_samples: Optional[int] = None
-    split: Optional[str] = None
+    question_column: str | None = None
+    context_column: str | None = None
+    answer_column: str | None = None
+    tokens_column: str | None = None
+    tags_column: str | None = None
+    custom_preprocess: Callable | None = None
+    max_samples: int | None = None
+    split: str | None = None
 
 
 
@@ -211,19 +212,19 @@ class ProductionDataCollator:
         self,
         pad_token_id: int = 0,
         label_pad_token_id: int = -100,
-        pad_to_multiple_of: Optional[int] = 8,
-        max_length: Optional[int] = None,
+        pad_to_multiple_of: int | None = 8,
+        max_length: int | None = None,
     ) -> None:
         self.pad_token_id = pad_token_id
         self.label_pad_token_id = label_pad_token_id
         self.pad_to_multiple_of = pad_to_multiple_of
         self.max_length = max_length
 
-    def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
+    def __call__(self, features: list[dict[str, Any]]) -> dict[str, torch.Tensor]:
         if not features:
             return {}
 
-        batch: Dict[str, Any] = {}
+        batch: dict[str, Any] = {}
         first = features[0]
 
         # Determine sequence length
@@ -315,7 +316,7 @@ def create_dataloader(dataset, tokenizer, config: DataConfig, **kwargs) -> DataL
         if col in processed.column_names
     ]
     processed.set_format(type="torch", columns=columns)
-    
+
     collate_fn = kwargs.pop("collate_fn", None)
     if collate_fn is None:
         collate_fn = ProductionDataCollator(

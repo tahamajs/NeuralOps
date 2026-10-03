@@ -9,7 +9,7 @@ Hardened for production use across diverse transformer architectures:
 """
 
 import logging
-from typing import Any, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -54,7 +54,7 @@ class MinimalMoEFallback(nn.Module):
         ])
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
 
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         router_in = self.router.in_features
         if x.shape[-1] != router_in:
             x_in = F.pad(x, (0, router_in - x.shape[-1])) if x.shape[-1] < router_in else x[..., :router_in]
@@ -80,16 +80,16 @@ class SambaMoEBlock(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        d_model: Optional[int] = None,
-        n_heads: Optional[int] = None,
+        config: Any | None = None,
+        d_model: int | None = None,
+        n_heads: int | None = None,
         n_experts: int = 8,
         window: int = 128,
-        rank: Optional[int] = 64,
-        pretrained_attn: Optional[nn.Module] = None,
+        rank: int | None = 64,
+        pretrained_attn: nn.Module | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
@@ -185,17 +185,17 @@ class SambaMoEBlock(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
-    ) -> Union[Tuple[torch.Tensor, Optional[torch.Tensor]], torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None] | torch.Tensor:
         if encoder_hidden_states is not None:
             raise NotImplementedError("SambaMoEBlock does not support cross-attention")
 
@@ -251,14 +251,14 @@ def inject_samba_moe(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
-) -> Optional[SambaMoEBlock]:
+) -> SambaMoEBlock | None:
     """Safe injection hook for SambaMoEBlock."""
     try:
         target = layer if layer is not None else model
         if target is None:
-            target = kwargs.get("model", kwargs.get("layer", None))
+            target = kwargs.get("model", kwargs.get("layer"))
         if target is None:
             return None
 

@@ -8,15 +8,14 @@ Hardened for multi-architecture production deployment.
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 
@@ -53,9 +52,9 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
+    position_ids: torch.Tensor | None = None,
     unsqueeze_dim: int = 1,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Applies Rotary Position Embedding (RoPE) with partial dimension and independent seq-len support."""
     if cos is None or sin is None:
         return q, k
@@ -108,9 +107,9 @@ class SALTLinear(nn.Module):
         in_features: int,
         out_features: int,
         rank: int = 16,
-        original_weight: Optional[torch.Tensor] = None,
-        original_bias: Optional[torch.Tensor] = None,
-        fisher_diag: Optional[torch.Tensor] = None,
+        original_weight: torch.Tensor | None = None,
+        original_bias: torch.Tensor | None = None,
+        fisher_diag: torch.Tensor | None = None,
         use_fisher: bool = True,
     ) -> None:
         super().__init__()
@@ -164,7 +163,7 @@ class SALTLinear(nn.Module):
         else:
             self.bias = nn.Parameter(torch.zeros(out_features, device=target_dev, dtype=target_dtype))
 
-    def init_gamma_from_sensitivity(self, sensitivity: Optional[torch.Tensor] = None) -> None:
+    def init_gamma_from_sensitivity(self, sensitivity: torch.Tensor | None = None) -> None:
         """
         Initialize gamma from attention sensitivity per SVD direction.
         If sensitivity is None, initialize to ones.
@@ -259,11 +258,11 @@ class SALTAttention(BaseAttention):
     def __init__(
         self,
         config: Any,
-        rank: Optional[int] = None,
-        pretrained_attn: Optional[nn.Module] = None,
-        is_decoder: Optional[bool] = None,
-        use_fisher: Optional[bool] = None,
-        adaptive_rank: Optional[bool] = None,
+        rank: int | None = None,
+        pretrained_attn: nn.Module | None = None,
+        is_decoder: bool | None = None,
+        use_fisher: bool | None = None,
+        adaptive_rank: bool | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
@@ -334,7 +333,7 @@ class SALTAttention(BaseAttention):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    def _get_projection_ranks(self, pretrained_attn: Optional[nn.Module], base_rank: int) -> Dict[str, int]:
+    def _get_projection_ranks(self, pretrained_attn: nn.Module | None, base_rank: int) -> dict[str, int]:
         """
         Compute per-projection rank based on SVD energy.
         Returns dict {'q': r_q, 'k': r_k, 'v': r_v, 'o': r_o}.
@@ -382,7 +381,7 @@ class SALTAttention(BaseAttention):
     def copy_weights(self, src: Any) -> None:
         from framework.core.adapters import UniversalAdapter
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -425,7 +424,7 @@ class SALTAttention(BaseAttention):
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            s = getattr(src, "self")
+            s = src.self
             if hasattr(s, "query"):
                 extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
             if hasattr(s, "key"):
@@ -433,7 +432,7 @@ class SALTAttention(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -569,18 +568,18 @@ class SALTAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, L, D = hidden_states.shape
         H, Dh = self.num_heads, self.head_dim
         device = hidden_states.device
@@ -595,7 +594,7 @@ class SALTAttention(BaseAttention):
         V = self.v_proj(kv_input).view(B, L_kv, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
@@ -678,15 +677,15 @@ class SALTAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("salt_attention_inject")
 @ATTENTION_REGISTRY.register("inject_salt_attention")
 def inject_salt_attention(
-    model: Optional[nn.Module] = None,
-    layer: Optional[Any] = None,
+    model: nn.Module | None = None,
+    layer: Any | None = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Any = None,
     **kwargs: Any,
-) -> Optional[Union[SALTAttention, nn.Module]]:
+) -> SALTAttention | nn.Module | None:
     """Safe injection hook for SALTAttention with whole-model and layer support."""
     target = layer if layer is not None else model
     if target is None:
@@ -805,7 +804,7 @@ def merge_model_salt(model: nn.Module) -> nn.Module:
 def calibrate_gamma(
     model: nn.Module,
     calibration_data: Any,
-    tokenizer: Optional[Any] = None,
+    tokenizer: Any | None = None,
 ) -> None:
     """
     Run forward+backward on calibration data, capture gradients
@@ -826,7 +825,7 @@ def calibrate_gamma(
         inputs = calibration_data
 
     # Hook to capture gradients
-    grads: Dict[str, torch.Tensor] = {}
+    grads: dict[str, torch.Tensor] = {}
     handles = []
 
     def make_hook(mod_name):

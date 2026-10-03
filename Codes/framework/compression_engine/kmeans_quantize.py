@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -126,7 +126,7 @@ def fast_kmeans_1d(
     max_iters: int = 20,
     tol: float = 1e-4,
     seed: int = 0xCAFE,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     1D Lloyd's algorithm with quantile init.
 
@@ -178,7 +178,7 @@ def fast_kmeans_1d(
 # ===========================================================================
 # LoRA detection (KM-FIX-02, KM-FIX-19)
 # ===========================================================================
-def _detect_lora(layer: nn.Module) -> Tuple[int, float, Optional[torch.Tensor], Optional[torch.Tensor]]:
+def _detect_lora(layer: nn.Module) -> tuple[int, float, torch.Tensor | None, torch.Tensor | None]:
     """
     Detect existing LoRA wrapper and extract (rank, alpha, A, B).
 
@@ -308,7 +308,7 @@ class KMeansLinear(nn.Module):
             self.register_parameter("lora_B", None)
 
         # KM-FIX-20: cache in eval
-        self._cached_weight: Optional[torch.Tensor] = None
+        self._cached_weight: torch.Tensor | None = None
 
     # ------------------------------------------------------------------
     def get_weight(self) -> torch.Tensor:
@@ -327,14 +327,14 @@ class KMeansLinear(nn.Module):
     def weight(self) -> torch.Tensor:
         return self.get_weight()
 
-    def train(self, mode: bool = True) -> "KMeansLinear":
+    def train(self, mode: bool = True) -> KMeansLinear:
         super().train(mode)
         if mode:
             self._cached_weight = None
         return self
 
     # ------------------------------------------------------------------
-    def storage_bytes(self) -> Dict[str, int]:
+    def storage_bytes(self) -> dict[str, int]:
         """KM-FIX-07/22: honest storage accounting."""
         def _sz(t):
             if t is None:
@@ -383,9 +383,9 @@ class KMeansCompressor(BaseCompressor):
 
     def __init__(
         self,
-        model: Optional[nn.Module] = None,
+        model: nn.Module | None = None,
         n_clusters: int = 256,
-        bits: Optional[int] = None,
+        bits: int | None = None,
         max_error: float = 0.35,
         target_attention_only: bool = False,
         fallback_to_original: bool = True,
@@ -395,11 +395,11 @@ class KMeansCompressor(BaseCompressor):
         skip_should_compress_filter: bool = False,
         min_layer_dim: int = 8,
         kmeans_seed: int = 0xCAFE,
-        cfg: Optional[Any] = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="kmeans", **kwargs)
-        cfg = cfg or kwargs.get("comp_config", None)
+        cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
         parsed_bits = _cfg_get(cfg, "kmeans_bits", _cfg_get(cfg, "bits", bits))
@@ -429,12 +429,12 @@ class KMeansCompressor(BaseCompressor):
         self.min_layer_dim = max(1, int(_cfg_get(cfg, "min_layer_dim", min_layer_dim)))
         self.kmeans_seed = int(_cfg_get(cfg, "kmeans_seed", kmeans_seed))
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_storage: Dict[str, Dict[str, int]] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_storage: dict[str, dict[str, int]] = {}
+        self.stats: dict[str, Any] = {}
         self._compressed_params: int = 0
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
@@ -512,7 +512,7 @@ class KMeansCompressor(BaseCompressor):
         return True
 
     # ------------------------------------------------------------------
-    def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         # Idempotence
         if getattr(self.model, "_kmeans_compressed", False):
             logger.warning("KMeansCompressor: model already compressed; skipping.")
@@ -533,7 +533,7 @@ class KMeansCompressor(BaseCompressor):
         self.skipped_layers = []
         self.layer_errors = {}
         self.layer_storage = {}
-        seen_weights: Set[int] = set()
+        seen_weights: set[int] = set()
 
         total_orig_bytes = 0
         total_comp_bytes = 0
@@ -583,7 +583,7 @@ class KMeansCompressor(BaseCompressor):
                 orig_bytes += bias_holder.numel() * bias_holder.element_size()
             total_orig_bytes += orig_bytes
 
-            new_layer: Optional[KMeansLinear] = None
+            new_layer: KMeansLinear | None = None
             err = 1.0
             try:
                 new_layer = KMeansLinear(

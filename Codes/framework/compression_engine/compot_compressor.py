@@ -8,8 +8,7 @@ reconstruction validation, Conv1D support, rank reduction bounds, and safe fallb
 from __future__ import annotations
 
 import logging
-import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -52,8 +51,8 @@ class COMPOTLinear(nn.Module):
         out_features: int,
         rank: int = 64,
         bias: bool = True,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -106,9 +105,9 @@ class COMPOTLinear(nn.Module):
     def from_linear_and_activations(
         cls,
         layer: nn.Module,
-        activations: Optional[torch.Tensor] = None,
+        activations: torch.Tensor | None = None,
         rank: int = 64,
-    ) -> Tuple["COMPOTLinear", float, bool]:
+    ) -> tuple[COMPOTLinear, float, bool]:
         """
         Construct COMPOTLinear by learning orthogonal dictionary from activations or weights.
         Returns: (compot_layer, relative_reconstruction_error, used_activations)
@@ -214,20 +213,20 @@ class COMPOTCompressor(BaseCompressor):
 
     def __init__(
         self,
-        model: Optional[nn.Module] = None,
+        model: nn.Module | None = None,
         rank: int = 64,
         max_error: float = 0.20,
         fallback_to_original: bool = True,
-        calibration_texts: Optional[List[str]] = None,
-        calibration_loader: Optional[Any] = None,
-        tokenizer: Optional[Any] = None,
-        cfg: Optional[Any] = None,
+        calibration_texts: list[str] | None = None,
+        calibration_loader: Any | None = None,
+        tokenizer: Any | None = None,
+        cfg: Any | None = None,
         target_attention_only: bool = False,
-        target_layers: Optional[List[str]] = None,
+        target_layers: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="compot", **kwargs)
-        conf = cfg or kwargs.get("comp_config", None)
+        conf = cfg or kwargs.get("comp_config")
         if conf is not None:
             rank = getattr(conf, "compot_rank", getattr(conf, "rank", rank))
             max_error = getattr(conf, "compot_max_error", getattr(conf, "max_error", max_error))
@@ -247,11 +246,11 @@ class COMPOTCompressor(BaseCompressor):
         self.target_layers = target_layers
         self.target_attention_only = target_attention_only
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
-        self.used_activations: Dict[str, bool] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+        self.used_activations: dict[str, bool] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         cls_name = module.__class__.__name__.lower()
@@ -269,9 +268,9 @@ class COMPOTCompressor(BaseCompressor):
             return any(t in name for t in self.target_layers)
         return True
 
-    def _collect_activations(self) -> Dict[str, torch.Tensor]:
+    def _collect_activations(self) -> dict[str, torch.Tensor]:
         """Collect input activations across target modules."""
-        layer_data: Dict[str, torch.Tensor] = {}
+        layer_data: dict[str, torch.Tensor] = {}
         hooks = []
 
         def make_hook(name: str):
@@ -318,7 +317,7 @@ class COMPOTCompressor(BaseCompressor):
 
         return layer_data
 
-    def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         """Compress linear and Conv1D layers via COMPOT orthogonal dictionary learning."""
         if model is not None:
             self.model = model
@@ -430,10 +429,10 @@ class COMPOTCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("compot_compressor_factory")
 def compot_compressor_factory(
     model: nn.Module,
-    comp_config: Optional[Any] = None,
-    rank: Optional[int] = None,
+    comp_config: Any | None = None,
+    rank: int | None = None,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Factory function for COMPOT compression."""
     effective_rank = rank or getattr(comp_config, "compot_rank", None) or getattr(comp_config, "rank", 64)
     cal_texts = getattr(comp_config, "compot_calibration_texts", None)

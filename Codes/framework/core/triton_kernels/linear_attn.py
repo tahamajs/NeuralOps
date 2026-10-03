@@ -11,11 +11,9 @@ Supports:
 """
 from __future__ import annotations
 
-import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
-import torch.nn.functional as F
 
 from framework.core.triton_kernels._common import (
     HAS_TRITON,
@@ -225,8 +223,8 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
         is_causal: bool,
         phi: str,
         eps: float,
-        cos_weight: Optional[torch.Tensor],
-        sin_weight: Optional[torch.Tensor],
+        cos_weight: torch.Tensor | None,
+        sin_weight: torch.Tensor | None,
     ) -> torch.Tensor:
         orig_shape = q.shape
         D_k = q.shape[-1]
@@ -302,7 +300,7 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
         return out.view(*orig_shape[:-1], D_v)
 
     @staticmethod
-    def backward(ctx: Any, grad_out: torch.Tensor) -> Tuple[Optional[torch.Tensor], ...]:
+    def backward(ctx: Any, grad_out: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
         q, k, v = ctx.saved_tensors
         q_req = q.detach().requires_grad_(True)
         k_req = k.detach().requires_grad_(True)
@@ -319,7 +317,7 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
             )
             grads = torch.autograd.grad(out, [q_req, k_req, v_req], grad_out, retain_graph=False)
 
-        def _sanitize(g: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
+        def _sanitize(g: torch.Tensor | None) -> torch.Tensor | None:
             if g is None:
                 return None
             return torch.nan_to_num(g, nan=0.0, posinf=65500.0, neginf=-65500.0)
@@ -345,8 +343,8 @@ def fwd(
     is_causal: bool = False,
     phi: str = "elu+1",
     eps: float = 1e-6,
-    cos_weight: Optional[torch.Tensor] = None,
-    sin_weight: Optional[torch.Tensor] = None,
+    cos_weight: torch.Tensor | None = None,
+    sin_weight: torch.Tensor | None = None,
     **kwargs: Any,
 ) -> torch.Tensor:
     """Forward entrypoint for fused Triton linear attention."""
@@ -368,10 +366,10 @@ def bwd(
     is_causal: bool = False,
     phi: str = "elu+1",
     eps: float = 1e-6,
-    cos_weight: Optional[torch.Tensor] = None,
-    sin_weight: Optional[torch.Tensor] = None,
+    cos_weight: torch.Tensor | None = None,
+    sin_weight: torch.Tensor | None = None,
     **kwargs: Any,
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """Backward entrypoint computing gradients for q, k, v."""
     q_req = q.detach().requires_grad_(True)
     k_req = k.detach().requires_grad_(True)

@@ -26,7 +26,7 @@ d_out * d_in, producing real compression when keep < d_out * d_in / (d_out + d_i
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 import logging
 import torch
 import torch.nn as nn
@@ -72,23 +72,23 @@ class SliceGPTCompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        tokenizer: Optional[Any] = None,
+        tokenizer: Any | None = None,
         sparsity: float = 0.6,
         non_uniform: bool = False,
-        calibration_loader: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
         target_attention_only: bool = False,
-        device: Optional[Union[str, torch.device]] = None,
+        device: str | torch.device | None = None,
         max_error: float = 0.5,
         fallback_to_original: bool = True,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         use_lora: bool = False,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="slicegpt", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             sparsity = _cfg_get(cfg, "slicegpt_sparsity", _cfg_get(cfg, "sparsity", sparsity))
             non_uniform = _cfg_get(cfg, "non_uniform", non_uniform)
@@ -123,9 +123,9 @@ class SliceGPTCompressor(BaseCompressor):
         self.use_lora = bool(use_lora) or (lora_r > 0)
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
-        self.stats: Dict[str, Any] = {}
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+        self.stats: dict[str, Any] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         """
@@ -158,14 +158,14 @@ class SliceGPTCompressor(BaseCompressor):
             return True
         return any(t in name for t in self.target_modules)
 
-    def _collect_layer_activations(self) -> Dict[str, torch.Tensor]:
+    def _collect_layer_activations(self) -> dict[str, torch.Tensor]:
         """Collect input activations across target linear layers."""
         self.model.eval()
-        activations: Dict[str, List[torch.Tensor]] = {}
+        activations: dict[str, list[torch.Tensor]] = {}
         hooks = []
 
         def make_hook(name: str):
-            def hook(module: nn.Module, inputs: Tuple[torch.Tensor, ...], output: Any):
+            def hook(module: nn.Module, inputs: tuple[torch.Tensor, ...], output: Any):
                 if inputs and isinstance(inputs[0], torch.Tensor):
                     inp = inputs[0].detach()
                     activations.setdefault(name, []).append(inp.cpu())
@@ -201,7 +201,7 @@ class SliceGPTCompressor(BaseCompressor):
         for h in hooks:
             h.remove()
 
-        aggregated: Dict[str, torch.Tensor] = {}
+        aggregated: dict[str, torch.Tensor] = {}
         for name, act_list in activations.items():
             if act_list:
                 aggregated[name] = torch.cat(act_list, dim=0)
@@ -209,10 +209,10 @@ class SliceGPTCompressor(BaseCompressor):
 
     def _compute_orthogonal_rotation(
         self,
-        X: Optional[torch.Tensor],
+        X: torch.Tensor | None,
         d_in: int,
-        device: Optional[torch.device] = None,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        device: torch.device | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Compute orthogonal rotation matrix Q via eigen-decomposition of activation covariance."""
         if device is None:
             device = X.device if X is not None else torch.device("cpu")
@@ -233,7 +233,7 @@ class SliceGPTCompressor(BaseCompressor):
         return Q, torch.ones(d_in, device=device)
 
     @staticmethod
-    def _detect_lora(module: nn.Module) -> Tuple[int, float]:
+    def _detect_lora(module: nn.Module) -> tuple[int, float]:
         """Detect existing LoRA rank and alpha from a wrapped module, if any."""
         if not hasattr(module, "lora_A") or module.lora_A is None:
             return 0, 1.0
@@ -255,7 +255,7 @@ class SliceGPTCompressor(BaseCompressor):
                 break
         return rank, alpha
 
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """
         Applies SliceGPT rotation + rank-r truncation and replaces each weight
         with a real SVDLinear low-rank factorization.

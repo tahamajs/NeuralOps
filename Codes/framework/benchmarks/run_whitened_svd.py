@@ -25,7 +25,7 @@ def compress_whitened(model_path, dataset_name, rank, num_samples, output_dir):
     local_path = Path(f"Codes/framework/data/glue_data/{dataset_name}")
     if not local_path.exists():
         local_path = Path(f"PROJECT_ROOT/Codes/framework/data/glue_data/{dataset_name}")
-    
+
     if local_path.exists():
         ds_dict = load_from_disk(str(local_path))
         ds = ds_dict["train"]

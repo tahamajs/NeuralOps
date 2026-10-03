@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import math
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -28,7 +28,7 @@ import torch.nn.functional as F
 
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -61,8 +61,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -141,8 +141,8 @@ class FactorisedLinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -188,11 +188,11 @@ class FactorisedLinear(nn.Module):
         return torch.matmul(self.up.weight, self.down.weight)
 
     @property
-    def bias(self) -> Optional[torch.Tensor]:
+    def bias(self) -> torch.Tensor | None:
         return self.up.bias
 
     def decompose_from_weight(
-        self, weight: torch.Tensor, bias: Optional[torch.Tensor] = None,
+        self, weight: torch.Tensor, bias: torch.Tensor | None = None,
     ) -> None:
         out_dim, in_dim = weight.shape
         with torch.no_grad():
@@ -274,13 +274,13 @@ class ORIONAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        model_config: Optional[Any] = None,
-        orion_cfg: Optional[ORIONConfig] = None,
-        pretrained_attn: Optional[Any] = None,
-        old_attn: Optional[Any] = None,
-        comp_config: Optional[Any] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        model_config: Any | None = None,
+        orion_cfg: ORIONConfig | None = None,
+        pretrained_attn: Any | None = None,
+        old_attn: Any | None = None,
+        comp_config: Any | None = None,
         bert_mode: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -297,9 +297,9 @@ class ORIONAttention(BaseAttention):
             if rank is not None:
                 orion_cfg.svd_max_rank = max(rank, orion_cfg.svd_min_rank)
 
-        hidden_size = kwargs.get("hidden_size", None)
-        num_heads = kwargs.get("num_attention_heads", kwargs.get("num_heads", None))
-        num_kv_heads = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", None))
+        hidden_size = kwargs.get("hidden_size")
+        num_heads = kwargs.get("num_attention_heads", kwargs.get("num_heads"))
+        num_kv_heads = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads"))
 
         if hidden_size is None or num_heads is None:
             if cfg is not None:
@@ -361,9 +361,7 @@ class ORIONAttention(BaseAttention):
         is_dec = bool(getattr(cfg, "is_decoder",
                               getattr(cfg, "is_causal", kwargs.get("is_causal", False)))) if cfg else False
         if any(model_type.startswith(p) for p in
-               ("gpt", "qwen", "llama", "mistral", "falcon", "bloom", "opt")):
-            is_dec = True
-        elif hasattr(cfg, "architectures") and any(
+               ("gpt", "qwen", "llama", "mistral", "falcon", "bloom", "opt")) or hasattr(cfg, "architectures") and any(
             "GPT" in str(a) or "CausalLM" in str(a)
             for a in (getattr(cfg, "architectures", []) or [])
         ):
@@ -387,7 +385,7 @@ class ORIONAttention(BaseAttention):
         )
         self.freeze_base = (self.lora_rank > 0)
 
-        target_dtype = kwargs.get("dtype", None)
+        target_dtype = kwargs.get("dtype")
         if target_dtype is None and source_attn is not None:
             p = next(source_attn.parameters(), None)
             if p is not None:
@@ -467,9 +465,7 @@ class ORIONAttention(BaseAttention):
         cls_name = src.__class__.__name__
         has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
-        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            is_nested = True
-        elif (
+        if hasattr(src, "self") and hasattr(src.self, "query") or (
             cls_name in ["BertSelfAttention", "RobertaSelfAttention",
                          "XLMRobertaSelfAttention", "ElectraSelfAttention",
                          "DebertaSelfAttention"]
@@ -478,7 +474,7 @@ class ORIONAttention(BaseAttention):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -517,8 +513,8 @@ class ORIONAttention(BaseAttention):
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
         # RoBERTa nested
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            s = getattr(src, "self")
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
+            s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
@@ -526,7 +522,7 @@ class ORIONAttention(BaseAttention):
                         mod.weight.data.clone(),
                         mod.bias.data.clone() if mod.bias is not None else None,
                     )
-            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
                 extracted["o"] = (
                     out_mod.weight.data.clone(),
@@ -622,7 +618,7 @@ class ORIONAttention(BaseAttention):
         Q: torch.Tensor,
         K: torch.Tensor,
         V: torch.Tensor,
-        token_valid: Optional[torch.Tensor] = None,
+        token_valid: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """
         FAVOR+ random feature linear attention.
@@ -717,7 +713,7 @@ class ORIONAttention(BaseAttention):
         Q: torch.Tensor,
         K: torch.Tensor,
         V: torch.Tensor,
-        token_valid: Optional[torch.Tensor] = None,
+        token_valid: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """
         Full softmax attention for the "full" heads.
@@ -784,18 +780,18 @@ class ORIONAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if hidden_states.dim() == 4:
             B, H, L, Dh = hidden_states.shape
             hidden_states = hidden_states.view(B, L, H * Dh)
@@ -905,10 +901,10 @@ def inject_orion(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
-) -> Optional[Union[ORIONAttention, nn.Module]]:
+) -> ORIONAttention | nn.Module | None:
     """Safe injection hook for ORIONAttention across diverse transformer architectures."""
     # OR-FIX-07: recursion guard
     if _depth > 8:
@@ -917,7 +913,7 @@ def inject_orion(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

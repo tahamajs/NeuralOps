@@ -12,7 +12,7 @@ Hardened for production use across diverse transformer architectures:
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -35,7 +35,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
     if module is None:
         return None, None
     base = getattr(module, "base_layer", module)
@@ -69,9 +69,9 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
+    position_ids: torch.Tensor | None = None,
     unsqueeze_dim: int = 1,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Applies Rotary Position Embedding (RoPE) with partial dimension support."""
     rotary_dim = cos.shape[-1]
     rotary_dim = rotary_dim - (rotary_dim % 2)
@@ -105,17 +105,17 @@ class SVDLLMV2Attention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        old_attn: Optional[nn.Module] = None,
-        rank: Optional[int] = 192,
+        config: Any | None = None,
+        old_attn: nn.Module | None = None,
+        rank: int | None = 192,
         energy_threshold: float = 0.999,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         dropout: float = 0.1,
         **kwargs: Any,
     ) -> None:
-        comp_config = _cfg_get(config, "compression_config", kwargs.get("comp_config", None))
+        comp_config = _cfg_get(config, "compression_config", kwargs.get("comp_config"))
         actual_rank = (
             rank
             if rank is not None
@@ -301,7 +301,7 @@ class SVDLLMV2Attention(BaseAttention):
         vh_param: nn.Parameter,
         bias_param: nn.Parameter,
         weight: torch.Tensor,
-        bias: Optional[torch.Tensor],
+        bias: torch.Tensor | None,
     ) -> None:
         with torch.no_grad():
             W = weight.float()
@@ -471,8 +471,8 @@ class SVDLLMV2Attention(BaseAttention):
         s: nn.Parameter,
         u: nn.Parameter,
         b: nn.Parameter,
-        lora_A: Optional[nn.Parameter],
-        lora_B: Optional[nn.Parameter],
+        lora_A: nn.Parameter | None,
+        lora_B: nn.Parameter | None,
     ) -> torch.Tensor:
         """Factorized SVD projection with LoRA residual addition."""
         V_eff = s.to(dtype=vh.dtype).view(-1, 1) * vh
@@ -485,18 +485,18 @@ class SVDLLMV2Attention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         batch_size, seq_len, _ = hidden_states.shape
         device = hidden_states.device
         dtype = hidden_states.dtype
@@ -520,7 +520,7 @@ class SVDLLMV2Attention(BaseAttention):
 
         # 2. RoPE support
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
@@ -629,17 +629,17 @@ def inject_svd_llm_v2(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     lora_rank: int = 16,
-    rank: Optional[int] = 192,
+    rank: int | None = 192,
     **kwargs: Any,
-) -> Optional[Any]:
+) -> Any | None:
     """Safely constructs and injects SVDLLMV2Attention into a model or transformer layer."""
     target = layer if layer is not None else model
     if target is None:
         return None
 
-    cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
+    cfg = model_config or getattr(target, "config", None) or kwargs.get("config")
 
     # 1. Whole model traversal support
     layer_list = None

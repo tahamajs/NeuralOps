@@ -23,7 +23,7 @@ import logging
 import math
 import sys
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 # Default calibration corpus
 # ============================================================================
-DEFAULT_CALIBRATION_CORPUS: List[str] = [
+DEFAULT_CALIBRATION_CORPUS: list[str] = [
     (
         "Transformers rely heavily on multi-head self-attention mechanisms to capture complex syntactic "
         "and semantic dependencies across arbitrary sequence lengths. However, the standard quadratic computational "
@@ -110,8 +110,8 @@ class FusedQKVSVDLinear(nn.Module):
         out_features: int,
         rank: int,
         bias: bool = True,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> None:
@@ -270,24 +270,24 @@ class AdaSVDCompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         target_param_ratio: float = 0.7,
         num_iters: int = 10,
         max_error: float = 0.50,
         fallback_to_original: bool = True,
         target_attention_only: bool = True,
         min_rank: int = 16,
-        target_modules: Optional[List[str]] = None,
-        tokenizer: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
+        tokenizer: Any | None = None,
+        calibration_texts: list[str] | None = None,
         use_weighted_als: bool = False,
         use_mean_shift: bool = True,
         use_gating_d: bool = True,
-        device: Optional[Union[str, torch.device]] = None,
+        device: str | torch.device | None = None,
         comp_config: Any = None,
         max_calib_tokens: int = 4096,
         fused_qkv_error_threshold: float = 0.30,
-        gelu_layer_patterns: Optional[Tuple[str, ...]] = None,
+        gelu_layer_patterns: tuple[str, ...] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="adasvd", **kwargs)
@@ -401,17 +401,17 @@ class AdaSVDCompressor(BaseCompressor):
         self.comp_config = cfg
 
         # State
-        self.calibration_activations: Dict[str, torch.Tensor] = {}
-        self.layer_means: Dict[str, torch.Tensor] = {}
-        self.layer_out_means: Dict[str, torch.Tensor] = {}
-        self.layer_out_vars: Dict[str, torch.Tensor] = {}
-        self.mean_shifts: Dict[str, torch.Tensor] = {}
+        self.calibration_activations: dict[str, torch.Tensor] = {}
+        self.layer_means: dict[str, torch.Tensor] = {}
+        self.layer_out_means: dict[str, torch.Tensor] = {}
+        self.layer_out_vars: dict[str, torch.Tensor] = {}
+        self.mean_shifts: dict[str, torch.Tensor] = {}
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
-        self.layer_iters: Dict[str, int] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+        self.layer_iters: dict[str, int] = {}
 
         self.calibration_time_s: float = 0.0
 
@@ -519,10 +519,10 @@ class AdaSVDCompressor(BaseCompressor):
     # Calibration
     # ------------------------------------------------------------------
     def _collect_activations(
-        self, calibration_data: Optional[Any] = None
-    ) -> Dict[str, torch.Tensor]:
-        activations: Dict[str, List[torch.Tensor]] = {}
-        out_activations: Dict[str, List[torch.Tensor]] = {}
+        self, calibration_data: Any | None = None
+    ) -> dict[str, torch.Tensor]:
+        activations: dict[str, list[torch.Tensor]] = {}
+        out_activations: dict[str, list[torch.Tensor]] = {}
         hooks = []
         max_tokens = self.max_calib_tokens
 
@@ -607,7 +607,7 @@ class AdaSVDCompressor(BaseCompressor):
             for h in hooks:
                 h.remove()
 
-        result: Dict[str, torch.Tensor] = {}
+        result: dict[str, torch.Tensor] = {}
         for name, tensor_list in activations.items():
             if tensor_list:
                 cat_x = torch.cat(tensor_list, dim=0)
@@ -667,8 +667,8 @@ class AdaSVDCompressor(BaseCompressor):
         self,
         W: torch.Tensor,
         r: int,
-        C_X: Optional[torch.Tensor] = None,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        C_X: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         d_out, d_in = W.shape
         device = W.device
         dtype = W.dtype
@@ -713,11 +713,11 @@ class AdaSVDCompressor(BaseCompressor):
         r: int,
         C_X: torch.Tensor,
         D_var: torch.Tensor,
-        X_calib: Optional[torch.Tensor] = None,
-        mu_x: Optional[torch.Tensor] = None,
+        X_calib: torch.Tensor | None = None,
+        mu_x: torch.Tensor | None = None,
         num_iters: int = 10,
         patience: int = 3,
-    ) -> Tuple[torch.Tensor, torch.Tensor, float, int]:
+    ) -> tuple[torch.Tensor, torch.Tensor, float, int]:
         device = W.device
         dtype = W.dtype
 
@@ -795,7 +795,7 @@ class AdaSVDCompressor(BaseCompressor):
         layer: nn.Module,
         rank: int,
         name: str,
-    ) -> Tuple[Optional[FusedQKVSVDLinear], float, int]:
+    ) -> tuple[FusedQKVSVDLinear | None, float, int]:
         target_mod = getattr(layer, "base_layer", layer)
         w = getattr(target_mod, "weight", None)
         if w is None or w.dim() != 2:
@@ -884,11 +884,11 @@ class AdaSVDCompressor(BaseCompressor):
         layer: nn.Module,
         rank: int,
         name: str = "",
-        covariance: Optional[torch.Tensor] = None,
-        X_calib: Optional[torch.Tensor] = None,
-        out_variance: Optional[torch.Tensor] = None,
+        covariance: torch.Tensor | None = None,
+        X_calib: torch.Tensor | None = None,
+        out_variance: torch.Tensor | None = None,
         **kwargs: Any,
-    ) -> Tuple[Optional[nn.Module], float, int]:
+    ) -> tuple[nn.Module | None, float, int]:
         if self._is_fused_qkv_layer(name, layer):
             return self._compress_fused_qkv(layer, rank, name)
 
@@ -1011,8 +1011,8 @@ class AdaSVDCompressor(BaseCompressor):
     # Main compress
     # ------------------------------------------------------------------
     def compress(
-        self, calibration_data: Optional[Any] = None
-    ) -> Tuple[nn.Module, Dict[str, Any]]:
+        self, calibration_data: Any | None = None
+    ) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers = []
         self.fallback_layers = []
         self.layer_errors = {}
@@ -1050,7 +1050,7 @@ class AdaSVDCompressor(BaseCompressor):
         logger.info("AdaSVD calibration time: %.2f s", self.calibration_time_s)
 
         # ---- Step 2: spectral importance ----
-        layer_importances: Dict[str, float] = {}
+        layer_importances: dict[str, float] = {}
         total_importance = 0.0
         for name, module in target_layers:
             target_mod = getattr(module, "base_layer", module)

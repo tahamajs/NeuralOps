@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
 
 import numpy as np
 from scipy import stats
@@ -14,7 +13,7 @@ class ABTestResult:
     p_value: float
     significant: bool
     better_model: str
-    confidence_interval: Tuple[float, float]
+    confidence_interval: tuple[float, float]
 
 
 class ABTester:
@@ -22,8 +21,8 @@ class ABTester:
         self.alpha = alpha
 
     def compare(
-        self, results_a: Dict[str, List[float]], results_b: Dict[str, List[float]]
-    ) -> List[ABTestResult]:
+        self, results_a: dict[str, list[float]], results_b: dict[str, list[float]]
+    ) -> list[ABTestResult]:
         """Compare."""
         outcomes = []
         for metric in results_a:

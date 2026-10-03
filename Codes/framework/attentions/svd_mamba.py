@@ -8,14 +8,13 @@ Hardened for production use across diverse transformer architectures:
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from framework.core.adapters import UniversalAdapter
-from framework.core.attention_mask import apply_attention_mask
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
@@ -30,7 +29,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
     if module is None:
         return None, None
     base = getattr(module, "base_layer", module)
@@ -64,8 +63,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -113,15 +112,15 @@ class SVDLinear(nn.Module):
         self,
         in_features: int,
         out_features: int,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ):
         super().__init__()
-        
+
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -149,7 +148,7 @@ class SVDLinear(nn.Module):
             self.V.requires_grad = False
             self.bias.requires_grad = False
 
-    def decompose_from_weight(self, weight: torch.Tensor, bias: Optional[torch.Tensor] = None) -> None:
+    def decompose_from_weight(self, weight: torch.Tensor, bias: torch.Tensor | None = None) -> None:
         with torch.no_grad():
             W = weight.float()
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
@@ -198,22 +197,22 @@ class SVDMamba(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        d_model: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        d_model: int | None = None,
         d_state: int = 16,
         d_conv: int = 4,
         expand: int = 1,
-        dt_rank: Optional[int] = None,
+        dt_rank: int | None = None,
         global_rank: int = 8,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
-        pretrained_attn: Optional[nn.Module] = None,
+        is_decoder: bool | None = None,
+        pretrained_attn: nn.Module | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        comp_config = _cfg_get(config, "compression_config", kwargs.get("comp_config", None))
+        comp_config = _cfg_get(config, "compression_config", kwargs.get("comp_config"))
 
         if d_model is None:
             if isinstance(config, int):
@@ -246,9 +245,7 @@ class SVDMamba(BaseAttention):
             is_dec = bool(_cfg_get(config, "is_decoder", False))
         else:
             is_dec = bool(kwargs.get("is_causal", False))
-        if any(model_type.startswith(p) for p in decoder_prefixes):
-            is_dec = True
-        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+        if any(model_type.startswith(p) for p in decoder_prefixes) or hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
 
@@ -263,8 +260,8 @@ class SVDMamba(BaseAttention):
         self.kv_head_size = self.num_kv_heads * self.head_dim
         self.supports_gqa = True
 
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
-        target_dtype = kwargs.get("dtype", None)
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
+        target_dtype = kwargs.get("dtype")
         if target_dtype is None and source_attn is not None:
             target_dtype = next(source_attn.parameters(), torch.tensor([])).dtype
             if not isinstance(target_dtype, torch.dtype):
@@ -529,18 +526,18 @@ class SVDMamba(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Union[Tuple[torch.Tensor, Optional[torch.Tensor]], torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None] | torch.Tensor:
         if encoder_hidden_states is not None:
             return (hidden_states, None)
 
@@ -574,7 +571,7 @@ class SVDMamba(BaseAttention):
         K = self.k_proj(hidden_states).view(batch, seqlen, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         V_attn = self.v_proj(hidden_states).view(batch, seqlen, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
-        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
@@ -721,9 +718,9 @@ def inject_svd_mamba(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
-) -> Optional[Any]:
+) -> Any | None:
     """Safe injection hook for SVDMamba with whole-model and layer support."""
     target = layer if layer is not None else model
     cfg = model_config or getattr(target, "config", None)
@@ -792,9 +789,9 @@ def inject_svd_mamba(
                 return None
             if "SVDMamba" in src.__class__.__name__ or "SVD_Mamba" in src.__class__.__name__:
                 return None
-            if hasattr(src, "inner") and isinstance(getattr(src, "inner"), SVDMamba):
+            if hasattr(src, "inner") and isinstance(src.inner, SVDMamba):
                 return None
-            if hasattr(src, "_wrapped_attention") and isinstance(getattr(src, "_wrapped_attention"), SVDMamba):
+            if hasattr(src, "_wrapped_attention") and isinstance(src._wrapped_attention, SVDMamba):
                 return None
 
         if target is not None:
@@ -806,9 +803,9 @@ def inject_svd_mamba(
                     return None
                 if "SVDMamba" in cand.__class__.__name__ or "SVD_Mamba" in cand.__class__.__name__:
                     return None
-                if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), SVDMamba):
+                if hasattr(cand, "inner") and isinstance(cand.inner, SVDMamba):
                     return None
-                if hasattr(cand, "_wrapped_attention") and isinstance(getattr(cand, "_wrapped_attention"), SVDMamba):
+                if hasattr(cand, "_wrapped_attention") and isinstance(cand._wrapped_attention, SVDMamba):
                     return None
 
         # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers

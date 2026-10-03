@@ -3,7 +3,6 @@ import json
 import time
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Dict, Optional
 
 import numpy as np
 import torch
@@ -66,7 +65,7 @@ class ModelProfiler:
             hook.remove()
         self.hooks = []
 
-    def get_report(self) -> Dict[str, Dict[str, float]]:
+    def get_report(self) -> dict[str, dict[str, float]]:
         """Return the report."""
         report = {}
         for name in self.timings:
@@ -114,7 +113,7 @@ class ModelProfiler:
 
 def measure_inference_latency(
     model, dataloader, device, num_samples: int = 100, warmup: int = 10
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Measure inference latency."""
     model.eval()
     model.to(device)
@@ -153,7 +152,7 @@ def measure_inference_latency(
 
 def measure_memory_usage(
     model, dataloader, device, num_samples: int = 10
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Measure memory usage."""
     model.eval()
     model.to(device)
@@ -177,7 +176,7 @@ def measure_memory_usage(
 
 
 @contextmanager
-def profile_context(model, profiler: Optional[ModelProfiler] = None) -> None:
+def profile_context(model, profiler: ModelProfiler | None = None) -> None:
     """Profile context."""
     if profiler is None:
         profiler = ModelProfiler(model)

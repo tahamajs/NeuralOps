@@ -32,7 +32,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -41,7 +41,6 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.gqa_utils import repeat_kv
-from framework.core.triton_kernels import triton_dispatch
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +68,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos.dim() == 2:
         cos = cos.unsqueeze(0).unsqueeze(0)
         sin = sin.unsqueeze(0).unsqueeze(0)
@@ -411,7 +410,7 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx: Any, grad_out: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, None]:
+    def backward(ctx: Any, grad_out: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, None]:
         q, k, v = ctx.saved_tensors
         is_decoder = ctx.is_decoder
         eps = ctx.eps
@@ -526,12 +525,12 @@ class TritonCosformerAttention(BaseAttention):
     def __init__(
         self,
         config: Any = None,
-        embed_dim: Optional[int] = None,
-        num_heads: Optional[int] = None,
-        num_kv_heads: Optional[int] = None,
+        embed_dim: int | None = None,
+        num_heads: int | None = None,
+        num_kv_heads: int | None = None,
         is_decoder: bool = False,
         eps: float = 1e-6,
-        pretrained_attn: Optional[nn.Module] = None,
+        pretrained_attn: nn.Module | None = None,
         **kwargs: Any,
     ):
         super().__init__()
@@ -627,8 +626,8 @@ class TritonCosformerAttention(BaseAttention):
                         self.out_proj.bias.data.copy_(bias_o.data)
 
         # 2. RoBERTa / BERT nested self-attention
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            s = getattr(src, "self")
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
+            s = src.self
             mapping = [("q_proj", "query"), ("k_proj", "key"), ("v_proj", "value")]
             for target_name, sub_name in mapping:
                 target_mod = getattr(self, target_name)
@@ -639,7 +638,7 @@ class TritonCosformerAttention(BaseAttention):
                     if base_src.bias is not None and target_mod.bias is not None:
                         target_mod.bias.data.copy_(base_src.bias.data)
 
-            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
                 base_out = getattr(out_mod, "base_layer", out_mod)
                 self.out_proj.weight.data.copy_(base_out.weight.data)
@@ -675,18 +674,18 @@ class TritonCosformerAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
-        position_ids: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
+        attention_mask: torch.Tensor | None = None,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        position_ids: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[Any]]:
+    ) -> tuple[torch.Tensor, Any | None]:
         B, N, C = hidden_states.shape
 
         # RoPE from kwargs if not explicit
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
 
         # 1. Project Q, K, V
         q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
@@ -748,7 +747,7 @@ def inject_triton_cosformer(
     rank: int = 64,
     copy_weights: bool = True,
     **kwargs: Any,
-) -> Optional[nn.Module]:
+) -> nn.Module | None:
     """Safe factory function to inject TritonCosformerAttention into a model."""
     from framework.core.attention_utils import inject_attention
     return inject_attention(model, "triton_cosformer", rank=rank, copy_weights=copy_weights, **kwargs)

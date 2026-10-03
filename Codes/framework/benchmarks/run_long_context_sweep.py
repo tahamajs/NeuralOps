@@ -17,7 +17,6 @@ import argparse
 import csv
 import json
 import logging
-import os
 import sys
 import time
 from pathlib import Path
@@ -32,7 +31,7 @@ CODES = HERE.parent
 ROOT = CODES.parent
 sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "Codes")]
 
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 from framework.eval_all_models_datasets import apply_module_to_model
 from framework.data_utils.load_byte_imdb import get_byte_imdb_dataloader
 
@@ -184,7 +183,7 @@ def evaluate_long_context(model, dataloader, max_samples=None, device="cuda"):
 
     elapsed_s = max(1e-4, time.time() - t0)
     acc = round(100.0 * correct / max(1, total), 2)
-    
+
     if device == "cuda" and torch.cuda.is_available():
         peak_vram_mb = round(torch.cuda.max_memory_allocated() / (1024 ** 2), 2)
     else:

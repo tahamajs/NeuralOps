@@ -1,7 +1,6 @@
 """General utilities (device, seeding, formatting)."""
 
 import random
-from typing import Optional
 
 import numpy as np
 import torch
@@ -74,7 +73,7 @@ def clear_memory() -> None:
         torch.mps.empty_cache()
 
 
-def get_memory_usage() -> Optional[float]:
+def get_memory_usage() -> float | None:
     """Return the memory usage."""
     if torch.cuda.is_available():
         return torch.cuda.memory_allocated() / (1024 * 1024)

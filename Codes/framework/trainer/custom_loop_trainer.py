@@ -6,18 +6,17 @@ from __future__ import annotations
 
 import contextlib
 import logging
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any
+from collections.abc import Callable
 
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from tqdm import tqdm
 
 from .base_trainer import BaseTrainer
 from .metrics import get_task_metrics
 from .registry import TrainerRegistry
 from .utils import clip_grad_norm_factorized, evaluate_model, train_model
-from framework.core.memory import cleanup_gpu_memory
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +33,12 @@ class CustomLoopTrainer(BaseTrainer):
         model: nn.Module,
         train_dataset: Any,
         eval_dataset: Any,
-        config: Dict[str, Any],
-        results_manager: Optional[Any] = None,
-        device: Optional[torch.device] = None,
+        config: dict[str, Any],
+        results_manager: Any | None = None,
+        device: torch.device | None = None,
         num_labels: int = 2,
         is_multichoice: bool = False,
-        compute_metrics_fn: Optional[Callable] = None,
+        compute_metrics_fn: Callable | None = None,
         **kwargs: Any,
     ) -> None:
         self.model = model
@@ -79,12 +78,12 @@ class CustomLoopTrainer(BaseTrainer):
         self,
         train_loader: DataLoader,
         optimizer: torch.optim.Optimizer,
-        scaler: Optional[torch.cuda.amp.GradScaler],
+        scaler: torch.cuda.amp.GradScaler | None,
         gradient_accumulation_steps: int = 1,
         max_grad_norm: float = 1.0,
         amp_dtype: torch.dtype = torch.float32,
         use_amp: bool = False,
-        pbar: Optional[Any] = None,
+        pbar: Any | None = None,
     ) -> float:
         """
         Execute a single training epoch with DDP gradient accumulation synchronization optimization.
@@ -104,7 +103,7 @@ class CustomLoopTrainer(BaseTrainer):
             # FIX: Wrap non-final micro-batches in model.no_sync() for DDP to eliminate redundant all-reduce synchronization
             sync_context = (
                 contextlib.nullcontext()
-                if (is_sync_step or not hasattr(self.model, "no_sync") or not callable(getattr(self.model, "no_sync")))
+                if (is_sync_step or not hasattr(self.model, "no_sync") or not callable(self.model.no_sync))
                 else self.model.no_sync()
             )
 
@@ -167,7 +166,7 @@ class CustomLoopTrainer(BaseTrainer):
 
         return total_epoch_loss / max(1, num_batches)
 
-    def train(self) -> Dict[str, Any]:
+    def train(self) -> dict[str, Any]:
         """Fit the model on the provided dataset with full DDP and accumulation safety."""
         train_loader = self._make_loader(self.train_dataset, shuffle=True)
         val_loader = self._make_loader(self.eval_dataset, shuffle=False)
@@ -202,7 +201,7 @@ class CustomLoopTrainer(BaseTrainer):
 
         return result
 
-    def evaluate(self) -> Dict[str, Any]:
+    def evaluate(self) -> dict[str, Any]:
         """Run evaluate and return results."""
         val_loader = self._make_loader(self.eval_dataset, shuffle=False)
         return evaluate_model(

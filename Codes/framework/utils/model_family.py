@@ -18,7 +18,7 @@ Bug fixes (2026-09-25):
 """
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 
 FAMILIES = ("bert", "roberta", "gpt", "qwen", "qwen3_5", "t5", "ssm", "unknown")
@@ -108,7 +108,7 @@ class ModelAdapter:
     canonical value; code that needs the raw value should use `raw_family`.
     """
 
-    def __init__(self, model_or_config: Any, family: Optional[str] = None):
+    def __init__(self, model_or_config: Any, family: str | None = None):
         self.source = _config(model_or_config)
         raw_family = family or detect_family(model_or_config)
         # Normalize aliases to canonical internal family.

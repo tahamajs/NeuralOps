@@ -10,12 +10,11 @@ and valid causal perplexity evaluation dynamics.
 from __future__ import annotations
 
 import logging
-import math
 import random
 import re
 import string
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -53,7 +52,7 @@ def generate_zipfian_tokens(
     np_rng = np.random.default_rng(seed)
 
     effective_vocab = max(2, vocab_size - min_token_id)
-    
+
     # FIX: Compute exact Zipfian rank probabilities: P(k) = (1 / k^s) / zeta(s)
     # to simulate authentic natural language entropy and prevent flat uniform noise distortion.
     ranks = np.arange(1, effective_vocab + 1, dtype=np.float64)
@@ -68,7 +67,7 @@ def generate_zipfian_tokens(
     flat_tokens = np_rng.choice(
         effective_vocab, size=(num_samples, seq_len), p=probs, replace=True
     )
-    
+
     # Shift indices to respect min_token_id (reserving special tokens)
     token_tensor = torch.from_numpy(flat_tokens + min_token_id).long()
     return token_tensor
@@ -101,7 +100,7 @@ def generate_zipfian_markov_tokens(
     """
     np_rng = np.random.default_rng(seed)
     effective_vocab = max(2, min(vocab_size - min_token_id, 2048))
-    
+
     # FIX: Compute Zipfian unigram prior
     ranks = np.arange(1, effective_vocab + 1, dtype=np.float64)
     unigram_probs = 1.0 / (ranks ** zipf_param)
@@ -173,7 +172,7 @@ class SyntheticPerplexityDataset(Dataset):
     def __len__(self) -> int:
         return self.num_samples
 
-    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
+    def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         return {
             "input_ids": self.input_ids[idx],
             "attention_mask": self.attention_mask[idx],
@@ -230,7 +229,7 @@ class SyntheticClassificationDataset(Dataset):
     def __len__(self) -> int:
         return self.num_samples
 
-    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
+    def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         return {
             "input_ids": self.input_ids[idx],
             "attention_mask": self.attention_mask[idx],
@@ -238,7 +237,7 @@ class SyntheticClassificationDataset(Dataset):
         }
 
 
-DEFAULT_DOMAINS: Dict[str, Dict[str, List[str]]] = {
+DEFAULT_DOMAINS: dict[str, dict[str, list[str]]] = {
     "movies": {
         "pos_adj": ["exceptional", "phenomenal", "brilliant", "masterful", "captivating"],
         "neg_adj": ["disastrous", "tedious", "bland", "lifeless", "confusing"],
@@ -265,14 +264,14 @@ DEFAULT_DOMAINS: Dict[str, Dict[str, List[str]]] = {
     },
 }
 
-TEMPLATES_POS: List[str] = [
+TEMPLATES_POS: list[str] = [
     "The {adj} {noun} was {adv} {verb}.",
     "I found the {noun} to be {adj} and {adv} {verb}.",
     "The {adj} {noun} {prep_phrase}.",
     "What an {adj} {noun}! It {verb} {adv}.",
 ]
 
-TEMPLATES_NEG: List[str] = [
+TEMPLATES_NEG: list[str] = [
     "The {adj} {noun} was {adv} {verb}.",
     "I found the {noun} to be {adj} and {adv} {verb}.",
     "Unfortunately, the {adj} {noun} {prep_phrase}.",
@@ -288,7 +287,7 @@ def _clean_text(text: str) -> str:
     return text
 
 
-def _generate_batch(domain_key: str, size: int, label: int, is_positive: bool) -> List[Dict[str, Any]]:
+def _generate_batch(domain_key: str, size: int, label: int, is_positive: bool) -> list[dict[str, Any]]:
     vocab = DEFAULT_DOMAINS.get(domain_key, DEFAULT_DOMAINS["movies"])
     templates = TEMPLATES_POS if is_positive else TEMPLATES_NEG
     prep_phrases = (
@@ -332,9 +331,9 @@ def generate_synthetic_data(
 
 
 def run_universal_generation(
-    output_dir: Union[str, Path],
+    output_dir: str | Path,
     total_samples_per_domain: int = 5000,
-    domains: Optional[Dict[str, Any]] = None,
+    domains: dict[str, Any] | None = None,
     seed: int = 42,
 ) -> pd.DataFrame:
     """Generate synthetic dataset across multiple domains and combine them."""

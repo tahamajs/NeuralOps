@@ -3,7 +3,7 @@ Compression pipeline – orchestrates multiple compressors sequentially.
 """
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 import torch.nn as nn
 
@@ -19,7 +19,7 @@ class CompressionPipeline:
     def __init__(
         self,
         model: nn.Module,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         tokenizer=None,
     ) -> None:
         self.model = model
@@ -55,7 +55,7 @@ class CompressionPipeline:
 
 def compress_model(
     model: nn.Module,
-    config: Dict[str, Any],
+    config: dict[str, Any],
     tokenizer=None,
 ) -> nn.Module:
     """Convenience function to compress a model with a configuration dict."""

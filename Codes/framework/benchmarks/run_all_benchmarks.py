@@ -22,12 +22,11 @@ import argparse
 import csv
 import json
 import logging
-import os
 import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Path Setup
@@ -48,7 +47,7 @@ logging.basicConfig(
 )
 LOG = logging.getLogger("BenchmarkMaster")
 
-AGGREGATE_FIELDS: List[str] = [
+AGGREGATE_FIELDS: list[str] = [
     "module_name",
     "ppl",
     "hellaswag_acc",
@@ -66,7 +65,7 @@ AGGREGATE_FIELDS: List[str] = [
 ]
 
 
-def discover_modules(category: str = "all") -> List[str]:
+def discover_modules(category: str = "all") -> list[str]:
     """Discover all compatible attention and compressor modules."""
     try:
         from framework.run_gpt2_sweep import get_all_decoder_modules
@@ -76,7 +75,7 @@ def discover_modules(category: str = "all") -> List[str]:
 
     try:
         from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, is_helper_module
-        items: List[str] = ["full"]
+        items: list[str] = ["full"]
         for name in list(ATTENTION_REGISTRY.keys()) + list(COMPRESSOR_REGISTRY.keys()):
             if name != "full" and not is_helper_module(name) and name not in items:
                 items.append(name)
@@ -85,7 +84,7 @@ def discover_modules(category: str = "all") -> List[str]:
         return ["full"]
 
 
-def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Master Orchestrator: Unified evaluation across PPL, LM-Eval, and RULER NIAH."
     )
@@ -170,7 +169,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def run_command(cmd: List[str], desc: str) -> Tuple[int, str, str]:
+def run_command(cmd: list[str], desc: str) -> tuple[int, str, str]:
     """Run a subprocess command safely, capturing returncode and stderr."""
     LOG.info("Executing: %s", " ".join(cmd))
     proc = subprocess.run(cmd, capture_output=True, text=True)
@@ -179,12 +178,12 @@ def run_command(cmd: List[str], desc: str) -> Tuple[int, str, str]:
     return proc.returncode, proc.stdout, proc.stderr
 
 
-def upsert_aggregate_row(csv_path: Path, row: Dict[str, Any]) -> None:
+def upsert_aggregate_row(csv_path: Path, row: dict[str, Any]) -> None:
     """Atomic upsert of row into aggregate CSV."""
-    rows: Dict[str, Dict[str, Any]] = {}
+    rows: dict[str, dict[str, Any]] = {}
     if csv_path.exists():
         try:
-            with open(csv_path, "r", newline="", encoding="utf-8") as f:
+            with open(csv_path, newline="", encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 for r in reader:
                     name = r.get("module_name", "").strip()
@@ -204,11 +203,11 @@ def upsert_aggregate_row(csv_path: Path, row: Dict[str, Any]) -> None:
     tmp_path.replace(csv_path)
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
 
     # Resolve module list
-    parsed: List[str] = []
+    parsed: list[str] = []
     for item in args.modules:
         parsed.extend([m.strip() for m in str(item).split(",") if m.strip()])
     if not parsed or parsed == ["all"]:
@@ -235,11 +234,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     LOG.info("  Output Dir:    %s", out_dir)
     LOG.info("=" * 78)
 
-    all_rows: List[Dict[str, Any]] = []
+    all_rows: list[dict[str, Any]] = []
 
     for mod in module_list:
         LOG.info("\n>>> Processing Module: %s <<<", mod)
-        errors: List[str] = []
+        errors: list[str] = []
 
         ppl_val: Any = ""
         hellaswag_acc: Any = ""
@@ -367,7 +366,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         else:
             status = "FAIL"
 
-        row: Dict[str, Any] = {
+        row: dict[str, Any] = {
             "module_name": mod,
             "ppl": ppl_val,
             "hellaswag_acc": hellaswag_acc,

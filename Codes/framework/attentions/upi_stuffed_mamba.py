@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -21,7 +21,6 @@ from framework.core.adapters import UniversalAdapter
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
-from framework.utils.model_family import ModelAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +45,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -141,21 +140,21 @@ class SelectiveMamba(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        d_model: Optional[Union[int, Any]] = None,
-        dim: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        d_model: int | Any | None = None,
+        dim: int | None = None,
         d_state: int = 16,
         d_conv: int = 4,
         expand: int = 1,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
-        pretrained_attn: Optional[nn.Module] = None,
+        is_decoder: bool | None = None,
+        pretrained_attn: nn.Module | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        src_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn", None)
+        src_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn")
 
         if dim is None and d_model is None:
             if config is not None and not isinstance(config, int):
@@ -199,7 +198,7 @@ class SelectiveMamba(BaseAttention):
         # A_log init: log([1, 2, ..., d_state]) repeated.
         # In our scan, we compute A = +exp(A_log) (positive),
         # then log_decay = -dt * A (negative), giving decay < 1.
-        # This is mathematically equivalent to Mamba's 
+        # This is mathematically equivalent to Mamba's
         # A = -exp(A_log), decay = exp(dt * A).
         A_init = torch.arange(1, d_state + 1, dtype=torch.float32).repeat(self.inner_dim, 1)
         self.A_log = nn.Parameter(torch.log(A_init))
@@ -212,8 +211,8 @@ class SelectiveMamba(BaseAttention):
 
         # x_proj maps inner_dim → dt_rank + 2*d_state
         self.x_proj = nn.Linear(
-            self.inner_dim, 
-            self.dt_rank + 2 * self.d_state, 
+            self.inner_dim,
+            self.dt_rank + 2 * self.d_state,
             bias=False,
         )
         self.x_proj.weight.requires_grad = True
@@ -491,7 +490,7 @@ class SelectiveMamba(BaseAttention):
         dt: torch.Tensor,
         B_t: torch.Tensor,
         C_t: torch.Tensor,
-        mask: Optional[torch.Tensor] = None,
+        mask: torch.Tensor | None = None,
         reverse: bool = False,
     ) -> torch.Tensor:
         """Bounded chunked associative SSM scan in FP32 with O(chunk=64) memory."""
@@ -555,17 +554,17 @@ class SelectiveMamba(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if encoder_hidden_states is not None:
             raise NotImplementedError(
                 "SelectiveMamba does not support cross-attention. "
@@ -574,7 +573,7 @@ class SelectiveMamba(BaseAttention):
             )
 
         B, L, D = hidden_states.shape
-        mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
+        mask = attention_mask if attention_mask is not None else kwargs.get("mask")
 
         if head_mask is not None:
             logger.warning(
@@ -586,7 +585,7 @@ class SelectiveMamba(BaseAttention):
         if mask is not None:
             if mask.dim() == 2:
                 # Distinguish between int/bool masks and float additive masks
-                if mask.dtype in (torch.bool, torch.int8, torch.int16, 
+                if mask.dtype in (torch.bool, torch.int8, torch.int16,
                                   torch.int32, torch.int64):
                     mask_bool = mask.bool().to(hidden_states.device)
                 else:
@@ -615,8 +614,8 @@ class SelectiveMamba(BaseAttention):
         # Selective projections: dt_raw [dt_rank], B_t [d_state], C_t [d_state]
         x_proj_out = self.x_proj(x_ssm)
         dt_raw, B_t, C_t = torch.split(
-            x_proj_out, 
-            [self.dt_rank, self.d_state, self.d_state], 
+            x_proj_out,
+            [self.dt_rank, self.d_state, self.d_state],
             dim=-1,
         )
         dt = F.softplus(self.dt_proj(dt_raw))
@@ -652,8 +651,8 @@ class SelectiveMamba(BaseAttention):
     def step_recurrent(
         self,
         x_t: torch.Tensor,
-        state: Optional[Dict[str, torch.Tensor]] = None,
-    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        state: dict[str, torch.Tensor] | None = None,
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
         """
         Single-step streaming inference. 
         
@@ -665,7 +664,7 @@ class SelectiveMamba(BaseAttention):
             x_t = x_t.unsqueeze(1)
         B, L, D = x_t.shape
         assert L == 1, "step_recurrent expects L=1"
-        
+
         # Initialize state
         if state is None:
             h = torch.zeros(
@@ -679,11 +678,11 @@ class SelectiveMamba(BaseAttention):
         else:
             h = state["h"]
             conv_buf = state.get("conv_buf")
-        
+
         # in_proj
         xz = self.in_proj(x_t)  # (B, 1, 2*inner_dim)
         x_in, z = xz.chunk(2, dim=-1)
-        
+
         # Conv1d with buffer
         x_conv_input = torch.cat([conv_buf, x_in], dim=1)  # (B, d_conv, inner_dim)
         x_conv = F.conv1d(
@@ -693,33 +692,33 @@ class SelectiveMamba(BaseAttention):
             groups=self.inner_dim,
         ).transpose(1, 2)  # (B, 1, inner_dim)
         new_conv_buf = x_conv_input[:, -(self.d_conv - 1):]
-        
+
         x_ssm = F.silu(x_conv)
-        
+
         # Selective params
         x_proj_out = self.x_proj(x_ssm)
         dt_raw, B_t, C_t = torch.split(
-            x_proj_out, 
-            [self.dt_rank, self.d_state, self.d_state], 
+            x_proj_out,
+            [self.dt_rank, self.d_state, self.d_state],
             dim=-1,
         )
         dt = F.softplus(self.dt_proj(dt_raw)).clamp(1e-3, 1.0)
-        
+
         # Single step scan
         A = torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0))
         dA = torch.exp(-dt.unsqueeze(-1) * A.view(1, 1, self.inner_dim, self.d_state))
         dBx = dt.unsqueeze(-1) * B_t.unsqueeze(2) * x_ssm.unsqueeze(-1)
-        
+
         h = dA.squeeze(1) * h + dBx.squeeze(1)  # (B, inner_dim, d_state)
         y = (C_t.squeeze(1).unsqueeze(1) * h).sum(dim=-1)  # (B, inner_dim)
         y = y + self.D * x_ssm.squeeze(1)
-        
+
         # Gating
         gated = y * F.silu(z.squeeze(1))  # (B, inner_dim)
-        
+
         # Output projection
         out = self.out_proj(gated.unsqueeze(1))  # (B, 1, D)
-        
+
         new_state = {"h": h, "conv_buf": new_conv_buf}
         return out, new_state
 
@@ -740,9 +739,9 @@ def inject_selective_mamba(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
-) -> Optional[SelectiveMamba]:
+) -> SelectiveMamba | None:
     """Safe injection hook for SelectiveMamba."""
     target = layer if layer is not None else model
     try:

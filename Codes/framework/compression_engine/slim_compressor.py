@@ -19,7 +19,7 @@ Mathematical Formulation:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 import torch
 import torch.nn as nn
 
@@ -28,7 +28,6 @@ from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import (
     apply_24_structured_mask,
-    apply_block_mask,
 )
 from framework.utils.compat import should_compress_linear
 
@@ -61,11 +60,11 @@ class SLiMCompressor(BaseCompressor):
         target_attention_only: bool = False,
         max_error: float = 0.5,
         fallback_to_original: bool = True,  # Fix 1: Default changed to True
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="slim", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             bits = _cfg_get(cfg, "slim_bits", _cfg_get(cfg, "bits", bits))
             sparsity = _cfg_get(cfg, "slim_sparsity", _cfg_get(cfg, "sparsity", sparsity))
@@ -86,8 +85,8 @@ class SLiMCompressor(BaseCompressor):
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
         self.target_modules = target_modules
-        self.layer_errors: Dict[str, float] = {}
-        self.stats: Dict[str, Any] = {}
+        self.layer_errors: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         """
@@ -124,7 +123,7 @@ class SLiMCompressor(BaseCompressor):
         W_q = torch.round((W - min_val) / scale) * scale + min_val
         return W_q
 
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """Executes SLiM compression pipeline across all Linear and Conv1D layers."""
         self.layer_errors = {}
         pruned_layers_count = 0

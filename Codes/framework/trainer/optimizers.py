@@ -6,7 +6,8 @@ and standard registered optimizers (AdamW, SGD, Adam, AdaBelief, Ranger, Lamb, L
 from __future__ import annotations
 
 import math
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any
+from collections.abc import Callable, Iterable
 
 import torch
 import torch.nn as nn
@@ -224,16 +225,11 @@ class RiemannianStiefelOptimizer(Optimizer):
 
     def __init__(
         self,
-        params: Union[
-            Iterable[torch.nn.Parameter],
-            Iterable[Dict[str, Any]],
-            nn.Module,
-            List[Tuple[str, torch.nn.Parameter]],
-        ],
+        params: Iterable[torch.nn.Parameter] | Iterable[dict[str, Any]] | nn.Module | list[tuple[str, torch.nn.Parameter]],
         lr: float = 1e-3,
-        lr_stiefel: Optional[float] = None,
+        lr_stiefel: float | None = None,
         base_optimizer: str = "adamw",
-        betas: Tuple[float, float] = (0.9, 0.999),
+        betas: tuple[float, float] = (0.9, 0.999),
         eps: float = 1e-8,
         weight_decay: float = 0.01,
         momentum: float = 0.9,
@@ -274,12 +270,12 @@ class RiemannianStiefelOptimizer(Optimizer):
         )
 
         # RESEARCH FIX: Extract named parameters or handle param groups robustly
-        param_groups: List[Dict[str, Any]] = []
+        param_groups: list[dict[str, Any]] = []
 
         if isinstance(params, nn.Module):
             named_params = list(params.named_parameters())
-            stiefel_p: List[torch.nn.Parameter] = []
-            euclidean_p: List[torch.nn.Parameter] = []
+            stiefel_p: list[torch.nn.Parameter] = []
+            euclidean_p: list[torch.nn.Parameter] = []
             for name, p in named_params:
                 if not p.requires_grad:
                     continue
@@ -399,8 +395,8 @@ class RiemannianStiefelOptimizer(Optimizer):
         return stiefel_qr_retraction(W, grad_R, lr)
 
     def check_orthogonality_error(
-        self, param: Optional[torch.Tensor] = None
-    ) -> Union[float, Dict[int, float]]:
+        self, param: torch.Tensor | None = None
+    ) -> float | dict[int, float]:
         """
         Computes Frobenius norm orthogonality error ||W^T W - I||_F for manifold parameters.
 
@@ -422,7 +418,7 @@ class RiemannianStiefelOptimizer(Optimizer):
                 eye = torch.eye(n, device=w.device, dtype=w.dtype)
             return float(torch.linalg.norm(gram - eye).item())
 
-        errors: Dict[int, float] = {}
+        errors: dict[int, float] = {}
         idx = 0
         for group in self.param_groups:
             if group.get("manifold") == "stiefel":
@@ -441,7 +437,7 @@ class RiemannianStiefelOptimizer(Optimizer):
         return errors
 
     @torch.no_grad()
-    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+    def step(self, closure: Callable[[], float] | None = None) -> float | None:
         """
         Performs a single Riemannian optimization step.
 
@@ -624,7 +620,7 @@ class Muon(Optimizer):
         super().__init__(params, defaults)
 
     @torch.no_grad()
-    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+    def step(self, closure: Callable[[], float] | None = None) -> float | None:
         loss = None
         if closure is not None:
             with torch.enable_grad():
@@ -675,7 +671,7 @@ class MuonAdamW(Optimizer):
 
     def __init__(
         self,
-        param_groups: List[Dict[str, Any]],
+        param_groups: list[dict[str, Any]],
     ) -> None:
         for g in param_groups:
             if "optimizer" not in g:
@@ -693,7 +689,7 @@ class MuonAdamW(Optimizer):
         super().__init__(param_groups, {})
 
     @torch.no_grad()
-    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+    def step(self, closure: Callable[[], float] | None = None) -> float | None:
         loss = None
         if closure is not None:
             with torch.enable_grad():
@@ -843,7 +839,7 @@ def create_muon_adamw_reg(params: Any, lr: float = 0.02, lr_adam: float = 5e-5, 
 def create_riemannian_stiefel(
     params: Any,
     lr: float = 1e-3,
-    lr_stiefel: Optional[float] = None,
+    lr_stiefel: float | None = None,
     base_optimizer: str = "adamw",
     weight_decay: float = 0.01,
     **kwargs: Any,

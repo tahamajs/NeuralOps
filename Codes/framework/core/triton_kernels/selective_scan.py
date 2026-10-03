@@ -13,9 +13,7 @@ Stores full h_t trajectory in forward so backward can access h_{t-1}.
 
 from __future__ import annotations
 
-import math
 import torch
-import torch.nn.functional as F
 import triton
 import triton.language as tl
 

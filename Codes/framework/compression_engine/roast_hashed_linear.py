@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -47,8 +47,8 @@ class ROASTLinear(nn.Module):
         bias: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -91,7 +91,7 @@ class ROASTLinear(nn.Module):
             persistent=False,
         )
 
-        self._cached_weight: Optional[torch.Tensor] = None
+        self._cached_weight: torch.Tensor | None = None
         self._cache_stale: bool = True
 
         if self.lora_r > 0:
@@ -220,17 +220,17 @@ class ROASTCompressor(BaseCompressor):
         use_lora: bool = False,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         target_attention_only: bool = False,
         max_error: float = 0.50,
         fallback_to_original: bool = True,
         min_numel: int = 16,
-        device: Optional[Union[str, torch.device]] = None,
-        cfg: Optional[Any] = None,
+        device: str | torch.device | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name='roast', **kwargs)
-        cfg_obj = cfg or kwargs.get('comp_config', None)
+        cfg_obj = cfg or kwargs.get('comp_config')
 
         self.n_buckets = max(1, int(n_buckets if n_buckets is not None else _cfg_get(cfg_obj, 'n_buckets', 1024)))
         self.tile_size = max(1, int(tile_size if tile_size is not None else _cfg_get(cfg_obj, 'tile_size', 32)))
@@ -254,13 +254,13 @@ class ROASTCompressor(BaseCompressor):
             self.target_device = next(model.parameters()).device if list(model.parameters()) else torch.device('cpu')
 
         # Diagnostics & Tracking
-        self.visited_modules: Set[int] = set()
-        self.compressed_layers: List[str] = []
-        self.protected_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.failed_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
+        self.visited_modules: set[int] = set()
+        self.compressed_layers: list[str] = []
+        self.protected_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.failed_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         """Check if layer belongs to an attention projection in a GQA architecture."""
@@ -270,7 +270,7 @@ class ROASTCompressor(BaseCompressor):
         num_heads = getattr(cfg, 'num_attention_heads', None)
         num_kv_heads = getattr(cfg, 'num_key_value_heads', None)
         is_gqa = (num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads)
-        
+
         name_l = name.lower()
         is_attn_qkv = any(p in name_l for p in [
             'q_proj', 'k_proj', 'v_proj', 'c_attn', 'query', 'key', 'value',
@@ -320,7 +320,7 @@ class ROASTCompressor(BaseCompressor):
             return any(t in name for t in self.target_modules)
         return True
 
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """Compress the target modules using ROAST tiling with LoRA support."""
         self.compressed_layers.clear()
         self.visited_modules.clear()
@@ -429,7 +429,7 @@ def roast_factory(
     return_stats: bool = False,
     return_tuple: bool = False,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """ROAST compressor factory function returning (compressed_model, stats) when requested."""
     n_buckets = kwargs.pop('n_buckets', _cfg_get(comp_config, 'n_buckets', 1024))
     tile_size = kwargs.pop('tile_size', _cfg_get(comp_config, 'tile_size', 32))

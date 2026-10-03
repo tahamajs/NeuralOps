@@ -16,11 +16,10 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 try:
     from framework.attentions.compressed_attention import CompressedAttentionLayer
@@ -70,7 +69,7 @@ def _silu_derivative_sq(y: torch.Tensor) -> torch.Tensor:
     return silu_prime ** 2
 
 
-def _detect_activation_type(layer_name: str, model: Optional[nn.Module] = None) -> str:
+def _detect_activation_type(layer_name: str, model: nn.Module | None = None) -> str:
     """
     Detect whether layer output is directly followed by GELU, SiLU, or None.
     - GELU: DistilBERT ('ffn.lin1'), RoBERTa ('intermediate.dense'), BERT ('intermediate.dense', 'ffn.lin1')
@@ -141,17 +140,17 @@ class AdaptiveRanksCompressor(BaseCompressor):
         fallback_to_original: bool = True,
         protect_critical: bool = True,
         target_attention_only: bool = False,
-        target_modules: Optional[List[str]] = None,
-        tokenizer: Optional[Any] = None,
-        calibration_loader: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
-        device: Optional[Union[str, torch.device]] = None,
+        target_modules: list[str] | None = None,
+        tokenizer: Any | None = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
         use_jg_svd: bool = False,
         use_cholesky_jg: bool = True,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="adaptive_ranks", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is None and hasattr(model, "config") and model.config is not None:
             cfg = model.config
 
@@ -212,15 +211,15 @@ class AdaptiveRanksCompressor(BaseCompressor):
             else next(model.parameters(), torch.tensor(0.0)).device
         )
 
-        self.layer_D_gating: Dict[str, torch.Tensor] = {}
-        self.attn_jacobian: Dict[str, float] = {}
+        self.layer_D_gating: dict[str, torch.Tensor] = {}
+        self.attn_jacobian: dict[str, float] = {}
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
-        self.used_covariance: Dict[str, bool] = {}
-        self.used_jg_svd: Dict[str, bool] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+        self.used_covariance: dict[str, bool] = {}
+        self.used_jg_svd: dict[str, bool] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, SVDLinear) or (CompressedAttentionLayer is not None and isinstance(module, CompressedAttentionLayer)):
@@ -277,7 +276,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
         return True
 
     def _compute_energy_rank(
-        self, S: torch.Tensor, max_rank: int, min_rank_floor: Optional[int] = None, threshold: Optional[float] = None
+        self, S: torch.Tensor, max_rank: int, min_rank_floor: int | None = None, threshold: float | None = None
     ) -> int:
         r"""
         Find smallest rank $r$ satisfying cumulative singular energy ratio $\ge$ threshold:
@@ -297,19 +296,19 @@ class AdaptiveRanksCompressor(BaseCompressor):
         r = int(idx[0].item()) + 1 if len(idx) > 0 else max_rank
         return max(1, min(max(r, r_floor), max_rank))
 
-    def _collect_activation_covariances(self) -> Dict[str, torch.Tensor]:
+    def _collect_activation_covariances(self) -> dict[str, torch.Tensor]:
         """Collect empirical input activation covariances across target nn.Linear / Conv1D modules."""
         if not (self.tokenizer or self.calibration_loader or self.calibration_texts):
             logger.info("No calibration data available; using unweighted SVD.")
             return {}
 
         self.model.eval()
-        running_cov: Dict[str, torch.Tensor] = {}
-        sample_counts: Dict[str, int] = {}
+        running_cov: dict[str, torch.Tensor] = {}
+        sample_counts: dict[str, int] = {}
         hooks = []
 
         def make_hook(layer_name: str) -> Any:
-            def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any) -> None:
+            def hook(module: nn.Module, inp: tuple[torch.Tensor, ...], outp: Any) -> None:
                 if len(inp) > 0 and isinstance(inp[0], torch.Tensor):
                     x = inp[0].detach().float()
                     target_mod = getattr(module, "base_layer", module)
@@ -380,7 +379,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
         for h in hooks:
             h.remove()
 
-        covariances: Dict[str, torch.Tensor] = {}
+        covariances: dict[str, torch.Tensor] = {}
         for name, cov_sum in running_cov.items():
             n = float(max(sample_counts.get(name, 1), 1))
             covariances[name] = cov_sum / n
@@ -399,11 +398,11 @@ class AdaptiveRanksCompressor(BaseCompressor):
 
         self.model.eval()
         hooks = []
-        out_acts: Dict[str, List[torch.Tensor]] = {}
-        attn_probs: Dict[str, List[torch.Tensor]] = {}
+        out_acts: dict[str, list[torch.Tensor]] = {}
+        attn_probs: dict[str, list[torch.Tensor]] = {}
 
         def make_out_hook(layer_name: str) -> Any:
-            def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any) -> None:
+            def hook(module: nn.Module, inp: tuple[torch.Tensor, ...], outp: Any) -> None:
                 if isinstance(outp, torch.Tensor):
                     y = outp.detach().float()
                     target_mod = getattr(module, "base_layer", module)
@@ -425,7 +424,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
             return hook
 
         def make_attn_hook(layer_name: str) -> Any:
-            def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any) -> None:
+            def hook(module: nn.Module, inp: tuple[torch.Tensor, ...], outp: Any) -> None:
                 p = None
                 if isinstance(outp, (tuple, list)) and len(outp) > 1 and isinstance(outp[1], torch.Tensor):
                     p = outp[1].detach().float()
@@ -528,11 +527,11 @@ class AdaptiveRanksCompressor(BaseCompressor):
     def _factorize_with_JG(
         self,
         W: torch.Tensor,
-        cov: Optional[torch.Tensor],
-        D_gating: Optional[torch.Tensor],
+        cov: torch.Tensor | None,
+        D_gating: torch.Tensor | None,
         r: int,
         num_iters: int = 8,
-    ) -> Tuple[torch.Tensor, torch.Tensor, float]:
+    ) -> tuple[torch.Tensor, torch.Tensor, float]:
         r"""
         Two-Sided Weighted ALS factorizing W ~ U_r @ V_r minimizing:
             || D^{1/2} (W - U V) C_X^{1/2} ||_F^2
@@ -636,8 +635,8 @@ class AdaptiveRanksCompressor(BaseCompressor):
         return best_A.to(dtype=dtype, device=device), best_B.to(dtype=dtype, device=device), best_err
 
     def compress_linear(
-        self, layer: nn.Module, cov: Optional[torch.Tensor] = None, layer_name: Optional[str] = None
-    ) -> Tuple[Optional[AdaptiveSVDLinear], float, int, bool, bool]:
+        self, layer: nn.Module, cov: torch.Tensor | None = None, layer_name: str | None = None
+    ) -> tuple[AdaptiveSVDLinear | None, float, int, bool, bool]:
         """
         Decompose a single linear, Conv1D, or LoRALinear layer via energy-thresholded SVD
         with covariance whitening, returning (svd_layer, relative_error, rank, used_cov).
@@ -688,7 +687,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
         # Attempt 0: Jacobian-Gated SVD (JG-SVD) if enabled
         used_cov = False
         used_jg = False
-        svd_layer: Optional[AdaptiveSVDLinear] = None
+        svd_layer: AdaptiveSVDLinear | None = None
         best_err = 1.0
         best_rank = r_floor
 
@@ -819,7 +818,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
             logger.warning("AdaptiveRanks standard SVD failed: %s", e)
             return None, 1.0, r_floor, False, False
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Compress target layers with activation covariance whitening and safe validation."""
         self.compressed_layers = []
         self.fallback_layers = []

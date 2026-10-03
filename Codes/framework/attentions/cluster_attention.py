@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -18,7 +18,7 @@ import torch.nn.functional as F
 
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.utils.model_family import ModelAdapter
 
@@ -36,8 +36,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -83,8 +83,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -158,15 +158,15 @@ class ClusterAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
         num_clusters: int = 16,
         n_iters: int = 3,
         window_size: int = 32,
         lora_rank: int = 16,
-        comp_config: Optional[Any] = None,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
+        comp_config: Any | None = None,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
@@ -264,7 +264,7 @@ class ClusterAttention(BaseAttention):
 
         # Decoder & nested encoder detection with robust prefix matching
         model_type = str(getattr(config, "model_type", "") or "").lower() if config else ""
-        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", 
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
                              "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
         is_dec = (
             getattr(config, "is_decoder", False)
@@ -276,15 +276,11 @@ class ClusterAttention(BaseAttention):
             is_dec = True
         if source_attn is not None:
             cls_name = source_attn.__class__.__name__.lower()
-            if any(p in cls_name for p in ("gpt", "causal", "qwen", "llama", "mistral")):
+            if any(p in cls_name for p in ("gpt", "causal", "qwen", "llama", "mistral")) or getattr(source_attn, "is_causal", False) or getattr(source_attn, "is_decoder", False) or hasattr(source_attn, "c_attn"):
                 is_dec = True
-            elif getattr(source_attn, "is_causal", False) or getattr(source_attn, "is_decoder", False):
-                is_dec = True
-            elif hasattr(source_attn, "c_attn"):
-                is_dec = True
-        if kwargs.get("is_decoder", None) is not None:
+        if kwargs.get("is_decoder") is not None:
             is_dec = bool(kwargs["is_decoder"])
-        elif kwargs.get("is_causal", None) is not None:
+        elif kwargs.get("is_causal") is not None:
             is_dec = bool(kwargs["is_causal"])
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = bool(is_dec)
@@ -324,7 +320,7 @@ class ClusterAttention(BaseAttention):
     def copy_weights(self, src: Any, **kwargs: Any) -> None:
         from framework.core.adapters import UniversalAdapter
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -381,7 +377,7 @@ class ClusterAttention(BaseAttention):
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            s = getattr(src, "self")
+            s = src.self
             if hasattr(s, "query"):
                 extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
             if hasattr(s, "key"):
@@ -389,7 +385,7 @@ class ClusterAttention(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -413,9 +409,7 @@ class ClusterAttention(BaseAttention):
         cls_name = src.__class__.__name__
         has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
         is_nested = False
-        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            is_nested = True
-        elif (
+        if hasattr(src, "self") and hasattr(src.self, "query") or (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
             or (("roberta" in cls_name.lower() or "bert" in cls_name.lower()) and not has_out_proj)
@@ -424,7 +418,7 @@ class ClusterAttention(BaseAttention):
         if hasattr(src, "config"):
             if getattr(src.config, "model_type", "").lower() in ("roberta", "bert", "xlm-roberta") and not has_out_proj:
                 is_nested = True
-        if kwargs.get("is_nested_encoder", None) is not None:
+        if kwargs.get("is_nested_encoder") is not None:
             is_nested = kwargs["is_nested_encoder"]
         self.is_nested_encoder = bool(is_nested)
 
@@ -480,8 +474,8 @@ class ClusterAttention(BaseAttention):
         Q: torch.Tensor,
         K_num: int,
         iters: int = 3,
-        valid_mask: Optional[torch.Tensor] = None,
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        valid_mask: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         r"""
         Vectorized Lloyd's $K$-means clustering for queries with padding token filtering.
         Q: [B, H, L, d], valid_mask: Optional[torch.Tensor] of shape [B, L] (True for real tokens)
@@ -544,18 +538,18 @@ class ClusterAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
         is_cross_attention = key_value_states is not None
         kv_input = key_value_states if is_cross_attention else hidden_states
@@ -571,13 +565,13 @@ class ClusterAttention(BaseAttention):
         V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
         # Apply RoPE (accept from position_embeddings or fallback to rotary_emb)
-        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
         elif self.rotary_emb is not None:
             rotary_mod = self.rotary_emb
-            pos_ids = kwargs.get("position_ids", None)
+            pos_ids = kwargs.get("position_ids")
             if pos_ids is None:
                 pos_ids = torch.arange(L, device=device).unsqueeze(0).expand(B, -1)
             try:
@@ -616,7 +610,7 @@ class ClusterAttention(BaseAttention):
         if is_decoder or is_cross_attention:
             # Exact attention with causal masking to prevent future token leakage
             scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
-            mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
+            mask = attention_mask if attention_mask is not None else kwargs.get("mask")
             if mask is not None:
                 if mask.dim() == 4:
                     if mask.dtype == torch.bool:
@@ -739,9 +733,9 @@ def inject_cluster(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
-) -> Optional[Union[ClusterAttention, nn.Module]]:
+) -> ClusterAttention | nn.Module | None:
     r"""Safe injection factory for ClusterAttention across diverse transformer architectures."""
     target = layer if layer is not None else model
     if target is None:

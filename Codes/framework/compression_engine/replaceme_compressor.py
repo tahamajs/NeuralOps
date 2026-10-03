@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -48,8 +48,8 @@ class ReplacementBlock(nn.Module):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         return_tuple: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.hidden_size = hidden_size
@@ -82,10 +82,10 @@ class ReplacementBlock(nn.Module):
 
     def forward(
         self,
-        hidden_states: Union[torch.Tensor, Tuple[torch.Tensor, ...], Any],
+        hidden_states: torch.Tensor | tuple[torch.Tensor, ...] | Any,
         *args: Any,
         **kwargs: Any,
-    ) -> Union[torch.Tensor, Tuple[torch.Tensor, ...]]:
+    ) -> torch.Tensor | tuple[torch.Tensor, ...]:
         # Extract primary tensor
         if isinstance(hidden_states, (tuple, list)):
             primary = hidden_states[0]
@@ -127,13 +127,13 @@ class ReplaceMeCompressor(BaseCompressor):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         fallback_to_original: bool = True,
-        device: Optional[Union[str, torch.device]] = None,
-        config: Optional[Any] = None,
-        cfg: Optional[Any] = None,
+        device: str | torch.device | None = None,
+        config: Any | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="replaceme", **kwargs)
-        cfg_obj = cfg or config or kwargs.get("comp_config", None)
+        cfg_obj = cfg or config or kwargs.get("comp_config")
 
         self.remove_layers = max(
             1, int(remove_layers if remove_layers is not None
@@ -170,7 +170,7 @@ class ReplaceMeCompressor(BaseCompressor):
             )
 
     # ------------------------------------------------------------------
-    def _find_transformer_layers(self) -> Optional[nn.ModuleList]:
+    def _find_transformer_layers(self) -> nn.ModuleList | None:
         """Locate the transformer layer list across common architectures."""
         # Ordered list of attribute paths (most specific first).
         candidates = [
@@ -223,10 +223,10 @@ class ReplaceMeCompressor(BaseCompressor):
         return 768  # last-resort default
 
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         layers = self._find_transformer_layers()
         layers_replaced = 0
-        fallback_layers: List[int] = []
+        fallback_layers: list[int] = []
 
         if layers is None:
             logger.warning("ReplaceMe: could not locate transformer layer list.")
@@ -331,7 +331,7 @@ def replaceme_factory(
     return_stats: bool = False,
     return_tuple: bool = False,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """ReplaceMe compressor factory function."""
     remove_layers = kwargs.pop(
         "remove_layers", _cfg_get(comp_config, "remove_layers", 2)

@@ -20,7 +20,6 @@ import argparse
 import csv
 import json
 import logging
-import os
 import sys
 import time
 from pathlib import Path
@@ -33,7 +32,7 @@ CODES = HERE.parent
 ROOT = CODES.parent
 sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "Codes")]
 
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 from framework.eval_all_models_datasets import apply_module_to_model
 
 LOG = logging.getLogger("SeqlenScaling")
@@ -189,7 +188,7 @@ def main():
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
 
-            except torch.cuda.OutOfMemoryError as oom:
+            except torch.cuda.OutOfMemoryError:
                 LOG.warning("CUDA OOM for module %s at seq_len %d", mod, L)
                 metrics = {
                     "status": "OOM",

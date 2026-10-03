@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # Bit packing helpers
 # ===========================================================================
-def _quantize_packed(t: torch.Tensor, bits: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Size]:
+def _quantize_packed(t: torch.Tensor, bits: int) -> tuple[torch.Tensor, torch.Tensor, torch.Size]:
     """
     Symmetric per-tensor quantization with bit packing.
 
@@ -128,11 +128,11 @@ class MLoRQLoRALinear(nn.Module):
         Vt_packed: torch.Tensor,
         Vt_scale: torch.Tensor,
         Vt_shape: torch.Size,
-        bias: Optional[torch.Tensor] = None,
+        bias: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = int(in_features)
@@ -237,7 +237,7 @@ class MLoRQLoRALinear(nn.Module):
         bits: int,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-    ) -> "MLoRQLoRALinear":
+    ) -> MLoRQLoRALinear:
         base_layer = getattr(linear, "base_layer", linear)
         bias = (
             base_layer.bias.detach()
@@ -330,7 +330,7 @@ class MLoRQCompressor(BaseCompressor):
         self,
         model: nn.Module,
         total_memory_budget_mb: float = 500,
-        bits_candidates: Optional[List[int]] = None,
+        bits_candidates: list[int] | None = None,
         max_error: float = 0.50,
         fallback_to_original: bool = True,
         lora_r: int = 0,
@@ -338,11 +338,11 @@ class MLoRQCompressor(BaseCompressor):
         skip_attention_qkv: bool = False,
         target_attention_only: bool = False,
         min_rank: int = 4,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="mlorq", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             total_memory_budget_mb = _cfg_get(
                 cfg, "mlorq_budget_mb", _cfg_get(cfg, "total_memory_budget_mb", total_memory_budget_mb)
@@ -371,13 +371,13 @@ class MLoRQCompressor(BaseCompressor):
         self.min_rank = max(1, int(min_rank))
         self.target_modules = target_modules
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
-        self.layer_bits: Dict[str, int] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+        self.layer_bits: dict[str, int] = {}
+        self.stats: dict[str, Any] = {}
 
     # ------------------------------------------------------------------
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
@@ -446,7 +446,7 @@ class MLoRQCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     def _generate_candidates(
         self, W: torch.Tensor
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Generate (rank, bits, error, cost_bits, U, S, Vt) candidates for a weight."""
         out_f, in_f = W.shape
         max_rank = min(out_f, in_f)
@@ -505,17 +505,17 @@ class MLoRQCompressor(BaseCompressor):
         return candidates
 
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers = []
         self.fallback_layers = []
         self.skipped_layers = []
         self.layer_errors = {}
         self.layer_ranks = {}
         self.layer_bits = {}
-        seen_weights: Set[int] = set()
+        seen_weights: set[int] = set()
 
         # ---------- 1. Collect target layers ----------
-        layer_infos: List[Dict[str, Any]] = []
+        layer_infos: list[dict[str, Any]] = []
         total_orig_bits = 0
 
         for name, module in list(self.model.named_modules()):
@@ -693,7 +693,7 @@ class MLoRQCompressor(BaseCompressor):
                 except Exception:
                     try:
                         self.model(dummy)
-                    except Exception as e2:
+                    except Exception:
                         cfg = getattr(self.model, "config", None)
                         hidden = getattr(cfg, "hidden_size", None) if cfg else None
                         if hidden is None:

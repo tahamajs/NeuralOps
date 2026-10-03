@@ -14,7 +14,7 @@ from __future__ import annotations
 import contextlib
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Default multi-domain calibration corpus
 # ---------------------------------------------------------------------------
-DEFAULT_CALIBRATION_CORPUS: List[str] = [
+DEFAULT_CALIBRATION_CORPUS: list[str] = [
     (
         "Transformers rely heavily on multi-head self-attention mechanisms to capture complex syntactic "
         "and semantic dependencies across arbitrary sequence lengths. However, the standard quadratic computational "
@@ -101,10 +101,10 @@ class SVDLinear(nn.Module):
         bias: bool = True,
         use_fused_kernel: bool = False,
         dtype: torch.dtype = torch.float32,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
         lora_rank: int = 0,
         lora_alpha: float = 1.0,
-        lora_r: Optional[int] = None,
+        lora_r: int | None = None,
         freeze_base: bool = False,
     ) -> None:
         super().__init__()
@@ -145,7 +145,7 @@ class SVDLinear(nn.Module):
             self.register_parameter("lora_B", None)
 
         # AASVD-FIX-07: input mean is not tracked; remove the buffer.
-        self._input_mean: Optional[torch.Tensor] = None
+        self._input_mean: torch.Tensor | None = None
 
         self.reset_parameters()
 
@@ -251,14 +251,14 @@ class AASVDCompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        tokenizer: Optional[Any] = None,
+        tokenizer: Any | None = None,
         rank: int = 288,
         ema_beta: float = 0.9,
         max_error: float = 0.50,
         fallback_to_original: bool = True,
-        calibration_texts: Optional[List[str]] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        target_modules: Optional[List[str]] = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
+        target_modules: list[str] | None = None,
         target_attention_only: bool = True,
         force_rank: bool = False,
         lora_rank: int = 0,          # AASVD-FIX-03
@@ -267,7 +267,7 @@ class AASVDCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="aasvd", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         # AASVD-FIX-02
         self.comp_config = cfg
 
@@ -352,10 +352,10 @@ class AASVDCompressor(BaseCompressor):
         )
 
         # ---- state ----
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
 
         # AASVD-FIX-14
         self._compressed_params: int = 0
@@ -429,7 +429,7 @@ class AASVDCompressor(BaseCompressor):
     # AASVD-FIX-10: dynamic STRS candidates
     # ------------------------------------------------------------------
     @staticmethod
-    def _build_strs_candidates(r_floor: int, r_ceiling: int) -> List[int]:
+    def _build_strs_candidates(r_floor: int, r_ceiling: int) -> list[int]:
         if r_ceiling < r_floor:
             return [r_ceiling]
         cands = set()
@@ -446,10 +446,10 @@ class AASVDCompressor(BaseCompressor):
     def compress_linear(
         self,
         layer: nn.Module,
-        rank: Optional[int] = None,
-        cov: Optional[torch.Tensor] = None,
-        cov_factors: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
-    ) -> Tuple[Optional[SVDLinear], float, int]:
+        rank: int | None = None,
+        cov: torch.Tensor | None = None,
+        cov_factors: tuple[torch.Tensor, torch.Tensor] | None = None,
+    ) -> tuple[SVDLinear | None, float, int]:
         try:
             target_mod = getattr(layer, "base_layer", layer)
             cls_name = layer.__class__.__name__.lower()
@@ -585,7 +585,7 @@ class AASVDCompressor(BaseCompressor):
             return None, float("inf"), 0
 
     # ------------------------------------------------------------------
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         self.model.eval()
         self.compressed_layers = []
         self.fallback_layers = []
@@ -594,9 +594,9 @@ class AASVDCompressor(BaseCompressor):
         self._orig_storage_bytes = 0
         self._comp_storage_bytes = 0
 
-        covariances: Dict[str, torch.Tensor] = {}
+        covariances: dict[str, torch.Tensor] = {}
         # AASVD-FIX-06: track per-layer update count
-        update_counts: Dict[str, int] = {}
+        update_counts: dict[str, int] = {}
 
         if self.tokenizer is None:
             logger.info("AASVD: no tokenizer; using unweighted SVD.")
@@ -672,7 +672,7 @@ class AASVDCompressor(BaseCompressor):
                     h.remove()
 
         # ---- Precompute covariance square roots ----
-        cov_factor_cache: Dict[str, Tuple[torch.Tensor, torch.Tensor]] = {}
+        cov_factor_cache: dict[str, tuple[torch.Tensor, torch.Tensor]] = {}
         for name, cov in covariances.items():
             try:
                 cov_dev = cov.to(self.device, torch.float32)
@@ -698,8 +698,8 @@ class AASVDCompressor(BaseCompressor):
             except Exception:
                 pass
 
-            cov_factors = cov_factor_cache.get(name, None)
-            cov = covariances.get(name, None) if cov_factors is None else None
+            cov_factors = cov_factor_cache.get(name)
+            cov = covariances.get(name) if cov_factors is None else None
 
             svd_layer, err, r = self.compress_linear(
                 module, rank=self.rank, cov=cov, cov_factors=cov_factors,

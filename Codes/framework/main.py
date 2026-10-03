@@ -34,7 +34,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # Ensure UTF-8 console output on Windows to prevent UnicodeEncodeError
 try:
@@ -96,11 +96,10 @@ def _import_framework():
         list_all_components,
     )
     from framework.core.utils import clear_memory, count_parameters, get_device, set_seed
-    from framework.experiment_utils.config import ExperimentConfig, build_config_from_args
+    from framework.experiment_utils.config import ExperimentConfig
     from framework.trainer.callbacks import MemoryCallback, SVDAttentionCallback, TimeCallback
     from framework.trainer.metrics import get_task_metrics
     from framework.utils.replace_attention import replace_attention
-    import framework.compression_engine  # auto-register all compressors
     from framework.pipeline.result_writer import ResultWriter
 
     return dict(
@@ -180,7 +179,7 @@ def load_data(cfg, tokenizer):
             tokenizer, cfg.task, cfg.max_len, sent1_key, sent2_key, is_regression
         )
         dataset = raw.map(preprocess_fn, batched=True, remove_columns=raw["train"].column_names)
-        
+
         # Crop dataset to max_train_samples (e.g. 1000) if requested for fast benchmarking
         max_samples = getattr(cfg, "max_train_samples", None)
         if max_samples is not None and "train" in dataset:
@@ -201,20 +200,19 @@ def load_data(cfg, tokenizer):
 # ---------------------------------------------------------------------------
 
 
-import json
 from transformers import TrainerCallback
 
 class LiveHistoryCallback(TrainerCallback):
     def __init__(self, out_dir):
         self.history_file = Path(out_dir) / "history" / "log_history.json"
         self.history_file.parent.mkdir(parents=True, exist_ok=True)
-        
+
     def on_log(self, args, state, control, logs=None, **kwargs):
         if state.log_history:
             with open(self.history_file, "w", encoding="utf-8") as f:
                 json.dump(state.log_history, f, indent=2, default=str)
 
-def run_train(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
+def run_train(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     """Full training pipeline: data → model → train → eval → save."""
     torch = fw["torch"]
     fw["set_seed"](cfg.seed)
@@ -264,7 +262,7 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
                 cfg.attn_type,
                 fw["ATTENTION_REGISTRY"].keys(),
             )
-            
+
     # Full end-to-end parameter fine-tuning enabled for all attention mechanisms
 
     model.to(device)
@@ -367,7 +365,7 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
 # Evaluation pipeline
 # ---------------------------------------------------------------------------
 
-def run_eval(cfg, fw: dict, logger: logging.Logger, model_path: str) -> Dict[str, Any]:
+def run_eval(cfg, fw: dict, logger: logging.Logger, model_path: str) -> dict[str, Any]:
     """Load a saved checkpoint and evaluate it on the validation split."""
     fw["set_seed"](cfg.seed)
     device = fw["get_device"]()
@@ -413,7 +411,7 @@ def run_eval(cfg, fw: dict, logger: logging.Logger, model_path: str) -> Dict[str
 # Compression pipeline
 # ---------------------------------------------------------------------------
 
-def run_compress(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
+def run_compress(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     """Apply a registered compressor to the base model and report size reduction."""
     from framework.core.registry import COMPRESSOR_REGISTRY
 
@@ -532,18 +530,18 @@ def run_compress(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
 # Sweep pipeline
 # ---------------------------------------------------------------------------
 
-def run_sweep(args, fw: dict, logger: logging.Logger) -> List[Dict[str, Any]]:
+def run_sweep(args, fw: dict, logger: logging.Logger) -> list[dict[str, Any]]:
     """Run a grid sweep: attn_types × seeds, save aggregated results."""
     import numpy as np
 
-    attn_types: List[str] = args.attn_types
-    seeds: List[int] = args.seeds
+    attn_types: list[str] = args.attn_types
+    seeds: list[int] = args.seeds
     logger.info(
         "Starting sweep: %d attn_types × %d seeds = %d runs",
         len(attn_types), len(seeds), len(attn_types) * len(seeds),
     )
 
-    all_results: List[Dict[str, Any]] = []
+    all_results: list[dict[str, Any]] = []
     for attn_type in attn_types:
         for seed in seeds:
             run_name = f"{attn_type}_s{seed}"
@@ -580,7 +578,7 @@ def run_sweep(args, fw: dict, logger: logging.Logger) -> List[Dict[str, Any]]:
     sweep_out = Path(args.output_dir) / f"sweep_{args.task}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     sweep_out.mkdir(parents=True, exist_ok=True)
 
-    by_attn: Dict[str, List] = {}
+    by_attn: dict[str, list] = {}
     for r in all_results:
         k = r.get("attn_type", "unknown")
         by_attn.setdefault(k, []).append(r)
@@ -613,7 +611,7 @@ def run_sweep(args, fw: dict, logger: logging.Logger) -> List[Dict[str, Any]]:
     return all_results
 
 
-def _write_sweep_markdown(out_dir: Path, task: str, summary: dict, attn_types: List[str]) -> None:
+def _write_sweep_markdown(out_dir: Path, task: str, summary: dict, attn_types: list[str]) -> None:
     """Write a human-readable sweep summary to RESULTS.md."""
     lines = [
         f"# Sweep Summary — Task: {task}",
@@ -643,10 +641,8 @@ def _write_sweep_markdown(out_dir: Path, task: str, summary: dict, attn_types: L
 # List registries
 # ---------------------------------------------------------------------------
 
-def run_list(fw: Optional[dict] = None) -> None:
+def run_list(fw: dict | None = None) -> None:
     """Print all registered components grouped by track."""
-    import framework.compression_engine
-    import framework.attentions
     from framework.eval_all_models_datasets import TRACK_MODULES
     from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 
@@ -738,7 +734,7 @@ def main() -> None:
         return
 
     # ── Optional YAML config override ──────────────────────────────────────
-    cfg_overrides: Dict[str, Any] = {}
+    cfg_overrides: dict[str, Any] = {}
     if getattr(args, "config", None):
         import yaml
         with open(args.config) as f:

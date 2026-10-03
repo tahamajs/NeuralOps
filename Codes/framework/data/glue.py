@@ -4,7 +4,6 @@ Uses the HuggingFace `datasets` library and local files if available.
 """
 
 import os
-from typing import Optional
 
 from datasets import DatasetDict, load_dataset
 
@@ -35,8 +34,8 @@ SUPERGLUE_TASK_KEYS = {
 
 def load_glue_dataset(
     task_name: str,
-    split: Optional[str] = None,
-    local_dir: Optional[str] = None,
+    split: str | None = None,
+    local_dir: str | None = None,
 ) -> DatasetDict:
     """
     Load a GLUE task dataset. If a local directory is given and contains
@@ -61,7 +60,7 @@ def load_glue_dataset(
 
 def load_superglue_dataset(
     task_name: str,
-    split: Optional[str] = None,
+    split: str | None = None,
 ) -> DatasetDict:
     """Load superglue dataset from disk or config."""
     ds = load_dataset("super_glue", task_name)

@@ -1,6 +1,5 @@
 import math
 from typing import Any
-import torch
 from framework.core.registry import Registry
 from torch.optim import lr_scheduler
 

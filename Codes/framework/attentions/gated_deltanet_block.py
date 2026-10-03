@@ -5,7 +5,7 @@ multi-head self-attention and Bidirectional Gated DeltaNet with pretrained weigh
 """
 
 import logging
-from typing import Any, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -33,12 +33,12 @@ class GatedDeltaNetBlock(BaseAttention):
     is_custom_attention: bool = True
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        d_model: Optional[Union[int, Any]] = None,
-        num_heads: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        d_model: int | Any | None = None,
+        num_heads: int | None = None,
         use_full_attention: bool = False,
-        comp_config: Optional[Any] = None,
+        comp_config: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
@@ -60,7 +60,7 @@ class GatedDeltaNetBlock(BaseAttention):
         self.comp_config = comp_config
 
         if use_full_attention:
-            self.attn: Optional[nn.MultiheadAttention] = nn.MultiheadAttention(
+            self.attn: nn.MultiheadAttention | None = nn.MultiheadAttention(
                 self.d_model, self.num_heads, batch_first=True
             )
         else:
@@ -112,7 +112,7 @@ class GatedDeltaNetBlock(BaseAttention):
                             if target is not None and hasattr(target, cand):
                                 mod = getattr(target, cand)
                                 if hasattr(mod, "dense"):
-                                    mod = getattr(mod, "dense")
+                                    mod = mod.dense
                                 if hasattr(mod, "weight") and mod.weight is not None:
                                     w_o = mod.weight.data.clone()
                                     if w_o.ndim == 2 and w_o.shape[0] < w_o.shape[1]:
@@ -147,17 +147,17 @@ class GatedDeltaNetBlock(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """Forward pass for GatedDeltaNetBlock."""
         x = hidden_states
         if self.use_full_attention and self.attn is not None:
@@ -200,12 +200,12 @@ def inject_gated_deltanet_block(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
 ):
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

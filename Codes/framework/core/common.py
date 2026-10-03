@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import math
 import logging
-from typing import Any, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -55,8 +55,8 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
 
 def _detect_decoder(
     config: Any = None,
-    is_decoder: Optional[bool] = None,
-    old_attn: Optional[nn.Module] = None,
+    is_decoder: bool | None = None,
+    old_attn: nn.Module | None = None,
 ) -> bool:
     """
     Detects whether an attention layer should operate in causal decoder mode.
@@ -88,14 +88,14 @@ def _apply_rope(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Applies Rotary Position Embedding (RoPE) to Query and Key tensors.
     """
     if cos.dim() < q.dim():
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
-    
+
     def rotate_half(x: torch.Tensor) -> torch.Tensor:
         x1 = x[..., : x.shape[-1] // 2]
         x2 = x[..., x.shape[-1] // 2 :]
@@ -118,17 +118,17 @@ class LoRALinear(nn.Module):
     """
     def __init__(
         self,
-        base_or_in_features: Union[nn.Module, int],
-        out_features: Optional[int] = None,
+        base_or_in_features: nn.Module | int,
+        out_features: int | None = None,
         bias: bool = True,
         lora_rank: int = 16,
-        r: Optional[int] = None,
+        r: int | None = None,
         lora_alpha: float = 32.0,
         lora_dropout: float = 0.0,
         freeze_base: bool = False,
         merge_weights: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         effective_r = r if r is not None else lora_rank
@@ -266,8 +266,8 @@ class FactorizedLinear(nn.Module):
         rank: int = 128,
         lora_rank: int = 32,
         bias: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = int(in_features)
@@ -323,7 +323,7 @@ class FactorizedLinear(nn.Module):
         return w
 
     @property
-    def bias(self) -> Optional[torch.Tensor]:
+    def bias(self) -> torch.Tensor | None:
         return self.lin2.bias
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

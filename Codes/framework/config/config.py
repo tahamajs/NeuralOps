@@ -8,7 +8,7 @@ Usage:
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from framework.utils.paths import get_glue_dir
 
@@ -115,7 +115,7 @@ class ModelConfig:
     trust_remote_code: bool = False
     cache_dir: str = "./cache"
     fix_layernorm_naming: bool = True
-    variants: List[str] = field(
+    variants: list[str] = field(
         default_factory=list
     )  # e.g., ["standard", "compressed"]
 
@@ -126,12 +126,12 @@ class DataConfig:
 
     local_glue_path: str = str(get_glue_dir())
     max_seq_length: int = 128
-    max_train_samples: Optional[int] = None
-    max_val_samples: Optional[int] = None
+    max_train_samples: int | None = None
+    max_val_samples: int | None = None
     num_proc: int = 4
     streaming: bool = False
-    remove_columns: List[str] = field(default_factory=lambda: ["label"])
-    split_mapping: Dict[str, str] = field(
+    remove_columns: list[str] = field(default_factory=lambda: ["label"])
+    split_mapping: dict[str, str] = field(
         default_factory=lambda: {
             "train": "train",
             "validation": "validation",
@@ -156,7 +156,7 @@ class TrainingConfig:
     max_grad_norm: float = 1.0
     lr_scheduler_type: str = "linear"
     optimizer: str = "adamw"
-    early_stopping_patience: Optional[int] = None
+    early_stopping_patience: int | None = None
     early_stopping_threshold: float = 0.001
     save_strategy: str = "epoch"
     save_steps: int = 500
@@ -243,15 +243,15 @@ class CompressionConfig:
     num_experts: int = 8
     top_k: int = 2
     ratio: int = 9  # hybrid attention / Mamba ratio
-    n_heads: Optional[int] = None
-    n_layers: Optional[int] = None
+    n_heads: int | None = None
+    n_layers: int | None = None
     use_full_attention: bool = False
     use_fp8: bool = False
 
     # Additional fields used by some compressors
     use_lion: bool = False
     gradient_checkpointing: bool = False
-    early_stopping_patience: Optional[int] = None
+    early_stopping_patience: int | None = None
     max_grad_norm: float = 1.0
 
 
@@ -266,19 +266,19 @@ class SweepConfig:
     max_trials: int = 20
     parallel_workers: int = 1
     pruner: str = "hyperband"
-    search_space: Dict[str, Any] = field(default_factory=dict)
-    base_config: Dict[str, Any] = field(default_factory=dict)
+    search_space: dict[str, Any] = field(default_factory=dict)
+    base_config: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class ExperimentConfig:
     """Multi‑run experiment grid (SVD ranks, datasets, models)."""
 
-    base_models: Dict[str, str] = field(
+    base_models: dict[str, str] = field(
         default_factory=lambda: {"bert": "bert-base-uncased"}
     )
-    svd_ranks: List[int] = field(default_factory=lambda: [8, 16, 32])
-    datasets: List[DatasetConfig] = field(default_factory=list)
+    svd_ranks: list[int] = field(default_factory=lambda: [8, 16, 32])
+    datasets: list[DatasetConfig] = field(default_factory=list)
     min_samples: int = 10
     max_samples: int = 200
     batch_size: int = 4
@@ -292,9 +292,9 @@ class ExperimentConfig:
     output_dir: str = "./results"
     plots_dir: str = "./plots/comprehensive"
     log_dir: str = "./logs"
-    selected_models: List[str] = field(default_factory=list)
-    selected_datasets: List[str] = field(default_factory=list)
-    selected_ranks: List[int] = field(default_factory=list)
+    selected_models: list[str] = field(default_factory=list)
+    selected_datasets: list[str] = field(default_factory=list)
+    selected_ranks: list[int] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------

@@ -4,7 +4,7 @@ metric delta tables, and run diff for training runs.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 try:
     from deepdiff import DeepDiff
@@ -29,14 +29,14 @@ from .model import TrainingRun
 class ComparisonResult:
     """Result of comparing multiple training runs."""
 
-    run_ids: List[str]
-    metrics_table: List[Dict[str, Any]]  # one row per run
-    config_diff: Dict[str, Any]  # DeepDiff between configs
-    hyperparameter_table: List[Dict[str, Any]]  # hyperparams across runs
-    metric_deltas: List[Dict[str, Any]]  # delta from baseline
-    timeline_data: Dict[str, List[float]]  # for loss curve overlay
-    parallel_coords: Dict[str, Any]  # data for parallel coords plot
-    best_run_id: Optional[str] = None
+    run_ids: list[str]
+    metrics_table: list[dict[str, Any]]  # one row per run
+    config_diff: dict[str, Any]  # DeepDiff between configs
+    hyperparameter_table: list[dict[str, Any]]  # hyperparams across runs
+    metric_deltas: list[dict[str, Any]]  # delta from baseline
+    timeline_data: dict[str, list[float]]  # for loss curve overlay
+    parallel_coords: dict[str, Any]  # data for parallel coords plot
+    best_run_id: str | None = None
     summary: str = ""
 
 
@@ -46,10 +46,10 @@ class ExperimentComparator:
     Inspired by ZenML's comparison tool, MLflow compare, and RagaAI diff.
     """
 
-    def __init__(self, run_ids: List[str], baseline_id: Optional[str] = None) -> None:
+    def __init__(self, run_ids: list[str], baseline_id: str | None = None) -> None:
         self.run_ids = run_ids
         self.baseline_id = baseline_id or (run_ids[0] if run_ids else None)
-        self.runs: List[TrainingRun] = []
+        self.runs: list[TrainingRun] = []
 
     def load_runs(self) -> None:
         """Load runs from disk or config."""
@@ -80,7 +80,7 @@ class ExperimentComparator:
         result.summary = self._generate_summary(result)
         return result
 
-    def _build_metrics_table(self) -> List[Dict[str, Any]]:
+    def _build_metrics_table(self) -> list[dict[str, Any]]:
         """ build metrics table."""
         rows = []
         for run in self.runs:
@@ -104,7 +104,7 @@ class ExperimentComparator:
             )
         return rows
 
-    def _build_config_diff(self) -> Dict[str, Any]:
+    def _build_config_diff(self) -> dict[str, Any]:
         """ build config diff."""
         configs = {str(r.id): r.config for r in self.runs}
         first_id = str(self.runs[0].id)
@@ -123,7 +123,7 @@ class ExperimentComparator:
             ),
         }
 
-    def _build_hyperparameter_table(self) -> List[Dict[str, Any]]:
+    def _build_hyperparameter_table(self) -> list[dict[str, Any]]:
         """ build hyperparameter table."""
         hp_keys = [
             "learning_rate",
@@ -147,7 +147,7 @@ class ExperimentComparator:
             rows.append(row)
         return rows
 
-    def _build_metric_deltas(self, baseline: TrainingRun) -> List[Dict[str, Any]]:
+    def _build_metric_deltas(self, baseline: TrainingRun) -> list[dict[str, Any]]:
         """ build metric deltas."""
         base_metrics = baseline.final_metrics or {}
         deltas = []
@@ -178,7 +178,7 @@ class ExperimentComparator:
             deltas.append(delta_row)
         return deltas
 
-    def _build_timeline_overlay(self) -> Dict[str, List[float]]:
+    def _build_timeline_overlay(self) -> dict[str, list[float]]:
         """Extract training history for overlaid loss curves."""
         timeline = {"steps": [], "series": {}}
         for run in self.runs:
@@ -191,7 +191,7 @@ class ExperimentComparator:
                 timeline["series"][str(run.id)] = losses
         return timeline
 
-    def _build_parallel_coords(self) -> Dict[str, Any]:
+    def _build_parallel_coords(self) -> dict[str, Any]:
         """Build data for a parallel coordinates plot (hyperparams + metrics)."""
         dimensions = [
             "learning_rate",
@@ -213,7 +213,7 @@ class ExperimentComparator:
             data.append(point)
         return {"dimensions": dimensions, "data": data}
 
-    def _find_best_run(self) -> Optional[str]:
+    def _find_best_run(self) -> str | None:
         """ find best run."""
         best = None
         best_acc = -1
@@ -243,7 +243,7 @@ class ExperimentComparator:
         return " ".join(lines)
 
 
-def compare_runs_api(run_ids: List[str], baseline_id: Optional[str] = None) -> Dict:
+def compare_runs_api(run_ids: list[str], baseline_id: str | None = None) -> dict:
     """API-friendly wrapper."""
     comparator = ExperimentComparator(run_ids, baseline_id)
     result = comparator.compare()

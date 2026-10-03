@@ -12,7 +12,7 @@ Hardened for production use across diverse transformer architectures:
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -21,7 +21,7 @@ import torch.nn.functional as F
 from framework.core.adapters import UniversalAdapter
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.triton_kernels import triton_dispatch
 
@@ -36,7 +36,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
     if module is None:
         return None, None
     base = getattr(module, "base_layer", module)
@@ -69,9 +69,9 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
+    position_ids: torch.Tensor | None = None,
     unsqueeze_dim: int = 1,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Applies Rotary Position Embedding (RoPE) with partial dimension support."""
     rotary_dim = cos.shape[-1]
     rotary_dim = rotary_dim - (rotary_dim % 2)
@@ -123,7 +123,7 @@ class SVDProjectionLinear(nn.Module):
         self.U: nn.Parameter = nn.Parameter(torch.empty(out_features, rank))
         self.V: nn.Parameter = nn.Parameter(torch.empty(rank, in_features))
         if bias:
-            self.bias: Optional[nn.Parameter] = nn.Parameter(torch.empty(out_features))
+            self.bias: nn.Parameter | None = nn.Parameter(torch.empty(out_features))
         else:
             self.register_parameter("bias", None)
 
@@ -196,12 +196,12 @@ class SVDProjectionAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        old_attn: Optional[nn.Module] = None,
-        rank: Optional[int] = None,
+        config: Any | None = None,
+        old_attn: nn.Module | None = None,
+        rank: int | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         dropout: float = 0.1,
         **kwargs: Any,
     ) -> None:
@@ -251,7 +251,7 @@ class SVDProjectionAttention(BaseAttention):
             )
 
         self.is_nested_encoder: bool = False
-        comp_config = _cfg_get(config, "compression_config", kwargs.get("comp_config", None))
+        comp_config = _cfg_get(config, "compression_config", kwargs.get("comp_config"))
         self.rank: int = (
             rank
             if rank is not None
@@ -348,7 +348,7 @@ class SVDProjectionAttention(BaseAttention):
         return self.out_proj
 
     def _decompose_and_set(
-        self, target: SVDProjectionLinear, weight: torch.Tensor, bias: Optional[torch.Tensor]
+        self, target: SVDProjectionLinear, weight: torch.Tensor, bias: torch.Tensor | None
     ) -> None:
         """Decomposes full weight matrix into SVD factors and copies bias."""
         with torch.no_grad():
@@ -482,7 +482,7 @@ class SVDProjectionAttention(BaseAttention):
             self._decompose_and_set(self.q_proj, w_q, b_q)
 
             # Handle GQA pooling/repetition for K and V
-            def _align_kv(w: torch.Tensor, b: Optional[torch.Tensor]) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+            def _align_kv(w: torch.Tensor, b: torch.Tensor | None) -> tuple[torch.Tensor, torch.Tensor | None]:
                 if w.shape[0] == self.kv_head_size:
                     return w, b
                 elif w.shape[0] > self.kv_head_size and w.shape[0] % self.kv_head_size == 0:
@@ -528,18 +528,18 @@ class SVDProjectionAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, N, _ = hidden_states.shape
         is_cross = encoder_hidden_states is not None
         kv_input = encoder_hidden_states if is_cross else hidden_states
@@ -552,7 +552,7 @@ class SVDProjectionAttention(BaseAttention):
 
         # 2. RoPE support
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
@@ -654,14 +654,14 @@ def inject_svd_proj_attn(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     lora_rank: int = 16,
-    rank: Optional[int] = None,
+    rank: int | None = None,
     **kwargs: Any,
-) -> Optional[Any]:
+) -> Any | None:
     """Safely constructs and injects SVDProjectionAttention into a model or transformer layer."""
     target = layer if layer is not None else model
-    cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
+    cfg = model_config or getattr(target, "config", None) or kwargs.get("config")
 
     # 1. Whole model traversal support
     if target is not None and (
