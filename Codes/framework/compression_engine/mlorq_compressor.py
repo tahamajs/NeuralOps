@@ -539,7 +539,6 @@ class MLoRQCompressor(BaseCompressor):
         """Generate (rank, bits, error, cost_bits, U, S, Vt) candidates for a weight."""
         out_f, in_f = W.shape
         max_rank = min(out_f, in_f)
-        device = W.device
 
         # Randomized SVD for large matrices (MLR-FIX-09)
         q = min(max_rank + 10, max_rank)

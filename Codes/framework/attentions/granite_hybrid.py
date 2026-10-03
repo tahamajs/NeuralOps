@@ -398,7 +398,7 @@ class GraniteHybridBlock(BaseAttention):
 
         num_exp = int(_get("num_experts", kwargs.get("num_experts", num_experts)))
         tk = int(_get("top_k", kwargs.get("top_k", top_k)))
-        rat = int(_get("ratio", kwargs.get("ratio", ratio)))
+        int(_get("ratio", kwargs.get("ratio", ratio)))
         self.moe: MixtureOfExperts = MixtureOfExperts(
             self.dim, self.dim * 4, num_exp, tk
         )

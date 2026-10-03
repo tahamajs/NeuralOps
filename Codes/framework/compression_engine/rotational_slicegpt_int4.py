@@ -391,8 +391,8 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
 
         # Re-quantize the final W_quant column-wise to get indices + centroids
         # (OBS updates can change values slightly, so we requantize once).
-        flat = W_quant.t().contiguous()  # (r, D_out) → quantize per row
-        W_idx_list, W_cents_list = [], []
+        W_quant.t().contiguous()  # (r, D_out) → quantize per row
+        _W_idx_list, _W_cents_list = [], []
         per_col_centroids = []
         W_indices = torch.empty_like(W_quant, dtype=torch.int8)
         for j in range(r):

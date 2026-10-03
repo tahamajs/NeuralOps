@@ -259,13 +259,11 @@ def main():
             Path(args.sweep_csv).parent
             / f"distilbert_mnli_full_{mod}_full_metrics.json"
         )
-        loaded_checkpoint = False
         if checkpoint_path.exists():
             try:
                 with open(checkpoint_path) as jf:
-                    jdata = json.load(jf)
+                    json.load(jf)
                 # The metrics JSON contains performance, not weights. Use it as ref only.
-                loaded_checkpoint = True
             except Exception:
                 pass
 

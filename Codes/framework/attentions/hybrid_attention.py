@@ -451,7 +451,7 @@ class HybridAttention(BaseAttention):
         V_f = V_f * mask
 
         B_h, H_h, N_h, D_h = phi_Q.shape
-        N_k = phi_K.shape[2]
+        phi_K.shape[2]
 
         # Handle cache: query positions are [past_len .. past_len + N_h), keys are [0 .. N_k)
         if self.is_decoder and past_len > 0:

@@ -322,7 +322,7 @@ class LayerwiseAnalyzer:
         kurtosis_scores = [acc.compute_kurtosis() for acc in self.layer_accumulators]
 
         # Estimate intrinsic dimension using mean vectors
-        stacked_means = np.stack(mean_vectors) if num_layers > 1 else np.zeros((1, 128))
+        np.stack(mean_vectors) if num_layers > 1 else np.zeros((1, 128))
         intrinsic_dims = [
             estimate_intrinsic_dimension(
                 acc.cov_matrix if acc.cov_matrix is not None else np.eye(10), k=3

@@ -6,4 +6,4 @@ Wrapper for orchestrating minimal_svd_v2.
 from .unified_orchestrator import run_orchestrator
 
 if __name__ == "__main__":
-    run_orchestrator("minimal_svd_v2", ['--lora_rank', '16', '--rank', '32'])
+    run_orchestrator("minimal_svd_v2", ["--lora_rank", "16", "--rank", "32"])

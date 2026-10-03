@@ -274,9 +274,7 @@ class HLAAttention(BaseAttention):
             # Pattern 1: GPT-2 Fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
-                c_attn_b = (
-                    src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                )
+                (src.c_attn.bias.detach() if src.c_attn.bias is not None else None)
                 if (
                     c_attn_w.shape[0] == self.hidden_size
                     and c_attn_w.shape[1] != self.hidden_size

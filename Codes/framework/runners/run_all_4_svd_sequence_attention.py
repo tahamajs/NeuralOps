@@ -6,4 +6,4 @@ Wrapper for orchestrating svd_sequence_attention.
 from .unified_orchestrator import run_orchestrator
 
 if __name__ == "__main__":
-    run_orchestrator("svd_sequence_attention", ['--lora_rank', '16', '--rank', '32'])
+    run_orchestrator("svd_sequence_attention", ["--lora_rank", "16", "--rank", "32"])

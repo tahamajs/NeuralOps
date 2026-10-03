@@ -860,7 +860,7 @@ class InfiniAttention(BaseAttention):
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
 
         # INF3-FIX-02: layer_idx from kwargs (some HF models pass it)
-        layer_idx = kwargs.get("layer_idx", 0)
+        kwargs.get("layer_idx", 0)
 
         # INF3-FIX-01: position_embeddings comes from kwargs, never positional
         position_embeddings = kwargs.get("position_embeddings")
@@ -876,7 +876,6 @@ class InfiniAttention(BaseAttention):
         B, L, _ = hidden_states.shape
         H, Dh = self.num_heads, self.head_dim
         device = hidden_states.device
-        dtype_in = hidden_states.dtype
 
         # ---- projections ----
         q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()

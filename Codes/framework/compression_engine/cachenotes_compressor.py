@@ -843,7 +843,7 @@ class CacheNotesCompressor(BaseCompressor):
             target_mod = getattr(
                 module, "base_layer", getattr(module, "linear", module)
             )
-            cls_name = module.__class__.__name__.lower()
+            module.__class__.__name__.lower()
             is_conv1d = (
                 (
                     Conv1D is not None

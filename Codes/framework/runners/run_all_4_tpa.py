@@ -6,4 +6,4 @@ Wrapper for orchestrating tpa.
 from .unified_orchestrator import run_orchestrator
 
 if __name__ == "__main__":
-    run_orchestrator("tpa", ['--lora_rank', '16', '--rank', '8'])
+    run_orchestrator("tpa", ["--lora_rank", "16", "--rank", "8"])

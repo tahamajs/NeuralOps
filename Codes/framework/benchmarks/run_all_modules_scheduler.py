@@ -760,7 +760,7 @@ def main():
             time.sleep(3)
 
         # Wait for batch completion
-        batch_ok = wait_for_batch(batch, poll_sec=20, timeout_min=30)
+        wait_for_batch(batch, poll_sec=20, timeout_min=30)
 
         # Sync results from remote
         sync_results()

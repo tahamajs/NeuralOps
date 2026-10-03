@@ -1275,7 +1275,7 @@ def main(argv: list[str] | None = None):
                     2.0 * baseline_ppl,
                 )
                 try:
-                    kd_rec_time = run_kd_recovery(
+                    run_kd_recovery(
                         student=cand,
                         teacher=base_snapshot,
                         tokenizer=tokenizer,

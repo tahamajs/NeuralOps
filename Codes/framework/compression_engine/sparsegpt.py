@@ -239,10 +239,10 @@ class SparseGPTCompressor(BaseCompressor):
                     act_flat, damping=self.percdamp, device=device
                 )
             else:
-                H = 2.0 * torch.eye(d_in, device=device)
+                2.0 * torch.eye(d_in, device=device)
                 H_inv = 0.5 * torch.eye(d_in, device=device)
         else:
-            H = 2.0 * torch.eye(d_in, device=device)
+            2.0 * torch.eye(d_in, device=device)
             H_inv = 0.5 * torch.eye(d_in, device=device)
 
         H_inv = H_inv.to(device=device, dtype=torch.float32)

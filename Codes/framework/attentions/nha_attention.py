@@ -883,7 +883,7 @@ class NativeHybridAttention(BaseAttention):
         if past_key_value is not None and hasattr(past_key_value, "update"):
             past_key_value.update(K_new, V_new, layer_idx)
 
-        N_kv = K_cat.shape[-2]
+        K_cat.shape[-2]
 
         # GQA
         if self.num_heads != self.num_kv_heads:

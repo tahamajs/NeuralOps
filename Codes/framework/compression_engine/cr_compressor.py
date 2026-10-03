@@ -152,7 +152,7 @@ class CRLinear(nn.Module):
 
         if col_idx is None:
             # Pure PyTorch QRCP-equivalent greedy pivoted column selection
-            remaining_cols = list(range(in_f))
+            list(range(in_f))
             selected_cols = []
             norms = torch.sum(W_float**2, dim=0)
 
@@ -382,9 +382,9 @@ class CRCompressor(BaseCompressor):
                 or hasattr(module, "nf")
                 or hasattr(target_mod, "nf")
             )
-            has_lora = (
-                hasattr(module, "lora_A") and module.lora_A is not None
-            ) or hasattr(module, "base_layer")
+            (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(
+                module, "base_layer"
+            )
 
             raw_w = target_mod.weight.data
             orig_w = raw_w.t().float() if is_conv1d else raw_w.float()

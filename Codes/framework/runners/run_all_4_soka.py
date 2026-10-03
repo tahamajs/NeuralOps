@@ -6,4 +6,4 @@ Wrapper for orchestrating soka.
 from .unified_orchestrator import run_orchestrator
 
 if __name__ == "__main__":
-    run_orchestrator("soka", ['--rank', '128'])
+    run_orchestrator("soka", ["--rank", "128"])

@@ -48,7 +48,7 @@ class BenchmarkDatasetInfo:
 def _generate_synthetic_wikitext(
     num_samples: int, seed: int = 42
 ) -> list[dict[str, Any]]:
-    rng = random.Random(seed)
+    random.Random(seed)
     topics = [
         (
             "Valkyria Chronicles III",
@@ -80,7 +80,7 @@ def _generate_synthetic_wikitext(
 
 
 def _generate_synthetic_c4(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
-    rng = random.Random(seed)
+    random.Random(seed)
     domains = [
         "news-digest.org",
         "tech-insights.io",

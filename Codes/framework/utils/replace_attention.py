@@ -163,7 +163,7 @@ class UniversalAttentionWrapper(nn.Module):
 
         cfg = getattr(self._wrapped_attention, "config", getattr(self, "config", None))
         fam = detect_family(cfg) if cfg is not None else "unknown"
-        is_dec = is_decoder_family(fam) or fam in {
+        is_decoder_family(fam) or fam in {
             "qwen3_5",
             "qwen",
             "gpt",

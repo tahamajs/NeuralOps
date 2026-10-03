@@ -618,7 +618,6 @@ class SpectraV2Attention(BaseAttention):
         # Causal determination
         _is_causal = getattr(self, "is_decoder", False) and not is_cross and N > 1
 
-        attn_out = None
         attn_weights = None
 
         if not output_attentions:

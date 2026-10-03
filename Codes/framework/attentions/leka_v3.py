@@ -944,7 +944,6 @@ class LEKAV3Attention(BaseAttention):
         H = self.num_heads
         d = self.head_dim
         device = hidden_states.device
-        dtype = hidden_states.dtype
 
         valid_mask = get_token_valid_mask(attention_mask, B, N, device)
 

@@ -396,9 +396,8 @@ class ZeroKVNeoCompressor(BaseCompressor):
                     compressed_layer  # put compressed layer inside wrapper
                 )
                 # module itself (LoRALinear wrapper) remains the replacement
-                new_module = module
             else:
-                new_module = compressed_layer
+                pass
             if (
                 getattr(base_layer, "bias", None) is not None
                 and base_layer.bias is not None

@@ -6,4 +6,4 @@ Wrapper for orchestrating moba.
 from .unified_orchestrator import run_orchestrator
 
 if __name__ == "__main__":
-    run_orchestrator("moba", ['--lora_rank', '16', '--rank', '32'])
+    run_orchestrator("moba", ["--lora_rank", "16", "--rank", "32"])

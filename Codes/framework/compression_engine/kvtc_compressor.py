@@ -592,7 +592,6 @@ class KVTCCompressor(BaseCompressor):
 
             cls_name = target_mod.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-            device = raw_w.device
             dtype = raw_w.dtype
 
             W = (

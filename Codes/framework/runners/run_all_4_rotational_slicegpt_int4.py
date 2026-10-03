@@ -6,4 +6,4 @@ Wrapper for orchestrating rotational_slicegpt_int4.
 from .unified_orchestrator import run_orchestrator
 
 if __name__ == "__main__":
-    run_orchestrator("rotational_slicegpt_int4", ['--rank', '128'])
+    run_orchestrator("rotational_slicegpt_int4", ["--rank", "128"])

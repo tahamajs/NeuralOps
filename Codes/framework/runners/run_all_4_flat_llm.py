@@ -6,4 +6,4 @@ Wrapper for orchestrating flat_llm.
 from .unified_orchestrator import run_orchestrator
 
 if __name__ == "__main__":
-    run_orchestrator("flat_llm", ['--rank', '128'])
+    run_orchestrator("flat_llm", ["--rank", "128"])

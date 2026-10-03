@@ -1049,9 +1049,8 @@ class AegisAttentionV2(BaseAttention):
         ):
             idx = getattr(self, "layer_idx", 0)
             past_key_value.update(K_new, V_new, idx)
-            cache_to_return = past_key_value
         else:
-            cache_to_return = (K_cat, V_cat)
+            pass
 
         N_kv = K_cat.shape[2]
         past_len = N_kv - N if (self.is_decoder and not is_cross) else 0

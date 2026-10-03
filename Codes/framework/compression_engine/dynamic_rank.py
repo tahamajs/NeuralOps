@@ -121,7 +121,7 @@ def allocate_entropy_ranks(
 
     min_rank = max(16, int(min_rank))
     layer_names = list(entropies.keys())
-    num_layers = len(layer_names)
+    len(layer_names)
 
     # Determine per-layer physical dimension bounds with minimum rank floor
     per_layer_min = {}

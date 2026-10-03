@@ -713,7 +713,7 @@ class TLinFormerAttention(BaseAttention):
         interpolate hack).
         """
         buf = getattr(self, name)  # (rank, max_seq_len)
-        r = buf.shape[0]
+        buf.shape[0]
         if self.max_seq_len < L:
             logger.warning(
                 "TLinFormer: sequence length %d exceeds max_seq_len %d; "
