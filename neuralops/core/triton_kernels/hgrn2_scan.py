@@ -15,8 +15,14 @@ Note: f, iv, h all have shape (B, L, D). No state-dim mixing.
 from __future__ import annotations
 
 import torch
-import triton
-import triton.language as tl
+try:
+    import triton
+    import triton.language as tl
+    HAS_TRITON = True
+except ImportError:
+    HAS_TRITON = False
+    triton = type("triton", (), {"jit": lambda f: f, "heuristics": lambda *a, **kw: lambda f: f, "autotune": lambda *a, **kw: lambda f: f})
+    tl = None
 
 
 @triton.jit
