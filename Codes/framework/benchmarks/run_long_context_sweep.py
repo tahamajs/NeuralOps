@@ -11,6 +11,7 @@ Usage:
     python run_long_context_sweep.py --dry_run
     python run_long_context_sweep.py --model_path models/distilbert_sst2 --rank 64
 """
+
 from __future__ import annotations
 
 import argparse
@@ -32,11 +33,13 @@ ROOT = CODES.parent
 sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "Codes")]
 
 from framework.core.registry import ATTENTION_REGISTRY
-from framework.eval_all_models_datasets import apply_module_to_model
 from framework.data_utils.load_byte_imdb import get_byte_imdb_dataloader
+from framework.eval_all_models_datasets import apply_module_to_model
 
 LOG = logging.getLogger("LongContextSweep")
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
 
 DEFAULT_LONG_CONTEXT_MODULES = [
     "full",
@@ -87,30 +90,65 @@ def parse_args():
         description="Run 4096-token long-context evaluation sweep on Byte-Level IMDb",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--model_path", type=str, default="models/distilbert_sst2",
-                        help="Path to pre-trained/fine-tuned classification model")
-    parser.add_argument("--dataset_dir", type=str, default="Codes/framework/data/byte_imdb",
-                        help="Path to pre-cached byte-imdb dataset directory")
-    parser.add_argument("--output_dir", type=str, default="results/05_perplexity_seqlen/long_context",
-                        help="Directory to save sweep results and summary.csv")
-    parser.add_argument("--modules", type=str, nargs="*", default=DEFAULT_LONG_CONTEXT_MODULES,
-                        help="Modules to evaluate")
-    parser.add_argument("--batch_size", type=int, default=2,
-                        help="Evaluation batch size (kept small for 4096 tokens to avoid OOM)")
-    parser.add_argument("--seq_len", type=int, default=4096,
-                        help="Target sequence length in tokens/bytes")
-    parser.add_argument("--max_length", type=int, default=None,
-                        help="Alias for --seq_len")
-    parser.add_argument("--parallel", type=int, default=1,
-                        help="Parallel workers (default 1)")
-    parser.add_argument("--max_eval_samples", type=int, default=500,
-                        help="Number of test samples to evaluate (None for full split)")
-    parser.add_argument("--rank", type=int, default=64,
-                        help="Compression rank")
-    parser.add_argument("--fp16", action="store_true", default=True,
-                        help="Use FP16 precision")
-    parser.add_argument("--dry_run", action="store_true", default=False,
-                        help="Dry run: print planned steps without executing")
+    parser.add_argument(
+        "--model_path",
+        type=str,
+        default="models/distilbert_sst2",
+        help="Path to pre-trained/fine-tuned classification model",
+    )
+    parser.add_argument(
+        "--dataset_dir",
+        type=str,
+        default="Codes/framework/data/byte_imdb",
+        help="Path to pre-cached byte-imdb dataset directory",
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default="results/05_perplexity_seqlen/long_context",
+        help="Directory to save sweep results and summary.csv",
+    )
+    parser.add_argument(
+        "--modules",
+        type=str,
+        nargs="*",
+        default=DEFAULT_LONG_CONTEXT_MODULES,
+        help="Modules to evaluate",
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=2,
+        help="Evaluation batch size (kept small for 4096 tokens to avoid OOM)",
+    )
+    parser.add_argument(
+        "--seq_len",
+        type=int,
+        default=4096,
+        help="Target sequence length in tokens/bytes",
+    )
+    parser.add_argument(
+        "--max_length", type=int, default=None, help="Alias for --seq_len"
+    )
+    parser.add_argument(
+        "--parallel", type=int, default=1, help="Parallel workers (default 1)"
+    )
+    parser.add_argument(
+        "--max_eval_samples",
+        type=int,
+        default=500,
+        help="Number of test samples to evaluate (None for full split)",
+    )
+    parser.add_argument("--rank", type=int, default=64, help="Compression rank")
+    parser.add_argument(
+        "--fp16", action="store_true", default=True, help="Use FP16 precision"
+    )
+    parser.add_argument(
+        "--dry_run",
+        action="store_true",
+        default=False,
+        help="Dry run: print planned steps without executing",
+    )
     return parser.parse_args()
 
 
@@ -126,25 +164,47 @@ def adapt_model_pos_embeddings(model: nn.Module, target_seq_len: int = 4096) -> 
             pos_emb = model.distilbert.embeddings.position_embeddings
             old_w = pos_emb.weight.data  # [max_pos, dim]
             # Interpolate: [1, dim, max_pos] -> [1, dim, target_seq_len]
-            new_w = torch.nn.functional.interpolate(
-                old_w.t().unsqueeze(0), size=target_seq_len, mode="linear", align_corners=False
-            ).squeeze(0).t()
-            new_pos_emb = torch.nn.Embedding(target_seq_len, old_w.shape[1], device=old_w.device, dtype=old_w.dtype)
+            new_w = (
+                torch.nn.functional.interpolate(
+                    old_w.t().unsqueeze(0),
+                    size=target_seq_len,
+                    mode="linear",
+                    align_corners=False,
+                )
+                .squeeze(0)
+                .t()
+            )
+            new_pos_emb = torch.nn.Embedding(
+                target_seq_len, old_w.shape[1], device=old_w.device, dtype=old_w.dtype
+            )
             new_pos_emb.weight.data.copy_(new_w)
             model.distilbert.embeddings.position_embeddings = new_pos_emb
             if hasattr(model.distilbert.embeddings, "register_buffer"):
                 model.distilbert.embeddings.register_buffer(
-                    "position_ids", torch.arange(target_seq_len).expand((1, -1)).to(old_w.device)
+                    "position_ids",
+                    torch.arange(target_seq_len).expand((1, -1)).to(old_w.device),
                 )
             cfg.max_position_embeddings = target_seq_len
         # RoBERTa / BERT
         elif hasattr(model, "roberta") and hasattr(model.roberta, "embeddings"):
             pos_emb = model.roberta.embeddings.position_embeddings
             old_w = pos_emb.weight.data
-            new_w = torch.nn.functional.interpolate(
-                old_w.t().unsqueeze(0), size=target_seq_len + 2, mode="linear", align_corners=False
-            ).squeeze(0).t()
-            new_pos_emb = torch.nn.Embedding(target_seq_len + 2, old_w.shape[1], device=old_w.device, dtype=old_w.dtype)
+            new_w = (
+                torch.nn.functional.interpolate(
+                    old_w.t().unsqueeze(0),
+                    size=target_seq_len + 2,
+                    mode="linear",
+                    align_corners=False,
+                )
+                .squeeze(0)
+                .t()
+            )
+            new_pos_emb = torch.nn.Embedding(
+                target_seq_len + 2,
+                old_w.shape[1],
+                device=old_w.device,
+                dtype=old_w.dtype,
+            )
             new_pos_emb.weight.data.copy_(new_w)
             model.roberta.embeddings.position_embeddings = new_pos_emb
             cfg.max_position_embeddings = target_seq_len + 2
@@ -185,7 +245,7 @@ def evaluate_long_context(model, dataloader, max_samples=None, device="cuda"):
     acc = round(100.0 * correct / max(1, total), 2)
 
     if device == "cuda" and torch.cuda.is_available():
-        peak_vram_mb = round(torch.cuda.max_memory_allocated() / (1024 ** 2), 2)
+        peak_vram_mb = round(torch.cuda.max_memory_allocated() / (1024**2), 2)
     else:
         peak_vram_mb = 0.0
 
@@ -231,7 +291,9 @@ def main():
     if args.dry_run:
         print("\n[DRY RUN] Planned evaluation sequence:")
         for idx, mod in enumerate(args.modules, 1):
-            print(f"  {idx:2d}. Module: {mod:<25} | Rank: {args.rank} | Output: {args.output_dir}/{mod}/result.json")
+            print(
+                f"  {idx:2d}. Module: {mod:<25} | Rank: {args.rank} | Output: {args.output_dir}/{mod}/result.json"
+            )
         print("\n[DRY RUN COMPLETE] No hardware sweeps executed.")
         return
 
@@ -256,11 +318,17 @@ def main():
     base_model.to(device)
 
     total_params_baseline = sum(p.numel() for p in base_model.parameters())
-    base_metrics = evaluate_long_context(base_model, loader, max_samples=args.max_eval_samples, device=device)
+    base_metrics = evaluate_long_context(
+        base_model, loader, max_samples=args.max_eval_samples, device=device
+    )
     baseline_acc = base_metrics["accuracy_pct"]
 
-    LOG.info("Baseline 4096-token Acc: %.2f%% | VRAM: %.1f MB | Latency: %.1f ms/sample",
-             baseline_acc, base_metrics["peak_vram_mb"], base_metrics["latency_ms_per_sample"])
+    LOG.info(
+        "Baseline 4096-token Acc: %.2f%% | VRAM: %.1f MB | Latency: %.1f ms/sample",
+        baseline_acc,
+        base_metrics["peak_vram_mb"],
+        base_metrics["latency_ms_per_sample"],
+    )
 
     results = []
     base_row = {
@@ -291,14 +359,18 @@ def main():
         if mod == "full":
             continue
 
-        LOG.info("[%d/%d] Evaluating long-context module: %s...", idx, len(args.modules), mod)
+        LOG.info(
+            "[%d/%d] Evaluating long-context module: %s...", idx, len(args.modules), mod
+        )
         t_mod = time.time()
         mod_dir = out_dir / mod
         mod_dir.mkdir(parents=True, exist_ok=True)
         res_json = mod_dir / "result.json"
 
         try:
-            cand_model = AutoModelForSequenceClassification.from_pretrained(args.model_path)
+            cand_model = AutoModelForSequenceClassification.from_pretrained(
+                args.model_path
+            )
             adapt_model_pos_embeddings(cand_model, target_seq_len=args.seq_len)
             if args.fp16 and device == "cuda":
                 cand_model.half()
@@ -313,7 +385,9 @@ def main():
             comp_rate = round(total_params_baseline / max(1, p_after), 4)
             comp_pct = round(100.0 * (1.0 - p_after / max(1, total_params_baseline)), 2)
 
-            metrics = evaluate_long_context(cand_model, loader, max_samples=args.max_eval_samples, device=device)
+            metrics = evaluate_long_context(
+                cand_model, loader, max_samples=args.max_eval_samples, device=device
+            )
             delta_acc = round(metrics["accuracy_pct"] - baseline_acc, 2)
             status = "PASS" if metrics["accuracy_pct"] >= 50.0 else "PASS_LOW"
 

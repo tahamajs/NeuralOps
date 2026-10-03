@@ -12,6 +12,7 @@ Features:
   4. Resilient OOM and exception handling (skips/records failed context lengths cleanly).
   5. JSON and Markdown summary table output.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -61,11 +62,23 @@ NEEDLE_BANK: list[tuple[str, str, str]] = [
     ("The secret passcode is 7402.", "What is the secret passcode?", "7402"),
     ("The hidden city is Zephyria.", "What is the hidden city?", "Zephyria"),
     ("The magic number is 9183.", "What is the magic number?", "9183"),
-    ("The important date is March 15, 2042.", "What is the important date?", "March 15, 2042"),
+    (
+        "The important date is March 15, 2042.",
+        "What is the important date?",
+        "March 15, 2042",
+    ),
     ("The rare element is Vibranium.", "What is the rare element?", "Vibranium"),
     ("The key is hidden under the oak tree.", "Where is the key hidden?", "oak tree"),
-    ("The password for the vault is 'tangerine'.", "What is the vault password?", "tangerine"),
-    ("The scientist's name is Dr. Aris Thorne.", "What is the scientist's name?", "Aris Thorne"),
+    (
+        "The password for the vault is 'tangerine'.",
+        "What is the vault password?",
+        "tangerine",
+    ),
+    (
+        "The scientist's name is Dr. Aris Thorne.",
+        "What is the scientist's name?",
+        "Aris Thorne",
+    ),
 ]
 
 FILLER_SENTENCES: list[str] = [
@@ -212,8 +225,12 @@ def evaluate_context_length(
     Clamps effective prompt length to min(context_len, max_position).
     """
     effective_len = min(context_len, max_position)
-    LOG.info("Evaluating context_len=%d (clamped effective_len=%d, samples=%d)...",
-             context_len, effective_len, num_samples)
+    LOG.info(
+        "Evaluating context_len=%d (clamped effective_len=%d, samples=%d)...",
+        context_len,
+        effective_len,
+        num_samples,
+    )
 
     depth_stats: dict[str, dict[str, int]] = {
         str(round(d, 4)): {"correct": 0, "total": 0} for d in depths
@@ -245,16 +262,22 @@ def evaluate_context_length(
                     do_sample=False,
                     pad_token_id=tokenizer.eos_token_id,
                 )
-            generated_tokens = output_ids[0][input_tensor.shape[1]:]
-            generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
+            generated_tokens = output_ids[0][input_tensor.shape[1] :]
+            generated_text = tokenizer.decode(
+                generated_tokens, skip_special_tokens=True
+            ).strip()
             is_correct = answer.lower() in generated_text.lower()
         except torch.cuda.OutOfMemoryError as oom_err:
-            LOG.warning("CUDA OOM at ctx_len=%d, sample=%d: %s", context_len, i, oom_err)
+            LOG.warning(
+                "CUDA OOM at ctx_len=%d, sample=%d: %s", context_len, i, oom_err
+            )
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             raise oom_err
         except Exception as gen_err:
-            LOG.warning("Generation error at ctx_len=%d, sample=%d: %s", context_len, i, gen_err)
+            LOG.warning(
+                "Generation error at ctx_len=%d, sample=%d: %s", context_len, i, gen_err
+            )
             is_correct = False
 
         depth_stats[depth_key]["total"] += 1
@@ -262,8 +285,13 @@ def evaluate_context_length(
             depth_stats[depth_key]["correct"] += 1
             total_correct += 1
 
-        LOG.info("ctx_len=%d depth=%.2f correct=%s (expected: '%s')",
-                 context_len, depth, is_correct, answer)
+        LOG.info(
+            "ctx_len=%d depth=%.2f correct=%s (expected: '%s')",
+            context_len,
+            depth,
+            is_correct,
+            answer,
+        )
 
     accuracy = round(total_correct / max(1, num_samples), 4)
     by_depth: dict[str, float] = {}
@@ -278,23 +306,33 @@ def evaluate_context_length(
     }
 
 
-def print_summary_table(results: dict[str, Any], depths: list[float], module_name: str) -> None:
+def print_summary_table(
+    results: dict[str, Any], depths: list[float], module_name: str
+) -> None:
     """Print summary table formatted like: ctx_len | accuracy | depth_0.1 | depth_0.5 | depth_0.9"""
     print("\n" + "=" * 75)
     print(f" RULER NIAH RETRIEVAL BENCHMARK SUMMARY: {module_name}")
     print("=" * 75)
 
-    rep_depths = [d for d in [0.1, 0.5, 0.9] if any(abs(d - cur) < 1e-4 for cur in depths)]
+    rep_depths = [
+        d for d in [0.1, 0.5, 0.9] if any(abs(d - cur) < 1e-4 for cur in depths)
+    ]
     if not rep_depths:
         rep_depths = depths[:3]
 
     depth_headers = [f"depth_{d}" for d in rep_depths]
-    header = f"{'ctx_len':<10} | {'accuracy':<10} | " + " | ".join(f"{dh:<10}" for dh in depth_headers)
+    header = f"{'ctx_len':<10} | {'accuracy':<10} | " + " | ".join(
+        f"{dh:<10}" for dh in depth_headers
+    )
     print(header)
     print("-" * len(header))
 
     for ctx_len_str, res in results.items():
-        acc_str = f"{res.get('accuracy', 0.0):<10.4f}" if "accuracy" in res else f"{'ERR':<10}"
+        acc_str = (
+            f"{res.get('accuracy', 0.0):<10.4f}"
+            if "accuracy" in res
+            else f"{'ERR':<10}"
+        )
         by_d = res.get("by_depth", {})
         d_vals = []
         for rd in rep_depths:
@@ -311,9 +349,13 @@ def main(argv: list[str] | None = None) -> int:
     try:
         import numpy as _np
         import torch as _torch
-        from transformers import AutoModelForCausalLM as _AutoModelForCausalLM, AutoTokenizer as _AutoTokenizer
-        from framework.core.registry import ATTENTION_REGISTRY as _ATTENTION_REGISTRY, COMPRESSOR_REGISTRY as _COMPRESSOR_REGISTRY
-        from framework.eval_all_models_datasets import apply_module_to_model as _apply_module_to_model
+        from framework.core.registry import ATTENTION_REGISTRY as _ATTENTION_REGISTRY
+        from framework.core.registry import COMPRESSOR_REGISTRY as _COMPRESSOR_REGISTRY
+        from framework.eval_all_models_datasets import (
+            apply_module_to_model as _apply_module_to_model,
+        )
+        from transformers import AutoModelForCausalLM as _AutoModelForCausalLM
+        from transformers import AutoTokenizer as _AutoTokenizer
 
         np = _np
         torch = _torch

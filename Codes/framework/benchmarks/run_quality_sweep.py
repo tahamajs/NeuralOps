@@ -21,10 +21,14 @@ Debugged v2 — 15 fixes applied:
 14. Dead config code removed
 15. Step loss accumulation clarified
 """
+
 from __future__ import annotations
+
+import os
+
 import torch
 import torch.nn as nn
-import os
+
 os.environ.setdefault("LOKY_MAX_CPU_COUNT", "4")
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
@@ -39,14 +43,19 @@ import math
 import sys
 
 # Sanitize sys.path before importing 'datasets' package so local Codes/framework/datasets doesn't shadow HuggingFace datasets
-sys.path = [p for p in sys.path if not p.rstrip("/\\").replace("\\", "/").endswith("Codes/framework") and not p.rstrip("/\\").replace("\\", "/").endswith("framework")]
+sys.path = [
+    p
+    for p in sys.path
+    if not p.rstrip("/\\").replace("\\", "/").endswith("Codes/framework")
+    and not p.rstrip("/\\").replace("\\", "/").endswith("framework")
+]
 
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from datasets import load_from_disk, load_dataset
+from datasets import load_dataset, load_from_disk
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 HERE = Path(__file__).resolve().parent
@@ -55,14 +64,14 @@ ROOT = CODES.parent
 sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "Codes")]
 
 from framework.eval_all_models_datasets import apply_module_to_model
+from framework.utils.compat import module_family_support, wrap_for_family
+from framework.utils.model_family import ModelAdapter, detect_family
 from framework.utils.qwen_compat import (
     QwenIncompatibleError,
     install_qwen_aliases,
     is_dtype_error,
     is_qwen_model,
 )
-from framework.utils.model_family import ModelAdapter, detect_family
-from framework.utils.compat import module_family_support, wrap_for_family
 
 LOG = logging.getLogger("QwenQualitySweep")
 
@@ -141,23 +150,59 @@ if _dep_file.exists():
 # Unified SLOW_MODULE_TIMEOUT_OVERRIDES (Fix 12)
 # ============================================================================
 SLOW_MODULE_TIMEOUT_OVERRIDES: dict[str, int] = {
-    "grecodec": 600, "grecodec_compressor": 600,
-    "mlorq": 500, "lillama": 500, "cr": 500, "huffman": 500,
-    "primal": 400, "primal_attention": 400,
-    "fused_svd_kernel": 400, "hla": 400, "nmf": 400,
-    "rotational_slicegpt": 400, "rotational_slicegpt_int4": 400,
-    "slicegpt": 400, "slicegpt_pca": 400, "slicegpt_compressor": 400,
-    "sparsegpt": 400, "granite_hybrid": 400, "mamba_svd_flash": 400,
-    "uniql": 400, "vspec": 400, "saes": 400, "hymba_transx": 400,
-    "orion": 400, "phantom": 400, "soka": 400, "sdrm": 400,
-    "hybridkv": 400, "jamba_info": 400, "kmeans": 400,
-    "kronecker": 400, "kvtc": 400, "lsc": 400, "mgie": 400,
-    "mgie_budget": 400, "mixattention_moska": 400, "modegpt": 400,
-    "nli_softmax": 400, "oats": 400, "optimal_subspace_projection": 400,
-    "rpc": 400, "rpca": 400, "samba_moe": 400, "slim": 400,
-    "soa_attn": 400, "soa_fused_attn": 400, "spectral_residual_lora": 400,
-    "spectron": 400, "svd_llm_v2": 400, "swift_svd": 400,
-    "swift_svd_act": 400, "tt": 400, "svd_quant": 400,
+    "grecodec": 600,
+    "grecodec_compressor": 600,
+    "mlorq": 500,
+    "lillama": 500,
+    "cr": 500,
+    "huffman": 500,
+    "primal": 400,
+    "primal_attention": 400,
+    "fused_svd_kernel": 400,
+    "hla": 400,
+    "nmf": 400,
+    "rotational_slicegpt": 400,
+    "rotational_slicegpt_int4": 400,
+    "slicegpt": 400,
+    "slicegpt_pca": 400,
+    "slicegpt_compressor": 400,
+    "sparsegpt": 400,
+    "granite_hybrid": 400,
+    "mamba_svd_flash": 400,
+    "uniql": 400,
+    "vspec": 400,
+    "saes": 400,
+    "hymba_transx": 400,
+    "orion": 400,
+    "phantom": 400,
+    "soka": 400,
+    "sdrm": 400,
+    "hybridkv": 400,
+    "jamba_info": 400,
+    "kmeans": 400,
+    "kronecker": 400,
+    "kvtc": 400,
+    "lsc": 400,
+    "mgie": 400,
+    "mgie_budget": 400,
+    "mixattention_moska": 400,
+    "modegpt": 400,
+    "nli_softmax": 400,
+    "oats": 400,
+    "optimal_subspace_projection": 400,
+    "rpc": 400,
+    "rpca": 400,
+    "samba_moe": 400,
+    "slim": 400,
+    "soa_attn": 400,
+    "soa_fused_attn": 400,
+    "spectral_residual_lora": 400,
+    "spectron": 400,
+    "svd_llm_v2": 400,
+    "swift_svd": 400,
+    "swift_svd_act": 400,
+    "tt": 400,
+    "svd_quant": 400,
     "svd_projection": 400,
     "aegis_spectron_fp8": 1500,
     "asvd": 1500,
@@ -177,16 +222,34 @@ SLOW_MODULE_TIMEOUT_OVERRIDES: dict[str, int] = {
 
 # Per-module batch_size overrides for VRAM-heavy modules on 8GB GPU
 OOM_MODULE_BATCH_OVERRIDES: dict[str, int] = {
-    "granite_hybrid": 4, "grecodec": 4, "grecodec_compressor": 4,
-    "hymba_transx": 4, "mamba_svd_flash": 8, "spectral_mamba": 8,
-    "vspec": 8, "slicegpt": 8, "slicegpt_pca": 8,
-    "asvd": 8, "cosformer": 8, "cur": 8, "vig": 8,
-    "tpa": 4, "tpa_attention": 4, "tp_attention": 4,
-    "kda": 4, "nha": 4, "nha_attention": 4, "nha_compressor": 4,
+    "granite_hybrid": 4,
+    "grecodec": 4,
+    "grecodec_compressor": 4,
+    "hymba_transx": 4,
+    "mamba_svd_flash": 8,
+    "spectral_mamba": 8,
+    "vspec": 8,
+    "slicegpt": 8,
+    "slicegpt_pca": 8,
+    "asvd": 8,
+    "cosformer": 8,
+    "cur": 8,
+    "vig": 8,
+    "tpa": 4,
+    "tpa_attention": 4,
+    "tp_attention": 4,
+    "kda": 4,
+    "nha": 4,
+    "nha_attention": 4,
+    "nha_compressor": 4,
     "kronecker_tt_lora": 4,
-    "gated_delta_net": 4, "hgrn2_gated_deltanet": 4,
-    "nasc": 8, "nasc_attention": 8,
-    "mamba": 4, "mamba_ssm": 4, "moe_deltakv_paged": 4,
+    "gated_delta_net": 4,
+    "hgrn2_gated_deltanet": 4,
+    "nasc": 8,
+    "nasc_attention": 8,
+    "mamba": 4,
+    "mamba_ssm": 4,
+    "moe_deltakv_paged": 4,
 }
 
 
@@ -236,11 +299,15 @@ def _get_family_slug(family: str) -> str:
 
 def _get_git_sha() -> str:
     try:
-        out = subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"],
-            stderr=subprocess.DEVNULL,
-            timeout=5,
-        ).decode("utf-8").strip()
+        out = (
+            subprocess.check_output(
+                ["git", "rev-parse", "--short", "HEAD"],
+                stderr=subprocess.DEVNULL,
+                timeout=5,
+            )
+            .decode("utf-8")
+            .strip()
+        )
         return out if out else "unknown"
     except Exception:
         return "unknown"
@@ -248,11 +315,15 @@ def _get_git_sha() -> str:
 
 def _get_git_dirty() -> bool:
     try:
-        out = subprocess.check_output(
-            ["git", "status", "--porcelain"],
-            stderr=subprocess.DEVNULL,
-            timeout=5,
-        ).decode("utf-8").strip()
+        out = (
+            subprocess.check_output(
+                ["git", "status", "--porcelain"],
+                stderr=subprocess.DEVNULL,
+                timeout=5,
+            )
+            .decode("utf-8")
+            .strip()
+        )
         return len(out) > 0
     except Exception:
         return False
@@ -263,8 +334,10 @@ def _get_git_dirty() -> bool:
 # ============================================================================
 def compute_t_test_p_value(accs1: list[float], accs2: list[float]) -> float:
     import numpy as np
+
     try:
         from scipy import stats
+
         res = stats.ttest_ind(accs1, accs2, equal_var=False)
         p = float(res.pvalue)
         return 1.0 if np.isnan(p) else p
@@ -280,6 +353,7 @@ def compute_bh_fdr(raw_p: list[float]) -> list[float]:
     if not raw_p:
         return []
     import numpy as np
+
     p_vals = np.array(raw_p, dtype=float)
     n = len(p_vals)
     sorted_indices = np.argsort(p_vals)
@@ -296,8 +370,11 @@ def compute_bh_fdr(raw_p: list[float]) -> list[float]:
     return out.tolist()
 
 
-def compute_bootstrap_ci(accs: list[float], n_bootstraps: int = 500, ci_level: float = 0.95) -> tuple[float, float]:
+def compute_bootstrap_ci(
+    accs: list[float], n_bootstraps: int = 500, ci_level: float = 0.95
+) -> tuple[float, float]:
     import numpy as np
+
     if not accs:
         return (0.0, 0.0)
     arr = np.array(accs)
@@ -316,6 +393,7 @@ def compute_bootstrap_ci(accs: list[float], n_bootstraps: int = 500, ci_level: f
 
 def compute_confidence_interval_95(accs: list[float]) -> tuple[float, float]:
     import numpy as np
+
     if not accs:
         return (0.0, 0.0)
     arr = np.array(accs)
@@ -332,7 +410,11 @@ def compute_confidence_interval_95(accs: list[float]) -> tuple[float, float]:
 # Module discovery
 # ============================================================================
 def modules() -> list[str]:
-    from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, is_helper_module
+    from framework.core.registry import (
+        ATTENTION_REGISTRY,
+        COMPRESSOR_REGISTRY,
+        is_helper_module,
+    )
 
     for package, folder in (
         ("framework.attentions", "attentions"),
@@ -346,7 +428,9 @@ def modules() -> list[str]:
                     LOG.debug("Failed to import %s: %s", p.stem, e)
 
     by_factory: dict[Any, list[str]] = {}
-    for name, factory in list(ATTENTION_REGISTRY.items()) + list(COMPRESSOR_REGISTRY.items()):
+    for name, factory in list(ATTENTION_REGISTRY.items()) + list(
+        COMPRESSOR_REGISTRY.items()
+    ):
         if name != "full" and not is_helper_module(name):
             by_factory.setdefault(factory, []).append(name)
 
@@ -362,7 +446,11 @@ def modules() -> list[str]:
 def fields(name: str) -> tuple[str, str | None]:
     if name in {"sst2", "cola"}:
         return ("sentence", None)
-    if name in {"ag_news", "agnews", "imdb"} or "wikitext" in name.lower() or name == "c4":
+    if (
+        name in {"ag_news", "agnews", "imdb"}
+        or "wikitext" in name.lower()
+        or name == "c4"
+    ):
         return ("text", None)
     if name == "mrpc":
         return ("sentence1", "sentence2")
@@ -422,7 +510,9 @@ def prepare_eval_batches(tokenizer, ds, name, seq_len, batch_size, device):
     return batches
 
 
-def prepare_train_batches(tokenizer, ds, name, seq_len, batch_size, device, max_batches=10):
+def prepare_train_batches(
+    tokenizer, ds, name, seq_len, batch_size, device, max_batches=10
+):
     batches = []
     end_idx = min(len(ds), max_batches * batch_size)
     for i in range(0, end_idx, batch_size):
@@ -449,10 +539,24 @@ def compute_compression_metrics(
         1
         for m in model.modules()
         if m.__class__.__name__
-        in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear", "A3FactorizedLinear", "CoopQLinear")
+        in (
+            "SVDLinear",
+            "SVDLinearLayer",
+            "FactorisedLinear",
+            "A3FactorizedLinear",
+            "CoopQLinear",
+        )
         or any(
             k in m.__class__.__name__
-            for k in ("SVDCompressed", "MinimalNOVA", "MinimalPRISM", "NEXUS", "ORION", "MoBA", "A3")
+            for k in (
+                "SVDCompressed",
+                "MinimalNOVA",
+                "MinimalPRISM",
+                "NEXUS",
+                "ORION",
+                "MoBA",
+                "A3",
+            )
         )
         or hasattr(m, "q_down")
     )
@@ -465,23 +569,34 @@ def compute_compression_metrics(
     if univ_count > 0:
         num_injected_attention = univ_count
     else:
-        _ATTN_CLASS_HINTS = ("attention", "attentionv2", "attentionv3", "attentionv5", "attentionv6", "mamba", "attn")
+        _ATTN_CLASS_HINTS = (
+            "attention",
+            "attentionv2",
+            "attentionv3",
+            "attentionv5",
+            "attentionv6",
+            "mamba",
+            "attn",
+        )
         num_injected_attention = sum(
             1
             for m in model.modules()
             if any(h in m.__class__.__name__.lower() for h in _ATTN_CLASS_HINTS)
             and getattr(m, "is_custom_attention", False)
         )
-    lora_params = sum(p.numel() for n, p in model.named_parameters() if "lora_" in n.lower())
+    lora_params = sum(
+        p.numel() for n, p in model.named_parameters() if "lora_" in n.lower()
+    )
     raw_params_after = total_params_after - lora_params
 
-    is_compression = (
-        module_type == "compressor"
-        or (total_params_after < total_params_before and module_name != "full")
+    is_compression = module_type == "compressor" or (
+        total_params_after < total_params_before and module_name != "full"
     )
 
     if total_params_after > 0:
-        compression_rate_net = round(total_params_before / max(1, total_params_after), 4)
+        compression_rate_net = round(
+            total_params_before / max(1, total_params_after), 4
+        )
         compression_rate_raw = round(total_params_before / max(1, raw_params_after), 4)
         compression_rate = compression_rate_net if is_compression else 1.0
         compression_ratio_pct = (
@@ -495,17 +610,25 @@ def compute_compression_metrics(
 
     num_compressed_layers = comp_stats.get(
         "num_compressed",
-        comp_stats.get("num_compressed_layers", comp_stats.get("compressed_layers_count", 0)),
+        comp_stats.get(
+            "num_compressed_layers", comp_stats.get("compressed_layers_count", 0)
+        ),
     )
     if isinstance(comp_stats.get("compressed_layers"), (list, tuple)):
-        num_compressed_layers = max(num_compressed_layers, len(comp_stats["compressed_layers"]))
+        num_compressed_layers = max(
+            num_compressed_layers, len(comp_stats["compressed_layers"])
+        )
 
     num_fallback_layers = comp_stats.get(
         "num_fallback",
-        comp_stats.get("num_fallback_layers", comp_stats.get("fallback_layer_count", 0)),
+        comp_stats.get(
+            "num_fallback_layers", comp_stats.get("fallback_layer_count", 0)
+        ),
     )
     if isinstance(comp_stats.get("fallback_layers"), (list, tuple)):
-        num_fallback_layers = max(num_fallback_layers, len(comp_stats["fallback_layers"]))
+        num_fallback_layers = max(
+            num_fallback_layers, len(comp_stats["fallback_layers"])
+        )
 
     layer_ranks = dict(comp_stats.get("layer_ranks", {}))
     layer_errors = dict(comp_stats.get("layer_errors", {}))
@@ -537,7 +660,9 @@ def compute_compression_metrics(
             for k in layer_errors
             if k in layer_ranks
         )
-        total_rank = sum(layer_ranks.get(k, 1) for k in layer_errors if k in layer_ranks)
+        total_rank = sum(
+            layer_ranks.get(k, 1) for k in layer_errors if k in layer_ranks
+        )
         weighted_reconstruction_error = (
             round(weighted_sum / max(1, total_rank), 4)
             if total_rank > 0
@@ -562,7 +687,9 @@ def compute_compression_metrics(
                         orig_flops += 2 * in_f * out_f
                         fact_flops += 2 * r * (in_f + out_f)
             flops_reduction_pct = (
-                round((1.0 - (fact_flops / orig_flops)) * 100.0, 2) if orig_flops > 0 else 0.0
+                round((1.0 - (fact_flops / orig_flops)) * 100.0, 2)
+                if orig_flops > 0
+                else 0.0
             )
         else:
             flops_reduction_pct = 0.0
@@ -585,10 +712,16 @@ def compute_compression_metrics(
         "avg_reconstruction_error": avg_reconstruction_error,
         "weighted_reconstruction_error": weighted_reconstruction_error,  # ← این خط
         "calibration_time_s": comp_stats.get("calibration_time_s", 0.0),
-
         "per_layer_reconstruction_errors": layer_errors,
         "per_layer_ranks": layer_ranks,
-        "is_unstructured_sparsity": bool(("admm" in module_name.lower() or "sparse" in module_name.lower() or "prun" in module_name.lower()) and compression_rate <= 1.001),
+        "is_unstructured_sparsity": bool(
+            (
+                "admm" in module_name.lower()
+                or "sparse" in module_name.lower()
+                or "prun" in module_name.lower()
+            )
+            and compression_rate <= 1.001
+        ),
     }
 
 
@@ -666,7 +799,9 @@ def collect_and_export_full_metrics(
         sparsity_ratio_pct = 0.0
 
     scalability: dict[str, Any] = {}
-    max_pos = getattr(getattr(model, "config", None), "max_position_embeddings", 2048) or 2048
+    max_pos = (
+        getattr(getattr(model, "config", None), "max_position_embeddings", 2048) or 2048
+    )
     if device_type == "cuda":
         for test_len in [128, 256, 512, 1024]:
             if test_len > max_pos - 2:
@@ -711,11 +846,15 @@ def collect_and_export_full_metrics(
             "flops_reduction_pct": comp.get("flops_reduction_pct", 0.0),
             "num_compressed_layers": comp.get("num_compressed_layers", 0),
             "num_fallback_layers": comp.get("num_fallback_layers", 0),
-            "num_injected_attention_layers": comp.get("num_injected_attention_layers", 0),
+            "num_injected_attention_layers": comp.get(
+                "num_injected_attention_layers", 0
+            ),
             "lora_params": comp.get("lora_params", 0),
             "avg_reconstruction_error": comp.get("avg_reconstruction_error"),
             "weighted_reconstruction_error": comp.get("weighted_reconstruction_error"),
-            "per_layer_reconstruction_errors": comp.get("per_layer_reconstruction_errors", {}),
+            "per_layer_reconstruction_errors": comp.get(
+                "per_layer_reconstruction_errors", {}
+            ),
             "per_layer_ranks": comp.get("per_layer_ranks", {}),
         },
         "hardware": {
@@ -732,7 +871,9 @@ def collect_and_export_full_metrics(
         "git_sha": _get_git_sha(),
         "git_dirty": _get_git_dirty(),
         "torch_version": torch.__version__,
-        "transformers_version": getattr(__import__("transformers"), "__version__", "unknown"),
+        "transformers_version": getattr(
+            __import__("transformers"), "__version__", "unknown"
+        ),
         "cuda_version": torch.version.cuda if torch.cuda.is_available() else None,
         "timestamp": _now_iso(),
     }
@@ -746,6 +887,7 @@ def collect_and_export_full_metrics(
 # ============================================================================
 # Evaluation
 # ============================================================================
+
 
 @torch.inference_mode()
 def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=True):
@@ -773,15 +915,23 @@ def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=
 
     # Batch chunks dynamically with balanced cap (12 chunks = 12288 tokens, ~2.1 GB VRAM) to saturate Tensor Cores
     eval_bs = max(1, min(batch_size or 12, 12))
-    pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else (tokenizer.eos_token_id or 0)
+    pad_id = (
+        tokenizer.pad_token_id
+        if tokenizer.pad_token_id is not None
+        else (tokenizer.eos_token_id or 0)
+    )
 
     for b_idx in range(0, len(chunks), eval_bs):
         batch_chunks = chunks[b_idx : b_idx + eval_bs]
         batch_trg_lens = trg_lens[b_idx : b_idx + eval_bs]
         max_c_len = max(c.size(0) for c in batch_chunks)
 
-        input_batch = torch.full((len(batch_chunks), max_c_len), pad_id, dtype=torch.long)
-        target_batch = torch.full((len(batch_chunks), max_c_len), -100, dtype=torch.long)
+        input_batch = torch.full(
+            (len(batch_chunks), max_c_len), pad_id, dtype=torch.long
+        )
+        target_batch = torch.full(
+            (len(batch_chunks), max_c_len), -100, dtype=torch.long
+        )
 
         for j, (c, t_len) in enumerate(zip(batch_chunks, batch_trg_lens)):
             c_len = c.size(0)
@@ -797,13 +947,20 @@ def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=
         batch_tokens = sum(batch_trg_lens)
 
         try:
-            with torch.autocast(device_type=device_type, dtype=torch.float16, enabled=fp16 and device_type == "cuda"):
+            with torch.autocast(
+                device_type=device_type,
+                dtype=torch.float16,
+                enabled=fp16 and device_type == "cuda",
+            ):
                 attn_mask = (input_batch != pad_id).long()
-                outputs = model(input_batch, attention_mask=attn_mask, labels=target_batch)
+                outputs = model(
+                    input_batch, attention_mask=attn_mask, labels=target_batch
+                )
 
                 loss = outputs.loss.float()
         except Exception as e:
             from framework.utils.logger import LOG
+
             LOG.warning("evaluate_perplexity: forward crashed: %s", e)
             return {
                 "status": "FAIL_PPL_NAN",
@@ -839,18 +996,39 @@ def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=
         "perplexity": round(ppl, 6),
         "throughput": total_tokens / (t1 - t0) if t1 > t0 else 0.0,
         "tokens_per_sec": total_tokens / (t1 - t0) if t1 > t0 else 0.0,
-        "vram_mb": torch.cuda.max_memory_allocated(device) / (1024**2) if device_type == "cuda" else 0.0,
-        "peak_vram_mb": torch.cuda.max_memory_allocated(device) / (1024**2) if device_type == "cuda" else 0.0,
-        "latency_ms_per_token": ((t1 - t0) / max(1, total_tokens) * 1000.0) if total_tokens > 0 else 0.0,
+        "vram_mb": (
+            torch.cuda.max_memory_allocated(device) / (1024**2)
+            if device_type == "cuda"
+            else 0.0
+        ),
+        "peak_vram_mb": (
+            torch.cuda.max_memory_allocated(device) / (1024**2)
+            if device_type == "cuda"
+            else 0.0
+        ),
+        "latency_ms_per_token": (
+            ((t1 - t0) / max(1, total_tokens) * 1000.0) if total_tokens > 0 else 0.0
+        ),
         "eval_time_s": round(t1 - t0, 2),
     }
 
+
 @torch.inference_mode()
 def evaluate_comprehensive(
-    model, tokenizer, ds, name, seq_len, batch_size, device, fp16=True, precomputed_batches=None
+    model,
+    tokenizer,
+    ds,
+    name,
+    seq_len,
+    batch_size,
+    device,
+    fp16=True,
+    precomputed_batches=None,
 ):
     if "wikitext" in name.lower() or name == "c4":
-        return evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=fp16)
+        return evaluate_perplexity(
+            model, tokenizer, ds, seq_len, batch_size, device, fp16=fp16
+        )
 
     model.eval()
     correct = total = 0
@@ -874,9 +1052,14 @@ def evaluate_comprehensive(
 
     for x, y in batches:
         try:
-            with torch.autocast(
-                device_type, dtype=torch.float16, enabled=fp16 and device_type == "cuda"
-            ), torch.no_grad():
+            with (
+                torch.autocast(
+                    device_type,
+                    dtype=torch.float16,
+                    enabled=fp16 and device_type == "cuda",
+                ),
+                torch.no_grad(),
+            ):
                 outputs = model(**x)
                 logits = outputs.logits
                 if hasattr(outputs, "loss") and outputs.loss is not None:
@@ -898,15 +1081,18 @@ def evaluate_comprehensive(
                 for i in range(0, b_size, sub_size):
                     sub_x = {k: v[i : i + sub_size] for k, v in x.items()}
                     sub_y = y[i : i + sub_size]
-                    with torch.autocast(
-                        device_type,
-                        dtype=torch.float16,
-                        enabled=fp16 and device_type == "cuda",
-                    ), torch.no_grad():
+                    with (
+                        torch.autocast(
+                            device_type,
+                            dtype=torch.float16,
+                            enabled=fp16 and device_type == "cuda",
+                        ),
+                        torch.no_grad(),
+                    ):
                         sub_out = model(**sub_x)
                         logits_list.append(sub_out.logits)
-                        loss_sum += (
-                            loss_fn(sub_out.logits, sub_y).item() * sub_y.size(0)
+                        loss_sum += loss_fn(sub_out.logits, sub_y).item() * sub_y.size(
+                            0
                         )
                 logits = torch.cat(logits_list, dim=0)
                 loss_val = float(loss_sum / b_size)
@@ -943,28 +1129,44 @@ def evaluate_comprehensive(
     try:
         from sklearn.metrics import (
             f1_score,
+            precision_recall_fscore_support,
             precision_score,
             recall_score,
-            precision_recall_fscore_support,
         )
 
         unique_classes = set(all_targets_flat)
         n_classes = len(unique_classes)
         if n_classes <= 1:
             LOG.error(f"Dataset has only one class {unique_classes}")
-            return {"status": "SKIP_INVALID_DATASET", "accuracy_pct": 0.0, "f1_score": 0.0}
+            return {
+                "status": "SKIP_INVALID_DATASET",
+                "accuracy_pct": 0.0,
+                "f1_score": 0.0,
+            }
         if n_classes <= 2:
-            f1 = float(f1_score(all_targets_flat, all_preds_flat, average="binary", zero_division=0))
+            f1 = float(
+                f1_score(
+                    all_targets_flat, all_preds_flat, average="binary", zero_division=0
+                )
+            )
         else:
-            f1 = float(f1_score(all_targets_flat, all_preds_flat, average="macro", zero_division=0))
+            f1 = float(
+                f1_score(
+                    all_targets_flat, all_preds_flat, average="macro", zero_division=0
+                )
+            )
         f1_macro = float(
             f1_score(all_targets_flat, all_preds_flat, average="macro", zero_division=0)
         )
         precision = float(
-            precision_score(all_targets_flat, all_preds_flat, average="macro", zero_division=0)
+            precision_score(
+                all_targets_flat, all_preds_flat, average="macro", zero_division=0
+            )
         )
         recall = float(
-            recall_score(all_targets_flat, all_preds_flat, average="macro", zero_division=0)
+            recall_score(
+                all_targets_flat, all_preds_flat, average="macro", zero_division=0
+            )
         )
 
         class_labels = sorted(unique_classes)
@@ -1010,9 +1212,27 @@ def evaluate_comprehensive(
 
 
 @torch.inference_mode()
-def evaluate(model, tokenizer, ds, name, seq_len, batch_size, device, fp16=True, precomputed_batches=None):
+def evaluate(
+    model,
+    tokenizer,
+    ds,
+    name,
+    seq_len,
+    batch_size,
+    device,
+    fp16=True,
+    precomputed_batches=None,
+):
     res = evaluate_comprehensive(
-        model, tokenizer, ds, name, seq_len, batch_size, device, fp16=fp16, precomputed_batches=precomputed_batches
+        model,
+        tokenizer,
+        ds,
+        name,
+        seq_len,
+        batch_size,
+        device,
+        fp16=fp16,
+        precomputed_batches=precomputed_batches,
     )
     return res["accuracy_pct"]
 
@@ -1020,20 +1240,31 @@ def evaluate(model, tokenizer, ds, name, seq_len, batch_size, device, fp16=True,
 # ============================================================================
 # Fine-tuning
 # ============================================================================
-def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, fp16, lr=1e-4):
+def finetune(
+    model, tokenizer, train, name, steps, seq_len, batch_size, device, fp16, lr=1e-4
+):
     for p in model.parameters():
         p.requires_grad = False
     head = next(
         (
             getattr(model, attr, None)
-            for attr in ("score", "classifier", "classification_head", "classification_head.dense")
+            for attr in (
+                "score",
+                "classifier",
+                "classification_head",
+                "classification_head.dense",
+            )
             if getattr(model, attr, None) is not None
         ),
         None,
     )
     if head is None:
         head = next(
-            (sub for name_, sub in model.named_modules() if name_.endswith("classification_head")),
+            (
+                sub
+                for name_, sub in model.named_modules()
+                if name_.endswith("classification_head")
+            ),
             None,
         )
     if head is None:
@@ -1049,7 +1280,9 @@ def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, 
         i = (step * batch_size) % len(train)
         x, y = encode(tokenizer, train[i : i + batch_size], name, seq_len, device)
         opt.zero_grad(set_to_none=True)
-        with torch.autocast("cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"):
+        with torch.autocast(
+            "cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"
+        ):
             loss = model(**x, labels=y).loss
         scaler.scale(loss).backward()
         scaler.step(opt)
@@ -1099,7 +1332,9 @@ def finetune_with_kd(
             cx, cy = encode(tokenizer, train[i : i + batch_size], name, seq_len, device)
 
         opt.zero_grad(set_to_none=True)
-        with torch.autocast("cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"):
+        with torch.autocast(
+            "cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"
+        ):
             student_out = model(**cx, labels=cy)
             student_logits = student_out.logits
             ce_loss = student_out.loss
@@ -1112,7 +1347,7 @@ def finetune_with_kd(
                 teacher_probs = F.softmax(teacher_logits / temperature, dim=-1)
                 kl_loss = F.kl_div(
                     student_log_probs, teacher_probs, reduction="batchmean"
-                ) * (temperature ** 2)
+                ) * (temperature**2)
                 loss = (1.0 - alpha) * ce_loss + alpha * kl_loss
             else:
                 loss = ce_loss
@@ -1200,13 +1435,30 @@ def finetune_lora(
 
     curr_batch_size = batch_size
     if device.type == "cuda":
-        total_vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024 ** 3)
+        total_vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
         mod_lower = str(name).lower()
         is_heavy_module = any(
-            k in mod_lower for k in (
-                "hgrn", "deltanet", "delta_net", "samba", "mamba", "ssm", "hla",
-                "admm", "nexus", "phantom", "aegis", "jamba", "armor", "ast",
-                "granite", "hymba", "hybrid", "recurrent", "outer"
+            k in mod_lower
+            for k in (
+                "hgrn",
+                "deltanet",
+                "delta_net",
+                "samba",
+                "mamba",
+                "ssm",
+                "hla",
+                "admm",
+                "nexus",
+                "phantom",
+                "aegis",
+                "jamba",
+                "armor",
+                "ast",
+                "granite",
+                "hymba",
+                "hybrid",
+                "recurrent",
+                "outer",
             )
         )
         if "qwen" in mod_lower:
@@ -1229,7 +1481,12 @@ def finetune_lora(
 
     while step < steps:
         if time.monotonic() - t_start > timeout:
-            LOG.warning("Training step %d/%d exceeded timeout %.0fs; aborting", step, steps, timeout)
+            LOG.warning(
+                "Training step %d/%d exceeded timeout %.0fs; aborting",
+                step,
+                steps,
+                timeout,
+            )
             raise TimeoutError(f"Module training exceeded {timeout}s stall timeout")
 
         step_start_time = time.time()
@@ -1267,7 +1524,9 @@ def finetune_lora(
                                 get_total_span_loss,
                             )
 
-                            span_reg = get_total_span_loss(model, lambda_span=span_lambda)
+                            span_reg = get_total_span_loss(
+                                model, lambda_span=span_lambda
+                            )
                             loss_chunk = loss_chunk + span_reg * frac
                         except Exception:
                             pass
@@ -1338,7 +1597,10 @@ def finetune_lora(
 # Auto sizing
 # ============================================================================
 def _auto_parallel_and_batch(
-    requested_parallel=None, requested_batch=None, explicit_parallel=False, explicit_batch=False
+    requested_parallel=None,
+    requested_batch=None,
+    explicit_parallel=False,
+    explicit_batch=False,
 ):
     if not torch.cuda.is_available():
         p = requested_parallel if explicit_parallel else 1
@@ -1347,7 +1609,7 @@ def _auto_parallel_and_batch(
 
     try:
         free_bytes, total_bytes = torch.cuda.mem_get_info()
-        free_gb = free_bytes / (1024 ** 3)
+        free_gb = free_bytes / (1024**3)
     except Exception:
         free_gb = 4.0
 
@@ -1370,7 +1632,9 @@ def _auto_parallel_and_batch(
             parallel = 1
 
     if free_gb < 3.0 and torch.cuda.is_available():
-        LOG.info("Free VRAM < 3.0 GB (%.2f GB) — sleeping 10s for VRAM to settle...", free_gb)
+        LOG.info(
+            "Free VRAM < 3.0 GB (%.2f GB) — sleeping 10s for VRAM to settle...", free_gb
+        )
         time.sleep(10)
 
     return parallel, batch
@@ -1446,15 +1710,41 @@ def parse_args(argv=None):
     ap.add_argument("--strict_compat", action="store_true")
     ap.add_argument(
         "--model_family",
-        choices=("auto", "bert", "roberta", "gpt", "gpt2", "qwen", "qwen3_5", "t5", "ssm", "unknown"),
+        choices=(
+            "auto",
+            "bert",
+            "roberta",
+            "gpt",
+            "gpt2",
+            "qwen",
+            "qwen3_5",
+            "t5",
+            "ssm",
+            "unknown",
+        ),
         default="auto",
     )
     ap.add_argument("--parent_checkpoint", type=str, default=None)
     ap.add_argument("--fresh", action="store_true")
     ap.add_argument("--no_skip", action="store_true", default=False)
-    ap.add_argument("--dry_run", action="store_true", default=False, help="Diagnose module injection and model forward pass without full recovery training or eval.")
-    ap.add_argument("--debug_module", action="store_true", default=False, help="Run deep tensor health check (NaN, shape, norm, parameter delta).")
-    ap.add_argument("--verbose_debug", action="store_true", default=False, help="Print detailed step-by-step tensor inspection logs.")
+    ap.add_argument(
+        "--dry_run",
+        action="store_true",
+        default=False,
+        help="Diagnose module injection and model forward pass without full recovery training or eval.",
+    )
+    ap.add_argument(
+        "--debug_module",
+        action="store_true",
+        default=False,
+        help="Run deep tensor health check (NaN, shape, norm, parameter delta).",
+    )
+    ap.add_argument(
+        "--verbose_debug",
+        action="store_true",
+        default=False,
+        help="Print detailed step-by-step tensor inspection logs.",
+    )
     ap.add_argument("--rank", type=int, default=None)
     ap.add_argument("--force_rank", action="store_true", default=False)
     ap.add_argument("--rank_ratio", type=float, default=None)
@@ -1482,7 +1772,7 @@ def parse_args(argv=None):
         type=lambda x: str(x).lower() in ("true", "1", "yes"),
         default=False,
         help="If True, the compressor uses exactly the requested rank "
-             "without escalating it to fit the error threshold.",
+        "without escalating it to fit the error threshold.",
     )
     ap.add_argument("--a3_max_error", type=float, default=None)
     ap.add_argument(
@@ -1906,16 +2196,24 @@ def parse_args(argv=None):
 
     args, unknown_args = ap.parse_known_args(raw_argv)
     args.unknown_args = unknown_args
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+    )
     extended_args = {}
     if unknown_args:
-        LOG.info("Parsed %d module-specific extended arguments: %s", len(unknown_args), unknown_args)
+        LOG.info(
+            "Parsed %d module-specific extended arguments: %s",
+            len(unknown_args),
+            unknown_args,
+        )
         i = 0
         while i < len(unknown_args):
             flag = unknown_args[i]
             if flag.startswith("--"):
                 key = flag[2:].replace("-", "_")
-                if i + 1 < len(unknown_args) and not unknown_args[i + 1].startswith("--"):
+                if i + 1 < len(unknown_args) and not unknown_args[i + 1].startswith(
+                    "--"
+                ):
                     val = unknown_args[i + 1]
                     if val.lower() in ("true", "1", "yes"):
                         parsed_val = True
@@ -1955,7 +2253,11 @@ def parse_args(argv=None):
         except Exception:
             pass
         try:
-            target_frac = float(args.max_vram_fraction) if getattr(args, "max_vram_fraction", None) is not None else 0.70
+            target_frac = (
+                float(args.max_vram_fraction)
+                if getattr(args, "max_vram_fraction", None) is not None
+                else 0.70
+            )
             if 0.0 < target_frac <= 1.0:
                 torch.cuda.set_per_process_memory_fraction(target_frac)
                 LOG.info(
@@ -1967,8 +2269,8 @@ def parse_args(argv=None):
             LOG.debug("Could not set memory fraction: %s", frac_err)
         try:
             free_bytes, total_bytes = torch.cuda.mem_get_info()
-            free_gb = free_bytes / (1024 ** 3)
-            total_gb = total_bytes / (1024 ** 3)
+            free_gb = free_bytes / (1024**3)
+            total_gb = total_bytes / (1024**3)
             LOG.info(
                 "GPU VRAM: %.2f GB free / %.2f GB total on %s",
                 free_gb,
@@ -2005,6 +2307,7 @@ def parse_args(argv=None):
 #  top of this docstring must be applied at the indicated locations.)
 # ============================================================================
 
+
 # NOTE: The remaining functions (_run_candidate_pipeline, run_single_module_main,
 # run_module_isolated, main) are preserved from the original file with the
 # following patch points applied:
@@ -2025,878 +2328,1300 @@ def parse_args(argv=None):
 # 14. Dead config pass block removed
 # 15. Step loss accumulation clarified (already done in finetune_lora above)
 #
-def _run_candidate_pipeline(model, name, args, device, family, effective_batch_size, tokenizer, val, base, train, effective_timeout, out, model_slug, total_params_before, module_rank, eval_batches, train_batches, eval_seq_len, pass_threshold_pct, typ, t):
-        model = model.to(device)
-        injected = False
-        active_opt = "muon" if getattr(args, "use_muon", False) or getattr(args, "optimizer", "adamw") == "muon" else "adamw"
-        path_name = ""
-        had_nan = False
-        rec_steps = 0
-        trainable_recovery_params = 0
-        measured_calib_time = 0.0
-        recovery_time_s = 0.0
+def _run_candidate_pipeline(
+    model,
+    name,
+    args,
+    device,
+    family,
+    effective_batch_size,
+    tokenizer,
+    val,
+    base,
+    train,
+    effective_timeout,
+    out,
+    model_slug,
+    total_params_before,
+    module_rank,
+    eval_batches,
+    train_batches,
+    eval_seq_len,
+    pass_threshold_pct,
+    typ,
+    t,
+):
+    model = model.to(device)
+    injected = False
+    active_opt = (
+        "muon"
+        if getattr(args, "use_muon", False)
+        or getattr(args, "optimizer", "adamw") == "muon"
+        else "adamw"
+    )
+    path_name = ""
+    had_nan = False
+    rec_steps = 0
+    trainable_recovery_params = 0
+    measured_calib_time = 0.0
+    recovery_time_s = 0.0
 
-        if name not in ("full", "dense"):
-            if hasattr(model, "config") and model.config is not None:
-                # Automatically propagate all parsed flags matching module name prefix or compressor keywords
-                for attr_name, attr_val in vars(args).items():
-                    if attr_name.startswith(name + "_") or attr_name in (
-                        "max_error", "target_attention_only", "rank", "force_rank",
-                        "lora_rank", "lora_alpha", "sparsity", "use_fisher",
-                        "recalibrate_ln", "n_calib",
-                        # TPA-specific
-                        "tpa_rank", "strict_rank",
-                    ):
-                        setattr(model.config, attr_name, attr_val)
+    if name not in ("full", "dense"):
+        if hasattr(model, "config") and model.config is not None:
+            # Automatically propagate all parsed flags matching module name prefix or compressor keywords
+            for attr_name, attr_val in vars(args).items():
+                if attr_name.startswith(name + "_") or attr_name in (
+                    "max_error",
+                    "target_attention_only",
+                    "rank",
+                    "force_rank",
+                    "lora_rank",
+                    "lora_alpha",
+                    "sparsity",
+                    "use_fisher",
+                    "recalibrate_ln",
+                    "n_calib",
+                    # TPA-specific
+                    "tpa_rank",
+                    "strict_rank",
+                ):
+                    setattr(model.config, attr_name, attr_val)
 
-                    # Also strip module prefix for standard configs (e.g. nmf_max_error -> max_error)
-                    if attr_name.startswith(name + "_"):
-                        stripped = attr_name[len(name) + 1:]
-                        setattr(model.config, stripped, attr_val)
+                # Also strip module prefix for standard configs (e.g. nmf_max_error -> max_error)
+                if attr_name.startswith(name + "_"):
+                    stripped = attr_name[len(name) + 1 :]
+                    setattr(model.config, stripped, attr_val)
 
-                if getattr(args, "strict_rank", None) is not None:
-                    model.config.strict_rank = args.strict_rank
+            if getattr(args, "strict_rank", None) is not None:
+                model.config.strict_rank = args.strict_rank
+            if getattr(args, "lora_rank", None) is not None:
+                model.config.lora_rank = args.lora_rank
+            if getattr(args, "asvd_dynamic_rank", None) is not None:
+                model.config.asvd_dynamic_rank = args.asvd_dynamic_rank
+            if getattr(args, "asvd_energy_threshold", None) is not None:
+                model.config.asvd_energy_threshold = args.asvd_energy_threshold
+            if getattr(args, "asvd_error_threshold", None) is not None:
+                model.config.asvd_error_threshold = args.asvd_error_threshold
+            if getattr(args, "aasvd_max_error", None) is not None:
+                model.config.aasvd_max_error = args.aasvd_max_error
+                model.config.max_error = args.aasvd_max_error
+            if getattr(args, "aasvd_target_attention_only", None) is not None:
+                model.config.aasvd_target_attention_only = (
+                    args.aasvd_target_attention_only
+                )
+                model.config.target_attention_only = args.aasvd_target_attention_only
+            if getattr(args, "aasvd_ema_beta", None) is not None:
+                model.config.aasvd_ema_beta = args.aasvd_ema_beta
+                model.config.ema_beta = args.aasvd_ema_beta
+            if getattr(args, "aasvd_fallback_to_original", None) is not None:
+                model.config.aasvd_fallback_to_original = (
+                    args.aasvd_fallback_to_original
+                )
+                model.config.fallback_to_original = args.aasvd_fallback_to_original
+            if getattr(args, "adaptive_ranks_max_error", None) is not None:
+                model.config.adaptive_ranks_max_error = args.adaptive_ranks_max_error
+                model.config.max_error = args.adaptive_ranks_max_error
+            if getattr(args, "adaptive_ranks_energy_threshold", None) is not None:
+                model.config.adaptive_ranks_energy_threshold = (
+                    args.adaptive_ranks_energy_threshold
+                )
+                model.config.energy_threshold = args.adaptive_ranks_energy_threshold
+            if getattr(args, "adaptive_ranks_target_attention_only", None) is not None:
+                model.config.adaptive_ranks_target_attention_only = (
+                    args.adaptive_ranks_target_attention_only
+                )
+                model.config.target_attention_only = (
+                    args.adaptive_ranks_target_attention_only
+                )
+            if getattr(args, "adasvd_max_error", None) is not None:
+                model.config.adasvd_max_error = args.adasvd_max_error
+                model.config.max_error = args.adasvd_max_error
+            if getattr(args, "adasvd_target_attention_only", None) is not None:
+                model.config.adasvd_target_attention_only = (
+                    args.adasvd_target_attention_only
+                )
+                model.config.target_attention_only = args.adasvd_target_attention_only
+            if getattr(args, "adasvd_min_rank", None) is not None:
+                model.config.adasvd_min_rank = args.adasvd_min_rank
+                model.config.min_rank = args.adasvd_min_rank
+            if getattr(args, "admm_sparsity", None) is not None:
+                model.config.admm_sparsity = args.admm_sparsity
+                model.config.sparsity = args.admm_sparsity
+            if getattr(args, "admm_quant_bits", None) is not None:
+                model.config.admm_quant_bits = args.admm_quant_bits
+                model.config.quant_bits = args.admm_quant_bits
+            if getattr(args, "admm_structured_24", None) is not None:
+                model.config.admm_structured_24 = args.admm_structured_24
+                model.config.structured_24 = args.admm_structured_24
+            if getattr(args, "admm_max_error", None) is not None:
+                model.config.admm_max_error = args.admm_max_error
+                model.config.max_error = args.admm_max_error
+            if getattr(args, "admm_target_attention_only", None) is not None:
+                model.config.admm_target_attention_only = (
+                    args.admm_target_attention_only
+                )
+                model.config.target_attention_only = args.admm_target_attention_only
+            if getattr(args, "admm_rho1", None) is not None:
+                model.config.admm_rho1 = args.admm_rho1
+            if getattr(args, "admm_rho2", None) is not None:
+                model.config.admm_rho2 = args.admm_rho2
+            if getattr(args, "admm_max_iter", None) is not None:
+                model.config.admm_max_iter = args.admm_max_iter
+            if getattr(args, "admm_pruner_sparsity", None) is not None:
+                model.config.admm_pruner_sparsity = args.admm_pruner_sparsity
+                model.config.sparsity = args.admm_pruner_sparsity
+            if getattr(args, "admm_pruner_structured_24", None) is not None:
+                model.config.admm_pruner_structured_24 = args.admm_pruner_structured_24
+                model.config.structured_24 = args.admm_pruner_structured_24
+            if getattr(args, "admm_pruner_max_error", None) is not None:
+                model.config.admm_pruner_max_error = args.admm_pruner_max_error
+                model.config.max_error = args.admm_pruner_max_error
+            if getattr(args, "admm_pruner_target_attention_only", None) is not None:
+                model.config.admm_pruner_target_attention_only = (
+                    args.admm_pruner_target_attention_only
+                )
+                model.config.target_attention_only = (
+                    args.admm_pruner_target_attention_only
+                )
+            if getattr(args, "admm_pruner_lambda_distill", None) is not None:
+                model.config.admm_pruner_lambda_distill = (
+                    args.admm_pruner_lambda_distill
+                )
+                model.config.lambda_distill = args.admm_pruner_lambda_distill
+            if getattr(args, "admm_pruner_distill_batch_size", None) is not None:
+                model.config.admm_pruner_distill_batch_size = (
+                    args.admm_pruner_distill_batch_size
+                )
+                model.config.distill_batch_size = args.admm_pruner_distill_batch_size
+            if getattr(args, "admm_pruner_rho", None) is not None:
+                model.config.admm_pruner_rho = args.admm_pruner_rho
+            if getattr(args, "admm_pruner_max_iter", None) is not None:
+                model.config.admm_pruner_max_iter = args.admm_pruner_max_iter
+            if getattr(args, "armor_rank", None) is not None:
+                model.config.armor_rank = args.armor_rank
+                model.config.rank = args.armor_rank
+            if getattr(args, "armor_sparsity", None) is not None:
+                model.config.armor_sparsity = args.armor_sparsity
+                model.config.sparsity = args.armor_sparsity
+            if getattr(args, "armor_structured_24", None) is not None:
+                model.config.armor_structured_24 = args.armor_structured_24
+                model.config.structured_24 = args.armor_structured_24
+            if getattr(args, "armor_max_error", None) is not None:
+                model.config.armor_max_error = args.armor_max_error
+                model.config.max_error = args.armor_max_error
+            if getattr(args, "armor_target_attention_only", None) is not None:
+                model.config.armor_target_attention_only = (
+                    args.armor_target_attention_only
+                )
+                model.config.target_attention_only = args.armor_target_attention_only
+            if getattr(args, "armor_decouple", None) is not None:
+                model.config.armor_decouple = args.armor_decouple
+                model.config.decouple = args.armor_decouple
+            if getattr(args, "armor_lora_alpha", None) is not None:
+                model.config.armor_lora_alpha = args.armor_lora_alpha
+                model.config.lora_alpha = args.armor_lora_alpha
+            if getattr(args, "armor_skip_attention_qkv", None) is not None:
+                model.config.armor_skip_attention_qkv = args.armor_skip_attention_qkv
+                model.config.skip_attention_qkv = args.armor_skip_attention_qkv
+            if getattr(args, "astro_bits", None) is not None:
+                model.config.astro_bits = args.astro_bits
+                model.config.bits = args.astro_bits
+            if getattr(args, "astro_symmetric", None) is not None:
+                model.config.astro_symmetric = args.astro_symmetric
+                model.config.symmetric = args.astro_symmetric
+            if getattr(args, "astro_per_channel", None) is not None:
+                model.config.astro_per_channel = args.astro_per_channel
+                model.config.per_channel = args.astro_per_channel
+            if getattr(args, "astro_use_ste", None) is not None:
+                model.config.astro_use_ste = args.astro_use_ste
+                model.config.use_ste = args.astro_use_ste
+            if getattr(args, "astro_max_error", None) is not None:
+                model.config.astro_max_error = args.astro_max_error
+                model.config.max_error = args.astro_max_error
+            if getattr(args, "astro_target_attention_only", None) is not None:
+                model.config.astro_target_attention_only = (
+                    args.astro_target_attention_only
+                )
+                model.config.target_attention_only = args.astro_target_attention_only
+            if getattr(args, "astro_use_fisher_adaptive_bits", None) is not None:
+                model.config.astro_use_fisher_adaptive_bits = (
+                    args.astro_use_fisher_adaptive_bits
+                )
+                model.config.use_fisher_adaptive_bits = (
+                    args.astro_use_fisher_adaptive_bits
+                )
+            if getattr(args, "astro_target_avg_bits", None) is not None:
+                model.config.astro_target_avg_bits = args.astro_target_avg_bits
+                model.config.target_avg_bits = args.astro_target_avg_bits
+            if getattr(args, "astro_min_bits", None) is not None:
+                model.config.astro_min_bits = args.astro_min_bits
+                model.config.min_bits = args.astro_min_bits
+            if getattr(args, "astro_max_bits", None) is not None:
+                model.config.astro_max_bits = args.astro_max_bits
+                model.config.max_bits = args.astro_max_bits
+            if getattr(args, "astro_fisher_beta", None) is not None:
+                model.config.astro_fisher_beta = args.astro_fisher_beta
+                model.config.fisher_beta = args.astro_fisher_beta
+            if getattr(args, "cachenotes_task", None) is not None:
+                model.config.cachenotes_task = args.cachenotes_task
+                model.config.task_type = args.cachenotes_task
+            if getattr(args, "cachenotes_keep_ratio", None) is not None:
+                model.config.cachenotes_keep_ratio = args.cachenotes_keep_ratio
+                model.config.keep_ratio = args.cachenotes_keep_ratio
+            if getattr(args, "cachenotes_max_error", None) is not None:
+                model.config.cachenotes_max_error = args.cachenotes_max_error
+                model.config.max_error = args.cachenotes_max_error
+            if getattr(args, "cachenotes_target_attention_only", None) is not None:
+                model.config.cachenotes_target_attention_only = (
+                    args.cachenotes_target_attention_only
+                )
+                model.config.target_attention_only = (
+                    args.cachenotes_target_attention_only
+                )
+            if getattr(args, "cachenotes_lora_r", None) is not None:
+                model.config.cachenotes_lora_r = args.cachenotes_lora_r
+                model.config.lora_r = args.cachenotes_lora_r
+                model.config.lora_rank = args.cachenotes_lora_r
+            if getattr(args, "cachenotes_lora_alpha", None) is not None:
+                model.config.cachenotes_lora_alpha = args.cachenotes_lora_alpha
+                model.config.lora_alpha = args.cachenotes_lora_alpha
+            if getattr(args, "cachenotes_skip_attention_qkv", None) is not None:
+                model.config.cachenotes_skip_attention_qkv = (
+                    args.cachenotes_skip_attention_qkv
+                )
+                model.config.skip_attention_qkv = args.cachenotes_skip_attention_qkv
+            if getattr(args, "come_target_layers", None) is not None:
+                model.config.come_target_layers = args.come_target_layers
+                model.config.target_layers = args.come_target_layers
+            if getattr(args, "come_sparsity", None) is not None:
+                model.config.come_sparsity = args.come_sparsity
+                model.config.sparsity = args.come_sparsity
+            if getattr(args, "come_alpha_init", None) is not None:
+                model.config.come_alpha_init = args.come_alpha_init
+                model.config.alpha_init = args.come_alpha_init
+            if getattr(args, "come_lora_r", None) is not None:
+                model.config.come_lora_r = args.come_lora_r
+                model.config.lora_r = args.come_lora_r
+                model.config.lora_rank = args.come_lora_r
+            if getattr(args, "come_lora_alpha", None) is not None:
+                model.config.come_lora_alpha = args.come_lora_alpha
+                model.config.lora_alpha = args.come_lora_alpha
+            if getattr(args, "come_skip_attention_qkv", None) is not None:
+                model.config.come_skip_attention_qkv = args.come_skip_attention_qkv
+                model.config.skip_attention_qkv = args.come_skip_attention_qkv
+            if getattr(args, "come_target_attention_only", None) is not None:
+                model.config.come_target_attention_only = (
+                    args.come_target_attention_only
+                )
+                model.config.target_attention_only = args.come_target_attention_only
+            # CoopQ
+            if getattr(args, "coopq_bits", None) is not None:
+                model.config.coopq_bits = args.coopq_bits
+                model.config.bits = args.coopq_bits
+            if getattr(args, "coopq_min_bits", None) is not None:
+                model.config.coopq_min_bits = args.coopq_min_bits
+                model.config.min_bits = args.coopq_min_bits
+            if getattr(args, "coopq_max_bits", None) is not None:
+                model.config.coopq_max_bits = args.coopq_max_bits
+                model.config.max_bits = args.coopq_max_bits
+            if getattr(args, "coopq_symmetric", None) is not None:
+                model.config.coopq_symmetric = args.coopq_symmetric
+                model.config.symmetric = args.coopq_symmetric
+            if getattr(args, "coopq_per_channel", None) is not None:
+                model.config.coopq_per_channel = args.coopq_per_channel
+                model.config.per_channel = args.coopq_per_channel
+            if getattr(args, "coopq_use_ste", None) is not None:
+                model.config.coopq_use_ste = args.coopq_use_ste
+                model.config.use_ste = args.coopq_use_ste
+            if getattr(args, "coopq_target_attention_only", None) is not None:
+                model.config.coopq_target_attention_only = (
+                    args.coopq_target_attention_only
+                )
+                model.config.target_attention_only = args.coopq_target_attention_only
+            # CR
+            if getattr(args, "cr_rank", None) is not None:
+                model.config.cr_rank = args.cr_rank
+                model.config.rank = args.cr_rank
+            if getattr(args, "cr_max_error", None) is not None:
+                model.config.cr_max_error = args.cr_max_error
+                model.config.max_error = args.cr_max_error
+            if getattr(args, "cr_target_attention_only", None) is not None:
+                model.config.cr_target_attention_only = args.cr_target_attention_only
+                model.config.target_attention_only = args.cr_target_attention_only
+            # CUR
+            if getattr(args, "cur_rank", None) is not None:
+                model.config.cur_rank = args.cur_rank
+                model.config.rank = args.cur_rank
+            if getattr(args, "cur_min_rank", None) is not None:
+                model.config.cur_min_rank = args.cur_min_rank
+                model.config.min_rank = args.cur_min_rank
+            if getattr(args, "cur_method", None) is not None:
+                model.config.cur_method = args.cur_method
+                model.config.method = args.cur_method
+            if getattr(args, "cur_max_error", None) is not None:
+                model.config.cur_max_error = args.cur_max_error
+                model.config.max_error = args.cur_max_error
+            if getattr(args, "cur_target_attention_only", None) is not None:
+                model.config.cur_target_attention_only = args.cur_target_attention_only
+                model.config.target_attention_only = args.cur_target_attention_only
+            # CUR-MoE
+            if getattr(args, "cur_moe_rank", None) is not None:
+                model.config.cur_moe_rank = args.cur_moe_rank
+                model.config.rank = args.cur_moe_rank
+            if getattr(args, "cur_moe_target_attention_only", None) is not None:
+                model.config.cur_moe_target_attention_only = (
+                    args.cur_moe_target_attention_only
+                )
+                model.config.target_attention_only = args.cur_moe_target_attention_only
+            # DeltaKV
+            if getattr(args, "delta_kv_rank", None) is not None:
+                model.config.delta_kv_rank = args.delta_kv_rank
+                model.config.rank = args.delta_kv_rank
+            if getattr(args, "delta_kv_sparsity", None) is not None:
+                model.config.delta_kv_sparsity = args.delta_kv_sparsity
+                model.config.sparsity = args.delta_kv_sparsity
+            if getattr(args, "delta_kv_max_error", None) is not None:
+                model.config.delta_kv_max_error = args.delta_kv_max_error
+                model.config.max_error = args.delta_kv_max_error
+            if getattr(args, "delta_kv_target_attention_only", None) is not None:
+                model.config.delta_kv_target_attention_only = (
+                    args.delta_kv_target_attention_only
+                )
+                model.config.target_attention_only = args.delta_kv_target_attention_only
+            # DirectSVD
+            if getattr(args, "direct_svd_rank", None) is not None:
+                model.config.direct_svd_rank = args.direct_svd_rank
+                model.config.rank = args.direct_svd_rank
+            if getattr(args, "direct_svd_max_error", None) is not None:
+                model.config.direct_svd_max_error = args.direct_svd_max_error
+                model.config.max_error = args.direct_svd_max_error
+            if getattr(args, "direct_svd_target_attention_only", None) is not None:
+                model.config.direct_svd_target_attention_only = (
+                    args.direct_svd_target_attention_only
+                )
+                model.config.target_attention_only = (
+                    args.direct_svd_target_attention_only
+                )
+            # Dobi-SVD
+            if getattr(args, "dobi_rank", None) is not None:
+                model.config.dobi_rank = args.dobi_rank
+                model.config.rank = args.dobi_rank
+            if getattr(args, "dobi_init_rank_ratio", None) is not None:
+                model.config.dobi_init_rank_ratio = args.dobi_init_rank_ratio
+                model.config.init_rank_ratio = args.dobi_init_rank_ratio
+            if getattr(args, "dobi_init_gate_val", None) is not None:
+                model.config.dobi_init_gate_val = args.dobi_init_gate_val
+                model.config.init_gate_val = args.dobi_init_gate_val
+            if getattr(args, "dobi_max_error", None) is not None:
+                model.config.dobi_max_error = args.dobi_max_error
+                model.config.max_error = args.dobi_max_error
+            if getattr(args, "dobi_target_attention_only", None) is not None:
+                model.config.dobi_target_attention_only = (
+                    args.dobi_target_attention_only
+                )
+                model.config.target_attention_only = args.dobi_target_attention_only
+            # Dynamic Entropy SVD
+            if getattr(args, "dynamic_min_rank", None) is not None:
+                model.config.dynamic_min_rank = args.dynamic_min_rank
+                model.config.min_rank = args.dynamic_min_rank
+            if getattr(args, "dynamic_max_rank", None) is not None:
+                model.config.dynamic_max_rank = args.dynamic_max_rank
+                model.config.max_rank = args.dynamic_max_rank
+            if getattr(args, "dynamic_target_param_ratio", None) is not None:
+                model.config.dynamic_target_param_ratio = (
+                    args.dynamic_target_param_ratio
+                )
+                model.config.target_param_ratio = args.dynamic_target_param_ratio
+            if getattr(args, "dynamic_max_error", None) is not None:
+                model.config.dynamic_max_error = args.dynamic_max_error
+                model.config.max_error = args.dynamic_max_error
+            if getattr(args, "dynamic_target_attention_only", None) is not None:
+                model.config.dynamic_target_attention_only = (
+                    args.dynamic_target_attention_only
+                )
+                model.config.target_attention_only = args.dynamic_target_attention_only
+            # ENLighten
+            if getattr(args, "enlighten_rank", None) is not None:
+                model.config.enlighten_rank = args.enlighten_rank
+                model.config.rank = args.enlighten_rank
+            if getattr(args, "enlighten_sparsity", None) is not None:
+                model.config.enlighten_sparsity = args.enlighten_sparsity
+                model.config.sparsity = args.enlighten_sparsity
+            if getattr(args, "enlighten_structured_24", None) is not None:
+                model.config.enlighten_structured_24 = args.enlighten_structured_24
+                model.config.structured_24 = args.enlighten_structured_24
+            if getattr(args, "enlighten_max_error", None) is not None:
+                model.config.enlighten_max_error = args.enlighten_max_error
+                model.config.max_error = args.enlighten_max_error
+            if getattr(args, "enlighten_target_attention_only", None) is not None:
+                model.config.enlighten_target_attention_only = (
+                    args.enlighten_target_attention_only
+                )
+                model.config.target_attention_only = (
+                    args.enlighten_target_attention_only
+                )
+            # Entropy Budget SVD
+            if getattr(args, "entropy_budget_rank", None) is not None:
+                model.config.entropy_budget_rank = args.entropy_budget_rank
+                model.config.rank = args.entropy_budget_rank
+            if getattr(args, "entropy_budget_total_budget_ratio", None) is not None:
+                model.config.entropy_budget_total_budget_ratio = (
+                    args.entropy_budget_total_budget_ratio
+                )
+                model.config.total_budget_ratio = args.entropy_budget_total_budget_ratio
+            if getattr(args, "entropy_budget_max_error", None) is not None:
+                model.config.entropy_budget_max_error = args.entropy_budget_max_error
+                model.config.max_error = args.entropy_budget_max_error
+            if getattr(args, "entropy_budget_target_attention_only", None) is not None:
+                model.config.entropy_budget_target_attention_only = (
+                    args.entropy_budget_target_attention_only
+                )
+                model.config.target_attention_only = (
+                    args.entropy_budget_target_attention_only
+                )
+            # ERC-SVD
+            if getattr(args, "erc_allowed_error", None) is not None:
+                model.config.erc_allowed_error = args.erc_allowed_error
+                model.config.allowed_error = args.erc_allowed_error
+            if getattr(args, "erc_max_error", None) is not None:
+                model.config.erc_max_error = args.erc_max_error
+                model.config.max_error = args.erc_max_error
+            if getattr(args, "erc_target_attention_only", None) is not None:
+                model.config.erc_target_attention_only = args.erc_target_attention_only
+                model.config.target_attention_only = args.erc_target_attention_only
+            if getattr(args, "erc_rank", None) is not None:
+                model.config.erc_rank = args.erc_rank
+                model.config.rank = args.erc_rank
+            # FAQ Quantizer
+            if getattr(args, "faq_bits", None) is not None:
+                model.config.faq_bits = args.faq_bits
+                model.config.bits = args.faq_bits
+            if getattr(args, "faq_alpha", None) is not None:
+                model.config.faq_alpha = args.faq_alpha
+                model.config.alpha = args.faq_alpha
+            if getattr(args, "faq_symmetric", None) is not None:
+                model.config.faq_symmetric = args.faq_symmetric
+                model.config.symmetric = args.faq_symmetric
+            if getattr(args, "faq_use_ste", None) is not None:
+                model.config.faq_use_ste = args.faq_use_ste
+                model.config.use_ste = args.faq_use_ste
+            if getattr(args, "faq_lora_r", None) is not None:
+                model.config.faq_lora_r = args.faq_lora_r
+                model.config.lora_r = args.faq_lora_r
+            if getattr(args, "faq_max_error", None) is not None:
+                model.config.faq_max_error = args.faq_max_error
+                model.config.max_error = args.faq_max_error
+            if getattr(args, "faq_target_attention_only", None) is not None:
+                model.config.faq_target_attention_only = args.faq_target_attention_only
+                model.config.target_attention_only = args.faq_target_attention_only
+            # FLAP
+            if getattr(args, "flap_sparsity", None) is not None:
+                model.config.flap_sparsity = args.flap_sparsity
+                model.config.sparsity = args.flap_sparsity
+            if getattr(args, "flap_metric_type", None) is not None:
+                model.config.flap_metric_type = args.flap_metric_type
+                model.config.metric_type = args.flap_metric_type
+            if getattr(args, "flap_structured_24", None) is not None:
+                model.config.flap_structured_24 = args.flap_structured_24
+                model.config.structured_24 = args.flap_structured_24
+            if getattr(args, "flap_max_error", None) is not None:
+                model.config.flap_max_error = args.flap_max_error
+                model.config.max_error = args.flap_max_error
+            if getattr(args, "flap_target_attention_only", None) is not None:
+                model.config.flap_target_attention_only = (
+                    args.flap_target_attention_only
+                )
+                model.config.target_attention_only = args.flap_target_attention_only
+            # FLAT-LLM
+            if getattr(args, "flat_llm_keep_ratio", None) is not None:
+                model.config.flat_llm_keep_ratio = args.flat_llm_keep_ratio
+                model.config.keep_ratio = args.flat_llm_keep_ratio
+            if getattr(args, "flat_llm_damping", None) is not None:
+                model.config.flat_llm_damping = args.flat_llm_damping
+                model.config.damping = args.flat_llm_damping
+            if getattr(args, "flat_llm_structured_24", None) is not None:
+                model.config.flat_llm_structured_24 = args.flat_llm_structured_24
+                model.config.structured_24 = args.flat_llm_structured_24
+            if getattr(args, "flat_llm_max_error", None) is not None:
+                model.config.flat_llm_max_error = args.flat_llm_max_error
+                model.config.max_error = args.flat_llm_max_error
+            if getattr(args, "flat_llm_target_attention_only", None) is not None:
+                model.config.flat_llm_target_attention_only = (
+                    args.flat_llm_target_attention_only
+                )
+                model.config.target_attention_only = args.flat_llm_target_attention_only
+            # FRanDI
+            if getattr(args, "frandi_rank", None) is not None:
+                model.config.frandi_rank = args.frandi_rank
+                model.config.rank = args.frandi_rank
+            if getattr(args, "frandi_energy_threshold", None) is not None:
+                model.config.frandi_energy_threshold = args.frandi_energy_threshold
+                model.config.energy_threshold = args.frandi_energy_threshold
+            if getattr(args, "frandi_lora_r", None) is not None:
+                model.config.frandi_lora_r = args.frandi_lora_r
+                model.config.lora_r = args.frandi_lora_r
+            if getattr(args, "frandi_max_error", None) is not None:
+                model.config.frandi_max_error = args.frandi_max_error
+                model.config.max_error = args.frandi_max_error
+            if getattr(args, "frandi_target_attention_only", None) is not None:
+                model.config.frandi_target_attention_only = (
+                    args.frandi_target_attention_only
+                )
+                model.config.target_attention_only = args.frandi_target_attention_only
+            # GreCoDeC
+            if getattr(args, "grecodec_rank", None) is not None:
+                model.config.grecodec_rank = args.grecodec_rank
+                model.config.rank = args.grecodec_rank
+            if getattr(args, "grecodec_max_iter", None) is not None:
+                model.config.grecodec_max_iter = args.grecodec_max_iter
+                model.config.max_iter = args.grecodec_max_iter
+            if getattr(args, "grecodec_lora_r", None) is not None:
+                model.config.grecodec_lora_r = args.grecodec_lora_r
+                model.config.lora_r = args.grecodec_lora_r
+            if getattr(args, "grecodec_max_error", None) is not None:
+                model.config.grecodec_max_error = args.grecodec_max_error
+                model.config.max_error = args.grecodec_max_error
+            if getattr(args, "grecodec_target_attention_only", None) is not None:
+                model.config.grecodec_target_attention_only = (
+                    args.grecodec_target_attention_only
+                )
+                model.config.target_attention_only = args.grecodec_target_attention_only
+            # HashedNets & HashedNet
+            if getattr(args, "hashed_net_buckets", None) is not None:
+                model.config.hashed_net_buckets = args.hashed_net_buckets
+                model.config.n_buckets = args.hashed_net_buckets
+            if getattr(args, "hashed_net_use_sign", None) is not None:
+                model.config.hashed_net_use_sign = args.hashed_net_use_sign
+                model.config.use_sign = args.hashed_net_use_sign
+            if getattr(args, "hashed_net_lora_r", None) is not None:
+                model.config.hashed_net_lora_r = args.hashed_net_lora_r
+                model.config.lora_r = args.hashed_net_lora_r
+            if getattr(args, "hashed_net_max_error", None) is not None:
+                model.config.hashed_net_max_error = args.hashed_net_max_error
+                model.config.max_error = args.hashed_net_max_error
+            if getattr(args, "hashed_net_target_attention_only", None) is not None:
+                model.config.hashed_net_target_attention_only = (
+                    args.hashed_net_target_attention_only
+                )
+                model.config.target_attention_only = (
+                    args.hashed_net_target_attention_only
+                )
+            # Huffman
+            if getattr(args, "huffman_quantize_bits", None) is not None:
+                model.config.huffman_quantize_bits = args.huffman_quantize_bits
+                model.config.quantize_bits = args.huffman_quantize_bits
+                model.config.bits = args.huffman_quantize_bits
+            if getattr(args, "huffman_max_error", None) is not None:
+                model.config.huffman_max_error = args.huffman_max_error
+                model.config.max_error = args.huffman_max_error
+            if getattr(args, "huffman_target_attention_only", None) is not None:
+                model.config.huffman_target_attention_only = (
+                    args.huffman_target_attention_only
+                )
+                model.config.target_attention_only = args.huffman_target_attention_only
+            # Hybrid SVD
+            if getattr(args, "hybrid_svd_rank", None) is not None:
+                model.config.hybrid_svd_rank = args.hybrid_svd_rank
+                model.config.svd_rank = args.hybrid_svd_rank
+                model.config.rank = args.hybrid_svd_rank
+            if getattr(args, "hybrid_svd_use_full", None) is not None:
+                model.config.hybrid_svd_use_full = args.hybrid_svd_use_full
+                model.config.use_full_layer_replacement = args.hybrid_svd_use_full
+            if getattr(args, "hybrid_svd_lora_r", None) is not None:
+                model.config.hybrid_svd_lora_r = args.hybrid_svd_lora_r
+                model.config.lora_r = args.hybrid_svd_lora_r
+            if getattr(args, "hybrid_svd_max_error", None) is not None:
+                model.config.hybrid_svd_max_error = args.hybrid_svd_max_error
+                model.config.max_error = args.hybrid_svd_max_error
+            if getattr(args, "hybrid_svd_target_attention_only", None) is not None:
+                model.config.hybrid_svd_target_attention_only = (
+                    args.hybrid_svd_target_attention_only
+                )
+                model.config.target_attention_only = (
+                    args.hybrid_svd_target_attention_only
+                )
+            # HybridKV
+            if getattr(args, "hybridkv_budget", None) is not None:
+                model.config.hybridkv_budget = args.hybridkv_budget
+                model.config.budget = args.hybridkv_budget
+            if getattr(args, "hybridkv_static_ratio", None) is not None:
+                model.config.hybridkv_static_ratio = args.hybridkv_static_ratio
+                model.config.static_ratio = args.hybridkv_static_ratio
+            if getattr(args, "hybridkv_max_cache_len", None) is not None:
+                model.config.hybridkv_max_cache_len = args.hybridkv_max_cache_len
+                model.config.max_cache_len = args.hybridkv_max_cache_len
+            if getattr(args, "hybridkv_num_sinks", None) is not None:
+                model.config.hybridkv_num_sinks = args.hybridkv_num_sinks
+                model.config.num_sinks = args.hybridkv_num_sinks
+            if getattr(args, "hybridkv_recent_window", None) is not None:
+                model.config.hybridkv_recent_window = args.hybridkv_recent_window
+                model.config.recent_window = args.hybridkv_recent_window
+            if getattr(args, "hybridkv_target_attention_only", None) is not None:
+                model.config.hybridkv_target_attention_only = (
+                    args.hybridkv_target_attention_only
+                )
+                model.config.target_attention_only = args.hybridkv_target_attention_only
+            # KMeans Quantizer
+            if getattr(args, "kmeans_clusters", None) is not None:
+                model.config.kmeans_clusters = args.kmeans_clusters
+                model.config.n_clusters = args.kmeans_clusters
+            if getattr(args, "kmeans_lora_r", None) is not None:
+                model.config.kmeans_lora_r = args.kmeans_lora_r
+                model.config.lora_r = args.kmeans_lora_r
+            if getattr(args, "kmeans_max_error", None) is not None:
+                model.config.kmeans_max_error = args.kmeans_max_error
+                model.config.max_error = args.kmeans_max_error
+            if getattr(args, "kmeans_target_attention_only", None) is not None:
+                model.config.kmeans_target_attention_only = (
+                    args.kmeans_target_attention_only
+                )
+                model.config.target_attention_only = args.kmeans_target_attention_only
+            # Kronecker
+            if getattr(args, "kronecker_rank", None) is not None:
+                model.config.kronecker_rank = args.kronecker_rank
+                model.config.rank = args.kronecker_rank
+            if getattr(args, "kronecker_max_error", None) is not None:
+                model.config.kronecker_max_error = args.kronecker_max_error
+                model.config.max_error = args.kronecker_max_error
+            if getattr(args, "kronecker_target_attention_only", None) is not None:
+                model.config.kronecker_target_attention_only = (
+                    args.kronecker_target_attention_only
+                )
+                model.config.target_attention_only = (
+                    args.kronecker_target_attention_only
+                )
+            # Kronecker TT LoRA
+            if getattr(args, "tt_ranks", None) is not None:
+                model.config.tt_ranks = args.tt_ranks
+            if getattr(args, "kronecker_tt_lora_max_error", None) is not None:
+                model.config.kronecker_tt_lora_max_error = (
+                    args.kronecker_tt_lora_max_error
+                )
+                model.config.max_error = args.kronecker_tt_lora_max_error
+            if (
+                getattr(args, "kronecker_tt_lora_target_attention_only", None)
+                is not None
+            ):
+                model.config.kronecker_tt_lora_target_attention_only = (
+                    args.kronecker_tt_lora_target_attention_only
+                )
+                model.config.target_attention_only = (
+                    args.kronecker_tt_lora_target_attention_only
+                )
+            # KVTC Compressor
+            if getattr(args, "kvtc_bits", None) is not None:
+                model.config.kvtc_bits = args.kvtc_bits
+                model.config.bits = args.kvtc_bits
+            if getattr(args, "kvtc_pca_energy", None) is not None:
+                model.config.kvtc_pca_energy = args.kvtc_pca_energy
+                model.config.pca_energy = args.kvtc_pca_energy
+            if getattr(args, "kvtc_max_error", None) is not None:
+                model.config.kvtc_max_error = args.kvtc_max_error
+                model.config.max_error = args.kvtc_max_error
+            if getattr(args, "kvtc_target_attention_only", None) is not None:
+                model.config.kvtc_target_attention_only = (
+                    args.kvtc_target_attention_only
+                )
+                model.config.target_attention_only = args.kvtc_target_attention_only
+            if getattr(args, "kvtc_fallback_to_original", None) is not None:
+                model.config.kvtc_fallback_to_original = args.kvtc_fallback_to_original
+                model.config.fallback_to_original = args.kvtc_fallback_to_original
+
+            # Enforce module-specific max_error and target_attention_only to prevent contamination from unrelated compressors
+            if getattr(args, f"{name}_max_error", None) is not None:
+                model.config.max_error = getattr(args, f"{name}_max_error")
+            elif getattr(args, "max_error", None) is not None:
+                model.config.max_error = args.max_error
+
+            if getattr(args, f"{name}_target_attention_only", None) is not None:
+                model.config.target_attention_only = getattr(
+                    args, f"{name}_target_attention_only"
+                )
+            elif getattr(args, "target_attention_only", None) is not None:
+                model.config.target_attention_only = args.target_attention_only
+
+            if name in ("svd_llm", "svd_llm_compressor"):
+                if getattr(args, "rank_ratio", None) is not None:
+                    model.config.rank_ratio = args.rank_ratio
+                if getattr(args, "max_error", None) is not None:
+                    model.config.max_error = args.max_error
                 if getattr(args, "lora_rank", None) is not None:
                     model.config.lora_rank = args.lora_rank
-                if getattr(args, "asvd_dynamic_rank", None) is not None:
-                    model.config.asvd_dynamic_rank = args.asvd_dynamic_rank
-                if getattr(args, "asvd_energy_threshold", None) is not None:
-                    model.config.asvd_energy_threshold = args.asvd_energy_threshold
-                if getattr(args, "asvd_error_threshold", None) is not None:
-                    model.config.asvd_error_threshold = args.asvd_error_threshold
-                if getattr(args, "aasvd_max_error", None) is not None:
-                    model.config.aasvd_max_error = args.aasvd_max_error
-                    model.config.max_error = args.aasvd_max_error
-                if getattr(args, "aasvd_target_attention_only", None) is not None:
-                    model.config.aasvd_target_attention_only = args.aasvd_target_attention_only
-                    model.config.target_attention_only = args.aasvd_target_attention_only
-                if getattr(args, "aasvd_ema_beta", None) is not None:
-                    model.config.aasvd_ema_beta = args.aasvd_ema_beta
-                    model.config.ema_beta = args.aasvd_ema_beta
-                if getattr(args, "aasvd_fallback_to_original", None) is not None:
-                    model.config.aasvd_fallback_to_original = args.aasvd_fallback_to_original
-                    model.config.fallback_to_original = args.aasvd_fallback_to_original
-                if getattr(args, "adaptive_ranks_max_error", None) is not None:
-                    model.config.adaptive_ranks_max_error = args.adaptive_ranks_max_error
-                    model.config.max_error = args.adaptive_ranks_max_error
-                if getattr(args, "adaptive_ranks_energy_threshold", None) is not None:
-                    model.config.adaptive_ranks_energy_threshold = args.adaptive_ranks_energy_threshold
-                    model.config.energy_threshold = args.adaptive_ranks_energy_threshold
-                if getattr(args, "adaptive_ranks_target_attention_only", None) is not None:
-                    model.config.adaptive_ranks_target_attention_only = args.adaptive_ranks_target_attention_only
-                    model.config.target_attention_only = args.adaptive_ranks_target_attention_only
-                if getattr(args, "adasvd_max_error", None) is not None:
-                    model.config.adasvd_max_error = args.adasvd_max_error
-                    model.config.max_error = args.adasvd_max_error
-                if getattr(args, "adasvd_target_attention_only", None) is not None:
-                    model.config.adasvd_target_attention_only = args.adasvd_target_attention_only
-                    model.config.target_attention_only = args.adasvd_target_attention_only
-                if getattr(args, "adasvd_min_rank", None) is not None:
-                    model.config.adasvd_min_rank = args.adasvd_min_rank
-                    model.config.min_rank = args.adasvd_min_rank
-                if getattr(args, "admm_sparsity", None) is not None:
-                    model.config.admm_sparsity = args.admm_sparsity
-                    model.config.sparsity = args.admm_sparsity
-                if getattr(args, "admm_quant_bits", None) is not None:
-                    model.config.admm_quant_bits = args.admm_quant_bits
-                    model.config.quant_bits = args.admm_quant_bits
-                if getattr(args, "admm_structured_24", None) is not None:
-                    model.config.admm_structured_24 = args.admm_structured_24
-                    model.config.structured_24 = args.admm_structured_24
-                if getattr(args, "admm_max_error", None) is not None:
-                    model.config.admm_max_error = args.admm_max_error
-                    model.config.max_error = args.admm_max_error
-                if getattr(args, "admm_target_attention_only", None) is not None:
-                    model.config.admm_target_attention_only = args.admm_target_attention_only
-                    model.config.target_attention_only = args.admm_target_attention_only
-                if getattr(args, "admm_rho1", None) is not None:
-                    model.config.admm_rho1 = args.admm_rho1
-                if getattr(args, "admm_rho2", None) is not None:
-                    model.config.admm_rho2 = args.admm_rho2
-                if getattr(args, "admm_max_iter", None) is not None:
-                    model.config.admm_max_iter = args.admm_max_iter
-                if getattr(args, "admm_pruner_sparsity", None) is not None:
-                    model.config.admm_pruner_sparsity = args.admm_pruner_sparsity
-                    model.config.sparsity = args.admm_pruner_sparsity
-                if getattr(args, "admm_pruner_structured_24", None) is not None:
-                    model.config.admm_pruner_structured_24 = args.admm_pruner_structured_24
-                    model.config.structured_24 = args.admm_pruner_structured_24
-                if getattr(args, "admm_pruner_max_error", None) is not None:
-                    model.config.admm_pruner_max_error = args.admm_pruner_max_error
-                    model.config.max_error = args.admm_pruner_max_error
-                if getattr(args, "admm_pruner_target_attention_only", None) is not None:
-                    model.config.admm_pruner_target_attention_only = args.admm_pruner_target_attention_only
-                    model.config.target_attention_only = args.admm_pruner_target_attention_only
-                if getattr(args, "admm_pruner_lambda_distill", None) is not None:
-                    model.config.admm_pruner_lambda_distill = args.admm_pruner_lambda_distill
-                    model.config.lambda_distill = args.admm_pruner_lambda_distill
-                if getattr(args, "admm_pruner_distill_batch_size", None) is not None:
-                    model.config.admm_pruner_distill_batch_size = args.admm_pruner_distill_batch_size
-                    model.config.distill_batch_size = args.admm_pruner_distill_batch_size
-                if getattr(args, "admm_pruner_rho", None) is not None:
-                    model.config.admm_pruner_rho = args.admm_pruner_rho
-                if getattr(args, "admm_pruner_max_iter", None) is not None:
-                    model.config.admm_pruner_max_iter = args.admm_pruner_max_iter
-                if getattr(args, "armor_rank", None) is not None:
-                    model.config.armor_rank = args.armor_rank
-                    model.config.rank = args.armor_rank
-                if getattr(args, "armor_sparsity", None) is not None:
-                    model.config.armor_sparsity = args.armor_sparsity
-                    model.config.sparsity = args.armor_sparsity
-                if getattr(args, "armor_structured_24", None) is not None:
-                    model.config.armor_structured_24 = args.armor_structured_24
-                    model.config.structured_24 = args.armor_structured_24
-                if getattr(args, "armor_max_error", None) is not None:
-                    model.config.armor_max_error = args.armor_max_error
-                    model.config.max_error = args.armor_max_error
-                if getattr(args, "armor_target_attention_only", None) is not None:
-                    model.config.armor_target_attention_only = args.armor_target_attention_only
-                    model.config.target_attention_only = args.armor_target_attention_only
-                if getattr(args, "armor_decouple", None) is not None:
-                    model.config.armor_decouple = args.armor_decouple
-                    model.config.decouple = args.armor_decouple
-                if getattr(args, "armor_lora_alpha", None) is not None:
-                    model.config.armor_lora_alpha = args.armor_lora_alpha
-                    model.config.lora_alpha = args.armor_lora_alpha
-                if getattr(args, "armor_skip_attention_qkv", None) is not None:
-                    model.config.armor_skip_attention_qkv = args.armor_skip_attention_qkv
-                    model.config.skip_attention_qkv = args.armor_skip_attention_qkv
-                if getattr(args, "astro_bits", None) is not None:
-                    model.config.astro_bits = args.astro_bits
-                    model.config.bits = args.astro_bits
-                if getattr(args, "astro_symmetric", None) is not None:
-                    model.config.astro_symmetric = args.astro_symmetric
-                    model.config.symmetric = args.astro_symmetric
-                if getattr(args, "astro_per_channel", None) is not None:
-                    model.config.astro_per_channel = args.astro_per_channel
-                    model.config.per_channel = args.astro_per_channel
-                if getattr(args, "astro_use_ste", None) is not None:
-                    model.config.astro_use_ste = args.astro_use_ste
-                    model.config.use_ste = args.astro_use_ste
-                if getattr(args, "astro_max_error", None) is not None:
-                    model.config.astro_max_error = args.astro_max_error
-                    model.config.max_error = args.astro_max_error
-                if getattr(args, "astro_target_attention_only", None) is not None:
-                    model.config.astro_target_attention_only = args.astro_target_attention_only
-                    model.config.target_attention_only = args.astro_target_attention_only
-                if getattr(args, "astro_use_fisher_adaptive_bits", None) is not None:
-                    model.config.astro_use_fisher_adaptive_bits = args.astro_use_fisher_adaptive_bits
-                    model.config.use_fisher_adaptive_bits = args.astro_use_fisher_adaptive_bits
-                if getattr(args, "astro_target_avg_bits", None) is not None:
-                    model.config.astro_target_avg_bits = args.astro_target_avg_bits
-                    model.config.target_avg_bits = args.astro_target_avg_bits
-                if getattr(args, "astro_min_bits", None) is not None:
-                    model.config.astro_min_bits = args.astro_min_bits
-                    model.config.min_bits = args.astro_min_bits
-                if getattr(args, "astro_max_bits", None) is not None:
-                    model.config.astro_max_bits = args.astro_max_bits
-                    model.config.max_bits = args.astro_max_bits
-                if getattr(args, "astro_fisher_beta", None) is not None:
-                    model.config.astro_fisher_beta = args.astro_fisher_beta
-                    model.config.fisher_beta = args.astro_fisher_beta
-                if getattr(args, "cachenotes_task", None) is not None:
-                    model.config.cachenotes_task = args.cachenotes_task
-                    model.config.task_type = args.cachenotes_task
-                if getattr(args, "cachenotes_keep_ratio", None) is not None:
-                    model.config.cachenotes_keep_ratio = args.cachenotes_keep_ratio
-                    model.config.keep_ratio = args.cachenotes_keep_ratio
-                if getattr(args, "cachenotes_max_error", None) is not None:
-                    model.config.cachenotes_max_error = args.cachenotes_max_error
-                    model.config.max_error = args.cachenotes_max_error
-                if getattr(args, "cachenotes_target_attention_only", None) is not None:
-                    model.config.cachenotes_target_attention_only = args.cachenotes_target_attention_only
-                    model.config.target_attention_only = args.cachenotes_target_attention_only
-                if getattr(args, "cachenotes_lora_r", None) is not None:
-                    model.config.cachenotes_lora_r = args.cachenotes_lora_r
-                    model.config.lora_r = args.cachenotes_lora_r
-                    model.config.lora_rank = args.cachenotes_lora_r
-                if getattr(args, "cachenotes_lora_alpha", None) is not None:
-                    model.config.cachenotes_lora_alpha = args.cachenotes_lora_alpha
-                    model.config.lora_alpha = args.cachenotes_lora_alpha
-                if getattr(args, "cachenotes_skip_attention_qkv", None) is not None:
-                    model.config.cachenotes_skip_attention_qkv = args.cachenotes_skip_attention_qkv
-                    model.config.skip_attention_qkv = args.cachenotes_skip_attention_qkv
-                if getattr(args, "come_target_layers", None) is not None:
-                    model.config.come_target_layers = args.come_target_layers
-                    model.config.target_layers = args.come_target_layers
-                if getattr(args, "come_sparsity", None) is not None:
-                    model.config.come_sparsity = args.come_sparsity
-                    model.config.sparsity = args.come_sparsity
-                if getattr(args, "come_alpha_init", None) is not None:
-                    model.config.come_alpha_init = args.come_alpha_init
-                    model.config.alpha_init = args.come_alpha_init
-                if getattr(args, "come_lora_r", None) is not None:
-                    model.config.come_lora_r = args.come_lora_r
-                    model.config.lora_r = args.come_lora_r
-                    model.config.lora_rank = args.come_lora_r
-                if getattr(args, "come_lora_alpha", None) is not None:
-                    model.config.come_lora_alpha = args.come_lora_alpha
-                    model.config.lora_alpha = args.come_lora_alpha
-                if getattr(args, "come_skip_attention_qkv", None) is not None:
-                    model.config.come_skip_attention_qkv = args.come_skip_attention_qkv
-                    model.config.skip_attention_qkv = args.come_skip_attention_qkv
-                if getattr(args, "come_target_attention_only", None) is not None:
-                    model.config.come_target_attention_only = args.come_target_attention_only
-                    model.config.target_attention_only = args.come_target_attention_only
-                # CoopQ
-                if getattr(args, "coopq_bits", None) is not None:
-                    model.config.coopq_bits = args.coopq_bits
-                    model.config.bits = args.coopq_bits
-                if getattr(args, "coopq_min_bits", None) is not None:
-                    model.config.coopq_min_bits = args.coopq_min_bits
-                    model.config.min_bits = args.coopq_min_bits
-                if getattr(args, "coopq_max_bits", None) is not None:
-                    model.config.coopq_max_bits = args.coopq_max_bits
-                    model.config.max_bits = args.coopq_max_bits
-                if getattr(args, "coopq_symmetric", None) is not None:
-                    model.config.coopq_symmetric = args.coopq_symmetric
-                    model.config.symmetric = args.coopq_symmetric
-                if getattr(args, "coopq_per_channel", None) is not None:
-                    model.config.coopq_per_channel = args.coopq_per_channel
-                    model.config.per_channel = args.coopq_per_channel
-                if getattr(args, "coopq_use_ste", None) is not None:
-                    model.config.coopq_use_ste = args.coopq_use_ste
-                    model.config.use_ste = args.coopq_use_ste
-                if getattr(args, "coopq_target_attention_only", None) is not None:
-                    model.config.coopq_target_attention_only = args.coopq_target_attention_only
-                    model.config.target_attention_only = args.coopq_target_attention_only
-                # CR
-                if getattr(args, "cr_rank", None) is not None:
-                    model.config.cr_rank = args.cr_rank
-                    model.config.rank = args.cr_rank
-                if getattr(args, "cr_max_error", None) is not None:
-                    model.config.cr_max_error = args.cr_max_error
-                    model.config.max_error = args.cr_max_error
-                if getattr(args, "cr_target_attention_only", None) is not None:
-                    model.config.cr_target_attention_only = args.cr_target_attention_only
-                    model.config.target_attention_only = args.cr_target_attention_only
-                # CUR
-                if getattr(args, "cur_rank", None) is not None:
-                    model.config.cur_rank = args.cur_rank
-                    model.config.rank = args.cur_rank
-                if getattr(args, "cur_min_rank", None) is not None:
-                    model.config.cur_min_rank = args.cur_min_rank
-                    model.config.min_rank = args.cur_min_rank
-                if getattr(args, "cur_method", None) is not None:
-                    model.config.cur_method = args.cur_method
-                    model.config.method = args.cur_method
-                if getattr(args, "cur_max_error", None) is not None:
-                    model.config.cur_max_error = args.cur_max_error
-                    model.config.max_error = args.cur_max_error
-                if getattr(args, "cur_target_attention_only", None) is not None:
-                    model.config.cur_target_attention_only = args.cur_target_attention_only
-                    model.config.target_attention_only = args.cur_target_attention_only
-                # CUR-MoE
-                if getattr(args, "cur_moe_rank", None) is not None:
-                    model.config.cur_moe_rank = args.cur_moe_rank
-                    model.config.rank = args.cur_moe_rank
-                if getattr(args, "cur_moe_target_attention_only", None) is not None:
-                    model.config.cur_moe_target_attention_only = args.cur_moe_target_attention_only
-                    model.config.target_attention_only = args.cur_moe_target_attention_only
-                # DeltaKV
-                if getattr(args, "delta_kv_rank", None) is not None:
-                    model.config.delta_kv_rank = args.delta_kv_rank
-                    model.config.rank = args.delta_kv_rank
-                if getattr(args, "delta_kv_sparsity", None) is not None:
-                    model.config.delta_kv_sparsity = args.delta_kv_sparsity
-                    model.config.sparsity = args.delta_kv_sparsity
-                if getattr(args, "delta_kv_max_error", None) is not None:
-                    model.config.delta_kv_max_error = args.delta_kv_max_error
-                    model.config.max_error = args.delta_kv_max_error
-                if getattr(args, "delta_kv_target_attention_only", None) is not None:
-                    model.config.delta_kv_target_attention_only = args.delta_kv_target_attention_only
-                    model.config.target_attention_only = args.delta_kv_target_attention_only
-                # DirectSVD
-                if getattr(args, "direct_svd_rank", None) is not None:
-                    model.config.direct_svd_rank = args.direct_svd_rank
-                    model.config.rank = args.direct_svd_rank
-                if getattr(args, "direct_svd_max_error", None) is not None:
-                    model.config.direct_svd_max_error = args.direct_svd_max_error
-                    model.config.max_error = args.direct_svd_max_error
-                if getattr(args, "direct_svd_target_attention_only", None) is not None:
-                    model.config.direct_svd_target_attention_only = args.direct_svd_target_attention_only
-                    model.config.target_attention_only = args.direct_svd_target_attention_only
-                # Dobi-SVD
-                if getattr(args, "dobi_rank", None) is not None:
-                    model.config.dobi_rank = args.dobi_rank
-                    model.config.rank = args.dobi_rank
-                if getattr(args, "dobi_init_rank_ratio", None) is not None:
-                    model.config.dobi_init_rank_ratio = args.dobi_init_rank_ratio
-                    model.config.init_rank_ratio = args.dobi_init_rank_ratio
-                if getattr(args, "dobi_init_gate_val", None) is not None:
-                    model.config.dobi_init_gate_val = args.dobi_init_gate_val
-                    model.config.init_gate_val = args.dobi_init_gate_val
-                if getattr(args, "dobi_max_error", None) is not None:
-                    model.config.dobi_max_error = args.dobi_max_error
-                    model.config.max_error = args.dobi_max_error
-                if getattr(args, "dobi_target_attention_only", None) is not None:
-                    model.config.dobi_target_attention_only = args.dobi_target_attention_only
-                    model.config.target_attention_only = args.dobi_target_attention_only
-                # Dynamic Entropy SVD
-                if getattr(args, "dynamic_min_rank", None) is not None:
-                    model.config.dynamic_min_rank = args.dynamic_min_rank
-                    model.config.min_rank = args.dynamic_min_rank
-                if getattr(args, "dynamic_max_rank", None) is not None:
-                    model.config.dynamic_max_rank = args.dynamic_max_rank
-                    model.config.max_rank = args.dynamic_max_rank
-                if getattr(args, "dynamic_target_param_ratio", None) is not None:
-                    model.config.dynamic_target_param_ratio = args.dynamic_target_param_ratio
-                    model.config.target_param_ratio = args.dynamic_target_param_ratio
-                if getattr(args, "dynamic_max_error", None) is not None:
-                    model.config.dynamic_max_error = args.dynamic_max_error
-                    model.config.max_error = args.dynamic_max_error
-                if getattr(args, "dynamic_target_attention_only", None) is not None:
-                    model.config.dynamic_target_attention_only = args.dynamic_target_attention_only
-                    model.config.target_attention_only = args.dynamic_target_attention_only
-                # ENLighten
-                if getattr(args, "enlighten_rank", None) is not None:
-                    model.config.enlighten_rank = args.enlighten_rank
-                    model.config.rank = args.enlighten_rank
-                if getattr(args, "enlighten_sparsity", None) is not None:
-                    model.config.enlighten_sparsity = args.enlighten_sparsity
-                    model.config.sparsity = args.enlighten_sparsity
-                if getattr(args, "enlighten_structured_24", None) is not None:
-                    model.config.enlighten_structured_24 = args.enlighten_structured_24
-                    model.config.structured_24 = args.enlighten_structured_24
-                if getattr(args, "enlighten_max_error", None) is not None:
-                    model.config.enlighten_max_error = args.enlighten_max_error
-                    model.config.max_error = args.enlighten_max_error
-                if getattr(args, "enlighten_target_attention_only", None) is not None:
-                    model.config.enlighten_target_attention_only = args.enlighten_target_attention_only
-                    model.config.target_attention_only = args.enlighten_target_attention_only
-                # Entropy Budget SVD
-                if getattr(args, "entropy_budget_rank", None) is not None:
-                    model.config.entropy_budget_rank = args.entropy_budget_rank
-                    model.config.rank = args.entropy_budget_rank
-                if getattr(args, "entropy_budget_total_budget_ratio", None) is not None:
-                    model.config.entropy_budget_total_budget_ratio = args.entropy_budget_total_budget_ratio
-                    model.config.total_budget_ratio = args.entropy_budget_total_budget_ratio
-                if getattr(args, "entropy_budget_max_error", None) is not None:
-                    model.config.entropy_budget_max_error = args.entropy_budget_max_error
-                    model.config.max_error = args.entropy_budget_max_error
-                if getattr(args, "entropy_budget_target_attention_only", None) is not None:
-                    model.config.entropy_budget_target_attention_only = args.entropy_budget_target_attention_only
-                    model.config.target_attention_only = args.entropy_budget_target_attention_only
-                # ERC-SVD
-                if getattr(args, "erc_allowed_error", None) is not None:
-                    model.config.erc_allowed_error = args.erc_allowed_error
-                    model.config.allowed_error = args.erc_allowed_error
-                if getattr(args, "erc_max_error", None) is not None:
-                    model.config.erc_max_error = args.erc_max_error
-                    model.config.max_error = args.erc_max_error
-                if getattr(args, "erc_target_attention_only", None) is not None:
-                    model.config.erc_target_attention_only = args.erc_target_attention_only
-                    model.config.target_attention_only = args.erc_target_attention_only
-                if getattr(args, "erc_rank", None) is not None:
-                    model.config.erc_rank = args.erc_rank
-                    model.config.rank = args.erc_rank
-                # FAQ Quantizer
-                if getattr(args, "faq_bits", None) is not None:
-                    model.config.faq_bits = args.faq_bits
-                    model.config.bits = args.faq_bits
-                if getattr(args, "faq_alpha", None) is not None:
-                    model.config.faq_alpha = args.faq_alpha
-                    model.config.alpha = args.faq_alpha
-                if getattr(args, "faq_symmetric", None) is not None:
-                    model.config.faq_symmetric = args.faq_symmetric
-                    model.config.symmetric = args.faq_symmetric
-                if getattr(args, "faq_use_ste", None) is not None:
-                    model.config.faq_use_ste = args.faq_use_ste
-                    model.config.use_ste = args.faq_use_ste
-                if getattr(args, "faq_lora_r", None) is not None:
-                    model.config.faq_lora_r = args.faq_lora_r
-                    model.config.lora_r = args.faq_lora_r
-                if getattr(args, "faq_max_error", None) is not None:
-                    model.config.faq_max_error = args.faq_max_error
-                    model.config.max_error = args.faq_max_error
-                if getattr(args, "faq_target_attention_only", None) is not None:
-                    model.config.faq_target_attention_only = args.faq_target_attention_only
-                    model.config.target_attention_only = args.faq_target_attention_only
-                # FLAP
-                if getattr(args, "flap_sparsity", None) is not None:
-                    model.config.flap_sparsity = args.flap_sparsity
-                    model.config.sparsity = args.flap_sparsity
-                if getattr(args, "flap_metric_type", None) is not None:
-                    model.config.flap_metric_type = args.flap_metric_type
-                    model.config.metric_type = args.flap_metric_type
-                if getattr(args, "flap_structured_24", None) is not None:
-                    model.config.flap_structured_24 = args.flap_structured_24
-                    model.config.structured_24 = args.flap_structured_24
-                if getattr(args, "flap_max_error", None) is not None:
-                    model.config.flap_max_error = args.flap_max_error
-                    model.config.max_error = args.flap_max_error
-                if getattr(args, "flap_target_attention_only", None) is not None:
-                    model.config.flap_target_attention_only = args.flap_target_attention_only
-                    model.config.target_attention_only = args.flap_target_attention_only
-                # FLAT-LLM
-                if getattr(args, "flat_llm_keep_ratio", None) is not None:
-                    model.config.flat_llm_keep_ratio = args.flat_llm_keep_ratio
-                    model.config.keep_ratio = args.flat_llm_keep_ratio
-                if getattr(args, "flat_llm_damping", None) is not None:
-                    model.config.flat_llm_damping = args.flat_llm_damping
-                    model.config.damping = args.flat_llm_damping
-                if getattr(args, "flat_llm_structured_24", None) is not None:
-                    model.config.flat_llm_structured_24 = args.flat_llm_structured_24
-                    model.config.structured_24 = args.flat_llm_structured_24
-                if getattr(args, "flat_llm_max_error", None) is not None:
-                    model.config.flat_llm_max_error = args.flat_llm_max_error
-                    model.config.max_error = args.flat_llm_max_error
-                if getattr(args, "flat_llm_target_attention_only", None) is not None:
-                    model.config.flat_llm_target_attention_only = args.flat_llm_target_attention_only
-                    model.config.target_attention_only = args.flat_llm_target_attention_only
-                # FRanDI
-                if getattr(args, "frandi_rank", None) is not None:
-                    model.config.frandi_rank = args.frandi_rank
-                    model.config.rank = args.frandi_rank
-                if getattr(args, "frandi_energy_threshold", None) is not None:
-                    model.config.frandi_energy_threshold = args.frandi_energy_threshold
-                    model.config.energy_threshold = args.frandi_energy_threshold
-                if getattr(args, "frandi_lora_r", None) is not None:
-                    model.config.frandi_lora_r = args.frandi_lora_r
-                    model.config.lora_r = args.frandi_lora_r
-                if getattr(args, "frandi_max_error", None) is not None:
-                    model.config.frandi_max_error = args.frandi_max_error
-                    model.config.max_error = args.frandi_max_error
-                if getattr(args, "frandi_target_attention_only", None) is not None:
-                    model.config.frandi_target_attention_only = args.frandi_target_attention_only
-                    model.config.target_attention_only = args.frandi_target_attention_only
-                # GreCoDeC
-                if getattr(args, "grecodec_rank", None) is not None:
-                    model.config.grecodec_rank = args.grecodec_rank
-                    model.config.rank = args.grecodec_rank
-                if getattr(args, "grecodec_max_iter", None) is not None:
-                    model.config.grecodec_max_iter = args.grecodec_max_iter
-                    model.config.max_iter = args.grecodec_max_iter
-                if getattr(args, "grecodec_lora_r", None) is not None:
-                    model.config.grecodec_lora_r = args.grecodec_lora_r
-                    model.config.lora_r = args.grecodec_lora_r
-                if getattr(args, "grecodec_max_error", None) is not None:
-                    model.config.grecodec_max_error = args.grecodec_max_error
-                    model.config.max_error = args.grecodec_max_error
-                if getattr(args, "grecodec_target_attention_only", None) is not None:
-                    model.config.grecodec_target_attention_only = args.grecodec_target_attention_only
-                    model.config.target_attention_only = args.grecodec_target_attention_only
-                # HashedNets & HashedNet
-                if getattr(args, "hashed_net_buckets", None) is not None:
-                    model.config.hashed_net_buckets = args.hashed_net_buckets
-                    model.config.n_buckets = args.hashed_net_buckets
-                if getattr(args, "hashed_net_use_sign", None) is not None:
-                    model.config.hashed_net_use_sign = args.hashed_net_use_sign
-                    model.config.use_sign = args.hashed_net_use_sign
-                if getattr(args, "hashed_net_lora_r", None) is not None:
-                    model.config.hashed_net_lora_r = args.hashed_net_lora_r
-                    model.config.lora_r = args.hashed_net_lora_r
-                if getattr(args, "hashed_net_max_error", None) is not None:
-                    model.config.hashed_net_max_error = args.hashed_net_max_error
-                    model.config.max_error = args.hashed_net_max_error
-                if getattr(args, "hashed_net_target_attention_only", None) is not None:
-                    model.config.hashed_net_target_attention_only = args.hashed_net_target_attention_only
-                    model.config.target_attention_only = args.hashed_net_target_attention_only
-                # Huffman
-                if getattr(args, "huffman_quantize_bits", None) is not None:
-                    model.config.huffman_quantize_bits = args.huffman_quantize_bits
-                    model.config.quantize_bits = args.huffman_quantize_bits
-                    model.config.bits = args.huffman_quantize_bits
-                if getattr(args, "huffman_max_error", None) is not None:
-                    model.config.huffman_max_error = args.huffman_max_error
-                    model.config.max_error = args.huffman_max_error
-                if getattr(args, "huffman_target_attention_only", None) is not None:
-                    model.config.huffman_target_attention_only = args.huffman_target_attention_only
-                    model.config.target_attention_only = args.huffman_target_attention_only
-                # Hybrid SVD
-                if getattr(args, "hybrid_svd_rank", None) is not None:
-                    model.config.hybrid_svd_rank = args.hybrid_svd_rank
-                    model.config.svd_rank = args.hybrid_svd_rank
-                    model.config.rank = args.hybrid_svd_rank
-                if getattr(args, "hybrid_svd_use_full", None) is not None:
-                    model.config.hybrid_svd_use_full = args.hybrid_svd_use_full
-                    model.config.use_full_layer_replacement = args.hybrid_svd_use_full
-                if getattr(args, "hybrid_svd_lora_r", None) is not None:
-                    model.config.hybrid_svd_lora_r = args.hybrid_svd_lora_r
-                    model.config.lora_r = args.hybrid_svd_lora_r
-                if getattr(args, "hybrid_svd_max_error", None) is not None:
-                    model.config.hybrid_svd_max_error = args.hybrid_svd_max_error
-                    model.config.max_error = args.hybrid_svd_max_error
-                if getattr(args, "hybrid_svd_target_attention_only", None) is not None:
-                    model.config.hybrid_svd_target_attention_only = args.hybrid_svd_target_attention_only
-                    model.config.target_attention_only = args.hybrid_svd_target_attention_only
-                # HybridKV
-                if getattr(args, "hybridkv_budget", None) is not None:
-                    model.config.hybridkv_budget = args.hybridkv_budget
-                    model.config.budget = args.hybridkv_budget
-                if getattr(args, "hybridkv_static_ratio", None) is not None:
-                    model.config.hybridkv_static_ratio = args.hybridkv_static_ratio
-                    model.config.static_ratio = args.hybridkv_static_ratio
-                if getattr(args, "hybridkv_max_cache_len", None) is not None:
-                    model.config.hybridkv_max_cache_len = args.hybridkv_max_cache_len
-                    model.config.max_cache_len = args.hybridkv_max_cache_len
-                if getattr(args, "hybridkv_num_sinks", None) is not None:
-                    model.config.hybridkv_num_sinks = args.hybridkv_num_sinks
-                    model.config.num_sinks = args.hybridkv_num_sinks
-                if getattr(args, "hybridkv_recent_window", None) is not None:
-                    model.config.hybridkv_recent_window = args.hybridkv_recent_window
-                    model.config.recent_window = args.hybridkv_recent_window
-                if getattr(args, "hybridkv_target_attention_only", None) is not None:
-                    model.config.hybridkv_target_attention_only = args.hybridkv_target_attention_only
-                    model.config.target_attention_only = args.hybridkv_target_attention_only
-                # KMeans Quantizer
-                if getattr(args, "kmeans_clusters", None) is not None:
-                    model.config.kmeans_clusters = args.kmeans_clusters
-                    model.config.n_clusters = args.kmeans_clusters
-                if getattr(args, "kmeans_lora_r", None) is not None:
-                    model.config.kmeans_lora_r = args.kmeans_lora_r
-                    model.config.lora_r = args.kmeans_lora_r
-                if getattr(args, "kmeans_max_error", None) is not None:
-                    model.config.kmeans_max_error = args.kmeans_max_error
-                    model.config.max_error = args.kmeans_max_error
-                if getattr(args, "kmeans_target_attention_only", None) is not None:
-                    model.config.kmeans_target_attention_only = args.kmeans_target_attention_only
-                    model.config.target_attention_only = args.kmeans_target_attention_only
-                # Kronecker
-                if getattr(args, "kronecker_rank", None) is not None:
-                    model.config.kronecker_rank = args.kronecker_rank
-                    model.config.rank = args.kronecker_rank
-                if getattr(args, "kronecker_max_error", None) is not None:
-                    model.config.kronecker_max_error = args.kronecker_max_error
-                    model.config.max_error = args.kronecker_max_error
-                if getattr(args, "kronecker_target_attention_only", None) is not None:
-                    model.config.kronecker_target_attention_only = args.kronecker_target_attention_only
-                    model.config.target_attention_only = args.kronecker_target_attention_only
-                # Kronecker TT LoRA
-                if getattr(args, "tt_ranks", None) is not None:
-                    model.config.tt_ranks = args.tt_ranks
-                if getattr(args, "kronecker_tt_lora_max_error", None) is not None:
-                    model.config.kronecker_tt_lora_max_error = args.kronecker_tt_lora_max_error
-                    model.config.max_error = args.kronecker_tt_lora_max_error
-                if getattr(args, "kronecker_tt_lora_target_attention_only", None) is not None:
-                    model.config.kronecker_tt_lora_target_attention_only = args.kronecker_tt_lora_target_attention_only
-                    model.config.target_attention_only = args.kronecker_tt_lora_target_attention_only
-                # KVTC Compressor
-                if getattr(args, "kvtc_bits", None) is not None:
-                    model.config.kvtc_bits = args.kvtc_bits
-                    model.config.bits = args.kvtc_bits
-                if getattr(args, "kvtc_pca_energy", None) is not None:
-                    model.config.kvtc_pca_energy = args.kvtc_pca_energy
-                    model.config.pca_energy = args.kvtc_pca_energy
-                if getattr(args, "kvtc_max_error", None) is not None:
-                    model.config.kvtc_max_error = args.kvtc_max_error
-                    model.config.max_error = args.kvtc_max_error
-                if getattr(args, "kvtc_target_attention_only", None) is not None:
-                    model.config.kvtc_target_attention_only = args.kvtc_target_attention_only
-                    model.config.target_attention_only = args.kvtc_target_attention_only
-                if getattr(args, "kvtc_fallback_to_original", None) is not None:
-                    model.config.kvtc_fallback_to_original = args.kvtc_fallback_to_original
-                    model.config.fallback_to_original = args.kvtc_fallback_to_original
 
-                # Enforce module-specific max_error and target_attention_only to prevent contamination from unrelated compressors
-                if getattr(args, f"{name}_max_error", None) is not None:
-                    model.config.max_error = getattr(args, f"{name}_max_error")
-                elif getattr(args, "max_error", None) is not None:
-                    model.config.max_error = args.max_error
-
-                if getattr(args, f"{name}_target_attention_only", None) is not None:
-                    model.config.target_attention_only = getattr(args, f"{name}_target_attention_only")
-                elif getattr(args, "target_attention_only", None) is not None:
-                    model.config.target_attention_only = args.target_attention_only
-
-                if name in ("svd_llm", "svd_llm_compressor"):
-                    if getattr(args, "rank_ratio", None) is not None:
-                        model.config.rank_ratio = args.rank_ratio
-                    if getattr(args, "max_error", None) is not None:
-                        model.config.max_error = args.max_error
-                    if getattr(args, "lora_rank", None) is not None:
-                        model.config.lora_rank = args.lora_rank
-
-                if name in ("a3", "a3_compressor"):
-                    a3_err = getattr(args, "a3_max_error", None)
-                    if a3_err is None:
-                        a3_err = getattr(args, "max_error", 0.50)
-                    model.config.a3_max_error = a3_err
-                    model.config.max_error = a3_err
-                    a3_attn = getattr(args, "a3_target_attention_only", getattr(args, "target_attention_only", True))
-                    model.config.a3_attention_only = a3_attn
-                    model.config.target_attention_only = a3_attn
-
-                    LOG.info(
-                        "Calling apply_module_to_model with rank=%d for module=%s (lora_rank=%s)",
-                        module_rank, name, getattr(args, "lora_rank", None),
-                    )
-
-            t_compress_start = time.monotonic()
-            model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
-            measured_calib_time = round(time.monotonic() - t_compress_start, 2)
-            model = model.to(device)
-            injected = True
-            path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
-            LOG.info("module=%s path=%s", name, path_name)
-            num_svd_layers = sum(
-                1 for m in model.modules()
-                if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear", "A3FactorizedLinear", "SVDLLMLinear")
-                or any(k in m.__class__.__name__ for k in ("SVDCompressed", "NEXUS", "ORION", "MoBA", "A3"))
-                or hasattr(m, "q_down")
-            )
-            LOG.info("module=%s injection summary: %d SVDLinear layers active", name, num_svd_layers)
-            if name in ("aatc_xkv", "aatc_xkv_compressor", "a3", "a3_compressor", "aasvd", "adasvd", "svd_llm", "svd_llm_compressor", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor", "coopq", "coopq_quantizer", "cr", "cr_compressor", "cur", "cur_compressor", "cur_moe", "cur_moe_compressor", "delta_kv", "delta_kv_compressor", "direct_svd", "direct_svd_compressor", "dobi", "dobi_svd", "dynamic_entropy_svd", "dynamic_rank", "dynamic_entropy", "enlighten", "enlighten_compressor", "entropy_budget", "entropy_budget_allocation", "erc", "erc_svd", "faq", "faq_quantizer", "flap", "flat_llm", "flat_llm_compressor", "frandi", "frandi_compressor", "grecodec", "grecodec_compressor", "hashednets", "hashednets_compressor", "hashed_net", "hashed_net_compressor", "huffman", "hybrid_svd", "hybridkv", "hybridkv_compressor", "kmeans", "kmeans_quantize", "kronecker", "kronecker_compressor", "kronecker_tt_lora", "kvtc", "kvtc_compressor", "kvtc_quantizer"):
-                try:
-                    sdata = getattr(model, "compression_stats", {})
-                    if not sdata and name in ("aasvd", "adasvd"):
-                        sdata = {"num_compressed_layers": num_svd_layers}
-                    with open(out / f"{name}_stats.json", "w", encoding="utf-8") as sf:
-                        json.dump(sdata, sf, indent=2)
-                except Exception:
-                    pass
-            # -------------------------------------------------------------------------
-            # DIAGNOSTIC / DEBUG / DRY-RUN HOOK
-            # -------------------------------------------------------------------------
-            if getattr(args, "debug_module", False) or getattr(args, "dry_run", False) or getattr(args, "verbose_debug", False):
-                LOG.info("=" * 70)
-                LOG.info("[DIAGNOSTIC] Running module health & forward verification for '%s'...", name)
-                # 1. Parameter sanity check
-                nan_params = []
-                total_injected_p = 0
-                for pn, pv in model.named_parameters():
-                    total_injected_p += pv.numel()
-                    if torch.isnan(pv).any() or torch.isinf(pv).any():
-                        nan_params.append(pn)
-                if nan_params:
-                    LOG.error("[DIAGNOSTIC] Detected %d parameters with NaN/Inf values: %s", len(nan_params), nan_params[:5])
-                    raise RuntimeError(f"Module '{name}' injected weights contain NaN/Inf: {nan_params[:3]}")
-                LOG.info("[DIAGNOSTIC] Parameter count: before=%d, after=%d, delta=%+d", total_params_before, total_injected_p, total_injected_p - total_params_before)
-
-                # 2. Forward pass dry-run test
-                if eval_batches and len(eval_batches) > 0:
-                    test_x, test_y = eval_batches[0]
-                    test_x = {k: v[:2].to(device) for k, v in test_x.items()}
-                    test_y = test_y[:2].to(device)
-                    model.eval()
-                    with torch.no_grad():
-                        with torch.autocast(str(device).split(":")[0], dtype=torch.float16, enabled=args.precision == "fp16" and str(device).startswith("cuda")):
-                            t_out = model(**test_x)
-                            t_logits = t_out.logits if hasattr(t_out, "logits") else t_out[0]
-                            if torch.isnan(t_logits).any() or torch.isinf(t_logits).any():
-                                raise RuntimeError(f"Forward pass output logits contain NaN/Inf for module '{name}'")
-                    LOG.info("[DIAGNOSTIC] Forward verification PASSED (logits shape=%s, finite=True)", list(t_logits.shape))
-
-                if getattr(args, "dry_run", False):
-                    LOG.info("[DIAGNOSTIC] --dry_run specified: skipping full recovery fine-tuning and evaluation.")
-                    LOG.info("=" * 70)
-                    perf_metrics = {
-                        "accuracy_pct": 100.0,
-                        "f1_score": 1.0,
-                        "f1_macro": 1.0,
-                        "precision": 1.0,
-                        "recall": 1.0,
-                        "val_loss": 0.0,
-                        "peak_vram_mb": 0.0,
-                        "tokens_per_sec": 0.0,
-                        "latency_ms_per_token": 0.0,
-                        "elapsed_s": round(time.monotonic() - t, 2),
-                    }
-                    comp_metrics = {
-                        "compression_rate": total_params_before / max(1, total_injected_p),
-                        "compression_ratio_pct": round(100.0 * (1.0 - total_injected_p / max(1, total_params_before)), 2),
-                        "num_compressed_layers": num_svd_layers,
-                        "num_fallback_layers": 0,
-                    }
-                    return perf_metrics, comp_metrics, True, path_name, False, 0.0, measured_calib_time
-                LOG.info("=" * 70)
-
-            had_nan = False
-            recovery_time_s = 0.0
-            recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}
-            should_recover = (
-                args.recovery_steps > 0
-                and (
-                    not recovery_targets
-                    or "all" in recovery_targets
-                    or typ in recovery_targets
-                    or name in recovery_targets
+            if name in ("a3", "a3_compressor"):
+                a3_err = getattr(args, "a3_max_error", None)
+                if a3_err is None:
+                    a3_err = getattr(args, "max_error", 0.50)
+                model.config.a3_max_error = a3_err
+                model.config.max_error = a3_err
+                a3_attn = getattr(
+                    args,
+                    "a3_target_attention_only",
+                    getattr(args, "target_attention_only", True),
                 )
+                model.config.a3_attention_only = a3_attn
+                model.config.target_attention_only = a3_attn
+
+                LOG.info(
+                    "Calling apply_module_to_model with rank=%d for module=%s (lora_rank=%s)",
+                    module_rank,
+                    name,
+                    getattr(args, "lora_rank", None),
+                )
+
+        t_compress_start = time.monotonic()
+        model, _ = apply_module_to_model(
+            model, name, typ, rank=module_rank, device=device
+        )
+        measured_calib_time = round(time.monotonic() - t_compress_start, 2)
+        model = model.to(device)
+        injected = True
+        path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
+        LOG.info("module=%s path=%s", name, path_name)
+        num_svd_layers = sum(
+            1
+            for m in model.modules()
+            if m.__class__.__name__
+            in (
+                "SVDLinear",
+                "SVDLinearLayer",
+                "FactorisedLinear",
+                "A3FactorizedLinear",
+                "SVDLLMLinear",
             )
-            if should_recover:
-                FROM_SCRATCH_MODULES = {
-                    "linear_attention", "ssm", "cosformer", "rff", "fourier",
-                    "simple_ssm", "gated_linear_attn", "decay_linear_attn",
-                    "cluster", "cur", "cur_moe", "cur_moe_compressor",
-                    "performer", "nystrom", "mamba", "svd-mamba", "upi_stuffed_mamba",
-                    "vig", "galerkin", "regla", "hgrn2_layer", "hgrn2_outer",
-                    "hgrn2_gated_deltanet", "gated_delta_net", "gated_deltanet_block",
-                    "factorised_matrix_state", "linformer", "lsh", "hashed_net",
-                    "hamming", "spectron", "span_expanded", "gfws", "hla", "oha", "kda",
-                    "aegis_hybrid", "aegis_spectron_fp8",
-                    "halo_regla", "griffin_ssd", "granite_hybrid", "gqa", "gqa_attention",
-                    "nha", "nha_attention",
-                    "goldfinch_ahn", "goldfinch",
-                    "jamba", "jamba2",
-                    "mamba_svd_flash",
-                    "adaptive_sparse", "adaptive_sparse_attention",
+            or any(
+                k in m.__class__.__name__
+                for k in ("SVDCompressed", "NEXUS", "ORION", "MoBA", "A3")
+            )
+            or hasattr(m, "q_down")
+        )
+        LOG.info(
+            "module=%s injection summary: %d SVDLinear layers active",
+            name,
+            num_svd_layers,
+        )
+        if name in (
+            "aatc_xkv",
+            "aatc_xkv_compressor",
+            "a3",
+            "a3_compressor",
+            "aasvd",
+            "adasvd",
+            "svd_llm",
+            "svd_llm_compressor",
+            "admm",
+            "admm_pruner",
+            "admm_pruner_distill",
+            "armor",
+            "armor_pruner",
+            "astro",
+            "astro_quantizer",
+            "cachenotes",
+            "cachenotes_compressor",
+            "come",
+            "come_compressor",
+            "coopq",
+            "coopq_quantizer",
+            "cr",
+            "cr_compressor",
+            "cur",
+            "cur_compressor",
+            "cur_moe",
+            "cur_moe_compressor",
+            "delta_kv",
+            "delta_kv_compressor",
+            "direct_svd",
+            "direct_svd_compressor",
+            "dobi",
+            "dobi_svd",
+            "dynamic_entropy_svd",
+            "dynamic_rank",
+            "dynamic_entropy",
+            "enlighten",
+            "enlighten_compressor",
+            "entropy_budget",
+            "entropy_budget_allocation",
+            "erc",
+            "erc_svd",
+            "faq",
+            "faq_quantizer",
+            "flap",
+            "flat_llm",
+            "flat_llm_compressor",
+            "frandi",
+            "frandi_compressor",
+            "grecodec",
+            "grecodec_compressor",
+            "hashednets",
+            "hashednets_compressor",
+            "hashed_net",
+            "hashed_net_compressor",
+            "huffman",
+            "hybrid_svd",
+            "hybridkv",
+            "hybridkv_compressor",
+            "kmeans",
+            "kmeans_quantize",
+            "kronecker",
+            "kronecker_compressor",
+            "kronecker_tt_lora",
+            "kvtc",
+            "kvtc_compressor",
+            "kvtc_quantizer",
+        ):
+            try:
+                sdata = getattr(model, "compression_stats", {})
+                if not sdata and name in ("aasvd", "adasvd"):
+                    sdata = {"num_compressed_layers": num_svd_layers}
+                with open(out / f"{name}_stats.json", "w", encoding="utf-8") as sf:
+                    json.dump(sdata, sf, indent=2)
+            except Exception:
+                pass
+        # -------------------------------------------------------------------------
+        # DIAGNOSTIC / DEBUG / DRY-RUN HOOK
+        # -------------------------------------------------------------------------
+        if (
+            getattr(args, "debug_module", False)
+            or getattr(args, "dry_run", False)
+            or getattr(args, "verbose_debug", False)
+        ):
+            LOG.info("=" * 70)
+            LOG.info(
+                "[DIAGNOSTIC] Running module health & forward verification for '%s'...",
+                name,
+            )
+            # 1. Parameter sanity check
+            nan_params = []
+            total_injected_p = 0
+            for pn, pv in model.named_parameters():
+                total_injected_p += pv.numel()
+                if torch.isnan(pv).any() or torch.isinf(pv).any():
+                    nan_params.append(pn)
+            if nan_params:
+                LOG.error(
+                    "[DIAGNOSTIC] Detected %d parameters with NaN/Inf values: %s",
+                    len(nan_params),
+                    nan_params[:5],
+                )
+                raise RuntimeError(
+                    f"Module '{name}' injected weights contain NaN/Inf: {nan_params[:3]}"
+                )
+            LOG.info(
+                "[DIAGNOSTIC] Parameter count: before=%d, after=%d, delta=%+d",
+                total_params_before,
+                total_injected_p,
+                total_injected_p - total_params_before,
+            )
+
+            # 2. Forward pass dry-run test
+            if eval_batches and len(eval_batches) > 0:
+                test_x, test_y = eval_batches[0]
+                test_x = {k: v[:2].to(device) for k, v in test_x.items()}
+                test_y = test_y[:2].to(device)
+                model.eval()
+                with torch.no_grad():
+                    with torch.autocast(
+                        str(device).split(":")[0],
+                        dtype=torch.float16,
+                        enabled=args.precision == "fp16"
+                        and str(device).startswith("cuda"),
+                    ):
+                        t_out = model(**test_x)
+                        t_logits = (
+                            t_out.logits if hasattr(t_out, "logits") else t_out[0]
+                        )
+                        if torch.isnan(t_logits).any() or torch.isinf(t_logits).any():
+                            raise RuntimeError(
+                                f"Forward pass output logits contain NaN/Inf for module '{name}'"
+                            )
+                LOG.info(
+                    "[DIAGNOSTIC] Forward verification PASSED (logits shape=%s, finite=True)",
+                    list(t_logits.shape),
+                )
+
+            if getattr(args, "dry_run", False):
+                LOG.info(
+                    "[DIAGNOSTIC] --dry_run specified: skipping full recovery fine-tuning and evaluation."
+                )
+                LOG.info("=" * 70)
+                perf_metrics = {
+                    "accuracy_pct": 100.0,
+                    "f1_score": 1.0,
+                    "f1_macro": 1.0,
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "val_loss": 0.0,
+                    "peak_vram_mb": 0.0,
+                    "tokens_per_sec": 0.0,
+                    "latency_ms_per_token": 0.0,
+                    "elapsed_s": round(time.monotonic() - t, 2),
                 }
-                if name in FROM_SCRATCH_MODULES or name in ("asvd", "asvd_attention"):
-                    rec_steps = args.recovery_steps if getattr(args, "recovery_steps", None) is not None else 50
-                    if name in ("asvd", "asvd_attention") and family == "gpt":
-                        rec_lr = args.learning_rate if args.learning_rate != 2e-4 else 1e-4
-                    else:
-                        rec_lr = args.learning_rate if args.learning_rate else 2e-4
+                comp_metrics = {
+                    "compression_rate": total_params_before / max(1, total_injected_p),
+                    "compression_ratio_pct": round(
+                        100.0 * (1.0 - total_injected_p / max(1, total_params_before)),
+                        2,
+                    ),
+                    "num_compressed_layers": num_svd_layers,
+                    "num_fallback_layers": 0,
+                }
+                return (
+                    perf_metrics,
+                    comp_metrics,
+                    True,
+                    path_name,
+                    False,
+                    0.0,
+                    measured_calib_time,
+                )
+            LOG.info("=" * 70)
+
+        had_nan = False
+        recovery_time_s = 0.0
+        recovery_targets = {
+            x.strip() for x in args.recovery_modules.split(",") if x.strip()
+        }
+        should_recover = args.recovery_steps > 0 and (
+            not recovery_targets
+            or "all" in recovery_targets
+            or typ in recovery_targets
+            or name in recovery_targets
+        )
+        if should_recover:
+            FROM_SCRATCH_MODULES = {
+                "linear_attention",
+                "ssm",
+                "cosformer",
+                "rff",
+                "fourier",
+                "simple_ssm",
+                "gated_linear_attn",
+                "decay_linear_attn",
+                "cluster",
+                "cur",
+                "cur_moe",
+                "cur_moe_compressor",
+                "performer",
+                "nystrom",
+                "mamba",
+                "svd-mamba",
+                "upi_stuffed_mamba",
+                "vig",
+                "galerkin",
+                "regla",
+                "hgrn2_layer",
+                "hgrn2_outer",
+                "hgrn2_gated_deltanet",
+                "gated_delta_net",
+                "gated_deltanet_block",
+                "factorised_matrix_state",
+                "linformer",
+                "lsh",
+                "hashed_net",
+                "hamming",
+                "spectron",
+                "span_expanded",
+                "gfws",
+                "hla",
+                "oha",
+                "kda",
+                "aegis_hybrid",
+                "aegis_spectron_fp8",
+                "halo_regla",
+                "griffin_ssd",
+                "granite_hybrid",
+                "gqa",
+                "gqa_attention",
+                "nha",
+                "nha_attention",
+                "goldfinch_ahn",
+                "goldfinch",
+                "jamba",
+                "jamba2",
+                "mamba_svd_flash",
+                "adaptive_sparse",
+                "adaptive_sparse_attention",
+            }
+            if name in FROM_SCRATCH_MODULES or name in ("asvd", "asvd_attention"):
+                rec_steps = (
+                    args.recovery_steps
+                    if getattr(args, "recovery_steps", None) is not None
+                    else 50
+                )
+                if name in ("asvd", "asvd_attention") and family == "gpt":
+                    rec_lr = args.learning_rate if args.learning_rate != 2e-4 else 1e-4
                 else:
-                    hidden_size = getattr(getattr(model, "config", None), "hidden_size", 768)
-                    rec_lr = args.learning_rate if args.learning_rate else (5e-5 if (family == "qwen3_5" or hidden_size > 512) else 1e-4)
-                LOG.info("Running %d recovery fine-tuning steps for %s (lr=%.1e)", rec_steps, name, rec_lr)
-                if typ == "attention":
-                    for m in model.modules():
-                        if hasattr(m, "merged") and hasattr(m, "reset_parameters"):
-                            m.reset_parameters()
-                            m.merged = False
+                    rec_lr = args.learning_rate if args.learning_rate else 2e-4
+            else:
+                hidden_size = getattr(
+                    getattr(model, "config", None), "hidden_size", 768
+                )
+                rec_lr = (
+                    args.learning_rate
+                    if args.learning_rate
+                    else (5e-5 if (family == "qwen3_5" or hidden_size > 512) else 1e-4)
+                )
+            LOG.info(
+                "Running %d recovery fine-tuning steps for %s (lr=%.1e)",
+                rec_steps,
+                name,
+                rec_lr,
+            )
+            if typ == "attention":
+                for m in model.modules():
+                    if hasattr(m, "merged") and hasattr(m, "reset_parameters"):
+                        m.reset_parameters()
+                        m.merged = False
 
-                should_freeze_clf = getattr(args, "freeze_clf", False) or bool(args.parent_checkpoint)
-                if should_freeze_clf:
-                    for n, p in model.named_parameters():
-                        if any(h in n.lower() for h in ("score", "classifier", "pre_classifier")):
-                            p.requires_grad = False
-                from framework.utils.compat import get_recovery_params
-                trainable = get_recovery_params(model)
-                if should_freeze_clf and trainable:
-                    clf_param_ids = {id(cp) for cn, cp in model.named_parameters() if any(h in cn.lower() for h in ("score", "classifier", "pre_classifier"))}
-                    trainable = [p for p in trainable if id(p) not in clf_param_ids]
-                if trainable:
-                    trainable_recovery_params = sum(p.numel() for p in trainable)
-                    model._trainable_recovery_params = trainable_recovery_params
-                    trainable_ids = {id(p) for p in trainable}
-                    for p in model.parameters():
-                        p.requires_grad = (id(p) in trainable_ids)
-                    t_recovery_start = time.monotonic()
-                    if getattr(args, "kl_distill", False):
-                        LOG.info("Running recovery with KL Distillation (alpha=%.2f, temp=%.1f)", args.kl_alpha, args.kl_temperature)
-                        finetune_with_kd(
-                            model, base, train, args.dataset, rec_steps, args.seq_len, effective_batch_size, device,
-                            args.precision == "fp16", lr=rec_lr, alpha=args.kl_alpha, temperature=args.kl_temperature,
-                            precomputed_batches=train_batches
-                        )
-                        had_nan = False
-                    else:
-                        had_nan = finetune_lora(
-                            model, tokenizer, train, args.dataset, rec_steps, args.seq_len, effective_batch_size, device,
-                            args.precision == "fp16", lr=rec_lr, precomputed_batches=train_batches,
-                            optimizer_type=active_opt, muon_lr=args.muon_lr, adam_lr=args.adam_lr,
-                            weight_decay=args.weight_decay, timeout=effective_timeout,
-                            span_lambda=float(getattr(args, "span_lambda", 0.0) or 0.0),
-                        )
-                    recovery_time_s = round(time.monotonic() - t_recovery_start, 2)
+            should_freeze_clf = getattr(args, "freeze_clf", False) or bool(
+                args.parent_checkpoint
+            )
+            if should_freeze_clf:
+                for n, p in model.named_parameters():
+                    if any(
+                        h in n.lower()
+                        for h in ("score", "classifier", "pre_classifier")
+                    ):
+                        p.requires_grad = False
+            from framework.utils.compat import get_recovery_params
 
-        total_params_after = sum(p.numel() for p in model.parameters())
+            trainable = get_recovery_params(model)
+            if should_freeze_clf and trainable:
+                clf_param_ids = {
+                    id(cp)
+                    for cn, cp in model.named_parameters()
+                    if any(
+                        h in cn.lower()
+                        for h in ("score", "classifier", "pre_classifier")
+                    )
+                }
+                trainable = [p for p in trainable if id(p) not in clf_param_ids]
+            if trainable:
+                trainable_recovery_params = sum(p.numel() for p in trainable)
+                model._trainable_recovery_params = trainable_recovery_params
+                trainable_ids = {id(p) for p in trainable}
+                for p in model.parameters():
+                    p.requires_grad = id(p) in trainable_ids
+                t_recovery_start = time.monotonic()
+                if getattr(args, "kl_distill", False):
+                    LOG.info(
+                        "Running recovery with KL Distillation (alpha=%.2f, temp=%.1f)",
+                        args.kl_alpha,
+                        args.kl_temperature,
+                    )
+                    finetune_with_kd(
+                        model,
+                        base,
+                        train,
+                        args.dataset,
+                        rec_steps,
+                        args.seq_len,
+                        effective_batch_size,
+                        device,
+                        args.precision == "fp16",
+                        lr=rec_lr,
+                        alpha=args.kl_alpha,
+                        temperature=args.kl_temperature,
+                        precomputed_batches=train_batches,
+                    )
+                    had_nan = False
+                else:
+                    had_nan = finetune_lora(
+                        model,
+                        tokenizer,
+                        train,
+                        args.dataset,
+                        rec_steps,
+                        args.seq_len,
+                        effective_batch_size,
+                        device,
+                        args.precision == "fp16",
+                        lr=rec_lr,
+                        precomputed_batches=train_batches,
+                        optimizer_type=active_opt,
+                        muon_lr=args.muon_lr,
+                        adam_lr=args.adam_lr,
+                        weight_decay=args.weight_decay,
+                        timeout=effective_timeout,
+                        span_lambda=float(getattr(args, "span_lambda", 0.0) or 0.0),
+                    )
+                recovery_time_s = round(time.monotonic() - t_recovery_start, 2)
+
+    total_params_after = sum(p.numel() for p in model.parameters())
+
+    try:
+        perf_metrics = evaluate_comprehensive(
+            model,
+            tokenizer,
+            val,
+            args.dataset,
+            eval_seq_len,
+            effective_batch_size,
+            device,
+            fp16=args.precision == "fp16",
+            precomputed_batches=eval_batches,
+        )
+        eval_acc = perf_metrics["accuracy_pct"]
+        comp_metrics = compute_compression_metrics(
+            model,
+            name,
+            typ,
+            total_params_before,
+            total_params_after,
+            trainable_recovery_params,
+        )
 
         try:
-            perf_metrics = evaluate_comprehensive(
-                model, tokenizer, val, args.dataset, eval_seq_len, effective_batch_size, device,
-                fp16=args.precision == "fp16", precomputed_batches=eval_batches
+            # 1. Comprehensive Profiling Metrics Export
+            collect_and_export_full_metrics(
+                model,
+                eval_batches,
+                f"{model_slug}_{name}",
+                seq_len=eval_seq_len,
+                device=device,
+                fp16=args.precision == "fp16",
+                out_dir=str(out),
+                perf_metrics=perf_metrics,
+                comp_metrics=comp_metrics,
+                status="PENDING",
+                elapsed_s=round(time.monotonic() - t, 2),
             )
-            eval_acc = perf_metrics["accuracy_pct"]
-            comp_metrics = compute_compression_metrics(
-                model, name, typ, total_params_before, total_params_after, trainable_recovery_params
-            )
+            # 2. Complete Weights & Adapter Checkpoint Export
+            weights_dir = out / "checkpoints" / name
+            weights_dir.mkdir(parents=True, exist_ok=True)
 
-            try:
-                # 1. Comprehensive Profiling Metrics Export
-                collect_and_export_full_metrics(
-                    model, eval_batches, f"{model_slug}_{name}",
-                    seq_len=eval_seq_len, device=device, fp16=args.precision == "fp16",
-                    out_dir=str(out),
-                    perf_metrics=perf_metrics,
-                    comp_metrics=comp_metrics,
-                    status="PENDING",
-                    elapsed_s=round(time.monotonic() - t, 2),
+            module_state = {}
+            for mod_name, mod in model.named_modules():
+                is_svd = mod.__class__.__name__ == "SVDLinear" or (
+                    hasattr(mod, "U") and hasattr(mod, "V")
                 )
-                # 2. Complete Weights & Adapter Checkpoint Export
-                weights_dir = out / "checkpoints" / name
-                weights_dir.mkdir(parents=True, exist_ok=True)
+                is_custom_attn = (
+                    getattr(mod, "is_custom_attention", False)
+                    or "AdaptiveSpan" in mod.__class__.__name__
+                )
+                if (
+                    is_svd
+                    or is_custom_attn
+                    or any(
+                        k in mod_name for k in [name, "span", "adapter", "compressor"]
+                    )
+                ):
+                    for param_name, param in mod.named_parameters(recurse=False):
+                        module_state[f"{mod_name}.{param_name}"] = param.detach().cpu()
 
-                module_state = {}
-                for mod_name, mod in model.named_modules():
-                    is_svd = mod.__class__.__name__ == "SVDLinear" or (hasattr(mod, "U") and hasattr(mod, "V"))
-                    is_custom_attn = getattr(mod, "is_custom_attention", False) or "AdaptiveSpan" in mod.__class__.__name__
-                    if is_svd or is_custom_attn or any(k in mod_name for k in [name, "span", "adapter", "compressor"]):
-                        for param_name, param in mod.named_parameters(recurse=False):
-                            module_state[f"{mod_name}.{param_name}"] = param.detach().cpu()
+            lora_state = {
+                k: v.detach().cpu()
+                for k, v in model.state_dict().items()
+                if "lora_" in k
+                or "span_" in k
+                or any(
+                    h in k for h in ["classifier.", "score.", "classification_head."]
+                )
+            }
 
-                lora_state = {
-                    k: v.detach().cpu()
-                    for k, v in model.state_dict().items()
-                    if "lora_" in k or "span_" in k or any(h in k for h in ["classifier.", "score.", "classification_head."])
+            checkpoint_payload = {
+                "module_name": name,
+                "model_name": str(args.model),
+                "model_family": family,
+                "dataset": args.dataset,
+                "accuracy_pct": eval_acc,
+                "recovery_steps": rec_steps,
+                "timestamp": datetime.now().isoformat(),
+                "performance_metrics": perf_metrics,
+                "compression_metrics": comp_metrics,
+                "module_state_dict": module_state,
+                "lora_state_dict": lora_state,
+            }
+            save_heavy = os.environ.get("SAVE_HEAVY_WEIGHTS", "0") == "1"
+            if save_heavy:
+                ckpt_file = weights_dir / "weights.pt"
+                torch.save(checkpoint_payload, ckpt_file)
+                LOG.info(
+                    "Successfully saved model weights and checkpoint to %s (module_params=%d, lora_params=%d)",
+                    ckpt_file,
+                    len(module_state),
+                    len(lora_state),
+                )
+            else:
+                meta_file = weights_dir / "checkpoint_meta.json"
+                lean_payload = {
+                    k: v
+                    for k, v in checkpoint_payload.items()
+                    if k not in ("module_state_dict", "lora_state_dict")
                 }
-
-                checkpoint_payload = {
-                    "module_name": name,
-                    "model_name": str(args.model),
-                    "model_family": family,
-                    "dataset": args.dataset,
-                    "accuracy_pct": eval_acc,
-                    "recovery_steps": rec_steps,
-                    "timestamp": datetime.now().isoformat(),
-                    "performance_metrics": perf_metrics,
-                    "compression_metrics": comp_metrics,
-                    "module_state_dict": module_state,
-                    "lora_state_dict": lora_state,
-                }
-                save_heavy = (os.environ.get("SAVE_HEAVY_WEIGHTS", "0") == "1")
-                if save_heavy:
-                    ckpt_file = weights_dir / "weights.pt"
-                    torch.save(checkpoint_payload, ckpt_file)
-                    LOG.info("Successfully saved model weights and checkpoint to %s (module_params=%d, lora_params=%d)",
-                             ckpt_file, len(module_state), len(lora_state))
-                else:
-                    meta_file = weights_dir / "checkpoint_meta.json"
-                    lean_payload = {
-                        k: v for k, v in checkpoint_payload.items()
-                        if k not in ("module_state_dict", "lora_state_dict")
-                    }
-                    try:
-                        with open(meta_file, "w", encoding="utf-8") as f:
-                            json.dump(lean_payload, f, indent=2, default=str)
-                    except Exception:
-                        pass
-
-                # Export lean factorized SVD checkpoint artifacts (~20-90 MB) for automated publishing
-                hf_export_dir = weights_dir / "hf_export"
-                if eval_acc >= pass_threshold_pct:
-                    hf_export_dir.mkdir(parents=True, exist_ok=True)
                 try:
-                    if save_heavy:
-                        torch.save(checkpoint_payload, hf_export_dir / "weights.pt")
-                    if tokenizer is not None and hasattr(tokenizer, "save_pretrained"):
-                        try:
-                            tokenizer.save_pretrained(hf_export_dir)
-                        except Exception:
-                            pass
-                    if hasattr(model, "config") and model.config is not None:
-                        try:
-                            with open(hf_export_dir / "config.json", "w", encoding="utf-8") as cf:
-                                json.dump(model.config.to_dict(), cf, indent=2)
-                        except Exception:
-                            pass
-                    # Save evaluation metrics json in export directory
-                    with open(hf_export_dir / "metrics.json", "w", encoding="utf-8") as mf:
-                        json.dump({"performance": perf_metrics, "compression": comp_metrics}, mf, indent=2)
-                except Exception as hf_save_err:
-                    LOG.debug("Optional HF model export info: %s", hf_save_err)
-            except Exception as me_err:
-                LOG.warning("Failed to collect/export full metrics or weights for %s: %s", name, me_err)
-            return perf_metrics, comp_metrics, injected, path_name, had_nan, recovery_time_s, measured_calib_time
-        finally:
-            if model is not None:
-                try:
-                    model.zero_grad(set_to_none=True)
-                    model.to("cpu")
+                    with open(meta_file, "w", encoding="utf-8") as f:
+                        json.dump(lean_payload, f, indent=2, default=str)
                 except Exception:
                     pass
-                torch.cuda.empty_cache()
+
+            # Export lean factorized SVD checkpoint artifacts (~20-90 MB) for automated publishing
+            hf_export_dir = weights_dir / "hf_export"
+            if eval_acc >= pass_threshold_pct:
+                hf_export_dir.mkdir(parents=True, exist_ok=True)
+            try:
+                if save_heavy:
+                    torch.save(checkpoint_payload, hf_export_dir / "weights.pt")
+                if tokenizer is not None and hasattr(tokenizer, "save_pretrained"):
+                    try:
+                        tokenizer.save_pretrained(hf_export_dir)
+                    except Exception:
+                        pass
+                if hasattr(model, "config") and model.config is not None:
+                    try:
+                        with open(
+                            hf_export_dir / "config.json", "w", encoding="utf-8"
+                        ) as cf:
+                            json.dump(model.config.to_dict(), cf, indent=2)
+                    except Exception:
+                        pass
+                # Save evaluation metrics json in export directory
+                with open(hf_export_dir / "metrics.json", "w", encoding="utf-8") as mf:
+                    json.dump(
+                        {"performance": perf_metrics, "compression": comp_metrics},
+                        mf,
+                        indent=2,
+                    )
+            except Exception as hf_save_err:
+                LOG.debug("Optional HF model export info: %s", hf_save_err)
+        except Exception as me_err:
+            LOG.warning(
+                "Failed to collect/export full metrics or weights for %s: %s",
+                name,
+                me_err,
+            )
+        return (
+            perf_metrics,
+            comp_metrics,
+            injected,
+            path_name,
+            had_nan,
+            recovery_time_s,
+            measured_calib_time,
+        )
+    finally:
+        if model is not None:
+            try:
+                model.zero_grad(set_to_none=True)
+                model.to("cpu")
+            except Exception:
+                pass
+            torch.cuda.empty_cache()
 
 
 def run_single_module_main(args) -> dict:
     import os
+
     import torch
-    from framework.core.snapshot_restore import ModelStateSnapshot
     from framework.core.registry import ATTENTION_REGISTRY
+    from framework.core.snapshot_restore import ModelStateSnapshot
+
     name = args.modules[0] if isinstance(args.modules, list) else args.modules
-    typ = "baseline" if name in ("full", "dense") else ("attention" if name in ATTENTION_REGISTRY else "compressor")
+    typ = (
+        "baseline"
+        if name in ("full", "dense")
+        else ("attention" if name in ATTENTION_REGISTRY else "compressor")
+    )
 
     if name in DEPRECATED_MODULES:
         reason = DEPRECATED_MODULES[name]
@@ -2920,25 +3645,47 @@ def run_single_module_main(args) -> dict:
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
         try:
-            target_frac = float(args.max_vram_fraction) if getattr(args, "max_vram_fraction", None) is not None else 0.70
+            target_frac = (
+                float(args.max_vram_fraction)
+                if getattr(args, "max_vram_fraction", None) is not None
+                else 0.70
+            )
             if 0.0 < target_frac <= 1.0:
                 torch.cuda.set_per_process_memory_fraction(target_frac)
-                LOG.info("Configured PyTorch per-process GPU memory fraction cap: %.1f%%", target_frac * 100.0)
+                LOG.info(
+                    "Configured PyTorch per-process GPU memory fraction cap: %.1f%%",
+                    target_frac * 100.0,
+                )
             free_mem, _ = torch.cuda.mem_get_info()
-            free_gb = free_mem / (1024 ** 3)
+            free_gb = free_mem / (1024**3)
             if free_gb < 4.0:
-                LOG.warning("LOW GPU MEMORY: Only %.2f GB VRAM available (< 4.0 GB). High risk of CUDA OOM.", free_gb)
+                LOG.warning(
+                    "LOW GPU MEMORY: Only %.2f GB VRAM available (< 4.0 GB). High risk of CUDA OOM.",
+                    free_gb,
+                )
         except Exception as mem_err:
             LOG.debug("Could not query GPU memory info or set fraction: %s", mem_err)
     if args.output_dir is None:
         safe_model = Path(args.model).name.replace("-", "_").lower()
         # Cleanly organized hierarchical structure for saving folders
-        args.output_dir = str(Path(__file__).resolve().parents[2] / "results" / args.dataset / safe_model)
-    out = Path(args.output_dir); out.mkdir(parents=True, exist_ok=True)
-    device = torch.device("cuda" if torch.cuda.is_available() else ("mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available() else "cpu"))
+        args.output_dir = str(
+            Path(__file__).resolve().parents[2] / "results" / args.dataset / safe_model
+        )
+    out = Path(args.output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    device = torch.device(
+        "cuda"
+        if torch.cuda.is_available()
+        else (
+            "mps"
+            if hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+            else "cpu"
+        )
+    )
     if args.dataset_dir is None:
         for cand in [
-            Path("PROJECT_ROOT_PLACEHOLDER/Codes/framework/data/glue_data") / args.dataset,
+            Path("PROJECT_ROOT_PLACEHOLDER/Codes/framework/data/glue_data")
+            / args.dataset,
             Path("Codes/framework/data/glue_data") / args.dataset,
             Path(__file__).parent / "data" / "glue_data" / args.dataset,
             Path("PROJECT_ROOT_PLACEHOLDER/Codes/framework/data/glue_data/sst2"),
@@ -2960,8 +3707,14 @@ def run_single_module_main(args) -> dict:
                 Path("PROJECT_ROOT_PLACEHOLDER/models/roberta_sst2"),
             ]
             for c in cand_roberta:
-                if c.exists() and ((c / "config.json").exists() or (c / "model.safetensors").exists()):
-                    LOG.info("Auto-resolving base model '%s' to fine-tuned SST-2 model: %s", args.model, c)
+                if c.exists() and (
+                    (c / "config.json").exists() or (c / "model.safetensors").exists()
+                ):
+                    LOG.info(
+                        "Auto-resolving base model '%s' to fine-tuned SST-2 model: %s",
+                        args.model,
+                        c,
+                    )
                     args.model = str(c)
                     break
         elif "gpt2" in m_name and "sst2" not in m_name and args.dataset == "sst2":
@@ -2971,8 +3724,14 @@ def run_single_module_main(args) -> dict:
                 Path("PROJECT_ROOT_PLACEHOLDER/models/gpt2_sst2"),
             ]
             for c in cand_gpt2:
-                if c.exists() and ((c / "config.json").exists() or (c / "model.safetensors").exists()):
-                    LOG.info("Auto-resolving base model '%s' to fine-tuned SST-2 model: %s", args.model, c)
+                if c.exists() and (
+                    (c / "config.json").exists() or (c / "model.safetensors").exists()
+                ):
+                    LOG.info(
+                        "Auto-resolving base model '%s' to fine-tuned SST-2 model: %s",
+                        args.model,
+                        c,
+                    )
                     args.model = str(c)
                     break
     try:
@@ -2992,14 +3751,21 @@ def run_single_module_main(args) -> dict:
         else:
             ds = load_dataset(args.dataset)
     except Exception as e:
-        LOG.warning("Failed to load dataset '%s' from disk/hub (%s). Falling back to local sst2.", args.dataset, e)
-        fallback_sst2 = Path("PROJECT_ROOT_PLACEHOLDER/Codes/framework/data/glue_data/sst2")
+        LOG.warning(
+            "Failed to load dataset '%s' from disk/hub (%s). Falling back to local sst2.",
+            args.dataset,
+            e,
+        )
+        fallback_sst2 = Path(
+            "PROJECT_ROOT_PLACEHOLDER/Codes/framework/data/glue_data/sst2"
+        )
         if not fallback_sst2.exists():
             fallback_sst2 = Path(__file__).parent / "data" / "glue_data" / "sst2"
         ds = load_from_disk(str(fallback_sst2))
     train = ds["train"]
     val = ds["validation"] if "validation" in ds else ds["test"]
-    tokenizer = AutoTokenizer.from_pretrained(args.model); tokenizer.padding_side = "right"
+    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    tokenizer.padding_side = "right"
     if tokenizer.pad_token_id is None:
         if tokenizer.eos_token:
             tokenizer.pad_token = tokenizer.eos_token
@@ -3016,7 +3782,9 @@ def run_single_module_main(args) -> dict:
     num_classes = args.num_labels
     if num_classes is None:
         try:
-            if "label" in train.features and hasattr(train.features["label"], "num_classes"):
+            if "label" in train.features and hasattr(
+                train.features["label"], "num_classes"
+            ):
                 num_classes = train.features["label"].num_classes
             elif "label" in train.column_names:
                 num_classes = len(set(train["label"][:500]))
@@ -3026,32 +3794,65 @@ def run_single_module_main(args) -> dict:
             num_classes = 2
     LOG.info("Configured dataset '%s' with num_labels=%d", args.dataset, num_classes)
     try:
-        from transformers import AutoModelForCausalLM, AutoConfig
+        from transformers import AutoConfig, AutoModelForCausalLM
 
         cfg = AutoConfig.from_pretrained(args.model)
         if "wikitext" in args.dataset.lower() or args.dataset == "c4":
-            if cfg.model_type in ("distilbert", "bert", "roberta", "albert", "deberta", "deberta-v2", "electra"):
-                LOG.warning("Skipping model %s on wikitext/c4 because it lacks an LM head.", args.model)
+            if cfg.model_type in (
+                "distilbert",
+                "bert",
+                "roberta",
+                "albert",
+                "deberta",
+                "deberta-v2",
+                "electra",
+            ):
+                LOG.warning(
+                    "Skipping model %s on wikitext/c4 because it lacks an LM head.",
+                    args.model,
+                )
                 out = Path(args.output_dir)
                 out.mkdir(parents=True, exist_ok=True)
-                csv_name = f"summary_{args.output_suffix}.csv" if getattr(args, "output_suffix", None) else "summary.csv"
+                csv_name = (
+                    f"summary_{args.output_suffix}.csv"
+                    if getattr(args, "output_suffix", None)
+                    else "summary.csv"
+                )
                 with open(out / csv_name, "w", newline="", encoding="utf-8") as f:
                     f.write("module_name,status,accuracy_pct\n")
                 return {}
 
             try:
-                base = AutoModelForCausalLM.from_pretrained(args.model, dtype=dtype).to(device)
+                base = AutoModelForCausalLM.from_pretrained(args.model, dtype=dtype).to(
+                    device
+                )
             except TypeError:
-                base = AutoModelForCausalLM.from_pretrained(args.model, torch_dtype=dtype).to(device)
+                base = AutoModelForCausalLM.from_pretrained(
+                    args.model, torch_dtype=dtype
+                ).to(device)
         else:
             try:
-                base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=num_classes, ignore_mismatched_sizes=True, dtype=dtype).to(device)
+                base = AutoModelForSequenceClassification.from_pretrained(
+                    args.model,
+                    num_labels=num_classes,
+                    ignore_mismatched_sizes=True,
+                    dtype=dtype,
+                ).to(device)
             except TypeError:
-                base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=num_classes, ignore_mismatched_sizes=True, torch_dtype=dtype).to(device)
+                base = AutoModelForSequenceClassification.from_pretrained(
+                    args.model,
+                    num_labels=num_classes,
+                    ignore_mismatched_sizes=True,
+                    torch_dtype=dtype,
+                ).to(device)
     except torch.OutOfMemoryError as e:
         LOG.critical("CUDA OOM while loading base model: %s", e)
         sys.exit(1)
-    base.config.pad_token_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
+    base.config.pad_token_id = (
+        tokenizer.pad_token_id
+        if tokenizer.pad_token_id is not None
+        else tokenizer.eos_token_id
+    )
     install_qwen_aliases(base)
     base.tokenizer = tokenizer
     if hasattr(base, "config") and base.config is not None:
@@ -3067,10 +3868,15 @@ def run_single_module_main(args) -> dict:
     qwen = is_qwen_model(base)
     family = detect_family(base) if args.model_family == "auto" else args.model_family
     adapter = ModelAdapter(base, family)
-    LOG.info("model=%s qwen_compat=%s hidden=%s heads=%s head_dim=%s layers=%s",
-             args.model, qwen, getattr(base.config, "hidden_size", "?"),
-             getattr(base.config, "num_attention_heads", "?"),
-             getattr(base.config, "head_dim", "?"), getattr(base.config, "num_hidden_layers", "?"))
+    LOG.info(
+        "model=%s qwen_compat=%s hidden=%s heads=%s head_dim=%s layers=%s",
+        args.model,
+        qwen,
+        getattr(base.config, "hidden_size", "?"),
+        getattr(base.config, "num_attention_heads", "?"),
+        getattr(base.config, "head_dim", "?"),
+        getattr(base.config, "num_hidden_layers", "?"),
+    )
     LOG.info("detected model family=%s adapter=%s", family, adapter.as_dict())
     active_opt = "muon" if (args.use_muon or args.optimizer == "muon") else "adamw"
     LOG.info("=" * 80)
@@ -3080,14 +3886,23 @@ def run_single_module_main(args) -> dict:
     LOG.info("  dataset:           %s", args.dataset)
     LOG.info("  batch_size:        %d", args.batch_size)
     LOG.info("  recovery_steps:    %d", args.recovery_steps)
-    LOG.info("  optimizer:         %s (muon_lr=%.1e, adam_lr=%.1e, weight_decay=%.1e)",
-             active_opt, args.muon_lr, args.adam_lr if active_opt == "muon" else args.learning_rate, args.weight_decay)
+    LOG.info(
+        "  optimizer:         %s (muon_lr=%.1e, adam_lr=%.1e, weight_decay=%.1e)",
+        active_opt,
+        args.muon_lr,
+        args.adam_lr if active_opt == "muon" else args.learning_rate,
+        args.weight_decay,
+    )
     LOG.info("  precision:         %s", args.precision)
     LOG.info("=" * 80)
     # Enable gradient checkpointing if requested or for long sequences (> 512)
-    if (args.gradient_checkpointing or args.seq_len > 512) and hasattr(base, "gradient_checkpointing_enable"):
+    if (args.gradient_checkpointing or args.seq_len > 512) and hasattr(
+        base, "gradient_checkpointing_enable"
+    ):
         try:
-            base.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+            base.gradient_checkpointing_enable(
+                gradient_checkpointing_kwargs={"use_reentrant": False}
+            )
             LOG.info("Enabled gradient checkpointing for %s backbone", family)
         except Exception:
             try:
@@ -3097,44 +3912,81 @@ def run_single_module_main(args) -> dict:
                 LOG.warning("Could not enable gradient checkpointing: %s", e)
 
     checkpoint = out / "finetuned_model.pt"
-    parent_checkpoint = Path(args.parent_checkpoint) if args.parent_checkpoint and Path(args.parent_checkpoint).exists() else None
+    parent_checkpoint = (
+        Path(args.parent_checkpoint)
+        if args.parent_checkpoint and Path(args.parent_checkpoint).exists()
+        else None
+    )
     if parent_checkpoint is None:
         if args.parent_checkpoint:
-            LOG.warning("Specified parent_checkpoint '%s' does not exist; attempting automatic fallback search.", args.parent_checkpoint)
+            LOG.warning(
+                "Specified parent_checkpoint '%s' does not exist; attempting automatic fallback search.",
+                args.parent_checkpoint,
+            )
         candidates = [
-            out.parent / f"{family}_{args.dataset}_lora_baseline" / "finetuned_model.pt",
-            out.parent / f"{family}2_{args.dataset}_lora_baseline" / "finetuned_model.pt",
+            out.parent
+            / f"{family}_{args.dataset}_lora_baseline"
+            / "finetuned_model.pt",
+            out.parent
+            / f"{family}2_{args.dataset}_lora_baseline"
+            / "finetuned_model.pt",
             out.parent / f"{family}_{args.dataset}_full_sweep" / "finetuned_model.pt",
             out.parent / f"{family}_{args.dataset}_baseline" / "finetuned_model.pt",
-            Path("results") / f"{family}_{args.dataset}_lora_baseline" / "finetuned_model.pt",
-            Path("results") / f"{family}_{args.dataset}_baseline" / "finetuned_model.pt",
+            Path("results")
+            / f"{family}_{args.dataset}_lora_baseline"
+            / "finetuned_model.pt",
+            Path("results")
+            / f"{family}_{args.dataset}_baseline"
+            / "finetuned_model.pt",
         ]
         if args.dataset == "sst2":
-            candidates.extend([
-                out.parent / "unified_asvd" / family / "finetuned_model.pt",
-                out.parent / "unified_delta_kv" / family / "finetuned_model.pt",
-                out.parent / "unified_nsa" / family / "finetuned_model.pt",
-                out.parent / "unified_infini" / family / "finetuned_model.pt",
-                out.parent / "unified_rpc" / family / "finetuned_model.pt",
-                out.parent / "unified_res_svd" / family / "finetuned_model.pt",
-                Path("results") / "unified_asvd" / family / "finetuned_model.pt",
-                Path("results") / "unified_delta_kv" / family / "finetuned_model.pt",
-            ])
-        parent_checkpoint = next((c for c in candidates if c.exists()), Path("non_existent_placeholder.pt"))
+            candidates.extend(
+                [
+                    out.parent / "unified_asvd" / family / "finetuned_model.pt",
+                    out.parent / "unified_delta_kv" / family / "finetuned_model.pt",
+                    out.parent / "unified_nsa" / family / "finetuned_model.pt",
+                    out.parent / "unified_infini" / family / "finetuned_model.pt",
+                    out.parent / "unified_rpc" / family / "finetuned_model.pt",
+                    out.parent / "unified_res_svd" / family / "finetuned_model.pt",
+                    Path("results") / "unified_asvd" / family / "finetuned_model.pt",
+                    Path("results")
+                    / "unified_delta_kv"
+                    / family
+                    / "finetuned_model.pt",
+                ]
+            )
+        parent_checkpoint = next(
+            (c for c in candidates if c.exists()), Path("non_existent_placeholder.pt")
+        )
 
     def _safe_load_state(target_model: nn.Module, raw_state: Any) -> None:
-        st = raw_state.get("state_dict", raw_state) if isinstance(raw_state, dict) else raw_state
+        st = (
+            raw_state.get("state_dict", raw_state)
+            if isinstance(raw_state, dict)
+            else raw_state
+        )
         meta = raw_state.get("metadata", {}) if isinstance(raw_state, dict) else {}
         alpha = float(meta.get("alpha", 32.0))
         r = float(meta.get("r", 16.0))
         scaling = alpha / max(1.0, r)
 
         model_st = target_model.state_dict()
-        matching_keys = [k for k in st if k in model_st and hasattr(st[k], "shape") and hasattr(model_st[k], "shape") and st[k].shape == model_st[k].shape]
+        matching_keys = [
+            k
+            for k in st
+            if k in model_st
+            and hasattr(st[k], "shape")
+            and hasattr(model_st[k], "shape")
+            and st[k].shape == model_st[k].shape
+        ]
         is_partial = (
             len(st) < len(model_st) * 0.7
             or any(".lora_" in k for k in st)
-            or all(any(h in k for h in ("score", "classifier")) for k in st if "weight" in k or "bias" in k)
+            or all(
+                any(h in k for h in ("score", "classifier"))
+                for k in st
+                if "weight" in k or "bias" in k
+            )
         )
         denom = len(st) if is_partial else len(model_st)
         match_ratio = len(matching_keys) / max(1, denom)
@@ -3154,8 +4006,12 @@ def run_single_module_main(args) -> dict:
                     if v.shape == model_st[k].shape:
                         filtered_st[k] = v
                     else:
-                        LOG.warning("Skipping checkpoint parameter '%s' due to shape mismatch: %s vs current model %s",
-                                    k, list(v.shape), list(model_st[k].shape))
+                        LOG.warning(
+                            "Skipping checkpoint parameter '%s' due to shape mismatch: %s vs current model %s",
+                            k,
+                            list(v.shape),
+                            list(model_st[k].shape),
+                        )
                 else:
                     filtered_st[k] = v
 
@@ -3163,11 +4019,13 @@ def run_single_module_main(args) -> dict:
         #    e.g. checkpoint has 'classifier.dense.base_layer.weight' (+ optional lora_A/B), model has 'classifier.dense.weight'
         for k in model_st:
             if k not in filtered_st:
-                base_key = k.replace(".weight", ".base_layer.weight").replace(".bias", ".base_layer.bias")
+                base_key = k.replace(".weight", ".base_layer.weight").replace(
+                    ".bias", ".base_layer.bias"
+                )
                 if base_key in st:
                     val = st[base_key].clone()
                     if k.endswith(".weight"):
-                        prefix = k[:-len(".weight")]
+                        prefix = k[: -len(".weight")]
                         # Try direct nn.Parameter keys first (LoRALinear convention)
                         lora_a_key = f"{prefix}.lora_A"
                         lora_b_key = f"{prefix}.lora_B"
@@ -3188,7 +4046,11 @@ def run_single_module_main(args) -> dict:
                                 if delta is not None and delta.shape == val.shape:
                                     val = val + delta.to(val.dtype)
                     filtered_st[k] = val
-                    LOG.info("Reconstructed unmerged model layer '%s' from checkpoint LoRA '%s'", k, base_key)
+                    LOG.info(
+                        "Reconstructed unmerged model layer '%s' from checkpoint LoRA '%s'",
+                        k,
+                        base_key,
+                    )
 
         # 3. Check for plain layers in checkpoint mapped to LoRA base_layer in model
         #    e.g. checkpoint has 'classifier.dense.weight', model has 'classifier.dense.base_layer.weight'
@@ -3197,7 +4059,11 @@ def run_single_module_main(args) -> dict:
                 plain_key = k.replace(".base_layer.", ".")
                 if plain_key in st:
                     filtered_st[k] = st[plain_key]
-                    LOG.info("Mapped plain checkpoint layer '%s' into LoRA base_layer '%s'", plain_key, k)
+                    LOG.info(
+                        "Mapped plain checkpoint layer '%s' into LoRA base_layer '%s'",
+                        plain_key,
+                        k,
+                    )
 
         missing, unexpected = target_model.load_state_dict(filtered_st, strict=False)
         if missing:
@@ -3206,24 +4072,37 @@ def run_single_module_main(args) -> dict:
             LOG.warning("Unexpected keys during load: %s", unexpected[:10])
 
     # Auto-detect if checkpoint or parent_checkpoint is a LoRA checkpoint
-    is_lora_mode = (args.finetune_mode == "lora" or family in ("qwen3_5", "qwen"))
-    active_ckpt = checkpoint if checkpoint.exists() else (parent_checkpoint if parent_checkpoint.exists() else None)
+    is_lora_mode = args.finetune_mode == "lora" or family in ("qwen3_5", "qwen")
+    active_ckpt = (
+        checkpoint
+        if checkpoint.exists()
+        else (parent_checkpoint if parent_checkpoint.exists() else None)
+    )
     if active_ckpt is not None:
         try:
             probe = torch.load(active_ckpt, map_location="cpu", weights_only=False)
             if isinstance(probe, dict):
-                if probe.get("metadata", {}).get("finetune_mode") == "lora" or any(".lora_" in k for k in probe.get("state_dict", probe).keys()):
+                if probe.get("metadata", {}).get("finetune_mode") == "lora" or any(
+                    ".lora_" in k for k in probe.get("state_dict", probe).keys()
+                ):
                     is_lora_mode = True
         except Exception:
             pass
 
     # If LoRA mode is requested or detected, apply LoRA wrappers to the backbone
     if is_lora_mode:
-        from framework.utils.lora import apply_lora, save_lora_weights, find_all_linear_submodule_names
+        from framework.utils.lora import (
+            apply_lora,
+            find_all_linear_submodule_names,
+            save_lora_weights,
+        )
+
         dynamic_targets = find_all_linear_submodule_names(base)
         default_cli_targets = "q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj"
         if args.lora_target_modules != default_cli_targets:
-            target_mods = {x.strip() for x in args.lora_target_modules.split(",") if x.strip()}
+            target_mods = {
+                x.strip() for x in args.lora_target_modules.split(",") if x.strip()
+            }
         else:
             target_mods = dynamic_targets if dynamic_targets else default_cli_targets
         base, num_lora = apply_lora(
@@ -3234,15 +4113,29 @@ def run_single_module_main(args) -> dict:
             target_modules=target_mods,
         )
         base.to(device)
-        head = next((getattr(base, attr, None) for attr in
-                     ("score", "classifier", "classification_head", "classification_head.dense")
-                     if getattr(base, attr, None) is not None), None)
+        head = next(
+            (
+                getattr(base, attr, None)
+                for attr in (
+                    "score",
+                    "classifier",
+                    "classification_head",
+                    "classification_head.dense",
+                )
+                if getattr(base, attr, None) is not None
+            ),
+            None,
+        )
         if head is not None:
-            for p in head.parameters(): p.requires_grad = True
+            for p in head.parameters():
+                p.requires_grad = True
         LOG.info("Injected %d LoRALinear layers into %s backbone", num_lora, family)
 
     if parent_checkpoint.exists() and (args.fresh or not checkpoint.exists()):
-        LOG.info("Loading shared baseline checkpoint from parent directory: %s", parent_checkpoint)
+        LOG.info(
+            "Loading shared baseline checkpoint from parent directory: %s",
+            parent_checkpoint,
+        )
         state = torch.load(parent_checkpoint, map_location="cpu", weights_only=False)
         _safe_load_state(base, state)
     elif checkpoint.exists():
@@ -3250,43 +4143,102 @@ def run_single_module_main(args) -> dict:
         state = torch.load(checkpoint, map_location="cpu", weights_only=False)
         _safe_load_state(base, state)
     else:
-        if args.finetune_steps > 0 and "wikitext" not in args.dataset.lower() and args.dataset != "c4":
+        if (
+            args.finetune_steps > 0
+            and "wikitext" not in args.dataset.lower()
+            and args.dataset != "c4"
+        ):
             if args.finetune_mode == "lora":
-                LOG.info("Fine-tuning LoRA adapters for %d steps before module injection (lr=%.1e)", args.finetune_steps, args.learning_rate)
-                finetune_lora(base, tokenizer, train, args.dataset, args.finetune_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=args.learning_rate)
+                LOG.info(
+                    "Fine-tuning LoRA adapters for %d steps before module injection (lr=%.1e)",
+                    args.finetune_steps,
+                    args.learning_rate,
+                )
+                finetune_lora(
+                    base,
+                    tokenizer,
+                    train,
+                    args.dataset,
+                    args.finetune_steps,
+                    args.seq_len,
+                    args.batch_size,
+                    device,
+                    args.precision == "fp16",
+                    lr=args.learning_rate,
+                )
                 from framework.utils.lora import save_lora_weights
-                save_lora_weights(base, str(checkpoint), metadata={"finetune_mode": "lora", "steps": args.finetune_steps, "dataset": args.dataset, "seed": args.seed})
+
+                save_lora_weights(
+                    base,
+                    str(checkpoint),
+                    metadata={
+                        "finetune_mode": "lora",
+                        "steps": args.finetune_steps,
+                        "dataset": args.dataset,
+                        "seed": args.seed,
+                    },
+                )
             else:
                 head_lr = 1e-3 if family in ("roberta", "bert", "gpt") else 1e-4
-                LOG.info("Fine-tuning classification head for %d steps before module injection (head_lr=%.1e)", args.finetune_steps, head_lr)
-                finetune(base, tokenizer, train, args.dataset, args.finetune_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=head_lr)
+                LOG.info(
+                    "Fine-tuning classification head for %d steps before module injection (head_lr=%.1e)",
+                    args.finetune_steps,
+                    head_lr,
+                )
+                finetune(
+                    base,
+                    tokenizer,
+                    train,
+                    args.dataset,
+                    args.finetune_steps,
+                    args.seq_len,
+                    args.batch_size,
+                    device,
+                    args.precision == "fp16",
+                    lr=head_lr,
+                )
                 try:
                     if "baseline" in str(checkpoint).lower():
                         torch.save(base.state_dict(), checkpoint)
                         LOG.info("Saved fine-tuned checkpoint: %s", checkpoint)
                     else:
                         # For module sweeps, save only classification head to avoid filling disk with 500MB per module
-                        head_st = {k: v for k, v in base.state_dict().items() if any(h in k for h in ("score", "classifier"))}
+                        head_st = {
+                            k: v
+                            for k, v in base.state_dict().items()
+                            if any(h in k for h in ("score", "classifier"))
+                        }
                         torch.save(head_st, checkpoint)
-                        LOG.info("Saved lightweight fine-tuned head checkpoint: %s", checkpoint)
+                        LOG.info(
+                            "Saved lightweight fine-tuned head checkpoint: %s",
+                            checkpoint,
+                        )
                 except Exception as e:
-                    LOG.warning("Failed to save fine-tuned checkpoint %s: %s (continuing in-memory)", checkpoint, e)
+                    LOG.warning(
+                        "Failed to save fine-tuned checkpoint %s: %s (continuing in-memory)",
+                        checkpoint,
+                        e,
+                    )
     if args.precision == "fp16":
         with torch.no_grad():
             for name, p in base.named_parameters():
                 if not p.requires_grad and p.dtype != torch.float16:
                     p.data = p.data.half()
 
-
     base.to("cpu")
     try:
-        (out / "finetune_metadata.json").write_text(json.dumps({
-            "classification_head_trained": True,
-            "finetune_mode": args.finetune_mode,
-            "steps": args.finetune_steps,
-            "dataset": args.dataset,
-            "seed": args.seed
-        }), encoding="utf-8")
+        (out / "finetune_metadata.json").write_text(
+            json.dumps(
+                {
+                    "classification_head_trained": True,
+                    "finetune_mode": args.finetune_mode,
+                    "steps": args.finetune_steps,
+                    "dataset": args.dataset,
+                    "seed": args.seed,
+                }
+            ),
+            encoding="utf-8",
+        )
     except Exception as e:
         LOG.warning("Could not write finetune_metadata.json: %s", e)
     # Make batch cache dataset-specific to prevent cross-dataset contamination
@@ -3304,6 +4256,7 @@ def run_single_module_main(args) -> dict:
                 meta = json.load(f)
             if meta.get("dataset") != args.dataset:
                 import shutil
+
                 shutil.rmtree(str(_cached_dir), ignore_errors=True)
                 _cached_dir.mkdir(parents=True, exist_ok=True)
         except Exception:
@@ -3316,34 +4269,88 @@ def run_single_module_main(args) -> dict:
     train_batches = []
 
     if "wikitext" not in args.dataset.lower() and args.dataset != "c4":
-        if _eval_cache and _eval_cache.exists() and _train_cache and _train_cache.exists():
-            LOG.info("Loading pre-cached batches from %s (skipping tokenization)", _cached_dir)
-            eval_batches = [(d, t.to(device)) for d, t in [
-                ({k: v.to(device) for k, v in x.items()}, y) for x, y in torch.load(str(_eval_cache), map_location="cpu", weights_only=False)
-            ]]
-            _max_train = max(10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10))
-            all_train = torch.load(str(_train_cache), map_location="cpu", weights_only=False)
-            train_batches = [({k: v.to(device) for k, v in x.items()}, y.to(device)) for x, y in all_train[:_max_train]]
+        if (
+            _eval_cache
+            and _eval_cache.exists()
+            and _train_cache
+            and _train_cache.exists()
+        ):
+            LOG.info(
+                "Loading pre-cached batches from %s (skipping tokenization)",
+                _cached_dir,
+            )
+            eval_batches = [
+                (d, t.to(device))
+                for d, t in [
+                    ({k: v.to(device) for k, v in x.items()}, y)
+                    for x, y in torch.load(
+                        str(_eval_cache), map_location="cpu", weights_only=False
+                    )
+                ]
+            ]
+            _max_train = max(
+                10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10)
+            )
+            all_train = torch.load(
+                str(_train_cache), map_location="cpu", weights_only=False
+            )
+            train_batches = [
+                ({k: v.to(device) for k, v in x.items()}, y.to(device))
+                for x, y in all_train[:_max_train]
+            ]
         else:
-            eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, eval_seq_len, args.batch_size, device)
-            train_batches = prepare_train_batches(tokenizer, train, args.dataset, args.seq_len, args.batch_size, device, max_batches=max(10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10)))
+            eval_batches = prepare_eval_batches(
+                tokenizer, val, args.dataset, eval_seq_len, args.batch_size, device
+            )
+            train_batches = prepare_train_batches(
+                tokenizer,
+                train,
+                args.dataset,
+                args.seq_len,
+                args.batch_size,
+                device,
+                max_batches=max(
+                    10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10)
+                ),
+            )
             # Auto-save to cache dir if one was specified but files didn't exist yet
             if _cached_dir:
                 try:
                     _cached_dir.mkdir(parents=True, exist_ok=True)
-                    torch.save([({k: v.cpu() for k, v in x.items()}, y.cpu()) for x, y in eval_batches], str(_eval_cache))
-                    torch.save([({k: v.cpu() for k, v in x.items()}, y.cpu()) for x, y in train_batches], str(_train_cache))
+                    torch.save(
+                        [
+                            ({k: v.cpu() for k, v in x.items()}, y.cpu())
+                            for x, y in eval_batches
+                        ],
+                        str(_eval_cache),
+                    )
+                    torch.save(
+                        [
+                            ({k: v.cpu() for k, v in x.items()}, y.cpu())
+                            for x, y in train_batches
+                        ],
+                        str(_train_cache),
+                    )
                     meta_content = {
                         "dataset": args.dataset,
                         "max_length": eval_seq_len,
                         "num_eval_batches": len(eval_batches),
                         "num_train_batches": len(train_batches),
                     }
-                    cache_meta.write_text(json.dumps(meta_content, indent=2), encoding="utf-8")
+                    cache_meta.write_text(
+                        json.dumps(meta_content, indent=2), encoding="utf-8"
+                    )
                 except Exception as e:
                     LOG.warning("Failed to save caches to %s: %s", _cached_dir, e)
-                LOG.info("Saved pre-tokenized batch cache to %s (will be reused by subsequent module runs)", _cached_dir)
-    LOG.info("Prepared %d eval batches and %d train batches directly on GPU.", len(eval_batches), len(train_batches))
+                LOG.info(
+                    "Saved pre-tokenized batch cache to %s (will be reused by subsequent module runs)",
+                    _cached_dir,
+                )
+    LOG.info(
+        "Prepared %d eval batches and %d train batches directly on GPU.",
+        len(eval_batches),
+        len(train_batches),
+    )
     # Pre-evaluate base model to get baseline benchmark accuracy for reference
     # Merge LoRA adapters into base weights BEFORE measuring baseline
     for module in base.modules():
@@ -3360,19 +4367,49 @@ def run_single_module_main(args) -> dict:
 
     for m in base.modules():
         if hasattr(m, "merge") and callable(m.merge):
-            try: m.merge()
-            except Exception: pass
+            try:
+                m.merge()
+            except Exception:
+                pass
 
     base.to(device)
     base_benchmark_ppl = None
     if "wikitext" in args.dataset.lower() or args.dataset == "c4":
-        base_eval = evaluate_perplexity(base, tokenizer, val, eval_seq_len, args.batch_size, device, fp16=args.precision == "fp16")
+        base_eval = evaluate_perplexity(
+            base,
+            tokenizer,
+            val,
+            eval_seq_len,
+            args.batch_size,
+            device,
+            fp16=args.precision == "fp16",
+        )
         base_benchmark_ppl = base_eval.get("perplexity")
         base_benchmark_acc = 0.0
-        LOG.info("Baseline model benchmark perplexity on validation set: %s (loss=%.4f)", base_benchmark_ppl, base_eval.get("val_loss", 0.0))
+        LOG.info(
+            "Baseline model benchmark perplexity on validation set: %s (loss=%.4f)",
+            base_benchmark_ppl,
+            base_eval.get("val_loss", 0.0),
+        )
     else:
-        base_benchmark_acc = round(evaluate(base, tokenizer, val, args.dataset, eval_seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
-        LOG.info("Baseline model benchmark accuracy on validation set: %.2f%%", base_benchmark_acc)
+        base_benchmark_acc = round(
+            evaluate(
+                base,
+                tokenizer,
+                val,
+                args.dataset,
+                eval_seq_len,
+                args.batch_size,
+                device,
+                fp16=args.precision == "fp16",
+                precomputed_batches=eval_batches,
+            ),
+            2,
+        )
+        LOG.info(
+            "Baseline model benchmark accuracy on validation set: %.2f%%",
+            base_benchmark_acc,
+        )
     base.to("cpu")
 
     # -------------------------------------------------------------------------
@@ -3398,12 +4435,17 @@ def run_single_module_main(args) -> dict:
         majority_count = 500
         majority_baseline_ratio = 0.5
     else:
-        val_labels = val["label"] if "label" in val.features else [x["label"] for x in val]
+        val_labels = (
+            val["label"] if "label" in val.features else [x["label"] for x in val]
+        )
         from collections import Counter
+
         label_counts = Counter(val_labels)
         total_val_samples = len(val_labels)
         majority_count = max(label_counts.values()) if label_counts else 0
-        majority_baseline_ratio = majority_count / total_val_samples if total_val_samples > 0 else 0.5
+        majority_baseline_ratio = (
+            majority_count / total_val_samples if total_val_samples > 0 else 0.5
+        )
 
     majority_baseline_pct = round(majority_baseline_ratio * 100.0, 2)
 
@@ -3467,6 +4509,7 @@ def run_single_module_main(args) -> dict:
         backup_path = path.with_suffix(".csv.bak")
         if not backup_path.exists():
             import shutil
+
             shutil.copyfile(path, backup_path)
         with path.open("r", encoding="utf8") as f:
             for r in csv.DictReader(f):
@@ -3474,35 +4517,63 @@ def run_single_module_main(args) -> dict:
     # In fresh mode, evaluate everything; otherwise only skip modules that genuinely PASSED with non-zero accuracy.
     # PASS_LOW is NOT skipped — it gets re-evaluated on new datasets where thresholds differ.
     # CRASH/FAIL/REJECTED_EXPANSION are always re-tried unless in BLOCKED_MODULES.
-    existing = set() if args.fresh else {
-        m for m, r in summary_dict.items()
-        if r.get("status") == "PASS" and float(r.get("accuracy_pct", 0.0) or 0.0) > 0.0
-    }
-    module_rank = args.rank if args.rank is not None else max(16, getattr(adapter, "head_dim", 16))
+    existing = (
+        set()
+        if args.fresh
+        else {
+            m
+            for m, r in summary_dict.items()
+            if r.get("status") == "PASS"
+            and float(r.get("accuracy_pct", 0.0) or 0.0) > 0.0
+        }
+    )
+    module_rank = (
+        args.rank
+        if args.rank is not None
+        else max(16, getattr(adapter, "head_dim", 16))
+    )
     LOG.info("Initializing ModelStateSnapshot for in-memory module swapping...")
     base_snapshot = ModelStateSnapshot(base)
 
     for n, name in enumerate(names, 1):
         # Force rank = sqrt(head_dim) for TPA to preserve tensor product.
         if name in ("tpa", "tpa_attention", "tp_attention", "inject_tpa"):
-            _nh = getattr(base.config, "num_attention_heads", None) or getattr(base.config, "n_heads", 12)
-            _hs = getattr(base.config, "hidden_size", None) or getattr(base.config, "d_model", 768)
+            _nh = getattr(base.config, "num_attention_heads", None) or getattr(
+                base.config, "n_heads", 12
+            )
+            _hs = getattr(base.config, "hidden_size", None) or getattr(
+                base.config, "d_model", 768
+            )
             _hd = getattr(base.config, "head_dim", None) or (_hs // max(1, _nh))
-            _optimal = max(1, int(round(_hd ** 0.5)))
+            _optimal = max(1, int(round(_hd**0.5)))
             if module_rank != _optimal:
-                LOG.warning("TPA: overriding module_rank %d -> %d (head_dim=%d, sqrt required).", module_rank, _optimal, _hd)
+                LOG.warning(
+                    "TPA: overriding module_rank %d -> %d (head_dim=%d, sqrt required).",
+                    module_rank,
+                    _optimal,
+                    _hd,
+                )
                 module_rank = _optimal
                 if hasattr(base, "config") and base.config is not None:
                     base.config.rank = _optimal
                     base.config.tpa_rank = _optimal
         if name in DEPRECATED_MODULES:
             dep_reason = DEPRECATED_MODULES[name]
-            LOG.warning(">>> Skipping DEPRECATED module [%d/%d]: %s (%s)", n, len(names), name, dep_reason)
+            LOG.warning(
+                ">>> Skipping DEPRECATED module [%d/%d]: %s (%s)",
+                n,
+                len(names),
+                name,
+                dep_reason,
+            )
             row = {
-                "module_name": name, "status": "SKIP_DEPRECATED",
-                "accuracy_pct": 0.0, "elapsed_s": 0.0,
+                "module_name": name,
+                "status": "SKIP_DEPRECATED",
+                "accuracy_pct": 0.0,
+                "elapsed_s": 0.0,
                 "error": f"DEPRECATED: {dep_reason}",
-                "path": "deprecated", "timestamp": datetime.now().isoformat(),
+                "path": "deprecated",
+                "timestamp": datetime.now().isoformat(),
             }
             summary_dict[name] = row
             _tmp = path.with_suffix(".tmp")
@@ -3513,18 +4584,29 @@ def run_single_module_main(args) -> dict:
                     _w.writerow(summary_dict[_m])
             if _tmp.exists():
                 if path.exists():
-                    try: path.unlink()
-                    except Exception: pass
+                    try:
+                        path.unlink()
+                    except Exception:
+                        pass
                 _tmp.rename(path)
             continue
         if name in BLOCKED_MODULES and len(names) > 10:
             bl_reason = BLOCKED_MODULES[name]
-            LOG.warning(">>> Skipping BLOCKED module [%d/%d]: %s (%s)", n, len(names), name, bl_reason)
+            LOG.warning(
+                ">>> Skipping BLOCKED module [%d/%d]: %s (%s)",
+                n,
+                len(names),
+                name,
+                bl_reason,
+            )
             row = {
-                "module_name": name, "status": "SKIP_BLOCKED",
-                "accuracy_pct": 0.0, "elapsed_s": 0.0,
+                "module_name": name,
+                "status": "SKIP_BLOCKED",
+                "accuracy_pct": 0.0,
+                "elapsed_s": 0.0,
                 "error": f"BLOCKED: {bl_reason}",
-                "path": "blocked", "timestamp": datetime.now().isoformat(),
+                "path": "blocked",
+                "timestamp": datetime.now().isoformat(),
             }
             summary_dict[name] = row
             # Atomic write to CSV so blocklist entries appear in live summary.csv
@@ -3536,8 +4618,10 @@ def run_single_module_main(args) -> dict:
                     _w.writerow(summary_dict[_m])
             if _tmp.exists():
                 if path.exists():
-                    try: path.unlink()
-                    except Exception: pass
+                    try:
+                        path.unlink()
+                    except Exception:
+                        pass
                 _tmp.rename(path)
             continue
         # if name in existing:
@@ -3545,15 +4629,37 @@ def run_single_module_main(args) -> dict:
         #              n, len(names), name, float(summary_dict[name].get("accuracy_pct", 0.0)))
         #     continue
 
-        LOG.info(">>> STARTING MODULE [%d/%d]: %s (recovery_steps=%d, batch_size=%d, optimizer=%s)",
-                 n, len(names), name, args.recovery_steps, args.batch_size, active_opt)
-        t = time.monotonic(); status, acc, err = "PENDING", 0.0, ""; had_nan = False; path_name = "native_qwen" if family == "qwen" else ("legacy_bert" if family in {"bert", "roberta"} else "adapted")
+        LOG.info(
+            ">>> STARTING MODULE [%d/%d]: %s (recovery_steps=%d, batch_size=%d, optimizer=%s)",
+            n,
+            len(names),
+            name,
+            args.recovery_steps,
+            args.batch_size,
+            active_opt,
+        )
+        t = time.monotonic()
+        status, acc, err = "PENDING", 0.0, ""
+        had_nan = False
+        path_name = (
+            "native_qwen"
+            if family == "qwen"
+            else ("legacy_bert" if family in {"bert", "roberta"} else "adapted")
+        )
 
         support = module_family_support(name).get(family, "unknown")
         from framework.core.registry import is_module_declared_compatible
+
         is_compat, reason = is_module_declared_compatible(name, family)
-        if name not in ("full", "dense") and (support == "incompatible" or not is_compat):
-            LOG.warning("Module %s declared %s / %s, attempting injection with fallback guard...", name, support, reason)
+        if name not in ("full", "dense") and (
+            support == "incompatible" or not is_compat
+        ):
+            LOG.warning(
+                "Module %s declared %s / %s, attempting injection with fallback guard...",
+                name,
+                support,
+                reason,
+            )
 
         # Sequential single-model clone directly on GPU (Zero host RAM bloat, zero PCIe latency)
         # Deepcopy on CPU host memory (zero VRAM overhead) and send fresh candidate to device
@@ -3589,22 +4695,40 @@ def run_single_module_main(args) -> dict:
             pass
         model = model.to(device)
         injected = False
-        active_opt = "muon" if getattr(args, "use_muon", False) or getattr(args, "optimizer", "adamw") == "muon" else "adamw"
+        active_opt = (
+            "muon"
+            if getattr(args, "use_muon", False)
+            or getattr(args, "optimizer", "adamw") == "muon"
+            else "adamw"
+        )
         had_nan = False
         path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
 
         # Slow module or configured timeout (default minimum: 1200s = 20 minutes)
         override_to = SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, 0)
         cli_timeout = getattr(args, "timeout", None) or 1200
-        effective_timeout = max(cli_timeout, override_to) if override_to > 0 else cli_timeout
+        effective_timeout = (
+            max(cli_timeout, override_to) if override_to > 0 else cli_timeout
+        )
 
         # Per-module batch_size overrides for VRAM-heavy modules on 8GB GPU
         _OOM_MODULE_BATCH_OVERRIDES = {
-            "granite_hybrid": 4, "grecodec": 4, "grecodec_compressor": 4,
-            "hymba_transx": 4, "mamba_svd_flash": 8, "spectral_mamba": 8,
-            "vspec": 8, "slicegpt": 8, "slicegpt_pca": 8,
-            "asvd": 8, "cosformer": 8, "cur": 8, "vig": 8,
-            "tpa": 4, "tpa_attention": 4, "tp_attention": 4,
+            "granite_hybrid": 4,
+            "grecodec": 4,
+            "grecodec_compressor": 4,
+            "hymba_transx": 4,
+            "mamba_svd_flash": 8,
+            "spectral_mamba": 8,
+            "vspec": 8,
+            "slicegpt": 8,
+            "slicegpt_pca": 8,
+            "asvd": 8,
+            "cosformer": 8,
+            "cur": 8,
+            "vig": 8,
+            "tpa": 4,
+            "tpa_attention": 4,
+            "tp_attention": 4,
             "kda": 4,
             "nha": 4,
             "nha_attention": 4,
@@ -3617,7 +4741,9 @@ def run_single_module_main(args) -> dict:
         }
         # Apply OOM overrides across all models if module has known high memory consumption
         if name in _OOM_MODULE_BATCH_OVERRIDES:
-            effective_batch_size = min(args.batch_size, _OOM_MODULE_BATCH_OVERRIDES[name])
+            effective_batch_size = min(
+                args.batch_size, _OOM_MODULE_BATCH_OVERRIDES[name]
+            )
         else:
             effective_batch_size = args.batch_size
 
@@ -3630,7 +4756,37 @@ def run_single_module_main(args) -> dict:
         try:
 
             # Pipeline replaced
-            perf_metrics, comp_metrics, injected, path_name, had_nan, recovery_time_s, measured_calib_time = _run_candidate_pipeline(model, name, args, device, family, effective_batch_size, tokenizer, val, base, train, effective_timeout, out, model_slug, total_params_before, module_rank, eval_batches, train_batches, eval_seq_len, pass_threshold_pct, typ, t)
+            (
+                perf_metrics,
+                comp_metrics,
+                injected,
+                path_name,
+                had_nan,
+                recovery_time_s,
+                measured_calib_time,
+            ) = _run_candidate_pipeline(
+                model,
+                name,
+                args,
+                device,
+                family,
+                effective_batch_size,
+                tokenizer,
+                val,
+                base,
+                train,
+                effective_timeout,
+                out,
+                model_slug,
+                total_params_before,
+                module_rank,
+                eval_batches,
+                train_batches,
+                eval_seq_len,
+                pass_threshold_pct,
+                typ,
+                t,
+            )
             # *** Critical: extract acc from perf_metrics on successful run ***
             acc = perf_metrics.get("accuracy_pct", 0.0)
         except TimeoutError:
@@ -3647,24 +4803,52 @@ def run_single_module_main(args) -> dict:
                 try:
                     torch.cuda.empty_cache()
                     safe_batch = max(8, args.batch_size // 2)
-                    perf_metrics = evaluate_comprehensive(model, tokenizer, val, args.dataset, eval_seq_len, safe_batch, device)
+                    perf_metrics = evaluate_comprehensive(
+                        model,
+                        tokenizer,
+                        val,
+                        args.dataset,
+                        eval_seq_len,
+                        safe_batch,
+                        device,
+                    )
                     acc = perf_metrics["accuracy_pct"]
                     err = f"batch_size reduced {args.batch_size}->{safe_batch} after CUDA OOM"
                     exc = None
-                except Exception as retry: exc = retry
+                except Exception as retry:
+                    exc = retry
 
             if exc is not None and name != "full" and is_dtype_error(exc):
                 try:
                     model.float()
-                    model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
-                    perf_metrics = evaluate_comprehensive(model, tokenizer, val, args.dataset, eval_seq_len, effective_batch_size, device, precomputed_batches=eval_batches)
+                    model, _ = apply_module_to_model(
+                        model, name, typ, rank=module_rank, device=device
+                    )
+                    perf_metrics = evaluate_comprehensive(
+                        model,
+                        tokenizer,
+                        val,
+                        args.dataset,
+                        eval_seq_len,
+                        effective_batch_size,
+                        device,
+                        precomputed_batches=eval_batches,
+                    )
                     acc = perf_metrics["accuracy_pct"]
                     err = f"fp32 retry: {exc}"
                     exc = None
-                except Exception as retry: exc = retry
+                except Exception as retry:
+                    exc = retry
 
             # Check for explicit SKIP signal (e.g. inject_adaptive_svd returning None or copy_weights failing)
-            if exc is not None and isinstance(exc, RuntimeError) and ("Could not extract all required weights" in str(exc) or "Could not instantiate attention class" in str(exc)):
+            if (
+                exc is not None
+                and isinstance(exc, RuntimeError)
+                and (
+                    "Could not extract all required weights" in str(exc)
+                    or "Could not instantiate attention class" in str(exc)
+                )
+            ):
                 status = f"SKIP_{family.upper()}_ARCHITECTURAL"
                 err = f"note: architecture unsupported by module ({exc})"
                 acc = 0.0
@@ -3689,7 +4873,9 @@ def run_single_module_main(args) -> dict:
             comp_metrics = {
                 "total_params_before": total_params_before,
                 "total_params_after": total_params_before,
-                "trainable_recovery_params": getattr(model, "_trainable_recovery_params", 0),
+                "trainable_recovery_params": getattr(
+                    model, "_trainable_recovery_params", 0
+                ),
                 "compression_rate": 1.0,
                 "compression_rate_raw": 1.0,
                 "compression_rate_net": 1.0,
@@ -3714,7 +4900,9 @@ def run_single_module_main(args) -> dict:
                 except (ValueError, TypeError):
                     ppl_num = float("inf")
 
-                if acc >= 100.0 and (ppl_num <= 0.0 or math.isnan(ppl_num) or math.isinf(ppl_num)):
+                if acc >= 100.0 and (
+                    ppl_num <= 0.0 or math.isnan(ppl_num) or math.isinf(ppl_num)
+                ):
                     status = "INVALID"
                     err = "INVALID: evaluated accuracy is 100.0% on language modeling task without valid perplexity"
                 elif math.isnan(ppl_num) or math.isinf(ppl_num):
@@ -3755,15 +4943,27 @@ def run_single_module_main(args) -> dict:
                 if base_params_after > p_before * 1.20:
                     status = "EXTREME_EXPANSION"
                     err = f"base_before={p_before} base_after={base_params_after} delta=+{base_delta_pct:.1f}%"
-                elif base_params_after > p_before and base_delta > 1024 and base_delta_pct > 0.05:
+                elif (
+                    base_params_after > p_before
+                    and base_delta > 1024
+                    and base_delta_pct > 0.05
+                ):
                     status = "MODERATE_EXPANSION"
                     err = f"base_before={p_before} base_after={base_params_after} delta=+{base_delta_pct:.2f}%"
-                elif (comp_metrics.get("num_compressed_layers", 0) == 0
-                      and comp_metrics.get("num_injected_attention_layers", 0) == 0
-                      and not name.startswith("inject_")
-                      and base_params_after >= p_before * 0.99):
-                    if status.startswith("FAIL") or status.startswith("EVAL_FAILED") or status.startswith("SKIP"):
-                        err = f"{status}: zero compressed layers, zero injected layers ({err})".strip(": ")
+                elif (
+                    comp_metrics.get("num_compressed_layers", 0) == 0
+                    and comp_metrics.get("num_injected_attention_layers", 0) == 0
+                    and not name.startswith("inject_")
+                    and base_params_after >= p_before * 0.99
+                ):
+                    if (
+                        status.startswith("FAIL")
+                        or status.startswith("EVAL_FAILED")
+                        or status.startswith("SKIP")
+                    ):
+                        err = f"{status}: zero compressed layers, zero injected layers ({err})".strip(
+                            ": "
+                        )
                     else:
                         status = "PASS"
                         err = "note: zero compressed layers, zero injected layers, model unchanged"
@@ -3810,15 +5010,31 @@ def run_single_module_main(args) -> dict:
             "val_loss": perf_metrics.get("val_loss", 0.0),
             "perplexity": ppl_val_raw,
             "elapsed_s": round(time.monotonic() - t, 2),
-            "eval_time_s": perf_metrics.get("eval_time_s", round(time.monotonic() - t, 2)),
-            "calibration_time_s": comp_metrics.get("calibration_time_s") if comp_metrics.get("calibration_time_s", 0.0) > 0.0 else measured_calib_time,
+            "eval_time_s": perf_metrics.get(
+                "eval_time_s", round(time.monotonic() - t, 2)
+            ),
+            "calibration_time_s": (
+                comp_metrics.get("calibration_time_s")
+                if comp_metrics.get("calibration_time_s", 0.0) > 0.0
+                else measured_calib_time
+            ),
             "recovery_time_s": recovery_time_s,
             "latency_ms": perf_metrics.get("latency_ms", 0.0),
             "peak_vram_mb": perf_metrics.get("peak_vram_mb", 0.0),
-            "tokens_per_sec": perf_metrics.get("tokens_per_sec") if perf_metrics.get("tokens_per_sec") is not None else perf_metrics.get("throughput", 0.0),
-            "total_params_before": comp_metrics.get("total_params_before", total_params_before),
-            "total_params_after": comp_metrics.get("total_params_after", total_params_before),
-            "trainable_recovery_params": comp_metrics.get("trainable_recovery_params", 0),
+            "tokens_per_sec": (
+                perf_metrics.get("tokens_per_sec")
+                if perf_metrics.get("tokens_per_sec") is not None
+                else perf_metrics.get("throughput", 0.0)
+            ),
+            "total_params_before": comp_metrics.get(
+                "total_params_before", total_params_before
+            ),
+            "total_params_after": comp_metrics.get(
+                "total_params_after", total_params_before
+            ),
+            "trainable_recovery_params": comp_metrics.get(
+                "trainable_recovery_params", 0
+            ),
             "compression_rate": comp_metrics.get("compression_rate", 1.0),
             "compression_rate_raw": comp_metrics.get("compression_rate_raw", 1.0),
             "compression_rate_net": comp_metrics.get("compression_rate_net", 1.0),
@@ -3826,9 +5042,15 @@ def run_single_module_main(args) -> dict:
             "flops_reduction_pct": comp_metrics.get("flops_reduction_pct", 0.0),
             "num_compressed_layers": comp_metrics.get("num_compressed_layers", 0),
             "num_fallback_layers": comp_metrics.get("num_fallback_layers", 0),
-            "avg_reconstruction_error": comp_metrics.get("avg_reconstruction_error", ""),
-            "weighted_reconstruction_error": comp_metrics.get("weighted_reconstruction_error", ""),
-            "num_injected_attention_layers": comp_metrics.get("num_injected_attention_layers", 0),
+            "avg_reconstruction_error": comp_metrics.get(
+                "avg_reconstruction_error", ""
+            ),
+            "weighted_reconstruction_error": comp_metrics.get(
+                "weighted_reconstruction_error", ""
+            ),
+            "num_injected_attention_layers": comp_metrics.get(
+                "num_injected_attention_layers", 0
+            ),
             "lora_params": comp_metrics.get("lora_params", 0),
             "collapse_flag": perf_metrics.get("collapse_flag", False),
             "per_class_metrics": json.dumps(perf_metrics.get("per_class_metrics", {})),
@@ -3842,16 +5064,30 @@ def run_single_module_main(args) -> dict:
         _flush_summary_csv()
 
         f1_disp = row["f1_score"] if row.get("f1_score") not in ("", None) else "N/A"
-        vram_disp = row["peak_vram_mb"] if row.get("peak_vram_mb") not in ("", None) else "N/A"
-        LOG.info("[%d/%d] %s -> %s %.2f%% (F1: %s, Peak VRAM: %s MB)",
-                 n, len(names), name, status, acc, f1_disp, vram_disp)
+        vram_disp = (
+            row["peak_vram_mb"] if row.get("peak_vram_mb") not in ("", None) else "N/A"
+        )
+        LOG.info(
+            "[%d/%d] %s -> %s %.2f%% (F1: %s, Peak VRAM: %s MB)",
+            n,
+            len(names),
+            name,
+            status,
+            acc,
+            f1_disp,
+            vram_disp,
+        )
 
         if "wikitext" in args.dataset.lower() or args.dataset == "c4":
-            is_successful_run = status in ("PASS", "PASS_LOW_PPL") and (name == "full" or comp_metrics.get("num_compressed_layers", 0) > 0 or comp_metrics.get("num_injected_attention_layers", 0) > 0)
+            is_successful_run = status in ("PASS", "PASS_LOW_PPL") and (
+                name == "full"
+                or comp_metrics.get("num_compressed_layers", 0) > 0
+                or comp_metrics.get("num_injected_attention_layers", 0) > 0
+            )
         else:
             is_successful_run = (status == "PASS") and (acc >= pass_threshold_pct)
 
-        is_fake_pass = (status == "PASS_NO_COMPRESSION")
+        is_fake_pass = status == "PASS_NO_COMPRESSION"
         if is_fake_pass:
             LOG.warning(
                 "Module '%s' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.",
@@ -3861,15 +5097,22 @@ def run_single_module_main(args) -> dict:
         hf_export_dir = weights_dir / "hf_export"
 
         if not is_successful_run:
-            LOG.info("[Quality Guard] Module '%s' did not pass quality criteria (status=%s, acc=%.2f%%, pass_thresh=%.2f%%). Pruning large checkpoint artifacts but preserving metrics.",
-                     name, status, acc, pass_threshold_pct)
+            LOG.info(
+                "[Quality Guard] Module '%s' did not pass quality criteria (status=%s, acc=%.2f%%, pass_thresh=%.2f%%). Pruning large checkpoint artifacts but preserving metrics.",
+                name,
+                status,
+                acc,
+                pass_threshold_pct,
+            )
             # Log failed run to failed_runs.json
             try:
                 failed_json_path = out / "failed_runs.json"
                 failed_data = []
                 if failed_json_path.exists():
                     try:
-                        failed_data = json.loads(failed_json_path.read_text(encoding="utf-8"))
+                        failed_data = json.loads(
+                            failed_json_path.read_text(encoding="utf-8")
+                        )
                         if not isinstance(failed_data, list):
                             failed_data = []
                     except Exception:
@@ -3883,17 +5126,22 @@ def run_single_module_main(args) -> dict:
                     "perplexity": row.get("perplexity"),
                     "accuracy_pct": row.get("accuracy_pct", 0.0),
                     "error": err[:1000] if err else "",
-                    "timestamp": row.get("timestamp", datetime.now().isoformat())
+                    "timestamp": row.get("timestamp", datetime.now().isoformat()),
                 }
                 deduped = [
-                    e for e in failed_data
-                    if not (e.get("module") == new_entry["module"]
-                            and e.get("model") == new_entry["model"]
-                            and e.get("dataset") == new_entry["dataset"]
-                            and e.get("status") == new_entry["status"])
+                    e
+                    for e in failed_data
+                    if not (
+                        e.get("module") == new_entry["module"]
+                        and e.get("model") == new_entry["model"]
+                        and e.get("dataset") == new_entry["dataset"]
+                        and e.get("status") == new_entry["status"]
+                    )
                 ]
                 deduped.append(new_entry)
-                failed_json_path.write_text(json.dumps(deduped, indent=2), encoding="utf-8")
+                failed_json_path.write_text(
+                    json.dumps(deduped, indent=2), encoding="utf-8"
+                )
             except Exception as f_err:
                 LOG.debug("Could not update failed_runs.json: %s", f_err)
 
@@ -3934,22 +5182,34 @@ def run_single_module_main(args) -> dict:
                     "total_params_before": row.get("total_params_before", 0),
                     "total_params_after": row.get("total_params_after", 0),
                     "num_compressed_layers": row.get("num_compressed_layers", 0),
-                    "num_injected_attention_layers": row.get("num_injected_attention_layers", 0),
+                    "num_injected_attention_layers": row.get(
+                        "num_injected_attention_layers", 0
+                    ),
                     "lora_params": row.get("lora_params", 0),
                     "pass_threshold_pct": pass_threshold_pct,
                     "timestamp": row.get("timestamp", datetime.now().isoformat()),
                     "error": err[:500] if err else "",
                 }
-                with open(weights_dir / "summary_record.json", "w", encoding="utf-8") as srec:
+                with open(
+                    weights_dir / "summary_record.json", "w", encoding="utf-8"
+                ) as srec:
                     json.dump(summary_record, srec, indent=2)
             except Exception as srec_err:
-                LOG.debug("Could not write summary_record.json for %s: %s", name, srec_err)
+                LOG.debug(
+                    "Could not write summary_record.json for %s: %s", name, srec_err
+                )
         else:
             if getattr(args, "defer_export", False):
-                LOG.info("[Export Deferred] Checkpoint preserved in %s. Automated export will be handled post-sweep by orchestrator.", weights_dir)
+                LOG.info(
+                    "[Export Deferred] Checkpoint preserved in %s. Automated export will be handled post-sweep by orchestrator.",
+                    weights_dir,
+                )
             else:
                 try:
-                    from Codes.framework.utils.hf_git_exporter import handle_benchmark_run_export
+                    from Codes.framework.utils.hf_git_exporter import (
+                        handle_benchmark_run_export,
+                    )
+
                     # Always ensure hf_export_dir exists with metrics so HF upload is never silently skipped
                     hf_export_dir.mkdir(parents=True, exist_ok=True)
                     # Write metrics.json into export dir if not already present
@@ -3957,8 +5217,15 @@ def run_single_module_main(args) -> dict:
                     if not _metrics_out.exists():
                         try:
                             import json as _json
+
                             _metrics_out.write_text(
-                                _json.dumps({"performance": perf_metrics, "compression": comp_metrics}, indent=2),
+                                _json.dumps(
+                                    {
+                                        "performance": perf_metrics,
+                                        "compression": comp_metrics,
+                                    },
+                                    indent=2,
+                                ),
                                 encoding="utf-8",
                             )
                         except Exception:
@@ -3969,6 +5236,7 @@ def run_single_module_main(args) -> dict:
                     if _summary_src.exists() and not _summary_dst.exists():
                         try:
                             import shutil as _shutil
+
                             _shutil.copy2(_summary_src, _summary_dst)
                         except Exception:
                             pass
@@ -3978,6 +5246,7 @@ def run_single_module_main(args) -> dict:
                     if _weights_src.exists() and not _weights_dst.exists():
                         try:
                             import shutil as _shutil
+
                             _shutil.copy2(_weights_src, _weights_dst)
                         except Exception:
                             pass
@@ -4000,12 +5269,16 @@ def run_single_module_main(args) -> dict:
                     # Prune heavy weights from disk after successful HF upload to prevent disk exhaustion
                     try:
                         if weights_dir.exists():
-                            for big_file in list(weights_dir.glob("**/*.pt")) + list(weights_dir.glob("**/*.bin")):
+                            for big_file in list(weights_dir.glob("**/*.pt")) + list(
+                                weights_dir.glob("**/*.bin")
+                            ):
                                 big_file.unlink(missing_ok=True)
                     except Exception:
                         pass
                 except Exception as export_exc:
-                    LOG.warning("Automated export exception for %s: %s", name, export_exc)
+                    LOG.warning(
+                        "Automated export exception for %s: %s", name, export_exc
+                    )
 
         # Log per-module timing
         t_total = time.monotonic() - t
@@ -4034,51 +5307,72 @@ def run_single_module_main(args) -> dict:
         delta_acc = acc_val - base_benchmark_acc if m_name != "full" else 0.0
         f1_val = r.get("f1_score", "N/A")
         try:
-            f1_str = f"{float(f1_val):.4f}" if f1_val not in ("", "N/A", None) else "N/A"
+            f1_str = (
+                f"{float(f1_val):.4f}" if f1_val not in ("", "N/A", None) else "N/A"
+            )
         except (ValueError, TypeError):
             f1_str = str(f1_val)
 
         comp_rate = r.get("compression_rate", "1.00")
         try:
-            comp_rate_str = f"{float(comp_rate):.2f}x" if comp_rate not in ("", "N/A", None) else "1.00x"
+            comp_rate_str = (
+                f"{float(comp_rate):.2f}x"
+                if comp_rate not in ("", "N/A", None)
+                else "1.00x"
+            )
         except (ValueError, TypeError):
             comp_rate_str = str(comp_rate)
 
         vram = r.get("peak_vram_mb", "N/A")
         try:
-            vram_str = f"{float(vram):.1f} MB" if vram not in ("", "N/A", None) else "N/A"
+            vram_str = (
+                f"{float(vram):.1f} MB" if vram not in ("", "N/A", None) else "N/A"
+            )
         except (ValueError, TypeError):
             vram_str = str(vram)
 
         try:
-            inf_time = float(r.get('eval_time_s', r.get('elapsed_s', 0.0)) or 0.0)
+            inf_time = float(r.get("eval_time_s", r.get("elapsed_s", 0.0)) or 0.0)
             inf_time_str = f"{inf_time:.2f}"
         except (ValueError, TypeError):
             inf_time_str = "0.00"
 
         try:
-            lat = float(r.get('latency_ms', 0.0)) if r.get('latency_ms') not in ("", "N/A", None) else None
+            lat = (
+                float(r.get("latency_ms", 0.0))
+                if r.get("latency_ms") not in ("", "N/A", None)
+                else None
+            )
             lat_str = f"{lat:.2f}" if lat is not None else "N/A"
         except (ValueError, TypeError):
             lat_str = "N/A"
 
-        summary_rows.append({
-            "Module": display_name,
-            "Status": r.get("status", "N/A"),
-            "Accuracy": f"{acc_val:.2f}%",
-            "Delta Acc": f"{delta_acc:+.2f}%" if m_name != "full" else "0.00% (base)",
-            "F1": f1_str,
-            "Compressed Layers": r.get("num_compressed_layers", "0"),
-            "Compression Rate": comp_rate_str,
-            "Peak VRAM": vram_str,
-            "Inference Time (s)": inf_time_str,
-            "Latency (ms/samp)": lat_str,
-        })
+        summary_rows.append(
+            {
+                "Module": display_name,
+                "Status": r.get("status", "N/A"),
+                "Accuracy": f"{acc_val:.2f}%",
+                "Delta Acc": (
+                    f"{delta_acc:+.2f}%" if m_name != "full" else "0.00% (base)"
+                ),
+                "F1": f1_str,
+                "Compressed Layers": r.get("num_compressed_layers", "0"),
+                "Compression Rate": comp_rate_str,
+                "Peak VRAM": vram_str,
+                "Inference Time (s)": inf_time_str,
+                "Latency (ms/samp)": lat_str,
+            }
+        )
 
     import pandas as pd
+
     summary_df = pd.DataFrame(summary_rows)
     LOG.info("=" * 80)
-    LOG.info("BENCHMARK QUALITY SWEEP SUMMARY TABLE (%s on %s)", Path(args.model).name, args.dataset)
+    LOG.info(
+        "BENCHMARK QUALITY SWEEP SUMMARY TABLE (%s on %s)",
+        Path(args.model).name,
+        args.dataset,
+    )
     LOG.info("\n%s", summary_df.to_string(index=False))
     LOG.info("=" * 80)
 
@@ -4117,39 +5411,60 @@ def run_single_module_main(args) -> dict:
     return summary_dict
 
 
-
 import subprocess
 from pathlib import Path
+
 import torch
+
 
 def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
     import os
     import sys
+
     tmp_dir = Path("logs/isolated_results")
     tmp_dir.mkdir(parents=True, exist_ok=True)
-    result_json = tmp_dir / f"{module_name}_{int(time.time() * 1000)}_{os.getpid()}.json"
+    result_json = (
+        tmp_dir / f"{module_name}_{int(time.time() * 1000)}_{os.getpid()}.json"
+    )
     if result_json.exists():
-        try: result_json.unlink()
-        except Exception: pass
+        try:
+            result_json.unlink()
+        except Exception:
+            pass
 
     child_script = (HERE / "run_one_module_isolated.py").resolve()
     cmd = [
-        sys.executable, "-u",
+        sys.executable,
+        "-u",
         str(child_script),
-        "--module", module_name,
-        "--model", str(args.model),
-        "--model_family", str(args.model_family),
-        "--dataset", str(args.dataset),
-        "--dataset_dir", str(args.dataset_dir) if args.dataset_dir else "None",
-        "--output_json", str(result_json),
-        "--output_dir", str(args.output_dir) if args.output_dir else "results",
-        "--rank", str(args.rank or 64),
-        "--recovery_steps", str(args.recovery_steps),
-        "--lora_rank", str(args.lora_rank),
-        "--batch_size", str(args.batch_size),
-        "--precision", str(args.precision),
-        "--seed", str(args.seed),
-        "--cached_batches_dir", str(Path(args.output_dir or "results") / f"batch_cache_{args.dataset}"),
+        "--module",
+        module_name,
+        "--model",
+        str(args.model),
+        "--model_family",
+        str(args.model_family),
+        "--dataset",
+        str(args.dataset),
+        "--dataset_dir",
+        str(args.dataset_dir) if args.dataset_dir else "None",
+        "--output_json",
+        str(result_json),
+        "--output_dir",
+        str(args.output_dir) if args.output_dir else "results",
+        "--rank",
+        str(args.rank or 64),
+        "--recovery_steps",
+        str(args.recovery_steps),
+        "--lora_rank",
+        str(args.lora_rank),
+        "--batch_size",
+        str(args.batch_size),
+        "--precision",
+        str(args.precision),
+        "--seed",
+        str(args.seed),
+        "--cached_batches_dir",
+        str(Path(args.output_dir or "results") / f"batch_cache_{args.dataset}"),
         "--defer_export",
     ]
     if getattr(args, "max_error", None) is not None:
@@ -4164,7 +5479,10 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
         cmd.append("--debug_module")
     if getattr(args, "verbose_debug", False):
         cmd.append("--verbose_debug")
-    if getattr(args, "span_lambda", None) is not None and getattr(args, "span_lambda", 0.0) > 0:
+    if (
+        getattr(args, "span_lambda", None) is not None
+        and getattr(args, "span_lambda", 0.0) > 0
+    ):
         cmd.extend(["--span_lambda", str(args.span_lambda)])
     if getattr(args, "kvtc_bits", None) is not None:
         cmd.extend(["--kvtc_bits", str(args.kvtc_bits)])
@@ -4173,7 +5491,9 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
     if getattr(args, "kvtc_pca_energy", None) is not None:
         cmd.extend(["--kvtc_pca_energy", str(args.kvtc_pca_energy)])
     if getattr(args, "kvtc_target_attention_only", None) is not None:
-        cmd.extend(["--kvtc_target_attention_only", str(args.kvtc_target_attention_only)])
+        cmd.extend(
+            ["--kvtc_target_attention_only", str(args.kvtc_target_attention_only)]
+        )
     if getattr(args, "kvtc_fallback_to_original", None) is not None:
         cmd.extend(["--kvtc_fallback_to_original", str(args.kvtc_fallback_to_original)])
     if getattr(args, "strict_rank", False):
@@ -4183,7 +5503,11 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
     if getattr(args, "max_vram_fraction", None) is not None:
         cmd.extend(["--max_vram_fraction", str(args.max_vram_fraction)])
     if args.dataset_dir is None:
-        cmd = [c for i, c in enumerate(cmd) if not (cmd[i-1] == "--dataset_dir" or c == "--dataset_dir")]
+        cmd = [
+            c
+            for i, c in enumerate(cmd)
+            if not (cmd[i - 1] == "--dataset_dir" or c == "--dataset_dir")
+        ]
     if getattr(args, "unknown_args", None):
         cmd.extend(args.unknown_args)
 
@@ -4194,23 +5518,31 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
     t0 = time.monotonic()
 
     base_dir = HERE.parent.parent  # project root, resolved from this file's location
-    extra_flags = (0x08000000 | subprocess.CREATE_NEW_PROCESS_GROUP) if os.name == "nt" else 0
+    extra_flags = (
+        (0x08000000 | subprocess.CREATE_NEW_PROCESS_GROUP) if os.name == "nt" else 0
+    )
 
     with open(log_path, "w", encoding="utf-8") as log_file:
         proc = subprocess.Popen(
-            cmd, stdout=log_file, stderr=subprocess.STDOUT, cwd=str(base_dir),
+            cmd,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            cwd=str(base_dir),
             creationflags=extra_flags,
         )
 
         try:
             proc.wait(timeout=timeout_s)
             elapsed = time.monotonic() - t0
-            print(f"[ISOLATED] {module_name} exited with code {proc.returncode} in {elapsed:.1f}s")
+            print(
+                f"[ISOLATED] {module_name} exited with code {proc.returncode} in {elapsed:.1f}s"
+            )
         except subprocess.TimeoutExpired:
             print(f"[ISOLATED] {module_name} TIMEOUT after {timeout_s}s - killing")
             if os.name == "nt":
-                subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)],
-                               capture_output=True)
+                subprocess.run(
+                    ["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True
+                )
             else:
                 proc.terminate()
                 try:
@@ -4231,13 +5563,16 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
             "elapsed_s": elapsed,
         }
 
+
 def clear_vram_between_modules():
     import gc
+
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
     time.sleep(2)
+
 
 def main():
     args = parse_args()
@@ -4251,23 +5586,32 @@ def main():
         if not raw_mods or raw_mods == ["all"]:
             names = all_available
         elif raw_mods == ["attentions"]:
-            names = ["full"] + [m for m in all_available if m in ATTENTION_REGISTRY and m != "full"]
+            names = ["full"] + [
+                m for m in all_available if m in ATTENTION_REGISTRY and m != "full"
+            ]
         elif raw_mods == ["compressors"]:
-            names = ["full"] + [m for m in all_available if m in COMPRESSOR_REGISTRY and m != "full"]
+            names = ["full"] + [
+                m for m in all_available if m in COMPRESSOR_REGISTRY and m != "full"
+            ]
         else:
             names = raw_mods
     elif args.modules == "all":
         names = all_available
     elif args.modules == "attentions":
-        names = ["full"] + [m for m in all_available if m in ATTENTION_REGISTRY and m != "full"]
+        names = ["full"] + [
+            m for m in all_available if m in ATTENTION_REGISTRY and m != "full"
+        ]
     elif args.modules == "compressors":
-        names = ["full"] + [m for m in all_available if m in COMPRESSOR_REGISTRY and m != "full"]
+        names = ["full"] + [
+            m for m in all_available if m in COMPRESSOR_REGISTRY and m != "full"
+        ]
     else:
         names = [x.strip() for x in args.modules.split(",") if x.strip()]
 
     if args.dataset_dir is None:
         for cand in [
-            Path("PROJECT_ROOT_PLACEHOLDER/Codes/framework/data/glue_data") / args.dataset,
+            Path("PROJECT_ROOT_PLACEHOLDER/Codes/framework/data/glue_data")
+            / args.dataset,
             Path("Codes/framework/data/glue_data") / args.dataset,
             Path(__file__).parent / "data" / "glue_data" / args.dataset,
             Path("PROJECT_ROOT_PLACEHOLDER/Codes/framework/data/glue_data/sst2"),
@@ -4283,27 +5627,43 @@ def main():
         args.output_dir = f"results/{safe_model}_{args.dataset}_sweep"
     out = Path(args.output_dir)
     out.mkdir(parents=True, exist_ok=True)
-    csv_filename = f"summary_{args.output_suffix}.csv" if getattr(args, "output_suffix", None) else "summary.csv"
+    csv_filename = (
+        f"summary_{args.output_suffix}.csv"
+        if getattr(args, "output_suffix", None)
+        else "summary.csv"
+    )
     path = out / csv_filename
 
     summary_dict = {}
     if path.exists() and not args.fresh:
         import csv
+
         with path.open("r", encoding="utf8") as f:
             for r in csv.DictReader(f):
                 summary_dict[r["module_name"]] = r
 
-    existing = set() if (args.fresh or getattr(args, "no_skip", False)) else {
-        m for m, r in summary_dict.items()
-        if r.get("status") in {
-            "PASS", "PASS_LOW", "REJECTED_EXPANSION",
-            "EXTREME_EXPANSION", "MODERATE_EXPANSION",
-            "TIMEOUT", "SKIP_BERT_ARCHITECTURAL", "SKIP_BLOCKED",
+    existing = (
+        set()
+        if (args.fresh or getattr(args, "no_skip", False))
+        else {
+            m
+            for m, r in summary_dict.items()
+            if r.get("status")
+            in {
+                "PASS",
+                "PASS_LOW",
+                "REJECTED_EXPANSION",
+                "EXTREME_EXPANSION",
+                "MODERATE_EXPANSION",
+                "TIMEOUT",
+                "SKIP_BERT_ARCHITECTURAL",
+                "SKIP_BLOCKED",
+            }
         }
-    }
-
+    )
 
     import threading
+
     csv_write_lock = threading.Lock()
 
     def _execute_single(name):
@@ -4313,38 +5673,56 @@ def main():
         result = run_module_isolated(name, args, timeout_s)
         row = {
             "module_name": name,
-            "status":                        result.get("status", "UNKNOWN"),
-            "accuracy_pct":                  result.get("accuracy_pct", result.get("accuracy", 0.0)),
-            "f1_score":                      result.get("f1_score", result.get("f1", 0.0)),
-            "f1_macro":                      result.get("f1_macro", 0.0),
-            "precision":                     result.get("precision", 0.0),
-            "recall":                        result.get("recall", 0.0),
-            "val_loss":                      result.get("val_loss", 0.0),
-            "elapsed_s":                     result.get("elapsed_s", 0.0),
-            "peak_vram_mb":                  result.get("peak_vram_mb", 0.0),
-            "tokens_per_sec":                result.get("tokens_per_sec") if result.get("tokens_per_sec") is not None else result.get("throughput_tok_per_sec", 0.0),
-            "latency_ms_per_token":         result.get("latency_ms_per_token", result.get("latency_ms", 0.0)),
-            "throughput_tok_per_sec":       result.get("throughput_tok_per_sec", result.get("tokens_per_sec", 0.0)),
-            "perplexity":                   result.get("perplexity", ""),
-            "ppl_status":                   result.get("ppl_status", ""),
-            "long_context_accuracy":        result.get("long_context_accuracy", ""),
-            "calibration_time_s":           result.get("calibration_time_s", 0.0),
-            "recovery_time_s":              result.get("recovery_time_s", 0.0),
-            "total_params_before":           result.get("total_params_before", result.get("params_before", 0)),
-            "total_params_after":            result.get("total_params_after", result.get("params_after", 0)),
-            "trainable_recovery_params":     result.get("trainable_recovery_params", 0),
-            "compression_rate":              result.get("compression_rate", result.get("compression_ratio", 1.0)),
-            "compression_ratio_pct":         result.get("compression_ratio_pct", 0.0),
-            "flops_reduction_pct":           result.get("flops_reduction_pct", 0.0),
-            "num_compressed_layers":         result.get("num_compressed_layers", 0),
-            "num_fallback_layers":           result.get("num_fallback_layers", 0),
-            "avg_reconstruction_error":      result.get("avg_reconstruction_error", ""),
-            "weighted_reconstruction_error": result.get("weighted_reconstruction_error", ""),
-            "num_injected_attention_layers": result.get("num_injected_attention_layers", 0),
-            "lora_params":                   result.get("lora_params", 0),
-            "error":                         result.get("error", ""),
-            "path":                          result.get("path", ""),
-            "timestamp":                     result.get("finished_at", time.time()),
+            "status": result.get("status", "UNKNOWN"),
+            "accuracy_pct": result.get("accuracy_pct", result.get("accuracy", 0.0)),
+            "f1_score": result.get("f1_score", result.get("f1", 0.0)),
+            "f1_macro": result.get("f1_macro", 0.0),
+            "precision": result.get("precision", 0.0),
+            "recall": result.get("recall", 0.0),
+            "val_loss": result.get("val_loss", 0.0),
+            "elapsed_s": result.get("elapsed_s", 0.0),
+            "peak_vram_mb": result.get("peak_vram_mb", 0.0),
+            "tokens_per_sec": (
+                result.get("tokens_per_sec")
+                if result.get("tokens_per_sec") is not None
+                else result.get("throughput_tok_per_sec", 0.0)
+            ),
+            "latency_ms_per_token": result.get(
+                "latency_ms_per_token", result.get("latency_ms", 0.0)
+            ),
+            "throughput_tok_per_sec": result.get(
+                "throughput_tok_per_sec", result.get("tokens_per_sec", 0.0)
+            ),
+            "perplexity": result.get("perplexity", ""),
+            "ppl_status": result.get("ppl_status", ""),
+            "long_context_accuracy": result.get("long_context_accuracy", ""),
+            "calibration_time_s": result.get("calibration_time_s", 0.0),
+            "recovery_time_s": result.get("recovery_time_s", 0.0),
+            "total_params_before": result.get(
+                "total_params_before", result.get("params_before", 0)
+            ),
+            "total_params_after": result.get(
+                "total_params_after", result.get("params_after", 0)
+            ),
+            "trainable_recovery_params": result.get("trainable_recovery_params", 0),
+            "compression_rate": result.get(
+                "compression_rate", result.get("compression_ratio", 1.0)
+            ),
+            "compression_ratio_pct": result.get("compression_ratio_pct", 0.0),
+            "flops_reduction_pct": result.get("flops_reduction_pct", 0.0),
+            "num_compressed_layers": result.get("num_compressed_layers", 0),
+            "num_fallback_layers": result.get("num_fallback_layers", 0),
+            "avg_reconstruction_error": result.get("avg_reconstruction_error", ""),
+            "weighted_reconstruction_error": result.get(
+                "weighted_reconstruction_error", ""
+            ),
+            "num_injected_attention_layers": result.get(
+                "num_injected_attention_layers", 0
+            ),
+            "lora_params": result.get("lora_params", 0),
+            "error": result.get("error", ""),
+            "path": result.get("path", ""),
+            "timestamp": result.get("finished_at", time.time()),
         }
         with csv_write_lock:
             summary_dict[name] = row
@@ -4353,6 +5731,7 @@ def main():
                 try:
                     with path.open("r", encoding="utf8") as f:
                         import csv
+
                         reader = csv.DictReader(f)
                         for r in reader:
                             if r.get("module_name"):
@@ -4363,14 +5742,17 @@ def main():
             tmp = path.with_suffix(".tmp")
             with tmp.open("w", newline="", encoding="utf8") as f:
                 import csv
+
                 w = csv.DictWriter(f, fieldnames=FIELDS, extrasaction="ignore")
                 w.writeheader()
                 for m in existing_rows:
                     w.writerow(existing_rows[m])
             if tmp.exists():
                 if path.exists():
-                    try: path.unlink()
-                    except Exception as e: LOG.debug("Failed to unlink %s: %s", path, e)
+                    try:
+                        path.unlink()
+                    except Exception as e:
+                        LOG.debug("Failed to unlink %s: %s", path, e)
                 tmp.rename(path)
         clear_vram_between_modules()
         return row
@@ -4378,7 +5760,9 @@ def main():
     if len(names) <= 10:
         pending_names = [n for n in names if n not in existing]
     else:
-        pending_names = [n for n in names if n not in existing and n not in BLOCKED_MODULES]
+        pending_names = [
+            n for n in names if n not in existing and n not in BLOCKED_MODULES
+        ]
 
     # for n in names:
     #     if n in existing:
@@ -4388,15 +5772,27 @@ def main():
 
     workers = max(1, getattr(args, "parallel", 1))
     from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+
     # Force dynamic module discovery to populate ATTENTION_REGISTRY and COMPRESSOR_REGISTRY
     _ = modules()
-    attention_modules = [name for name in pending_names if name in ATTENTION_REGISTRY or name == "full"]
-    compressor_modules = [name for name in pending_names if name in COMPRESSOR_REGISTRY and name not in attention_modules]
+    attention_modules = [
+        name for name in pending_names if name in ATTENTION_REGISTRY or name == "full"
+    ]
+    compressor_modules = [
+        name
+        for name in pending_names
+        if name in COMPRESSOR_REGISTRY and name not in attention_modules
+    ]
 
     if compressor_modules:
-        LOG.info("Running %d compressor modules via isolated subprocesses (workers=%d)", len(compressor_modules), workers)
+        LOG.info(
+            "Running %d compressor modules via isolated subprocesses (workers=%d)",
+            len(compressor_modules),
+            workers,
+        )
         if workers > 1:
             from concurrent.futures import ThreadPoolExecutor
+
             with ThreadPoolExecutor(max_workers=workers) as executor:
                 list(executor.map(_execute_single, compressor_modules))
         else:
@@ -4404,7 +5800,10 @@ def main():
                 _execute_single(name)
 
     if attention_modules:
-        LOG.info("Running %d attention modules in-memory sequentially", len(attention_modules))
+        LOG.info(
+            "Running %d attention modules in-memory sequentially",
+            len(attention_modules),
+        )
         args.modules = attention_modules
         run_single_module_main(args)
 
@@ -4414,11 +5813,13 @@ def main():
             try:
                 with path.open("r", encoding="utf8") as f:
                     import csv
+
                     reader = csv.DictReader(f)
                     for r in reader:
                         summary_dict[r["module_name"]] = r
             except Exception:
                 pass
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

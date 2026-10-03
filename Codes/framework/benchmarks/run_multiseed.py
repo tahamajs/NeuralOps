@@ -10,6 +10,7 @@ Outputs:
   - results/multiseed/{seed}/{module}.json
   - results/multiseed/final_summary.csv with columns: module, mean_acc, std_acc, mean_f1, std_f1
 """
+
 from __future__ import annotations
 
 import argparse
@@ -24,8 +25,8 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from datasets import load_dataset, load_from_disk
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
-from datasets import load_from_disk, load_dataset
 
 HERE = Path(__file__).resolve().parent
 CODES = HERE.parent
@@ -34,10 +35,12 @@ sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "Codes")]
 
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.eval_all_models_datasets import apply_module_to_model
-from framework.run_quality_sweep import prepare_eval_batches, evaluate_comprehensive
+from framework.run_quality_sweep import evaluate_comprehensive, prepare_eval_batches
 
 LOG = logging.getLogger("MultiSeedRunner")
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
 
 SEEDS = [42, 123, 456]
 TARGET_MODULES = ["dense", "a3", "kmeans", "aasvd", "adaptive_svd", "adaptive"]
@@ -60,26 +63,60 @@ def parse_args():
         description="Run multi-seed statistical confidence benchmarks",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--model_path", type=str, default="models/distilbert_mnli_full",
-                        help="Path to fine-tuned model checkpoint")
-    parser.add_argument("--dataset_dir", type=str, default="Codes/framework/data/glue_data/mnli",
-                        help="Path to MNLI dataset directory")
-    parser.add_argument("--output_dir", type=str, default="results/06_multiseed/multiseed",
-                        help="Directory to save multi-seed results")
-    parser.add_argument("--seeds", type=str, default="42,123,456",
-                        help="List or comma-separated string of random seeds")
-    parser.add_argument("--modules", type=str, default="dense,a3,kmeans,aasvd,adaptive_svd,adaptive",
-                        help="List or comma-separated string of modules to evaluate")
-    parser.add_argument("--rank", type=int, default=64,
-                        help="Target rank for low-rank decomposition")
-    parser.add_argument("--batch_size", type=int, default=None,
-                        help="Batch size for validation (auto-sizes to 32/16/8 based on VRAM if not specified)")
-    parser.add_argument("--dataset", type=str, default="mnli",
-                        help="Target dataset (default: mnli)")
-    parser.add_argument("--parallel", type=int, default=1,
-                        help="Number of parallel evaluations (1 for deterministic single GPU)")
-    parser.add_argument("--dry_run", action="store_true", default=False,
-                        help="Print planned evaluation matrix without running")
+    parser.add_argument(
+        "--model_path",
+        type=str,
+        default="models/distilbert_mnli_full",
+        help="Path to fine-tuned model checkpoint",
+    )
+    parser.add_argument(
+        "--dataset_dir",
+        type=str,
+        default="Codes/framework/data/glue_data/mnli",
+        help="Path to MNLI dataset directory",
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default="results/06_multiseed/multiseed",
+        help="Directory to save multi-seed results",
+    )
+    parser.add_argument(
+        "--seeds",
+        type=str,
+        default="42,123,456",
+        help="List or comma-separated string of random seeds",
+    )
+    parser.add_argument(
+        "--modules",
+        type=str,
+        default="dense,a3,kmeans,aasvd,adaptive_svd,adaptive",
+        help="List or comma-separated string of modules to evaluate",
+    )
+    parser.add_argument(
+        "--rank", type=int, default=64, help="Target rank for low-rank decomposition"
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=None,
+        help="Batch size for validation (auto-sizes to 32/16/8 based on VRAM if not specified)",
+    )
+    parser.add_argument(
+        "--dataset", type=str, default="mnli", help="Target dataset (default: mnli)"
+    )
+    parser.add_argument(
+        "--parallel",
+        type=int,
+        default=1,
+        help="Number of parallel evaluations (1 for deterministic single GPU)",
+    )
+    parser.add_argument(
+        "--dry_run",
+        action="store_true",
+        default=False,
+        help="Print planned evaluation matrix without running",
+    )
     args = parser.parse_args()
 
     if isinstance(args.seeds, str):
@@ -101,8 +138,10 @@ def main():
         if device.type == "cuda":
             try:
                 free_bytes, _ = torch.cuda.mem_get_info()
-                free_gb = free_bytes / (1024 ** 3)
-                args.batch_size = 32 if free_gb >= 6.0 else (16 if free_gb >= 4.0 else 8)
+                free_gb = free_bytes / (1024**3)
+                args.batch_size = (
+                    32 if free_gb >= 6.0 else (16 if free_gb >= 4.0 else 8)
+                )
             except Exception:
                 args.batch_size = 16
         else:
@@ -120,7 +159,9 @@ def main():
         print("\n[DRY RUN] Planned multi-seed trials:")
         for seed in args.seeds:
             for mod in args.modules:
-                print(f"  Seed: {seed} | Module: {mod:<15} | Out: {args.output_dir}/{seed}/{mod}.json")
+                print(
+                    f"  Seed: {seed} | Module: {mod:<15} | Out: {args.output_dir}/{seed}/{mod}.json"
+                )
         print("\n[DRY RUN COMPLETE] No sweeps were executed.")
         return
 
@@ -133,10 +174,14 @@ def main():
         ds = load_from_disk(args.dataset_dir)
     else:
         ds = load_dataset("glue", "mnli")
-    val_split = ds["validation_matched"] if "validation_matched" in ds else ds["validation"]
+    val_split = (
+        ds["validation_matched"] if "validation_matched" in ds else ds["validation"]
+    )
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_path)
-    eval_batches = prepare_eval_batches(tokenizer, val_split, "mnli", 128, args.batch_size, device)
+    eval_batches = prepare_eval_batches(
+        tokenizer, val_split, "mnli", 128, args.batch_size, device
+    )
     LOG.info("Prepared %d validation batches for MNLI evaluation", len(eval_batches))
 
     # Store runs: module -> list of accuracies and F1s
@@ -154,7 +199,9 @@ def main():
             t0 = time.time()
 
             try:
-                model = AutoModelForSequenceClassification.from_pretrained(args.model_path)
+                model = AutoModelForSequenceClassification.from_pretrained(
+                    args.model_path
+                )
                 model.eval()
                 model.to(device)
 
@@ -167,8 +214,15 @@ def main():
                     model.to(device)
 
                 eval_res = evaluate_comprehensive(
-                    model, tokenizer, val_split, "mnli", 128, args.batch_size, device,
-                    fp16=True, precomputed_batches=eval_batches
+                    model,
+                    tokenizer,
+                    val_split,
+                    "mnli",
+                    128,
+                    args.batch_size,
+                    device,
+                    fp16=True,
+                    precomputed_batches=eval_batches,
                 )
                 acc = float(eval_res["accuracy_pct"])
                 f1 = float(eval_res["f1_score"])
@@ -203,18 +257,29 @@ def main():
             if fpath.exists():
                 try:
                     d = json.loads(fpath.read_text(encoding="utf-8"))
-                    trial_rows.append({
-                        "module_name": mod,
-                        "seed": seed,
-                        "accuracy_pct": d.get("accuracy_pct", 0.0),
-                        "f1_score": d.get("f1_score", 0.0),
-                        "peak_vram_mb": d.get("peak_vram_mb", 0.0),
-                    })
+                    trial_rows.append(
+                        {
+                            "module_name": mod,
+                            "seed": seed,
+                            "accuracy_pct": d.get("accuracy_pct", 0.0),
+                            "f1_score": d.get("f1_score", 0.0),
+                            "peak_vram_mb": d.get("peak_vram_mb", 0.0),
+                        }
+                    )
                 except Exception:
                     pass
 
     with open(out_dir / "summary.csv", "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["module_name", "seed", "accuracy_pct", "f1_score", "peak_vram_mb"])
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "module_name",
+                "seed",
+                "accuracy_pct",
+                "f1_score",
+                "peak_vram_mb",
+            ],
+        )
         writer.writeheader()
         for r in trial_rows:
             writer.writerow(r)
@@ -229,17 +294,29 @@ def main():
         mean_f1 = round(float(np.mean(f1s)), 4) if f1s else 0.0
         std_f1 = round(float(np.std(f1s)), 4) if f1s else 0.0
 
-        summary_rows.append({
-            "module": mod,
-            "mean_acc": mean_acc,
-            "std_acc": std_acc,
-            "mean_f1": mean_f1,
-            "std_f1": std_f1,
-            "num_seeds": len(accs),
-        })
+        summary_rows.append(
+            {
+                "module": mod,
+                "mean_acc": mean_acc,
+                "std_acc": std_acc,
+                "mean_f1": mean_f1,
+                "std_f1": std_f1,
+                "num_seeds": len(accs),
+            }
+        )
 
     with open(summary_csv, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["module", "mean_acc", "std_acc", "mean_f1", "std_f1", "num_seeds"])
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "module",
+                "mean_acc",
+                "std_acc",
+                "mean_f1",
+                "std_f1",
+                "num_seeds",
+            ],
+        )
         writer.writeheader()
         for r in summary_rows:
             writer.writerow(r)
