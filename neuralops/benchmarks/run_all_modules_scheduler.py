@@ -25,8 +25,8 @@ logger = logging.getLogger("KDScheduler")
 
 GPU_SSH = "gpu"
 PROJECT_DIR = "D:/SVD_Project"
-LOCAL_RESULTS = Path("results/kd_runs")
-REMOTE_RESULTS = f"{PROJECT_DIR}/results/kd_runs"
+LOCAL_RESULTS = Path("results/06_adhoc_experiments/kd_runs")
+REMOTE_RESULTS = f"{PROJECT_DIR}/results/06_adhoc_experiments/kd_runs"
 MASTER_MD_PATH = LOCAL_RESULTS / "ALL_MODULES_MASTER.md"
 MASTER_JSON_PATH = LOCAL_RESULTS / "ALL_MODULES_MASTER.json"
 
