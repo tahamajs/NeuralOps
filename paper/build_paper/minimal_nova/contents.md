@@ -24,7 +24,7 @@ FactorisedLinear:
 ### ۲. **Energy-Adaptive Rank** (نوآوری اصلی)
 ```python
 # در decompose_from_weight:
-cum_energy = cumsum(S^2) / sum(S^2)
+cum_energy = cumsum(S ^ 2) / sum(S ^ 2)
 calc_rank = int((cum_energy < target_energy).sum()) + 1
 r = min(self.rank, calc_rank, ...)
 ```
@@ -850,7 +850,7 @@ $$
 (Conv1D stores this transposed.) MinimalNOVA splits:
 
 ```python
-w = src.c_attn.weight.t()   # (3d, d)
+w = src.c_attn.weight.t()  # (3d, d)
 q_w, k_w, v_w = w.chunk(3, dim=0)
 ```
 
@@ -1089,7 +1089,7 @@ transformer.h.0.attn
    ```python
    w = src.c_attn.weight.data.clone()
    if "Conv1D" in type(src.c_attn).__name__:
-       w = w.t()   # (in, out) → (out, in)
+       w = w.t()  # (in, out) → (out, in)
    q_w, k_w, v_w = w.chunk(3, dim=0)
    ```
 
@@ -1118,7 +1118,7 @@ MinimalNOVA factorizes each at its natural dimension. During forward:
 
 ```python
 if self.num_kv_heads < self.num_heads:
-    K = repeat_kv(K, self.kv_repeat)   # (B, 2, N, 256) → (B, 8, N, 256)
+    K = repeat_kv(K, self.kv_repeat)  # (B, 2, N, 256) → (B, 8, N, 256)
     V = repeat_kv(V, self.kv_repeat)
 ```
 
@@ -2076,6 +2076,7 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
@@ -2451,7 +2452,7 @@ class FactorisedLinear(nn.Module):
 def decompose_from_weight(self, weight, bias=None, energy=None):
     with torch.no_grad():
         W = weight.float()
-        
+
         # Handle KV dimension matching for GQA
         if W.shape[0] < self.out_features and self.out_features % W.shape[0] == 0:
             rep = self.out_features // W.shape[0]
@@ -2459,29 +2460,29 @@ def decompose_from_weight(self, weight, bias=None, energy=None):
         elif W.shape[0] > self.out_features and W.shape[0] % self.out_features == 0:
             rep = W.shape[0] // self.out_features
             W = W.view(self.out_features, rep, -1).mean(dim=1)
-        
+
         # SVD
         U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-        
+
         # Energy-based rank selection
         target_energy = energy if energy is not None else self.energy
-        total_energy = (S ** 2).sum()
-        cum_energy = torch.cumsum(S ** 2, dim=0) / (total_energy + 1e-12)
+        total_energy = (S**2).sum()
+        cum_energy = torch.cumsum(S**2, dim=0) / (total_energy + 1e-12)
         calc_rank = int((cum_energy < target_energy).sum().item()) + 1
         r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
         r = max(1, r)
-        
+
         # Symmetric factorization
         sqrt_s = torch.sqrt(S[:r])
         A = (U[:, :r] * sqrt_s).to(self.up.weight.dtype)
         B = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype)
-        
+
         # Store
         self.up.weight.data.zero_()
         self.down.weight.data.zero_()
         self.up.weight.data[:, :r] = A
         self.down.weight.data[:r, :] = B
-        
+
         self.freeze_base_weights()
 ```
 
@@ -2569,7 +2570,7 @@ if hasattr(src, "c_attn"):
     c_attn_mod = src.c_attn
     base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
     weight = base_c.weight.data.clone()
-    
+
     # Conv1D stores (in, out)
     is_conv1d = (
         "Conv1D" in type(c_attn_mod).__name__
@@ -2578,12 +2579,12 @@ if hasattr(src, "c_attn"):
         or hasattr(base_c, "nf")
     )
     if is_conv1d:
-        weight = weight.t()   # (out, in)
-    
+        weight = weight.t()  # (out, in)
+
     split_size = weight.shape[0] // 3
     q_w = weight[:split_size, :]
-    k_w = weight[split_size:2*split_size, :]
-    v_w = weight[2*split_size:, :]
+    k_w = weight[split_size : 2 * split_size, :]
+    v_w = weight[2 * split_size :, :]
 ```
 
 ## B.6 Nested Encoder Bypass
@@ -2591,7 +2592,7 @@ if hasattr(src, "c_attn"):
 ```python
 # In forward:
 if self.is_nested_encoder:
-    return context, attn_weights   # No out_proj
+    return context, attn_weights  # No out_proj
 else:
     output = self.out_proj(context)
     return output, attn_weights
@@ -2603,18 +2604,18 @@ else:
 
 ```python
 # WRONG
-w = src.c_attn.weight    # shape (in, out) — wrong orientation
+w = src.c_attn.weight  # shape (in, out) — wrong orientation
 
 # RIGHT
 if is_conv1d:
-    w = w.t()    # (out, in)
+    w = w.t()  # (out, in)
 ```
 
 ### B.7.2 Nested Encoder Wrong Flag
 
 ```python
 # WRONG (RoBERTa)
-self.is_nested_encoder = False   # out_proj applied twice → collapse
+self.is_nested_encoder = False  # out_proj applied twice → collapse
 
 # RIGHT
 self.is_nested_encoder = True
@@ -2635,7 +2636,7 @@ if w_norm < 1e-4:
 self.lora_B = nn.Parameter(torch.randn(...))
 
 # RIGHT
-self.lora_B = nn.Parameter(torch.zeros(...))   # B = 0 at init
+self.lora_B = nn.Parameter(torch.zeros(...))  # B = 0 at init
 ```
 ```
 
@@ -3018,12 +3019,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -3050,8 +3064,15 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
     if to_pdf:
         try:
             subprocess.run(
-                ["pandoc", str(output), "-o", str(output.with_suffix(".pdf")),
-                 "--pdf-engine=xelatex", "-V", "geometry:margin=1in"],
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
                 check=True,
             )
             print(f"PDF: {output.with_suffix('.pdf')}")

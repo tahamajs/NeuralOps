@@ -10,27 +10,35 @@
 
 ```python
 class DobiSVDLinearLayer(nn.Module):
-    def __init__(self, in_features, out_features, rank, bias=True,
-                 init_gate_val=2.5, dtype=torch.float32, device=None):
+    def __init__(
+        self,
+        in_features,
+        out_features,
+        rank,
+        bias=True,
+        init_gate_val=2.5,
+        dtype=torch.float32,
+        device=None,
+    ):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.rank = max(1, min(rank, in_features, out_features))
-        
+
         self.V = nn.Parameter(torch.empty(self.rank, in_features, ...))
         self.U = nn.Parameter(torch.empty(out_features, self.rank, ...))
         self.gate = nn.Parameter(torch.full((self.rank,), init_gate_val, ...))
-        
+
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, ...))
-        
+
         self.reset_parameters()
-    
+
     def forward(self, x):
         if x.shape[-1] != self.in_features:
             # Pad or truncate
             ...
-        g = torch.sigmoid(self.gate).unsqueeze(1)   # (rank, 1)
+        g = torch.sigmoid(self.gate).unsqueeze(1)  # (rank, 1)
         V_gated = self.V * g
         latent = F.linear(x, V_gated)
         out = F.linear(latent, self.U, self.bias)
@@ -47,10 +55,13 @@ U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
 V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :] * init_gate_scale).to(dtype=dtype, device=device)
 
 dobi_layer = DobiSVDLinearLayer(
-    in_features=in_f, out_features=out_f, rank=r,
+    in_features=in_f,
+    out_features=out_f,
+    rank=r,
     bias=target_mod.bias is not None,
     init_gate_val=self.init_gate_val,
-    dtype=dtype, device=device,
+    dtype=dtype,
+    device=device,
 )
 dobi_layer.set_low_rank_factors(U_r, V_r)
 ```
@@ -58,7 +69,7 @@ dobi_layer.set_low_rank_factors(U_r, V_r)
 ## B.3 Reconstruction Validation
 
 ```python
-W_recon = dobi_layer.weight.float()   # This uses sigmoid(gate) internally
+W_recon = dobi_layer.weight.float()  # This uses sigmoid(gate) internally
 err = float(torch.norm(W - W_recon, p="fro").item() / norm_w)
 ```
 
@@ -101,8 +112,7 @@ class DobiSVDCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("dobi")
 @COMPRESSOR_REGISTRY.register("dobi_svd")
 @COMPRESSOR_REGISTRY.register("dobi_compressor")
-def dobi_factory(model, comp_config, **kwargs):
-    ...
+def dobi_factory(model, comp_config, **kwargs): ...
 ```
 
 ## B.6 Post-Hoc Pruning Script
@@ -153,7 +163,7 @@ When a layer is wrapped in `LoRALinear`:
 
 ```python
 if hasattr(module, "base_layer"):
-    module.base_layer = new_layer   # Preserve wrapper
+    module.base_layer = new_layer  # Preserve wrapper
     # LoRA stays trainable
     for p_name, p in module.named_parameters():
         if "lora_" in p_name.lower():
@@ -178,7 +188,7 @@ When `fallback_to_original = True` and error exceeds threshold:
 ```python
 self.fallback_layers.append(name)
 for p in module.parameters():
-    p.requires_grad = False   # Freeze the original layer
+    p.requires_grad = False  # Freeze the original layer
 ```
 
 This ensures recovery training does not touch fallback layers.

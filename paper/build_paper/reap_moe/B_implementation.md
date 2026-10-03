@@ -8,14 +8,14 @@ class REAPMoE(nn.Module):
         self.router_ln = nn.LayerNorm(d_model)
         self.router = nn.Linear(d_model, n_experts, bias=False)
         nn.init.uniform_(self.router.weight, -0.01, 0.01)
-        
+
         expert_layer = lambda: nn.Sequential(
-            SVDLinear(d_model, 2*d_model, rank=d_model//4),
+            SVDLinear(d_model, 2 * d_model, rank=d_model // 4),
             nn.GELU(),
-            SVDLinear(2*d_model, d_model, rank=d_model//4),
+            SVDLinear(2 * d_model, d_model, rank=d_model // 4),
         )
         self.experts = nn.ModuleList([expert_layer() for _ in range(n_experts)])
-        
+
         # Zero-init final layer
         for exp in self.experts:
             final = exp[-1]
@@ -134,7 +134,7 @@ experts_out = torch.stack([e(x) for e in self.experts], dim=2)
 for name, mod in model.named_modules():
     if isinstance(mod, REAPMoE):
         density = ...
-        print(f'{name}: density={density}')
+        print(f"{name}: density={density}")
 ```
 
 ---

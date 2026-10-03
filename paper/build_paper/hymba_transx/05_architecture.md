@@ -15,6 +15,7 @@
 
 ```python
 from framework.core.adapters import UniversalAdapter
+
 adapter = UniversalAdapter()
 for k in ["q", "k", "v", "o"]:
     w, b = adapter.get_weight_bias(src, k)
@@ -24,7 +25,8 @@ for k in ["q", "k", "v", "o"]:
 
 ```python
 c_w = src.c_attn.weight  # (in, out) for Conv1D
-if c_w.shape[0] < c_w.shape[1]: c_w = c_w.t()
+if c_w.shape[0] < c_w.shape[1]:
+    c_w = c_w.t()
 q_w, k_w, v_w = c_w.chunk(3, dim=0)
 o_w = src.c_proj.weight.t()
 ```
@@ -53,8 +55,9 @@ o_w = src.out_lin.weight
 Unlike SOA Fused Attention, we do **not** raise on missing weights. Instead:
 
 ```python
-missing_after = [k for k, (w, _) in extracted.items() 
-                 if w is None and (k != "o" or not self.is_nested_encoder)]
+missing_after = [
+    k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)
+]
 if missing_after:
     logger.warning(f"Missing {missing_after}, keeping Kaiming defaults.")
 ```

@@ -868,8 +868,7 @@ recommend adding a check if re-injection is a concern.
 ```python
 @ATTENTION_REGISTRY.register("hgrn2_layer")
 @ATTENTION_REGISTRY.register("hgrn2")
-class HGRN2Layer(BaseAttention):
-    ...
+class HGRN2Layer(BaseAttention): ...
 ```
 
 ## 5.10 Design Notes
@@ -1496,6 +1495,7 @@ python run_all_4_hgrn2.py --is_decoder true   # causal
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
@@ -1842,35 +1842,34 @@ def _scan_direction(self, f, iv, chunk_size=32):
     f_fp32 = f.float()
     iv_fp32 = iv.float()
     log_f = torch.log(f_fp32.clamp(min=1e-6))
-    
+
     h_chunks = []
     h_prev = torch.zeros(B, D, device=iv.device, dtype=torch.float32)
-    
+
     for start in range(0, L, chunk_size):
         end = min(start + chunk_size, L)
         C = end - start
-        
-        f_c = log_f[:, start:end]           # (B, C, D)
-        iv_c = iv_fp32[:, start:end]        # (B, C, D)
-        
-        A = torch.cumsum(f_c, dim=1)        # (B, C, D)
-        A_diff = A.unsqueeze(2) - A.unsqueeze(1)   # (B, C, C, D)
-        
+
+        f_c = log_f[:, start:end]  # (B, C, D)
+        iv_c = iv_fp32[:, start:end]  # (B, C, D)
+
+        A = torch.cumsum(f_c, dim=1)  # (B, C, D)
+        A_diff = A.unsqueeze(2) - A.unsqueeze(1)  # (B, C, C, D)
+
         mask = torch.tril(torch.ones(C, C, device=iv.device, dtype=torch.bool))
-        A_diff = torch.where(mask.unsqueeze(0).unsqueeze(-1), A_diff, 
-                             torch.full_like(A_diff, -1e4))
-        
+        A_diff = torch.where(mask.unsqueeze(0).unsqueeze(-1), A_diff, torch.full_like(A_diff, -1e4))
+
         decay_weights = torch.exp(A_diff) * mask.unsqueeze(0).unsqueeze(-1)
         intra = torch.sum(decay_weights * iv_c.unsqueeze(1), dim=2)
         inter = h_prev.unsqueeze(1) * torch.exp(A)
         h_c = inter + intra
-        
+
         if self.res_clip is not None and self.res_clip > 0:
             h_c = torch.clamp(h_c, -self.res_clip, self.res_clip)
-        
+
         h_chunks.append(h_c)
         h_prev = h_c[:, -1]
-    
+
     return torch.cat(h_chunks, dim=1).to(iv.dtype)
 ```
 
@@ -2206,12 +2205,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2237,12 +2249,18 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
 
     if to_pdf:
         try:
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
+            subprocess.run(
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
+                check=True,
+            )
             print(f"PDF: {output.with_suffix('.pdf')}")
         except Exception as e:
             print(f"PDF skipped: {e}")

@@ -109,7 +109,7 @@ Docstring می‌گوید `returning None on failure` ولی code raise می‌�
 
 ### ۳. `output_scale` پارامتر جدید
 ```python
-if not hasattr(self, 'output_scale'):
+if not hasattr(self, "output_scale"):
     self.output_scale = nn.Parameter(torch.ones(1))
 ```
 در checkpoint baseline وجود ندارد. `strict=True` می‌شکند.

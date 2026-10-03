@@ -5,43 +5,41 @@
 ```python
 def forward(self, hidden_states, attention_mask=None, **kwargs):
     B, L, D = hidden_states.shape
-    
+
     # 1. Project
     q = self.q_lin(hidden_states).view(B, L, H, Dh).transpose(1, 2)
     k = self.k_lin(hidden_states).view(B, L, H_kv, Dh).transpose(1, 2)
     v = self.v_lin(hidden_states).view(B, L, H_kv, Dh).transpose(1, 2)
-    
+
     # 2. RoPE
     if position_embeddings is not None:
         q, k = apply_rotary_pos_emb(q, k, cos, sin)
-    
+
     # 3. Compress
-    k, v, top_idx, comp_mask = self._select_compressed_tokens(
-        hidden_states, k, v, attention_mask
-    )
-    
+    k, v, top_idx, comp_mask = self._select_compressed_tokens(hidden_states, k, v, attention_mask)
+
     # 4. GQA
     if H_kv != H:
         k = repeat_kv(k, H // H_kv)
         v = repeat_kv(v, H // H_kv)
-    
+
     # 5. Attention with causal mask
     scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
     if self.is_decoder:
         q_pos = torch.arange(L).view(1, 1, L, 1)
         k_orig_pos = top_idx.unsqueeze(1).unsqueeze(2)
-        causal_mask = (k_orig_pos > q_pos)
+        causal_mask = k_orig_pos > q_pos
         scores = scores.masked_fill(causal_mask, float("-inf"))
-    
+
     # 6. Padding mask
     if comp_mask is not None:
         scores = apply_attention_mask(scores, comp_mask)
-    
+
     # 7. Softmax, context, output
     attn = F.softmax(scores, dim=-1)
     context = torch.matmul(attn, v)
     context = context.transpose(1, 2).contiguous().view(B, L, H * Dh)
-    
+
     return self.out_lin(context), None
 ```
 
@@ -50,27 +48,27 @@ def forward(self, hidden_states, attention_mask=None, **kwargs):
 ```python
 def _select_compressed_tokens(self, x, k_tensor, v_tensor, mask):
     B, L, D = x.shape
-    
-    energy = torch.norm(x.float(), p=2, dim=-1)          # (B, L)
-    learned = self.score_net(x.float()).squeeze(-1)       # (B, L)
+
+    energy = torch.norm(x.float(), p=2, dim=-1)  # (B, L)
+    learned = self.score_net(x.float()).squeeze(-1)  # (B, L)
     total_importance = energy + learned
-    
+
     k_keep = max(1, min(L, max(2, int(math.ceil(L * self.compression_ratio)))))
-    
+
     total_importance[:, 0] = 1e4  # Pin [CLS]
-    
+
     if mask is not None:
         if mask.dim() == 2:
             total_importance = total_importance.masked_fill(mask == 0, -1e4)
         total_importance[:, 0] = 1e4
-    
+
     _, top_indices = torch.topk(total_importance, k_keep, dim=-1)
     top_indices, _ = torch.sort(top_indices, dim=-1)
-    
+
     top_idx_exp = top_indices.unsqueeze(1).unsqueeze(-1).expand(-1, H_kv, -1, Dh)
     k_comp = torch.gather(k_tensor, 2, top_idx_exp)
     v_comp = torch.gather(v_tensor, 2, top_idx_exp)
-    
+
     return k_comp, v_comp, top_indices, comp_mask
 ```
 

@@ -703,8 +703,7 @@ Supports partial RoPE (Qwen3.5 with rotary_dim < head_dim).
 
 ```python
 @ATTENTION_REGISTRY.register("fusion_attn")
-class FUSIONATTN(BaseAttention):
-    ...
+class FUSIONATTN(BaseAttention): ...
 ```
 
 ## 5.8 Failure Modes
@@ -1547,24 +1546,24 @@ gate_scores = gate_scores / (self.gate_temp.abs() + 1e-5)
 ```python
 def _moba_block_attention(self, q, k, v, gate_scores, valid_mask, is_causal):
     B, H, N, D = q.shape
-    
+
     # Pad
     pad_len = (self.block_size - (N % self.block_size)) % self.block_size
     q_pad = F.pad(q, (0, 0, 0, pad_len)) if pad_len > 0 else q
     k_pad = F.pad(k, (0, 0, 0, pad_len)) if pad_len > 0 else k
     v_pad = F.pad(v, (0, 0, 0, pad_len)) if pad_len > 0 else v
-    
+
     num_blocks = q_pad.size(2) // self.block_size
     top_k = min(self.top_k_blocks, num_blocks)
-    
+
     _, top_indices = torch.topk(gate_scores, top_k, dim=-1)
     top_indices[:, :, :, 0] = 0  # Always block 0
-    
+
     # Reshape
     q_blocks = q_pad.reshape(B, H, num_blocks, self.block_size, D)
     k_blocks = k_pad.reshape(B, H, num_blocks, self.block_size, D)
     v_blocks = v_pad.reshape(B, H, num_blocks, self.block_size, D)
-    
+
     # Attention per query block
     out_blocks = []
     for b in range(num_blocks):
@@ -1572,26 +1571,28 @@ def _moba_block_attention(self, q, k, v, gate_scores, valid_mask, is_causal):
         idx_exp = idx_b.unsqueeze(-1).unsqueeze(-1).expand(B, H, top_k, self.block_size, D)
         k_sel = torch.gather(k_blocks, 2, idx_exp).reshape(B, H, top_k * self.block_size, D)
         v_sel = torch.gather(v_blocks, 2, idx_exp).reshape(B, H, top_k * self.block_size, D)
-        
+
         q_curr = q_blocks[:, :, b, :, :]
         attn_b = torch.matmul(q_curr.float(), k_sel.float().transpose(-2, -1)) / math.sqrt(D)
-        
+
         if is_causal:
-            causal_b = torch.triu(torch.full((self.block_size, top_k * self.block_size), float("-inf")), diagonal=1)
+            causal_b = torch.triu(
+                torch.full((self.block_size, top_k * self.block_size), float("-inf")), diagonal=1
+            )
             attn_b = attn_b + causal_b.unsqueeze(0).unsqueeze(0)
-        
+
         if valid_mask is not None:
             pad_m = (~valid_mask).unsqueeze(1).unsqueeze(2)
             if pad_m.shape[-1] < k_sel.shape[2]:
                 pad_m = F.pad(pad_m, (0, k_sel.shape[2] - pad_m.shape[-1]), value=True)
-            attn_b = attn_b.masked_fill(pad_m[:, :, :, :k_sel.shape[2]], float("-inf"))
-        
+            attn_b = attn_b.masked_fill(pad_m[:, :, :, : k_sel.shape[2]], float("-inf"))
+
         attn_b = F.softmax(attn_b, dim=-1)
         attn_b = torch.nan_to_num(attn_b, nan=0.0)
         attn_b = self.dropout(attn_b)
         out_b = torch.matmul(attn_b.to(v_sel.dtype), v_sel)
         out_blocks.append(out_b)
-    
+
     out_pad = torch.cat(out_blocks, dim=2)
     return out_pad[:, :, :N, :]
 ```

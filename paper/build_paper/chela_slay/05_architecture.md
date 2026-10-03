@@ -112,8 +112,7 @@ appropriate because the hybrid attention is complex.
 ```python
 @ATTENTION_REGISTRY.register("chela_slay")
 @ATTENTION_REGISTRY.register("chela_slay_attention")
-class ChelaSlayAttention(BaseAttention):
-    ...
+class ChelaSlayAttention(BaseAttention): ...
 ```
 
 ---

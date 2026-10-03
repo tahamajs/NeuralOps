@@ -32,6 +32,7 @@ python run_all_4_flash3.py \
 
 ```python
 from framework.attentions.flash_attention3 import FLASH_ATTN_AVAILABLE
+
 print("FlashAttention available:", FLASH_ATTN_AVAILABLE)
 ```
 

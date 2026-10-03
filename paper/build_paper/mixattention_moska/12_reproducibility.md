@@ -31,6 +31,7 @@ python run_all_4_fasa.py \
 
 ```python
 from huggingface_hub import hf_hub_download
+
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
         repo_id=f"efficiency-lab/svd-linear-attention-{model}-fasa",

@@ -717,7 +717,7 @@ if is_conv1d:
 
 ```python
 if self.is_nested_encoder:
-    out = context   # Skip out_proj
+    out = context  # Skip out_proj
 else:
     out = self.out_proj(context)
 ```
@@ -928,7 +928,7 @@ context = torch.matmul(attn_weights, V)
 context = context.transpose(1, 2).contiguous().view(...)
 
 if self.is_nested_encoder:
-    return context, None    # Skip out_proj
+    return context, None  # Skip out_proj
 else:
     return self.out_proj(context), None
 ```
@@ -1782,9 +1782,12 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 torch.backends.cudnn.deterministic = True
 ```
 
@@ -1800,6 +1803,7 @@ torch.backends.cudnn.deterministic = True
 
 ```python
 from huggingface_hub import hf_hub_download
+
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
         repo_id=f"efficiency-lab/svd-linear-attention-{model}-nystrom",
@@ -2255,7 +2259,7 @@ def forward(self, hidden_states, attention_mask=None, ...):
 ```python
 m = min(self.num_landmarks, N)
 
-Q_flat = Q.reshape(B * H, N, d).transpose(1, 2)   # (BH, d, N)
+Q_flat = Q.reshape(B * H, N, d).transpose(1, 2)  # (BH, d, N)
 K_flat = K.reshape(B * H, N, d).transpose(1, 2)
 
 Q_landmarks = F.adaptive_avg_pool1d(Q_flat, m).transpose(1, 2).reshape(B, H, m, d)
@@ -2716,12 +2720,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2748,8 +2765,15 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
     if to_pdf:
         try:
             subprocess.run(
-                ["pandoc", str(output), "-o", str(output.with_suffix(".pdf")),
-                 "--pdf-engine=xelatex", "-V", "geometry:margin=1in"],
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
                 check=True,
             )
             print(f"PDF: {output.with_suffix('.pdf')}")

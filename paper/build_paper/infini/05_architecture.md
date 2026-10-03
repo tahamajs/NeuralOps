@@ -79,13 +79,18 @@ Direct copy from `q_proj/k_proj/v_proj/o_proj`; RoPE preserved via
 
 ```python
 cls_name = src.__class__.__name__
-has_out = (hasattr(src, "dense") or hasattr(src, "out_proj")
-           or hasattr(src, "out_lin") or hasattr(src, "c_proj")
-           or hasattr(src, "o_proj"))
+has_out = (
+    hasattr(src, "dense")
+    or hasattr(src, "out_proj")
+    or hasattr(src, "out_lin")
+    or hasattr(src, "c_proj")
+    or hasattr(src, "o_proj")
+)
 
 is_nested = False
-if (cls_name in ["BertSelfAttention", "RobertaSelfAttention", ...]
-    or (hasattr(src, "query") and not has_out)):
+if cls_name in ["BertSelfAttention", "RobertaSelfAttention", ...] or (
+    hasattr(src, "query") and not has_out
+):
     is_nested = True
 if hasattr(src, "self") and hasattr(src, "output"):
     is_nested = True
@@ -150,8 +155,7 @@ position $j > i$ is zero.
 ```python
 @ATTENTION_REGISTRY.register("infini")
 @ATTENTION_REGISTRY.register("infini_attention")
-class InfiniAttention(BaseAttention):
-    ...
+class InfiniAttention(BaseAttention): ...
 ```
 
 ## 5.10 Cross-Attention

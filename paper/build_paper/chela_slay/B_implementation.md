@@ -40,14 +40,11 @@ def _spherical_normalize(self, x):
 ```python
 def _yat_feature_map(self, x):
     if self.random_proj.shape[0] != x.shape[-1]:
-        self.random_proj = torch.randn(
-            x.shape[-1], self.feature_dim, 
-            device=x.device, dtype=x.dtype
-        ) * 0.02
+        self.random_proj = (
+            torch.randn(x.shape[-1], self.feature_dim, device=x.device, dtype=x.dtype) * 0.02
+        )
     proj = torch.matmul(x, self.random_proj.to(device=x.device, dtype=x.dtype))
-    return torch.cat([torch.cos(proj), torch.sin(proj)], dim=-1) * (
-        1.0 / (self.feature_dim ** 0.25)
-    )
+    return torch.cat([torch.cos(proj), torch.sin(proj)], dim=-1) * (1.0 / (self.feature_dim**0.25))
 ```
 
 ## B.4 Causal Linear Attention

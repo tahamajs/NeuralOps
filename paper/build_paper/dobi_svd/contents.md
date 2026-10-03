@@ -608,10 +608,10 @@ class DobiSVDLinearLayer(nn.Module):
 
 ```python
 def forward(self, x):
-    g = torch.sigmoid(self.gate).unsqueeze(1)   # (rank, 1)
-    V_gated = self.V * g                         # (rank, in_features)
-    latent = F.linear(x, V_gated)                # (..., rank)
-    out = F.linear(latent, self.U, self.bias)    # (..., out_features)
+    g = torch.sigmoid(self.gate).unsqueeze(1)  # (rank, 1)
+    V_gated = self.V * g  # (rank, in_features)
+    latent = F.linear(x, V_gated)  # (..., rank)
+    out = F.linear(latent, self.U, self.bias)  # (..., out_features)
     return out
 ```
 
@@ -994,6 +994,7 @@ def dobi_factory(model, comp_config, **kwargs):
     compressed_model, stats = compressor.compress()
     return compressed_model
 
+
 @COMPRESSOR_REGISTRY.register("inject_dobi")
 def inject_dobi(model=None, layer=None, **kwargs):
     target = layer if layer is not None else model
@@ -1027,8 +1028,7 @@ For whole-model, it traverses `named_modules()`.
 @COMPRESSOR_REGISTRY.register("dobi_svd_compressor")
 @COMPRESSOR_REGISTRY.register("dobi_factory")
 @COMPRESSOR_REGISTRY.register("dobi_svd_factory")
-def dobi_factory(model, comp_config, **kwargs):
-    ...
+def dobi_factory(model, comp_config, **kwargs): ...
 ```
 
 ## 5.11 Interaction with LoRA Recovery Pipeline
@@ -1839,9 +1839,12 @@ python post_hoc_prune.py --tau 0.7 --output_suffix tau7
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 torch.backends.cudnn.deterministic = True
 ```
 
@@ -1857,6 +1860,7 @@ torch.backends.cudnn.deterministic = True
 
 ```python
 from huggingface_hub import hf_hub_download
+
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
         repo_id=f"efficiency-lab/svd-linear-attention-{model}-dobi",
@@ -2213,10 +2217,13 @@ U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
 V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :] * init_gate_scale).to(dtype=dtype, device=device)
 
 dobi_layer = DobiSVDLinearLayer(
-    in_features=in_f, out_features=out_f, rank=r,
+    in_features=in_f,
+    out_features=out_f,
+    rank=r,
     bias=target_mod.bias is not None,
     init_gate_val=self.init_gate_val,
-    dtype=dtype, device=device,
+    dtype=dtype,
+    device=device,
 )
 dobi_layer.set_low_rank_factors(U_r, V_r)
 ```
@@ -2224,7 +2231,7 @@ dobi_layer.set_low_rank_factors(U_r, V_r)
 ## B.3 Reconstruction Validation
 
 ```python
-W_recon = dobi_layer.weight.float()   # This uses sigmoid(gate) internally
+W_recon = dobi_layer.weight.float()  # This uses sigmoid(gate) internally
 err = float(torch.norm(W - W_recon, p="fro").item() / norm_w)
 ```
 
@@ -2267,8 +2274,7 @@ class DobiSVDCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("dobi")
 @COMPRESSOR_REGISTRY.register("dobi_svd")
 @COMPRESSOR_REGISTRY.register("dobi_compressor")
-def dobi_factory(model, comp_config, **kwargs):
-    ...
+def dobi_factory(model, comp_config, **kwargs): ...
 ```
 
 ## B.6 Post-Hoc Pruning Script
@@ -2319,7 +2325,7 @@ When a layer is wrapped in `LoRALinear`:
 
 ```python
 if hasattr(module, "base_layer"):
-    module.base_layer = new_layer   # Preserve wrapper
+    module.base_layer = new_layer  # Preserve wrapper
     # LoRA stays trainable
     for p_name, p in module.named_parameters():
         if "lora_" in p_name.lower():
@@ -2344,7 +2350,7 @@ When `fallback_to_original = True` and error exceeds threshold:
 ```python
 self.fallback_layers.append(name)
 for p in module.parameters():
-    p.requires_grad = False   # Freeze the original layer
+    p.requires_grad = False  # Freeze the original layer
 ```
 
 This ensures recovery training does not touch fallback layers.
@@ -2717,12 +2723,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2749,8 +2768,15 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
     if to_pdf:
         try:
             subprocess.run(
-                ["pandoc", str(output), "-o", str(output.with_suffix(".pdf")),
-                 "--pdf-engine=xelatex", "-V", "geometry:margin=1in"],
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
                 check=True,
             )
             print(f"PDF: {output.with_suffix('.pdf')}")

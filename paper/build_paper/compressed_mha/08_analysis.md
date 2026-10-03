@@ -43,7 +43,7 @@ this is where compression has the most impact.
 
 An earlier version checked:
 ```python
-if (cls_name.endswith("SelfAttention") and not has_out_proj):
+if cls_name.endswith("SelfAttention") and not has_out_proj:
     is_nested_encoder = True
 ```
 

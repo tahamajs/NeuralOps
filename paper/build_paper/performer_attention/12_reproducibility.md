@@ -30,6 +30,7 @@ python run_all_4_performer.py \
 
 ```python
 from huggingface_hub import hf_hub_download
+
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
         repo_id=f"efficiency-lab/svd-linear-attention-{model}-performer",
@@ -90,7 +91,7 @@ assert (Q_feat >= 0).all(), "Feature map produced negative values!"
 
 ```python
 sd = model.state_dict()
-assert any('omega' in k for k in sd), "omega NOT persisted!"
+assert any("omega" in k for k in sd), "omega NOT persisted!"
 ```
 
 ### Verify Causal Path

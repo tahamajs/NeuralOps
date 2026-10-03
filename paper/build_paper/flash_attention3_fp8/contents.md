@@ -576,10 +576,7 @@ At each forward, we check four conditions:
 
 ```python
 use_fp8_path = (
-    FLASH_ATTN_AVAILABLE
-    and self.use_fp8
-    and q.is_cuda
-    and hasattr(torch, "float8_e4m3fn")
+    FLASH_ATTN_AVAILABLE and self.use_fp8 and q.is_cuda and hasattr(torch, "float8_e4m3fn")
 )
 ```
 
@@ -821,10 +818,14 @@ We use the following logic in `copy_weights`:
 
 ```python
 if hasattr(src, "out_lin"):
-    is_nested = False       # DistilBERT
-elif (hasattr(src, "self") and hasattr(src.self, "query")
-      and hasattr(src, "output") and hasattr(src.output, "dense")):
-    is_nested = True        # RoBERTa
+    is_nested = False  # DistilBERT
+elif (
+    hasattr(src, "self")
+    and hasattr(src.self, "query")
+    and hasattr(src, "output")
+    and hasattr(src.output, "dense")
+):
+    is_nested = True  # RoBERTa
 elif cls_name in ["BertSelfAttention", "RobertaSelfAttention", ...]:
     is_nested = True
 elif cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower():
@@ -955,8 +956,7 @@ or silently produce wrong results. We detect the correct value from
 ```python
 @ATTENTION_REGISTRY.register("flash3_fp8")
 @ATTENTION_REGISTRY.register("flash_attention3_fp8")
-class FlashAttention3FP8(BaseAttention):
-    ...
+class FlashAttention3FP8(BaseAttention): ...
 ```
 
 ## 5.11 Integration with LoRA Recovery
@@ -1739,12 +1739,14 @@ pip install -r requirements.txt
 
 ```python
 import torch
+
 print("CUDA:", torch.cuda.is_available())
 print("GPU:", torch.cuda.get_device_name(0))
 print("Capability:", torch.cuda.get_device_capability(0))
 print("Float8 dtype:", hasattr(torch, "float8_e4m3fn"))
 try:
     import flash_attn
+
     print("flash_attn:", flash_attn.__version__)
 except ImportError:
     print("flash_attn: NOT INSTALLED")
@@ -1801,6 +1803,7 @@ python run_all_4_flash3_fp8.py --use_fp8 false --output_suffix fp8off
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
@@ -2167,12 +2170,12 @@ if out is None:
     else:
         # Combine causal and padding
         if causal_flag:
-            causal_m = torch.triu(
-                torch.full((L, kv_len), float("-inf"), device=device),
-                diagonal=1
+            causal_m = torch.triu(torch.full((L, kv_len), float("-inf"), device=device), diagonal=1)
+            attn_mask = (
+                (attn_mask + causal_m.unsqueeze(0).unsqueeze(0))
+                if attn_mask is not None
+                else causal_m.unsqueeze(0).unsqueeze(0)
             )
-            attn_mask = (attn_mask + causal_m.unsqueeze(0).unsqueeze(0)) \
-                        if attn_mask is not None else causal_m.unsqueeze(0).unsqueeze(0)
         out_sdpa = F.scaled_dot_product_attention(
             q, k, v, attn_mask=attn_mask, is_causal=False, dropout_p=self.dropout.p
         )
@@ -2214,7 +2217,7 @@ else:
 ## B.7 Nested vs Flat Detection
 
 ```python
-if hasattr(src, "out_lin"):        # DistilBERT
+if hasattr(src, "out_lin"):  # DistilBERT
     is_nested = False
 elif hasattr(src, "self") and hasattr(src.self, "query"):  # RoBERTa
     is_nested = True
@@ -2269,6 +2272,7 @@ causal_flag = self.is_decoder and not is_cross_attention and L == kv_len
 ```python
 # Print hardware capabilities
 import torch
+
 print("GPU:", torch.cuda.get_device_name(0))
 print("Capability:", torch.cuda.get_device_capability(0))
 print("Float8 exists:", hasattr(torch, "float8_e4m3fn"))
@@ -2283,8 +2287,7 @@ logger.info("FP8 path taken: %s", out is not None)
 ```python
 @ATTENTION_REGISTRY.register("flash3_fp8")
 @ATTENTION_REGISTRY.register("flash_attention3_fp8")
-class FlashAttention3FP8(BaseAttention):
-    ...
+class FlashAttention3FP8(BaseAttention): ...
 ```
 
 ## B.11 Injection Factory
@@ -2625,12 +2628,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2653,10 +2669,18 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
     print(f"Wrote {len(full):,} chars to {output}")
     if to_pdf:
         try:
-            subprocess.run([
-                "pandoc", str(output), "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex", "-V", "geometry:margin=1in",
-            ], check=True)
+            subprocess.run(
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
+                check=True,
+            )
             print(f"Wrote PDF to {output.with_suffix('.pdf')}")
         except (subprocess.CalledProcessError, FileNotFoundError):
             print("pandoc not available. Skipping PDF.")
@@ -2712,12 +2736,14 @@ def apply_vars(module_dir: Path, dry_run: bool = False):
     for md_file in sorted(module_dir.glob("*.md")):
         content = md_file.read_text(encoding="utf-8")
         missing = set()
+
         def replace(match):
             key = match.group(1)
             if key in variables:
                 return str(variables[key])
             missing.add(key)
             return match.group(0)
+
         new_content = PATTERN.sub(replace, content)
         if new_content != content:
             if dry_run:

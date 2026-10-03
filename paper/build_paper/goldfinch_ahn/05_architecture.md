@@ -137,8 +137,7 @@ next layer. This makes the block **conservative**.
 ```python
 @ATTENTION_REGISTRY.register("goldfinch_ahn")
 @ATTENTION_REGISTRY.register("goldfinch")
-class GoldFinchAHNBlock(BaseAttention):
-    ...
+class GoldFinchAHNBlock(BaseAttention): ...
 ```
 
 ---

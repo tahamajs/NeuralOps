@@ -28,10 +28,14 @@ with torch.no_grad():
             continue
         if w.ndim != 2:
             w = w.reshape(w.size(0), -1)
-        if w.shape != (target_mod.out_features, target_mod.in_features) \
-           and (target_mod.out_features, target_mod.in_features) == w.t().shape:
+        if (
+            w.shape != (target_mod.out_features, target_mod.in_features)
+            and (target_mod.out_features, target_mod.in_features) == w.t().shape
+        ):
             w = w.t()
-        target_mod.decompose_from_weight(w[:target_mod.out_features, :target_mod.in_features], ...)
+        target_mod.decompose_from_weight(
+            w[: target_mod.out_features, : target_mod.in_features], ...
+        )
 ```
 
 The `decompose_from_weight` method:
@@ -128,8 +132,7 @@ projection must be preserved.
 @ATTENTION_REGISTRY.register("orion")
 @ATTENTION_REGISTRY.register("orion_attention")
 @ATTENTION_REGISTRY.register("orion_module")
-class ORIONAttention(BaseAttention):
-    ...
+class ORIONAttention(BaseAttention): ...
 ```
 
 ## 5.8 Compatibility with Recovery

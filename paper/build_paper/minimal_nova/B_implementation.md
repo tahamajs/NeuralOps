@@ -42,7 +42,7 @@ class FactorisedLinear(nn.Module):
 def decompose_from_weight(self, weight, bias=None, energy=None):
     with torch.no_grad():
         W = weight.float()
-        
+
         # Handle KV dimension matching for GQA
         if W.shape[0] < self.out_features and self.out_features % W.shape[0] == 0:
             rep = self.out_features // W.shape[0]
@@ -50,29 +50,29 @@ def decompose_from_weight(self, weight, bias=None, energy=None):
         elif W.shape[0] > self.out_features and W.shape[0] % self.out_features == 0:
             rep = W.shape[0] // self.out_features
             W = W.view(self.out_features, rep, -1).mean(dim=1)
-        
+
         # SVD
         U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-        
+
         # Energy-based rank selection
         target_energy = energy if energy is not None else self.energy
-        total_energy = (S ** 2).sum()
-        cum_energy = torch.cumsum(S ** 2, dim=0) / (total_energy + 1e-12)
+        total_energy = (S**2).sum()
+        cum_energy = torch.cumsum(S**2, dim=0) / (total_energy + 1e-12)
         calc_rank = int((cum_energy < target_energy).sum().item()) + 1
         r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
         r = max(1, r)
-        
+
         # Symmetric factorization
         sqrt_s = torch.sqrt(S[:r])
         A = (U[:, :r] * sqrt_s).to(self.up.weight.dtype)
         B = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype)
-        
+
         # Store
         self.up.weight.data.zero_()
         self.down.weight.data.zero_()
         self.up.weight.data[:, :r] = A
         self.down.weight.data[:r, :] = B
-        
+
         self.freeze_base_weights()
 ```
 
@@ -160,7 +160,7 @@ if hasattr(src, "c_attn"):
     c_attn_mod = src.c_attn
     base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
     weight = base_c.weight.data.clone()
-    
+
     # Conv1D stores (in, out)
     is_conv1d = (
         "Conv1D" in type(c_attn_mod).__name__
@@ -169,12 +169,12 @@ if hasattr(src, "c_attn"):
         or hasattr(base_c, "nf")
     )
     if is_conv1d:
-        weight = weight.t()   # (out, in)
-    
+        weight = weight.t()  # (out, in)
+
     split_size = weight.shape[0] // 3
     q_w = weight[:split_size, :]
-    k_w = weight[split_size:2*split_size, :]
-    v_w = weight[2*split_size:, :]
+    k_w = weight[split_size : 2 * split_size, :]
+    v_w = weight[2 * split_size :, :]
 ```
 
 ## B.6 Nested Encoder Bypass
@@ -182,7 +182,7 @@ if hasattr(src, "c_attn"):
 ```python
 # In forward:
 if self.is_nested_encoder:
-    return context, attn_weights   # No out_proj
+    return context, attn_weights  # No out_proj
 else:
     output = self.out_proj(context)
     return output, attn_weights
@@ -194,18 +194,18 @@ else:
 
 ```python
 # WRONG
-w = src.c_attn.weight    # shape (in, out) — wrong orientation
+w = src.c_attn.weight  # shape (in, out) — wrong orientation
 
 # RIGHT
 if is_conv1d:
-    w = w.t()    # (out, in)
+    w = w.t()  # (out, in)
 ```
 
 ### B.7.2 Nested Encoder Wrong Flag
 
 ```python
 # WRONG (RoBERTa)
-self.is_nested_encoder = False   # out_proj applied twice → collapse
+self.is_nested_encoder = False  # out_proj applied twice → collapse
 
 # RIGHT
 self.is_nested_encoder = True
@@ -226,7 +226,7 @@ if w_norm < 1e-4:
 self.lora_B = nn.Parameter(torch.randn(...))
 
 # RIGHT
-self.lora_B = nn.Parameter(torch.zeros(...))   # B = 0 at init
+self.lora_B = nn.Parameter(torch.zeros(...))  # B = 0 at init
 ```
 
 ---

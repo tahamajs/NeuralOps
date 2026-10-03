@@ -220,12 +220,12 @@ The complete structured execution of `SparseGPTCompressor` is carried out in fou
 # Phase 1: Conditioning and norm evaluation
 W_f = layer.weight.data.float()
 frob_norm = torch.linalg.norm(W_f)
-assert frob_norm >= 1e-4, 'Degenerate weight norm'
+assert frob_norm >= 1e-4, "Degenerate weight norm"
 
 # Phase 2: Core mathematical decomposition
 if is_svd_factorization:
     U, S, Vh = torch.linalg.svd(W_f, full_matrices=False)
-    cum_energy = torch.cumsum(S ** 2, dim=0) / torch.sum(S ** 2)
+    cum_energy = torch.cumsum(S**2, dim=0) / torch.sum(S**2)
     r = torch.searchsorted(cum_energy, tau).item() + 1
     r = max(min_rank, min(r, max_rank))
     # Symmetric square-root distribution
@@ -248,7 +248,7 @@ lora_B = nn.Parameter(torch.zeros(d_out, lora_r))
 # Phase 4: Fallback verification
 recon_err = torch.linalg.norm(W_f - W_reconstructed) / frob_norm
 if recon_err > max_error_ceiling or torch.isnan(recon_err):
-    logger.warning('Triggering safety fallback to uncompressed layer')
+    logger.warning("Triggering safety fallback to uncompressed layer")
     layer = uncompressed_layer_backup
 ```
 
@@ -632,16 +632,16 @@ class StructuredModuleWrapper(nn.Module):
         self.config = config
         self.in_features = layer.in_features
         self.out_features = layer.out_features
-        
+
         # Allocate low-rank parameter buffers
-        self.register_buffer('U', torch.zeros(self.out_features, config.rank))
-        self.register_buffer('V', torch.zeros(config.rank, self.in_features))
-        
+        self.register_buffer("U", torch.zeros(self.out_features, config.rank))
+        self.register_buffer("V", torch.zeros(config.rank, self.in_features))
+
         # Trainable residual LoRA adapters
         self.lora_A = nn.Parameter(torch.empty(config.residual_rank, self.in_features))
         self.lora_B = nn.Parameter(torch.zeros(self.out_features, config.residual_rank))
         nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-        
+
     def forward(self, x):
         # Base factorized transformation
         base_out = F.linear(F.linear(x, self.V), self.U)
@@ -656,17 +656,17 @@ class StructuredModuleWrapper(nn.Module):
 Handling cross-architecture variations requires careful slicing across attention dimensions:
 
 ```python
-def extract_qkv_projections(module, model_type='distilbert'):
-    if model_type == 'distilbert':
+def extract_qkv_projections(module, model_type="distilbert"):
+    if model_type == "distilbert":
         return module.q_lin.weight, module.k_lin.weight, module.v_lin.weight
-    elif model_type == 'gpt2':
+    elif model_type == "gpt2":
         fused = module.c_attn.weight.T
         dim = fused.size(0) // 3
-        return fused[:dim, :], fused[dim:2*dim, :], fused[2*dim:, :]
-    elif model_type == 'roberta':
+        return fused[:dim, :], fused[dim : 2 * dim, :], fused[2 * dim :, :]
+    elif model_type == "roberta":
         return module.query.weight, module.key.weight, module.value.weight
     else:
-        raise ValueError(f'Unsupported model architecture: {model_type}')
+        raise ValueError(f"Unsupported model architecture: {model_type}")
 ```
 
 ## B.3 Layer-Wise PyTorch Dispatch Engine
@@ -678,19 +678,19 @@ class DispatchEngine:
     def attach_compressed_modules(model, config):
         replaced_count = 0
         for name, module in model.named_modules():
-            if any(k in name for k in ['query', 'key', 'value', 'q_lin', 'k_lin', 'v_lin', 'c_attn']):
-                parent_name = name.rsplit('.', 1)[0]
-                attr_name = name.rsplit('.', 1)[-1]
+            if any(
+                k in name for k in ["query", "key", "value", "q_lin", "k_lin", "v_lin", "c_attn"]
+            ):
+                parent_name = name.rsplit(".", 1)[0]
+                attr_name = name.rsplit(".", 1)[-1]
                 parent = model.get_submodule(parent_name)
                 orig_weight = module.weight.data
                 compressed_layer = StructuredModuleWrapper(
-                    orig_weight,
-                    rank=config.rank,
-                    residual_rank=config.residual_rank
+                    orig_weight, rank=config.rank, residual_rank=config.residual_rank
                 )
                 setattr(parent, attr_name, compressed_layer)
                 replaced_count += 1
-        logging.info(f'Successfully attached {replaced_count} compressed modules.')
+        logging.info(f"Successfully attached {replaced_count} compressed modules.")
         return model
 ```
 
@@ -702,13 +702,13 @@ class GPUMonitor:
     def __init__(self):
         torch.cuda.reset_peak_memory_stats()
         self.start_mem = torch.cuda.memory_allocated()
-        
+
     def report(self):
         peak_mem = torch.cuda.max_memory_allocated()
         return {
-            'initial_mb': self.start_mem / (1024 ** 2),
-            'peak_mb': peak_mem / (1024 ** 2),
-            'overhead_mb': (peak_mem - self.start_mem) / (1024 ** 2)
+            "initial_mb": self.start_mem / (1024**2),
+            "peak_mb": peak_mem / (1024**2),
+            "overhead_mb": (peak_mem - self.start_mem) / (1024**2),
         }
 ```
 

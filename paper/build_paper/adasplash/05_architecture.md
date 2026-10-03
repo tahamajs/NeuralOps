@@ -95,30 +95,20 @@ class AdaSplashLinear(nn.Module):
     def __init__(self, in_features, out_features, lora_rank=16, bias=True):
         super().__init__()
         self.lora_rank = min(lora_rank, in_features, out_features)
-        
+
         # Frozen base weight
-        self.weight = nn.Parameter(
-            torch.empty(out_features, in_features),
-            requires_grad=False
-        )
-        
+        self.weight = nn.Parameter(torch.empty(out_features, in_features), requires_grad=False)
+
         if bias:
-            self.bias = nn.Parameter(
-                torch.empty(out_features),
-                requires_grad=False
-            )
-        
+            self.bias = nn.Parameter(torch.empty(out_features), requires_grad=False)
+
         # Trainable LoRA
         if self.lora_rank > 0:
-            self.lora_B = nn.Parameter(
-                torch.empty(out_features, self.lora_rank)
-            )
-            self.lora_A = nn.Parameter(
-                torch.empty(self.lora_rank, in_features)
-            )
-        
+            self.lora_B = nn.Parameter(torch.empty(out_features, self.lora_rank))
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, in_features))
+
         self.reset_parameters()
-    
+
     def forward(self, x):
         out = F.linear(x, self.weight, self.bias)
         if self.lora_A is not None:
@@ -195,8 +185,7 @@ if is_decoder and W > 0:
 ```python
 @ATTENTION_REGISTRY.register("adasplash")
 @ATTENTION_REGISTRY.register("adasplash_attention")
-class AdaSplashAttention(BaseAttention):
-    ...
+class AdaSplashAttention(BaseAttention): ...
 ```
 
 ## 5.7 Failure Modes and Fallbacks

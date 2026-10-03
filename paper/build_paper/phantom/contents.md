@@ -1052,8 +1052,8 @@ RoBERTa's attention sits inside `BertAttention`:
 
 ```python
 class BertAttention:
-    self: BertSelfAttention      # query, key, value
-    output: BertSelfOutput       # dense (output projection)
+    self: BertSelfAttention  # query, key, value
+    output: BertSelfOutput  # dense (output projection)
 ```
 
 PHANTOM replaces `attention.self` and sets `is_nested_encoder = True`. The 
@@ -1182,8 +1182,7 @@ def lsh_attention(Q, K, V, rounds=4, bucket_size=4, softpick_temp=1.0, ...):
 ```python
 @ATTENTION_REGISTRY.register("phantom")
 @ATTENTION_REGISTRY.register("phantom_module")
-class PHANTOMAttention(BaseAttention):
-    ...
+class PHANTOMAttention(BaseAttention): ...
 ```
 
 ## 5.11 Causality Verification
@@ -1195,7 +1194,7 @@ inputs $\leq i$ via gradient check:
 X = torch.randn(1, N, d, requires_grad=True)
 Y = model(X)
 Y[0, i].sum().backward()
-assert X.grad[0, i+1:].abs().max() < 1e-6
+assert X.grad[0, i + 1 :].abs().max() < 1e-6
 ```
 ```
 
@@ -2041,6 +2040,7 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
@@ -2402,8 +2402,8 @@ def copy_cur(self, weight, bias):
         # SVD
         U, S, Vt = torch.linalg.svd(W, full_matrices=False)
         # Leverage
-        col_lev = (Vt ** 2).sum(dim=0)
-        row_lev = (U ** 2).sum(dim=1)
+        col_lev = (Vt**2).sum(dim=0)
+        row_lev = (U**2).sum(dim=1)
         # Top-r selection
         rank = min(self.cur_rank, W.shape[0], W.shape[1])
         col_idx = torch.topk(col_lev, k=rank).indices
@@ -2949,12 +2949,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2980,12 +2993,18 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
 
     if to_pdf:
         try:
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
+            subprocess.run(
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
+                check=True,
+            )
             print(f"PDF: {output.with_suffix('.pdf')}")
         except Exception as e:
             print(f"PDF skipped: {e}")

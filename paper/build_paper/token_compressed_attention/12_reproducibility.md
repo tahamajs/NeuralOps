@@ -63,6 +63,7 @@ python run_all_4_token_compressed.py --use_score_net false --output_suffix norm
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)

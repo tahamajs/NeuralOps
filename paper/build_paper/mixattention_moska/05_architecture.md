@@ -104,8 +104,7 @@ if hasattr(src, "self") and hasattr(src, "output"):
 @ATTENTION_REGISTRY.register("fasa")
 @ATTENTION_REGISTRY.register("fasa_attention")
 @ATTENTION_REGISTRY.register("mixattention_moska")
-class MixAttentionMoSKA(BaseAttention):
-    ...
+class MixAttentionMoSKA(BaseAttention): ...
 ```
 
 ## 5.7 Common Pitfalls

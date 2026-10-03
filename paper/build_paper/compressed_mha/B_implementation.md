@@ -5,35 +5,38 @@
 ```python
 def forward(self, hidden_states, attention_mask=None, **kwargs):
     B, N, _ = hidden_states.shape
-    
+
     # 1. Joint QKV projection (SVD + LoRA)
     proj = torch.matmul(hidden_states, self.Vh_qkv.t()) * self.S_qkv.unsqueeze(0).unsqueeze(0)
     qkv_comp = torch.matmul(proj, self.U_qkv.t())
     if self.lora_rank > 0:
-        lora_qkv = F.linear(F.linear(hidden_states, self.lora_A_qkv), self.lora_B_qkv) * self.lora_scaling
+        lora_qkv = (
+            F.linear(F.linear(hidden_states, self.lora_A_qkv), self.lora_B_qkv) * self.lora_scaling
+        )
         qkv_comp = qkv_comp + lora_qkv
-    
+
     # 2. Split
-    q_raw, k_raw, v_raw = torch.split(qkv_comp, 
-                                       [self.all_head_size, self.kv_head_size, self.kv_head_size], dim=-1)
+    q_raw, k_raw, v_raw = torch.split(
+        qkv_comp, [self.all_head_size, self.kv_head_size, self.kv_head_size], dim=-1
+    )
     q = q_raw + self.bias_q
     k = k_raw + self.bias_k
     v = v_raw + self.bias_v
-    
+
     # 3. Reshape
     q = q.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
     k = k.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
     v = v.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
-    
+
     # 4. RoPE
     if position_embeddings is not None:
         q, k = apply_rotary_pos_emb(q, k, cos, sin)
-    
+
     # 5. GQA
     if self.kv_repeat > 1:
         k = repeat_kv(k, self.kv_repeat)
         v = repeat_kv(v, self.kv_repeat)
-    
+
     # 6. Attention
     scores = torch.matmul(q, k.transpose(-2, -1)) * (1.0 / math.sqrt(self.head_dim))
     # masks
@@ -43,7 +46,7 @@ def forward(self, hidden_states, attention_mask=None, **kwargs):
     attn = F.softmax(scores.float(), dim=-1)
     context = torch.matmul(attn, v)
     context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-    
+
     # 7. Output
     if self.is_nested_encoder:
         return context, None
@@ -62,8 +65,7 @@ def forward(self, hidden_states, attention_mask=None, **kwargs):
 if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
     self.is_nested_encoder = False
 # Priority 2: nested structure
-elif (hasattr(src, "self") and hasattr(src, "output") 
-      and hasattr(src.output, "dense")):
+elif hasattr(src, "self") and hasattr(src, "output") and hasattr(src.output, "dense"):
     self.is_nested_encoder = True
 # Priority 3: class name (last resort)
 elif cls_name in ("BertSelfAttention", "RobertaSelfAttention"):

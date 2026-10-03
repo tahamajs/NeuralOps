@@ -1479,6 +1479,7 @@ python run_all_4_leka_v1.py --no_pres_gate
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
@@ -1789,7 +1790,7 @@ for h in range(self.num_heads):
         proj_data[h] = q_h.T
     else:
         q_h, _ = torch.linalg.qr(proj_data[h])
-        proj_data[h] = q_h[:, :self.feature_dim]
+        proj_data[h] = q_h[:, : self.feature_dim]
 self.register_buffer("proj", proj_data, persistent=True)
 ```
 
@@ -1810,7 +1811,11 @@ context = (num / denom).to(hidden_states.dtype)
 KV = torch.einsum("bhnf,bhnd->bhfd", K_features.float(), v.float())
 K_sum = K_features.float().sum(dim=2, keepdim=True)
 num = torch.einsum("bhnf,bhfd->bhnd", Q_features.float(), KV)
-denom = torch.einsum("bhnf,bhf->bhn", Q_features.float(), K_sum.squeeze(2)).unsqueeze(-1).clamp(min=1e-5)
+denom = (
+    torch.einsum("bhnf,bhf->bhn", Q_features.float(), K_sum.squeeze(2))
+    .unsqueeze(-1)
+    .clamp(min=1e-5)
+)
 context = (num / denom).to(hidden_states.dtype)
 ```
 
@@ -2154,12 +2159,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2185,12 +2203,18 @@ def build(module_dir, output, to_pdf=False):
 
     if to_pdf:
         try:
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
+            subprocess.run(
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
+                check=True,
+            )
             print(f"PDF: {output.with_suffix('.pdf')}")
         except Exception as e:
             print(f"PDF skipped: {e}")

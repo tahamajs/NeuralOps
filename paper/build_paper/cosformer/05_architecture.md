@@ -23,10 +23,12 @@
 The detection order matters. We check `has_out` first:
 
 ```python
-has_out = any(hasattr(src, x) for x in ['dense', 'out_proj', 'out_lin', 'c_proj', 'o_proj'])
-if cls_name in ['BertSelfAttention', 'RobertaSelfAttention'] or (hasattr(src, 'query') and not has_out):
+has_out = any(hasattr(src, x) for x in ["dense", "out_proj", "out_lin", "c_proj", "o_proj"])
+if cls_name in ["BertSelfAttention", "RobertaSelfAttention"] or (
+    hasattr(src, "query") and not has_out
+):
     self.is_nested_encoder = True
-if hasattr(src, 'self') and hasattr(src, 'output'):
+if hasattr(src, "self") and hasattr(src, "output"):
     self.is_nested_encoder = True
 ```
 
@@ -70,8 +72,11 @@ Z_cos = K_cos.sum(dim=2, keepdim=True)
 Z_sin = K_sin.sum(dim=2, keepdim=True)
 
 num = torch.matmul(Q_cos, KV_cos) + torch.matmul(Q_sin, KV_sin)
-denom = torch.matmul(Q_cos, Z_cos.transpose(-2, -1)) + \
-        torch.matmul(Q_sin, Z_sin.transpose(-2, -1)) + self.eps
+denom = (
+    torch.matmul(Q_cos, Z_cos.transpose(-2, -1))
+    + torch.matmul(Q_sin, Z_sin.transpose(-2, -1))
+    + self.eps
+)
 context = num / denom.clamp(min=self.eps)
 ```
 
@@ -151,8 +156,7 @@ accumulates garbage.
 ```python
 @ATTENTION_REGISTRY.register("cosformer")
 @ATTENTION_REGISTRY.register("cosformer_attention")
-class CosformerAttention(BaseAttention):
-    ...
+class CosformerAttention(BaseAttention): ...
 ```
 
 ## 5.8 Integration with LoRA Recovery

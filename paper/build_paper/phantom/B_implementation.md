@@ -36,8 +36,8 @@ def copy_cur(self, weight, bias):
         # SVD
         U, S, Vt = torch.linalg.svd(W, full_matrices=False)
         # Leverage
-        col_lev = (Vt ** 2).sum(dim=0)
-        row_lev = (U ** 2).sum(dim=1)
+        col_lev = (Vt**2).sum(dim=0)
+        row_lev = (U**2).sum(dim=1)
         # Top-r selection
         rank = min(self.cur_rank, W.shape[0], W.shape[1])
         col_idx = torch.topk(col_lev, k=rank).indices

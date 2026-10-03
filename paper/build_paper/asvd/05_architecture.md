@@ -32,11 +32,14 @@ extracted["o"] = (src.out_lin.weight.data, src.out_lin.bias.data)
 Detection:
 
 ```python
-if (hasattr(src, "self") and hasattr(src.self, "query")
-    and hasattr(src, "output") and hasattr(src.output, "dense")):
+if (
+    hasattr(src, "self")
+    and hasattr(src.self, "query")
+    and hasattr(src, "output")
+    and hasattr(src.output, "dense")
+):
     is_nested_encoder = True
-elif (cls_name in ["BertSelfAttention", "RobertaSelfAttention", ...]
-      and not has_out_lin):
+elif cls_name in ["BertSelfAttention", "RobertaSelfAttention", ...] and not has_out_lin:
     is_nested_encoder = True
 ```
 
@@ -150,8 +153,7 @@ stricter than A3/AASVD (which log warnings).
 
 ```python
 class ASVDLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank,
-                 bias=True, lora_rank=0, freeze_base=False):
+    def __init__(self, in_features, out_features, rank, bias=True, lora_rank=0, freeze_base=False):
         super().__init__()
         self.U = nn.Parameter(torch.empty(out_features, rank))
         self.S = nn.Parameter(torch.empty(rank))
@@ -170,9 +172,9 @@ class ASVDLinear(nn.Module):
 
 ```python
 def forward(self, x):
-    Vx = F.linear(x, self.V)          # x @ V^T
-    SVx = Vx * self.S                  # scale by Σ
-    out = F.linear(SVx, self.U)        # @ U^T
+    Vx = F.linear(x, self.V)  # x @ V^T
+    SVx = Vx * self.S  # scale by Σ
+    out = F.linear(SVx, self.U)  # @ U^T
     if self.bias is not None:
         out = out + self.bias
     if self.lora_rank > 0:
@@ -186,8 +188,7 @@ def forward(self, x):
 ```python
 @ATTENTION_REGISTRY.register("asvd")
 @ATTENTION_REGISTRY.register("asvd_attention")
-class ASVDAttention(BaseAttention):
-    ...
+class ASVDAttention(BaseAttention): ...
 ```
 
 ## 5.7 Causality

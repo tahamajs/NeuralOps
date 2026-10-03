@@ -64,8 +64,8 @@ RoBERTa's attention sits inside `BertAttention`:
 
 ```python
 class BertAttention:
-    self: BertSelfAttention      # query, key, value
-    output: BertSelfOutput       # dense (output projection)
+    self: BertSelfAttention  # query, key, value
+    output: BertSelfOutput  # dense (output projection)
 ```
 
 PHANTOM replaces `attention.self` and sets `is_nested_encoder = True`. The 
@@ -194,8 +194,7 @@ def lsh_attention(Q, K, V, rounds=4, bucket_size=4, softpick_temp=1.0, ...):
 ```python
 @ATTENTION_REGISTRY.register("phantom")
 @ATTENTION_REGISTRY.register("phantom_module")
-class PHANTOMAttention(BaseAttention):
-    ...
+class PHANTOMAttention(BaseAttention): ...
 ```
 
 ## 5.11 Causality Verification
@@ -207,7 +206,7 @@ inputs $\leq i$ via gradient check:
 X = torch.randn(1, N, d, requires_grad=True)
 Y = model(X)
 Y[0, i].sum().backward()
-assert X.grad[0, i+1:].abs().max() < 1e-6
+assert X.grad[0, i + 1 :].abs().max() < 1e-6
 ```
 
 ---

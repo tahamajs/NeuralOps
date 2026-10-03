@@ -130,7 +130,7 @@ def _unpack_weight_bias(module):
     base = getattr(module, "base_layer", module)
     w = base.weight.data.clone()
     if "Conv1D" in type(module).__name__ or hasattr(module, "nf"):
-        w = w.t()   # (in, out) → (out, in)
+        w = w.t()  # (in, out) → (out, in)
     return w, base.bias
 ```
 
@@ -141,9 +141,7 @@ When `w_k.shape[0] != self.kv_head_size`:
 ```python
 rep = w_k.shape[0] // self.kv_head_size
 w_k_pooled = (
-    w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
-    .mean(dim=1)
-    .view(self.kv_head_size, -1)
+    w_k.view(self.num_kv_heads, rep, self.head_dim, -1).mean(dim=1).view(self.kv_head_size, -1)
 )
 ```
 

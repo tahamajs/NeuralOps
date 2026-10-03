@@ -107,12 +107,12 @@ where $\alpha$ is a scaling factor (default 1.0).
 **Alternative factorization for efficiency:**
 ```python
 # Base
-h_b = x @ V_b.t()              # (B, L, r_b)
-y_b = h_b @ U_b.t()            # (B, L, m)
+h_b = x @ V_b.t()  # (B, L, r_b)
+y_b = h_b @ U_b.t()  # (B, L, m)
 
 # Residual
-h_r = x @ A.t()                 # (B, L, r_r)
-y_r = h_r @ B.t()               # (B, L, m)
+h_r = x @ A.t()  # (B, L, r_r)
+y_r = h_r @ B.t()  # (B, L, m)
 
 y = y_b + alpha * y_r + b
 ```

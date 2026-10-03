@@ -117,8 +117,10 @@ Unlike other modules, this one **raises** if a weight has near-zero norm:
 ```python
 w_norm = float(torch.norm(target_mod.weight.data).item())
 if w_norm < 1e-4:
-    raise RuntimeError(f"RoutingAttention weight verification failed for '{proj_key}': "
-                       f"norm too small ({w_norm:.2e})")
+    raise RuntimeError(
+        f"RoutingAttention weight verification failed for '{proj_key}': "
+        f"norm too small ({w_norm:.2e})"
+    )
 ```
 
 **This is a bug.** If any projection weight is legitimately small, the 
@@ -134,7 +136,7 @@ it twice could corrupt the model.
 ```python
 # Verify injection
 for name, mod in model.named_modules():
-    if 'routing' in type(mod).__name__.lower():
+    if "routing" in type(mod).__name__.lower():
         print(name, type(mod).__name__)
 ```
 

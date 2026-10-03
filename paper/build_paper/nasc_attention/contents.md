@@ -875,7 +875,7 @@ if any element is affected. This is slightly better than fully batch-level.
 NASC logs the path once per instance:
 
 ```python
-if not hasattr(self, '_logged_once'):
+if not hasattr(self, "_logged_once"):
     logger.debug("NASCAttention: L=%d, ...")
     self._logged_once = True
 ```
@@ -1595,6 +1595,7 @@ python run_all_4_nasc.py \
 
 ```python
 from huggingface_hub import hf_hub_download
+
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
         repo_id=f"efficiency-lab/svd-linear-attention-{model}-nasc",
@@ -2042,15 +2043,15 @@ def _local_window_attention(self, Q, K, V, valid_mask, is_causal):
 def _sparse_block_attention(self, Q, K, V, valid_mask, is_causal):
     # ... pad to multiple of block_size
     nb = Lp // self.block_size
-    
+
     # Compute block-level scores
     Q_mean = Qb.mean(dim=3)
     K_mean = Kb.mean(dim=3)
     blk_scores = torch.matmul(Q_mean.float(), K_mean.float().transpose(-2, -1)) * scale
-    
+
     if is_causal:
         blk_scores = blk_scores + causal_blk_mask
-    
+
     top_k = min(self.top_k, nb)
     _, top_idx = blk_scores.topk(top_k, dim=-1)
     if is_causal:
@@ -2058,22 +2059,22 @@ def _sparse_block_attention(self, Q, K, V, valid_mask, is_causal):
             top_idx[:, :, i, 0] = i
     else:
         top_idx[:, :, :, 0] = 0
-    
+
     out_blocks = torch.zeros_like(Qb)
     for i in range(nb):  # ← PYTHON LOOP
         idx = top_idx[:, :, i, :]
         idx_exp = idx.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, self.block_size, d)
         K_sel = torch.gather(Kb, 2, idx_exp).reshape(B, H, top_k * self.block_size, d)
         V_sel = torch.gather(Vb, 2, idx_exp).reshape(B, H, top_k * self.block_size, d)
-        
+
         scores_i = torch.matmul(Qb[:, :, i].float(), K_sel.float().transpose(-2, -1)) * scale
-        
+
         # Causal mask for selected tokens
-        # ... 
-        
+        # ...
+
         attn_i = softpick(scores_i, dim=-1).to(Q.dtype)
         out_blocks[:, :, i] = torch.matmul(attn_i, V_sel)
-    
+
     return out_blocks.view(B, H, Lp, d)[:, :, :L, :]
 ```
 
@@ -2169,6 +2170,8 @@ print(f"Gate: {gates.mean(dim=0)}")
 ```python
 def measure_rff_memory(B, H, L, F, d):
     return B * H * L * 2 * F * d * 4 / 1e6  # MB
+
+
 print(measure_rff_memory(8, 12, 128, 64, 64))  # ~50 MB
 ```
 ```

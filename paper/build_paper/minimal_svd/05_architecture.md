@@ -67,7 +67,7 @@ transformer.h.0.attn
    ```python
    w = src.c_attn.weight.data.clone()
    if is_conv1d:
-       w = w.t()   # (in, out) → (out, in)
+       w = w.t()  # (in, out) → (out, in)
    q_w, k_w, v_w = w.chunk(3, dim=0)
    ```
 

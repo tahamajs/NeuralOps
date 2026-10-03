@@ -837,7 +837,7 @@ $$
 ```python
 w = src.c_attn.weight.data.clone()
 if is_conv1d:
-    w = w.t()   # (3d, d)
+    w = w.t()  # (3d, d)
 q_w, k_w, v_w = w.chunk(3, dim=0)
 ```
 
@@ -1094,7 +1094,7 @@ transformer.h.0.attn
    ```python
    w = src.c_attn.weight.data.clone()
    if is_conv1d:
-       w = w.t()   # (in, out) → (out, in)
+       w = w.t()  # (in, out) → (out, in)
    q_w, k_w, v_w = w.chunk(3, dim=0)
    ```
 
@@ -1121,7 +1121,7 @@ MinimalPRISM factorizes each at its natural dimension. During forward:
 
 ```python
 if self.num_kv_heads < self.num_heads:
-    K = repeat_kv(K, self.kv_repeat)   # (B, 2, N, 256) → (B, 8, N, 256)
+    K = repeat_kv(K, self.kv_repeat)  # (B, 2, N, 256) → (B, 8, N, 256)
     V = repeat_kv(V, self.kv_repeat)
 ```
 
@@ -2079,9 +2079,12 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 torch.backends.cudnn.deterministic = True
 ```
 
@@ -2097,6 +2100,7 @@ torch.backends.cudnn.deterministic = True
 
 ```python
 from huggingface_hub import hf_hub_download
+
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
         repo_id=f"efficiency-lab/svd-linear-attention-{model}-minimal_prism",
@@ -2444,7 +2448,7 @@ class FactorisedLinear(nn.Module):
 def decompose_from_weight(self, weight, bias=None, energy=None):
     with torch.no_grad():
         W = weight.float()
-        
+
         # Handle GQA dimension mismatch
         if W.shape[0] < self.out_features and self.out_features % W.shape[0] == 0:
             rep = self.out_features // W.shape[0]
@@ -2452,29 +2456,29 @@ def decompose_from_weight(self, weight, bias=None, energy=None):
         elif W.shape[0] > self.out_features and W.shape[0] % self.out_features == 0:
             rep = W.shape[0] // self.out_features
             W = W.view(self.out_features, rep, -1).mean(dim=1)
-        
+
         # SVD
         U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-        
+
         # Energy-based rank
         target_energy = energy if energy is not None else self.energy
-        total_energy = (S ** 2).sum()
-        cum_energy = torch.cumsum(S ** 2, dim=0) / (total_energy + 1e-12)
+        total_energy = (S**2).sum()
+        cum_energy = torch.cumsum(S**2, dim=0) / (total_energy + 1e-12)
         calc_rank = int((cum_energy < target_energy).sum().item()) + 1
         r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
         r = max(1, r)
-        
+
         # Symmetric distribution
         sqrt_s = torch.sqrt(S[:r])
         A = (U[:, :r] * sqrt_s).to(self.up.weight.dtype)
         B = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype)
-        
+
         # Store
         self.up.weight.data.zero_()
         self.down.weight.data.zero_()
         self.up.weight.data[:, :r] = A
         self.down.weight.data[:r, :] = B
-        
+
         self.freeze_base_weights()
 ```
 
@@ -2536,7 +2540,7 @@ if hasattr(src, "c_attn"):
     c_attn_mod = src.c_attn
     base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
     weight = base_c.weight.data.clone()
-    
+
     is_conv1d = (
         "Conv1D" in type(c_attn_mod).__name__
         or "Conv1D" in type(base_c).__name__
@@ -2545,25 +2549,26 @@ if hasattr(src, "c_attn"):
     )
     if is_conv1d:
         weight = weight.t()
-    
+
     split_size = weight.shape[0] // 3
     q_w = weight[:split_size, :]
-    k_w = weight[split_size:2*split_size, :]
-    v_w = weight[2*split_size:, :]
+    k_w = weight[split_size : 2 * split_size, :]
+    v_w = weight[2 * split_size :, :]
 ```
 
 ## B.5 Nested Encoder Detection
 
 ```python
 cls_name = src.__class__.__name__
-has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj"))
+has_out_proj = any(
+    hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj")
+)
 
 is_nested = False
 if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
     is_nested = True
-elif (
-    cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
-    or (cls_name.endswith("SelfAttention") and not has_out_proj)
+elif cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention") or (
+    cls_name.endswith("SelfAttention") and not has_out_proj
 ):
     is_nested = True
 
@@ -2587,7 +2592,7 @@ if is_conv1d:
 
 ```python
 # WRONG (RoBERTa)
-self.is_nested_encoder = False   # out_proj applied twice
+self.is_nested_encoder = False  # out_proj applied twice
 
 # RIGHT
 self.is_nested_encoder = True
@@ -2627,8 +2632,7 @@ except Exception as e:
 ## B.8 Double-Injection Guard
 
 ```python
-if isinstance(src_attn, MinimalPRISMAttention) or \
-   "MinimalPRISM" in src_attn.__class__.__name__:
+if isinstance(src_attn, MinimalPRISMAttention) or "MinimalPRISM" in src_attn.__class__.__name__:
     return None
 ```
 ```
@@ -3009,12 +3013,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -3041,8 +3058,15 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
     if to_pdf:
         try:
             subprocess.run(
-                ["pandoc", str(output), "-o", str(output.with_suffix(".pdf")),
-                 "--pdf-engine=xelatex", "-V", "geometry:margin=1in"],
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
                 check=True,
             )
             print(f"PDF: {output.with_suffix('.pdf')}")

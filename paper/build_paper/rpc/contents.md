@@ -777,8 +777,7 @@ extracted["o"] = src.c_proj.weight.t()
 
 ```python
 self.register_buffer(
-    "proj",
-    torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim ** -0.5)
+    "proj", torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim**-0.5)
 )
 ```
 
@@ -835,8 +834,7 @@ This is **stricter** than NHA/EAT but similar to ASVD and OHA.
 ```python
 @ATTENTION_REGISTRY.register("rpc")
 @ATTENTION_REGISTRY.register("rpc_attention")
-class RPCAttention(BaseAttention):
-    ...
+class RPCAttention(BaseAttention): ...
 ```
 
 ## 5.9 Causality
@@ -1540,9 +1538,12 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 torch.backends.cudnn.deterministic = True
 ```
 
@@ -1916,8 +1917,7 @@ def forward(self, hidden_states, attention_mask=None, **kwargs):
 
 ```python
 self.register_buffer(
-    "proj",
-    torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim ** -0.5)
+    "proj", torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim**-0.5)
 )
 ```
 
@@ -2326,12 +2326,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2358,8 +2371,15 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
     if to_pdf:
         try:
             subprocess.run(
-                ["pandoc", str(output), "-o", str(output.with_suffix(".pdf")),
-                 "--pdf-engine=xelatex", "-V", "geometry:margin=1in"],
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
                 check=True,
             )
             print(f"PDF: {output.with_suffix('.pdf')}")

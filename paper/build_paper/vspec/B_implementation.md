@@ -15,24 +15,28 @@ class DynamicLowRankProjector(nn.Module):
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B)
         self.freeze_base_weights()
-    
+
     def set_weight(self, weight, bias=None):
         U, S, Vh = torch.linalg.svd(weight.float(), full_matrices=False)
         eff_rank = min(self.rank, U.size(1), Vh.size(0))
         self.U.data.zero_()
         self.S.data.zero_()
         self.V.data.zero_()
-        self.U.data[:min(self.U.size(0), U.size(0)), :eff_rank].copy_(U[:min(self.U.size(0), U.size(0)), :eff_rank])
+        self.U.data[: min(self.U.size(0), U.size(0)), :eff_rank].copy_(
+            U[: min(self.U.size(0), U.size(0)), :eff_rank]
+        )
         self.S.data[:eff_rank].copy_(S[:eff_rank])
-        self.V.data[:min(self.V.size(0), Vh.size(1)), :eff_rank].copy_(Vh[:eff_rank, :min(self.V.size(0), Vh.size(1))].t())
+        self.V.data[: min(self.V.size(0), Vh.size(1)), :eff_rank].copy_(
+            Vh[:eff_rank, : min(self.V.size(0), Vh.size(1))].t()
+        )
         if bias is not None:
-            self.bias.data[:min(...)].copy_(bias[:min(...)])
-    
+            self.bias.data[: min(...)].copy_(bias[: min(...)])
+
     def forward(self, x, gate):
-        z = torch.matmul(x, self.V)              # (B, k, r)
-        z = z * self.S.unsqueeze(0).unsqueeze(0) # broadcast
-        z = z * gate.unsqueeze(1)                # spectral gate
-        out = torch.matmul(z, self.U.t())        # (B, k, out)
+        z = torch.matmul(x, self.V)  # (B, k, r)
+        z = z * self.S.unsqueeze(0).unsqueeze(0)  # broadcast
+        z = z * gate.unsqueeze(1)  # spectral gate
+        out = torch.matmul(z, self.U.t())  # (B, k, out)
         if self.bias is not None:
             out = out + self.bias
         if self.lora_A is not None:
@@ -47,13 +51,11 @@ class DynamicLowRankProjector(nn.Module):
 class VariationalSpectralGate(nn.Module):
     def __init__(self, hidden_dim, rank):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(hidden_dim, 64), nn.GELU(), nn.Linear(64, rank * 2)
-        )
+        self.net = nn.Sequential(nn.Linear(hidden_dim, 64), nn.GELU(), nn.Linear(64, rank * 2))
         nn.init.zeros_(self.net[-1].weight)
         nn.init.constant_(self.net[-1].bias[:rank], 3.0)
         nn.init.constant_(self.net[-1].bias[rank:], -3.0)
-    
+
     def forward(self, x, valid_mask=None):
         pooled = _masked_mean(x, valid_mask).float()
         stats = self.net(pooled)
@@ -74,12 +76,10 @@ class VariationalSpectralGate(nn.Module):
 class HeadGate(nn.Module):
     def __init__(self, hidden_dim, n_heads):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(hidden_dim, 32), nn.GELU(), nn.Linear(32, n_heads)
-        )
+        self.net = nn.Sequential(nn.Linear(hidden_dim, 32), nn.GELU(), nn.Linear(32, n_heads))
         nn.init.zeros_(self.net[-1].weight)
         nn.init.constant_(self.net[-1].bias, 3.0)
-    
+
     def forward(self, x, valid_mask=None):
         pooled = _masked_mean(x, valid_mask).float()
         return torch.sigmoid(self.net(pooled)).to(x.dtype)
@@ -91,12 +91,10 @@ class HeadGate(nn.Module):
 class TokenRouter(nn.Module):
     def __init__(self, hidden_dim, keep_ratio=0.75, min_tokens=8):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(hidden_dim, 32), nn.GELU(), nn.Linear(32, 1)
-        )
+        self.net = nn.Sequential(nn.Linear(hidden_dim, 32), nn.GELU(), nn.Linear(32, 1))
         self.keep_ratio = keep_ratio
         self.min_tokens = min_tokens
-    
+
     def forward(self, x, valid_mask=None, is_decoder=False):
         B, N, D = x.shape
         scores = torch.sigmoid(self.net(x.float()).squeeze(-1))

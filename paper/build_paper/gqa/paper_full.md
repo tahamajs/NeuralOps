@@ -708,7 +708,7 @@ preserve or further reduce.
 DistilBERT has four projections:
 
 ```python
-q_lin: Linear(768, 768)   # H = 12, d_h = 64
+q_lin: Linear(768, 768)  # H = 12, d_h = 64
 k_lin: Linear(768, 768)
 v_lin: Linear(768, 768)
 out_lin: Linear(768, 768)
@@ -733,7 +733,7 @@ attention.output.dense: Linear(768, 768)
 ### 5.2.3 GPT-2 (Causal)
 
 ```python
-attn.c_attn: Conv1D(768, 2304)   # fused Q, K, V
+attn.c_attn: Conv1D(768, 2304)  # fused Q, K, V
 attn.c_proj: Conv1D(768, 768)
 ```
 
@@ -747,8 +747,8 @@ q_w, k_w, v_w = w.chunk(3, dim=0)
 ### 5.2.4 Qwen3.5 (GQA-native)
 
 ```python
-q_proj: Linear(1024, 2048)   # 8 heads × 256
-k_proj: Linear(1024, 512)    # 2 heads × 256
+q_proj: Linear(1024, 2048)  # 8 heads × 256
+k_proj: Linear(1024, 512)  # 2 heads × 256
 v_proj: Linear(1024, 512)
 o_proj: Linear(2048, 1024)
 ```
@@ -1567,6 +1567,7 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
@@ -1895,28 +1896,35 @@ In our setup, $\lambda = 0$ (no regularization).
 ```python
 class GroupedQueryAttention(BaseAttention):
     def __init__(
-        self, config=None, rank=None,
-        dim=None, num_heads=None, num_kv_heads=None,
-        lora_rank=16, lora_alpha=32.0,
-        pretrained_attn=None, old_attn=None, **kwargs,
+        self,
+        config=None,
+        rank=None,
+        dim=None,
+        num_heads=None,
+        num_kv_heads=None,
+        lora_rank=16,
+        lora_alpha=32.0,
+        pretrained_attn=None,
+        old_attn=None,
+        **kwargs,
     ):
         super().__init__(config, rank)
         src_attn = pretrained_attn or old_attn
-        
+
         # Resolve dim, num_heads, num_kv_heads
         self.hidden_size = ...
         self.num_heads = ...
         self.num_kv_heads = min(self.num_heads, max(1, num_kv_heads))
-        
+
         self.head_dim = self.hidden_size // self.num_heads
         self.kv_repeat = self.num_heads // self.num_kv_heads
-        
+
         # Projections
         self.query = LoRALinear(self.hidden_size, self.all_head_size, ...)
         self.key = LoRALinear(self.hidden_size, self.kv_head_size, ...)
         self.value = LoRALinear(self.hidden_size, self.kv_head_size, ...)
         self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, ...)
-        
+
         if src_attn is not None:
             self.copy_weights(src_attn)
 ```

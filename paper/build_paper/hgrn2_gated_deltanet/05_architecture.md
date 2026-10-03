@@ -90,8 +90,11 @@ To avoid the "multiple values for keyword argument" error, we filter
 `kwargs` before passing to sub-branches:
 
 ```python
-sub_kwargs = {k: v for k, v in kwargs.items() 
-              if k not in ("is_decoder", "is_causal", "lora_rank", "lora_alpha")}
+sub_kwargs = {
+    k: v
+    for k, v in kwargs.items()
+    if k not in ("is_decoder", "is_causal", "lora_rank", "lora_alpha")
+}
 ```
 
 This is essential when the same `kwargs` dict is passed through multiple 
@@ -100,8 +103,7 @@ levels of the call hierarchy.
 ## 5.6 Causal Detection
 
 ```python
-_decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", 
-                     "opt", "bloom", "falcon")
+_decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon")
 if any(model_type.startswith(p) for p in _decoder_prefixes):
     is_dec = True
 ```
@@ -115,10 +117,16 @@ The injection function checks whether the target already contains a
 `HGRN2GatedDeltaNet`:
 
 ```python
-if isinstance(curr_attn, HGRN2GatedDeltaNet): return None
-if "HGRN2GatedDeltaNet" in curr_attn.__class__.__name__: return None
-if hasattr(curr_attn, "inner") and isinstance(curr_attn.inner, HGRN2GatedDeltaNet): return None
-if hasattr(curr_attn, "_wrapped_attention") and isinstance(curr_attn._wrapped_attention, HGRN2GatedDeltaNet): return None
+if isinstance(curr_attn, HGRN2GatedDeltaNet):
+    return None
+if "HGRN2GatedDeltaNet" in curr_attn.__class__.__name__:
+    return None
+if hasattr(curr_attn, "inner") and isinstance(curr_attn.inner, HGRN2GatedDeltaNet):
+    return None
+if hasattr(curr_attn, "_wrapped_attention") and isinstance(
+    curr_attn._wrapped_attention, HGRN2GatedDeltaNet
+):
+    return None
 ```
 
 This prevents accidentally wrapping the module twice.

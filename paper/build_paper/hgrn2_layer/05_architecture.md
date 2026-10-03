@@ -124,8 +124,7 @@ recommend adding a check if re-injection is a concern.
 ```python
 @ATTENTION_REGISTRY.register("hgrn2_layer")
 @ATTENTION_REGISTRY.register("hgrn2")
-class HGRN2Layer(BaseAttention):
-    ...
+class HGRN2Layer(BaseAttention): ...
 ```
 
 ## 5.10 Design Notes

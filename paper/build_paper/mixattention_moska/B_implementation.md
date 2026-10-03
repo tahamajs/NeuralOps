@@ -51,7 +51,11 @@ if is_causal or is_cross:
     # Standard full attention — no pruning
     scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
     if is_causal:
-        causal_mask = torch.triu(torch.full((L, L_kv), float("-inf"), ...), diagonal=1).unsqueeze(0).unsqueeze(0)
+        causal_mask = (
+            torch.triu(torch.full((L, L_kv), float("-inf"), ...), diagonal=1)
+            .unsqueeze(0)
+            .unsqueeze(0)
+        )
         scores = scores + causal_mask
     # ... apply mask, softmax, etc.
 else:
@@ -61,7 +65,12 @@ else:
     if p_mask is not None:
         attn_scores = attn_scores.masked_fill((p_mask == 0).unsqueeze(1).unsqueeze(2), -10000.0)
     attn_weights = F.softmax(attn_scores, dim=-1).to(dtype)
-    out = torch.matmul(attn_weights, v_p).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+    out = (
+        torch.matmul(attn_weights, v_p)
+        .permute(0, 2, 1, 3)
+        .contiguous()
+        .view(B, L, self.all_head_size)
+    )
 ```
 
 ## B.3 Weight Transfer
@@ -126,10 +135,11 @@ with torch.no_grad():
 
 ```python
 import matplotlib.pyplot as plt
+
 kept = idx[0].cpu().numpy()
 mask = np.zeros(128)
 mask[kept] = 1
-plt.imshow(mask[None, :], aspect='auto')
+plt.imshow(mask[None, :], aspect="auto")
 plt.title("Kept positions")
 plt.show()
 ```
@@ -140,8 +150,7 @@ plt.show()
 @ATTENTION_REGISTRY.register("fasa")
 @ATTENTION_REGISTRY.register("fasa_attention")
 @ATTENTION_REGISTRY.register("mixattention_moska")
-class MixAttentionMoSKA(BaseAttention):
-    ...
+class MixAttentionMoSKA(BaseAttention): ...
 ```
 
 ## B.7 Injection

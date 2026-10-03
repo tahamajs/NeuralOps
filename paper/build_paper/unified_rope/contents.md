@@ -703,9 +703,11 @@ The `_copy_layer` helper preserves source LoRA adapters:
 ```python
 def _copy_layer(target_layer, w, b, src_sub=None):
     # Copy base weight
-    if w is not None: ...
+    if w is not None:
+        ...
     # Copy bias
-    if b is not None: ...
+    if b is not None:
+        ...
     # Preserve LoRA
     if src_sub is not None and hasattr(src_sub, "lora_A"):
         target_layer.lora_A.data.copy_(src_sub.lora_A.data)
@@ -794,7 +796,7 @@ For RoBERTa-style models:
 
 ```python
 if self.is_nested_encoder:
-    output = context   # Raw context
+    output = context  # Raw context
 else:
     output = self.out_proj(context)
 ```
@@ -946,8 +948,8 @@ q_dim = self.q_head_size
 k_dim = self.kv_head_size
 v_dim = self.kv_head_size
 w_q = c_attn_w[:q_dim, :]
-w_k = c_attn_w[q_dim:q_dim+k_dim, :]
-w_v = c_attn_w[q_dim+k_dim:, :]
+w_k = c_attn_w[q_dim : q_dim + k_dim, :]
+w_v = c_attn_w[q_dim + k_dim :, :]
 ```
 
 `is_nested_encoder = False`. Causal mask applied in forward.
@@ -976,26 +978,28 @@ if self.num_kv_heads != self.num_heads:
 ## 5.6 Injection Hook
 
 ```python
-def inject_unified_rope(layer, model_config=None, comp_config=None,
-                        old_attn=None, **kwargs):
+def inject_unified_rope(layer, model_config=None, comp_config=None, old_attn=None, **kwargs):
     src = old_attn
     if src is None:
         for attr in ("attention", "self_attn", "attn", "self"):
             if hasattr(layer, attr):
                 src = getattr(layer, attr)
                 break
-    
+
     if model_config is None and hasattr(layer, "config"):
         model_config = layer.config
-    
+
     lora_rank = kwargs.pop("lora_rank", 16)
     rank = kwargs.pop("rank", 32)
-    
+
     new_attn = UnifiedRoPE(
-        config=model_config, rank=rank, lora_rank=lora_rank,
-        pretrained_attn=src, **kwargs,
+        config=model_config,
+        rank=rank,
+        lora_rank=lora_rank,
+        pretrained_attn=src,
+        **kwargs,
     )
-    
+
     # Replace
     for attr in ("self_attn", "attn", "self"):
         if hasattr(layer, attr):
@@ -1807,9 +1811,12 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 torch.backends.cudnn.deterministic = True
 ```
 
@@ -1825,6 +1832,7 @@ torch.backends.cudnn.deterministic = True
 
 ```python
 from huggingface_hub import hf_hub_download
+
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
         repo_id=f"efficiency-lab/svd-linear-attention-{model}-unified_rope",
@@ -2171,8 +2179,7 @@ def _copy_layer(target_layer, w, b, src_sub=None):
 ## B.5 The Injection Hook
 
 ```python
-def inject_unified_rope(layer, model_config=None, comp_config=None,
-                        old_attn=None, **kwargs):
+def inject_unified_rope(layer, model_config=None, comp_config=None, old_attn=None, **kwargs):
     try:
         src = old_attn
         if src is None:
@@ -2180,21 +2187,24 @@ def inject_unified_rope(layer, model_config=None, comp_config=None,
                 if hasattr(layer, attr):
                     src = getattr(layer, attr)
                     break
-        
+
         if src is None:
             return None
-        
+
         if model_config is None and hasattr(layer, "config"):
             model_config = layer.config
-        
+
         lora_rank = kwargs.pop("lora_rank", 16)
         rank = kwargs.pop("rank", 32)
-        
+
         new_attn = UnifiedRoPE(
-            config=model_config, rank=rank, lora_rank=lora_rank,
-            pretrained_attn=src, **kwargs,
+            config=model_config,
+            rank=rank,
+            lora_rank=lora_rank,
+            pretrained_attn=src,
+            **kwargs,
         )
-        
+
         # Replace
         for attr in ("self_attn", "attn", "self"):
             if hasattr(layer, attr):
@@ -2564,12 +2574,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2596,8 +2619,15 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
     if to_pdf:
         try:
             subprocess.run(
-                ["pandoc", str(output), "-o", str(output.with_suffix(".pdf")),
-                 "--pdf-engine=xelatex", "-V", "geometry:margin=1in"],
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
                 check=True,
             )
             print(f"PDF: {output.with_suffix('.pdf')}")

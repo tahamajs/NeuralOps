@@ -614,9 +614,9 @@ scores = scores.masked_fill(~valid_mask, -1e4)
 if [CLS] is padding (it never should be), it is still excluded.
 
 ```python
-scores[:, 0] = 1e4               # CLS preservation
+scores[:, 0] = 1e4  # CLS preservation
 scores = scores.masked_fill(~valid_mask, -1e4)  # Padding
-scores[:, 0] = 1e4               # Re-apply CLS (padding mask may have overwritten)
+scores[:, 0] = 1e4  # Re-apply CLS (padding mask may have overwritten)
 ```
 
 ### 4.3.4 Top-K Selection
@@ -1660,6 +1660,7 @@ python run_all_4_ptp.py --preserve_cls false --output_suffix nopcls
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
@@ -2048,9 +2049,7 @@ if self.num_heads != self.num_kv_heads:
     v_all = repeat_kv(v_all, repeats)
 
 # Gather K, V at top_indices
-top_idx_exp = top_indices.unsqueeze(1).unsqueeze(-1).expand(
-    -1, self.num_heads, -1, self.head_dim
-)
+top_idx_exp = top_indices.unsqueeze(1).unsqueeze(-1).expand(-1, self.num_heads, -1, self.head_dim)
 k_pruned = torch.gather(k_all, 2, top_idx_exp)
 v_pruned = torch.gather(v_all, 2, top_idx_exp)
 ```
@@ -2068,9 +2067,7 @@ attn_scores = attn_scores.masked_fill(causal_mask, -1e4)
 
 ```python
 valid_keys = torch.gather(valid_mask, 1, top_indices)  # (B, k)
-attn_scores = attn_scores.masked_fill(
-    ~valid_keys.unsqueeze(1).unsqueeze(2), -1e4
-)
+attn_scores = attn_scores.masked_fill(~valid_keys.unsqueeze(1).unsqueeze(2), -1e4)
 ```
 
 ## B.6 Common Pitfalls
@@ -2447,12 +2444,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2478,12 +2488,18 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
 
     if to_pdf:
         try:
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
+            subprocess.run(
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
+                check=True,
+            )
             print(f"PDF: {output.with_suffix('.pdf')}")
         except Exception as e:
             print(f"PDF skipped: {e}")

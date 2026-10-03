@@ -170,8 +170,7 @@ Several clamps prevent overflow:
 @ATTENTION_REGISTRY.register("SVD-Mamba")
 @ATTENTION_REGISTRY.register("svd-mamba")
 @ATTENTION_REGISTRY.register("SVD_Mamba")
-class SVDMamba(BaseAttention):
-    ...
+class SVDMamba(BaseAttention): ...
 ```
 
 ## 5.10 Failure Modes

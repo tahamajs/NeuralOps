@@ -54,7 +54,11 @@ for k in range(K_num):
     scores = scores.masked_fill(eye, 0.0)
 
     if is_causal:
-        causal_mask = torch.triu(torch.full((L, L), True, device=device), diagonal=1).unsqueeze(0).unsqueeze(0)
+        causal_mask = (
+            torch.triu(torch.full((L, L), True, device=device), diagonal=1)
+            .unsqueeze(0)
+            .unsqueeze(0)
+        )
         scores = scores.masked_fill(causal_mask & (~eye), -1e4)
 
     attn = F.softmax(scores, dim=-1)
@@ -91,8 +95,7 @@ scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
 ```python
 @ATTENTION_REGISTRY.register("routing")
 @ATTENTION_REGISTRY.register("routing_attention")
-class RoutingAttention(BaseAttention):
-    ...
+class RoutingAttention(BaseAttention): ...
 ```
 
 ## B.5 Injection
@@ -116,7 +119,7 @@ def inject_routing(layer, model_config, ...):
 B, H, L, _ = Q.shape
 K = 16
 cluster_ids = attn._kmeans_assign(joint_feat, K, n_iters=3)
-print(f"Cluster sizes: {[int((cluster_ids[0,0]==k).sum()) for k in range(K)]}")
+print(f"Cluster sizes: {[int((cluster_ids[0, 0] == k).sum()) for k in range(K)]}")
 ```
 
 ---

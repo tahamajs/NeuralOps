@@ -10,8 +10,16 @@
 
 ```python
 class FactorisedLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank=64, bias=True,
-                 energy=0.95, lora_rank=16, lora_alpha=32.0):
+    def __init__(
+        self,
+        in_features,
+        out_features,
+        rank=64,
+        bias=True,
+        energy=0.95,
+        lora_rank=16,
+        lora_alpha=32.0,
+    ):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -19,16 +27,16 @@ class FactorisedLinear(nn.Module):
         self.energy = energy
         self.lora_rank = lora_rank
         self.lora_scaling = lora_alpha / lora_rank if lora_rank > 0 else 1.0
-        
+
         self.down = nn.Linear(in_features, self.rank, bias=False)
         self.up = nn.Linear(self.rank, out_features, bias=bias)
-        
+
         if lora_rank > 0:
             self.lora_A = nn.Parameter(torch.randn(lora_rank, in_features) * 0.01)
             self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
-        
+
         self.reset_parameters()
-    
+
     def forward(self, x):
         out = self.up(self.down(x))
         if self.lora_rank > 0:
@@ -42,7 +50,7 @@ class FactorisedLinear(nn.Module):
 def decompose_from_weight(self, weight, bias=None, energy=None):
     with torch.no_grad():
         W = weight.float()
-        
+
         # Handle GQA dimension mismatch
         if W.shape[0] < self.out_features and self.out_features % W.shape[0] == 0:
             rep = self.out_features // W.shape[0]
@@ -50,52 +58,56 @@ def decompose_from_weight(self, weight, bias=None, energy=None):
         elif W.shape[0] > self.out_features and W.shape[0] % self.out_features == 0:
             rep = W.shape[0] // self.out_features
             W = W.view(self.out_features, rep, -1).mean(dim=1)
-        
+
         # SVD
         U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-        
+
         # Energy-based rank
         target_energy = energy if energy is not None else self.energy
-        total_energy = (S ** 2).sum()
-        cum_energy = torch.cumsum(S ** 2, dim=0) / (total_energy + 1e-12)
+        total_energy = (S**2).sum()
+        cum_energy = torch.cumsum(S**2, dim=0) / (total_energy + 1e-12)
         calc_rank = int((cum_energy < target_energy).sum().item()) + 1
         r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
         r = max(1, r)
-        
+
         # Symmetric distribution
         sqrt_s = torch.sqrt(S[:r])
         A = (U[:, :r] * sqrt_s).to(self.up.weight.dtype)
         B = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype)
-        
+
         # Store
         self.up.weight.data.zero_()
         self.down.weight.data.zero_()
         self.up.weight.data[:, :r] = A
         self.down.weight.data[:r, :] = B
-        
+
         self.freeze_base_weights()
 ```
 
 ## B.3 The Injection Hook (Minimal)
 
 ```python
-def inject_minimal_svd(layer, model_config, comp_config=None,
-                       layer_idx=0, total_layers=1, old_attn=None, **kwargs):
+def inject_minimal_svd(
+    layer, model_config, comp_config=None, layer_idx=0, total_layers=1, old_attn=None, **kwargs
+):
     if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
-    
+        model_config = type("Cfg", (), {"hidden_size": 64, "num_heads": 4, "rank": 32})()
+
     energy = getattr(comp_config, "svd_energy", 0.95) if comp_config else 0.95
     dropout = getattr(comp_config, "dropout", 0.1) if comp_config else 0.1
-    
+
     new_attn = MinimalSVDAttention(
         model_config=model_config,
         energy=energy,
         dropout=dropout,
     )
-    
-    src_attn = old_attn if old_attn is not None else \
-               getattr(layer, "attention", getattr(layer, "self", None))
-    
+
+    src_attn = (
+        old_attn
+        if old_attn is not None
+        else getattr(layer, "attention", getattr(layer, "self", None))
+    )
+
     if src_attn is not None:
         try:
             new_attn.copy_weights(src_attn)
@@ -105,7 +117,7 @@ def inject_minimal_svd(layer, model_config, comp_config=None,
         p = next(src_attn.parameters(), None)
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)
-    
+
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
             layer.attention.self = new_attn
@@ -118,7 +130,7 @@ def inject_minimal_svd(layer, model_config, comp_config=None,
         new_attn.is_nested_encoder = True
     else:
         new_attn.is_nested_encoder = False
-    
+
     return new_attn
 ```
 
@@ -155,7 +167,7 @@ if hasattr(src, "c_attn"):
     c_attn_mod = src.c_attn
     base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
     weight = base_c.weight.data.clone()
-    
+
     is_conv1d = (
         "Conv1D" in type(c_attn_mod).__name__
         or "Conv1D" in type(base_c).__name__
@@ -164,11 +176,11 @@ if hasattr(src, "c_attn"):
     )
     if is_conv1d:
         weight = weight.t()
-    
+
     split_size = weight.shape[0] // 3
     q_w = weight[:split_size, :]
-    k_w = weight[split_size:2*split_size, :]
-    v_w = weight[2*split_size:, :]
+    k_w = weight[split_size : 2 * split_size, :]
+    v_w = weight[2 * split_size :, :]
 ```
 
 ## B.6 Nested Encoder Detection
@@ -179,9 +191,10 @@ MinimalSVD sets `is_nested_encoder` in **two places**:
 
 ```python
 model_type = getattr(cfg, "model_type", "").lower() if cfg else ""
-self.is_nested_encoder = (
-    getattr(cfg, "is_nested_encoder", False)
-    or model_type in ("roberta", "bert", "xlm-roberta")
+self.is_nested_encoder = getattr(cfg, "is_nested_encoder", False) or model_type in (
+    "roberta",
+    "bert",
+    "xlm-roberta",
 )
 ```
 
@@ -189,14 +202,15 @@ self.is_nested_encoder = (
 
 ```python
 cls_name = src.__class__.__name__
-has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj"))
+has_out_proj = any(
+    hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj")
+)
 
 is_nested = False
 if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
     is_nested = True
-elif (
-    cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
-    or (cls_name.endswith("SelfAttention") and not has_out_proj)
+elif cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention") or (
+    cls_name.endswith("SelfAttention") and not has_out_proj
 ):
     is_nested = True
 
@@ -224,7 +238,7 @@ if is_conv1d:
 
 ```python
 # WRONG (RoBERTa)
-self.is_nested_encoder = False   # out_proj applied twice
+self.is_nested_encoder = False  # out_proj applied twice
 
 # RIGHT
 self.is_nested_encoder = True

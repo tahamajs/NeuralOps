@@ -71,8 +71,8 @@ without applying `out_lin`. The outer `attention.output.dense` applies it.
 w = src.c_attn.weight.data.t()  # (3d, d)
 q_w, k_w, v_w = w.chunk(3, dim=0)
 extracted["q"] = (q_w, src.c_attn.bias.data[:d])
-extracted["k"] = (k_w, src.c_attn.bias.data[d:2*d])
-extracted["v"] = (v_w, src.c_attn.bias.data[2*d:])
+extracted["k"] = (k_w, src.c_attn.bias.data[d : 2 * d])
+extracted["v"] = (v_w, src.c_attn.bias.data[2 * d :])
 extracted["o"] = (src.c_proj.weight.data.t(), src.c_proj.bias.data)
 ```
 
@@ -102,11 +102,14 @@ in missing output).
 The detection logic:
 
 ```python
-if (hasattr(src, "self") and hasattr(src.self, "query")
-    and hasattr(src, "output") and hasattr(src.output, "dense")):
+if (
+    hasattr(src, "self")
+    and hasattr(src.self, "query")
+    and hasattr(src, "output")
+    and hasattr(src.output, "dense")
+):
     is_nested = True
-elif (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower()
-      and not has_out_lin):
+elif cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower() and not has_out_lin:
     is_nested = True
 ```
 
@@ -191,8 +194,7 @@ class EATBlock(BaseAttention):
 ```python
 @ATTENTION_REGISTRY.register("eat")
 @ATTENTION_REGISTRY.register("eat_attention")
-class EATBlock(BaseAttention):
-    ...
+class EATBlock(BaseAttention): ...
 ```
 
 ## 5.11 Causality Verification
@@ -212,7 +214,7 @@ X = torch.randn(1, L, d, requires_grad=True)
 Y = model(X)
 loss = Y[0, i].sum()
 loss.backward()
-assert X.grad[0, i+1:].abs().max() < 1e-6
+assert X.grad[0, i + 1 :].abs().max() < 1e-6
 ```
 
 32

@@ -122,8 +122,10 @@ Across the unified quality sweeps evaluating 271 module configurations on Distil
   - Replace line 481:
     ```python
     # Before (BUGS: raises Boolean Tensor error):
-    hidden_states = kwargs.get("hidden_states") or kwargs.get("input_ids") or (args[0] if args else None)
-    
+    hidden_states = (
+        kwargs.get("hidden_states") or kwargs.get("input_ids") or (args[0] if args else None)
+    )
+
     # After (SAFE):
     if hidden_states is None:
         if "hidden_states" in kwargs and kwargs["hidden_states"] is not None:

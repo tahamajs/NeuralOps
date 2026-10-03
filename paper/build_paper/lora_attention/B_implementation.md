@@ -4,35 +4,36 @@
 
 ```python
 class LoRALinear(nn.Module):
-    def __init__(self, in_features, out_features, bias=True,
-                 lora_rank=16, lora_alpha=32.0, freeze_base=False):
+    def __init__(
+        self, in_features, out_features, bias=True, lora_rank=16, lora_alpha=32.0, freeze_base=False
+    ):
         super().__init__()
         self.weight = nn.Parameter(torch.empty(out_features, in_features))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features))
-        
+
         if lora_rank > 0:
             self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
             self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
-        
+
         self.reset_parameters()
         if freeze_base:
             self.freeze_base_weights()
-    
+
     def reset_parameters(self):
         nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
         if self.bias is not None:
             fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
             bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
             nn.init.uniform_(self.bias, -bound, bound)
-        
+
         if self.lora_rank > 0:
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B)
-    
+
     def freeze_base_weights(self):
         self.weight.requires_grad = False
         if self.bias is not None:
@@ -40,7 +41,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0:
             self.lora_A.requires_grad = True
             self.lora_B.requires_grad = True
-    
+
     def forward(self, x):
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0:

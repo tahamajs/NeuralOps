@@ -831,8 +831,8 @@ without applying `out_lin`. The outer `attention.output.dense` applies it.
 w = src.c_attn.weight.data.t()  # (3d, d)
 q_w, k_w, v_w = w.chunk(3, dim=0)
 extracted["q"] = (q_w, src.c_attn.bias.data[:d])
-extracted["k"] = (k_w, src.c_attn.bias.data[d:2*d])
-extracted["v"] = (v_w, src.c_attn.bias.data[2*d:])
+extracted["k"] = (k_w, src.c_attn.bias.data[d : 2 * d])
+extracted["v"] = (v_w, src.c_attn.bias.data[2 * d :])
 extracted["o"] = (src.c_proj.weight.data.t(), src.c_proj.bias.data)
 ```
 
@@ -862,11 +862,14 @@ in missing output).
 The detection logic:
 
 ```python
-if (hasattr(src, "self") and hasattr(src.self, "query")
-    and hasattr(src, "output") and hasattr(src.output, "dense")):
+if (
+    hasattr(src, "self")
+    and hasattr(src.self, "query")
+    and hasattr(src, "output")
+    and hasattr(src.output, "dense")
+):
     is_nested = True
-elif (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower()
-      and not has_out_lin):
+elif cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower() and not has_out_lin:
     is_nested = True
 ```
 
@@ -951,8 +954,7 @@ class EATBlock(BaseAttention):
 ```python
 @ATTENTION_REGISTRY.register("eat")
 @ATTENTION_REGISTRY.register("eat_attention")
-class EATBlock(BaseAttention):
-    ...
+class EATBlock(BaseAttention): ...
 ```
 
 ## 5.11 Causality Verification
@@ -972,7 +974,7 @@ X = torch.randn(1, L, d, requires_grad=True)
 Y = model(X)
 loss = Y[0, i].sum()
 loss.backward()
-assert X.grad[0, i+1:].abs().max() < 1e-6
+assert X.grad[0, i + 1 :].abs().max() < 1e-6
 ```
 
 32
@@ -1731,9 +1733,12 @@ python run_all_4_eat.py --no_prune
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 torch.backends.cudnn.deterministic = True
 ```
 
@@ -2044,8 +2049,9 @@ class EATBlock(BaseAttention):
 
 ```python
 class LoRALinear(nn.Module):
-    def __init__(self, in_features, out_features, bias=True,
-                 lora_rank=16, lora_alpha=32.0, freeze_base=False):
+    def __init__(
+        self, in_features, out_features, bias=True, lora_rank=16, lora_alpha=32.0, freeze_base=False
+    ):
         super().__init__()
         self.weight = nn.Parameter(torch.empty(out_features, in_features))
         if bias:
@@ -2056,7 +2062,7 @@ class LoRALinear(nn.Module):
         self.reset_parameters()
         if freeze_base:
             self.freeze_base_weights()
-    
+
     def forward(self, x):
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0:
@@ -2111,12 +2117,15 @@ extracted["o"] = (src.o_proj.weight.data, src.o_proj.bias.data)
 **Critical code path** (in `copy_weights`):
 
 ```python
-missing_after = [k for k, (w, _) in extracted.items() 
-                 if w is None and (k != "o" or not self.is_nested_encoder)]
+missing_after = [
+    k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)
+]
 if missing_after:
-    logger.warning(f"EATBlock copy_weights: missing projections {missing_after} "
-                   f"from {pretrained_attn.__class__.__name__}; "
-                   f"proceeding with random init for those")
+    logger.warning(
+        f"EATBlock copy_weights: missing projections {missing_after} "
+        f"from {pretrained_attn.__class__.__name__}; "
+        f"proceeding with random init for those"
+    )
     # ← continues, doesn't raise
 ```
 
@@ -2604,10 +2613,15 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
     if to_pdf:
         try:
             subprocess.run(
-                ["pandoc", str(output),
-                 "-o", str(output.with_suffix(".pdf")),
-                 "--pdf-engine=xelatex",
-                 "-V", "geometry:margin=1in"],
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
                 check=True,
             )
             print(f"PDF: {output.with_suffix('.pdf')}")

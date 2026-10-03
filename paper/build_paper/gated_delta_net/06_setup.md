@@ -98,6 +98,7 @@ We measure per-step training time:
 
 ```python
 import time
+
 start = time.time()
 for step in range(5):
     ...  # training step

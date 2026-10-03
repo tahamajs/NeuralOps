@@ -32,55 +32,57 @@ class HymbaTransXBlock(BaseAttention):
 ```python
 def forward(self, x, attention_mask=None, position_embeddings=None, **kwargs):
     B, L, D = x.shape
-    
+
     # 1. Projections
     q1 = self.W_q1(x).view(B, L, H, Dh).transpose(1, 2)
     k1 = self.W_k1(x).view(B, L, Hkv, Dh).transpose(1, 2)
     q2 = self.W_q2(x).view(B, L, H, Dh).transpose(1, 2)
     k2 = self.W_k2(x).view(B, L, Hkv, Dh).transpose(1, 2)
     v = self.W_v(x).view(B, L, Hkv, Dh).transpose(1, 2)
-    
+
     # 2. RoPE
     if position_embeddings is not None:
         cos, sin = position_embeddings
         q1, k1 = apply_rotary_pos_emb(q1, k1, cos, sin)
         q2, k2 = apply_rotary_pos_emb(q2, k2, cos, sin)
     else:
-        q1 = self.rope(q1); k1 = self.rope(k1)
-        q2 = self.rope(q2); k2 = self.rope(k2)
-    
+        q1 = self.rope(q1)
+        k1 = self.rope(k1)
+        q2 = self.rope(q2)
+        k2 = self.rope(k2)
+
     # 3. GQA
     if self.kv_repeat > 1:
         k1 = repeat_kv(k1, self.kv_repeat)
         k2 = repeat_kv(k2, self.kv_repeat)
         v = repeat_kv(v, self.kv_repeat)
-    
+
     # 4. Attention
     scale = 1.0 / math.sqrt(self.head_dim)
     scores1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1)) * scale
     scores2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1)) * scale
-    
+
     # 5. Causal mask
     if self.is_decoder:
         causal_mask = torch.tril(torch.ones(L, L, dtype=torch.bool))
         scores1 = scores1.masked_fill(~causal_mask, -1e4)
         scores2 = scores2.masked_fill(~causal_mask, -1e4)
-    
+
     # 6. Padding mask
     if attention_mask is not None:
         valid = get_token_valid_mask(attention_mask, B, L, x.device)
         scores1 = scores1.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
         scores2 = scores2.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
-    
+
     # 7. Differential
     attn1 = F.softmax(scores1, dim=-1)
     attn2 = F.softmax(scores2, dim=-1)
     diff_attn = F.relu(attn1 - 0.2 * attn2)
     diff_attn = diff_attn / (diff_attn.sum(dim=-1, keepdim=True) + 1e-6)
-    
+
     # 8. Context
     A_out = torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-    
+
     # 9. SSM
     if self.is_decoder:
         M_out = self.mamba(x, attention_mask=attention_mask)[0]
@@ -89,11 +91,11 @@ def forward(self, x, attention_mask=None, position_embeddings=None, **kwargs):
         mf = self.mamba(x, attention_mask=attention_mask)[0]
         mb = self.mamba(x_rev, attention_mask=attention_mask)[0]
         M_out = 0.5 * (mf + torch.flip(mb, dims=[1]))
-    
+
     # 10. Fusion
     alpha = torch.sigmoid(self.alpha)
     combined = alpha * A_out + (1.0 - alpha) * M_out
-    
+
     return self.out_proj(combined), None
 ```
 

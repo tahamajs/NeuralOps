@@ -930,8 +930,10 @@ Unlike other modules, this one **raises** if a weight has near-zero norm:
 ```python
 w_norm = float(torch.norm(target_mod.weight.data).item())
 if w_norm < 1e-4:
-    raise RuntimeError(f"RoutingAttention weight verification failed for '{proj_key}': "
-                       f"norm too small ({w_norm:.2e})")
+    raise RuntimeError(
+        f"RoutingAttention weight verification failed for '{proj_key}': "
+        f"norm too small ({w_norm:.2e})"
+    )
 ```
 
 **This is a bug.** If any projection weight is legitimately small, the 
@@ -947,7 +949,7 @@ it twice could corrupt the model.
 ```python
 # Verify injection
 for name, mod in model.named_modules():
-    if 'routing' in type(mod).__name__.lower():
+    if "routing" in type(mod).__name__.lower():
         print(name, type(mod).__name__)
 ```
 
@@ -1691,8 +1693,11 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 ```
 
@@ -2013,7 +2018,11 @@ for k in range(K_num):
     scores = scores.masked_fill(eye, 0.0)
 
     if is_causal:
-        causal_mask = torch.triu(torch.full((L, L), True, device=device), diagonal=1).unsqueeze(0).unsqueeze(0)
+        causal_mask = (
+            torch.triu(torch.full((L, L), True, device=device), diagonal=1)
+            .unsqueeze(0)
+            .unsqueeze(0)
+        )
         scores = scores.masked_fill(causal_mask & (~eye), -1e4)
 
     attn = F.softmax(scores, dim=-1)
@@ -2050,8 +2059,7 @@ scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
 ```python
 @ATTENTION_REGISTRY.register("routing")
 @ATTENTION_REGISTRY.register("routing_attention")
-class RoutingAttention(BaseAttention):
-    ...
+class RoutingAttention(BaseAttention): ...
 ```
 
 ## B.5 Injection
@@ -2075,7 +2083,7 @@ def inject_routing(layer, model_config, ...):
 B, H, L, _ = Q.shape
 K = 16
 cluster_ids = attn._kmeans_assign(joint_feat, K, n_iters=3)
-print(f"Cluster sizes: {[int((cluster_ids[0,0]==k).sum()) for k in range(K)]}")
+print(f"Cluster sizes: {[int((cluster_ids[0, 0] == k).sum()) for k in range(K)]}")
 ```
 ```
 
@@ -2406,12 +2414,25 @@ None.
 
 ```python
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 ```
 

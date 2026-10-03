@@ -32,6 +32,7 @@ python run_all_4_orion.py \
 
 ```python
 from huggingface_hub import hf_hub_download
+
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
         repo_id=f"efficiency-lab/svd-linear-attention-{model}-orion",
@@ -85,10 +86,10 @@ torch.cuda.manual_seed_all(seed)
 
 ```python
 for name, mod in model.named_modules():
-    if hasattr(mod, 'down') and hasattr(mod, 'up'):
+    if hasattr(mod, "down") and hasattr(mod, "up"):
         orig = mod.in_features * mod.out_features
         new = mod.down.weight.numel() + mod.up.weight.numel()
-        print(f"{name}: {orig} → {new} ({orig/new:.1f}×)")
+        print(f"{name}: {orig} → {new} ({orig / new:.1f}×)")
 ```
 
 ### Check Head Split
@@ -102,7 +103,7 @@ print(f"Full heads: {model.num_full_heads}")
 
 ```python
 sd = model.state_dict()
-assert any('rff_proj' in k for k in sd), "rff_proj NOT in state_dict!"  # This will FAIL
+assert any("rff_proj" in k for k in sd), "rff_proj NOT in state_dict!"  # This will FAIL
 ```
 
 ## 12.8 Known Issues

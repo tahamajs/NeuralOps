@@ -99,7 +99,7 @@ context = torch.matmul(attn_weights, V)
 context = context.transpose(1, 2).contiguous().view(...)
 
 if self.is_nested_encoder:
-    return context, None    # Skip out_proj
+    return context, None  # Skip out_proj
 else:
     return self.out_proj(context), None
 ```

@@ -11,10 +11,12 @@
 ```python
 try:
     from flash_attn_interface import flash_attn_func
+
     FLASH_ATTN_AVAILABLE = True
 except ImportError:
     try:
         from flash_attn import flash_attn_func
+
         FLASH_ATTN_AVAILABLE = True
     except ImportError:
         FLASH_ATTN_AVAILABLE = False
@@ -48,12 +50,12 @@ if out is None:
     else:
         # Combine causal and padding
         if causal_flag:
-            causal_m = torch.triu(
-                torch.full((L, kv_len), float("-inf"), device=device),
-                diagonal=1
+            causal_m = torch.triu(torch.full((L, kv_len), float("-inf"), device=device), diagonal=1)
+            attn_mask = (
+                (attn_mask + causal_m.unsqueeze(0).unsqueeze(0))
+                if attn_mask is not None
+                else causal_m.unsqueeze(0).unsqueeze(0)
             )
-            attn_mask = (attn_mask + causal_m.unsqueeze(0).unsqueeze(0)) \
-                        if attn_mask is not None else causal_m.unsqueeze(0).unsqueeze(0)
         out_sdpa = F.scaled_dot_product_attention(
             q, k, v, attn_mask=attn_mask, is_causal=False, dropout_p=self.dropout.p
         )
@@ -95,7 +97,7 @@ else:
 ## B.7 Nested vs Flat Detection
 
 ```python
-if hasattr(src, "out_lin"):        # DistilBERT
+if hasattr(src, "out_lin"):  # DistilBERT
     is_nested = False
 elif hasattr(src, "self") and hasattr(src.self, "query"):  # RoBERTa
     is_nested = True
@@ -150,6 +152,7 @@ causal_flag = self.is_decoder and not is_cross_attention and L == kv_len
 ```python
 # Print hardware capabilities
 import torch
+
 print("GPU:", torch.cuda.get_device_name(0))
 print("Capability:", torch.cuda.get_device_capability(0))
 print("Float8 exists:", hasattr(torch, "float8_e4m3fn"))
@@ -164,8 +167,7 @@ logger.info("FP8 path taken: %s", out is not None)
 ```python
 @ATTENTION_REGISTRY.register("flash3_fp8")
 @ATTENTION_REGISTRY.register("flash_attention3_fp8")
-class FlashAttention3FP8(BaseAttention):
-    ...
+class FlashAttention3FP8(BaseAttention): ...
 ```
 
 ## B.11 Injection Factory

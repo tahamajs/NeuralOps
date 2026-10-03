@@ -92,8 +92,7 @@ kv_input = encoder_hidden_states
 ```python
 @ATTENTION_REGISTRY.register("flash3")
 @ATTENTION_REGISTRY.register("flash_attention3")
-class FlashAttention3(BaseAttention):
-    ...
+class FlashAttention3(BaseAttention): ...
 ```
 
 ## 5.8 Failure Modes

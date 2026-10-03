@@ -77,15 +77,15 @@ def ssm_forward(self, x):
     x_pad = F.pad(x_t, (self.d_conv - 1, 0))
     x_conv = self.conv1d(x_pad)[..., :seqlen].transpose(1, 2)
     x_conv = F.silu(x_conv)
-    
+
     x_proj = self.x_proj(x_conv)
     delta = F.softplus(self.dt_proj(x_proj[:, :, :dt_rank]) + self.dt_bias)
     delta = delta.clamp(min=1e-3, max=0.1)
-    B_ssm = x_proj[:, :, dt_rank:dt_rank+d_state]
-    C_ssm = x_proj[:, :, dt_rank+d_state:]
-    
+    B_ssm = x_proj[:, :, dt_rank : dt_rank + d_state]
+    C_ssm = x_proj[:, :, dt_rank + d_state :]
+
     A = -torch.exp(self.A_log.clamp(min=-20, max=10))
-    
+
     # Chunked scan
     h_running = zeros(B, inner_dim, d_state)
     y_chunks = []

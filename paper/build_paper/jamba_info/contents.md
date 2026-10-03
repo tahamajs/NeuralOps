@@ -1382,6 +1382,7 @@ python run_all_4_jamba_info.py --bottleneck_dim 768  # full dim
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
@@ -1662,27 +1663,27 @@ class InfoMambaConceptBottleneck(nn.Module):
 ```python
 def forward(self, x, attention_mask=None, position_embeddings=None):
     B, L, D = x.shape
-    
+
     # Differential attention branch
     q1 = self.W_q1(x).view(B, L, H, Dh).transpose(1, 2)
     k1 = self.W_k1(x).view(B, L, Hkv, Dh).transpose(1, 2)
     q2 = self.W_q2(x).view(B, L, H, Dh).transpose(1, 2)
     k2 = self.W_k2(x).view(B, L, Hkv, Dh).transpose(1, 2)
     v = self.W_v(x).view(B, L, Hkv, Dh).transpose(1, 2)
-    
+
     if position_embeddings is not None:
         cos, sin = position_embeddings
         q1, k1 = apply_rotary_pos_emb(q1, k1, cos, sin)
         q2, k2 = apply_rotary_pos_emb(q2, k2, cos, sin)
-    
+
     if self.kv_repeat > 1:
         k1 = repeat_kv(k1, self.kv_repeat)
         k2 = repeat_kv(k2, self.kv_repeat)
         v = repeat_kv(v, self.kv_repeat)
-    
+
     scores1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1)) * scale
     scores2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1)) * scale
-    
+
     # masks
     if self.is_decoder:
         causal = torch.tril(...)
@@ -1690,14 +1691,16 @@ def forward(self, x, attention_mask=None, position_embeddings=None):
         scores2 = scores2.masked_fill(~causal, -1e4)
     if attention_mask is not None:
         ...
-    
+
     attn1 = F.softmax(scores1, dim=-1)
     attn2 = F.softmax(scores2, dim=-1)
     diff_attn = F.relu(attn1 - 0.2 * attn2)
     diff_attn = diff_attn / (diff_attn.sum(dim=-1, keepdim=True) + 1e-8)
-    
-    attn_out = torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-    
+
+    attn_out = (
+        torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+    )
+
     # Concept-bottlenecked SSM
     z = self.bottleneck(x)  # (B, L, D)
     if self.is_decoder:
@@ -1707,11 +1710,11 @@ def forward(self, x, attention_mask=None, position_embeddings=None):
         M_fwd = self.ssm(z, attention_mask=attention_mask)[0]
         M_bwd = self.ssm(z_rev, attention_mask=attention_mask)[0]
         ssm_branch = 0.5 * (M_fwd + torch.flip(M_bwd, dims=[1]))
-    
+
     # Fusion
     alpha = torch.sigmoid(self.alpha_raw)
     combined = (1 - alpha) * attn_out + alpha * ssm_branch
-    
+
     if self.is_nested_encoder:
         return combined, None
     return self.out_proj(combined), None
@@ -2015,12 +2018,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2046,12 +2062,18 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
 
     if to_pdf:
         try:
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
+            subprocess.run(
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
+                check=True,
+            )
             print(f"PDF: {output.with_suffix('.pdf')}")
         except Exception as e:
             print(f"PDF skipped: {e}")

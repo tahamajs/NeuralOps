@@ -1667,8 +1667,11 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 ```
 
@@ -2004,29 +2007,27 @@ if is_causal:
     S = torch.zeros(B, H, d, d, device=..., dtype=q.dtype)
     z = torch.zeros(B, H, d, device=..., dtype=q.dtype)
     num_list, denom_list = [], []
-    
+
     for i in range(seq_len):
         q_i = q_prime[:, :, i, :]  # (B, H, d)
         k_i = k_prime[:, :, i, :]
         v_i = v_masked[:, :, i, :]
-        
+
         S = S + torch.einsum("bhd,bhe->bhde", k_i, v_i)
         z = z + k_i
-        
+
         num_i = torch.einsum("bhd,bhde->bhe", q_i, S)
         denom_i = torch.einsum("bhd,bhd->bh", q_i, z).unsqueeze(-1)
         num_list.append(num_i)
         denom_list.append(denom_i)
-    
+
     num = torch.stack(num_list, dim=2)
     denom = torch.stack(denom_list, dim=2).clamp(min=1e-4)
     lin_out = torch.nan_to_num(num / denom)
-    
+
     # Augmentation
     rank_mat = torch.einsum("hdr,her->hde", self.U, self.V)  # (H, d, d)
-    aug_out = torch.nan_to_num(
-        torch.einsum("bhnd,hde->bhne", q_prime, rank_mat) / denom
-    )
+    aug_out = torch.nan_to_num(torch.einsum("bhnd,hde->bhne", q_prime, rank_mat) / denom)
 ```
 
 ## B.3 Forward Pass (Non-Causal)
@@ -2063,11 +2064,11 @@ return self.out_proj(out), None
 Standard extraction handles four families:
 
 ```python
-if hasattr(src, "c_attn"):        # GPT-2
+if hasattr(src, "c_attn"):  # GPT-2
     ...
-elif hasattr(src, "self"):        # RoBERTa
+elif hasattr(src, "self"):  # RoBERTa
     ...
-else:                             # DistilBERT, Qwen
+else:  # DistilBERT, Qwen
     ...
 ```
 
@@ -2103,7 +2104,7 @@ denom = denom.clamp(min=1e-4)
 ### B.6.4 Nested Encoder Detection
 
 ```python
-if hasattr(src, "out_lin"):      # DistilBERT (flat)
+if hasattr(src, "out_lin"):  # DistilBERT (flat)
     is_nested = False
 elif hasattr(src, "self") and hasattr(src.self, "query"):  # RoBERTa
     is_nested = True
@@ -2115,8 +2116,7 @@ elif hasattr(src, "self") and hasattr(src.self, "query"):  # RoBERTa
 @ATTENTION_REGISTRY.register("rala")
 @ATTENTION_REGISTRY.register("rala_attention")
 @ATTENTION_REGISTRY.register("rala_linear_attention")
-class RALALinearAttention(BaseAttention):
-    ...
+class RALALinearAttention(BaseAttention): ...
 ```
 
 ## B.8 Diagnostics
@@ -2129,7 +2129,7 @@ for name, mod in model.named_modules():
 
 # Check alpha
 for name, mod in model.named_modules():
-    if hasattr(mod, 'alpha'):
+    if hasattr(mod, "alpha"):
         print(f"{name}: alpha = {mod.alpha.item():.4f}")
 ```
 ```
@@ -2459,12 +2459,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2487,10 +2500,18 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
     print(f"Wrote {len(full):,} chars to {output}")
     if to_pdf:
         try:
-            subprocess.run([
-                "pandoc", str(output), "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex", "-V", "geometry:margin=1in",
-            ], check=True)
+            subprocess.run(
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
+                check=True,
+            )
             print(f"Wrote PDF to {output.with_suffix('.pdf')}")
         except (subprocess.CalledProcessError, FileNotFoundError):
             print("pandoc not available. Skipping PDF.")
@@ -2546,12 +2567,14 @@ def apply_vars(module_dir: Path, dry_run: bool = False):
     for md_file in sorted(module_dir.glob("*.md")):
         content = md_file.read_text(encoding="utf-8")
         missing = set()
+
         def replace(match):
             key = match.group(1)
             if key in variables:
                 return str(variables[key])
             missing.add(key)
             return match.group(0)
+
         new_content = PATTERN.sub(replace, content)
         if new_content != content:
             if dry_run:

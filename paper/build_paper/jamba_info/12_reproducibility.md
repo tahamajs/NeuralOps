@@ -42,6 +42,7 @@ python run_all_4_jamba_info.py --bottleneck_dim 768  # full dim
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)

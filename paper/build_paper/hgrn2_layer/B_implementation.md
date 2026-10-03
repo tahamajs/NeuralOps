@@ -4,14 +4,23 @@
 
 ```python
 class HGRN2Layer(BaseAttention):
-    def __init__(self, config, rank=None, d_model=None, 
-                 res_clip=30.0, lora_rank=16, lora_alpha=32.0, 
-                 is_decoder=None, freeze_base=True, **kwargs):
+    def __init__(
+        self,
+        config,
+        rank=None,
+        d_model=None,
+        res_clip=30.0,
+        lora_rank=16,
+        lora_alpha=32.0,
+        is_decoder=None,
+        freeze_base=True,
+        **kwargs,
+    ):
         super().__init__(config, rank)
-        
+
         self.d_model = resolve_d_model(config, d_model, kwargs)
         self.res_clip = res_clip
-        
+
         # Gates
         self.forget_gate = nn.Linear(self.d_model, self.d_model)
         self.input_gate = nn.Linear(self.d_model, self.d_model)
@@ -19,7 +28,7 @@ class HGRN2Layer(BaseAttention):
         self.g_proj = nn.Linear(self.d_model, self.d_model)
         self.state_norm = nn.LayerNorm(self.d_model)
         self.out_proj = nn.Linear(self.d_model, self.d_model)
-        
+
         # Init
         nn.init.normal_(self.forget_gate.weight, std=0.01)
         nn.init.constant_(self.forget_gate.bias, -2.5)
@@ -38,35 +47,34 @@ def _scan_direction(self, f, iv, chunk_size=32):
     f_fp32 = f.float()
     iv_fp32 = iv.float()
     log_f = torch.log(f_fp32.clamp(min=1e-6))
-    
+
     h_chunks = []
     h_prev = torch.zeros(B, D, device=iv.device, dtype=torch.float32)
-    
+
     for start in range(0, L, chunk_size):
         end = min(start + chunk_size, L)
         C = end - start
-        
-        f_c = log_f[:, start:end]           # (B, C, D)
-        iv_c = iv_fp32[:, start:end]        # (B, C, D)
-        
-        A = torch.cumsum(f_c, dim=1)        # (B, C, D)
-        A_diff = A.unsqueeze(2) - A.unsqueeze(1)   # (B, C, C, D)
-        
+
+        f_c = log_f[:, start:end]  # (B, C, D)
+        iv_c = iv_fp32[:, start:end]  # (B, C, D)
+
+        A = torch.cumsum(f_c, dim=1)  # (B, C, D)
+        A_diff = A.unsqueeze(2) - A.unsqueeze(1)  # (B, C, C, D)
+
         mask = torch.tril(torch.ones(C, C, device=iv.device, dtype=torch.bool))
-        A_diff = torch.where(mask.unsqueeze(0).unsqueeze(-1), A_diff, 
-                             torch.full_like(A_diff, -1e4))
-        
+        A_diff = torch.where(mask.unsqueeze(0).unsqueeze(-1), A_diff, torch.full_like(A_diff, -1e4))
+
         decay_weights = torch.exp(A_diff) * mask.unsqueeze(0).unsqueeze(-1)
         intra = torch.sum(decay_weights * iv_c.unsqueeze(1), dim=2)
         inter = h_prev.unsqueeze(1) * torch.exp(A)
         h_c = inter + intra
-        
+
         if self.res_clip is not None and self.res_clip > 0:
             h_c = torch.clamp(h_c, -self.res_clip, self.res_clip)
-        
+
         h_chunks.append(h_c)
         h_prev = h_c[:, -1]
-    
+
     return torch.cat(h_chunks, dim=1).to(iv.dtype)
 ```
 

@@ -827,8 +827,7 @@ if self.kv_repeat > 1:
 ```python
 @ATTENTION_REGISTRY.register("cluster")
 @ATTENTION_REGISTRY.register("cluster_attention")
-class ClusterAttention(BaseAttention):
-    ...
+class ClusterAttention(BaseAttention): ...
 ```
 
 ## 5.8 Failure Modes
@@ -1736,8 +1735,7 @@ empty_clusters = (counts == 0).squeeze(-1).unsqueeze(2)
 scores_assign = scores_assign.masked_fill(empty_clusters, -10000.0)
 temp_clamped = self.temp.abs().clamp(min=0.1, max=10.0)
 attn_assign = torch.nan_to_num(
-    F.softmax((scores_assign / temp_clamped).float(), dim=-1),
-    nan=0.0
+    F.softmax((scores_assign / temp_clamped).float(), dim=-1), nan=0.0
 ).to(dtype)
 assign_denom = attn_assign.sum(dim=-1, keepdim=True).clamp(min=1.0)
 attn_assign = attn_assign / assign_denom

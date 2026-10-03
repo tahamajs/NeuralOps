@@ -813,7 +813,7 @@ attention.output.dense: Linear(768, 768)
 ### 5.2.3 GPT-2 (Causal)
 
 ```python
-attn.c_attn: Conv1D(768, 2304)   # fused Q, K, V
+attn.c_attn: Conv1D(768, 2304)  # fused Q, K, V
 attn.c_proj: Conv1D(768, 768)
 ```
 
@@ -827,8 +827,8 @@ q_w, k_w, v_w = w.chunk(3, dim=0)
 ### 5.2.4 Qwen3.5 (GQA-native)
 
 ```python
-q_proj: Linear(1024, 2048)   # 8 heads × 256
-k_proj: Linear(1024, 512)    # 2 heads × 256
+q_proj: Linear(1024, 2048)  # 8 heads × 256
+k_proj: Linear(1024, 512)  # 2 heads × 256
 v_proj: Linear(1024, 512)
 o_proj: Linear(2048, 1024)
 ```
@@ -1668,6 +1668,7 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
@@ -2496,12 +2497,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2527,12 +2541,18 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
 
     if to_pdf:
         try:
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
+            subprocess.run(
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
+                check=True,
+            )
             print(f"PDF: {output.with_suffix('.pdf')}")
         except Exception as e:
             print(f"PDF skipped: {e}")

@@ -150,8 +150,7 @@ except Exception as e:
 ```python
 @ATTENTION_REGISTRY.register("res_svd")
 @ATTENTION_REGISTRY.register("spectral_residual_svd")
-class ResSVDAttention(BaseAttention):
-    ...
+class ResSVDAttention(BaseAttention): ...
 ```
 
 ## 5.9 Cross-Attention

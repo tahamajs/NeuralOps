@@ -17,7 +17,8 @@ UniversalAdapter first, then fallbacks:
 
 ```python
 c_w = src.c_attn.weight
-if c_w.shape[0] < c_w.shape[1]: c_w = c_w.t()
+if c_w.shape[0] < c_w.shape[1]:
+    c_w = c_w.t()
 q_w, k_w, v_w = c_w.chunk(3, dim=0)
 o_w = src.c_proj.weight.t()
 ```
@@ -72,7 +73,7 @@ For RoBERTa, `is_nested_encoder = True`. Raw context returned.
 ```python
 q_pos = torch.arange(N).view(1, 1, N, 1)
 k_land_pos = land_idx.unsqueeze(2)
-causal_land_mask = (k_land_pos <= q_pos)
+causal_land_mask = k_land_pos <= q_pos
 attn_weights = attn_weights.masked_fill(~causal_land_mask, -1e4)
 ```
 
@@ -99,9 +100,12 @@ Output: M with attention replaced
 ## 5.10 Double-Injection Guard
 
 ```python
-if isinstance(src_attn, LEKAv2Attention): return None
-if "LEKAv2" in src_attn.__class__.__name__: return None
-if "LEKA" in src_attn.__class__.__name__: return None
+if isinstance(src_attn, LEKAv2Attention):
+    return None
+if "LEKAv2" in src_attn.__class__.__name__:
+    return None
+if "LEKA" in src_attn.__class__.__name__:
+    return None
 ```
 
 ## 5.11 Registry
@@ -109,8 +113,7 @@ if "LEKA" in src_attn.__class__.__name__: return None
 ```python
 @ATTENTION_REGISTRY.register("leka_v2")
 @ATTENTION_REGISTRY.register("leka_v2_attention")
-class LEKAv2Attention(BaseAttention):
-    ...
+class LEKAv2Attention(BaseAttention): ...
 ```
 
 ## 5.12 Cross-Attention

@@ -56,9 +56,12 @@ python run_all_4_aegis_v5.py - num_local_heads 0 - num_global_heads 12 - output_
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 ```
 
 ## 12.6 Expected Results

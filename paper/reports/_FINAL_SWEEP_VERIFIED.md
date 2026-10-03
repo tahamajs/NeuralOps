@@ -252,20 +252,20 @@ collapse_flag, status_raw, path, timestamp
 **`sed -n '2590,2620p' Codes/framework/run_quality_sweep.py`** (exact output):
 
 ```python
-    p0 = majority_baseline_ratio
-    se = math.sqrt(p0 * (1.0 - p0) / max(1, total_val_samples))
-    z_score = 3.0  # 3 standard errors above chance for 99.87% confidence
-    # Dataset-aware chance and threshold calibration
-    # Dynamic threshold: always derived from the actual validation split majority.
-    # No dataset-specific hardcodes — the majority, SE, and threshold are computed
-    # live from the loaded validation split.  This ensures the threshold is always
-    # calibrated to whatever dataset+split is actually on disk.
-    stat_margin_pct = round(z_score * se * 100.0, 2)
-    pass_threshold_pct = round(majority_baseline_pct + stat_margin_pct, 2)
-    threshold_source = (
-        f"dynamic: majority={majority_baseline_pct:.2f}% ({majority_count}/{total_val_samples}), "
-        f"SE={se*100:.3f}%, 3*SE={stat_margin_pct:.3f}%"
-    )
+p0 = majority_baseline_ratio
+se = math.sqrt(p0 * (1.0 - p0) / max(1, total_val_samples))
+z_score = 3.0  # 3 standard errors above chance for 99.87% confidence
+# Dataset-aware chance and threshold calibration
+# Dynamic threshold: always derived from the actual validation split majority.
+# No dataset-specific hardcodes — the majority, SE, and threshold are computed
+# live from the loaded validation split.  This ensures the threshold is always
+# calibrated to whatever dataset+split is actually on disk.
+stat_margin_pct = round(z_score * se * 100.0, 2)
+pass_threshold_pct = round(majority_baseline_pct + stat_margin_pct, 2)
+threshold_source = (
+    f"dynamic: majority={majority_baseline_pct:.2f}% ({majority_count}/{total_val_samples}), "
+    f"SE={se * 100:.3f}%, 3*SE={stat_margin_pct:.3f}%"
+)
 ```
 
 **Hardcode search** (`grep -n "36\.90\|56\.00\|30\.00"` excluding comments):

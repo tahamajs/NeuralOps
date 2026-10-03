@@ -54,14 +54,14 @@ ranges from 1.001 to 2. Heads converge during training.
 def _forward_decay_gated_linear_kernel(self, q, k, v, hidden_states, mask=None, past_state=None):
     B, H, N, D_k = q.shape
     D_v = v.shape[-1]
-    
+
     phi_q = F.elu(q.float()) + 1.0
     phi_k = F.elu(k.float()) + 1.0
     v_f = v.float()
-    
+
     if mask is not None:
         phi_k = phi_k * mask_expanded
-    
+
     # Decay
     decay_logits = self.decay_gate(hidden_states)
     if self.decay_channel_wise:
@@ -70,24 +70,24 @@ def _forward_decay_gated_linear_kernel(self, q, k, v, hidden_states, mask=None, 
     else:
         decay_logits = decay_logits.permute(0, 2, 1).unsqueeze(-1).unsqueeze(-1)
         lambda_decay = compute_exponential_decay(decay_logits)
-    
+
     # Force padding to have λ=1
     if mask is not None:
         lambda_decay = torch.where(mask_decay > 0, lambda_decay, torch.ones_like(lambda_decay))
-    
+
     # Chunked scan
     chunk_size = 64
     num_chunks = (N + chunk_size - 1) // chunk_size
     S_chunk = torch.zeros(B, H, D_k, D_v, dtype=torch.float32)
     Z_chunk = torch.zeros(B, H, D_k, 1, dtype=torch.float32)
     outputs = []
-    
+
     for c in range(num_chunks):
-        s, e = c * chunk_size, min(N, (c+1) * chunk_size)
-        qc, kc, vc = phi_q[:,:,s:e], phi_k[:,:,s:e], v_f[:,:,s:e]
-        lam_c = lambda_decay[:,:,s:e]
+        s, e = c * chunk_size, min(N, (c + 1) * chunk_size)
+        qc, kc, vc = phi_q[:, :, s:e], phi_k[:, :, s:e], v_f[:, :, s:e]
+        lam_c = lambda_decay[:, :, s:e]
         Lc = e - s
-        
+
         # Intra-chunk
         log_lam = torch.log(lam_c.clamp(min=1e-6))
         log_gamma = torch.cumsum(log_lam, dim=-1)
@@ -96,22 +96,22 @@ def _forward_decay_gated_linear_kernel(self, q, k, v, hidden_states, mask=None, 
         aff = torch.matmul(qc, kc.transpose(-1, -2)) * M_intra
         num_intra = torch.matmul(aff, vc)
         den_intra = aff.sum(dim=-1, keepdim=True)
-        
+
         # Inter-chunk
         decay = torch.exp(log_gamma.clamp(max=0.0)).unsqueeze(-1)
         num_inter = torch.matmul(qc, S_chunk) * decay
         den_inter = torch.matmul(qc, Z_chunk) * decay
-        
+
         out_c = (num_intra + num_inter) / (den_intra + den_inter + self.eps)
         outputs.append(out_c)
-        
+
         # Update state
-        total_decay = torch.exp(log_gamma[:,:,-1:].clamp(max=0.0)).unsqueeze(-1)
-        w_to_end = torch.exp((log_gamma[:,:,-1:] - log_gamma).clamp(max=0.0)).unsqueeze(-1)
+        total_decay = torch.exp(log_gamma[:, :, -1:].clamp(max=0.0)).unsqueeze(-1)
+        w_to_end = torch.exp((log_gamma[:, :, -1:] - log_gamma).clamp(max=0.0)).unsqueeze(-1)
         kc_w = kc * w_to_end
         S_chunk = total_decay * S_chunk + torch.matmul(kc_w.transpose(-1, -2), vc)
         Z_chunk = total_decay * Z_chunk + kc_w.sum(dim=-2, keepdim=True).transpose(-1, -2)
-    
+
     context = torch.cat(outputs, dim=2).to(q.dtype)
     return context, (S_chunk, Z_chunk)
 ```

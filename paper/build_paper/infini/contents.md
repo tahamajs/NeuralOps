@@ -861,13 +861,18 @@ Direct copy from `q_proj/k_proj/v_proj/o_proj`; RoPE preserved via
 
 ```python
 cls_name = src.__class__.__name__
-has_out = (hasattr(src, "dense") or hasattr(src, "out_proj")
-           or hasattr(src, "out_lin") or hasattr(src, "c_proj")
-           or hasattr(src, "o_proj"))
+has_out = (
+    hasattr(src, "dense")
+    or hasattr(src, "out_proj")
+    or hasattr(src, "out_lin")
+    or hasattr(src, "c_proj")
+    or hasattr(src, "o_proj")
+)
 
 is_nested = False
-if (cls_name in ["BertSelfAttention", "RobertaSelfAttention", ...]
-    or (hasattr(src, "query") and not has_out)):
+if cls_name in ["BertSelfAttention", "RobertaSelfAttention", ...] or (
+    hasattr(src, "query") and not has_out
+):
     is_nested = True
 if hasattr(src, "self") and hasattr(src, "output"):
     is_nested = True
@@ -932,8 +937,7 @@ position $j > i$ is zero.
 ```python
 @ATTENTION_REGISTRY.register("infini")
 @ATTENTION_REGISTRY.register("infini_attention")
-class InfiniAttention(BaseAttention):
-    ...
+class InfiniAttention(BaseAttention): ...
 ```
 
 ## 5.10 Cross-Attention
@@ -1668,9 +1672,12 @@ python run_all_4_infini.py --beta_init 0
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 torch.backends.cudnn.deterministic = True
 ```
 
@@ -2432,12 +2439,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2464,8 +2484,15 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
     if to_pdf:
         try:
             subprocess.run(
-                ["pandoc", str(output), "-o", str(output.with_suffix(".pdf")),
-                 "--pdf-engine=xelatex", "-V", "geometry:margin=1in"],
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
                 check=True,
             )
             print(f"PDF: {output.with_suffix('.pdf')}")

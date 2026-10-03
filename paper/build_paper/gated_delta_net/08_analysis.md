@@ -15,9 +15,9 @@ $\mathcal{O}(L)$ with a **very large constant**. Three factors:
 ### 8.1.1 Nested Python Loops
 
 ```python
-for c in range(num_chunks):              # outer
+for c in range(num_chunks):  # outer
     ...
-    for t in range(chunk_size):          # inner
+    for t in range(chunk_size):  # inner
         ...
 ```
 

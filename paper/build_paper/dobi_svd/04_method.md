@@ -79,10 +79,10 @@ class DobiSVDLinearLayer(nn.Module):
 
 ```python
 def forward(self, x):
-    g = torch.sigmoid(self.gate).unsqueeze(1)   # (rank, 1)
-    V_gated = self.V * g                         # (rank, in_features)
-    latent = F.linear(x, V_gated)                # (..., rank)
-    out = F.linear(latent, self.U, self.bias)    # (..., out_features)
+    g = torch.sigmoid(self.gate).unsqueeze(1)  # (rank, 1)
+    V_gated = self.V * g  # (rank, in_features)
+    latent = F.linear(x, V_gated)  # (..., rank)
+    out = F.linear(latent, self.U, self.bias)  # (..., out_features)
     return out
 ```
 

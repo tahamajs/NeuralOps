@@ -110,7 +110,7 @@ except Exception as e:
 
 ### ۳. باگ `rff_proj` persistence
 ```python
-persistent=False
+persistent = False
 ```
 RFF projection در `state_dict` ذخیره نمی‌شود. **Train/test mismatch** بعد از save/reload.
 

@@ -21,8 +21,12 @@
 ## 5.3 Nested Encoder Detection
 
 ```python
-if (hasattr(src, "self") and hasattr(src.self, "query")
-    and hasattr(src, "output") and hasattr(src.output, "dense")):
+if (
+    hasattr(src, "self")
+    and hasattr(src.self, "query")
+    and hasattr(src, "output")
+    and hasattr(src.output, "dense")
+):
     is_nested = True
 elif cls_name in ("BertSelfAttention", "RobertaSelfAttention") and not has_out_lin:
     is_nested = True
@@ -71,8 +75,7 @@ output.
 ```python
 @ATTENTION_REGISTRY.register("padre")
 @ATTENTION_REGISTRY.register("padre_attention")
-class PADReAttention(BaseAttention):
-    ...
+class PADReAttention(BaseAttention): ...
 ```
 
 ## 5.8 LoRA Recovery

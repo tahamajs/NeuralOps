@@ -66,8 +66,7 @@ extracted["o"] = src.c_proj.weight.t()
 
 ```python
 self.register_buffer(
-    "proj",
-    torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim ** -0.5)
+    "proj", torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim**-0.5)
 )
 ```
 
@@ -124,8 +123,7 @@ This is **stricter** than NHA/EAT but similar to ASVD and OHA.
 ```python
 @ATTENTION_REGISTRY.register("rpc")
 @ATTENTION_REGISTRY.register("rpc_attention")
-class RPCAttention(BaseAttention):
-    ...
+class RPCAttention(BaseAttention): ...
 ```
 
 ## 5.9 Causality

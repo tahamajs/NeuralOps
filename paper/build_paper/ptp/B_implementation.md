@@ -61,9 +61,7 @@ if self.num_heads != self.num_kv_heads:
     v_all = repeat_kv(v_all, repeats)
 
 # Gather K, V at top_indices
-top_idx_exp = top_indices.unsqueeze(1).unsqueeze(-1).expand(
-    -1, self.num_heads, -1, self.head_dim
-)
+top_idx_exp = top_indices.unsqueeze(1).unsqueeze(-1).expand(-1, self.num_heads, -1, self.head_dim)
 k_pruned = torch.gather(k_all, 2, top_idx_exp)
 v_pruned = torch.gather(v_all, 2, top_idx_exp)
 ```
@@ -81,9 +79,7 @@ attn_scores = attn_scores.masked_fill(causal_mask, -1e4)
 
 ```python
 valid_keys = torch.gather(valid_mask, 1, top_indices)  # (B, k)
-attn_scores = attn_scores.masked_fill(
-    ~valid_keys.unsqueeze(1).unsqueeze(2), -1e4
-)
+attn_scores = attn_scores.masked_fill(~valid_keys.unsqueeze(1).unsqueeze(2), -1e4)
 ```
 
 ## B.6 Common Pitfalls

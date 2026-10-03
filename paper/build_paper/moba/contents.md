@@ -1079,8 +1079,7 @@ The injection hook catches them and returns None.
 
 ```python
 @ATTENTION_REGISTRY.register("mamba")
-class Mamba(BaseAttention):
-    ...
+class Mamba(BaseAttention): ...
 ```
 
 ## 5.10 Interaction with LoRA Recovery
@@ -1717,9 +1716,12 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 ```
 
 ## 12.6 Expected Results
@@ -2065,7 +2067,7 @@ w_gate = w_q if w_q is not None else w_k
 if w_gate.shape[0] < D and D % w_gate.shape[0] == 0:
     rep = D // w_gate.shape[0]
     w_gate = w_gate.repeat(rep, 1)
-self.in_proj.weight.data[D:2*D, :D].copy_(w_gate[:D, :D])
+self.in_proj.weight.data[D : 2 * D, :D].copy_(w_gate[:D, :D])
 
 # out_proj: from O
 self.out_proj.weight.data.copy_(w_o[:D, :D])
@@ -2350,12 +2352,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2380,12 +2395,18 @@ def build(module_dir, output, to_pdf=False):
 
     if to_pdf:
         try:
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
+            subprocess.run(
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
+                check=True,
+            )
             print(f"PDF: {output.with_suffix('.pdf')}")
         except Exception as e:
             print(f"PDF skipped: {e}")

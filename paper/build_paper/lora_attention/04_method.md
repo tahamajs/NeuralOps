@@ -53,20 +53,21 @@ to zero ($B = 0$), so the initial forward pass exactly matches the baseline.
 
 ```python
 class LoRALinear(nn.Module):
-    def __init__(self, in_features, out_features, bias=True, 
-                 lora_rank=16, lora_alpha=32.0, freeze_base=False):
+    def __init__(
+        self, in_features, out_features, bias=True, lora_rank=16, lora_alpha=32.0, freeze_base=False
+    ):
         super().__init__()
         self.weight = nn.Parameter(torch.empty(out_features, in_features))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features))
-        
+
         if lora_rank > 0:
             self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
             self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
             # A: Kaiming, B: zeros
             nn.init.kaiming_uniform_(self.lora_A)
             nn.init.zeros_(self.lora_B)
-        
+
         if freeze_base:
             self.weight.requires_grad = False
             if self.bias is not None:
@@ -74,7 +75,7 @@ class LoRALinear(nn.Module):
         self.lora_rank = lora_rank
         self.lora_alpha = lora_alpha
         self.lora_scaling = lora_alpha / lora_rank if lora_rank > 0 else 1.0
-    
+
     def forward(self, x):
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0:
@@ -144,14 +145,17 @@ The critical detection logic:
 
 ```python
 cls_name = src.__class__.__name__
-has_out_proj = any(hasattr(src, attr) for attr in 
-                   ("dense", "out_proj", "c_proj", "out_lin", "o_proj", ...))
+has_out_proj = any(
+    hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", ...)
+)
 
 is_nested = False
 if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
     is_nested = True
-elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention", ...)
-      or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj:
+elif (
+    cls_name in ("BertSelfAttention", "RobertaSelfAttention", ...)
+    or (cls_name.endswith("SelfAttention") and not has_out_proj)
+) and not has_out_proj:
     is_nested = True
 self.is_nested_encoder = bool(is_nested)
 ```

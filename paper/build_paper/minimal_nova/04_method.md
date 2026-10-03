@@ -151,8 +151,8 @@ training stability.
 The framework stores $V_r$ in `down.weight` and $U_r$ in `up.weight`:
 
 ```python
-self.down.weight.data[:r, :] = V_r       # (r, d_in)
-self.up.weight.data[:, :r] = U_r         # (d_out, r)
+self.down.weight.data[:r, :] = V_r  # (r, d_in)
+self.up.weight.data[:, :r] = U_r  # (d_out, r)
 ```
 
 For $r < \text{target rank}$, the remaining rows/columns are zero.
@@ -184,7 +184,7 @@ $$
 (Conv1D stores this transposed.) MinimalNOVA splits:
 
 ```python
-w = src.c_attn.weight.t()   # (3d, d)
+w = src.c_attn.weight.t()  # (3d, d)
 q_w, k_w, v_w = w.chunk(3, dim=0)
 ```
 

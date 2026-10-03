@@ -898,7 +898,7 @@ transformer.h.0.attn
 **Extraction:**
 ```python
 weight = src.c_attn.weight.data
-if weight.shape[1] == 3 * hidden_size:   # Conv1D stores (in, out)
+if weight.shape[1] == 3 * hidden_size:  # Conv1D stores (in, out)
     weight = weight.t()
 q_w, k_w, v_w = weight.chunk(3, dim=0)
 w_o = src.c_proj.weight.data
@@ -1841,9 +1841,12 @@ python run_all_4_mla.py --normalize_sv false --output_suffix nonorm
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 torch.backends.cudnn.deterministic = True
 ```
 
@@ -1859,6 +1862,7 @@ torch.backends.cudnn.deterministic = True
 
 ```python
 from huggingface_hub import hf_hub_download
+
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
         repo_id=f"efficiency-lab/svd-linear-attention-{model}-mla",

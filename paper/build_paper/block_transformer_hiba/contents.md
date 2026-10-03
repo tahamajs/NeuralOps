@@ -203,7 +203,6 @@ split_size = c_w.size(0) // 3
 extracted["q"] = c_w[:split_size, :]
 extracted["k"] = c_w[split_size : 2 * split_size, :]
 # ...
-
 ```
 
 ## 5.3 Modern Architectural Features
@@ -512,7 +511,6 @@ We rewrote the `apply_rotary_pos_emb` function to dynamically slice the query an
 if rotary_dim < head_dim:
     q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
     # Rotate q_rot, then torch.cat with q_pass
-
 ```
 
 This partial-dimension splicing restored numerical parity with the base Qwen3.5 forward pass up to $1e^{-5}$ tolerance.

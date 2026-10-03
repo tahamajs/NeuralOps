@@ -69,7 +69,7 @@ if norm < 1e-4:
 **۴. `output_scale` ساخته میشه ولی استفاده نمیشه:**
 
 ```python
-if not hasattr(self, 'output_scale'):
+if not hasattr(self, "output_scale"):
     self.output_scale = nn.Parameter(torch.ones(1))
 ```
 
@@ -701,11 +701,11 @@ The ideal forward avoids reconstructing W:
 ```python
 def forward(self, x):
     # 1. Project to rank space
-    z = F.linear(x, self.Vt)                        # (B, L, r)
+    z = F.linear(x, self.Vt)  # (B, L, r)
     # 2. Scale by S * gamma
     z = z * (self.S * self.gamma)
     # 3. Project back
-    y_svd = F.linear(z, self.U)                     # (B, L, d_out)
+    y_svd = F.linear(z, self.U)  # (B, L, d_out)
     # 4. LoRA branch
     y_lora = F.linear(F.linear(x, self.B), self.A)
     return y_svd + y_lora + self.bias
@@ -942,7 +942,7 @@ which log and continue. This is a bug — see §10.
 The `SALTLinear` module defines `self.output_scale` but **never uses it**:
 
 ```python
-if not hasattr(self, 'output_scale'):
+if not hasattr(self, "output_scale"):
     self.output_scale = nn.Parameter(torch.ones(1))
 ```
 
@@ -976,8 +976,7 @@ SALT is registered as:
 ```python
 @ATTENTION_REGISTRY.register("salt_attention")
 @ATTENTION_REGISTRY.register("salt")
-class SALTAttention(BaseAttention):
-    ...
+class SALTAttention(BaseAttention): ...
 ```
 
 It integrates with the LoRA recovery pipeline.
@@ -1282,9 +1281,9 @@ The correct forward avoids reconstruction:
 
 ```python
 def forward(self, x):
-    z = F.linear(x, self.Vt)                        # (B, L, r)
+    z = F.linear(x, self.Vt)  # (B, L, r)
     z = z * (self.S * self.gamma)
-    y_svd = F.linear(z, self.U)                     # (B, L, d_out)
+    y_svd = F.linear(z, self.U)  # (B, L, d_out)
     y_lora = F.linear(F.linear(x, self.B), self.A)
     return y_svd + y_lora + self.bias
 ```
@@ -1338,7 +1337,7 @@ PiSSA (Meng et al., 2024) initializes LoRA factors from the SVD of W:
 `SALTLinear.__init__` defines:
 
 ```python
-if not hasattr(self, 'output_scale'):
+if not hasattr(self, "output_scale"):
     self.output_scale = nn.Parameter(torch.ones(1))
 ```
 
@@ -1724,8 +1723,11 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 ```
 
@@ -1743,6 +1745,7 @@ To verify storage reduction:
 
 ```python
 import torch
+
 model = torch.load("weights.pt")
 total = sum(p.numel() for p in model.values())
 print(f"Total parameters: {total}")
@@ -2082,10 +2085,10 @@ class SALTLinear(nn.Module):
 
 ```python
 def forward_fused(self, x):
-    z = F.linear(x, self.Vt)                         # (B, L, r)
-    z = z * (self.S * self.gamma)                     # scale
-    y_svd = F.linear(z, self.U)                       # (B, L, d_out)
-    y_lora = F.linear(F.linear(x, self.B), self.A)    # (B, L, d_out)
+    z = F.linear(x, self.Vt)  # (B, L, r)
+    z = z * (self.S * self.gamma)  # scale
+    y_svd = F.linear(z, self.U)  # (B, L, d_out)
+    y_lora = F.linear(F.linear(x, self.B), self.A)  # (B, L, d_out)
     return y_svd + y_lora + self.bias
 ```
 
@@ -2141,8 +2144,7 @@ self.is_nested_encoder = (
 ```python
 @ATTENTION_REGISTRY.register("salt_attention")
 @ATTENTION_REGISTRY.register("salt")
-class SALTAttention(BaseAttention):
-    ...
+class SALTAttention(BaseAttention): ...
 ```
 
 ## B.6 Diagnostics
@@ -2483,12 +2485,25 @@ None.
 
 ```python
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 ```
 

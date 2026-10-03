@@ -57,8 +57,11 @@ branch. This prevents the failed branch from injecting random noise.
 ## B.4 The `sub_kwargs` Pattern
 
 ```python
-sub_kwargs = {k: v for k, v in kwargs.items() 
-              if k not in ("is_decoder", "is_causal", "lora_rank", "lora_alpha")}
+sub_kwargs = {
+    k: v
+    for k, v in kwargs.items()
+    if k not in ("is_decoder", "is_causal", "lora_rank", "lora_alpha")
+}
 ```
 
 This is essential to avoid the "multiple values for keyword argument" error 
@@ -89,10 +92,16 @@ This search handles:
 ## B.6 Double-Injection Guard
 
 ```python
-if isinstance(curr_attn, HGRN2GatedDeltaNet): return None
-if "HGRN2GatedDeltaNet" in curr_attn.__class__.__name__: return None
-if hasattr(curr_attn, "inner") and isinstance(curr_attn.inner, HGRN2GatedDeltaNet): return None
-if hasattr(curr_attn, "_wrapped_attention") and isinstance(curr_attn._wrapped_attention, HGRN2GatedDeltaNet): return None
+if isinstance(curr_attn, HGRN2GatedDeltaNet):
+    return None
+if "HGRN2GatedDeltaNet" in curr_attn.__class__.__name__:
+    return None
+if hasattr(curr_attn, "inner") and isinstance(curr_attn.inner, HGRN2GatedDeltaNet):
+    return None
+if hasattr(curr_attn, "_wrapped_attention") and isinstance(
+    curr_attn._wrapped_attention, HGRN2GatedDeltaNet
+):
+    return None
 ```
 
 Four checks cover:

@@ -293,7 +293,7 @@ The outer `BertSelfOutput.dense` will apply the projection.
 # Check for flat output projections FIRST
 if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
     self.is_nested_encoder = False
-elif (hasattr(src, "self") and hasattr(src, "output")):
+elif hasattr(src, "self") and hasattr(src, "output"):
     self.is_nested_encoder = True
 else:
     self.is_nested_encoder = False

@@ -22,7 +22,7 @@ for h in range(self.num_heads):
         proj_data[h] = q_h.T
     else:
         q_h, _ = torch.linalg.qr(proj_data[h])
-        proj_data[h] = q_h[:, :self.feature_dim]
+        proj_data[h] = q_h[:, : self.feature_dim]
 self.register_buffer("proj", proj_data, persistent=True)
 ```
 
@@ -43,7 +43,11 @@ context = (num / denom).to(hidden_states.dtype)
 KV = torch.einsum("bhnf,bhnd->bhfd", K_features.float(), v.float())
 K_sum = K_features.float().sum(dim=2, keepdim=True)
 num = torch.einsum("bhnf,bhfd->bhnd", Q_features.float(), KV)
-denom = torch.einsum("bhnf,bhf->bhn", Q_features.float(), K_sum.squeeze(2)).unsqueeze(-1).clamp(min=1e-5)
+denom = (
+    torch.einsum("bhnf,bhf->bhn", Q_features.float(), K_sum.squeeze(2))
+    .unsqueeze(-1)
+    .clamp(min=1e-5)
+)
 context = (num / denom).to(hidden_states.dtype)
 ```
 

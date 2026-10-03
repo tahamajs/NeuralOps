@@ -64,7 +64,7 @@ Each block is orthonormal. The scaling $\sqrt{d}$ normalizes the variance.
 ```python
 def _feature_map(self, x):
     proj = torch.matmul(x, self.omega.t())
-    diag_sq = torch.sum(x ** 2, dim=-1, keepdim=True) * 0.5
+    diag_sq = torch.sum(x**2, dim=-1, keepdim=True) * 0.5
     max_proj = proj.amax(dim=-1, keepdim=True).detach()
     diff = torch.clamp(proj - max_proj - diag_sq, min=-30.0, max=10.0)
     phi = torch.exp(diff) + self.eps

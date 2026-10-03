@@ -145,8 +145,7 @@ print(f"long_out norm: {long_out.norm().item():.4f}")
 
 ```python
 @ATTENTION_REGISTRY.register("goldfinch_ahn")
-class GoldFinchAHNBlock(BaseAttention):
-    ...
+class GoldFinchAHNBlock(BaseAttention): ...
 ```
 
 ## B.8 Injection

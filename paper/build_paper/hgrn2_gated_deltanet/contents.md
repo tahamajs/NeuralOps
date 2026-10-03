@@ -785,8 +785,11 @@ To avoid the "multiple values for keyword argument" error, we filter
 `kwargs` before passing to sub-branches:
 
 ```python
-sub_kwargs = {k: v for k, v in kwargs.items() 
-              if k not in ("is_decoder", "is_causal", "lora_rank", "lora_alpha")}
+sub_kwargs = {
+    k: v
+    for k, v in kwargs.items()
+    if k not in ("is_decoder", "is_causal", "lora_rank", "lora_alpha")
+}
 ```
 
 This is essential when the same `kwargs` dict is passed through multiple 
@@ -795,8 +798,7 @@ levels of the call hierarchy.
 ## 5.6 Causal Detection
 
 ```python
-_decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", 
-                     "opt", "bloom", "falcon")
+_decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon")
 if any(model_type.startswith(p) for p in _decoder_prefixes):
     is_dec = True
 ```
@@ -810,10 +812,16 @@ The injection function checks whether the target already contains a
 `HGRN2GatedDeltaNet`:
 
 ```python
-if isinstance(curr_attn, HGRN2GatedDeltaNet): return None
-if "HGRN2GatedDeltaNet" in curr_attn.__class__.__name__: return None
-if hasattr(curr_attn, "inner") and isinstance(curr_attn.inner, HGRN2GatedDeltaNet): return None
-if hasattr(curr_attn, "_wrapped_attention") and isinstance(curr_attn._wrapped_attention, HGRN2GatedDeltaNet): return None
+if isinstance(curr_attn, HGRN2GatedDeltaNet):
+    return None
+if "HGRN2GatedDeltaNet" in curr_attn.__class__.__name__:
+    return None
+if hasattr(curr_attn, "inner") and isinstance(curr_attn.inner, HGRN2GatedDeltaNet):
+    return None
+if hasattr(curr_attn, "_wrapped_attention") and isinstance(
+    curr_attn._wrapped_attention, HGRN2GatedDeltaNet
+):
+    return None
 ```
 
 This prevents accidentally wrapping the module twice.
@@ -1493,6 +1501,7 @@ python run_all_4_hgrn2_gated_deltanet.py --use_hgrn false --use_deltanet true
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
@@ -1830,8 +1839,11 @@ branch. This prevents the failed branch from injecting random noise.
 ## B.4 The `sub_kwargs` Pattern
 
 ```python
-sub_kwargs = {k: v for k, v in kwargs.items() 
-              if k not in ("is_decoder", "is_causal", "lora_rank", "lora_alpha")}
+sub_kwargs = {
+    k: v
+    for k, v in kwargs.items()
+    if k not in ("is_decoder", "is_causal", "lora_rank", "lora_alpha")
+}
 ```
 
 This is essential to avoid the "multiple values for keyword argument" error 
@@ -1862,10 +1874,16 @@ This search handles:
 ## B.6 Double-Injection Guard
 
 ```python
-if isinstance(curr_attn, HGRN2GatedDeltaNet): return None
-if "HGRN2GatedDeltaNet" in curr_attn.__class__.__name__: return None
-if hasattr(curr_attn, "inner") and isinstance(curr_attn.inner, HGRN2GatedDeltaNet): return None
-if hasattr(curr_attn, "_wrapped_attention") and isinstance(curr_attn._wrapped_attention, HGRN2GatedDeltaNet): return None
+if isinstance(curr_attn, HGRN2GatedDeltaNet):
+    return None
+if "HGRN2GatedDeltaNet" in curr_attn.__class__.__name__:
+    return None
+if hasattr(curr_attn, "inner") and isinstance(curr_attn.inner, HGRN2GatedDeltaNet):
+    return None
+if hasattr(curr_attn, "_wrapped_attention") and isinstance(
+    curr_attn._wrapped_attention, HGRN2GatedDeltaNet
+):
+    return None
 ```
 
 Four checks cover:
@@ -2218,12 +2236,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2249,12 +2280,18 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
 
     if to_pdf:
         try:
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
+            subprocess.run(
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
+                check=True,
+            )
             print(f"PDF: {output.with_suffix('.pdf')}")
         except Exception as e:
             print(f"PDF skipped: {e}")

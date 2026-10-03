@@ -50,8 +50,9 @@ def softpick(x, dim=-1, temperature=1.0):
 ## B.3 Local Window Attention
 
 ```python
-def local_window_attention(Q, K, V, window, softpick_temperature=1.0, 
-                          token_valid=None, is_decoder=False):
+def local_window_attention(
+    Q, K, V, window, softpick_temperature=1.0, token_valid=None, is_decoder=False
+):
     B, H, N, D = Q.shape
     idx_q = torch.arange(N).unsqueeze(1)
     idx_k = torch.arange(N).unsqueeze(0)
@@ -60,7 +61,7 @@ def local_window_attention(Q, K, V, window, softpick_temperature=1.0,
     if is_decoder and N > 1:
         causal = (idx_k <= idx_q).unsqueeze(0).unsqueeze(0)
         mask = mask & causal
-    
+
     scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * (D**-0.5)
     scores = scores.masked_fill(~mask, -10000.0)
     if token_valid is not None:
@@ -72,23 +73,22 @@ def local_window_attention(Q, K, V, window, softpick_temperature=1.0,
 ## B.4 Kernel Linear Attention
 
 ```python
-def kernel_linear_attention(Q, K, V, rff_proj, use_zero_sum=True, 
-                            max_clamp=11.0, is_causal=False):
+def kernel_linear_attention(Q, K, V, rff_proj, use_zero_sum=True, max_clamp=11.0, is_causal=False):
     B, H, N, D = Q.shape
     F_dim = rff_proj.size(-1)
-    
+
     Q_f, K_f, V_f = Q.float(), K.float(), V.float()
     if use_zero_sum:
         K_f = K_f - K_f.mean(dim=2, keepdim=True)
-    
+
     Q_norm = F.normalize(Q_f, p=2, dim=-1)
     K_norm = F.normalize(K_f, p=2, dim=-1)
-    
+
     Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_norm, rff_proj.float()).clamp(max=max_clamp)
     K_proj = torch.einsum("bhnd,hdf->bhnf", K_norm, rff_proj.float()).clamp(max=max_clamp)
     Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
     K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
-    
+
     if is_causal:
         kv_outer = torch.einsum("bhnf,bhnd->bhnfd", K_feat, V_f)
         KV_cum = torch.cumsum(kv_outer, dim=2)
@@ -101,7 +101,7 @@ def kernel_linear_attention(Q, K, V, rff_proj, use_zero_sum=True,
         K_sum = K_feat.sum(dim=2)
         denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1)
         ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / (denom + 1e-5)
-    
+
     return torch.nan_to_num(ctx, nan=0.0).to(Q.dtype)
 ```
 

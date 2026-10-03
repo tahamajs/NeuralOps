@@ -45,7 +45,7 @@ class FactorisedLinear(nn.Module):
 def decompose_from_weight(self, weight, bias=None, energy=None):
     with torch.no_grad():
         W = weight.float()
-        
+
         # Handle GQA dimension mismatch
         if W.shape[0] < self.out_features and self.out_features % W.shape[0] == 0:
             rep = self.out_features // W.shape[0]
@@ -53,29 +53,29 @@ def decompose_from_weight(self, weight, bias=None, energy=None):
         elif W.shape[0] > self.out_features and W.shape[0] % self.out_features == 0:
             rep = W.shape[0] // self.out_features
             W = W.view(self.out_features, rep, -1).mean(dim=1)
-        
+
         # SVD
         U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-        
+
         # Energy-based rank
         target_energy = energy if energy is not None else self.energy
-        total_energy = (S ** 2).sum()
-        cum_energy = torch.cumsum(S ** 2, dim=0) / (total_energy + 1e-12)
+        total_energy = (S**2).sum()
+        cum_energy = torch.cumsum(S**2, dim=0) / (total_energy + 1e-12)
         calc_rank = int((cum_energy < target_energy).sum().item()) + 1
         r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
         r = max(1, r)
-        
+
         # Symmetric distribution
         sqrt_s = torch.sqrt(S[:r])
         A = (U[:, :r] * sqrt_s).to(self.up.weight.dtype)
         B = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype)
-        
+
         # Store
         self.up.weight.data.zero_()
         self.down.weight.data.zero_()
         self.up.weight.data[:, :r] = A
         self.down.weight.data[:r, :] = B
-        
+
         self.freeze_base_weights()
 ```
 
@@ -137,7 +137,7 @@ if hasattr(src, "c_attn"):
     c_attn_mod = src.c_attn
     base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
     weight = base_c.weight.data.clone()
-    
+
     is_conv1d = (
         "Conv1D" in type(c_attn_mod).__name__
         or "Conv1D" in type(base_c).__name__
@@ -146,25 +146,26 @@ if hasattr(src, "c_attn"):
     )
     if is_conv1d:
         weight = weight.t()
-    
+
     split_size = weight.shape[0] // 3
     q_w = weight[:split_size, :]
-    k_w = weight[split_size:2*split_size, :]
-    v_w = weight[2*split_size:, :]
+    k_w = weight[split_size : 2 * split_size, :]
+    v_w = weight[2 * split_size :, :]
 ```
 
 ## B.5 Nested Encoder Detection
 
 ```python
 cls_name = src.__class__.__name__
-has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj"))
+has_out_proj = any(
+    hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj")
+)
 
 is_nested = False
 if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
     is_nested = True
-elif (
-    cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
-    or (cls_name.endswith("SelfAttention") and not has_out_proj)
+elif cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention") or (
+    cls_name.endswith("SelfAttention") and not has_out_proj
 ):
     is_nested = True
 
@@ -188,7 +189,7 @@ if is_conv1d:
 
 ```python
 # WRONG (RoBERTa)
-self.is_nested_encoder = False   # out_proj applied twice
+self.is_nested_encoder = False  # out_proj applied twice
 
 # RIGHT
 self.is_nested_encoder = True
@@ -228,8 +229,7 @@ except Exception as e:
 ## B.8 Double-Injection Guard
 
 ```python
-if isinstance(src_attn, MinimalPRISMAttention) or \
-   "MinimalPRISM" in src_attn.__class__.__name__:
+if isinstance(src_attn, MinimalPRISMAttention) or "MinimalPRISM" in src_attn.__class__.__name__:
     return None
 ```
 

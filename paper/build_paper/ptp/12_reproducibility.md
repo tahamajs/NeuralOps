@@ -50,6 +50,7 @@ python run_all_4_ptp.py --preserve_cls false --output_suffix nopcls
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)

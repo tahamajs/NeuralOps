@@ -87,8 +87,7 @@ Output: M with attention replaced
 
 ```python
 @ATTENTION_REGISTRY.register("nexus", supports_causal=True, supports_gqa=True)
-class NEXUSAttention(BaseAttention):
-    ...
+class NEXUSAttention(BaseAttention): ...
 ```
 
 ---

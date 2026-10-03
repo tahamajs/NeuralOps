@@ -67,9 +67,9 @@ AASVD detects Conv1D via:
 
 ```python
 is_conv1d = (
-    "conv1d" in cls_name 
-    or "conv1d" in target_cls 
-    or hasattr(module, "nf") 
+    "conv1d" in cls_name
+    or "conv1d" in target_cls
+    or hasattr(module, "nf")
     or hasattr(target_mod, "nf")
 )
 ```
@@ -203,8 +203,7 @@ expects LoRA to be part of the compression module.
 @COMPRESSOR_REGISTRY.register("aasvd")
 @COMPRESSOR_REGISTRY.register("aa_svd")
 @COMPRESSOR_REGISTRY.register("aa_svd_compressor")
-class AASVDCompressor(BaseCompressor):
-    ...
+class AASVDCompressor(BaseCompressor): ...
 ```
 
 ## 5.11 Failure Modes and Fallbacks

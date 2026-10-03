@@ -84,9 +84,12 @@ assert L % chunk_size == 0 or padding_ok
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 ```
 
 ## 12.7 Verification
@@ -102,6 +105,7 @@ beta = torch.tensor([[[0.9]]])
 alpha = torch.tensor([[[0.5]]])
 
 from framework.attentions.gated_delta_net import _delta_chunk_forward
+
 y, S_new = _delta_chunk_forward(S, k, k, v, beta, alpha)
 # Verify: S_new ≈ beta * S + alpha * k^T (v - k S)
 ```

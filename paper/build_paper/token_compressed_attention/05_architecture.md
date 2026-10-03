@@ -66,7 +66,7 @@ The most delicate part. For decoders:
 ```python
 q_pos = torch.arange(L).view(1, 1, L, 1)
 k_orig_pos = top_idx.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, k)
-causal_mask = (k_orig_pos > q_pos)
+causal_mask = k_orig_pos > q_pos
 scores = scores.masked_fill(causal_mask, float("-inf"))
 ```
 
@@ -135,8 +135,7 @@ Total parameters: `dim * 64 + 64 + 64 + 1 = 65*dim + 65`. For $d = 768$:
 @ATTENTION_REGISTRY.register("token_compressed")
 @ATTENTION_REGISTRY.register("token_compressed_attention")
 @ATTENTION_REGISTRY.register("token_compressed_module")
-class TokenCompressedAttention(BaseAttention):
-    ...
+class TokenCompressedAttention(BaseAttention): ...
 ```
 
 ---

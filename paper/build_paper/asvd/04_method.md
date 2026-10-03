@@ -203,11 +203,11 @@ class ASVDLinear(nn.Module):
         if lora_rank > 0:
             self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
             self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
-    
+
     def forward(self, x):
-        Vx = F.linear(x, self.V)          # (B, L, r)
-        SVx = Vx * self.S                  # (B, L, r)
-        out = F.linear(SVx, self.U)        # (B, L, d_out)
+        Vx = F.linear(x, self.V)  # (B, L, r)
+        SVx = Vx * self.S  # (B, L, r)
+        out = F.linear(SVx, self.U)  # (B, L, d_out)
         if self.bias is not None:
             out = out + self.bias
         if self.lora_rank > 0:

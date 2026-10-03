@@ -152,8 +152,7 @@ to `logger.error(...); continue`.
 
 ```python
 @ATTENTION_REGISTRY.register("moe_deltakv_paged", supports_causal=True, supports_gqa=True)
-class MoEDeltaKVPagedAttention(nn.Module):
-    ...
+class MoEDeltaKVPagedAttention(nn.Module): ...
 ```
 
 ## 5.10 Interaction with Recovery

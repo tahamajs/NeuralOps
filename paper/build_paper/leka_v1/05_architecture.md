@@ -17,7 +17,8 @@ Handles four patterns. UniversalAdapter first, then fallback.
 
 ```python
 c_w = src.c_attn.weight
-if c_w.shape[0] < c_w.shape[1]: c_w = c_w.t()
+if c_w.shape[0] < c_w.shape[1]:
+    c_w = c_w.t()
 q_w, k_w, v_w = c_w.chunk(3, dim=0)
 o_w = src.c_proj.weight.t()
 ```

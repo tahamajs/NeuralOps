@@ -128,7 +128,7 @@ if any element is affected. This is slightly better than fully batch-level.
 NASC logs the path once per instance:
 
 ```python
-if not hasattr(self, '_logged_once'):
+if not hasattr(self, "_logged_once"):
     logger.debug("NASCAttention: L=%d, ...")
     self._logged_once = True
 ```

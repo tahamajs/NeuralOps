@@ -39,10 +39,7 @@ if use_dense:
 self.is_rectify = (
     (self.rect_interval > 0)
     and (layer_idx % self.rect_interval == 0)
-    and (
-        (pretrained_attn is None)
-        or getattr(self.cfg, "enable_spectraformer", False)
-    )
+    and ((pretrained_attn is None) or getattr(self.cfg, "enable_spectraformer", False))
 )
 ```
 
@@ -827,8 +824,7 @@ Output: M with attention replaced
 
 ```python
 @ATTENTION_REGISTRY.register("nexus", supports_causal=True, supports_gqa=True)
-class NEXUSAttention(BaseAttention):
-    ...
+class NEXUSAttention(BaseAttention): ...
 ```
 ```
 
@@ -1414,9 +1410,12 @@ python run_all_4_nexus.py --enable_spectraformer true
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 ```
 
 ## 12.7 Expected Results

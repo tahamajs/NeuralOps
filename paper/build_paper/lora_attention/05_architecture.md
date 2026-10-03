@@ -121,8 +121,7 @@ failure would corrupt the base weights**.
 ```python
 @ATTENTION_REGISTRY.register("lora_attn")
 @ATTENTION_REGISTRY.register("lora_attention")
-class LoRAAttention(BaseAttention):
-    ...
+class LoRAAttention(BaseAttention): ...
 ```
 
 ## 5.8 Interaction with Compression

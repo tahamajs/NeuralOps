@@ -146,8 +146,7 @@ The injection hook catches them and returns None.
 
 ```python
 @ATTENTION_REGISTRY.register("mamba")
-class Mamba(BaseAttention):
-    ...
+class Mamba(BaseAttention): ...
 ```
 
 ## 5.10 Interaction with LoRA Recovery

@@ -93,8 +93,7 @@ if self.kv_repeat > 1:
 ```python
 @ATTENTION_REGISTRY.register("cluster")
 @ATTENTION_REGISTRY.register("cluster_attention")
-class ClusterAttention(BaseAttention):
-    ...
+class ClusterAttention(BaseAttention): ...
 ```
 
 ## 5.8 Failure Modes

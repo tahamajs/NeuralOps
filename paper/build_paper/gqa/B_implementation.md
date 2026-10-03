@@ -11,28 +11,35 @@
 ```python
 class GroupedQueryAttention(BaseAttention):
     def __init__(
-        self, config=None, rank=None,
-        dim=None, num_heads=None, num_kv_heads=None,
-        lora_rank=16, lora_alpha=32.0,
-        pretrained_attn=None, old_attn=None, **kwargs,
+        self,
+        config=None,
+        rank=None,
+        dim=None,
+        num_heads=None,
+        num_kv_heads=None,
+        lora_rank=16,
+        lora_alpha=32.0,
+        pretrained_attn=None,
+        old_attn=None,
+        **kwargs,
     ):
         super().__init__(config, rank)
         src_attn = pretrained_attn or old_attn
-        
+
         # Resolve dim, num_heads, num_kv_heads
         self.hidden_size = ...
         self.num_heads = ...
         self.num_kv_heads = min(self.num_heads, max(1, num_kv_heads))
-        
+
         self.head_dim = self.hidden_size // self.num_heads
         self.kv_repeat = self.num_heads // self.num_kv_heads
-        
+
         # Projections
         self.query = LoRALinear(self.hidden_size, self.all_head_size, ...)
         self.key = LoRALinear(self.hidden_size, self.kv_head_size, ...)
         self.value = LoRALinear(self.hidden_size, self.kv_head_size, ...)
         self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, ...)
-        
+
         if src_attn is not None:
             self.copy_weights(src_attn)
 ```

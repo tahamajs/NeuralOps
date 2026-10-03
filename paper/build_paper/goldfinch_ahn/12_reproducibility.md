@@ -31,6 +31,7 @@ python run_all_4_goldfinch_ahn.py \
 
 ```python
 from huggingface_hub import hf_hub_download
+
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
         repo_id=f"efficiency-lab/svd-linear-attention-{model}-goldfinch_ahn",
@@ -92,6 +93,7 @@ torch.cuda.manual_seed_all(seed)
 
 ```python
 import torch
+
 L = 16
 W = 4
 idx = torch.arange(L)
@@ -99,13 +101,14 @@ dist = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs()
 M = dist <= W
 # Check band structure
 assert M[0, 0] == True
-assert M[0, W+1] == False
+assert M[0, W + 1] == False
 ```
 
 ### Verify Preservation Gate
 
 ```python
 import torch
+
 alpha = torch.sigmoid(torch.tensor(2.0))
 # alpha ≈ 0.88
 assert 0.85 < alpha.item() < 0.90

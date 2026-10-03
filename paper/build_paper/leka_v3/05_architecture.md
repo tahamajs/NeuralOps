@@ -78,7 +78,7 @@ For decoders, the landmark mask uses original positions:
 ```python
 q_pos = torch.arange(N).view(1, 1, N, 1)
 k_land_pos = land_idx.unsqueeze(2)  # [B, H, 1, L_land]
-causal_land_mask = (k_land_pos <= q_pos)
+causal_land_mask = k_land_pos <= q_pos
 attn_weights = attn_weights.masked_fill(~causal_land_mask, -1e4)
 ```
 
@@ -114,8 +114,7 @@ Output: M with attention replaced
 ```python
 @ATTENTION_REGISTRY.register("leka_v3")
 @ATTENTION_REGISTRY.register("leka_v3_attention")
-class LEKAV3Attention(BaseAttention):
-    ...
+class LEKAV3Attention(BaseAttention): ...
 ```
 
 ## 5.10 Interaction with LoRA Recovery
@@ -126,8 +125,8 @@ trainable:
 
 ```python
 self.landmark_scorer = nn.Sequential(...)  # trainable
-self.W_corr = nn.Parameter(...)              # trainable
-self.gate = nn.Parameter(...)                # trainable
+self.W_corr = nn.Parameter(...)  # trainable
+self.gate = nn.Parameter(...)  # trainable
 ```
 
 ---

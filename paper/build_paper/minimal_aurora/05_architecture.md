@@ -23,8 +23,11 @@ MinimalAURORA uses a **layered extraction strategy**:
 ### 5.2.2 GPT-2 Conv1D Handling
 
 ```python
-if ("Conv1D" in p_cls or hasattr(base_c, "nf")
-    or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size)):
+if (
+    "Conv1D" in p_cls
+    or hasattr(base_c, "nf")
+    or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size)
+):
     weight = weight.t()
 ```
 
@@ -38,8 +41,9 @@ Detection logic:
 ```python
 if hasattr(src, "self") and hasattr(src.self, "query"):
     is_nested = True
-elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention", ...)
-      or (cls_name.endswith("SelfAttention") and not has_out_proj)):
+elif cls_name in ("BertSelfAttention", "RobertaSelfAttention", ...) or (
+    cls_name.endswith("SelfAttention") and not has_out_proj
+):
     is_nested = True
 self.is_nested_encoder = is_nested
 ```
@@ -107,16 +111,24 @@ return value.
 
 ```python
 class FactorisedLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank=64, bias=True,
-                 energy=0.95, lora_rank=16, lora_alpha=32.0):
+    def __init__(
+        self,
+        in_features,
+        out_features,
+        rank=64,
+        bias=True,
+        energy=0.95,
+        lora_rank=16,
+        lora_alpha=32.0,
+    ):
         super().__init__()
         self.down = nn.Linear(in_features, rank, bias=False)
         self.up = nn.Linear(rank, out_features, bias=bias)
-        
+
         if lora_rank > 0:
             self.lora_A = nn.Parameter(torch.randn(lora_rank, in_features) * 0.01)
             self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
-        
+
         self.reset_parameters()
 ```
 
@@ -161,8 +173,7 @@ and recommend removal.
 
 ```python
 @ATTENTION_REGISTRY.register("minimal_aurora", supports_causal=True, supports_gqa=True)
-class MinimalAURORAAttention(BaseAttention):
-    ...
+class MinimalAURORAAttention(BaseAttention): ...
 ```
 
 ## 5.9 Cross-Attention

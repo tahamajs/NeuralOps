@@ -115,9 +115,9 @@ rank-$r$ truncated SVD of $W_\text{pretrained}$.
 def forward(self, x):
     adapted_S = self.S * self.gamma
     W_svd = (self.U * adapted_S.unsqueeze(0)) @ self.Vt  # reconstruct
-    W_lora = self.A @ self.B                             # reconstruct
+    W_lora = self.A @ self.B  # reconstruct
     W = (W_svd + W_lora).to(dtype=x.dtype)
-    return F.linear(x, W, self.bias)                     # full matmul
+    return F.linear(x, W, self.bias)  # full matmul
 ```
 
 **Cost.** $\mathcal{O}(d_\text{out} \cdot r \cdot d_\text{in} + d_\text{out} \cdot d_\text{in})$ 
@@ -130,11 +130,11 @@ The ideal forward avoids reconstructing W:
 ```python
 def forward(self, x):
     # 1. Project to rank space
-    z = F.linear(x, self.Vt)                        # (B, L, r)
+    z = F.linear(x, self.Vt)  # (B, L, r)
     # 2. Scale by S * gamma
     z = z * (self.S * self.gamma)
     # 3. Project back
-    y_svd = F.linear(z, self.U)                     # (B, L, d_out)
+    y_svd = F.linear(z, self.U)  # (B, L, d_out)
     # 4. LoRA branch
     y_lora = F.linear(F.linear(x, self.B), self.A)
     return y_svd + y_lora + self.bias

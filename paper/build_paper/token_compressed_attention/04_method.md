@@ -129,9 +129,9 @@ whose original position exceeds $i$.
 **Computing the mask:**
 
 ```python
-q_pos = torch.arange(L).view(1, 1, L, 1)       # (1, 1, L, 1)
-k_orig_pos = top_idx.unsqueeze(1).unsqueeze(2) # (B, 1, 1, k)
-causal_mask = (k_orig_pos > q_pos)             # (B, 1, L, k)
+q_pos = torch.arange(L).view(1, 1, L, 1)  # (1, 1, L, 1)
+k_orig_pos = top_idx.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, k)
+causal_mask = k_orig_pos > q_pos  # (B, 1, L, k)
 scores = scores.masked_fill(causal_mask, -inf)
 ```
 

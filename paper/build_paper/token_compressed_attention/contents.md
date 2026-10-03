@@ -729,7 +729,7 @@ The most delicate part. For decoders:
 ```python
 q_pos = torch.arange(L).view(1, 1, L, 1)
 k_orig_pos = top_idx.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, k)
-causal_mask = (k_orig_pos > q_pos)
+causal_mask = k_orig_pos > q_pos
 scores = scores.masked_fill(causal_mask, float("-inf"))
 ```
 
@@ -798,8 +798,7 @@ Total parameters: `dim * 64 + 64 + 64 + 1 = 65*dim + 65`. For $d = 768$:
 @ATTENTION_REGISTRY.register("token_compressed")
 @ATTENTION_REGISTRY.register("token_compressed_attention")
 @ATTENTION_REGISTRY.register("token_compressed_module")
-class TokenCompressedAttention(BaseAttention):
-    ...
+class TokenCompressedAttention(BaseAttention): ...
 ```
 ```
 
@@ -1477,6 +1476,7 @@ python run_all_4_token_compressed.py --use_score_net false --output_suffix norm
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
@@ -1768,27 +1768,27 @@ def forward(self, hidden_states, attention_mask=None, **kwargs):
 ```python
 def _select_compressed_tokens(self, x, k_tensor, v_tensor, mask):
     B, L, D = x.shape
-    
-    energy = torch.norm(x.float(), p=2, dim=-1)          # (B, L)
-    learned = self.score_net(x.float()).squeeze(-1)       # (B, L)
+
+    energy = torch.norm(x.float(), p=2, dim=-1)  # (B, L)
+    learned = self.score_net(x.float()).squeeze(-1)  # (B, L)
     total_importance = energy + learned
-    
+
     k_keep = max(1, min(L, max(2, int(math.ceil(L * self.compression_ratio)))))
-    
+
     total_importance[:, 0] = 1e4  # Pin [CLS]
-    
+
     if mask is not None:
         if mask.dim() == 2:
             total_importance = total_importance.masked_fill(mask == 0, -1e4)
         total_importance[:, 0] = 1e4
-    
+
     _, top_indices = torch.topk(total_importance, k_keep, dim=-1)
     top_indices, _ = torch.sort(top_indices, dim=-1)
-    
+
     top_idx_exp = top_indices.unsqueeze(1).unsqueeze(-1).expand(-1, H_kv, -1, Dh)
     k_comp = torch.gather(k_tensor, 2, top_idx_exp)
     v_comp = torch.gather(v_tensor, 2, top_idx_exp)
-    
+
     return k_comp, v_comp, top_indices, comp_mask
 ```
 
@@ -2046,12 +2046,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2077,12 +2090,18 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
 
     if to_pdf:
         try:
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
+            subprocess.run(
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
+                check=True,
+            )
             print(f"PDF: {output.with_suffix('.pdf')}")
         except Exception as e:
             print(f"PDF skipped: {e}")

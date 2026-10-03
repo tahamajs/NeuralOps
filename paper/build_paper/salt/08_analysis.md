@@ -17,8 +17,8 @@ SALT achieves two things simultaneously:
 **Why?** Because the forward pass reconstructs W:
 
 ```python
-W_svd = (self.U * adapted_S.unsqueeze(0)) @ self.Vt   # full (d_out, d_in)
-W_lora = self.A @ self.B                               # full (d_out, d_in)
+W_svd = (self.U * adapted_S.unsqueeze(0)) @ self.Vt  # full (d_out, d_in)
+W_lora = self.A @ self.B  # full (d_out, d_in)
 W = W_svd + W_lora
 ```
 
@@ -46,9 +46,9 @@ The correct forward avoids reconstruction:
 
 ```python
 def forward(self, x):
-    z = F.linear(x, self.Vt)                        # (B, L, r)
+    z = F.linear(x, self.Vt)  # (B, L, r)
     z = z * (self.S * self.gamma)
-    y_svd = F.linear(z, self.U)                     # (B, L, d_out)
+    y_svd = F.linear(z, self.U)  # (B, L, d_out)
     y_lora = F.linear(F.linear(x, self.B), self.A)
     return y_svd + y_lora + self.bias
 ```
@@ -102,7 +102,7 @@ PiSSA (Meng et al., 2024) initializes LoRA factors from the SVD of W:
 `SALTLinear.__init__` defines:
 
 ```python
-if not hasattr(self, 'output_scale'):
+if not hasattr(self, "output_scale"):
     self.output_scale = nn.Parameter(torch.ones(1))
 ```
 

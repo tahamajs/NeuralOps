@@ -67,8 +67,7 @@ This is stored as a **buffer** (not a parameter):
 
 ```python
 self.register_buffer(
-    "proj",
-    torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim ** -0.5)
+    "proj", torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim**-0.5)
 )
 ```
 

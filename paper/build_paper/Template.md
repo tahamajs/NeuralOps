@@ -781,8 +781,8 @@ RoBERTa attention is nested:
 
 ```python
 class BertAttention:
-    self: BertSelfAttention      # has query, key, value
-    output: BertSelfOutput       # has dense (output projection)
+    self: BertSelfAttention  # has query, key, value
+    output: BertSelfOutput  # has dense (output projection)
 ```
 
 **Copy procedure.** Extract from `self`:
@@ -804,14 +804,14 @@ GPT-2 fuses Q, K, V into a single `c_attn` Conv1D:
 
 ```python
 class GPT2Attention:
-    c_attn: Conv1D(768, 2304)   # fused Q, K, V
-    c_proj: Conv1D(768, 768)    # output
+    c_attn: Conv1D(768, 2304)  # fused Q, K, V
+    c_proj: Conv1D(768, 768)  # output
 ```
 
 **Copy procedure.** Split fused weight:
 
 ```python
-w = src.c_attn.weight.t()        # Conv1D stores (in, out) → (out, in)
+w = src.c_attn.weight.t()  # Conv1D stores (in, out) → (out, in)
 q_w, k_w, v_w = w.chunk(3, dim=0)
 target.q_proj.weight.copy_(q_w)
 target.k_proj.weight.copy_(k_w)
@@ -827,8 +827,8 @@ Qwen3.5 has GQA with $H_{kv} = 2 < H = 8$:
 
 ```python
 class Qwen3Attention:
-    q_proj: Linear(1024, 2048)   # H * d_h = 8 * 256
-    k_proj: Linear(1024, 512)    # H_kv * d_h = 2 * 256
+    q_proj: Linear(1024, 2048)  # H * d_h = 8 * 256
+    k_proj: Linear(1024, 512)  # H_kv * d_h = 2 * 256
     v_proj: Linear(1024, 512)
     o_proj: Linear(2048, 1024)
 ```
@@ -887,7 +887,7 @@ X = torch.randn(1, L, d, requires_grad=True)
 Y = model(X)
 loss = Y[0, i].sum()
 loss.backward()
-assert X.grad[0, i+1:].abs().max() < 1e-6
+assert X.grad[0, i + 1 :].abs().max() < 1e-6
 ```
 
 {{CAUSALITY_RESULT}}
@@ -1371,7 +1371,7 @@ Maybe `copy_weights` silently fails for RoBERTa's nested structure.
 **Test.** We inspected the copied weights:
 
 ```python
-for proj in ['q_proj', 'k_proj', 'v_proj', 'out_proj']:
+for proj in ["q_proj", "k_proj", "v_proj", "out_proj"]:
     w = getattr(new_attn, proj).weight
     print(proj, w.shape, w.norm().item(), w.isnan().any().item())
 ```
@@ -1960,20 +1960,17 @@ from huggingface_hub import hf_hub_download
 
 # DistilBERT
 path = hf_hub_download(
-    repo_id="{{HF_ORG}}/svd-linear-attention-distilbert-{{module}}",
-    filename="weights.pt"
+    repo_id="{{HF_ORG}}/svd-linear-attention-distilbert-{{module}}", filename="weights.pt"
 )
 
 # RoBERTa
 path = hf_hub_download(
-    repo_id="{{HF_ORG}}/svd-linear-attention-roberta-{{module}}",
-    filename="weights.pt"
+    repo_id="{{HF_ORG}}/svd-linear-attention-roberta-{{module}}", filename="weights.pt"
 )
 
 # GPT-2
 path = hf_hub_download(
-    repo_id="{{HF_ORG}}/svd-linear-attention-gpt2-{{module}}",
-    filename="weights.pt"
+    repo_id="{{HF_ORG}}/svd-linear-attention-gpt2-{{module}}", filename="weights.pt"
 )
 ```
 
@@ -3363,7 +3360,7 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
     """Concatenate all section files into one paper."""
     parts = []
     missing = []
-    
+
     for section in SECTIONS:
         path = module_dir / section
         if not path.exists():
@@ -3372,24 +3369,30 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
         content = path.read_text(encoding="utf-8")
         parts.append(content)
         parts.append("\n\n---\n\n")
-    
+
     if missing:
         print(f"Warning: {len(missing)} missing sections:")
         for m in missing:
             print(f"  - {m}")
-    
+
     full = "".join(parts)
     output.write_text(full, encoding="utf-8")
     print(f"Wrote {len(full):,} chars to {output}")
-    
+
     if to_pdf:
         try:
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
+            subprocess.run(
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
+                check=True,
+            )
             print(f"Wrote PDF to {output.with_suffix('.pdf')}")
         except (subprocess.CalledProcessError, FileNotFoundError):
             print("pandoc not available. Skipping PDF generation.")
@@ -3401,12 +3404,12 @@ def main():
     parser.add_argument("--output", default=None)
     parser.add_argument("--pdf", action="store_true")
     args = parser.parse_args()
-    
+
     module_dir = Path(__file__).parent / args.module
     if not module_dir.exists():
         print(f"Module directory not found: {module_dir}")
         return
-    
+
     output = Path(args.output) if args.output else module_dir / "paper_full.md"
     build(module_dir, output, to_pdf=args.pdf)
 

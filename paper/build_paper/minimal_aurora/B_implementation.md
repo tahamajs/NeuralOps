@@ -4,19 +4,27 @@
 
 ```python
 class FactorisedLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank=64, bias=True,
-                 energy=0.95, lora_rank=16, lora_alpha=32.0):
+    def __init__(
+        self,
+        in_features,
+        out_features,
+        rank=64,
+        bias=True,
+        energy=0.95,
+        lora_rank=16,
+        lora_alpha=32.0,
+    ):
         super().__init__()
         self.rank = min(rank, in_features, out_features)
         self.down = nn.Linear(in_features, self.rank, bias=False)
         self.up = nn.Linear(self.rank, out_features, bias=bias)
-        
+
         if lora_rank > 0:
             self.lora_A = nn.Parameter(torch.randn(lora_rank, in_features) * 0.01)
             self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
-        
+
         self.reset_parameters()
-    
+
     def decompose_from_weight(self, W, bias=None, energy=None):
         U, S, Vt = torch.linalg.svd(W.float())
         target_energy = energy if energy is not None else self.energy
@@ -24,17 +32,17 @@ class FactorisedLinear(nn.Module):
         calc_rank = int((cum_energy < target_energy).sum().item()) + 1
         r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
         r = max(1, r)
-        
+
         sqrt_s = torch.sqrt(S[:r])
         A = U[:, :r] * sqrt_s
         B = sqrt_s[:, None] * Vt[:r, :]
-        
+
         self.up.weight.data[:, :r] = A
         self.down.weight.data[:r, :] = B
-        
+
         if bias is not None:
-            self.up.bias.data[:len(bias)] = bias
-        
+            self.up.bias.data[: len(bias)] = bias
+
         self.freeze_base_weights()
 ```
 

@@ -41,10 +41,10 @@ $\alpha$ frozen at 1, accuracy is 86.4\%%.
 The Python loop over sequence length dominates runtime:
 
 ```python
-for i in range(seq_len):    # 128 iterations
+for i in range(seq_len):  # 128 iterations
     S = S + einsum("bhd,bhe->bhde", k_i, v_i)  # kernel launch
-    z = z + k_i                                # kernel launch
-    num_i = einsum("bhd,bhde->bhe", q_i, S)   # kernel launch
+    z = z + k_i  # kernel launch
+    num_i = einsum("bhd,bhde->bhe", q_i, S)  # kernel launch
     ...
 ```
 

@@ -69,7 +69,7 @@ We verify causality by finite differences:
 x = torch.randn(1, L, d, requires_grad=True)
 out = model(x)
 out[0, i].sum().backward()
-assert x.grad[0, i+1:].abs().max() < 1e-6
+assert x.grad[0, i + 1 :].abs().max() < 1e-6
 ```
 
 **Result.** 0.85

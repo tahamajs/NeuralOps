@@ -126,6 +126,7 @@ def dobi_factory(model, comp_config, **kwargs):
     compressed_model, stats = compressor.compress()
     return compressed_model
 
+
 @COMPRESSOR_REGISTRY.register("inject_dobi")
 def inject_dobi(model=None, layer=None, **kwargs):
     target = layer if layer is not None else model
@@ -159,8 +160,7 @@ For whole-model, it traverses `named_modules()`.
 @COMPRESSOR_REGISTRY.register("dobi_svd_compressor")
 @COMPRESSOR_REGISTRY.register("dobi_factory")
 @COMPRESSOR_REGISTRY.register("dobi_svd_factory")
-def dobi_factory(model, comp_config, **kwargs):
-    ...
+def dobi_factory(model, comp_config, **kwargs): ...
 ```
 
 ## 5.11 Interaction with LoRA Recovery Pipeline

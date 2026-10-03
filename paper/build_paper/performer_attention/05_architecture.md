@@ -134,8 +134,7 @@ Good — the RFF projection is saved and reloaded.
 ```python
 @ATTENTION_REGISTRY.register("performer")
 @ATTENTION_REGISTRY.register("performer_attention")
-class PerformerAttention(BaseAttention):
-    ...
+class PerformerAttention(BaseAttention): ...
 ```
 
 ## 5.8 Integration with LoRA Recovery

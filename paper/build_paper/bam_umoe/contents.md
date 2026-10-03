@@ -766,8 +766,7 @@ if not is_cross_attention:
 
 ```python
 @ATTENTION_REGISTRY.register("bam_umoe")
-class BAMUMoEBlock(BaseAttention):
-    ...
+class BAMUMoEBlock(BaseAttention): ...
 ```
 
 ## 5.7 Failure Modes
@@ -1315,6 +1314,7 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)

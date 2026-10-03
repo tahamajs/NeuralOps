@@ -15,25 +15,19 @@ class AdaSplashLinear(nn.Module):
         self.in_features = in_features
         self.out_features = out_features
         self.lora_rank = min(lora_rank, in_features, out_features)
-        
+
         # Frozen base
-        self.weight = nn.Parameter(
-            torch.empty(out_features, in_features),
-            requires_grad=False
-        )
+        self.weight = nn.Parameter(torch.empty(out_features, in_features), requires_grad=False)
         if bias:
-            self.bias = nn.Parameter(
-                torch.empty(out_features),
-                requires_grad=False
-            )
-        
+            self.bias = nn.Parameter(torch.empty(out_features), requires_grad=False)
+
         # Trainable LoRA
         if self.lora_rank > 0:
             self.lora_B = nn.Parameter(torch.empty(out_features, self.lora_rank))
             self.lora_A = nn.Parameter(torch.empty(self.lora_rank, in_features))
-        
+
         self.reset_parameters()
-    
+
     def forward(self, x):
         out = F.linear(x, self.weight, self.bias)
         if self.lora_A is not None:
@@ -136,18 +130,18 @@ if is_decoder and splash_radius > 0 and not is_cross_attention and L_k > splash_
 ```python
 def copy_weights(self, src):
     from framework.core.adapters import UniversalAdapter
-    
+
     extracted_weights = {}
-    
+
     for proj in ["q", "k", "v", "o"]:
         w, b = None, None
-        
+
         # Try UniversalAdapter
         try:
             w, b = UniversalAdapter.get_weight_bias(src, proj)
         except Exception:
             pass
-        
+
         # Fallbacks
         if w is None:
             if proj == "o":
@@ -165,19 +159,28 @@ def copy_weights(self, src):
                 fused = src.c_attn.weight.T
                 split = fused.size(0) // 3
                 idx = {"q": 0, "k": 1, "v": 2}[proj]
-                w = fused[idx*split:(idx+1)*split]
-                b = src.c_attn.bias[idx*split:(idx+1)*split] if src.c_attn.bias is not None else None
+                w = fused[idx * split : (idx + 1) * split]
+                b = (
+                    src.c_attn.bias[idx * split : (idx + 1) * split]
+                    if src.c_attn.bias is not None
+                    else None
+                )
             elif hasattr(src, "self") and hasattr(src.self, "query"):
                 s = src.self
                 name_map = {"q": "query", "k": "key", "v": "value"}
                 w = getattr(s, name_map[proj]).weight
                 b = getattr(getattr(s, name_map[proj]), "bias", None)
             # ... more cases
-        
+
         extracted_weights[proj] = (w, b)
-    
+
     # Copy into target projections
-    for proj, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
+    for proj, target in [
+        ("q", self.q_proj),
+        ("k", self.k_proj),
+        ("v", self.v_proj),
+        ("o", self.out_proj),
+    ]:
         w, b = extracted_weights[proj]
         if w is not None:
             with torch.no_grad():

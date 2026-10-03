@@ -78,7 +78,7 @@ where $A_{mm} = \text{softmax}(Q_m K_m^\top / \sqrt{d_h})$.
 We use `adaptive_avg_pool1d`:
 
 ```python
-Q_flat = Q.reshape(B * H, N, d).transpose(1, 2)   # (BH, d, N)
+Q_flat = Q.reshape(B * H, N, d).transpose(1, 2)  # (BH, d, N)
 Q_landmarks = F.adaptive_avg_pool1d(Q_flat, m).transpose(1, 2).reshape(B, H, m, d)
 ```
 
@@ -159,7 +159,7 @@ if is_conv1d:
 
 ```python
 if self.is_nested_encoder:
-    out = context   # Skip out_proj
+    out = context  # Skip out_proj
 else:
     out = self.out_proj(context)
 ```

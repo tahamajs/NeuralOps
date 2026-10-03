@@ -78,23 +78,23 @@ def _local_window_attention(self, Q, K, V, valid_mask, is_causal=False):
 ```python
 def _global_rff_attention(self, Q, K, V, valid_mask, is_causal=False):
     B, H, N, d = Q.shape
-    scale = d ** -0.25
+    scale = d**-0.25
     Q_scaled = Q * scale
     K_scaled = K * scale
-    
+
     proj = self.rff_proj.to(dtype=Q.dtype, device=Q.device)
     Qf = torch.matmul(Q_scaled, proj)
     Kf = torch.matmul(K_scaled, proj)
-    
+
     norm = 1.0 / math.sqrt(self.rff_features)
     phi_Q = (F.elu(Qf) + 1.0) * norm
     phi_K = (F.elu(Kf) + 1.0) * norm
-    
+
     pad = valid_mask.unsqueeze(1).unsqueeze(-1).to(Q.dtype)
     phi_K = phi_K * pad
     phi_Q = phi_Q * pad
     V_masked = V * pad
-    
+
     with torch.autocast(device_type=Q.device.type, enabled=False):
         # ... FP32 computation ...
         if is_causal:

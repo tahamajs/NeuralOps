@@ -893,8 +893,7 @@ if self.kv_repeat > 1:
 ```python
 @ATTENTION_REGISTRY.register("cluster")
 @ATTENTION_REGISTRY.register("cluster_attention")
-class ClusterAttention(BaseAttention):
-    ...
+class ClusterAttention(BaseAttention): ...
 ```
 
 ## 5.8 Failure Modes
@@ -1842,8 +1841,7 @@ empty_clusters = (counts == 0).squeeze(-1).unsqueeze(2)
 scores_assign = scores_assign.masked_fill(empty_clusters, -10000.0)
 temp_clamped = self.temp.abs().clamp(min=0.1, max=10.0)
 attn_assign = torch.nan_to_num(
-    F.softmax((scores_assign / temp_clamped).float(), dim=-1),
-    nan=0.0
+    F.softmax((scores_assign / temp_clamped).float(), dim=-1), nan=0.0
 ).to(dtype)
 assign_denom = attn_assign.sum(dim=-1, keepdim=True).clamp(min=1.0)
 attn_assign = attn_assign / assign_denom
@@ -2111,11 +2109,24 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md", "D_negative_results.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
     "E_ethics.md",
 ]
 
@@ -2136,10 +2147,18 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
     print(f"Wrote {len(full):,} chars to {output}")
     if to_pdf:
         try:
-            subprocess.run([
-                "pandoc", str(output), "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex", "-V", "geometry:margin=1in",
-            ], check=True)
+            subprocess.run(
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
+                check=True,
+            )
             print(f"PDF: {output.with_suffix('.pdf')}")
         except Exception as e:
             print(f"PDF skipped: {e}")
@@ -2187,12 +2206,14 @@ def apply_vars(module_dir: Path, dry_run: bool = False):
     for md_file in sorted(module_dir.glob("*.md")):
         content = md_file.read_text(encoding="utf-8")
         missing = set()
+
         def replace(m):
             k = m.group(1)
             if k in variables:
                 return str(variables[k])
             missing.add(k)
             return m.group(0)
+
         new_content = PATTERN.sub(replace, content)
         if new_content != content:
             if dry_run:

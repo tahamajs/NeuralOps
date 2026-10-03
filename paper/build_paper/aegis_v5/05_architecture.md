@@ -190,8 +190,7 @@ Output: M with attention replaced or unchanged on failure
 @ATTENTION_REGISTRY.register("aegis_v5_module")
 @ATTENTION_REGISTRY.register("AegisAttention")
 @ATTENTION_REGISTRY.register("aegis_v5")
-class AegisAttention(BaseAttention):
-    ...
+class AegisAttention(BaseAttention): ...
 ```
 
 ## 5.10 Interaction with LoRA Recovery

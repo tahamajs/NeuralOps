@@ -228,17 +228,20 @@ Output: Y ∈ R^{B×L×d}
 **Critical.** The `copy_weights` method contains:
 
 ```python
-missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+missing = [
+    k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)
+]
 if missing:
     try:
         from framework.core.adapters import UniversalAdapter
+
         adapter = UniversalAdapter()
         for k in missing:
             w, b = adapter.get_weight_bias(src, k)
             if w is not None:
                 extracted[k] = (w.clone(), b.clone() if b is not None else None)
     except Exception as e:
-        print(f'copy_weights failed: {e}')
+        print(f"copy_weights failed: {e}")
         raise RuntimeError(f"copy_weights failed: {e}")  # ← BUG
 ```
 

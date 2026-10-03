@@ -864,8 +864,10 @@ Output: M with attention replaced
 ## 5.9 Double-Injection Guard
 
 ```python
-if isinstance(src, VSpecAttention): return None
-if "VSpec" in src.__class__.__name__: return None
+if isinstance(src, VSpecAttention):
+    return None
+if "VSpec" in src.__class__.__name__:
+    return None
 ```
 
 ## 5.10 Cross-Attention
@@ -877,8 +879,7 @@ Not supported. Raises `NotImplementedError`.
 ```python
 @ATTENTION_REGISTRY.register("vspec")
 @ATTENTION_REGISTRY.register("vspec_attention")
-class VSpecAttention(BaseAttention):
-    ...
+class VSpecAttention(BaseAttention): ...
 ```
 ```
 
@@ -1506,6 +1507,7 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
@@ -1859,13 +1861,11 @@ class DynamicLowRankProjector(nn.Module):
 class VariationalSpectralGate(nn.Module):
     def __init__(self, hidden_dim, rank):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(hidden_dim, 64), nn.GELU(), nn.Linear(64, rank * 2)
-        )
+        self.net = nn.Sequential(nn.Linear(hidden_dim, 64), nn.GELU(), nn.Linear(64, rank * 2))
         nn.init.zeros_(self.net[-1].weight)
         nn.init.constant_(self.net[-1].bias[:rank], 3.0)
         nn.init.constant_(self.net[-1].bias[rank:], -3.0)
-    
+
     def forward(self, x, valid_mask=None):
         pooled = _masked_mean(x, valid_mask).float()
         stats = self.net(pooled)
@@ -1886,12 +1886,10 @@ class VariationalSpectralGate(nn.Module):
 class HeadGate(nn.Module):
     def __init__(self, hidden_dim, n_heads):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(hidden_dim, 32), nn.GELU(), nn.Linear(32, n_heads)
-        )
+        self.net = nn.Sequential(nn.Linear(hidden_dim, 32), nn.GELU(), nn.Linear(32, n_heads))
         nn.init.zeros_(self.net[-1].weight)
         nn.init.constant_(self.net[-1].bias, 3.0)
-    
+
     def forward(self, x, valid_mask=None):
         pooled = _masked_mean(x, valid_mask).float()
         return torch.sigmoid(self.net(pooled)).to(x.dtype)
@@ -1903,12 +1901,10 @@ class HeadGate(nn.Module):
 class TokenRouter(nn.Module):
     def __init__(self, hidden_dim, keep_ratio=0.75, min_tokens=8):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(hidden_dim, 32), nn.GELU(), nn.Linear(32, 1)
-        )
+        self.net = nn.Sequential(nn.Linear(hidden_dim, 32), nn.GELU(), nn.Linear(32, 1))
         self.keep_ratio = keep_ratio
         self.min_tokens = min_tokens
-    
+
     def forward(self, x, valid_mask=None, is_decoder=False):
         B, N, D = x.shape
         scores = torch.sigmoid(self.net(x.float()).squeeze(-1))
@@ -2269,12 +2265,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2300,12 +2309,18 @@ def build(module_dir, output, to_pdf=False):
 
     if to_pdf:
         try:
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
+            subprocess.run(
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
+                check=True,
+            )
             print(f"PDF: {output.with_suffix('.pdf')}")
         except Exception as e:
             print(f"PDF skipped: {e}")

@@ -146,8 +146,7 @@ For $H = 2$: $H_f = 1$, $H_k = 1$.
 @ATTENTION_REGISTRY.register("orion")
 @ATTENTION_REGISTRY.register("orion_attention")
 @ATTENTION_REGISTRY.register("orion_module")
-class ORIONAttention(BaseAttention):
-    ...
+class ORIONAttention(BaseAttention): ...
 ```
 
 ## B.10 Injection

@@ -265,10 +265,7 @@ parameters. Across 4 projections × $N_l$ layers: significant addition.
 
 ```python
 # Nested encoder detection
-is_nested = (
-    hasattr(src, "self") and hasattr(src, "output") and
-    hasattr(src.self, "query")
-)
+is_nested = hasattr(src, "self") and hasattr(src, "output") and hasattr(src.self, "query")
 ```
 
 For nested encoders, we extract $Q, K, V$ from `src.self` and set 

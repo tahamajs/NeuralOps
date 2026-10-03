@@ -50,33 +50,31 @@ class A3FactorizedLinear(nn.Module):
 def compress(self):
     # 1. Collect statistics
     cov_map, fisher_map = self._collect_activations_and_fisher()
-    
+
     # 2. For each layer
     for name, module in self.model.named_modules():
         if not self._is_target(module, name):
             continue
-        
+
         cov = cov_map.get(name)
         fisher = fisher_map.get(name)
-        
-        factorized, err, rank = self.compress_linear(
-            module, name=name, cov=cov, fisher=fisher
-        )
-        
+
+        factorized, err, rank = self.compress_linear(module, name=name, cov=cov, fisher=fisher)
+
         if factorized is not None:
             # Replace
-            if hasattr(module, 'base_layer'):
+            if hasattr(module, "base_layer"):
                 module.base_layer = factorized
                 replacement = module
             else:
                 replacement = factorized
             replace_module(self.model, name, replacement)
         # else: fallback, keep original
-    
+
     # 3. LN recalibration
     if self.recalibrate_ln:
         recalibrate_layernorms(self.model, ...)
-    
+
     return self.model, self.get_stats()
 ```
 
@@ -87,7 +85,7 @@ def _collect_activations_and_fisher(self):
     cov_running = {}
     fisher_running = {}
     count_running = {}
-    
+
     def make_hook(name):
         def hook(module, inp, outp):
             with torch.no_grad():
@@ -105,26 +103,27 @@ def _collect_activations_and_fisher(self):
                         cov_running[name] += c.cpu()
                         fisher_running[name] += f.cpu()
                         count_running[name] += x_valid.size(0)
+
         return hook
-    
+
     hooks = []
     for name, module in self.model.named_modules():
         if isinstance(module, nn.Linear):
             hooks.append(module.register_forward_hook(make_hook(name)))
-    
+
     # Run calibration
     self.model.eval()
     with torch.no_grad():
         for batch in self.calibration_loader:
             self.model(**batch)
-    
+
     for h in hooks:
         h.remove()
-    
+
     # Normalize
     cov_map = {n: cov_running[n] / count_running[n] for n in cov_running}
     fisher_map = {n: fisher_running[n] / count_running[n] for n in fisher_running}
-    
+
     return cov_map, fisher_map
 ```
 
@@ -133,10 +132,10 @@ def _collect_activations_and_fisher(self):
 ```python
 def compress_linear(self, module, name, cov=None, fisher=None):
     W = module.weight.data.float()
-    
+
     # Extract shape
     out_f, in_f = W.shape[0], W.shape[1]
-    
+
     # Compute weighting
     if self.use_fisher and fisher is not None:
         scale = torch.sqrt(fisher.clamp(min=1e-8) + 1e-6)
@@ -144,7 +143,7 @@ def compress_linear(self, module, name, cov=None, fisher=None):
         scale = torch.sqrt(torch.diag(cov).clamp(min=1e-8) + 1e-6)
     else:
         scale = None
-    
+
     # Weighted matrix
     if scale is not None:
         if self.normalize_scale:
@@ -154,39 +153,46 @@ def compress_linear(self, module, name, cov=None, fisher=None):
         W_w = W * scale.unsqueeze(0)
     else:
         W_w = W
-    
+
     # SVD
     U, S, Vt = torch.linalg.svd(W_w, full_matrices=False)
-    
+
     # Retry loop
     norm_orig = torch.linalg.norm(W).item()
-    best_err = float('inf')
+    best_err = float("inf")
     best_factors = None
-    
+
     for r in adaptive_ranks:
         sqrt_S = torch.sqrt(S[:r].clamp(min=1e-12))
         U_r = U[:, :r] * sqrt_S.unsqueeze(0)
         V_r = sqrt_S.unsqueeze(1) * Vt[:r, :]
         if scale is not None:
             V_r = V_r / scale.unsqueeze(0)
-        
+
         W_rec = U_r @ V_r
         err = torch.linalg.norm(W - W_rec).item() / (norm_orig + 1e-8)
-        
+
         if err < best_err:
             best_err = err
             best_factors = (U_r, V_r)
-        
+
         if err <= self.max_error:
             break
-    
+
     if best_err > self.max_error and self.fallback_to_original:
         return None, best_err, 0
-    
-    return A3FactorizedLinear(
-        in_features=in_f, out_features=out_f, rank=best_r,
-        U_factor=best_factors[0], V_factor=best_factors[1]
-    ), best_err, best_r
+
+    return (
+        A3FactorizedLinear(
+            in_features=in_f,
+            out_features=out_f,
+            rank=best_r,
+            U_factor=best_factors[0],
+            V_factor=best_factors[1],
+        ),
+        best_err,
+        best_r,
+    )
 ```
 
 ## B.5 LayerNorm Recalibration

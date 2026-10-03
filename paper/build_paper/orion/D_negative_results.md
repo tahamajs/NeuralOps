@@ -30,7 +30,7 @@ self.register_buffer("rff_proj", ..., persistent=False)
 
 ```python
 sd = model1.state_dict()
-assert 'rff_proj' not in sd  # Confirms bug
+assert "rff_proj" not in sd  # Confirms bug
 ```
 
 ## D.3 Softpick Masked Row Collapse

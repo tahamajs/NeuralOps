@@ -1138,9 +1138,9 @@ AASVD detects Conv1D via:
 
 ```python
 is_conv1d = (
-    "conv1d" in cls_name 
-    or "conv1d" in target_cls 
-    or hasattr(module, "nf") 
+    "conv1d" in cls_name
+    or "conv1d" in target_cls
+    or hasattr(module, "nf")
     or hasattr(target_mod, "nf")
 )
 ```
@@ -1274,8 +1274,7 @@ expects LoRA to be part of the compression module.
 @COMPRESSOR_REGISTRY.register("aasvd")
 @COMPRESSOR_REGISTRY.register("aa_svd")
 @COMPRESSOR_REGISTRY.register("aa_svd_compressor")
-class AASVDCompressor(BaseCompressor):
-    ...
+class AASVDCompressor(BaseCompressor): ...
 ```
 
 ## 5.11 Failure Modes and Fallbacks
@@ -2163,6 +2162,7 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
@@ -2552,17 +2552,15 @@ def make_hook(name):
             x_active = x_flat[mask]
             if x_active.size(0) == 0:
                 return
-            batch_cov = (
-                torch.matmul(x_active.T, x_active) / max(1, x_active.size(0))
-            ).cpu()
-        
+            batch_cov = (torch.matmul(x_active.T, x_active) / max(1, x_active.size(0))).cpu()
+
         if name not in covariances:
             covariances[name] = batch_cov
         else:
             covariances[name] = (
-                self.ema_beta * covariances[name]
-                + (1.0 - self.ema_beta) * batch_cov
+                self.ema_beta * covariances[name] + (1.0 - self.ema_beta) * batch_cov
             )
+
     return hook
 ```
 
@@ -2627,11 +2625,14 @@ def compress_linear(self, layer, cov_factors=None):
 ## B.5 Rank Cap Constraint
 
 ```python
-max_allowed_rank = max(1, min(
-    in_features,
-    out_features,
-    int(0.75 * (in_features * out_features) / (in_features + out_features))
-))
+max_allowed_rank = max(
+    1,
+    min(
+        in_features,
+        out_features,
+        int(0.75 * (in_features * out_features) / (in_features + out_features)),
+    ),
+)
 r = min(r, max_allowed_rank)
 ```
 

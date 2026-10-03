@@ -962,8 +962,7 @@ linear attention is less sensitive to layer skip.
 ```python
 @ATTENTION_REGISTRY.register("decay_linear_attention")
 @ATTENTION_REGISTRY.register("decay_linear_attn")
-class DecayLinearAttention(BaseAttention):
-    ...
+class DecayLinearAttention(BaseAttention): ...
 ```
 
 ## 5.10 Compatibility Properties
@@ -972,13 +971,25 @@ The module exposes Q/K/V/O under multiple names for framework integration:
 
 ```python
 @property
-def query(self): return self.q_proj
+def query(self):
+    return self.q_proj
+
+
 @property
-def key(self): return self.k_proj
+def key(self):
+    return self.k_proj
+
+
 @property
-def value(self): return self.v_proj
+def value(self):
+    return self.v_proj
+
+
 @property
-def q_lin(self): return self.q_proj
+def q_lin(self):
+    return self.q_proj
+
+
 ...
 ```
 ```
@@ -1587,6 +1598,7 @@ python run_all_4_decay_linear.py --log_decay_min 0.0 --log_decay_max 0.5 --outpu
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
@@ -2286,12 +2298,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2317,12 +2342,18 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
 
     if to_pdf:
         try:
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
+            subprocess.run(
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
+                check=True,
+            )
             print(f"PDF: {output.with_suffix('.pdf')}")
         except Exception as e:
             print(f"PDF skipped: {e}")

@@ -228,8 +228,7 @@ if is_causal:
 @ATTENTION_REGISTRY.register("adaptive_svd_attn")
 @ATTENTION_REGISTRY.register("adaptive_svd")
 @ATTENTION_REGISTRY.register("adaptive_svd_attention")
-class AdaptiveSVDAttention(BaseAttention):
-    ...
+class AdaptiveSVDAttention(BaseAttention): ...
 ```
 
 ## 5.7 Failure Modes and Fallbacks

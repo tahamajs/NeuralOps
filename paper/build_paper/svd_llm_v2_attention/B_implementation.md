@@ -10,34 +10,41 @@
 
 ```python
 class SVDLLMV2Attention(BaseAttention):
-    def __init__(self, config, old_attn=None, rank=64, energy_threshold=0.95,
-                 lora_rank=16, lora_alpha=32.0, **kwargs):
+    def __init__(
+        self,
+        config,
+        old_attn=None,
+        rank=64,
+        energy_threshold=0.95,
+        lora_rank=16,
+        lora_alpha=32.0,
+        **kwargs,
+    ):
         # Resolve dimensions
         self.hidden_size = ...
         self.num_heads = ...
         self.head_dim = ...
         self.num_kv_heads = ...
-        
+
         # Explicit factor buffers
-        self.query_u  = nn.Parameter(...)   # (q_head_size, rank)
-        self.query_s  = nn.Parameter(...)   # (rank,)
-        self.query_vh = nn.Parameter(...)   # (rank, hidden_size)
+        self.query_u = nn.Parameter(...)  # (q_head_size, rank)
+        self.query_s = nn.Parameter(...)  # (rank,)
+        self.query_vh = nn.Parameter(...)  # (rank, hidden_size)
         self.query_bias = nn.Parameter(...)
         # ... same for key, value, out_proj
-        
+
         # LoRA per projection
         if lora_rank > 0:
             self.q_lora_A = nn.Parameter(...)
             self.q_lora_B = nn.Parameter(...)
             # ...
-        
+
         self._init_random()
-        
+
         # Freeze base weights
-        for p in (self.query_u, self.query_s, self.query_vh, self.query_bias,
-                  ...):
+        for p in (self.query_u, self.query_s, self.query_vh, self.query_bias, ...):
             p.requires_grad = False
-        
+
         if old_attn is not None:
             self.copy_weights(old_attn)
 ```
@@ -56,22 +63,21 @@ def _project(self, x, vh, s, u, b, lora_A, lora_B):
 ## B.3 The `_decompose_and_set` Method
 
 ```python
-def _decompose_and_set(self, u_param, s_param, vh_param, bias_param,
-                       weight, bias):
+def _decompose_and_set(self, u_param, s_param, vh_param, bias_param, weight, bias):
     with torch.no_grad():
         W = weight.float()
         # Pad or truncate to expected shape
         if W.shape != (u_param.shape[0], vh_param.shape[1]):
             padded_W = torch.zeros(u_param.shape[0], vh_param.shape[1], ...)
-            padded_W[:min(...), :min(...)] = W[:min(...), :min(...)]
+            padded_W[: min(...), : min(...)] = W[: min(...), : min(...)]
             W = padded_W
-        
+
         U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-        total_energy = (S ** 2).sum().clamp(min=1e-12)
-        cum_energy = torch.cumsum(S ** 2, dim=0) / total_energy
+        total_energy = (S**2).sum().clamp(min=1e-12)
+        cum_energy = torch.cumsum(S**2, dim=0) / total_energy
         r_energy = int((cum_energy < self.energy_threshold).sum().item()) + 1
         r = max(1, min(r_energy, self.rank, len(S)))
-        
+
         u_param.data.zero_()
         s_param.data.zero_()
         vh_param.data.zero_()
@@ -203,7 +209,7 @@ if "Conv1D" in type(module).__name__ or hasattr(module, "nf"):
 
 ```python
 # WRONG (RoBERTa)
-self.is_nested_encoder = False   # out_proj applied twice
+self.is_nested_encoder = False  # out_proj applied twice
 
 # RIGHT
 if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):

@@ -18,19 +18,18 @@ class RPCAttention(BaseAttention):
         self.num_heads = 12
         self.head_dim = 64
         self.rank = min(rank, self.head_dim)
-        
+
         # Projections with LoRA
         self.W_q = LoRALinear(768, 768, lora_rank=16)
         self.W_k = LoRALinear(768, 768, lora_rank=16)
         self.W_v = LoRALinear(768, 768, lora_rank=16)
         self.out_proj = LoRALinear(768, 768, lora_rank=16)
-        
+
         # Random projection buffer (NOT a parameter)
         self.register_buffer(
-            "proj",
-            torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim ** -0.5)
+            "proj", torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim**-0.5)
         )
-        
+
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 ```
@@ -90,8 +89,7 @@ def forward(self, hidden_states, attention_mask=None, **kwargs):
 
 ```python
 self.register_buffer(
-    "proj",
-    torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim ** -0.5)
+    "proj", torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim**-0.5)
 )
 ```
 

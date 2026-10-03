@@ -801,8 +801,12 @@ self.z_proj.weight.data[:out_z, :in_z].copy_(w_q[:out_z, :in_z])
 The detection order:
 
 ```python
-if (hasattr(old_attn, "self") and hasattr(old_attn.self, "query")
-    and hasattr(old_attn, "output") and hasattr(old_attn.output, "dense")):
+if (
+    hasattr(old_attn, "self")
+    and hasattr(old_attn.self, "query")
+    and hasattr(old_attn, "output")
+    and hasattr(old_attn.output, "dense")
+):
     is_nested = True
 elif cls_name in ("BertSelfAttention", "RobertaSelfAttention", ...):
     is_nested = True
@@ -857,37 +861,38 @@ def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=8):
     # Normalize
     k_unit = k / k.norm(dim=-1, keepdim=True).clamp(min=1e-6)
     q_unit = q / q.norm(dim=-1, keepdim=True).clamp(min=1e-6)
-    
+
     # Reshape into chunks
     q_c = q_unit.view(B, H, num_chunks, chunk_size, d)
     ...
-    
+
     S = torch.zeros(B, H, d, d)  # state
     outputs = []
-    
-    for c in range(num_chunks):       # ← OUTER PYTHON LOOP
-        q_i, k_i, v_i = q_c[:,:,c], k_c[:,:,c], v_c[:,:,c]
+
+    for c in range(num_chunks):  # ← OUTER PYTHON LOOP
+        q_i, k_i, v_i = q_c[:, :, c], k_c[:, :, c], v_c[:, :, c]
         if use_checkpoint:
             y_i, S = checkpoint(_delta_chunk_forward, S, q_i, k_i, v_i, ...)
         else:
             y_i, S = _delta_chunk_forward(S, q_i, k_i, v_i, ...)
         outputs.append(y_i)
-    
+
     return torch.cat(outputs, dim=2)
 
+
 def _delta_chunk_forward(S, q_i, k_i, v_i, beta_i, alpha_i):
-    for t in range(chunk_size):       # ← INNER PYTHON LOOP
-        kt, vt, qt = k_i[:,:,t:t+1], v_i[:,:,t:t+1], q_i[:,:,t:t+1]
-        bt, at = beta_i[:,:,t:t+1], alpha_i[:,:,t:t+1]
-        
+    for t in range(chunk_size):  # ← INNER PYTHON LOOP
+        kt, vt, qt = k_i[:, :, t : t + 1], v_i[:, :, t : t + 1], q_i[:, :, t : t + 1]
+        bt, at = beta_i[:, :, t : t + 1], alpha_i[:, :, t : t + 1]
+
         inter_v = torch.matmul(kt, S)
         err = vt - inter_v
         norm_k_sq = (kt * kt).sum(-1, keepdim=True)
         step = (at / (1 + norm_k_sq).clamp(min=1.0)).clamp(0, 1)
-        
+
         S = bt * S + step * torch.matmul(kt.transpose(-1, -2), err)
         yt = torch.matmul(qt, S)
-    
+
     return torch.cat(outputs, dim=2), S
 ```
 
@@ -925,8 +930,7 @@ peak memory.
 
 ```python
 @ATTENTION_REGISTRY.register("gated_delta_net")
-class GatedDeltaNet(BaseAttention):
-    ...
+class GatedDeltaNet(BaseAttention): ...
 ```
 
 ## 5.10 Recommended Fix
@@ -1045,6 +1049,7 @@ We measure per-step training time:
 
 ```python
 import time
+
 start = time.time()
 for step in range(5):
     ...  # training step
@@ -1771,9 +1776,12 @@ assert L % chunk_size == 0 or padding_ok
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 ```
 
 ## 12.7 Verification
@@ -1789,6 +1797,7 @@ beta = torch.tensor([[[0.9]]])
 alpha = torch.tensor([[[0.5]]])
 
 from framework.attentions.gated_delta_net import _delta_chunk_forward
+
 y, S_new = _delta_chunk_forward(S, k, k, v, beta, alpha)
 # Verify: S_new ≈ beta * S + alpha * k^T (v - k S)
 ```
@@ -2175,18 +2184,20 @@ def _delta_chunk_forward(S, q_i, k_i, v_i, beta_i, alpha_i):
 ```python
 def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=8, use_checkpoint=True):
     B, H, L, d = q.shape
-    
+
     # FP32 for numerical stability
-    q_f = q.float(); k_f = k.float(); v_f = v.float()
-    beta_f = beta.float().clamp(1e-4, 1-1e-4)
+    q_f = q.float()
+    k_f = k.float()
+    v_f = v.float()
+    beta_f = beta.float().clamp(1e-4, 1 - 1e-4)
     alpha_f = alpha.float().clamp(1e-4, 1)
-    
+
     # Normalize
     k_norm = torch.norm(k_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
     k_unit = k_f / k_norm
     q_norm = torch.norm(q_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
     q_unit = q_f / q_norm
-    
+
     # Pad
     pad_len = (chunk_size - L % chunk_size) % chunk_size
     if pad_len > 0:
@@ -2195,29 +2206,31 @@ def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=8, use_checkpoint=T
         v_f = F.pad(v_f, (0, 0, 0, pad_len))
         beta_f = F.pad(beta_f, (0, pad_len), value=0.0)
         alpha_f = F.pad(alpha_f, (0, pad_len), value=1.0)
-    
+
     # Reshape
     L_pad = L + pad_len
     num_chunks = L_pad // chunk_size
     q_c = q_unit.view(B, H, num_chunks, chunk_size, d)
     # ... same for k, v, beta, alpha
-    
+
     # Recurrence
     S = torch.zeros((B, H, d, d), device=device, dtype=torch.float32)
     outputs = []
-    
+
     from torch.utils.checkpoint import checkpoint
-    for c in range(num_chunks):                    # ← outer Python loop
-        q_i, k_i, v_i = q_c[:,:,c], k_c[:,:,c], v_c[:,:,c]
-        beta_i, alpha_i = beta_c[:,:,c], alpha_c[:,:,c]
-        
+
+    for c in range(num_chunks):  # ← outer Python loop
+        q_i, k_i, v_i = q_c[:, :, c], k_c[:, :, c], v_c[:, :, c]
+        beta_i, alpha_i = beta_c[:, :, c], alpha_c[:, :, c]
+
         if use_checkpoint and q.requires_grad:
-            y_i, S = checkpoint(_delta_chunk_forward, S, q_i, k_i, v_i, 
-                                 beta_i, alpha_i, use_reentrant=False)
+            y_i, S = checkpoint(
+                _delta_chunk_forward, S, q_i, k_i, v_i, beta_i, alpha_i, use_reentrant=False
+            )
         else:
             y_i, S = _delta_chunk_forward(S, q_i, k_i, v_i, beta_i, alpha_i)
         outputs.append(y_i)
-    
+
     y = torch.cat(outputs, dim=2)
     if pad_len > 0:
         y = y[:, :, :L, :]
@@ -2270,7 +2283,9 @@ else:
 The recurrence **must** be done in FP32. FP16 accumulates error:
 
 ```python
-q_f = q.float(); k_f = k.float(); v_f = v.float()
+q_f = q.float()
+k_f = k.float()
+v_f = v.float()
 ```
 
 ### B.5.2 Missing Normalization
@@ -2338,8 +2353,7 @@ assert X.grad[0, 6:].abs().max() < 1e-6
 
 ```python
 @ATTENTION_REGISTRY.register("gated_delta_net")
-class GatedDeltaNet(BaseAttention):
-    ...
+class GatedDeltaNet(BaseAttention): ...
 ```
 
 ## B.8 Injection Factory
@@ -2349,18 +2363,21 @@ class GatedDeltaNet(BaseAttention):
 def inject_gated_delta_net(layer, model_config, comp_config, old_attn=None, **kwargs):
     # Find source attention
     src_attn = old_attn or extract_attention(layer)
-    
+
     # Create new
     try:
         new_block = GatedDeltaNet(
-            config=model_config, comp_config=comp_config,
-            d_model=hidden_size, num_heads=num_heads,
-            old_attn=src_attn, **kwargs,
+            config=model_config,
+            comp_config=comp_config,
+            d_model=hidden_size,
+            num_heads=num_heads,
+            old_attn=src_attn,
+            **kwargs,
         )
     except Exception as e:
         logger.error(f"Injection failed: {e}")
         return None
-    
+
     # Replace
     replace_attention(layer, new_block)
     return new_block

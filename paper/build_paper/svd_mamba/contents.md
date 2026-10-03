@@ -1072,8 +1072,7 @@ Several clamps prevent overflow:
 @ATTENTION_REGISTRY.register("SVD-Mamba")
 @ATTENTION_REGISTRY.register("svd-mamba")
 @ATTENTION_REGISTRY.register("SVD_Mamba")
-class SVDMamba(BaseAttention):
-    ...
+class SVDMamba(BaseAttention): ...
 ```
 
 ## 5.10 Failure Modes
@@ -1815,9 +1814,12 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 torch.backends.cudnn.deterministic = True
 ```
 
@@ -2150,15 +2152,15 @@ def ssm_forward(self, x):
     x_pad = F.pad(x_t, (self.d_conv - 1, 0))
     x_conv = self.conv1d(x_pad)[..., :seqlen].transpose(1, 2)
     x_conv = F.silu(x_conv)
-    
+
     x_proj = self.x_proj(x_conv)
     delta = F.softplus(self.dt_proj(x_proj[:, :, :dt_rank]) + self.dt_bias)
     delta = delta.clamp(min=1e-3, max=0.1)
-    B_ssm = x_proj[:, :, dt_rank:dt_rank+d_state]
-    C_ssm = x_proj[:, :, dt_rank+d_state:]
-    
+    B_ssm = x_proj[:, :, dt_rank : dt_rank + d_state]
+    C_ssm = x_proj[:, :, dt_rank + d_state :]
+
     A = -torch.exp(self.A_log.clamp(min=-20, max=10))
-    
+
     # Chunked scan
     h_running = zeros(B, inner_dim, d_state)
     y_chunks = []
@@ -2581,12 +2583,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2613,8 +2628,15 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
     if to_pdf:
         try:
             subprocess.run(
-                ["pandoc", str(output), "-o", str(output.with_suffix(".pdf")),
-                 "--pdf-engine=xelatex", "-V", "geometry:margin=1in"],
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
                 check=True,
             )
             print(f"PDF: {output.with_suffix('.pdf')}")

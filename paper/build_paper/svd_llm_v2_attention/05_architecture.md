@@ -104,9 +104,7 @@ model.layers.0.self_attn
 ```python
 rep = w_k.shape[0] // self.kv_head_size
 w_k_pooled = (
-    w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
-    .mean(dim=1)
-    .view(self.kv_head_size, -1)
+    w_k.view(self.num_kv_heads, rep, self.head_dim, -1).mean(dim=1).view(self.kv_head_size, -1)
 )
 ```
 
@@ -123,9 +121,9 @@ When `is_nested_encoder = True`:
 context = torch.matmul(probs, V).transpose(1, 2).contiguous().view(...)
 
 if self.is_nested_encoder:
-    out = context       # ← No out_proj
+    out = context  # ← No out_proj
 else:
-    out = self._project(context, ...)   # ← out_proj applied
+    out = self._project(context, ...)  # ← out_proj applied
 ```
 
 The outer `BertSelfOutput.dense` then applies the projection.

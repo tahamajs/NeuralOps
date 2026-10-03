@@ -82,8 +82,8 @@ q_dim = self.q_head_size
 k_dim = self.kv_head_size
 v_dim = self.kv_head_size
 w_q = c_attn_w[:q_dim, :]
-w_k = c_attn_w[q_dim:q_dim+k_dim, :]
-w_v = c_attn_w[q_dim+k_dim:, :]
+w_k = c_attn_w[q_dim : q_dim + k_dim, :]
+w_v = c_attn_w[q_dim + k_dim :, :]
 ```
 
 `is_nested_encoder = False`. Causal mask applied in forward.
@@ -112,26 +112,28 @@ if self.num_kv_heads != self.num_heads:
 ## 5.6 Injection Hook
 
 ```python
-def inject_unified_rope(layer, model_config=None, comp_config=None,
-                        old_attn=None, **kwargs):
+def inject_unified_rope(layer, model_config=None, comp_config=None, old_attn=None, **kwargs):
     src = old_attn
     if src is None:
         for attr in ("attention", "self_attn", "attn", "self"):
             if hasattr(layer, attr):
                 src = getattr(layer, attr)
                 break
-    
+
     if model_config is None and hasattr(layer, "config"):
         model_config = layer.config
-    
+
     lora_rank = kwargs.pop("lora_rank", 16)
     rank = kwargs.pop("rank", 32)
-    
+
     new_attn = UnifiedRoPE(
-        config=model_config, rank=rank, lora_rank=lora_rank,
-        pretrained_attn=src, **kwargs,
+        config=model_config,
+        rank=rank,
+        lora_rank=lora_rank,
+        pretrained_attn=src,
+        **kwargs,
     )
-    
+
     # Replace
     for attr in ("self_attn", "attn", "self"):
         if hasattr(layer, attr):

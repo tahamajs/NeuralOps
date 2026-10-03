@@ -10,24 +10,36 @@
 
 ```python
 class SqueezingHeadsDistiller(BaseAttention):
-    def __init__(self, config=None, old_attn=None, rank=None,
-                 lora_rank=16, lora_alpha=32.0, is_decoder=None, **kwargs):
+    def __init__(
+        self,
+        config=None,
+        old_attn=None,
+        rank=None,
+        lora_rank=16,
+        lora_alpha=32.0,
+        is_decoder=None,
+        **kwargs,
+    ):
         super().__init__(config, rank)
-        
+
         # Resolve dims
         self.hidden_size = ...
         self.num_heads = ...
         self.head_dim = ...
         self.num_kv_heads = ...
-        
+
         # LoRA-wrapped projections
-        self.q_proj = LoRALinear(self.hidden_size, self.q_head_size,
-                                  lora_rank=lora_rank, lora_alpha=lora_alpha,
-                                  freeze_base=True)
+        self.q_proj = LoRALinear(
+            self.hidden_size,
+            self.q_head_size,
+            lora_rank=lora_rank,
+            lora_alpha=lora_alpha,
+            freeze_base=True,
+        )
         self.k_proj = LoRALinear(...)
         self.v_proj = LoRALinear(...)
         self.out_proj = LoRALinear(...)
-        
+
         if old_attn is not None:
             self.copy_weights(old_attn)
 ```
@@ -102,7 +114,7 @@ When pooling GQA heads, the reshape must be exact:
 
 ```python
 w_k_pooled = (
-    w_k[:, :self.hidden_size]
+    w_k[:, : self.hidden_size]
     .view(self.num_kv_heads, rep, self.head_dim, -1)
     .mean(dim=1)
     .view(self.kv_head_size, -1)

@@ -636,11 +636,11 @@ $$
 
 ```python
 def _compute_energy_rank(self, S, max_rank, min_rank=16):
-    s_squared = S ** 2
+    s_squared = S**2
     total_energy = s_squared.sum()
     if total_energy <= 1e-12:
         return max(1, min(min_rank, max_rank))
-    
+
     cum_energy = torch.cumsum(s_squared, dim=0) / total_energy
     idx = torch.where(cum_energy >= self.energy_threshold)[0]
     r = int(idx[0].item()) + 1 if len(idx) > 0 else max_rank
@@ -1262,8 +1262,7 @@ if is_causal:
 @ATTENTION_REGISTRY.register("adaptive_svd_attn")
 @ATTENTION_REGISTRY.register("adaptive_svd")
 @ATTENTION_REGISTRY.register("adaptive_svd_attention")
-class AdaptiveSVDAttention(BaseAttention):
-    ...
+class AdaptiveSVDAttention(BaseAttention): ...
 ```
 
 ## 5.7 Failure Modes and Fallbacks
@@ -2210,6 +2209,7 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
@@ -2683,18 +2683,18 @@ class AdaptiveSVDLinear(nn.Module):
 ```python
 def forward(self, x):
     # SVD base
-    Vx = F.linear(x, self.V)      # (B, L, rank)
-    out = F.linear(Vx, self.U)     # (B, L, out_features)
-    
+    Vx = F.linear(x, self.V)  # (B, L, rank)
+    out = F.linear(Vx, self.U)  # (B, L, out_features)
+
     # Residual adapter
     if self.lora_A is not None and self.lora_B is not None:
-        Ax = F.linear(x, self.lora_A)      # (B, L, residual_rank)
+        Ax = F.linear(x, self.lora_A)  # (B, L, residual_rank)
         out = out + F.linear(Ax, self.lora_B)
-    
+
     # Bias
     if self.bias is not None:
         out = out + self.bias
-    
+
     return out
 ```
 
@@ -2704,21 +2704,21 @@ def forward(self, x):
 def _compute_energy_rank(self, S, max_rank, min_rank=16):
     """
     Find smallest rank r with cumulative energy >= τ.
-    
+
     Args:
         S: Singular values (descending), 1D tensor
         max_rank: Upper bound on rank
         min_rank: Lower bound on rank
-    
+
     Returns:
         Rank r ∈ [min_rank, max_rank]
     """
-    s_squared = S ** 2
+    s_squared = S**2
     total_energy = s_squared.sum()
-    
+
     if total_energy <= 1e-12:
         return max(1, min(min_rank, max_rank))
-    
+
     cum_energy = torch.cumsum(s_squared, dim=0) / total_energy
     idx = torch.where(cum_energy >= self.energy_threshold)[0]
     r = int(idx[0].item()) + 1 if len(idx) > 0 else max_rank
@@ -2732,24 +2732,22 @@ def _init_svd_part(self, adap_linear, W_data, bias_data):
     with torch.no_grad():
         W = W_data.float()  # FP32 for SVD
         U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-        
+
         max_r = min(adap_linear.svd_rank, U.size(1), Vt.size(0))
         r = self._compute_energy_rank(S, max_rank=max_r)
-        
+
         # Symmetric factor distribution
         sqrt_s = torch.sqrt(torch.clamp(S[:r], min=1e-12))
         U_r = (U[:, :r] * sqrt_s.unsqueeze(0)).to(
-            dtype=adap_linear.U.dtype,
-            device=adap_linear.U.device
+            dtype=adap_linear.U.dtype, device=adap_linear.U.device
         )
         V_r = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(
-            dtype=adap_linear.V.dtype,
-            device=adap_linear.V.device
+            dtype=adap_linear.V.dtype, device=adap_linear.V.device
         )
-        
+
         # Set factors
         adap_linear.set_svd_factors(U_r, V_r)
-        
+
         # Copy bias
         if adap_linear.bias is not None and bias_data is not None:
             adap_linear.bias.data.copy_(bias_data)
@@ -2786,16 +2784,16 @@ convention but equivalent).
 ```python
 def copy_weights(self, src):
     extracted = {}
-    
+
     for proj in ["q", "k", "v", "o"]:
         w, b = None, None
-        
+
         # Try UniversalAdapter first
         try:
             w, b = UniversalAdapter.get_weight_bias(src, proj)
         except Exception:
             pass
-        
+
         # Manual fallbacks
         if w is None:
             # GPT-2 Fused c_attn
@@ -2804,8 +2802,8 @@ def copy_weights(self, src):
                 fused_b = getattr(src.c_attn, "bias", None)
                 split = fused_w.size(0) // 3
                 idx = {"q": 0, "k": 1, "v": 2}[proj]
-                w = fused_w[idx*split:(idx+1)*split, :]
-                b = fused_b[idx*split:(idx+1)*split] if fused_b is not None else None
+                w = fused_w[idx * split : (idx + 1) * split, :]
+                b = fused_b[idx * split : (idx + 1) * split] if fused_b is not None else None
             elif hasattr(src, "c_proj") and proj == "o":
                 w = src.c_proj.weight.T
                 b = getattr(src.c_proj, "bias", None)
@@ -2821,18 +2819,20 @@ def copy_weights(self, src):
                 w = src.q_lin.weight
                 b = getattr(src.q_lin, "bias", None)
             # ... more cases
-        
+
         extracted[proj] = (w, b)
-    
+
     # Detect nested encoder
-    is_nested = (
-        hasattr(src, "self") and hasattr(src, "output") and
-        hasattr(src.self, "query")
-    )
+    is_nested = hasattr(src, "self") and hasattr(src, "output") and hasattr(src.self, "query")
     self.is_nested_encoder = is_nested
-    
+
     # Initialize SVD for each projection
-    for proj, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj)]:
+    for proj, target in [
+        ("q", self.query),
+        ("k", self.key),
+        ("v", self.value),
+        ("o", self.out_proj),
+    ]:
         w, b = extracted[proj]
         if w is not None:
             self._init_svd_part(target, w, b)
@@ -2850,7 +2850,9 @@ def copy_weights(self, src):
 ## B.7 T5 Relative Attention Bias
 
 ```python
-def _relative_position_bucket(self, relative_position, bidirectional=True, num_buckets=32, max_distance=128):
+def _relative_position_bucket(
+    self, relative_position, bidirectional=True, num_buckets=32, max_distance=128
+):
     relative_buckets = 0
     if bidirectional:
         num_buckets //= 2
@@ -2858,21 +2860,20 @@ def _relative_position_bucket(self, relative_position, bidirectional=True, num_b
         relative_position = torch.abs(relative_position)
     else:
         relative_position = -torch.min(relative_position, torch.zeros_like(relative_position))
-    
+
     max_exact = num_buckets // 2
     is_small = relative_position < max_exact
-    
+
     relative_position_if_large = max_exact + (
         torch.log(relative_position.float() / max_exact)
         / math.log(max_distance / max_exact)
         * (num_buckets - max_exact)
     ).to(torch.long)
-    
+
     relative_position_if_large = torch.min(
-        relative_position_if_large,
-        torch.full_like(relative_position_if_large, num_buckets - 1)
+        relative_position_if_large, torch.full_like(relative_position_if_large, num_buckets - 1)
     )
-    
+
     relative_buckets += torch.where(is_small, relative_position, relative_position_if_large)
     return relative_buckets
 ```
@@ -2882,15 +2883,15 @@ def _relative_position_bucket(self, relative_position, bidirectional=True, num_b
 ```python
 def apply_rotary(self, Q, K, cos, sin):
     def _rotate_half(x):
-        return torch.cat((-x[..., x.shape[-1]//2:], x[..., :x.shape[-1]//2]), dim=-1)
-    
+        return torch.cat((-x[..., x.shape[-1] // 2 :], x[..., : x.shape[-1] // 2]), dim=-1)
+
     if cos.dim() == 3:
         cos, sin = cos.unsqueeze(1), sin.unsqueeze(1)
     while cos.dim() < Q.dim():
         cos, sin = cos.unsqueeze(0), sin.unsqueeze(0)
     if cos.shape[-2] != Q.shape[-2]:
-        cos, sin = cos[..., :Q.shape[-2], :], sin[..., :Q.shape[-2], :]
-    
+        cos, sin = cos[..., : Q.shape[-2], :], sin[..., : Q.shape[-2], :]
+
     rotary_dim = cos.shape[-1]
     if rotary_dim <= Q.shape[-1]:
         q_rot, q_pass = Q[..., :rotary_dim], Q[..., rotary_dim:]
@@ -2900,10 +2901,10 @@ def apply_rotary(self, Q, K, cos, sin):
         Q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot
         K = torch.cat([k_rot, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot
     else:
-        cos_cut, sin_cut = cos[..., :Q.shape[-1]], sin[..., :Q.shape[-1]]
+        cos_cut, sin_cut = cos[..., : Q.shape[-1]], sin[..., : Q.shape[-1]]
         Q = (Q * cos_cut.to(Q.dtype)) + (_rotate_half(Q) * sin_cut.to(Q.dtype))
         K = (K * cos_cut.to(K.dtype)) + (_rotate_half(K) * sin_cut.to(K.dtype))
-    
+
     return Q, K
 ```
 

@@ -878,8 +878,7 @@ next layer. This makes the block **conservative**.
 ```python
 @ATTENTION_REGISTRY.register("goldfinch_ahn")
 @ATTENTION_REGISTRY.register("goldfinch")
-class GoldFinchAHNBlock(BaseAttention):
-    ...
+class GoldFinchAHNBlock(BaseAttention): ...
 ```
 ```
 
@@ -1592,6 +1591,7 @@ python run_all_4_goldfinch_ahn.py \
 
 ```python
 from huggingface_hub import hf_hub_download
+
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
         repo_id=f"efficiency-lab/svd-linear-attention-{model}-goldfinch_ahn",
@@ -1653,6 +1653,7 @@ torch.cuda.manual_seed_all(seed)
 
 ```python
 import torch
+
 L = 16
 W = 4
 idx = torch.arange(L)
@@ -1660,13 +1661,14 @@ dist = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs()
 M = dist <= W
 # Check band structure
 assert M[0, 0] == True
-assert M[0, W+1] == False
+assert M[0, W + 1] == False
 ```
 
 ### Verify Preservation Gate
 
 ```python
 import torch
+
 alpha = torch.sigmoid(torch.tensor(2.0))
 # alpha ≈ 0.88
 assert 0.85 < alpha.item() < 0.90
@@ -2107,8 +2109,7 @@ print(f"long_out norm: {long_out.norm().item():.4f}")
 
 ```python
 @ATTENTION_REGISTRY.register("goldfinch_ahn")
-class GoldFinchAHNBlock(BaseAttention):
-    ...
+class GoldFinchAHNBlock(BaseAttention): ...
 ```
 
 ## B.8 Injection
@@ -2648,6 +2649,7 @@ python build.py --module goldfinch_ahn
 class GatedDeltaNetLayer(nn.Module):
     def __init__(self, d_model, use_spectral_norm=False):
         self.net = nn.Linear(d_model, d_model)
+
     def forward(self, x):
         return self.net(x)
 ```

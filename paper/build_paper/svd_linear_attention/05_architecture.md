@@ -183,8 +183,7 @@ for token in sequence:
 @ATTENTION_REGISTRY.register("svd_linear_attn")
 @ATTENTION_REGISTRY.register("svd_linear_attention")
 @ATTENTION_REGISTRY.register("svd_linear")
-class SVDLinearAttention(BaseAttention):
-    ...
+class SVDLinearAttention(BaseAttention): ...
 ```
 
 ## 5.10 Causality

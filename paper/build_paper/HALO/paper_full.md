@@ -1295,7 +1295,7 @@ w.r.t. input at position $j > i$ is zero:
 x = torch.randn(1, L, d, requires_grad=True)
 out = model(x)
 out[0, i].sum().backward()
-assert x.grad[0, i+1:].abs().max() < 1e-6
+assert x.grad[0, i + 1 :].abs().max() < 1e-6
 ```
 
 **Result.** ✅ Verified on all three models
@@ -1622,6 +1622,7 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)

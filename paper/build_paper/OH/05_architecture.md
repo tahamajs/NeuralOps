@@ -72,8 +72,7 @@ Direct copy from `q_proj/k_proj/v_proj/o_proj`.
 ```python
 if hasattr(src, "self") and hasattr(src.self, "query"):
     is_nested = True
-elif (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower()
-      and not has_out_lin):
+elif cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower() and not has_out_lin:
     is_nested = True
 self.is_nested_encoder = is_nested
 ```
@@ -140,8 +139,7 @@ is safer in principle but requires that weight transfer always succeeds.
 ```python
 @ATTENTION_REGISTRY.register("oha")
 @ATTENTION_REGISTRY.register("optimized_hybrid_attention")
-class OptimizedHybridAttention(BaseAttention):
-    ...
+class OptimizedHybridAttention(BaseAttention): ...
 ```
 
 ## 5.10 Cross-Attention

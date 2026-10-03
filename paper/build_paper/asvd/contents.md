@@ -731,11 +731,11 @@ class ASVDLinear(nn.Module):
         if lora_rank > 0:
             self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
             self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
-    
+
     def forward(self, x):
-        Vx = F.linear(x, self.V)          # (B, L, r)
-        SVx = Vx * self.S                  # (B, L, r)
-        out = F.linear(SVx, self.U)        # (B, L, d_out)
+        Vx = F.linear(x, self.V)  # (B, L, r)
+        SVx = Vx * self.S  # (B, L, r)
+        out = F.linear(SVx, self.U)  # (B, L, d_out)
         if self.bias is not None:
             out = out + self.bias
         if self.lora_rank > 0:
@@ -929,11 +929,14 @@ extracted["o"] = (src.out_lin.weight.data, src.out_lin.bias.data)
 Detection:
 
 ```python
-if (hasattr(src, "self") and hasattr(src.self, "query")
-    and hasattr(src, "output") and hasattr(src.output, "dense")):
+if (
+    hasattr(src, "self")
+    and hasattr(src.self, "query")
+    and hasattr(src, "output")
+    and hasattr(src.output, "dense")
+):
     is_nested_encoder = True
-elif (cls_name in ["BertSelfAttention", "RobertaSelfAttention", ...]
-      and not has_out_lin):
+elif cls_name in ["BertSelfAttention", "RobertaSelfAttention", ...] and not has_out_lin:
     is_nested_encoder = True
 ```
 
@@ -1047,8 +1050,7 @@ stricter than A3/AASVD (which log warnings).
 
 ```python
 class ASVDLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank,
-                 bias=True, lora_rank=0, freeze_base=False):
+    def __init__(self, in_features, out_features, rank, bias=True, lora_rank=0, freeze_base=False):
         super().__init__()
         self.U = nn.Parameter(torch.empty(out_features, rank))
         self.S = nn.Parameter(torch.empty(rank))
@@ -1067,9 +1069,9 @@ class ASVDLinear(nn.Module):
 
 ```python
 def forward(self, x):
-    Vx = F.linear(x, self.V)          # x @ V^T
-    SVx = Vx * self.S                  # scale by Σ
-    out = F.linear(SVx, self.U)        # @ U^T
+    Vx = F.linear(x, self.V)  # x @ V^T
+    SVx = Vx * self.S  # scale by Σ
+    out = F.linear(SVx, self.U)  # @ U^T
     if self.bias is not None:
         out = out + self.bias
     if self.lora_rank > 0:
@@ -1083,8 +1085,7 @@ def forward(self, x):
 ```python
 @ATTENTION_REGISTRY.register("asvd")
 @ATTENTION_REGISTRY.register("asvd_attention")
-class ASVDAttention(BaseAttention):
-    ...
+class ASVDAttention(BaseAttention): ...
 ```
 
 ## 5.7 Causality
@@ -1894,9 +1895,12 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 torch.backends.cudnn.deterministic = True
 ```
 
@@ -2203,29 +2207,28 @@ class ASVDLinear(nn.Module):
 def _decompose_and_set(self, target, src_weight, src_bias, proj_name):
     W = src_weight.detach().float()
     U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-    
+
     # Cumulative energy
-    total_energy = torch.sum(S ** 2)
-    cum_energy = torch.cumsum(S ** 2, dim=0) / (total_energy + 1e-12)
-    
+    total_energy = torch.sum(S**2)
+    cum_energy = torch.cumsum(S**2, dim=0) / (total_energy + 1e-12)
+
     # Select rank
-    target_energy = max(self.energy_threshold, 
-                       1.0 - self.error_threshold ** 2)
+    target_energy = max(self.energy_threshold, 1.0 - self.error_threshold**2)
     indices = (cum_energy >= target_energy).nonzero()
     r = indices[0].item() + 1 if len(indices) > 0 else min(U.size(1), Vt.size(0))
-    
+
     if self.dynamic_rank:
         r = max(16, min(r, U.size(1), Vt.size(0)))
     else:
         r = min(self.rank, U.size(1), Vt.size(0))
-    
+
     # Validate
     w_rec = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
     rel_err = float((torch.norm(W - w_rec) / (torch.norm(W) + 1e-9)).item())
-    
+
     if rel_err > self.error_threshold:
         raise RuntimeError(...)
-    
+
     target.set_svd_factors(U[:, :r], Vt[:r, :], S[:r], bias=src_bias)
     return rel_err
 ```
@@ -2252,8 +2255,7 @@ In `inject_asvd`:
 
 ```python
 try:
-    new_attn = ASVDAttention(target_config, rank=rank,
-                              pretrained_attn=old_attn, **kwargs)
+    new_attn = ASVDAttention(target_config, rank=rank, pretrained_attn=old_attn, **kwargs)
     replace_attention(layer, new_attn)
     return new_attn
 except RuntimeError as err:
@@ -2649,12 +2651,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2681,8 +2696,15 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
     if to_pdf:
         try:
             subprocess.run(
-                ["pandoc", str(output), "-o", str(output.with_suffix(".pdf")),
-                 "--pdf-engine=xelatex", "-V", "geometry:margin=1in"],
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
                 check=True,
             )
             print(f"PDF: {output.with_suffix('.pdf')}")

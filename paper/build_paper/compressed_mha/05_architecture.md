@@ -62,13 +62,16 @@ named_map = {
 The **critical fix** — check `out_lin` before nested structure:
 
 ```python
-has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+has_out_proj = any(
+    hasattr(src, attr)
+    for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")
+)
 
 # PRIORITY 1: flat models with explicit output projections
 if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
     self.is_nested_encoder = False
 # PRIORITY 2: nested models (self + output.dense)
-elif (hasattr(src, "self") and hasattr(src, "output") and hasattr(src.output, "dense")):
+elif hasattr(src, "self") and hasattr(src, "output") and hasattr(src.output, "dense"):
     self.is_nested_encoder = True
 # PRIORITY 3: class name heuristic (as last resort)
 elif cls_name in ("BertSelfAttention", "RobertaSelfAttention"):
@@ -99,9 +102,9 @@ w_qkv = torch.cat([w_q, w_k, w_v], dim=0)
 U, S, Vh = torch.linalg.svd(w_qkv, full_matrices=False)
 r_qkv = min(self.rank_qkv, U.size(1), Vh.size(0))
 
-self.U_qkv.data[:min(qkv_out_dim, U.size(0)), :r_qkv].copy_(U[...])
+self.U_qkv.data[: min(qkv_out_dim, U.size(0)), :r_qkv].copy_(U[...])
 self.S_qkv.data[:r_qkv].copy_(S[:r_qkv])
-self.Vh_qkv.data[:r_qkv, :min(self.hidden_size, Vh.size(1))].copy_(Vh[...])
+self.Vh_qkv.data[:r_qkv, : min(self.hidden_size, Vh.size(1))].copy_(Vh[...])
 ```
 
 ### 5.3.3 Rank Defaults
@@ -176,8 +179,7 @@ The problematic layer simply keeps its original attention.
 ```python
 @ATTENTION_REGISTRY.register("compressed_mha")
 @ATTENTION_REGISTRY.register("compressed_mha_attention")
-class CompressedDistilBertAttention(BaseAttention):
-    ...
+class CompressedDistilBertAttention(BaseAttention): ...
 ```
 
 ## 5.9 Interaction with LoRA Recovery

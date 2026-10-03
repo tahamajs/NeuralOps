@@ -15,7 +15,7 @@ regression** compared to modules that return None.
 ## 10.2 `rff_proj` is Not Persistent
 
 ```python
-persistent=False
+persistent = False
 ```
 
 The RFF projection is re-initialized randomly on reload. **Train/test 

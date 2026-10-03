@@ -6,8 +6,8 @@ We study svd_linear on three transformer backbones across rank r in {16, 32, 64,
 ## 1. Main Results
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 16 | 64.77 ± 34.83% | N/A | N/A |
-| 32 | 53.60 ± 0.00% | N/A | N/A |
+| 16 | 64.77 Â± 34.83% | N/A | N/A |
+| 32 | 53.60 Â± 0.00% | N/A | N/A |
 | 64 | N/A | N/A | N/A |
 | 128 | N/A | N/A | N/A |
 | 192 | N/A | N/A | N/A |

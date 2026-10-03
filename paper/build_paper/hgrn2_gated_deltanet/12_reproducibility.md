@@ -62,6 +62,7 @@ python run_all_4_hgrn2_gated_deltanet.py --use_hgrn false --use_deltanet true
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)

@@ -59,7 +59,9 @@ def _sdpa_fallback(self, q, k, v, attn_mask, causal):
     else:
         if causal:
             causal_m = torch.triu(torch.full((q.shape[-2], k.shape[-2]), float("-inf")), diagonal=1)
-            attn_mask = causal_m.unsqueeze(0).unsqueeze(0) if attn_mask is None else attn_mask + causal_m
+            attn_mask = (
+                causal_m.unsqueeze(0).unsqueeze(0) if attn_mask is None else attn_mask + causal_m
+            )
         return F.scaled_dot_product_attention(q, k, v, attn_mask=attn_mask)
 ```
 
@@ -104,6 +106,7 @@ num_kv_heads = config.num_key_value_heads
 ```python
 try:
     from flash_attn import flash_attn_func
+
     FLASH_ATTN_AVAILABLE = True
 except ImportError:
     FLASH_ATTN_AVAILABLE = False
@@ -125,6 +128,7 @@ For RoBERTa: `is_nested_encoder = True` skips `out_proj`.
 
 ```python
 from framework.attentions.flash_attention3 import FLASH_ATTN_AVAILABLE
+
 print(FLASH_ATTN_AVAILABLE)  # False on RTX 4070
 
 # Exactness test

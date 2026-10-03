@@ -15,27 +15,29 @@ The `clamp` prevents overflow in `cos`/`sin` for extreme inputs.
 ## B.2 Landmark Selection
 
 ```python
-def select_landmarks(self, K_features, V, valid_mask=None, num_landmarks=None, return_indices=False):
+def select_landmarks(
+    self, K_features, V, valid_mask=None, num_landmarks=None, return_indices=False
+):
     B, H, N, feat_dim = K_features.shape
     target_landmarks = num_landmarks or self.num_landmarks
     L = min(target_landmarks, N)
-    
+
     scores = self.landmark_scorer(K_features)[..., 0]  # (B, H, N)
-    
+
     if valid_mask is not None:
         pad = (~valid_mask).unsqueeze(1)
         scores = scores.masked_fill(pad.bool(), -1e4)
-    
+
     anchor_boost = torch.zeros_like(scores)
     anchor_boost[:, :, 0] = 1e4
     scores = scores + anchor_boost
-    
+
     _, idx = scores.topk(L, dim=-1)
     idx[:, :, 0] = 0  # Force [CLS]
-    
+
     K_land = torch.gather(K_features, 2, idx.unsqueeze(-1).expand(-1, -1, -1, feat_dim))
     V_land = torch.gather(V, 2, idx.unsqueeze(-1).expand(-1, -1, -1, V.shape[-1]))
-    
+
     if return_indices:
         return K_land, V_land, idx
     return K_land, V_land
@@ -82,7 +84,7 @@ def forward(self, hidden_states, attention_mask=None, ...):
 if self.is_decoder:
     q_pos = torch.arange(N).view(1, 1, N, 1)
     k_land_pos = land_idx.unsqueeze(2)
-    causal_land_mask = (k_land_pos <= q_pos)
+    causal_land_mask = k_land_pos <= q_pos
     attn_weights = attn_weights.masked_fill(~causal_land_mask, -1e4)
 ```
 

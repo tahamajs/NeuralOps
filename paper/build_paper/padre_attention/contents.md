@@ -6,7 +6,7 @@
 
 ### هشدار ۱ — Polynomial kernel خودش O(N²) است
 ```python
-attn_weights = (1 + scores_centered/order)**order
+attn_weights = (1 + scores_centered / order) ** order
 ```
 
 این **در حال حاضر** O(N²) است. هرچند kernelizable است (به شکل $\phi(q) \cdot \phi(k)$)، اما پیاده‌سازی فعلی **kernelized نیست**. پس ادعای "faster inference" **فعلاً برقرار نیست**.
@@ -881,8 +881,7 @@ output.
 ```python
 @ATTENTION_REGISTRY.register("padre")
 @ATTENTION_REGISTRY.register("padre_attention")
-class PADReAttention(BaseAttention):
-    ...
+class PADReAttention(BaseAttention): ...
 ```
 
 ## 5.8 LoRA Recovery
@@ -1458,9 +1457,12 @@ done
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 ```
 
 ## 12.6 Expected Results

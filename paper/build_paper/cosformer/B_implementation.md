@@ -45,8 +45,11 @@ Z_cos = K_cos.sum(dim=2, keepdim=True)
 Z_sin = K_sin.sum(dim=2, keepdim=True)
 
 num = torch.matmul(Q_cos, KV_cos) + torch.matmul(Q_sin, KV_sin)
-denom = torch.matmul(Q_cos, Z_cos.transpose(-2, -1)) + \
-        torch.matmul(Q_sin, Z_sin.transpose(-2, -1)) + self.eps
+denom = (
+    torch.matmul(Q_cos, Z_cos.transpose(-2, -1))
+    + torch.matmul(Q_sin, Z_sin.transpose(-2, -1))
+    + self.eps
+)
 
 context = (num / denom.clamp(min=self.eps)).to(dtype)
 ```
@@ -117,7 +120,7 @@ is fixed.
 # Simple test: L=4, d=2
 Q = torch.eye(4)  # one-hot queries
 K = torch.eye(4)
-V = torch.tensor([[1., 0.], [0., 1.], [1., 1.], [2., 0.]])
+V = torch.tensor([[1.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 0.0]])
 
 # After Cosformer forward
 # Check that output is a convex combination of V rows
@@ -136,8 +139,7 @@ assert x.grad[0, 31:].abs().max() < 1e-6
 
 ```python
 @ATTENTION_REGISTRY.register("cosformer")
-class CosformerAttention(BaseAttention):
-    ...
+class CosformerAttention(BaseAttention): ...
 ```
 
 ## B.9 Injection Factory

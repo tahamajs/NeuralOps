@@ -925,8 +925,7 @@ projection must be preserved.
 @ATTENTION_REGISTRY.register("orion")
 @ATTENTION_REGISTRY.register("orion_attention")
 @ATTENTION_REGISTRY.register("orion_module")
-class ORIONAttention(BaseAttention):
-    ...
+class ORIONAttention(BaseAttention): ...
 ```
 
 ## 5.8 Compatibility with Recovery
@@ -1700,6 +1699,7 @@ python run_all_4_orion.py \
 
 ```python
 from huggingface_hub import hf_hub_download
+
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
         repo_id=f"efficiency-lab/svd-linear-attention-{model}-orion",
@@ -1753,10 +1753,10 @@ torch.cuda.manual_seed_all(seed)
 
 ```python
 for name, mod in model.named_modules():
-    if hasattr(mod, 'down') and hasattr(mod, 'up'):
+    if hasattr(mod, "down") and hasattr(mod, "up"):
         orig = mod.in_features * mod.out_features
         new = mod.down.weight.numel() + mod.up.weight.numel()
-        print(f"{name}: {orig} → {new} ({orig/new:.1f}×)")
+        print(f"{name}: {orig} → {new} ({orig / new:.1f}×)")
 ```
 
 ### Check Head Split
@@ -1770,7 +1770,7 @@ print(f"Full heads: {model.num_full_heads}")
 
 ```python
 sd = model.state_dict()
-assert any('rff_proj' in k for k in sd), "rff_proj NOT in state_dict!"  # This will FAIL
+assert any("rff_proj" in k for k in sd), "rff_proj NOT in state_dict!"  # This will FAIL
 ```
 
 ## 12.8 Known Issues
@@ -2193,8 +2193,7 @@ For $H = 2$: $H_f = 1$, $H_k = 1$.
 @ATTENTION_REGISTRY.register("orion")
 @ATTENTION_REGISTRY.register("orion_attention")
 @ATTENTION_REGISTRY.register("orion_module")
-class ORIONAttention(BaseAttention):
-    ...
+class ORIONAttention(BaseAttention): ...
 ```
 
 ## B.10 Injection
@@ -2334,7 +2333,7 @@ self.register_buffer("rff_proj", ..., persistent=False)
 
 ```python
 sd = model1.state_dict()
-assert 'rff_proj' not in sd  # Confirms bug
+assert "rff_proj" not in sd  # Confirms bug
 ```
 
 ## D.3 Softpick Masked Row Collapse
@@ -2739,7 +2738,7 @@ except Exception as e:
 
 ### ۳. باگ `rff_proj` persistence
 ```python
-persistent=False
+persistent = False
 ```
 RFF projection در `state_dict` ذخیره نمی‌شود. **Train/test mismatch** بعد از save/reload.
 

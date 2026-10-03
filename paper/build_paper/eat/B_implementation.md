@@ -61,8 +61,9 @@ class EATBlock(BaseAttention):
 
 ```python
 class LoRALinear(nn.Module):
-    def __init__(self, in_features, out_features, bias=True,
-                 lora_rank=16, lora_alpha=32.0, freeze_base=False):
+    def __init__(
+        self, in_features, out_features, bias=True, lora_rank=16, lora_alpha=32.0, freeze_base=False
+    ):
         super().__init__()
         self.weight = nn.Parameter(torch.empty(out_features, in_features))
         if bias:
@@ -73,7 +74,7 @@ class LoRALinear(nn.Module):
         self.reset_parameters()
         if freeze_base:
             self.freeze_base_weights()
-    
+
     def forward(self, x):
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0:
@@ -128,12 +129,15 @@ extracted["o"] = (src.o_proj.weight.data, src.o_proj.bias.data)
 **Critical code path** (in `copy_weights`):
 
 ```python
-missing_after = [k for k, (w, _) in extracted.items() 
-                 if w is None and (k != "o" or not self.is_nested_encoder)]
+missing_after = [
+    k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)
+]
 if missing_after:
-    logger.warning(f"EATBlock copy_weights: missing projections {missing_after} "
-                   f"from {pretrained_attn.__class__.__name__}; "
-                   f"proceeding with random init for those")
+    logger.warning(
+        f"EATBlock copy_weights: missing projections {missing_after} "
+        f"from {pretrained_attn.__class__.__name__}; "
+        f"proceeding with random init for those"
+    )
     # ← continues, doesn't raise
 ```
 

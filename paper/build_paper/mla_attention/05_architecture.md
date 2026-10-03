@@ -73,7 +73,7 @@ transformer.h.0.attn
 **Extraction:**
 ```python
 weight = src.c_attn.weight.data
-if weight.shape[1] == 3 * hidden_size:   # Conv1D stores (in, out)
+if weight.shape[1] == 3 * hidden_size:  # Conv1D stores (in, out)
     weight = weight.t()
 q_w, k_w, v_w = weight.chunk(3, dim=0)
 w_o = src.c_proj.weight.data

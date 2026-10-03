@@ -10,9 +10,17 @@
 
 ```python
 class NystromAttention(BaseAttention):
-    def __init__(self, config=None, rank=None, num_landmarks=None,
-                 pinv_iterations=3, pretrained_attn=None, old_attn=None,
-                 comp_config=None, **kwargs):
+    def __init__(
+        self,
+        config=None,
+        rank=None,
+        num_landmarks=None,
+        pinv_iterations=3,
+        pretrained_attn=None,
+        old_attn=None,
+        comp_config=None,
+        **kwargs,
+    ):
         # Dimensions
         self.dim = ...
         self.num_heads = ...
@@ -21,24 +29,24 @@ class NystromAttention(BaseAttention):
         self.all_head_size = ...
         self.all_kv_head_size = ...
         self.kv_repeat = ...
-        
+
         # Landmarks
         self.num_landmarks = min(32, int(num_landmarks or 32))
         self.pinv_iterations = pinv_iterations
-        
+
         # Decoder detection
         self.is_decoder = ...
         self.is_nested_encoder = False
-        
+
         # LoRA config
         self.lora_rank = ...
-        
+
         # Projections
         self.query = LoRALinear(...)
         self.key = LoRALinear(...)
         self.value = LoRALinear(...)
         self.out_proj = LoRALinear(...)
-        
+
         if source_attn is not None:
             self.copy_weights(source_attn)
 ```
@@ -120,7 +128,7 @@ def forward(self, hidden_states, attention_mask=None, ...):
 ```python
 m = min(self.num_landmarks, N)
 
-Q_flat = Q.reshape(B * H, N, d).transpose(1, 2)   # (BH, d, N)
+Q_flat = Q.reshape(B * H, N, d).transpose(1, 2)  # (BH, d, N)
 K_flat = K.reshape(B * H, N, d).transpose(1, 2)
 
 Q_landmarks = F.adaptive_avg_pool1d(Q_flat, m).transpose(1, 2).reshape(B, H, m, d)

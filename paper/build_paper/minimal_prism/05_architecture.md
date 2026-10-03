@@ -67,7 +67,7 @@ transformer.h.0.attn
    ```python
    w = src.c_attn.weight.data.clone()
    if is_conv1d:
-       w = w.t()   # (in, out) → (out, in)
+       w = w.t()  # (in, out) → (out, in)
    q_w, k_w, v_w = w.chunk(3, dim=0)
    ```
 
@@ -94,7 +94,7 @@ MinimalPRISM factorizes each at its natural dimension. During forward:
 
 ```python
 if self.num_kv_heads < self.num_heads:
-    K = repeat_kv(K, self.kv_repeat)   # (B, 2, N, 256) → (B, 8, N, 256)
+    K = repeat_kv(K, self.kv_repeat)  # (B, 2, N, 256) → (B, 8, N, 256)
     V = repeat_kv(V, self.kv_repeat)
 ```
 

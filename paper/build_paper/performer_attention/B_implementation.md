@@ -30,7 +30,7 @@ def _build_orthogonal_matrix(self, d, m):
 ```python
 def _feature_map(self, x):
     proj = torch.matmul(x, self.omega.to(dtype=x.dtype).t())
-    diag_sq = torch.sum(x ** 2, dim=-1, keepdim=True) * 0.5
+    diag_sq = torch.sum(x**2, dim=-1, keepdim=True) * 0.5
     max_proj = proj.amax(dim=-1, keepdim=True).detach()
     diff = torch.clamp(proj - max_proj - diag_sq, min=-30.0, max=10.0)
     phi = torch.exp(diff) + self.eps
@@ -134,7 +134,7 @@ assert (Q_feat >= 0).all()
 
 ```python
 sd = model.state_dict()
-assert any('omega' in k for k in sd)
+assert any("omega" in k for k in sd)
 ```
 
 ### Verify Causal
@@ -151,8 +151,7 @@ assert x.grad[0, 51:].abs().max() < 1e-6
 ```python
 @ATTENTION_REGISTRY.register("performer")
 @ATTENTION_REGISTRY.register("performer_attention")
-class PerformerAttention(BaseAttention):
-    ...
+class PerformerAttention(BaseAttention): ...
 ```
 
 ---

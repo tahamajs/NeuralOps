@@ -64,22 +64,33 @@ single `nn.Module`. It provides:
 
 ```python
 class UnifiedRoPE(BaseAttention):
-    def __init__(self, config=None, rank=None, dim=None, num_heads=None,
-                 max_seq_len=4096, base=10000, dropout=0.1,
-                 pretrained_attn=None, lora_rank=16, lora_alpha=32.0,
-                 is_decoder=None, **kwargs):
+    def __init__(
+        self,
+        config=None,
+        rank=None,
+        dim=None,
+        num_heads=None,
+        max_seq_len=4096,
+        base=10000,
+        dropout=0.1,
+        pretrained_attn=None,
+        lora_rank=16,
+        lora_alpha=32.0,
+        is_decoder=None,
+        **kwargs,
+    ):
         # Resolve dimensions
         self.hidden_size = ...
         self.num_heads = ...
         self.num_kv_heads = ...
         self.head_dim = hidden_size // num_heads
-        
+
         # LoRA projections
         self.q_proj = LoRALinear(hidden_size, q_head_size, lora_rank=..., freeze_base=True)
         self.k_proj = LoRALinear(hidden_size, kv_head_size, lora_rank=..., freeze_base=True)
         self.v_proj = LoRALinear(hidden_size, kv_head_size, lora_rank=..., freeze_base=True)
         self.out_proj = LoRALinear(q_head_size, hidden_size, lora_rank=..., freeze_base=True)
-        
+
         # RoPE cache
         self.rotary_dim = 2 * (head_dim // 2)
         self.register_buffer("inv_freq", ..., persistent=False)
@@ -159,9 +170,11 @@ The `_copy_layer` helper preserves source LoRA adapters:
 ```python
 def _copy_layer(target_layer, w, b, src_sub=None):
     # Copy base weight
-    if w is not None: ...
+    if w is not None:
+        ...
     # Copy bias
-    if b is not None: ...
+    if b is not None:
+        ...
     # Preserve LoRA
     if src_sub is not None and hasattr(src_sub, "lora_A"):
         target_layer.lora_A.data.copy_(src_sub.lora_A.data)
@@ -250,7 +263,7 @@ For RoBERTa-style models:
 
 ```python
 if self.is_nested_encoder:
-    output = context   # Raw context
+    output = context  # Raw context
 else:
     output = self.out_proj(context)
 ```

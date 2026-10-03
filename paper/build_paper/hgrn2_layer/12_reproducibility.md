@@ -63,6 +63,7 @@ python run_all_4_hgrn2.py --is_decoder true   # causal
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)

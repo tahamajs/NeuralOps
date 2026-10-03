@@ -109,9 +109,9 @@ scores = scores.masked_fill(~valid_mask, -1e4)
 if [CLS] is padding (it never should be), it is still excluded.
 
 ```python
-scores[:, 0] = 1e4               # CLS preservation
+scores[:, 0] = 1e4  # CLS preservation
 scores = scores.masked_fill(~valid_mask, -1e4)  # Padding
-scores[:, 0] = 1e4               # Re-apply CLS (padding mask may have overwritten)
+scores[:, 0] = 1e4  # Re-apply CLS (padding mask may have overwritten)
 ```
 
 ### 4.3.4 Top-K Selection

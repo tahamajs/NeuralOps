@@ -728,7 +728,7 @@ def _unpack_weight_bias(module):
     base = getattr(module, "base_layer", module)
     w = base.weight.data.clone()
     if "Conv1D" in type(module).__name__ or hasattr(module, "nf"):
-        w = w.t()   # (in, out) → (out, in)
+        w = w.t()  # (in, out) → (out, in)
     return w, base.bias
 ```
 
@@ -739,9 +739,7 @@ When `w_k.shape[0] != self.kv_head_size`:
 ```python
 rep = w_k.shape[0] // self.kv_head_size
 w_k_pooled = (
-    w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
-    .mean(dim=1)
-    .view(self.kv_head_size, -1)
+    w_k.view(self.num_kv_heads, rep, self.head_dim, -1).mean(dim=1).view(self.kv_head_size, -1)
 )
 ```
 
@@ -970,9 +968,7 @@ model.layers.0.self_attn
 ```python
 rep = w_k.shape[0] // self.kv_head_size
 w_k_pooled = (
-    w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
-    .mean(dim=1)
-    .view(self.kv_head_size, -1)
+    w_k.view(self.num_kv_heads, rep, self.head_dim, -1).mean(dim=1).view(self.kv_head_size, -1)
 )
 ```
 
@@ -989,9 +985,9 @@ When `is_nested_encoder = True`:
 context = torch.matmul(probs, V).transpose(1, 2).contiguous().view(...)
 
 if self.is_nested_encoder:
-    out = context       # ← No out_proj
+    out = context  # ← No out_proj
 else:
-    out = self._project(context, ...)   # ← out_proj applied
+    out = self._project(context, ...)  # ← out_proj applied
 ```
 
 The outer `BertSelfOutput.dense` then applies the projection.
@@ -1897,9 +1893,12 @@ python run_all_4_svd_llm_v2.py --factorization symmetric --output_suffix sym
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 torch.backends.cudnn.deterministic = True
 ```
 
@@ -1915,6 +1914,7 @@ torch.backends.cudnn.deterministic = True
 
 ```python
 from huggingface_hub import hf_hub_download
+
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
         repo_id=f"efficiency-lab/svd-linear-attention-{model}-svd_llm_v2",
@@ -2277,22 +2277,21 @@ def _project(self, x, vh, s, u, b, lora_A, lora_B):
 ## B.3 The `_decompose_and_set` Method
 
 ```python
-def _decompose_and_set(self, u_param, s_param, vh_param, bias_param,
-                       weight, bias):
+def _decompose_and_set(self, u_param, s_param, vh_param, bias_param, weight, bias):
     with torch.no_grad():
         W = weight.float()
         # Pad or truncate to expected shape
         if W.shape != (u_param.shape[0], vh_param.shape[1]):
             padded_W = torch.zeros(u_param.shape[0], vh_param.shape[1], ...)
-            padded_W[:min(...), :min(...)] = W[:min(...), :min(...)]
+            padded_W[: min(...), : min(...)] = W[: min(...), : min(...)]
             W = padded_W
-        
+
         U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-        total_energy = (S ** 2).sum().clamp(min=1e-12)
-        cum_energy = torch.cumsum(S ** 2, dim=0) / total_energy
+        total_energy = (S**2).sum().clamp(min=1e-12)
+        cum_energy = torch.cumsum(S**2, dim=0) / total_energy
         r_energy = int((cum_energy < self.energy_threshold).sum().item()) + 1
         r = max(1, min(r_energy, self.rank, len(S)))
-        
+
         u_param.data.zero_()
         s_param.data.zero_()
         vh_param.data.zero_()
@@ -2424,7 +2423,7 @@ if "Conv1D" in type(module).__name__ or hasattr(module, "nf"):
 
 ```python
 # WRONG (RoBERTa)
-self.is_nested_encoder = False   # out_proj applied twice
+self.is_nested_encoder = False  # out_proj applied twice
 
 # RIGHT
 if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
@@ -2817,12 +2816,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2849,8 +2861,15 @@ def build(module_dir: Path, output: Path, to_pdf: bool = False):
     if to_pdf:
         try:
             subprocess.run(
-                ["pandoc", str(output), "-o", str(output.with_suffix(".pdf")),
-                 "--pdf-engine=xelatex", "-V", "geometry:margin=1in"],
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
                 check=True,
             )
             print(f"PDF: {output.with_suffix('.pdf')}")

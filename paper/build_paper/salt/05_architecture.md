@@ -26,7 +26,11 @@ if hasattr(src, "c_attn"):
     if weight.shape[1] == 3 * self.hidden_size:
         weight = weight.t()
     split_size = weight.shape[0] // 3
-    q_w, k_w, v_w = weight[:split_size], weight[split_size:2*split_size], weight[2*split_size:]
+    q_w, k_w, v_w = (
+        weight[:split_size],
+        weight[split_size : 2 * split_size],
+        weight[2 * split_size :],
+    )
 ```
 
 ### 5.2.2 RoBERTa (Nested)
@@ -123,7 +127,7 @@ which log and continue. This is a bug — see §10.
 The `SALTLinear` module defines `self.output_scale` but **never uses it**:
 
 ```python
-if not hasattr(self, 'output_scale'):
+if not hasattr(self, "output_scale"):
     self.output_scale = nn.Parameter(torch.ones(1))
 ```
 
@@ -157,8 +161,7 @@ SALT is registered as:
 ```python
 @ATTENTION_REGISTRY.register("salt_attention")
 @ATTENTION_REGISTRY.register("salt")
-class SALTAttention(BaseAttention):
-    ...
+class SALTAttention(BaseAttention): ...
 ```
 
 It integrates with the LoRA recovery pipeline.

@@ -42,61 +42,64 @@ class OptimizedHybridAttention(BaseAttention):
 def forward(self, hidden_states, attention_mask=None, **kwargs):
     B, N, D = hidden_states.shape
     H, d = self.num_heads, self.head_dim
-    
+
     # Projections
     Q = self.query(hidden_states).view(B, N, H, d).permute(0, 2, 1, 3)
     K = self.key(hidden_states).view(B, N, self.num_kv_heads, d).permute(0, 2, 1, 3)
     V = self.value(hidden_states).view(B, N, self.num_kv_heads, d).permute(0, 2, 1, 3)
-    
+
     if position_embeddings is not None:
         Q, K = apply_rotary_pos_emb(Q, K, *position_embeddings)
-    
+
     if self.kv_repeat > 1:
         K = repeat_kv(K, self.kv_repeat)
         V = repeat_kv(V, self.kv_repeat)
-    
+
     valid_mask_2d = get_token_valid_mask(attention_mask, B, N, device)
     key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)
-    
+
     scale = 1.0 / math.sqrt(d)
-    
+
     # Local branch
     idx = torch.arange(N, device=device)
     if self.is_decoder:
-        band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0) >= 0) & \
-                    (idx.unsqueeze(1) - idx.unsqueeze(0) <= self.window_size)
+        band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0) >= 0) & (
+            idx.unsqueeze(1) - idx.unsqueeze(0) <= self.window_size
+        )
     else:
         band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
     local_mask = band_mask.unsqueeze(0).unsqueeze(0) & key_valid_4d
-    
+
     local_scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
     local_scores = local_scores.masked_fill(~local_mask, -1e4)
     local_probs = F.softmax(local_scores, dim=-1).to(dtype)
     local_ctx = torch.matmul(local_probs, V)
-    
+
     # Compression
     comp_k_raw = self.compress_k(hidden_states)
     comp_v_raw = self.compress_v(hidden_states)
     mask_inv = (~valid_mask_2d).unsqueeze(-1)
     comp_k_raw = comp_k_raw.masked_fill(mask_inv, -1e4)
     comp_v_raw = comp_v_raw.masked_fill(mask_inv, -1e4)
-    
+
     comp_k_weights = F.softmax(comp_k_raw, dim=1)
     comp_v_weights = F.softmax(comp_v_raw, dim=1)
-    
+
     ck = torch.einsum("bhnd,bnr->bhrd", K, comp_k_weights)
     cv = torch.einsum("bhnd,bnr->bhrd", V, comp_v_weights)
-    
+
     # Global attention
     global_scores = torch.matmul(Q.float(), ck.float().transpose(-2, -1)) * scale
-    
+
     if self.is_decoder:
-        causal_global = torch.tril(torch.ones(N, self.compression_rank, device=device, dtype=torch.bool))
+        causal_global = torch.tril(
+            torch.ones(N, self.compression_rank, device=device, dtype=torch.bool)
+        )
         global_scores = global_scores.masked_fill(~causal_global.unsqueeze(0).unsqueeze(0), -1e4)
-    
+
     global_probs = F.softmax(global_scores, dim=-1).to(dtype)
     global_ctx = torch.matmul(global_probs, cv)
-    
+
     # Gating
     if self.use_gate:
         gate = torch.sigmoid(self.gate(hidden_states))
@@ -104,9 +107,9 @@ def forward(self, hidden_states, attention_mask=None, **kwargs):
         context = gate * local_ctx + (1 - gate) * global_ctx
     else:
         context = 0.5 * local_ctx + 0.5 * global_ctx
-    
+
     context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
-    
+
     if self.is_nested_encoder:
         return context, None
     return self.out_proj(context), None
@@ -137,7 +140,7 @@ there is no silent fallback.
 In `LoRALinear.__init__`:
 
 ```python
-if not hasattr(self, 'output_scale'):
+if not hasattr(self, "output_scale"):
     self.output_scale = nn.Parameter(torch.ones(1))
 ```
 

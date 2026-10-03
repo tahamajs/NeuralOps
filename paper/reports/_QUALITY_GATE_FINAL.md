@@ -33,7 +33,7 @@ stat_margin_pct = round(z_score * se * 100.0, 2)
 pass_threshold_pct = round(majority_baseline_pct + stat_margin_pct, 2)
 threshold_source = (
     f"dynamic: majority={majority_baseline_pct:.2f}% ({majority_count}/{total_val_samples}), "
-    f"SE={se*100:.3f}%, 3*SE={stat_margin_pct:.3f}%"
+    f"SE={se * 100:.3f}%, 3*SE={stat_margin_pct:.3f}%"
 )
 ```
 

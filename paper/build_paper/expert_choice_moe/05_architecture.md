@@ -117,8 +117,7 @@ MoE injection is complex.
 ```python
 @ATTENTION_REGISTRY.register("expert_choice_moe")
 @ATTENTION_REGISTRY.register("expert_choice_moe_attention")
-class ExpertChoiceMoEAttention(BaseAttention):
-    ...
+class ExpertChoiceMoEAttention(BaseAttention): ...
 ```
 
 ---

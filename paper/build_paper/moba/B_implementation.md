@@ -61,7 +61,7 @@ w_gate = w_q if w_q is not None else w_k
 if w_gate.shape[0] < D and D % w_gate.shape[0] == 0:
     rep = D // w_gate.shape[0]
     w_gate = w_gate.repeat(rep, 1)
-self.in_proj.weight.data[D:2*D, :D].copy_(w_gate[:D, :D])
+self.in_proj.weight.data[D : 2 * D, :D].copy_(w_gate[:D, :D])
 
 # out_proj: from O
 self.out_proj.weight.data.copy_(w_o[:D, :D])

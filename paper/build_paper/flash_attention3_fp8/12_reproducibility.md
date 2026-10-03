@@ -21,12 +21,14 @@ pip install -r requirements.txt
 
 ```python
 import torch
+
 print("CUDA:", torch.cuda.is_available())
 print("GPU:", torch.cuda.get_device_name(0))
 print("Capability:", torch.cuda.get_device_capability(0))
 print("Float8 dtype:", hasattr(torch, "float8_e4m3fn"))
 try:
     import flash_attn
+
     print("flash_attn:", flash_attn.__version__)
 except ImportError:
     print("flash_attn: NOT INSTALLED")
@@ -83,6 +85,7 @@ python run_all_4_flash3_fp8.py --use_fp8 false --output_suffix fp8off
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)

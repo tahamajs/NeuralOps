@@ -794,7 +794,7 @@ The outer `BertSelfOutput.dense` will apply the projection.
 # Check for flat output projections FIRST
 if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
     self.is_nested_encoder = False
-elif (hasattr(src, "self") and hasattr(src, "output")):
+elif hasattr(src, "self") and hasattr(src, "output"):
     self.is_nested_encoder = True
 else:
     self.is_nested_encoder = False
@@ -948,13 +948,16 @@ named_map = {
 The **critical fix** — check `out_lin` before nested structure:
 
 ```python
-has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+has_out_proj = any(
+    hasattr(src, attr)
+    for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")
+)
 
 # PRIORITY 1: flat models with explicit output projections
 if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
     self.is_nested_encoder = False
 # PRIORITY 2: nested models (self + output.dense)
-elif (hasattr(src, "self") and hasattr(src, "output") and hasattr(src.output, "dense")):
+elif hasattr(src, "self") and hasattr(src, "output") and hasattr(src.output, "dense"):
     self.is_nested_encoder = True
 # PRIORITY 3: class name heuristic (as last resort)
 elif cls_name in ("BertSelfAttention", "RobertaSelfAttention"):
@@ -985,9 +988,9 @@ w_qkv = torch.cat([w_q, w_k, w_v], dim=0)
 U, S, Vh = torch.linalg.svd(w_qkv, full_matrices=False)
 r_qkv = min(self.rank_qkv, U.size(1), Vh.size(0))
 
-self.U_qkv.data[:min(qkv_out_dim, U.size(0)), :r_qkv].copy_(U[...])
+self.U_qkv.data[: min(qkv_out_dim, U.size(0)), :r_qkv].copy_(U[...])
 self.S_qkv.data[:r_qkv].copy_(S[:r_qkv])
-self.Vh_qkv.data[:r_qkv, :min(self.hidden_size, Vh.size(1))].copy_(Vh[...])
+self.Vh_qkv.data[:r_qkv, : min(self.hidden_size, Vh.size(1))].copy_(Vh[...])
 ```
 
 ### 5.3.3 Rank Defaults
@@ -1062,8 +1065,7 @@ The problematic layer simply keeps its original attention.
 ```python
 @ATTENTION_REGISTRY.register("compressed_mha")
 @ATTENTION_REGISTRY.register("compressed_mha_attention")
-class CompressedDistilBertAttention(BaseAttention):
-    ...
+class CompressedDistilBertAttention(BaseAttention): ...
 ```
 
 ## 5.9 Interaction with LoRA Recovery
@@ -1780,9 +1782,12 @@ python run_all_4_compressed_mha.py --legacy_nested_detection --output_suffix wro
 
 ```python
 import random, numpy as np, torch
+
 seed = 42
-random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 ```
 
 ## 12.7 Expected Results
@@ -2154,8 +2159,7 @@ def forward(self, hidden_states, attention_mask=None, **kwargs):
 if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
     self.is_nested_encoder = False
 # Priority 2: nested structure
-elif (hasattr(src, "self") and hasattr(src, "output") 
-      and hasattr(src.output, "dense")):
+elif hasattr(src, "self") and hasattr(src, "output") and hasattr(src.output, "dense"):
     self.is_nested_encoder = True
 # Priority 3: class name (last resort)
 elif cls_name in ("BertSelfAttention", "RobertaSelfAttention"):
@@ -2467,12 +2471,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -2497,12 +2514,18 @@ def build(module_dir, output, to_pdf=False):
 
     if to_pdf:
         try:
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
+            subprocess.run(
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(output.with_suffix(".pdf")),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
+                check=True,
+            )
             print(f"PDF: {output.with_suffix('.pdf')}")
         except Exception as e:
             print(f"PDF skipped: {e}")

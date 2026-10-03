@@ -67,10 +67,12 @@ Our implementation wraps FlashAttention-3 with three layers of safety:
 ```python
 try:
     from flash_attn_interface import flash_attn_func
+
     FLASH_ATTN_AVAILABLE = True
 except ImportError:
     try:
         from flash_attn import flash_attn_func
+
         FLASH_ATTN_AVAILABLE = True
     except ImportError:
         FLASH_ATTN_AVAILABLE = False
@@ -85,10 +87,7 @@ At each forward, we check four conditions:
 
 ```python
 use_fp8_path = (
-    FLASH_ATTN_AVAILABLE
-    and self.use_fp8
-    and q.is_cuda
-    and hasattr(torch, "float8_e4m3fn")
+    FLASH_ATTN_AVAILABLE and self.use_fp8 and q.is_cuda and hasattr(torch, "float8_e4m3fn")
 )
 ```
 

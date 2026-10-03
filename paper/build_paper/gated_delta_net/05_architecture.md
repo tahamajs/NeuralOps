@@ -27,8 +27,8 @@ if hasattr(old_attn, "c_attn"):
         c_w = c_w.t()
     split_size = c_w.size(0) // 3
     extracted["q"] = c_w[:split_size, :]
-    extracted["k"] = c_w[split_size:2*split_size, :]
-    extracted["v"] = c_w[2*split_size:, :]
+    extracted["k"] = c_w[split_size : 2 * split_size, :]
+    extracted["v"] = c_w[2 * split_size :, :]
 ```
 
 ### 5.2.2 RoBERTa (Nested)
@@ -64,8 +64,12 @@ self.z_proj.weight.data[:out_z, :in_z].copy_(w_q[:out_z, :in_z])
 The detection order:
 
 ```python
-if (hasattr(old_attn, "self") and hasattr(old_attn.self, "query")
-    and hasattr(old_attn, "output") and hasattr(old_attn.output, "dense")):
+if (
+    hasattr(old_attn, "self")
+    and hasattr(old_attn.self, "query")
+    and hasattr(old_attn, "output")
+    and hasattr(old_attn.output, "dense")
+):
     is_nested = True
 elif cls_name in ("BertSelfAttention", "RobertaSelfAttention", ...):
     is_nested = True
@@ -120,37 +124,38 @@ def chunked_delta_rule_scan(q, k, v, beta, alpha, chunk_size=8):
     # Normalize
     k_unit = k / k.norm(dim=-1, keepdim=True).clamp(min=1e-6)
     q_unit = q / q.norm(dim=-1, keepdim=True).clamp(min=1e-6)
-    
+
     # Reshape into chunks
     q_c = q_unit.view(B, H, num_chunks, chunk_size, d)
     ...
-    
+
     S = torch.zeros(B, H, d, d)  # state
     outputs = []
-    
-    for c in range(num_chunks):       # ← OUTER PYTHON LOOP
-        q_i, k_i, v_i = q_c[:,:,c], k_c[:,:,c], v_c[:,:,c]
+
+    for c in range(num_chunks):  # ← OUTER PYTHON LOOP
+        q_i, k_i, v_i = q_c[:, :, c], k_c[:, :, c], v_c[:, :, c]
         if use_checkpoint:
             y_i, S = checkpoint(_delta_chunk_forward, S, q_i, k_i, v_i, ...)
         else:
             y_i, S = _delta_chunk_forward(S, q_i, k_i, v_i, ...)
         outputs.append(y_i)
-    
+
     return torch.cat(outputs, dim=2)
 
+
 def _delta_chunk_forward(S, q_i, k_i, v_i, beta_i, alpha_i):
-    for t in range(chunk_size):       # ← INNER PYTHON LOOP
-        kt, vt, qt = k_i[:,:,t:t+1], v_i[:,:,t:t+1], q_i[:,:,t:t+1]
-        bt, at = beta_i[:,:,t:t+1], alpha_i[:,:,t:t+1]
-        
+    for t in range(chunk_size):  # ← INNER PYTHON LOOP
+        kt, vt, qt = k_i[:, :, t : t + 1], v_i[:, :, t : t + 1], q_i[:, :, t : t + 1]
+        bt, at = beta_i[:, :, t : t + 1], alpha_i[:, :, t : t + 1]
+
         inter_v = torch.matmul(kt, S)
         err = vt - inter_v
         norm_k_sq = (kt * kt).sum(-1, keepdim=True)
         step = (at / (1 + norm_k_sq).clamp(min=1.0)).clamp(0, 1)
-        
+
         S = bt * S + step * torch.matmul(kt.transpose(-1, -2), err)
         yt = torch.matmul(qt, S)
-    
+
     return torch.cat(outputs, dim=2), S
 ```
 
@@ -188,8 +193,7 @@ peak memory.
 
 ```python
 @ATTENTION_REGISTRY.register("gated_delta_net")
-class GatedDeltaNet(BaseAttention):
-    ...
+class GatedDeltaNet(BaseAttention): ...
 ```
 
 ## 5.10 Recommended Fix

@@ -45,11 +45,12 @@ Add logging and check output:
 
 ```python
 import logging
+
 logging.basicConfig(level=logging.INFO)
 
 # After injection:
 for name, mod in model.named_modules():
-    if hasattr(mod, 'attn') and mod.attn is not None:
+    if hasattr(mod, "attn") and mod.attn is not None:
         w = mod.attn.in_proj_weight
         print(f"{name}: in_proj_weight norm = {w.norm().item():.4f}")
         # If norm ~= 1e-3, weights are random → silent failure

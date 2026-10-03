@@ -53,7 +53,7 @@ Extract from inner `self`. `is_nested_encoder = True`; skip own `out_proj`.
 ### 5.2.3 GPT-2 (Causal)
 
 ```python
-c_attn (fused), c_proj
+c_attn(fused), c_proj
 ```
 
 Split fused `c_attn`:

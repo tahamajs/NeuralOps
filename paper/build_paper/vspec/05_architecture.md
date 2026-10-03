@@ -17,7 +17,8 @@ UniversalAdapter first, then fallback patterns:
 
 ```python
 c_w = src.c_attn.weight
-if c_w.shape[0] < c_w.shape[1]: c_w = c_w.t()
+if c_w.shape[0] < c_w.shape[1]:
+    c_w = c_w.t()
 q_w, k_w, v_w = c_w.chunk(3, dim=0)
 o_w = src.c_proj.weight.t()
 ```
@@ -97,8 +98,10 @@ Output: M with attention replaced
 ## 5.9 Double-Injection Guard
 
 ```python
-if isinstance(src, VSpecAttention): return None
-if "VSpec" in src.__class__.__name__: return None
+if isinstance(src, VSpecAttention):
+    return None
+if "VSpec" in src.__class__.__name__:
+    return None
 ```
 
 ## 5.10 Cross-Attention
@@ -110,8 +113,7 @@ Not supported. Raises `NotImplementedError`.
 ```python
 @ATTENTION_REGISTRY.register("vspec")
 @ATTENTION_REGISTRY.register("vspec_attention")
-class VSpecAttention(BaseAttention):
-    ...
+class VSpecAttention(BaseAttention): ...
 ```
 
 ---

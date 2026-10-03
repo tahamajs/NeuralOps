@@ -59,7 +59,7 @@ attention.output.dense: Linear(768, 768)
 ### 5.2.3 GPT-2 (Causal)
 
 ```python
-attn.c_attn: Conv1D(768, 2304)   # fused Q, K, V
+attn.c_attn: Conv1D(768, 2304)  # fused Q, K, V
 attn.c_proj: Conv1D(768, 768)
 ```
 
@@ -68,8 +68,8 @@ attn.c_proj: Conv1D(768, 768)
 ### 5.2.4 Qwen3.5 (GQA + RoPE)
 
 ```python
-q_proj: Linear(1024, 2048)   # 8 heads × 256
-k_proj: Linear(1024, 512)    # 2 heads × 256
+q_proj: Linear(1024, 2048)  # 8 heads × 256
+k_proj: Linear(1024, 512)  # 2 heads × 256
 v_proj: Linear(1024, 512)
 o_proj: Linear(2048, 1024)
 ```

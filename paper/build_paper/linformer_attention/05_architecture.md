@@ -125,8 +125,7 @@ Output: M with attention replaced
 ```python
 @ATTENTION_REGISTRY.register("linformer")
 @ATTENTION_REGISTRY.register("linformer_attention")
-class LinformerAttention(BaseAttention):
-    ...
+class LinformerAttention(BaseAttention): ...
 ```
 
 ## 5.9 Interaction with LoRA Recovery

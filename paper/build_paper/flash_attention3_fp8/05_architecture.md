@@ -46,10 +46,14 @@ We use the following logic in `copy_weights`:
 
 ```python
 if hasattr(src, "out_lin"):
-    is_nested = False       # DistilBERT
-elif (hasattr(src, "self") and hasattr(src.self, "query")
-      and hasattr(src, "output") and hasattr(src.output, "dense")):
-    is_nested = True        # RoBERTa
+    is_nested = False  # DistilBERT
+elif (
+    hasattr(src, "self")
+    and hasattr(src.self, "query")
+    and hasattr(src, "output")
+    and hasattr(src.output, "dense")
+):
+    is_nested = True  # RoBERTa
 elif cls_name in ["BertSelfAttention", "RobertaSelfAttention", ...]:
     is_nested = True
 elif cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower():
@@ -180,8 +184,7 @@ or silently produce wrong results. We detect the correct value from
 ```python
 @ATTENTION_REGISTRY.register("flash3_fp8")
 @ATTENTION_REGISTRY.register("flash_attention3_fp8")
-class FlashAttention3FP8(BaseAttention):
-    ...
+class FlashAttention3FP8(BaseAttention): ...
 ```
 
 ## 5.11 Integration with LoRA Recovery

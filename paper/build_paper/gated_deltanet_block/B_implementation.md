@@ -53,7 +53,7 @@ residual + LN.
 # Check that self.norm is not used
 def forward(self, x):
     if self.is_nested_encoder:
-        assert not hasattr(self, '_norm_used')  # should not be touched
+        assert not hasattr(self, "_norm_used")  # should not be touched
         return delta_out, None
 ```
 
@@ -73,8 +73,7 @@ attn_out, attn_weights = self.attn(
 if self.is_decoder:
     seq_len = x.shape[1]
     causal_mask = torch.triu(
-        torch.full((seq_len, seq_len), float('-inf'), device=x.device),
-        diagonal=1
+        torch.full((seq_len, seq_len), float("-inf"), device=x.device), diagonal=1
     )
     attn_out, _ = self.attn(x, x, x, attn_mask=causal_mask)
 ```
@@ -83,9 +82,11 @@ if self.is_decoder:
 
 ```python
 if attn_out.shape[-1] != x.shape[-1]:
-    attn_out = F.pad(attn_out, (0, x.shape[-1] - attn_out.shape[-1])) \
-               if attn_out.shape[-1] < x.shape[-1] \
-               else attn_out[..., :x.shape[-1]]
+    attn_out = (
+        F.pad(attn_out, (0, x.shape[-1] - attn_out.shape[-1]))
+        if attn_out.shape[-1] < x.shape[-1]
+        else attn_out[..., : x.shape[-1]]
+    )
 ```
 
 **Concern.** If shapes mismatch, this silently pads/truncates. **Should** 
@@ -97,6 +98,7 @@ Add explicit logging:
 
 ```python
 import logging
+
 logger = logging.getLogger(__name__)
 
 # After weight transfer:
@@ -129,8 +131,7 @@ pretrained. Consider copying pretrained LN if available.
 
 ```python
 @ATTENTION_REGISTRY.register("gated_deltanet_block")
-class GatedDeltaNetBlock(BaseAttention):
-    ...
+class GatedDeltaNetBlock(BaseAttention): ...
 ```
 
 ## B.8 Injection Factory

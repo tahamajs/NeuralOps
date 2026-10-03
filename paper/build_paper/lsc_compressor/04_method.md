@@ -110,12 +110,12 @@ The complete structured execution of `LSCPrunedLoRALinear` is carried out in fou
 # Phase 1: Conditioning and norm evaluation
 W_f = layer.weight.data.float()
 frob_norm = torch.linalg.norm(W_f)
-assert frob_norm >= 1e-4, 'Degenerate weight norm'
+assert frob_norm >= 1e-4, "Degenerate weight norm"
 
 # Phase 2: Core mathematical decomposition
 if is_svd_factorization:
     U, S, Vh = torch.linalg.svd(W_f, full_matrices=False)
-    cum_energy = torch.cumsum(S ** 2, dim=0) / torch.sum(S ** 2)
+    cum_energy = torch.cumsum(S**2, dim=0) / torch.sum(S**2)
     r = torch.searchsorted(cum_energy, tau).item() + 1
     r = max(min_rank, min(r, max_rank))
     # Symmetric square-root distribution
@@ -138,7 +138,7 @@ lora_B = nn.Parameter(torch.zeros(d_out, lora_r))
 # Phase 4: Fallback verification
 recon_err = torch.linalg.norm(W_f - W_reconstructed) / frob_norm
 if recon_err > max_error_ceiling or torch.isnan(recon_err):
-    logger.warning('Triggering safety fallback to uncompressed layer')
+    logger.warning("Triggering safety fallback to uncompressed layer")
     layer = uncompressed_layer_backup
 ```
 

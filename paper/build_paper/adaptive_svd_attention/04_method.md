@@ -115,11 +115,11 @@ $$
 
 ```python
 def _compute_energy_rank(self, S, max_rank, min_rank=16):
-    s_squared = S ** 2
+    s_squared = S**2
     total_energy = s_squared.sum()
     if total_energy <= 1e-12:
         return max(1, min(min_rank, max_rank))
-    
+
     cum_energy = torch.cumsum(s_squared, dim=0) / total_energy
     idx = torch.where(cum_energy >= self.energy_threshold)[0]
     r = int(idx[0].item()) + 1 if len(idx) > 0 else max_rank

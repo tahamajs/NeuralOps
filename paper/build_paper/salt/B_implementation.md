@@ -10,41 +10,42 @@
 
 ```python
 class SALTLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank=16,
-                 original_weight=None, original_bias=None):
+    def __init__(
+        self, in_features, out_features, rank=16, original_weight=None, original_bias=None
+    ):
         super().__init__()
-        if not hasattr(self, 'output_scale'):
+        if not hasattr(self, "output_scale"):
             self.output_scale = nn.Parameter(torch.ones(1))  # DEAD CODE
-        
+
         self.in_features = in_features
         self.out_features = out_features
         self.rank = min(rank, min(in_features, out_features))
 
         W = original_weight.float() if original_weight is not None else ...
         U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-        
+
         # Buffers
-        self.register_buffer("U", U[:, :self.rank])
-        self.register_buffer("Vt", Vt[:self.rank, :])
-        self.register_buffer("S", S[:self.rank])
-        
+        self.register_buffer("U", U[:, : self.rank])
+        self.register_buffer("Vt", Vt[: self.rank, :])
+        self.register_buffer("S", S[: self.rank])
+
         # Trainable
         self.gamma = nn.Parameter(torch.ones(self.rank))
         self.A = nn.Parameter(torch.randn(out_features, self.rank) * 0.01)
         self.B = nn.Parameter(torch.zeros(self.rank, in_features))
-        
+
         if original_bias is not None:
             self.bias = nn.Parameter(original_bias.clone())
         else:
             self.bias = nn.Parameter(torch.zeros(out_features))
-    
+
     @property
     def weight(self):
         adapted_S = self.S * self.gamma
         W_svd = (self.U * adapted_S.unsqueeze(0)) @ self.Vt
         W_lora = self.A @ self.B
         return W_svd + W_lora
-    
+
     def forward(self, x):
         adapted_S = self.S * self.gamma
         W_svd = (self.U * adapted_S.unsqueeze(0)) @ self.Vt
@@ -57,10 +58,10 @@ class SALTLinear(nn.Module):
 
 ```python
 def forward_fused(self, x):
-    z = F.linear(x, self.Vt)                         # (B, L, r)
-    z = z * (self.S * self.gamma)                     # scale
-    y_svd = F.linear(z, self.U)                       # (B, L, d_out)
-    y_lora = F.linear(F.linear(x, self.B), self.A)    # (B, L, d_out)
+    z = F.linear(x, self.Vt)  # (B, L, r)
+    z = z * (self.S * self.gamma)  # scale
+    y_svd = F.linear(z, self.U)  # (B, L, d_out)
+    y_lora = F.linear(F.linear(x, self.B), self.A)  # (B, L, d_out)
     return y_svd + y_lora + self.bias
 ```
 
@@ -116,8 +117,7 @@ self.is_nested_encoder = (
 ```python
 @ATTENTION_REGISTRY.register("salt_attention")
 @ATTENTION_REGISTRY.register("salt")
-class SALTAttention(BaseAttention):
-    ...
+class SALTAttention(BaseAttention): ...
 ```
 
 ## B.6 Diagnostics

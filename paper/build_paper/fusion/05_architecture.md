@@ -78,8 +78,7 @@ Supports partial RoPE (Qwen3.5 with rotary_dim < head_dim).
 
 ```python
 @ATTENTION_REGISTRY.register("fusion_attn")
-class FUSIONATTN(BaseAttention):
-    ...
+class FUSIONATTN(BaseAttention): ...
 ```
 
 ## 5.8 Failure Modes

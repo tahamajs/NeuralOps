@@ -149,8 +149,8 @@ stability.
 The framework stores $V_r$ in `down.weight` and $U_r$ in `up.weight`:
 
 ```python
-self.down.weight.data[:r, :] = V_r    # (r, d_in)
-self.up.weight.data[:, :r] = U_r      # (d_out, r)
+self.down.weight.data[:r, :] = V_r  # (r, d_in)
+self.up.weight.data[:, :r] = U_r  # (d_out, r)
 ```
 
 For $r < \text{target rank}$, remaining rows/columns are zero.
@@ -183,7 +183,7 @@ $$
 ```python
 w = src.c_attn.weight.data.clone()
 if is_conv1d:
-    w = w.t()   # (3d, d)
+    w = w.t()  # (3d, d)
 q_w, k_w, v_w = w.chunk(3, dim=0)
 ```
 

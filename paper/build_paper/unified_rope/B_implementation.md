@@ -111,8 +111,7 @@ def _copy_layer(target_layer, w, b, src_sub=None):
 ## B.5 The Injection Hook
 
 ```python
-def inject_unified_rope(layer, model_config=None, comp_config=None,
-                        old_attn=None, **kwargs):
+def inject_unified_rope(layer, model_config=None, comp_config=None, old_attn=None, **kwargs):
     try:
         src = old_attn
         if src is None:
@@ -120,21 +119,24 @@ def inject_unified_rope(layer, model_config=None, comp_config=None,
                 if hasattr(layer, attr):
                     src = getattr(layer, attr)
                     break
-        
+
         if src is None:
             return None
-        
+
         if model_config is None and hasattr(layer, "config"):
             model_config = layer.config
-        
+
         lora_rank = kwargs.pop("lora_rank", 16)
         rank = kwargs.pop("rank", 32)
-        
+
         new_attn = UnifiedRoPE(
-            config=model_config, rank=rank, lora_rank=lora_rank,
-            pretrained_attn=src, **kwargs,
+            config=model_config,
+            rank=rank,
+            lora_rank=lora_rank,
+            pretrained_attn=src,
+            **kwargs,
         )
-        
+
         # Replace
         for attr in ("self_attn", "attn", "self"):
             if hasattr(layer, attr):

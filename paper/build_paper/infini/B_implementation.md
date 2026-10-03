@@ -11,10 +11,11 @@
 ```python
 @ATTENTION_REGISTRY.register("infini")
 class InfiniAttention(BaseAttention):
-    def __init__(self, config, rank=64, compress_dim=128,
-                 local_window=128, pretrained_attn=None, **kwargs):
+    def __init__(
+        self, config, rank=64, compress_dim=128, local_window=128, pretrained_attn=None, **kwargs
+    ):
         super().__init__(config, rank)
-        
+
         # Dimensions
         self.dim = 768
         self.num_heads = 12
@@ -22,17 +23,17 @@ class InfiniAttention(BaseAttention):
         self.all_head_size = 768
         self.compress_dim = 128
         self.local_window = 128
-        
+
         # Projections with LoRA
         self.q_proj = LoRALinear(768, 768, lora_rank=16)
         self.k_proj = LoRALinear(768, 768, lora_rank=16)
         self.v_proj = LoRALinear(768, 768, lora_rank=16)
         self.out_proj = LoRALinear(768, 768, lora_rank=16)
-        
+
         # Compressive memory
         self.memory = nn.Parameter(torch.randn(1, 12, 128, 64) * 0.001)
         self.beta = nn.Parameter(torch.tensor([-5.0]))
-        
+
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 ```

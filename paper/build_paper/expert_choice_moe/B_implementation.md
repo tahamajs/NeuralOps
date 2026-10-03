@@ -9,20 +9,22 @@ class ExpertChoiceMoE(nn.Module):
         self.d_model = d_model
         self.n_experts = n_experts
         self.capacity_factor = capacity_factor
-        
+
         self.router_ln = nn.LayerNorm(d_model)
         self.router = nn.Linear(d_model, n_experts, bias=False)
         nn.init.uniform_(self.router.weight, -0.01, 0.01)
-        
-        self.experts = nn.ModuleList([
-            nn.Sequential(
-                nn.Linear(d_model, d_model * 2),
-                nn.GELU(),
-                nn.Linear(d_model * 2, d_model),
-            )
-            for _ in range(n_experts)
-        ])
-        
+
+        self.experts = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Linear(d_model, d_model * 2),
+                    nn.GELU(),
+                    nn.Linear(d_model * 2, d_model),
+                )
+                for _ in range(n_experts)
+            ]
+        )
+
         # Zero-init expert outputs
         for expert in self.experts:
             nn.init.zeros_(expert[2].weight)
