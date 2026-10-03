@@ -13,7 +13,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PAPERS_DIR = PROJECT_ROOT / "paper" / "build_paper"
 RESULTS_DIR = PROJECT_ROOT / "results"
 CSV_OUT = PROJECT_ROOT / "paper" / "_ALL_MODULES_ANALYSIS.csv"
