@@ -1,0 +1,8 @@
+{
+  "task": "hellaswag",
+  "accuracy": 29.4,
+  "correct_samples": 147,
+  "total_samples": 500,
+  "elapsed_seconds": 35.94,
+  "batch_size": 8
+}

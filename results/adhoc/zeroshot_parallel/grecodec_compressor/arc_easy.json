@@ -1,0 +1,8 @@
+{
+  "task": "arc_easy",
+  "accuracy": 42.2,
+  "correct_samples": 211,
+  "total_samples": 500,
+  "elapsed_seconds": 36.05,
+  "batch_size": 8
+}

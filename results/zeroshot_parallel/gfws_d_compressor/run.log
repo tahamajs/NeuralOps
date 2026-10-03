@@ -1,18 +1,0 @@
-C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
-  warnings.warn(
-Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
-[START] RAM: 0.70/16.79 GB, VRAM: 0.00/8.59 GB
-Loading models/gpt2 on cuda...
-Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3735.76it/s]
-Traceback (most recent call last):
-  File "D:\SVD_Project\scripts\eval_zeroshot.py", line 548, in <module>
-    main()
-    ~~~~^^
-  File "D:\SVD_Project\scripts\eval_zeroshot.py", line 471, in main
-    model, _ = apply_module_to_model(model, args.module, "compressor",
-               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                                      rank=256, device=torch.device(device))
-                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\SVD_Project\Codes\framework\eval_all_models_datasets.py", line 642, in apply_module_to_model
-    raise RuntimeError(f"Compressor '{module_name}' not found in COMPRESSOR_REGISTRY")
-RuntimeError: Compressor 'gfws_d_compressor' not found in COMPRESSOR_REGISTRY

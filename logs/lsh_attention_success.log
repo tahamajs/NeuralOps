@@ -1,7 +1,0 @@
-[main 1b9ea8606] feat(benchmark): record successful lsh_attention on distilbert-sst2 (Acc: 82.57%, F1: 0.8245)
- 5 files changed, 651 insertions(+), 595 deletions(-)
- create mode 100644 results/all_modules/lsh_attention/distilbert_sst2_lsh_attention_full_metrics.json
- create mode 100644 results/all_modules/lsh_attention/finetune_metadata.json
- create mode 100644 results/all_modules/lsh_attention/summary.csv
- create mode 100644 results/all_modules/mamba/finetune_metadata.json
-branch 'main' set up to track 'origin/main'.

@@ -1,6 +1,0 @@
-[main 0d2067cea] feat(benchmark): record successful minimal_prism on distilbert-sst2 (Acc: 88.76%, F1: 0.8904)
- 4 files changed, 584 insertions(+), 499 deletions(-)
- create mode 100644 results/all_modules/minimal_prism/distilbert_sst2_minimal_prism_full_metrics.json
- create mode 100644 results/all_modules/minimal_prism/finetune_metadata.json
- create mode 100644 results/all_modules/minimal_prism/summary.csv
-branch 'main' set up to track 'origin/main'.

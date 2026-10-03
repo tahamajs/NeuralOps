@@ -1,6 +1,0 @@
-[main a0b4fd0c6] feat(benchmark): record successful low_rank_modulated_attention on distilbert-sst2 (Acc: 90.60%, F1: 0.9091)
- 3 files changed, 55 insertions(+)
- create mode 100644 results/all_modules/low_rank_modulated_attention/distilbert_sst2_low_rank_modulated_attention_full_metrics.json
- create mode 100644 results/all_modules/low_rank_modulated_attention/finetune_metadata.json
- create mode 100644 results/all_modules/low_rank_modulated_attention/summary.csv
-branch 'main' set up to track 'origin/main'.

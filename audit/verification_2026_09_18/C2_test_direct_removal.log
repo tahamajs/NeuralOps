@@ -1,3 +1,0 @@
-Removed test_direct from Category 1 (was module #43 of 44). New Category 1 count: 43.
-Root cause: test_direct was a temporary harness sanity check in run_one_module.py and not a genuine model attention compression module.
-Removal timestamp: 2026-09-18T08:13:45

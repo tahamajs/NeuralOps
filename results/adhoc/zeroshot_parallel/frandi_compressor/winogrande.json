@@ -1,0 +1,8 @@
+{
+  "task": "winogrande",
+  "accuracy": 52.2,
+  "correct_samples": 261,
+  "total_samples": 500,
+  "elapsed_seconds": 25.95,
+  "batch_size": 8
+}

@@ -1,0 +1,24 @@
+{
+  "module_name": "expert_choice_moe",
+  "exception_type": "AttributeError",
+  "exception_message": "'float' object has no attribute 'get'",
+  "errno": null,
+  "filename": null,
+  "fault_file": "D:\\SVD_Project\\Codes\\framework\\run_gpt2_sweep.py",
+  "fault_line": 1013,
+  "fault_function": "main",
+  "cwd": "D:\\SVD_Project",
+  "traceback": [
+    "Traceback (most recent call last):\n",
+    "  File \"D:\\SVD_Project\\Codes\\framework\\run_gpt2_sweep.py\", line 1013, in main\n    lora_params=int(comp_stats.get(\"lora_params\", 0) or 0),\n                    ^^^^^^^^^^^^^^\n",
+    "AttributeError: 'float' object has no attribute 'get'\n"
+  ],
+  "torch_version": "2.6.0+cu124",
+  "cuda_available": true,
+  "timestamp": "2026-09-27T14:33:58",
+  "baseline_ppl": 21.7132,
+  "rank": 64,
+  "seq_len": 1024,
+  "device": "cuda",
+  "fp16": true
+}

@@ -1,6 +1,0 @@
-[main a1d497950] feat(benchmark): record successful minimal_svd on distilbert-sst2 (Acc: 88.30%, F1: 0.8844)
- 4 files changed, 699 insertions(+), 614 deletions(-)
- create mode 100644 results/all_modules/minimal_svd/distilbert_sst2_minimal_svd_full_metrics.json
- create mode 100644 results/all_modules/minimal_svd/finetune_metadata.json
- create mode 100644 results/all_modules/minimal_svd/summary.csv
-branch 'main' set up to track 'origin/main'.

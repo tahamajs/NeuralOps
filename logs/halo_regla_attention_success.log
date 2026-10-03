@@ -1,6 +1,0 @@
-[main 6e2078cd0] feat(benchmark): record successful halo_regla_attention on distilbert-sst2 (Acc: 90.48%, F1: 0.9085)
- 4 files changed, 421 insertions(+), 360 deletions(-)
- create mode 100644 results/all_modules/halo_regla_attention/distilbert_sst2_halo_regla_attention_full_metrics.json
- create mode 100644 results/all_modules/halo_regla_attention/finetune_metadata.json
- create mode 100644 results/all_modules/halo_regla_attention/summary.csv
-branch 'main' set up to track 'origin/main'.

@@ -1,0 +1,8 @@
+{
+  "task": "piqa",
+  "accuracy": 59.6,
+  "correct_samples": 298,
+  "total_samples": 500,
+  "elapsed_seconds": 41.37,
+  "batch_size": 8
+}

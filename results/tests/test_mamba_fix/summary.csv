@@ -1,0 +1,5 @@
+module_name,status,perplexity,baseline_ppl,delta_ppl,compression_rate,compression_ratio_pct,peak_vram_mb,latency_ms_per_token,throughput_tok_per_sec,elapsed_s,total_params_before,total_params_after,error,timestamp
+full,PASS,21.71,21.71,0.0,1.0,0.0,916.17,0.078,12788.4,7.82,124439808,124439808,,2026-09-27T13:36:13
+mamba_block,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,7.41,124439808,124439808,[C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\functional.py:407] RuntimeError: expected scalar type Half but found Float,2026-09-27T13:36:21
+full,PASS,21.71,21.71,0.0,1.0,0.0,916.17,0.076,13192.2,7.58,124439808,124439808,,2026-09-27T13:49:00
+mamba_block,FAIL_PPL_DIVERGED,10767.44,21.71,10745.73,0.8804,-13.58,1159.6,6.522,153.3,652.22,124439808,141341952,,2026-09-27T13:59:58

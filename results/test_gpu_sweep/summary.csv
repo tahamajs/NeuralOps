@@ -1,4 +1,0 @@
-module_name,status,perplexity,baseline_ppl,delta_ppl,compression_rate,compression_ratio_pct,peak_vram_mb,latency_ms_per_token,throughput_tok_per_sec,elapsed_s,total_params_before,total_params_after,error,timestamp
-full,PASS,21.71,21.71,0.0,1.0,0.0,916.17,0.074,13531.9,7.39,124439808,124439808,,2026-09-27T13:05:20
-tt,SKIP_DEPRECATED,-1.0,21.71,0.0,1.0,0.0,0.0,0.0,0.0,0.0,124439808,124439808,Module marked deprecated in deprecated_modules.txt,2026-09-27T13:05:20
-unified_rope,FAIL_PPL_DIVERGED,3368.62,21.71,3346.91,0.9906,-0.95,1164.14,0.173,5770.7,17.33,124439808,125619456,,2026-09-27T13:05:41
