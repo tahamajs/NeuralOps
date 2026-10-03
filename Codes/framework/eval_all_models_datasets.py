@@ -1808,11 +1808,11 @@ def evaluate_single_combination_opt(
         try:
             run_dir.mkdir(parents=True, exist_ok=True)
         except OSError:
-            # Fallback to brain artifact directory if results_dir has restricted filesystem permissions
-            brain_base = Path("/Users/tahamajs/.gemini/antigravity-cli/brain/154e5c28-a619-4387-be97-a33f27392ecf/results")
-            run_dir = brain_base / Path(results_dir).name / model_family / dataset / module_name / f"rank_{rank}"
+            # Fallback to system temp directory if results_dir has restricted filesystem permissions
+            fallback_base = Path(tempfile.gettempdir()) / "neuralops_results"
+            run_dir = fallback_base / Path(results_dir).name / model_family / dataset / module_name / f"rank_{rank}"
             run_dir.mkdir(parents=True, exist_ok=True)
-            results_dir = str(brain_base / Path(results_dir).name)
+            results_dir = str(fallback_base / Path(results_dir).name)
 
         # 1. run.log
         run_log_content = "\n".join(run_log_lines)

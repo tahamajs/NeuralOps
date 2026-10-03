@@ -10,7 +10,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path("/Users/tahamajs/Documents/uni/Project")
+ROOT = Path(__file__).resolve().parent.parent
 PAPER_BASE = ROOT / "paper/PerModulePaper"
 
 sys.path.insert(0, str(ROOT / "scripts"))
