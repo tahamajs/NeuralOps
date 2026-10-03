@@ -10,7 +10,7 @@
   "classes": [
     "AdaptiveRanksCompressor"
   ],
-  "methods_count": 10,
+  "methods_count": 20,
   "math_latex": "\\\\frac{\\\\sum_{i=1}^r \\\\sigma_i^2}{\\\\sum_{j=1}^d \\\\sigma_j^2} \\\\ge \\\\tau \\\\quad (\\\\tau = 0.92)",
   "components": [
     {

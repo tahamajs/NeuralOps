@@ -8,9 +8,10 @@
   "icon": "\ud83c\udf1f",
   "description": "CUR Compressor: replaces Linear and Conv1D layers with CUR decomposition. Uses leverage score sampling or energy sampling for column/row selection. Registered in COMPRESSOR_REGISTRY as 'cur' and 'cur_compressor'.",
   "classes": [
+    "CURLinear",
     "CURCompressor"
   ],
-  "methods_count": 6,
+  "methods_count": 15,
   "math_latex": "A_{ij} = \\text{TopK}\\left(\\text{Softmax}\\left(\\frac{Q_i K_j^\\top}{\\sqrt{d}}\\right)\\right)",
   "components": [
     {

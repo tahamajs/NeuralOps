@@ -1,17 +1,19 @@
 {
   "id": "moba_attention",
-  "name": "Moba Attention",
+  "name": "MoBA: Mixture of Block Attention \u2014 Production-Hardened (v2).",
   "file": "Codes/framework/attentions/moba_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Production-grade Low-Rank SVD & Factorization module.",
+  "description": "MoBA: Mixture of Block Attention \u2014 Production-Hardened (v2).  Registered as 'moba', 'moba_attention', 'moba_inject'.",
   "classes": [
     "LoRALinear",
-    "MoBAAttention"
+    "MoBAAttention",
+    "_Cfg",
+    "_Cfg"
   ],
-  "methods_count": 14,
+  "methods_count": 23,
   "math_latex": "\\mathbf{Q} = \\mathbf{X} \\mathbf{W}_Q, \\quad \\mathbf{K} = \\mathbf{X} \\mathbf{W}_K, \\quad \\mathbf{V} = \\mathbf{X} \\mathbf{W}_V",
   "components": [
     {

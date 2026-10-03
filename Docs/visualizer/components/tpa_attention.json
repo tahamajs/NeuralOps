@@ -1,17 +1,17 @@
 {
   "id": "tpa_attention",
-  "name": "TPAttention: Tensor Product Attention with Factorised Query-Key Projections",
+  "name": "TPAttention: Tensor Product Attention with Factorised Q-K Projections.",
   "file": "Codes/framework/attentions/tpa_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "TPAttention: Tensor Product Attention with Factorised Query-Key Projections. Hardened for production use across diverse transformer architectures: - DistilBERT (Flat MHA) - RoBERTa / BERT (Nested Encoder Self-Attention) - GPT-2 (Causal Decoder with Conv1D) - Qwen / LLaMA (GQA with Rotary Position Embeddings)",
+  "description": "TPAttention: Tensor Product Attention with Factorised Q-K Projections.  Tensor-Product factorization of Q and K:     W_q \u2248 q_proj1 \u2297 q_proj2   (per head)     W_q[h*hd + a*r + b, k] \u2248 A[h, a, k] \u00b7 B[h, b, k]     W_k[h*hd + a*r + b, k] \u2248 C[h, a, k] \u00b7 D[h, b, k]",
   "classes": [
     "LoRALinear",
     "TPAttention"
   ],
-  "methods_count": 13,
+  "methods_count": 16,
   "math_latex": "q_1 = \\text{LoRALinear}_{Q1}(X) \\in \\mathbb{R}^{B \\times L \\times (H \\cdot r)}, \\quad q_2 = \\text{LoRALinear}_{Q2}(X) \\in \\mathbb{R}^{B \\times L \\times (H \\cdot r)}",
   "components": [
     {

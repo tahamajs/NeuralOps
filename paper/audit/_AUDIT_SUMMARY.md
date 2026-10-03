@@ -27,7 +27,7 @@
 
 ## Action List (Ordered by Priority)
 1. **Merge Duplicate BibTeX Clusters**: Consolidate duplicate clusters identified in paper/_AUDIT_DUPLICATES.md into single canonical citation keys.
-2. **Populate Missing Module References**: Link zero-citation modules in paper/PerModulePaper/ to the canonical topic citations established in paper/REFERENCES.bib.
+2. **Populate Missing Module References**: Link zero-citation modules in paper/build_paper/REFERENCES.bib.
 3. **Expand Topic T12 Literature**: Append foundational Rotary Position Embedding papers (Su et al., RoFormer; Press et al., ALiBi; Sun et al., LongRoPE).
 4. **Maintain Appendix D Segregation**: Ensure Category C models remain strictly in Appendix D to preserve the scientific integrity of the core parameter compression frontier.
 5. **Apply FP32 Precision Guards**: Wrap Schulz polynomial inversions in autocast(enabled=False) in production inference scripts.

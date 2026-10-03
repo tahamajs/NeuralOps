@@ -1,17 +1,17 @@
 {
   "id": "svd_linear_attention",
-  "name": "SVD Factorized Linear Attention & Kernelized Linear Attention Modules with ",
+  "name": "SVD Factorized Linear Attention & Kernelized Linear Attention",
   "file": "Codes/framework/attentions/svd_linear_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "SVD Factorized Linear Attention & Kernelized Linear Attention Modules with Exponential Decay Gating. Hardened for production use across diverse transformer architectures: - DistilBERT (Flat MHA) - RoBERTa / BERT (Nested Encoder Self-Attention) - GPT-2 (Causal Decoder with Conv1D) - Qwen / LLaMA (GQA with Rotary Position Embeddings)",
+  "description": "SVD Factorized Linear Attention & Kernelized Linear Attention with Exponential Decay Gating \u2014 Production-Hardened (v2).  Hardened for production use across:   - DistilBERT (Flat MHA)   - RoBERTa / BERT (Nested Encoder Self-Attention)   - GPT-2 (Causal Decoder with Conv1D)   - Qwen / LLaMA (GQA with Rotary Position Embeddings)  Fixes (v2):   SVDLA-FIX-01  `copy_weights` no longer raises on missing",
   "classes": [
     "SVDLinear",
     "SVDLinearAttention"
   ],
-  "methods_count": 23,
+  "methods_count": 25,
   "math_latex": "\\\\text{Attention}(Q, K, V) = \\\\frac{\\\\phi(Q) (\\\\phi(K)^\\\\top V)}{\\\\phi(Q) \\\\sum_j \\\\phi(k_j)^\\\\top + \\\\epsilon}",
   "components": [
     {

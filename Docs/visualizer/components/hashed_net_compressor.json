@@ -1,41 +1,42 @@
 {
   "id": "hashed_net_compressor",
-  "name": "HashedNet Compressor: replaces nn.Linear and Conv1D layers with HashedLinea",
+  "name": "HashedNet Compressor \u2014 Production-Hardened (v2).",
   "file": "Codes/framework/compression_engine/hashed_net_compressor.py",
   "type": "Compression Engine",
-  "category": "Dynamic & Efficient Attention",
-  "paradigm": "sparse",
-  "icon": "\ud83c\udf1f",
-  "description": "HashedNet Compressor: replaces nn.Linear and Conv1D layers with HashedLinear. Registered in COMPRESSOR_REGISTRY as 'hashed_net', 'hashednets', and 'hashednets_compressor'.",
+  "category": "Low-Rank SVD & Factorization",
+  "paradigm": "svd",
+  "icon": "\u26a1",
+  "description": "HashedNet Compressor \u2014 Production-Hardened (v2).  Registered as 'hashed_net', 'hashednets', 'hashednets_compressor',               'hashed_linear', 'hashed_net_factory', ...  \u26a0\ufe0f  FUNDAMENTAL LIMITATION \u26a0\ufe0f  HashedNet (Chen et al., 2015) compresses a weight matrix W \u2208 R^{out\u00d7in} by storing a compact parameter table w \u2208 R^{n_buckets} and reconstructing W[i,j] = sign(i,j) \u00b7 w[h(i,j)]. This is lossy: i",
   "classes": [
+    "HashedLinear",
     "HashedNetCompressor"
   ],
-  "methods_count": 7,
-  "math_latex": "A_{ij} = \\text{TopK}\\left(\\text{Softmax}\\left(\\frac{Q_i K_j^\\top}{\\sqrt{d}}\\right)\\right)",
+  "methods_count": 19,
+  "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
   "components": [
     {
-      "id": "sparse_mask",
-      "name": "Dynamic Top-K Attention Sparsity Mask",
-      "role": "O(N sqrt{N}) Token Filtering",
-      "shape_transform": "[Seq \u00d7 Seq] Sparse",
-      "color": "#38bdf8",
-      "math_latex": "M_{ij} = \\mathbb{I}(|S_{ij}| \\ge \\tau), \\quad S_{ij} = \\frac{q_i k_j^\\top}{\\sqrt{d}}"
+      "id": "v_factor",
+      "name": "Factor V (Low-Rank Subspace Projection)",
+      "role": "Projection to Rank r",
+      "shape_transform": "[r \u00d7 d_in]",
+      "color": "#3acbb8",
+      "math_latex": "z_t = x_t V_r^\\top, \\quad V_r \\in \\mathbb{R}^{r \\times d_{in}}"
     },
     {
-      "id": "kernel_attn",
-      "name": "Linearized Positive Kernel Projection",
-      "role": "Softmax Approximation",
-      "shape_transform": "[\\phi(Q) \\cdot \\phi(K)^T]",
-      "color": "#7dd3fc",
-      "math_latex": "\\text{Attn}(Q,K,V) = \\frac{\\phi(Q) (\\phi(K)^\\top V)}{\\phi(Q) \\sum_j \\phi(K_j)^\\top}"
+      "id": "u_factor",
+      "name": "Factor U (Full-Rank Expansion Projection)",
+      "role": "Expansion to Output Space",
+      "shape_transform": "[d_out \u00d7 r]",
+      "color": "#2dd4bf",
+      "math_latex": "y_t = z_t (\\Sigma_r U_r^\\top) + b, \\quad U_r \\in \\mathbb{R}^{d_{out} \\times r}"
     },
     {
-      "id": "out_norm",
-      "name": "Output Layer Normalization",
-      "role": "Attention Scale Stabilization",
-      "shape_transform": "[d_{in}]",
-      "color": "#bae6fd",
-      "math_latex": "\\text{LN}(y) = \\frac{y - \\mu}{\\sqrt{\\sigma^2 + \\epsilon}} \\odot \\gamma + \\beta"
+      "id": "adapter",
+      "name": "Residual LoRA / Norm Calibration",
+      "role": "Fidelity Compensation",
+      "shape_transform": "[d_out \u00d7 d_in] Residual",
+      "color": "#5eead4",
+      "math_latex": "\\Delta y_t = x_t (B A)^\\top \\cdot \\frac{\\alpha}{r}, \\quad A \\in \\mathbb{R}^{r \\times d_{in}}, \\; B \\in \\mathbb{R}^{d_{out} \\times r}"
     }
   ],
   "model_projections": {
@@ -43,29 +44,29 @@
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 3568435,
-      "savings_ratio": 1.82
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "roberta": {
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 3568435,
-      "savings_ratio": 1.82
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "gpt2": {
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 3568435,
-      "savings_ratio": 1.82
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "qwen": {
       "hidden_size": 896,
       "intermediate_size": 4864,
       "baseline_layer_params": 11124736,
-      "compressed_layer_params": 6118604,
-      "savings_ratio": 1.82
+      "compressed_layer_params": 1081344,
+      "savings_ratio": 10.29
     }
   }
 }

@@ -1,18 +1,18 @@
 {
   "id": "orion",
-  "name": "ORION: Optimized Rectified Input-aware Orthogonal Network (Production-Harde",
+  "name": "ORION: Optimized Rectified Input-aware Orthogonal Network (Corrected).",
   "file": "Codes/framework/attentions/orion.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "ORION: Optimized Rectified Input-aware Orthogonal Network (Production-Hardened).  Hybrid multi-head attention architecture integrating zero-shot SVD low-rank factorized projections, head-wise bifurcated linear kernel vs. rectified Softpick full attention, and random Fourier features.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA",
+  "description": "ORION: Optimized Rectified Input-aware Orthogonal Network (Corrected).  Hybrid multi-head attention architecture integrating zero-shot SVD low-rank factorized projections, head-wise bifurcated linear kernel vs. temperature-softmax full attention, and random Fourier features.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters",
   "classes": [
     "ORIONConfig",
     "FactorisedLinear",
     "ORIONAttention"
   ],
-  "methods_count": 21,
+  "methods_count": 28,
   "math_latex": "W = U \\Sigma V^T, \\quad \\Sigma = \\text{diag}(\\sigma_1, \\sigma_2, \\dots, \\sigma_{\\min(d_{\\text{out}}, d_{\\text{in}})})",
   "components": [
     {

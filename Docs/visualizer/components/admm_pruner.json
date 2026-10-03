@@ -6,7 +6,7 @@
   "category": "Structured Pruning & Channel Slicing",
   "paradigm": "pruning",
   "icon": "\u2702\ufe0f",
-  "description": "ADMM Pruner: Alternating Direction Method of Multipliers for Structured & Semi-Structured Pruning with Layer-Wise Reconstruction Distillation, STE, and Dynamic Rho. Registered in COMPRESSOR_REGISTRY as 'admm_pruner' and 'admm_pruner_distill'.  Mathematical Formulation: $$\\min_W \\frac{1}{2} \\|W - W_0\\|_F^2 + \\lambda \\cdot \\mathbb{E}_{x \\sim \\mathcal{D}} \\left[ \\| \\text{layer}(x; W, \\text{mask}) - \\",
+  "description": "ADMM Pruner: Alternating Direction Method of Multipliers for Structured & Semi-Structured Pruning with Layer-Wise Reconstruction Distillation, STE, and Dynamic Rho. Registered in COMPRESSOR_REGISTRY as 'admm_pruner' and 'admm_pruner_distill'.",
   "classes": [
     "ADMMSTEPrune",
     "ADMMMaskedLinear",

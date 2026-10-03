@@ -1,17 +1,17 @@
 {
   "id": "tlinformer_attention",
-  "name": "TLinFormer: Exact linear\u2011time attention via low\u2011rank sequence projections.",
-  "file": "Codes/framework/compression_engine/tlinformer_attention.py",
-  "type": "Compression Engine",
+  "name": "TLinFormer: Exact linear-time attention via low-rank sequence projections.",
+  "file": "Codes/framework/attentions/tlinformer_attention.py",
+  "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "TLinFormer: Exact linear\u2011time attention via low\u2011rank sequence projections. Reference: LinFormer (Wang et al., 2020) - adapted for DistilBERT, RoBERTa, GPT-2, and Qwen3.5.  Production-Hardened with: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Frobenius norm validation (>= 1e-4) - Grouped-Query Attention (GQA) with repeat_kv - Rotary Position Embedding (R",
+  "description": "TLinFormer: Exact linear-time attention via low-rank sequence projections. Reference: LinFormer (Wang et al., 2020).  Production-hardened for DistilBERT, RoBERTa, GPT-2, Qwen3.5.",
   "classes": [
     "LoRALinear",
     "TLinFormerAttention"
   ],
-  "methods_count": 23,
+  "methods_count": 27,
   "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
   "components": [
     {

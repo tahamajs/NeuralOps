@@ -1,17 +1,17 @@
 {
   "id": "fusion_attn",
-  "name": "FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention Module.",
+  "name": "FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention Module (Production-Harde",
   "file": "Codes/framework/attentions/fusion_attn.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention Module.  Implements hybrid sparse attention with block gating, full-attention short sequence fast-path, and subspace estimation.  Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA architectures: - Robust pretrained weight extraction (GPT-2 fused c_attn, RoBERTa nested, Qwen GQA, DistilBERT) - Strict Frobenius norm veri",
+  "description": "FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention Module (Production-Hardened v2).  Hybrid sparse attention with:   - Short-sequence fast path (full attention via SDPA / manual)   - Long-sequence block-gated sparse attention (MoBA-style)   - Per-head dynamic gating for block selection   - RoPE support with partial-dim slicing   - GQA with repeat_kv   - Nested encoder bypass   - LoRA adapters on f",
   "classes": [
     "LoRALinear",
     "FUSIONATTN"
   ],
-  "methods_count": 26,
+  "methods_count": 31,
   "math_latex": "\\mathbf{S}_{\\text{blk}} = \\frac{\\mathbf{G}_Q(\\mathbf{Q}_{\\text{blk}}) \\mathbf{G}_K(\\mathbf{K}_{\\text{blk}})^T}{\\tau}",
   "components": [
     {

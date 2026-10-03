@@ -1,19 +1,18 @@
 {
   "id": "aegis_v5",
-  "name": "AEGIS-Attention V5: Adaptive Enhanced Global-Local Integrated Sparse Attent",
+  "name": "AEGIS-Attention V5 (Corrected): Adaptive Enhanced Global-Local Integrated S",
   "file": "Codes/framework/attentions/aegis_v5.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "AEGIS-Attention V5: Adaptive Enhanced Global-Local Integrated Sparse Attention Baseline.  Combines SVD-factorized projection matrices with energy-based rank selection and LoRA adapters, split-head local sliding-window attention with smooth activations, and global linear kernel attention with adaptive gating. Hardened for multi-architecture deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.",
+  "description": "AEGIS-Attention V5 (Corrected): Adaptive Enhanced Global-Local Integrated Sparse Attention.  Architecture:   * FactorisedLinear: SVD-factorized linear layers with energy-based rank selection + LoRA.   * Split-head attention: some heads perform local sliding-window attention,     other heads perform global kernel linear attention (RFF / FAVOR+).   * Adaptive gate: blends local-head outputs with the",
   "classes": [
     "AegisConfigV5",
     "FactorisedLinear",
-    "AegisAttention",
-    "DummyConfig"
+    "AegisAttention"
   ],
-  "methods_count": 30,
+  "methods_count": 31,
   "math_latex": "Q_{\\text{feat}} = \\operatorname{ELU}(Q_g \\Omega) + 1.0 \\in \\mathbb{R}^{B \\times H_g \\times L \\times F}",
   "components": [
     {

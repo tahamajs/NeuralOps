@@ -6,12 +6,12 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "LSC: Low-Rank Spectral & Fourier-Domain Linear Compressor. Registered in COMPRESSOR_REGISTRY as 'lsc' and 'lsc_compressor'.  Mathematical Formulation: 1. 2D Discrete Fourier Transform:    $$\\widehat{W} = \\mathcal{F}_{2D}(W) \\in \\mathbb{C}^{d_{out} \\times d_{in}}$$ 2. Spectral Magnitude Spectrum:    $$M_{ij} = |\\widehat{W}_{ij}| = \\sqrt{\\operatorname{Re}(\\widehat{W}_{ij})^2 + \\operatorname{Im}(\\wid",
+  "description": "LSC: Low-Rank Spectral & Fourier-Domain Linear Compressor. Registered as 'lsc', 'lsc_class', 'lsc_compressor', 'lsc_factory'.  Mathematical Formulation:   1. 2D DFT: \\hat{W} = F_2D(W)   2. Magnitude: M_ij = |\\hat{W}_ij|   3. Top-k selection: M_spectral = Top-k(M), k = min(r*r, d_out*d_in)   4. Inverse DFT: W_lsc = Re(F_2D^{-1}(\\hat{W} \u2299 M_spectral))",
   "classes": [
     "LSCPrunedLoRALinear",
     "LSCCompressor"
   ],
-  "methods_count": 10,
+  "methods_count": 12,
   "math_latex": "\\tilde{W}_{u,v} = \\sum_{n=0}^{N-1} \\sum_{m=0}^{M-1} W_{nm} \\cos\\left(\\frac{\\pi u (2n+1)}{2N}\\right) \\cos\\left(\\frac{\\pi v (2m+1)}{2M}\\right)",
   "components": [
     {

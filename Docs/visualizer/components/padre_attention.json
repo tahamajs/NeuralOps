@@ -1,8 +1,8 @@
 {
   "id": "padre_attention",
   "name": "PADRe: Polynomial Attention with Dropout Regularization.",
-  "file": "Codes/framework/compression_engine/padre_attention.py",
-  "type": "Compression Engine",
+  "file": "Codes/framework/attentions/padre_attention.py",
+  "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",

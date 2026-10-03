@@ -11,7 +11,7 @@
     "FAQLinear",
     "FAQQuantizer"
   ],
-  "methods_count": 13,
+  "methods_count": 14,
   "math_latex": "W = S \\odot (Q_W - Z), \\quad Q_W \\in \\{-8, \\dots, 7\\}, \\quad S = \\text{scale}",
   "components": [
     {

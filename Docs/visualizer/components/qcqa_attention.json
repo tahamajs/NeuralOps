@@ -1,17 +1,17 @@
 {
   "id": "qcqa_attention",
-  "name": "Quality and Capacity-Aware Grouped Query Attention (QCQA) \u2013 Production-Hard",
+  "name": "Quality and Capacity-Aware Grouped Query Attention (QCQA) \u2014 v2.",
   "file": "Codes/framework/attentions/qcqa_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Quality and Capacity-Aware Grouped Query Attention (QCQA) \u2013 Production-Hardened.  Dynamically synthesizes head-specific key-value representations for each query head via continuous learned routing distributions over a compressed set of KV heads.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base weights - GQA",
+  "description": "Quality and Capacity-Aware Grouped Query Attention (QCQA) \u2014 v2.  Dynamically synthesizes head-specific key-value representations for each query head via continuous learned routing distributions over a compressed set of KV heads.",
   "classes": [
     "LoRALinear",
     "QCQAAttention"
   ],
-  "methods_count": 10,
+  "methods_count": 14,
   "math_latex": "\\pi_{h, j} = \\frac{\\exp\\left(\\frac{q_h W_{\\text{router}, j}}{\\tau}\\right)}{\\sum_{j'=1}^{H_{kv}} \\exp\\left(\\frac{q_h W_{\\text{router}, j'}}{\\tau}\\right)}, \\quad \\forall j \\in \\{1, \\dots, H_{kv}\\}",
   "components": [
     {

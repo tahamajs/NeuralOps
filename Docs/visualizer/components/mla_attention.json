@@ -1,17 +1,18 @@
 {
   "id": "mla_attention",
-  "name": "Multi-Head Latent Attention (MLA) \u2013 DeepSeek-V2.",
+  "name": "Multi-Head Latent Attention (MLA) \u2013 DeepSeek-V2 (Production-Hardened v2).",
   "file": "Codes/framework/attentions/mla_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Multi-Head Latent Attention (MLA) \u2013 DeepSeek-V2.  Paper: https://arxiv.org/abs/2405.04434 Hardened for multi-architecture production deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.",
+  "description": "Multi-Head Latent Attention (MLA) \u2013 DeepSeek-V2 (Production-Hardened v2).  Paper: https://arxiv.org/abs/2405.04434  Reference implementation for DeepSeek-V2, adapted for multi-architecture deployment across DistilBERT, RoBERTa, GPT-2, Qwen/LLaMA.  Note on encoder-only models:   MLA was designed for decoder inference with KV-cache compression. On   encoder-only models (BERT/RoBERTa/DistilBERT) it a",
   "classes": [
     "LoRALinear",
-    "MLAAttention"
+    "MLAAttention",
+    "_Cfg"
   ],
-  "methods_count": 14,
+  "methods_count": 25,
   "math_latex": "\\mathbf{c}_{KV} = W_{DKV} X \\in \\mathbb{R}^{B \\times N \\times d_c}",
   "components": [
     {

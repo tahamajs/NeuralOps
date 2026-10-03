@@ -6,7 +6,7 @@
   "category": "Mixture of Experts & Routing",
   "paradigm": "moe",
   "icon": "\ud83d\udd00",
-  "description": "AdaSplash Attention: Adaptive Splash Attention with \u03b1-Entmax Sparse Activations.  Combines localized sliding-window splash radius with sparse \u03b1-entmax adaptive thresholding and global token routing, ensuring robust numerical convergence and exact pretrained weight transfer.",
+  "description": "AdaSplash Attention: Adaptive Splash Attention with \u03b1-Entmax Sparse Activations.  Combines localized sliding-window splash radius with sparse \u03b1-entmax adaptive thresholding and global token routing, ensuring robust numerical convergence and exact pretrained weight transfer.  [OPTIMIZED FOR ZERO-SHOT BENCHMARKING]",
   "classes": [
     "AdaSplashLinear",
     "AdaSplashAttention"

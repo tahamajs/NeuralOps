@@ -1,17 +1,17 @@
 {
   "id": "leka_v1",
-  "name": "LEKAv1: Linear-time Efficient Kernel Attention (Production-Hardened).",
+  "name": "LEKAv1: Linear-time Efficient Kernel Attention (Corrected with Positive Fea",
   "file": "Codes/framework/attentions/leka_v1.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "LEKAv1: Linear-time Efficient Kernel Attention (Production-Hardened).  Mathematical Mechanism:     Approximates the Gaussian RBF kernel via Random Fourier Feature (RFF) mapping:     Supports:     - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)     - Trainable LoRA adapters with frozen base weights     - GQA with repeat_kv     - RoPE position embeddings     -",
+  "description": "LEKAv1: Linear-time Efficient Kernel Attention (Corrected with Positive Features).  Approximates the attention kernel via Positive Feature Mapping (ELU + 1) to guarantee strict positivity and stable gradients, avoiding NaN denominator collapse.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base weights (Facto",
   "classes": [
-    "LoRALinear",
+    "FactorizedLoRALinear",
     "LEKAV1Attention"
   ],
-  "methods_count": 13,
+  "methods_count": 23,
   "math_latex": "\\mathbf{O}_i = \\sum_{j=1}^N \\frac{\\exp\\left(\\frac{\\mathbf{q}_i \\mathbf{k}_j^\\top}{\\sqrt{d_k}}\\right)}{\\sum_{m=1}^N \\exp\\left(\\frac{\\mathbf{q}_i \\mathbf{k}_m^\\top}{\\sqrt{d_k}}\\right)} \\mathbf{v}_j",
   "components": [
     {

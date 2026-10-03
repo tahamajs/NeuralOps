@@ -1,17 +1,18 @@
 {
   "id": "progressive_token_pruning",
-  "name": "Progressive Token Pruning (PTP) \u2013 Production-Hardened.",
+  "name": "Progressive Token Pruning (PTP) \u2013 Production-Hardened (v2).",
   "file": "Codes/framework/attentions/progressive_token_pruning.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Progressive Token Pruning (PTP) \u2013 Production-Hardened.  Learnable Progressive Token Pruning module with guaranteed [CLS] retention, multi-head attention capabilities, and full multi-architecture support.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base weights - GQA with repeat_kv - RoPE position embeddings",
+  "description": "Progressive Token Pruning (PTP) \u2013 Production-Hardened (v2).  Learnable Progressive Token Pruning module with guaranteed [CLS] retention, multi-head attention capabilities, and full multi-architecture support.  \u26a0\ufe0f  IMPORTANT \u2014 WHAT PTP ACTUALLY DOES  \u26a0\ufe0f  PTP is a **compute optimization**, not a parameter compressor. It prunes tokens at *inference time* by keeping the top-k highest-scoring tokens pe",
   "classes": [
     "LoRALinear",
+    "SharedTokenScorer",
     "ProgressiveTokenPruning"
   ],
-  "methods_count": 10,
+  "methods_count": 15,
   "math_latex": "\\min_{\\text{rank}(\\widehat{W}) \\le r} \\|W - \\widehat{W}\\|_F^2 = \\sum_{i=r+1}^{D} \\sigma_i^2",
   "components": [
     {

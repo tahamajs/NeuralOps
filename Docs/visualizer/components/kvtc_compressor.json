@@ -6,14 +6,14 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "KVTC: KV Cache Transform Coding - PCA decorrelation + adaptive quantization       + entropy coding for compact KV cache storage.  Paper: \"KV Cache Transform Coding for Compact Storage in LLM Inference\"        Staniszewski & Lancucki, ICLR 2026. Registered as 'kvtc' and 'kvtc_quantizer'.",
+  "description": "KVTC: KV Cache Transform Coding - PCA decorrelation + adaptive quantization       + entropy coding for compact model weight / KV cache storage.  Paper: \"KV Cache Transform Coding for Compact Storage in LLM Inference\"        Staniszewski & Lancucki, ICLR 2026.  NOTE ON SCOPE: In this codebase, KVTC operates primarily as a static weight-matrix compressor (PCA low-rank projection + uniform integer qu",
   "classes": [
     "SimpleEntropyCoder",
     "KVTCStore",
     "KVTCQuantizedLoRALinear",
     "KVTCCompressor"
   ],
-  "methods_count": 15,
+  "methods_count": 20,
   "math_latex": "K_{\\text{comp}} = K V_K^\\top, \\; V_{\\text{comp}} = V V_V^\\top, \\quad V_K, V_V \\in \\mathbb{R}^{r \\times d_k}",
   "components": [
     {

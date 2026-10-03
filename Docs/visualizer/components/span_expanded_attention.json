@@ -11,7 +11,7 @@
     "LoRALinear",
     "SpanExpandedAttention"
   ],
-  "methods_count": 10,
+  "methods_count": 12,
   "math_latex": "A = \\operatorname{Softmax}\\left(\\frac{Q K^\\top}{\\sqrt{d}} + M\\right)",
   "components": [
     {

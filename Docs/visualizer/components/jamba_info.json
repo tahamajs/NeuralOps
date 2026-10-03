@@ -1,18 +1,18 @@
 {
   "id": "jamba_info",
-  "name": "Information-Bottlenecked Jamba Architecture with Dual Operational Modes (Pr",
+  "name": "Information-Bottlenecked Jamba Architecture with Dual Operational Modes (v2",
   "file": "Codes/framework/attentions/jamba_info.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Information-Bottlenecked Jamba Architecture with Dual Operational Modes (Production-Hardened).  Differential attention with concept-bottlenecked SSM branch.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base weights - GQA with repeat_kv - RoPE position embeddings - Causal masking for decoders - Nested encoder",
+  "description": "Information-Bottlenecked Jamba Architecture with Dual Operational Modes (v2 \u2014 Production-Hardened).  Differential attention with concept-bottlenecked SSM branch.",
   "classes": [
     "LoRALinear",
     "InfoMambaConceptBottleneck",
     "JambaInfoBlock"
   ],
-  "methods_count": 14,
+  "methods_count": 29,
   "math_latex": "\\mathbf{Y} = \\mathbf{W}_O \\left(\\mathbf{A}_{\\text{diff}} \\mathbf{V} + 0.1 \\cdot \\text{SimpleSSM}(\\text{MLP}_{\\text{down-up}}(\\mathbf{X}))\\right)",
   "components": [
     {

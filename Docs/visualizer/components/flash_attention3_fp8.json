@@ -6,7 +6,7 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "FlashAttention-3 FP8: Low-Precision 8-bit Float Transformer Attention.  Implements FlashAttention-3 utilizing FP8 (e4m3fn) precision format for Hopper Tensor Cores, with automatic fallback to hardware-accelerated SDPA.  Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA architectures: - Robust pretrained weight extraction (GPT-2 fused c_attn, RoBERTa nested, Qwen GQA, D",
+  "description": "FlashAttention-3 FP8: Low-Precision 8-bit Float Transformer Attention.  Implements FlashAttention-3 utilizing FP8 (e4m3fn) precision format for NVIDIA Hopper (SM 9.0+) Tensor Cores with per-tensor dynamic scaling and de-scaling, with automatic fallback to hardware-accelerated SDPA on pre-Hopper architectures (such as Ada Lovelace SM 8.9 or Ampere SM 8.0) and CPU.  NOTE ON METHODOLOGY: FlashAttenti",
   "classes": [
     "LoRALinear",
     "FlashAttention3FP8",

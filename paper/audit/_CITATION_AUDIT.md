@@ -9,8 +9,8 @@ This report verifies that all citations in the A3 paper correspond to real, publ
 
 ## 1. Citation Integrity Check
 
-- **Primary BibTeX File:** `paper/PerModulePaper/a3/iclr2027_conference.bib`
-- **Embedded References:** `paper/PerModulePaper/a3/13_references.tex`
+- **Primary BibTeX File:** `paper/build_paper/iclr2027_conference.bib`
+- **Embedded References:** `paper/build_paper/13_references.tex`
 - **Verification against Global Audit:** All citations match entries verified in `paper/REFERENCES.bib` (164 verified published papers).
 - **Phantom Artifacts Audit:**
   - `author2024figure` — PURGED (0 occurrences)

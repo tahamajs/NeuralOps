@@ -1,17 +1,17 @@
 {
   "id": "modegpt_compressor",
-  "name": "MoDeGPT: Modular Decomposition of Transformer Blocks.",
+  "name": "MoDeGPT: Modular Decomposition of Transformer Blocks \u2014 Production-Hardened ",
   "file": "Codes/framework/compression_engine/modegpt_compressor.py",
   "type": "Compression Engine",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "MoDeGPT: Modular Decomposition of Transformer Blocks. Decomposes pairs of linear projections (e.g. Q & K, Up & Gate) jointly via shared low-rank bases. Registered as 'modegpt'.",
+  "description": "MoDeGPT: Modular Decomposition of Transformer Blocks \u2014 Production-Hardened (v2).  Decomposes pairs of linear projections sharing the same input dimension (e.g., Q & K, Q & V, Gate & Up) into shared low-rank bases:      W1 \u2248 U1 @ V_shared      U1 \u2208 R^{out1 \u00d7 r}, V_shared \u2208 R^{r \u00d7 in}     W2 \u2248 U2 @ V_shared      U2 \u2208 R^{out2 \u00d7 r}  The shared factor V_shared is stored ONCE per pair. This yields real",
   "classes": [
-    "MoDeGPTLoRALinear",
+    "MoDeGPTLowRankLinear",
     "MoDeGPTCompressor"
   ],
-  "methods_count": 12,
+  "methods_count": 16,
   "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
   "components": [
     {

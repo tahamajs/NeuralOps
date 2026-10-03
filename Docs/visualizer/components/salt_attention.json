@@ -11,7 +11,7 @@
     "SALTLinear",
     "SALTAttention"
   ],
-  "methods_count": 15,
+  "methods_count": 23,
   "math_latex": "W = U_{:, :r} \\operatorname{diag}(\\Sigma_{1:r} \\odot \\gamma) V_{1:r, :}^\\top + A B",
   "components": [
     {

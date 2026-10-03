@@ -1,17 +1,17 @@
 {
   "id": "optimized_hybrid_attention",
-  "name": "Optimized Hybrid Attention (OHA) \u2013 Production-Hardened.",
+  "name": "Optimized Hybrid Attention (OHA) \u2014 Production-Hardened (v2).",
   "file": "Codes/framework/attentions/optimized_hybrid_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Optimized Hybrid Attention (OHA) \u2013 Production-Hardened.  Fuses localized sliding-window self-attention with sequence-compressed low-rank global attention via dynamic head-wise gated modulation and exact pretrained weight transfer.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base weights - GQA with repeat_kv",
+  "description": "Optimized Hybrid Attention (OHA) \u2014 Production-Hardened (v2).  Fuses localized sliding-window self-attention with sequence-compressed low-rank global attention via dynamic head-wise gated modulation and exact pretrained weight transfer.",
   "classes": [
     "LoRALinear",
     "OptimizedHybridAttention"
   ],
-  "methods_count": 11,
+  "methods_count": 16,
   "math_latex": "Q = X W_Q, \\quad K = X W_K, \\quad V = X W_V \\in \\mathbb{R}^{B \\times N \\times H \\cdot d_h}",
   "components": [
     {

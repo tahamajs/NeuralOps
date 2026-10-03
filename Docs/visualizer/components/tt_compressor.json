@@ -1,16 +1,18 @@
 {
   "id": "tt_compressor",
-  "name": "Tensor Train Compressor: replaces eligible nn.Linear and Conv1D layers with",
+  "name": "Tensor Train Compressor (best-effort, production-guarded).",
   "file": "Codes/framework/compression_engine/tt_compressor.py",
   "type": "Compression Engine",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Tensor Train Compressor: replaces eligible nn.Linear and Conv1D layers with TTLinearLayer. Registered in COMPRESSOR_REGISTRY as \"tt\".  NOTE (DEPRECATED):     Tensor-Train compression on 2D linear matrices is deprecated in this repository     and removed from the active benchmark queue (run_all_benchmarks_queue.py).     Due to mode scrambling and flattened singular value decay compared to 2D SVD, T",
+  "description": "Tensor Train Compressor (best-effort, production-guarded).  Registered as 'tt', 'tt_linear', 'tt_compressor', 'tt_linear_compressor',               'tt_factory', 'tt_compressor_factory', 'tt_linear_factory'.  \u26a0\ufe0f  FUNDAMENTAL LIMITATION \u26a0\ufe0f  TT decomposition assumes a matrix W reshaped as a multi-dimensional tensor (q_0, q_1, ..., p_0, p_1, ...) admits a low-rank TT factorization. Pretrained transfo",
   "classes": [
+    "SVDLinearLayer",
+    "TTLinearLayer",
     "TTCompressor"
   ],
-  "methods_count": 6,
+  "methods_count": 20,
   "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
   "components": [
     {

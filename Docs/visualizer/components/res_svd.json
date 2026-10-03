@@ -14,7 +14,7 @@
     "ResSVDCompressorRegistered",
     "SpectralResidualLoRARegistered"
   ],
-  "methods_count": 15,
+  "methods_count": 14,
   "math_latex": "A = \\\\sqrt{\\\\Sigma_{\\\\text{tail}}} V_{\\\\text{tail}}^\\\\top, \\\\quad B = U_{\\\\text{tail}} \\\\sqrt{\\\\Sigma_{\\\\text{tail}}}",
   "components": [
     {

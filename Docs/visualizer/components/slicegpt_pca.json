@@ -6,12 +6,12 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "SliceGPT PCA Compressor: Principal Component Analysis based Dimensionality Slicing. Registered in COMPRESSOR_REGISTRY as 'slicegpt_pca' and 'slicegpt_pca_factory'.  Mathematical Formulation: 1. Activation Sample Matrix $X \\in \\mathbb{R}^{N        imes d_{in}}$ 2. Empirical Covariance: $\\Sigma = \frac{1}{N - 1} (X - \\mu)^    op (X - \\mu)$ 3. Eigendecomposition: $\\Sigma = V \\Lambda V^   op$ 4. Retain",
+  "description": "SliceGPT PCA Compressor: Principal Component Analysis based Dimensionality Slicing. Registered in COMPRESSOR_REGISTRY as 'slicegpt_pca' and 'slicegpt_pca_factory'.  Mathematical Formulation: 1. Activation Sample Matrix X \u2208 R^{N \u00d7 d_in} 2. Empirical Covariance: \u03a3 = (1/(N-1)) (X - \u03bc)^T (X - \u03bc) 3. Eigendecomposition: \u03a3 = V \u039b V^T 4. Retain principal coordinates covering (1 - sparsity) cumulative varia",
   "classes": [
     "SliceGPTPCALoRALinear",
     "SliceGPTPCACompressor"
   ],
-  "methods_count": 12,
+  "methods_count": 13,
   "math_latex": "\\Sigma = \\frac{1}{N - 1} X_c^\\top X_c + \\epsilon I_{d_{\\text{in}}}",
   "components": [
     {

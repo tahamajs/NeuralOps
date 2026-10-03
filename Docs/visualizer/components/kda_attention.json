@@ -1,12 +1,12 @@
 {
   "id": "kda_attention",
-  "name": "Kernelized Decay Attention (KDA) / Recurrent Linear Attention (Hardened).",
+  "name": "Kernelized Decay Attention (KDA) / Recurrent Linear Attention (Corrected).",
   "file": "Codes/framework/attentions/kda_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Kernelized Decay Attention (KDA) / Recurrent Linear Attention (Hardened).  Implements multi-head linear recurrence with learned exponential decay gating, spherical normalization, denominator tracking, and pretrained weight transfer.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base weights - GQA with repeat_",
+  "description": "Kernelized Decay Attention (KDA) / Recurrent Linear Attention (Corrected).  Implements multi-head linear recurrence with learned exponential decay gating, spherical normalization, denominator tracking, and pretrained weight transfer.",
   "classes": [
     "LoRALinear",
     "KDAAttention"
