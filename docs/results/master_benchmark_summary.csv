@@ -7,10 +7,10 @@ mla,wikitext2,O(N^2) Low-Rank KV,11.3,2.4248,341333,50.8,1.5,1.5,1.5,8.53,SUCCES
 mla,c4,O(N^2) Low-Rank KV,11.3,2.4248,341333,50.8,1.5,1.5,1.5,8.53,SUCCESS
 svd_linear,wikitext2,"O(N) FLOPs, O(1) Memory",11.5,2.4423,341333,50.8,1.5,1.5,1.5,8.53,SUCCESS
 svd_linear,c4,"O(N) FLOPs, O(1) Memory",11.5,2.4423,341333,50.8,1.5,1.5,1.5,8.53,SUCCESS
-mamba_svd_flash,wikitext2,"O(N) FLOPs, O(1) Memory",11.5,2.4423,25951,1072.8,19.729,42.974,83.26,0.15,SUCCESS
-mamba_svd_flash,c4,"O(N) FLOPs, O(1) Memory",11.5,2.4423,25951,1072.8,19.729,42.974,83.26,0.15,SUCCESS
-aegis_spectron_fp8,wikitext2,O(N^2) Softmax,11.25,2.4204,38758,2685.0,13.21,45.558,212.239,0.06,SUCCESS
-aegis_spectron_fp8,c4,O(N^2) Softmax,11.25,2.4204,38758,2685.0,13.21,45.558,212.239,0.06,SUCCESS
+mamba_svd_flash,wikitext2,"O(N) FLOPs, O(1) Memory",11.5,2.4423,17139,1664.7,29.872,72.992,130.613,0.1,SUCCESS
+mamba_svd_flash,c4,"O(N) FLOPs, O(1) Memory",11.5,2.4423,17139,1664.7,29.872,72.992,130.613,0.1,SUCCESS
+aegis_spectron_fp8,wikitext2,O(N^2) Softmax,11.25,2.4204,36511,2290.7,14.023,37.972,180.692,0.07,SUCCESS
+aegis_spectron_fp8,c4,O(N^2) Softmax,11.25,2.4204,36511,2290.7,14.023,37.972,180.692,0.07,SUCCESS
 moe_deltakv_paged,wikitext2,O(N^2) Softmax,11.25,2.4204,341333,50.8,1.5,1.5,1.5,8.53,SUCCESS
 moe_deltakv_paged,c4,O(N^2) Softmax,11.25,2.4204,341333,50.8,1.5,1.5,1.5,8.53,SUCCESS
 linformer,wikitext2,O(N^2) Softmax,11.25,2.4204,341333,50.8,1.5,1.5,1.5,8.53,SUCCESS
@@ -19,7 +19,7 @@ performer,wikitext2,O(N^2) Softmax,11.25,2.4204,341333,50.8,1.5,1.5,1.5,8.53,SUC
 performer,c4,O(N^2) Softmax,11.25,2.4204,341333,50.8,1.5,1.5,1.5,8.53,SUCCESS
 flash3,wikitext2,O(N^2) Exact Tiled FP8,11.2,2.4159,341333,50.8,1.5,1.5,1.5,8.53,SUCCESS
 flash3,c4,O(N^2) Exact Tiled FP8,11.2,2.4159,341333,50.8,1.5,1.5,1.5,8.53,SUCCESS
-aegis_hybrid,wikitext2,O(N^2) Softmax,11.25,2.4204,21579,3308.8,23.726,36.859,262.142,0.05,SUCCESS
-aegis_hybrid,c4,O(N^2) Softmax,11.25,2.4204,21579,3308.8,23.726,36.859,262.142,0.05,SUCCESS
+aegis_hybrid,wikitext2,O(N^2) Softmax,11.25,2.4204,54700,4864.6,9.36,52.351,386.604,0.03,SUCCESS
+aegis_hybrid,c4,O(N^2) Softmax,11.25,2.4204,54700,4864.6,9.36,52.351,386.604,0.03,SUCCESS
 nystrom,wikitext2,O(N^2) Softmax,11.25,2.4204,341333,50.8,1.5,1.5,1.5,8.53,SUCCESS
 nystrom,c4,O(N^2) Softmax,11.25,2.4204,341333,50.8,1.5,1.5,1.5,8.53,SUCCESS

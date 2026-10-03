@@ -50,6 +50,31 @@
   ],
   "reports": [
     {
+      "id": "RESULTS_INDEX.md",
+      "title": "\ud83d\udcda Complete Results Index",
+      "path": "reports/RESULTS_INDEX.md"
+    },
+    {
+      "id": "PHASE1_EFFICIENCY_SWEEP_AUDIT_REPORT.md",
+      "title": "\u26a1 Phase 1 Efficiency Sweep Audit",
+      "path": "reports/PHASE1_EFFICIENCY_SWEEP_AUDIT_REPORT.md"
+    },
+    {
+      "id": "KD_EXPERIMENT_SUMMARY.md",
+      "title": "\ud83e\udde0 Knowledge Distillation Experiment Summary",
+      "path": "reports/KD_EXPERIMENT_SUMMARY.md"
+    },
+    {
+      "id": "FULL_BENCHMARK_ANALYSIS_REPORT.md",
+      "title": "\ud83d\udcca Full Benchmark Analysis Report",
+      "path": "reports/FULL_BENCHMARK_ANALYSIS_REPORT.md"
+    },
+    {
+      "id": "MASTER_PROJECT_RESULTS.md",
+      "title": "\ud83c\udfc6 Master Project Results",
+      "path": "reports/MASTER_PROJECT_RESULTS.md"
+    },
+    {
       "id": "MASTER_EMPIRICAL_BENCHMARK_REPORT.md",
       "title": "\ud83d\udcca SVD Linear Attention & Compression Framework: Master Empirical Benchmark Report",
       "path": "reports/MASTER_EMPIRICAL_BENCHMARK_REPORT.md"
