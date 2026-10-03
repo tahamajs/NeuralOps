@@ -1,686 +1,0 @@
-2026-08-20 22:32:54 [INFO   ] ============================================================
-2026-08-20 22:32:54 [INFO   ]   STARTING MULTI-PROCESS TRIPLE-WORKER GPU ORCHESTRATION  
-2026-08-20 22:32:54 [INFO   ] ============================================================
-2026-08-20 22:32:54 [INFO   ] Trajectory Matrix: 15 Models x 8 Tasks = 120 Runs
-2026-08-20 22:32:54 [INFO   ] Targeting 90-100% GPU Compute Utilization via 3 Isolated OS Processes.
-2026-08-20 22:33:23 [INFO   ] Registered trainer: custom_loop -> CustomLoopTrainer
-2026-08-20 22:33:23 [INFO   ] Registered trainer: custom_loop -> CustomLoopTrainer
-2026-08-20 22:33:23 [INFO   ] Registered trainer: hf -> HuggingFaceTrainer
-2026-08-20 22:33:23 [INFO   ] Registered trainer: hf -> HuggingFaceTrainer
-2026-08-20 22:33:23 [INFO   ] Registered trainer: custom_loop -> CustomLoopTrainer
-2026-08-20 22:33:23 [INFO   ] Registered trainer: hf -> HuggingFaceTrainer
-2026-08-20 22:33:27 [INFO   ] Process Worker-1 (PID 47842) started on CUDA.
-2026-08-20 22:33:27 [INFO   ] [Worker-1] [1/120] >> Launching: attn=svd_linear | task=sst2 | seed=42
-2026-08-20 22:33:27 [INFO   ] Process Worker-3 (PID 47891) started on CUDA.
-2026-08-20 22:33:27 [INFO   ] [Worker-3] [2/120] >> Launching: attn=svd | task=sst2 | seed=42
-2026-08-20 22:33:27 [INFO   ] Process Worker-2 (PID 47873) started on CUDA.
-2026-08-20 22:33:27 [INFO   ] [Worker-2] [3/120] >> Launching: attn=full | task=sst2 | seed=42
-2026-08-20 22:33:28 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:33:28 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:33:28 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:33:28 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:33:28 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:33:28 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:33:29 [INFO   ] Loading data for task: sst2
-2026-08-20 22:33:29 [INFO   ] Loading data for task: sst2
-2026-08-20 22:33:29 [INFO   ] Loading data for task: sst2
-Map:   0%|          | 0/67349 [00:00<?, ? examples/s]Map:   0%|          | 0/67349 [00:00<?, ? examples/s]Map:   0%|          | 0/67349 [00:00<?, ? examples/s]Map:   1%|▏         | 1000/67349 [00:00<00:30, 2206.43 examples/s]Map:   1%|▏         | 1000/67349 [00:00<00:34, 1897.44 examples/s]Map:   1%|▏         | 1000/67349 [00:00<00:29, 2278.05 examples/s]Map:   3%|▎         | 2000/67349 [00:00<00:19, 3415.34 examples/s]Map:   3%|▎         | 2000/67349 [00:00<00:23, 2812.07 examples/s]Map:   3%|▎         | 2000/67349 [00:00<00:23, 2799.67 examples/s]Map:   4%|▍         | 3000/67349 [00:00<00:16, 4004.88 examples/s]Map:   4%|▍         | 3000/67349 [00:00<00:17, 3708.41 examples/s]Map:   4%|▍         | 3000/67349 [00:01<00:21, 3009.21 examples/s]Map:   6%|▌         | 4000/67349 [00:01<00:18, 3491.51 examples/s]Map:   6%|▌         | 4000/67349 [00:01<00:23, 2750.70 examples/s]Map:   7%|▋         | 5000/67349 [00:01<00:20, 3100.95 examples/s]Map:   7%|▋         | 5000/67349 [00:01<00:19, 3189.10 examples/s]Map:   6%|▌         | 4000/67349 [00:01<00:28, 2211.73 examples/s]Map:   9%|▉         | 6000/67349 [00:01<00:19, 3137.38 examples/s]Map:   7%|▋         | 5000/67349 [00:01<00:24, 2547.59 examples/s]Map:   9%|▉         | 6000/67349 [00:02<00:21, 2877.07 examples/s]Map:  10%|█         | 7000/67349 [00:02<00:17, 3470.84 examples/s]Map:  10%|█         | 7000/67349 [00:02<00:19, 3166.81 examples/s]Map:  12%|█▏        | 8000/67349 [00:02<00:13, 4257.03 examples/s]Map:   9%|▉         | 6000/67349 [00:02<00:23, 2658.75 examples/s]Map:  12%|█▏        | 8000/67349 [00:02<00:23, 2494.82 examples/s]Map:  10%|█         | 7000/67349 [00:03<00:29, 2027.44 examples/s]Map:  12%|█▏        | 8000/67349 [00:03<00:24, 2402.10 examples/s]Map:  13%|█▎        | 9000/67349 [00:03<00:31, 1824.93 examples/s]Map:  13%|█▎        | 9000/67349 [00:03<00:30, 1899.00 examples/s]Map:  15%|█▍        | 10000/67349 [00:03<00:27, 2051.35 examples/s]Map:  13%|█▎        | 9000/67349 [00:03<00:28, 2012.66 examples/s]Map:  15%|█▍        | 10000/67349 [00:04<00:29, 1944.63 examples/s]Map:  16%|█▋        | 11000/67349 [00:04<00:23, 2381.75 examples/s]Map:  15%|█▍        | 10000/67349 [00:04<00:24, 2308.50 examples/s]Map:  16%|█▋        | 11000/67349 [00:04<00:24, 2300.42 examples/s]Map:  18%|█▊        | 12000/67349 [00:04<00:22, 2474.79 examples/s]Map:  16%|█▋        | 11000/67349 [00:04<00:23, 2415.94 examples/s]Map:  18%|█▊        | 12000/67349 [00:04<00:20, 2635.77 examples/s]Map:  18%|█▊        | 12000/67349 [00:04<00:18, 2935.33 examples/s]Map:  19%|█▉        | 13000/67349 [00:04<00:20, 2687.75 examples/s]Map:  19%|█▉        | 13000/67349 [00:04<00:18, 2897.55 examples/s]Map:  19%|█▉        | 13000/67349 [00:05<00:16, 3219.10 examples/s]Map:  21%|██        | 14000/67349 [00:05<00:17, 3099.49 examples/s]Map:  21%|██        | 14000/67349 [00:05<00:16, 3151.29 examples/s]Map:  21%|██        | 14000/67349 [00:05<00:13, 3874.93 examples/s]Map:  22%|██▏       | 15000/67349 [00:05<00:15, 3451.40 examples/s]Map:  22%|██▏       | 15000/67349 [00:05<00:15, 3424.13 examples/s]Map:  24%|██▍       | 16000/67349 [00:05<00:12, 4014.16 examples/s]Map:  22%|██▏       | 15000/67349 [00:05<00:14, 3561.34 examples/s]Map:  24%|██▍       | 16000/67349 [00:05<00:13, 3671.76 examples/s]Map:  25%|██▌       | 17000/67349 [00:05<00:12, 4069.36 examples/s]Map:  24%|██▍       | 16000/67349 [00:05<00:12, 4054.51 examples/s]Map:  25%|██▌       | 17000/67349 [00:05<00:13, 3651.67 examples/s]Map:  25%|██▌       | 17000/67349 [00:05<00:13, 3814.82 examples/s]Map:  27%|██▋       | 18000/67349 [00:06<00:14, 3352.72 examples/s]Map:  28%|██▊       | 19000/67349 [00:06<00:12, 4016.70 examples/s]Map:  27%|██▋       | 18000/67349 [00:06<00:12, 3976.41 examples/s]Map:  27%|██▋       | 18000/67349 [00:06<00:15, 3232.04 examples/s]Map:  30%|██▉       | 20000/67349 [00:06<00:09, 4857.77 examples/s]Map:  28%|██▊       | 19000/67349 [00:06<00:12, 3935.77 examples/s]Map:  28%|██▊       | 19000/67349 [00:06<00:13, 3576.10 examples/s]Map:  30%|██▉       | 20000/67349 [00:06<00:09, 4743.29 examples/s]Map:  31%|███       | 21000/67349 [00:06<00:11, 4203.87 examples/s]Map:  33%|███▎      | 22000/67349 [00:06<00:08, 5080.87 examples/s]Map:  30%|██▉       | 20000/67349 [00:06<00:12, 3720.39 examples/s]Map:  31%|███       | 21000/67349 [00:06<00:09, 4778.50 examples/s]Map:  31%|███       | 21000/67349 [00:06<00:10, 4347.17 examples/s]Map:  34%|███▍      | 23000/67349 [00:06<00:08, 5269.15 examples/s]Map:  33%|███▎      | 22000/67349 [00:06<00:08, 5219.98 examples/s]Map:  36%|███▌      | 24000/67349 [00:07<00:07, 5897.37 examples/s]Map:  33%|███▎      | 22000/67349 [00:06<00:09, 5012.94 examples/s]Map:  36%|███▌      | 24000/67349 [00:07<00:06, 6996.88 examples/s]Map:  39%|███▊      | 26000/67349 [00:07<00:05, 7132.69 examples/s]Map:  37%|███▋      | 25000/67349 [00:07<00:05, 7181.24 examples/s]Map:  36%|███▌      | 24000/67349 [00:07<00:07, 6074.06 examples/s]Map:  39%|███▊      | 26000/67349 [00:07<00:05, 7441.35 examples/s]Map:  40%|████      | 27000/67349 [00:07<00:05, 7146.96 examples/s]Map:  37%|███▋      | 25000/67349 [00:07<00:08, 5152.42 examples/s]Map:  43%|████▎     | 29000/67349 [00:07<00:04, 8292.45 examples/s]Map:  42%|████▏     | 28000/67349 [00:07<00:05, 7757.35 examples/s]Map:  40%|████      | 27000/67349 [00:07<00:07, 5753.41 examples/s]Map:  46%|████▌     | 31000/67349 [00:07<00:05, 7152.82 examples/s]Map:  45%|████▍     | 30000/67349 [00:07<00:05, 6445.09 examples/s]Map:  42%|████▏     | 28000/67349 [00:07<00:06, 5917.83 examples/s]Map:  48%|████▊     | 32000/67349 [00:08<00:05, 6770.37 examples/s]Map:  43%|████▎     | 29000/67349 [00:08<00:06, 6043.53 examples/s]Map:  46%|████▌     | 31000/67349 [00:08<00:06, 5654.88 examples/s]Map:  45%|████▍     | 30000/67349 [00:08<00:05, 6521.27 examples/s]Map:  48%|████▊     | 32000/67349 [00:08<00:04, 8018.09 examples/s]Map:  49%|████▉     | 33000/67349 [00:08<00:07, 4397.93 examples/s]Map:  50%|█████     | 34000/67349 [00:08<00:07, 4571.77 examples/s]Map:  49%|████▉     | 33000/67349 [00:08<00:07, 4431.81 examples/s]Map:  52%|█████▏    | 35000/67349 [00:08<00:06, 5145.26 examples/s]Map:  49%|████▉     | 33000/67349 [00:08<00:07, 4769.26 examples/s]Map:  52%|█████▏    | 35000/67349 [00:09<00:05, 5403.56 examples/s]Map:  52%|█████▏    | 35000/67349 [00:09<00:05, 6015.67 examples/s]Map:  55%|█████▍    | 37000/67349 [00:09<00:05, 5431.92 examples/s]Map:  53%|█████▎    | 36000/67349 [00:09<00:05, 5430.34 examples/s]Map:  53%|█████▎    | 36000/67349 [00:09<00:06, 4566.65 examples/s]Map:  56%|█████▋    | 38000/67349 [00:09<00:06, 4421.36 examples/s]Map:  55%|█████▍    | 37000/67349 [00:09<00:06, 4667.27 examples/s]Map:  55%|█████▍    | 37000/67349 [00:09<00:07, 3992.02 examples/s]Map:  58%|█████▊    | 39000/67349 [00:09<00:06, 4559.65 examples/s]Map:  56%|█████▋    | 38000/67349 [00:09<00:06, 4528.51 examples/s]Map:  56%|█████▋    | 38000/67349 [00:10<00:08, 3642.92 examples/s]Map:  58%|█████▊    | 39000/67349 [00:10<00:06, 4117.03 examples/s]Map:  58%|█████▊    | 39000/67349 [00:10<00:07, 3802.09 examples/s]Map:  59%|█████▉    | 40000/67349 [00:14<00:35, 767.11 examples/s] Map:  59%|█████▉    | 40000/67349 [00:14<00:33, 822.57 examples/s] Map:  61%|██████    | 41000/67349 [00:14<00:24, 1071.99 examples/s]Map:  61%|██████    | 41000/67349 [00:14<00:27, 964.98 examples/s]Map:  59%|█████▉    | 40000/67349 [00:14<00:36, 742.85 examples/s] Map:  64%|██████▍   | 43000/67349 [00:14<00:13, 1787.40 examples/s]Map:  62%|██████▏   | 42000/67349 [00:14<00:19, 1286.90 examples/s]Map:  61%|██████    | 41000/67349 [00:14<00:26, 1004.69 examples/s]Map:  64%|██████▍   | 43000/67349 [00:14<00:14, 1679.66 examples/s]Map:  64%|██████▍   | 43000/67349 [00:14<00:14, 1695.46 examples/s]Map:  67%|██████▋   | 45000/67349 [00:14<00:08, 2556.82 examples/s]Map:  65%|██████▌   | 44000/67349 [00:14<00:11, 2023.97 examples/s]Map:  67%|██████▋   | 45000/67349 [00:15<00:08, 2606.19 examples/s]Map:  68%|██████▊   | 46000/67349 [00:14<00:07, 2901.59 examples/s]Map:  70%|██████▉   | 47000/67349 [00:15<00:05, 3821.19 examples/s]Map:  68%|██████▊   | 46000/67349 [00:15<00:07, 2997.26 examples/s]Map:  71%|███████▏  | 48000/67349 [00:15<00:04, 4087.21 examples/s]Map:  70%|██████▉   | 47000/67349 [00:15<00:05, 3535.11 examples/s]Map:  73%|███████▎  | 49000/67349 [00:15<00:03, 5122.33 examples/s]Map:  74%|███████▍  | 50000/67349 [00:15<00:03, 5582.66 examples/s]Map:  74%|███████▍  | 50000/67349 [00:15<00:03, 4804.41 examples/s]Map:  77%|███████▋  | 52000/67349 [00:15<00:02, 6190.24 examples/s]Map:  73%|███████▎  | 49000/67349 [00:15<00:04, 4392.53 examples/s]Map:  76%|███████▌  | 51000/67349 [00:15<00:03, 5410.96 examples/s]Map:  80%|████████  | 54000/67349 [00:15<00:01, 7264.69 examples/s]Map:  76%|███████▌  | 51000/67349 [00:15<00:02, 5646.95 examples/s]Map:  79%|███████▊  | 53000/67349 [00:15<00:02, 6973.33 examples/s]Map:  83%|████████▎ | 56000/67349 [00:15<00:01, 8331.04 examples/s]Map:  79%|███████▊  | 53000/67349 [00:15<00:02, 6996.25 examples/s]Map:  82%|████████▏ | 55000/67349 [00:15<00:01, 8300.42 examples/s]Map:  82%|████████▏ | 55000/67349 [00:15<00:01, 8330.12 examples/s]Map:  86%|████████▌ | 58000/67349 [00:16<00:00, 9449.33 examples/s]Map:  85%|████████▍ | 57000/67349 [00:16<00:01, 9385.19 examples/s]Map:  89%|████████▉ | 60000/67349 [00:16<00:00, 10243.17 examples/s]Map:  85%|████████▍ | 57000/67349 [00:16<00:01, 8977.66 examples/s]Map:  88%|████████▊ | 59000/67349 [00:16<00:00, 10155.87 examples/s]Map:  92%|█████████▏| 62000/67349 [00:16<00:00, 10663.42 examples/s]Map:  88%|████████▊ | 59000/67349 [00:16<00:00, 10120.96 examples/s]Map:  91%|█████████ | 61000/67349 [00:16<00:00, 10927.51 examples/s]Map:  91%|█████████ | 61000/67349 [00:16<00:00, 10424.15 examples/s]Map:  95%|█████████▌| 64000/67349 [00:16<00:00, 10403.95 examples/s]Map:  94%|█████████▎| 63000/67349 [00:16<00:00, 8790.67 examples/s] Map:  94%|█████████▎| 63000/67349 [00:16<00:00, 8874.25 examples/s] Map:  98%|█████████▊| 66000/67349 [00:16<00:00, 8961.40 examples/s] Map:  97%|█████████▋| 65000/67349 [00:16<00:00, 9464.34 examples/s]Map: 100%|██████████| 67349/67349 [00:16<00:00, 9027.34 examples/s]Map:  97%|█████████▋| 65000/67349 [00:16<00:00, 9431.54 examples/s]Map: 100%|██████████| 67349/67349 [00:17<00:00, 3938.34 examples/s]
-Map:  99%|█████████▉| 67000/67349 [00:17<00:00, 8651.78 examples/s]Map:  99%|█████████▉| 67000/67349 [00:17<00:00, 9163.83 examples/s]Map: 100%|██████████| 67349/67349 [00:17<00:00, 3882.57 examples/s]
-Map: 100%|██████████| 67349/67349 [00:17<00:00, 3896.48 examples/s]
-Map:   0%|          | 0/872 [00:00<?, ? examples/s]Map: 100%|██████████| 872/872 [00:00<00:00, 7201.32 examples/s]Map: 100%|██████████| 872/872 [00:00<00:00, 6816.02 examples/s]
-Map:   0%|          | 0/1821 [00:00<?, ? examples/s]Map:   0%|          | 0/1821 [00:00<?, ? examples/s]Map:  55%|█████▍    | 1000/1821 [00:00<00:00, 4422.68 examples/s]Map:  55%|█████▍    | 1000/1821 [00:00<00:00, 7582.72 examples/s]Map: 100%|██████████| 1821/1821 [00:00<00:00, 5909.77 examples/s]
-2026-08-20 22:33:50 [INFO   ] Train: 67349 | Val: 872
-2026-08-20 22:33:50 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-Map: 100%|██████████| 1821/1821 [00:00<00:00, 9272.94 examples/s]
-2026-08-20 22:33:50 [INFO   ] Train: 67349 | Val: 872
-2026-08-20 22:33:50 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-2026-08-20 22:33:50 [INFO   ] Train: 67349 | Val: 872
-2026-08-20 22:33:50 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 35359.16it/s]
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 16561.91it/s]
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 12135.95it/s]
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_transform.bias    | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_layer_norm.weight | UNEXPECTED | 
-pre_classifier.bias     | MISSING    | 
-classifier.bias         | MISSING    | 
-pre_classifier.weight   | MISSING    | 
-classifier.weight       | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_transform.bias    | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-vocab_layer_norm.weight | UNEXPECTED | 
-classifier.weight       | MISSING    | 
-pre_classifier.weight   | MISSING    | 
-classifier.bias         | MISSING    | 
-pre_classifier.bias     | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:33:50 [INFO   ] Replacing attention layers with: svd_linear
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_layer_norm.weight | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_transform.bias    | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-pre_classifier.weight   | MISSING    | 
-classifier.weight       | MISSING    | 
-pre_classifier.bias     | MISSING    | 
-classifier.bias         | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:33:50 [INFO   ] Replacing attention layers with: svd
-2026-08-20 22:33:53 [INFO   ] Trainable parameters: 66,955,010
-Replaced distilbert.transformer.layer.0.attention with svd
-Replaced distilbert.transformer.layer.1.attention with svd
-Replaced distilbert.transformer.layer.2.attention with svd
-Replaced distilbert.transformer.layer.3.attention with svd
-Replaced distilbert.transformer.layer.4.attention with svd
-Replaced distilbert.transformer.layer.5.attention with svd
-Replaced 6 attention layers.
-2026-08-20 22:33:53 [INFO   ] Trainable parameters: 66,955,010
-2026-08-20 22:33:53 [INFO   ] [Worker-3] [2/120] NOTICE: attn=svd | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 26.1s
-2026-08-20 22:33:53 [INFO   ] [Worker-2] [3/120] NOTICE: attn=full | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 26.1s
-fatal: Unable to create '/Users/tahamajs/Documents/uni/Project/.git/index.lock': File exists.
-
-Another git process seems to be running in this repository, e.g.
-an editor opened by 'git commit'. Please make sure all processes
-are terminated then try again. If it still fails, a git process
-may have crashed in this repository earlier:
-remove the file manually to continue.
-2026-08-20 22:33:55 [WARNING] Git push error: Command '['git', 'add', '-f', '/Users/tahamajs/Documents/uni/Project/Codes/framework/experiments', '/Users/tahamajs/Documents/uni/Project/trajectory_master.log']' returned non-zero exit status 128.
-2026-08-20 22:33:56 [INFO   ] [Worker-2] [4/120] >> Launching: attn=lora_attn | task=sst2 | seed=42
-2026-08-20 22:33:56 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:33:56 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:33:57 [INFO   ] Loading data for task: sst2
-2026-08-20 22:33:58 [INFO   ] Train: 67349 | Val: 872
-2026-08-20 22:33:58 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 40454.32it/s]
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_transform.bias    | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_layer_norm.weight | UNEXPECTED | 
-pre_classifier.bias     | MISSING    | 
-classifier.bias         | MISSING    | 
-pre_classifier.weight   | MISSING    | 
-classifier.weight       | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:33:59 [INFO   ] Replacing attention layers with: lora_attn
-2026-08-20 22:33:59 [INFO   ] [Worker-2] [4/120] NOTICE: attn=lora_attn | task=sst2 | Error: pretrained_attn required for zero-shot init | Time: 2.4s
-Replaced distilbert.transformer.layer.0.attention with svd_linear
-Replaced distilbert.transformer.layer.1.attention with svd_linear
-Replaced distilbert.transformer.layer.2.attention with svd_linear
-Replaced distilbert.transformer.layer.3.attention with svd_linear
-Replaced distilbert.transformer.layer.4.attention with svd_linear
-Replaced distilbert.transformer.layer.5.attention with svd_linear
-Replaced 6 attention layers.
-2026-08-20 22:34:02 [INFO   ] Trainable parameters: 59,932,490
-2026-08-20 22:34:02 [INFO   ] [Worker-1] [1/120] NOTICE: attn=svd_linear | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 35.4s
-2026-08-20 22:34:09 [INFO   ] [Worker-3] [5/120] >> Launching: attn=performer | task=sst2 | seed=42
-2026-08-20 22:34:09 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:34:09 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:34:09 [INFO   ] Loading data for task: sst2
-2026-08-20 22:34:13 [INFO   ] Train: 67349 | Val: 872
-2026-08-20 22:34:13 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-2026-08-20 22:34:18 [INFO   ] [Worker-2] [6/120] >> Launching: attn=nystrom | task=sst2 | seed=42
-2026-08-20 22:34:18 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:34:18 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:34:19 [INFO   ] Loading data for task: sst2
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 9088.22it/s]
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_layer_norm.weight | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_transform.bias    | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-pre_classifier.weight   | MISSING    | 
-classifier.weight       | MISSING    | 
-pre_classifier.bias     | MISSING    | 
-classifier.bias         | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:34:19 [INFO   ] Replacing attention layers with: performer
-2026-08-20 22:34:20 [INFO   ] [Worker-1] [7/120] >> Launching: attn=linformer | task=sst2 | seed=42
-2026-08-20 22:34:20 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:34:20 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:34:21 [INFO   ] Loading data for task: sst2
-2026-08-20 22:34:21 [INFO   ] Train: 67349 | Val: 872
-2026-08-20 22:34:21 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-2026-08-20 22:34:23 [INFO   ] Train: 67349 | Val: 872
-2026-08-20 22:34:23 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-Replaced distilbert.transformer.layer.0.attention with performer
-Replaced distilbert.transformer.layer.1.attention with performer
-Replaced distilbert.transformer.layer.2.attention with performer
-Replaced distilbert.transformer.layer.3.attention with performer
-Replaced distilbert.transformer.layer.4.attention with performer
-Replaced distilbert.transformer.layer.5.attention with performer
-Replaced 6 attention layers.
-2026-08-20 22:34:24 [INFO   ] Trainable parameters: 66,955,010
-2026-08-20 22:34:24 [INFO   ] [Worker-3] [5/120] NOTICE: attn=performer | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 15.1s
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 12064.38it/s]
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_transform.bias    | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-vocab_layer_norm.weight | UNEXPECTED | 
-classifier.weight       | MISSING    | 
-pre_classifier.weight   | MISSING    | 
-classifier.bias         | MISSING    | 
-pre_classifier.bias     | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:34:31 [INFO   ] Replacing attention layers with: linformer
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights:   8%|▊         | 8/100 [00:00<00:01, 56.18it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 665.65it/s]
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_transform.bias    | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_layer_norm.weight | UNEXPECTED | 
-pre_classifier.bias     | MISSING    | 
-classifier.bias         | MISSING    | 
-pre_classifier.weight   | MISSING    | 
-classifier.weight       | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:34:32 [INFO   ] Replacing attention layers with: nystrom
-Replaced distilbert.transformer.layer.0.attention with nystrom
-Replaced distilbert.transformer.layer.1.attention with nystrom
-Replaced distilbert.transformer.layer.2.attention with nystrom
-Replaced distilbert.transformer.layer.3.attention with nystrom
-Replaced distilbert.transformer.layer.4.attention with nystrom
-Replaced distilbert.transformer.layer.5.attention with nystrom
-Replaced 6 attention layers.
-2026-08-20 22:34:36 [INFO   ] Trainable parameters: 66,955,010
-2026-08-20 22:34:36 [INFO   ] [Worker-2] [6/120] NOTICE: attn=nystrom | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 17.8s
-Replaced distilbert.transformer.layer.0.attention with linformer
-Replaced distilbert.transformer.layer.1.attention with linformer
-Replaced distilbert.transformer.layer.2.attention with linformer
-Replaced distilbert.transformer.layer.3.attention with linformer
-Replaced distilbert.transformer.layer.4.attention with linformer
-Replaced distilbert.transformer.layer.5.attention with linformer
-Replaced 6 attention layers.
-2026-08-20 22:34:40 [INFO   ] Trainable parameters: 67,348,226
-2026-08-20 22:34:41 [INFO   ] [Worker-1] [7/120] NOTICE: attn=linformer | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 20.5s
-2026-08-20 22:35:05 [INFO   ] [Worker-2] [8/120] >> Launching: attn=flash3 | task=sst2 | seed=42
-2026-08-20 22:35:05 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:35:05 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:35:06 [INFO   ] Loading data for task: sst2
-2026-08-20 22:35:08 [INFO   ] [Worker-3] [9/120] >> Launching: attn=mamba | task=sst2 | seed=42
-2026-08-20 22:35:08 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:35:08 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:35:08 [INFO   ] Loading data for task: sst2
-2026-08-20 22:35:08 [INFO   ] Train: 67349 | Val: 872
-2026-08-20 22:35:08 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-2026-08-20 22:35:09 [INFO   ] Train: 67349 | Val: 872
-2026-08-20 22:35:09 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights:   1%|          | 1/100 [00:00<00:22,  4.49it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 435.37it/s]
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_layer_norm.weight | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_transform.bias    | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-pre_classifier.weight   | MISSING    | 
-classifier.weight       | MISSING    | 
-pre_classifier.bias     | MISSING    | 
-classifier.bias         | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:35:10 [INFO   ] Replacing attention layers with: mamba
-2026-08-20 22:35:10 [INFO   ] [Worker-3] [9/120] NOTICE: attn=mamba | task=sst2 | Error: inject_mamba() missing 6 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', 'total_layers', and 'old_attn' | Time: 2.4s
-2026-08-20 22:35:11 [INFO   ] [Worker-1] [10/120] >> Launching: attn=gated_delta_net | task=sst2 | seed=42
-2026-08-20 22:35:11 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:35:11 [INFO   ] Loading tokeniser: distilbert-base-uncased
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]2026-08-20 22:35:11 [INFO   ] Loading data for task: sst2
-Loading weights: 100%|██████████| 100/100 [00:00<00:00, 1988.12it/s]
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_transform.bias    | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_layer_norm.weight | UNEXPECTED | 
-pre_classifier.bias     | MISSING    | 
-classifier.bias         | MISSING    | 
-pre_classifier.weight   | MISSING    | 
-classifier.weight       | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:35:12 [INFO   ] Replacing attention layers with: flash3
-2026-08-20 22:35:13 [INFO   ] Train: 67349 | Val: 872
-2026-08-20 22:35:13 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 10348.64it/s]
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_transform.bias    | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-vocab_layer_norm.weight | UNEXPECTED | 
-classifier.weight       | MISSING    | 
-pre_classifier.weight   | MISSING    | 
-classifier.bias         | MISSING    | 
-pre_classifier.bias     | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:35:13 [INFO   ] Replacing attention layers with: gated_delta_net
-2026-08-20 22:35:13 [INFO   ] [Worker-1] [10/120] NOTICE: attn=gated_delta_net | task=sst2 | Error: inject_gated_delta_net() missing 5 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', and 'total_layers' | Time: 2.5s
-Replaced distilbert.transformer.layer.0.attention with flash3
-Replaced distilbert.transformer.layer.1.attention with flash3
-Replaced distilbert.transformer.layer.2.attention with flash3
-Replaced distilbert.transformer.layer.3.attention with flash3
-Replaced distilbert.transformer.layer.4.attention with flash3
-Replaced distilbert.transformer.layer.5.attention with flash3
-Replaced 6 attention layers.
-2026-08-20 22:35:16 [INFO   ] Trainable parameters: 66,955,010
-2026-08-20 22:35:16 [INFO   ] [Worker-2] [8/120] NOTICE: attn=flash3 | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 11.2s
-2026-08-20 22:35:20 [INFO   ] [Worker-3] [11/120] >> Launching: attn=adasplash | task=sst2 | seed=42
-2026-08-20 22:35:20 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:35:20 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:35:20 [INFO   ] [Worker-1] [12/120] >> Launching: attn=aegis_v3 | task=sst2 | seed=42
-2026-08-20 22:35:20 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:35:20 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:35:20 [INFO   ] Loading data for task: sst2
-2026-08-20 22:35:21 [INFO   ] Loading data for task: sst2
-2026-08-20 22:35:22 [INFO   ] [Worker-2] [13/120] >> Launching: attn=griffin_ssd | task=sst2 | seed=42
-2026-08-20 22:35:22 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:35:22 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:35:23 [INFO   ] Train: 67349 | Val: 872
-2026-08-20 22:35:23 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-2026-08-20 22:35:23 [INFO   ] Loading data for task: sst2
-2026-08-20 22:35:23 [INFO   ] Train: 67349 | Val: 872
-2026-08-20 22:35:23 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 19187.12it/s]
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 19507.48it/s]
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_transform.bias    | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-vocab_layer_norm.weight | UNEXPECTED | 
-classifier.weight       | MISSING    | 
-pre_classifier.weight   | MISSING    | 
-classifier.bias         | MISSING    | 
-pre_classifier.bias     | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:35:25 [INFO   ] Train: 67349 | Val: 872
-2026-08-20 22:35:25 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-2026-08-20 22:35:25 [INFO   ] Replacing attention layers with: aegis_v3
-2026-08-20 22:35:25 [INFO   ] [Worker-1] [12/120] NOTICE: attn=aegis_v3 | task=sst2 | Error: inject_aegis_v3() missing 6 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', 'total_layers', and 'old_attn' | Time: 5.1s
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_layer_norm.weight | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_transform.bias    | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-pre_classifier.weight   | MISSING    | 
-classifier.weight       | MISSING    | 
-pre_classifier.bias     | MISSING    | 
-classifier.bias         | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:35:26 [INFO   ] Replacing attention layers with: adasplash
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 5403.92it/s]
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_transform.bias    | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_layer_norm.weight | UNEXPECTED | 
-pre_classifier.bias     | MISSING    | 
-classifier.bias         | MISSING    | 
-pre_classifier.weight   | MISSING    | 
-classifier.weight       | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:35:27 [INFO   ] Replacing attention layers with: griffin_ssd
-Replaced distilbert.transformer.layer.0.attention with griffin_ssd
-Replaced distilbert.transformer.layer.1.attention with griffin_ssd
-Replaced distilbert.transformer.layer.2.attention with griffin_ssd
-Replaced distilbert.transformer.layer.3.attention with griffin_ssd
-Replaced distilbert.transformer.layer.4.attention with griffin_ssd
-Replaced distilbert.transformer.layer.5.attention with griffin_ssd
-Replaced 6 attention layers.
-2026-08-20 22:35:30 [INFO   ] Trainable parameters: 70,480,130
-2026-08-20 22:35:30 [INFO   ] [Worker-2] [13/120] NOTICE: attn=griffin_ssd | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 7.7s
-Replaced distilbert.transformer.layer.0.attention with adasplash
-Replaced distilbert.transformer.layer.1.attention with adasplash
-Replaced distilbert.transformer.layer.2.attention with adasplash
-Replaced distilbert.transformer.layer.3.attention with adasplash
-Replaced distilbert.transformer.layer.4.attention with adasplash
-Replaced distilbert.transformer.layer.5.attention with adasplash
-Replaced 6 attention layers.
-2026-08-20 22:35:31 [INFO   ] Trainable parameters: 66,955,010
-2026-08-20 22:35:32 [INFO   ] [Worker-3] [11/120] NOTICE: attn=adasplash | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 12.2s
-2026-08-20 22:35:36 [INFO   ] [Worker-1] [14/120] >> Launching: attn=spectra_v2 | task=sst2 | seed=42
-2026-08-20 22:35:36 [INFO   ] [Worker-3] [15/120] >> Launching: attn=samba_m3 | task=sst2 | seed=42
-2026-08-20 22:35:36 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:35:36 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:35:36 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:35:36 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:35:36 [INFO   ] Loading data for task: sst2
-2026-08-20 22:35:37 [INFO   ] Loading data for task: sst2
-2026-08-20 22:35:38 [INFO   ] [Worker-2] [16/120] >> Launching: attn=svd_linear | task=mrpc | seed=42
-2026-08-20 22:35:38 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:35:38 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:35:38 [INFO   ] Train: 67349 | Val: 872
-2026-08-20 22:35:38 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-2026-08-20 22:35:38 [INFO   ] Loading data for task: mrpc
-2026-08-20 22:35:38 [INFO   ] Train: 67349 | Val: 872
-2026-08-20 22:35:38 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-Map:   0%|          | 0/3668 [00:00<?, ? examples/s]Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 2777.68it/s]
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_layer_norm.weight | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_transform.bias    | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-pre_classifier.weight   | MISSING    | 
-classifier.weight       | MISSING    | 
-pre_classifier.bias     | MISSING    | 
-classifier.bias         | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:35:39 [INFO   ] Replacing attention layers with: samba_m3
-Loading weights:  11%|█         | 11/100 [00:00<00:01, 72.71it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 624.37it/s]
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_transform.bias    | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-vocab_layer_norm.weight | UNEXPECTED | 
-classifier.weight       | MISSING    | 
-pre_classifier.weight   | MISSING    | 
-classifier.bias         | MISSING    | 
-pre_classifier.bias     | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:35:39 [INFO   ] Replacing attention layers with: spectra_v2
-2026-08-20 22:35:39 [INFO   ] [Worker-1] [14/120] NOTICE: attn=spectra_v2 | task=sst2 | Error: inject_spectra_v2() missing 6 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', 'total_layers', and 'old_attn' | Time: 3.0s
-Replaced distilbert.transformer.layer.0.attention with samba_m3
-Replaced distilbert.transformer.layer.1.attention with samba_m3
-Replaced distilbert.transformer.layer.2.attention with samba_m3
-Replaced distilbert.transformer.layer.3.attention with samba_m3
-Replaced distilbert.transformer.layer.4.attention with samba_m3
-Replaced distilbert.transformer.layer.5.attention with samba_m3
-Replaced 6 attention layers.
-2026-08-20 22:35:41 [INFO   ] Trainable parameters: 77,608,706
-2026-08-20 22:35:41 [INFO   ] [Worker-3] [15/120] NOTICE: attn=samba_m3 | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 4.8s
-Map:  27%|██▋       | 1000/3668 [00:02<00:07, 355.77 examples/s]Map:  55%|█████▍    | 2000/3668 [00:03<00:02, 770.95 examples/s]Map:  82%|████████▏ | 3000/3668 [00:03<00:00, 1266.06 examples/s]Map: 100%|██████████| 3668/3668 [00:03<00:00, 1596.15 examples/s]Map: 100%|██████████| 3668/3668 [00:03<00:00, 1068.66 examples/s]
-Map:   0%|          | 0/408 [00:00<?, ? examples/s]Map: 100%|██████████| 408/408 [00:00<00:00, 4381.97 examples/s]
-Map:   0%|          | 0/1725 [00:00<?, ? examples/s]Map:  58%|█████▊    | 1000/1725 [00:00<00:00, 8350.88 examples/s]Map: 100%|██████████| 1725/1725 [00:00<00:00, 7878.76 examples/s]
-2026-08-20 22:35:43 [INFO   ] Train: 3668 | Val: 408
-2026-08-20 22:35:43 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 1205.55it/s]
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_transform.bias    | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_layer_norm.weight | UNEXPECTED | 
-pre_classifier.bias     | MISSING    | 
-classifier.bias         | MISSING    | 
-pre_classifier.weight   | MISSING    | 
-classifier.weight       | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:35:43 [INFO   ] Replacing attention layers with: svd_linear
-2026-08-20 22:35:46 [INFO   ] [Worker-3] [17/120] >> Launching: attn=svd | task=mrpc | seed=42
-2026-08-20 22:35:46 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:35:46 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:35:47 [INFO   ] Loading data for task: mrpc
-2026-08-20 22:35:47 [INFO   ] [Worker-1] [18/120] >> Launching: attn=full | task=mrpc | seed=42
-2026-08-20 22:35:47 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:35:47 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:35:47 [INFO   ] Loading data for task: mrpc
-2026-08-20 22:35:47 [INFO   ] Train: 3668 | Val: 408
-2026-08-20 22:35:47 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-2026-08-20 22:35:48 [INFO   ] Train: 3668 | Val: 408
-2026-08-20 22:35:48 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 7973.20it/s]
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_layer_norm.weight | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_transform.bias    | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-pre_classifier.weight   | MISSING    | 
-classifier.weight       | MISSING    | 
-pre_classifier.bias     | MISSING    | 
-classifier.bias         | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:35:48 [INFO   ] Replacing attention layers with: svd
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 7016.00it/s]
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_transform.bias    | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-vocab_layer_norm.weight | UNEXPECTED | 
-classifier.weight       | MISSING    | 
-pre_classifier.weight   | MISSING    | 
-classifier.bias         | MISSING    | 
-pre_classifier.bias     | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-Replaced distilbert.transformer.layer.0.attention with svd
-Replaced distilbert.transformer.layer.1.attention with svd
-Replaced distilbert.transformer.layer.2.attention with svd
-Replaced distilbert.transformer.layer.3.attention with svd
-Replaced distilbert.transformer.layer.4.attention with svd
-Replaced distilbert.transformer.layer.5.attention with svd
-Replaced 6 attention layers.
-2026-08-20 22:35:49 [INFO   ] Trainable parameters: 66,955,010
-2026-08-20 22:35:49 [INFO   ] [Worker-3] [17/120] NOTICE: attn=svd | task=mrpc | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 2.8s
-Replaced distilbert.transformer.layer.0.attention with svd_linear
-Replaced distilbert.transformer.layer.1.attention with svd_linear
-Replaced distilbert.transformer.layer.2.attention with svd_linear
-Replaced distilbert.transformer.layer.3.attention with svd_linear
-Replaced distilbert.transformer.layer.4.attention with svd_linear
-Replaced distilbert.transformer.layer.5.attention with svd_linear
-Replaced 6 attention layers.
-2026-08-20 22:35:50 [INFO   ] Trainable parameters: 59,932,490
-2026-08-20 22:35:50 [INFO   ] [Worker-2] [16/120] NOTICE: attn=svd_linear | task=mrpc | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 12.4s
-2026-08-20 22:35:54 [INFO   ] Trainable parameters: 66,955,010
-2026-08-20 22:35:54 [INFO   ] [Worker-1] [18/120] NOTICE: attn=full | task=mrpc | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 7.0s
-2026-08-20 22:35:57 [INFO   ] [Worker-3] [19/120] >> Launching: attn=lora_attn | task=mrpc | seed=42
-2026-08-20 22:35:57 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:35:57 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:35:57 [INFO   ] Loading data for task: mrpc
-2026-08-20 22:35:59 [INFO   ] [Worker-2] [20/120] >> Launching: attn=performer | task=mrpc | seed=42
-2026-08-20 22:35:59 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:35:59 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:36:00 [INFO   ] Loading data for task: mrpc
-2026-08-20 22:36:00 [INFO   ] Train: 3668 | Val: 408
-2026-08-20 22:36:00 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-2026-08-20 22:36:01 [INFO   ] Train: 3668 | Val: 408
-2026-08-20 22:36:01 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 2929.64it/s]
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 10164.56it/s]
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_layer_norm.weight | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_transform.bias    | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-pre_classifier.weight   | MISSING    | 
-classifier.weight       | MISSING    | 
-pre_classifier.bias     | MISSING    | 
-classifier.bias         | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:36:01 [INFO   ] Replacing attention layers with: lora_attn
-2026-08-20 22:36:01 [INFO   ] [Worker-3] [19/120] NOTICE: attn=lora_attn | task=mrpc | Error: pretrained_attn required for zero-shot init | Time: 4.0s
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_transform.bias    | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_layer_norm.weight | UNEXPECTED | 
-pre_classifier.bias     | MISSING    | 
-classifier.bias         | MISSING    | 
-pre_classifier.weight   | MISSING    | 
-classifier.weight       | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:36:01 [INFO   ] Replacing attention layers with: performer
-Replaced distilbert.transformer.layer.0.attention with performer
-Replaced distilbert.transformer.layer.1.attention with performer
-Replaced distilbert.transformer.layer.2.attention with performer
-Replaced distilbert.transformer.layer.3.attention with performer
-Replaced distilbert.transformer.layer.4.attention with performer
-Replaced distilbert.transformer.layer.5.attention with performer
-Replaced 6 attention layers.
-2026-08-20 22:36:02 [INFO   ] Trainable parameters: 66,955,010
-2026-08-20 22:36:02 [INFO   ] [Worker-2] [20/120] NOTICE: attn=performer | task=mrpc | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 2.4s
-2026-08-20 22:36:08 [INFO   ] [Worker-3] [21/120] >> Launching: attn=nystrom | task=mrpc | seed=42
-2026-08-20 22:36:08 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:36:08 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:36:08 [INFO   ] Loading data for task: mrpc
-2026-08-20 22:36:09 [INFO   ] Train: 3668 | Val: 408
-2026-08-20 22:36:09 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-2026-08-20 22:36:09 [INFO   ] [Worker-1] [22/120] >> Launching: attn=linformer | task=mrpc | seed=42
-2026-08-20 22:36:09 [INFO   ] Device: mps | Seed: 42
-2026-08-20 22:36:09 [INFO   ] Loading tokeniser: distilbert-base-uncased
-2026-08-20 22:36:09 [INFO   ] Loading data for task: mrpc
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 8733.04it/s]
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_layer_norm.weight | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_transform.bias    | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-pre_classifier.weight   | MISSING    | 
-classifier.weight       | MISSING    | 
-pre_classifier.bias     | MISSING    | 
-classifier.bias         | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:36:10 [INFO   ] Replacing attention layers with: nystrom
-2026-08-20 22:36:12 [INFO   ] Train: 3668 | Val: 408
-2026-08-20 22:36:12 [INFO   ] Loading model: distilbert-base-uncased  (num_labels=2)
-Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 2768.15it/s]
-[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-uncased
-Key                     | Status     | 
-------------------------+------------+-
-vocab_transform.bias    | UNEXPECTED | 
-vocab_layer_norm.bias   | UNEXPECTED | 
-vocab_transform.weight  | UNEXPECTED | 
-vocab_projector.bias    | UNEXPECTED | 
-vocab_layer_norm.weight | UNEXPECTED | 
-classifier.weight       | MISSING    | 
-pre_classifier.weight   | MISSING    | 
-classifier.bias         | MISSING    | 
-pre_classifier.bias     | MISSING    | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-08-20 22:36:12 [INFO   ] Replacing attention layers with: linformer
-Replaced distilbert.transformer.layer.0.attention with linformer
-Replaced distilbert.transformer.layer.1.attention with linformer
-Replaced distilbert.transformer.layer.2.attention with linformer
-Replaced distilbert.transformer.layer.3.attention with linformer
-Replaced distilbert.transformer.layer.4.attention with linformer
-Replaced distilbert.transformer.layer.5.attention with linformer
-Replaced 6 attention layers.
-2026-08-20 22:36:14 [INFO   ] Trainable parameters: 67,348,226
-2026-08-20 22:36:14 [INFO   ] [Worker-1] [22/120] NOTICE: attn=linformer | task=mrpc | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 4.3s
-/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/multiprocessing/resource_tracker.py:396: UserWarning: resource_tracker: There appear to be 6 leaked semaphore objects to clean up at shutdown: {'/loky-47873-e6302csm', '/loky-47842-510ircug', '/mp-j7x_5bei', '/mp-2o91po96', '/mp-hc181y5i', '/loky-47891-rcerrqgu'}
-  warnings.warn(
