@@ -1,0 +1,1428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests API documentation</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Namespace <code>neuralops.tests</code></h1>
+</header>
+<section id="section-intro">
+</section>
+<section>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+<dl>
+<dt><code class="name"><a title="neuralops.tests.test_aasvd_exhaustive" href="test_aasvd_exhaustive.html">neuralops.tests.test_aasvd_exhaustive</a></code></dt>
+<dd>
+<div class="desc"><p>Exhaustive Verification Suite for AASVD (Activation-Aware SVD) Compressor.
+Validates structural factorizations, streaming covariance estimation,
+…</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_adaptive_ranks_extra" href="test_adaptive_ranks_extra.html">neuralops.tests.test_adaptive_ranks_extra</a></code></dt>
+<dd>
+<div class="desc"><p>Comprehensive tests for AdaptiveRanksCompressor.
+Verifies:
+1. Conv1D and LoRALinear wrapper detection, weight transposition, and base layer handling.
+…</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_adaptive_ranks_jg" href="test_adaptive_ranks_jg.html">neuralops.tests.test_adaptive_ranks_jg</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for Adaptive Ranks Compressor with Jacobian-Gated SVD (JG-SVD).
+Tests all 9 core properties:
+1. GELU derivative squared at y=0 is 0.25 …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_adaptive_span" href="test_adaptive_span.html">neuralops.tests.test_adaptive_span</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for AdaptiveSpanAttention module.
+Verifies all 8 core properties:
+1. Module instantiates with correct span initialization (span_logits = …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_adaptive_span_comprehensive" href="test_adaptive_span_comprehensive.html">neuralops.tests.test_adaptive_span_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_adaptive_sparse_attention" href="test_adaptive_sparse_attention.html">neuralops.tests.test_adaptive_sparse_attention</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_adaptive_sparse_comprehensive" href="test_adaptive_sparse_comprehensive.html">neuralops.tests.test_adaptive_sparse_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_adaptive_svd_attention" href="test_adaptive_svd_attention.html">neuralops.tests.test_adaptive_svd_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Hardening test suite for adaptive_svd_attention.py (AdaptiveSVDAttention).</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_adaptive_svd_attention_comprehensive" href="test_adaptive_svd_attention_comprehensive.html">neuralops.tests.test_adaptive_svd_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_adaptive_svd_verification" href="test_adaptive_svd_verification.html">neuralops.tests.test_adaptive_svd_verification</a></code></dt>
+<dd>
+<div class="desc"><p>Verification test script for AdaptiveSVDAttention and AdaptiveRanksCompressor.
+Validates:
+1. Dynamic cumulative singular value energy thresholding:
+…</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_adasplash_attention" href="test_adasplash_attention.html">neuralops.tests.test_adasplash_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Hardening tests for AdaSplashAttention (adasplash_attention.py) …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_adasplash_attention_auto" href="test_adasplash_attention_auto.html">neuralops.tests.test_adasplash_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_adasplash_attention_comprehensive" href="test_adasplash_attention_comprehensive.html">neuralops.tests.test_adasplash_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_adasvd_hardened" href="test_adasvd_hardened.html">neuralops.tests.test_adasvd_hardened</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_admm_hardened" href="test_admm_hardened.html">neuralops.tests.test_admm_hardened</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for production-hardened ADMM Compressor …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_admm_pruner_distill" href="test_admm_pruner_distill.html">neuralops.tests.test_admm_pruner_distill</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for production-hardened ADMM Pruner with Layer-Wise Reconstruction Distillation …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_aegis_hybrid" href="test_aegis_hybrid.html">neuralops.tests.test_aegis_hybrid</a></code></dt>
+<dd>
+<div class="desc"><p>Hardening test suite for aegis_hybrid.py (AegisHybridAttention).</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_aegis_hybrid_auto" href="test_aegis_hybrid_auto.html">neuralops.tests.test_aegis_hybrid_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_aegis_hybrid_comprehensive" href="test_aegis_hybrid_comprehensive.html">neuralops.tests.test_aegis_hybrid_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_aegis_spectron_fp8" href="test_aegis_spectron_fp8.html">neuralops.tests.test_aegis_spectron_fp8</a></code></dt>
+<dd>
+<div class="desc"><p>Hardening test suite for aegis_spectron_fp8.py (AegisSpectronFP8Attention).</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_aegis_spectron_fp8_auto" href="test_aegis_spectron_fp8_auto.html">neuralops.tests.test_aegis_spectron_fp8_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_aegis_spectron_fp8_comprehensive" href="test_aegis_spectron_fp8_comprehensive.html">neuralops.tests.test_aegis_spectron_fp8_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_aegis_v2" href="test_aegis_v2.html">neuralops.tests.test_aegis_v2</a></code></dt>
+<dd>
+<div class="desc"><p>Hardening test suite for aegis_v2.py (AegisAttentionV2).</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_aegis_v2_auto" href="test_aegis_v2_auto.html">neuralops.tests.test_aegis_v2_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_aegis_v2_comprehensive" href="test_aegis_v2_comprehensive.html">neuralops.tests.test_aegis_v2_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_aegis_v5" href="test_aegis_v5.html">neuralops.tests.test_aegis_v5</a></code></dt>
+<dd>
+<div class="desc"><p>Hardening test suite for aegis_v5.py (AegisAttention V5) …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_aegis_v5_auto" href="test_aegis_v5_auto.html">neuralops.tests.test_aegis_v5_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_aegis_v5_comprehensive" href="test_aegis_v5_comprehensive.html">neuralops.tests.test_aegis_v5_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_aegis_v6_auto" href="test_aegis_v6_auto.html">neuralops.tests.test_aegis_v6_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_aegis_v6_comprehensive" href="test_aegis_v6_comprehensive.html">neuralops.tests.test_aegis_v6_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_all_203_models_comprehensive" href="test_all_203_models_comprehensive.html">neuralops.tests.test_all_203_models_comprehensive</a></code></dt>
+<dd>
+<div class="desc"><p>Comprehensive Master Test Suite for All Attention Mechanisms and Compression Engines.
+Tests instantiation, mock forward pass, cross-entropy / loss …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_all_compression_engines" href="test_all_compression_engines.html">neuralops.tests.test_all_compression_engines</a></code></dt>
+<dd>
+<div class="desc"><p>Master Test Suite for All Compression Engine Modules
+Tests initialization, compression, shape preservation, and forward pass across all 70 registered …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_architecture" href="test_architecture.html">neuralops.tests.test_architecture</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for core architecture discovery, leaf extraction, and attention injection.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_armor_hardened" href="test_armor_hardened.html">neuralops.tests.test_armor_hardened</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for production-hardened ARMOR Pruner …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_armor_pruner_hardened" href="test_armor_pruner_hardened.html">neuralops.tests.test_armor_pruner_hardened</a></code></dt>
+<dd>
+<div class="desc"><p>Comprehensive Unit Test Suite for Production-Hardened ARMOR Pruner.
+Covers:
+1. Factory config safety (None, dict, missing parameters)
+2. Conv1D …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_astro_hardened" href="test_astro_hardened.html">neuralops.tests.test_astro_hardened</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for hardened AstroQuantizer with Fisher-Adaptive Bit Allocation.
+Verifies:
+1. allocate_fisher_bits solves the integer knapsack budget and …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_asvd_attention_auto" href="test_asvd_attention_auto.html">neuralops.tests.test_asvd_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_asvd_attention_comprehensive" href="test_asvd_attention_comprehensive.html">neuralops.tests.test_asvd_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_attention_injection" href="test_attention_injection.html">neuralops.tests.test_attention_injection</a></code></dt>
+<dd>
+<div class="desc"><p>Tests for the attention injection utilities.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_attention_linear_family" href="test_attention_linear_family.html">neuralops.tests.test_attention_linear_family</a></code></dt>
+<dd>
+<div class="desc"><p>Subagent 2: Linear Attention &amp; Kernelization Family Test Suite.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_attention_modules_compat" href="test_attention_modules_compat.html">neuralops.tests.test_attention_modules_compat</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for attention module family compatibility and declared capabilities.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_attention_ssm_family" href="test_attention_ssm_family.html">neuralops.tests.test_attention_ssm_family</a></code></dt>
+<dd>
+<div class="desc"><p>Subagent 3: Recurrent / SSM / Mamba Family Test Suite.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_attention_standard_family" href="test_attention_standard_family.html">neuralops.tests.test_attention_standard_family</a></code></dt>
+<dd>
+<div class="desc"><p>Subagent 4: Standard / Hybrid / GQA Family Test Suite.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_attention_svd_family" href="test_attention_svd_family.html">neuralops.tests.test_attention_svd_family</a></code></dt>
+<dd>
+<div class="desc"><p>Subagent 1: SVD-based &amp; Factorization Attention Family Test Suite.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_attention_utils" href="test_attention_utils.html">neuralops.tests.test_attention_utils</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_attentions" href="test_attentions.html">neuralops.tests.test_attentions</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_bam_umoe_auto" href="test_bam_umoe_auto.html">neuralops.tests.test_bam_umoe_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_bam_umoe_comprehensive" href="test_bam_umoe_comprehensive.html">neuralops.tests.test_bam_umoe_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_benchmark_datasets" href="test_benchmark_datasets.html">neuralops.tests.test_benchmark_datasets</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for BenchmarkDatasetRegistry and load_benchmark_dataset.
+Tests offline synthetic fallback, registered benchmarks, and data formats.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_block_transformer_hiba_auto" href="test_block_transformer_hiba_auto.html">neuralops.tests.test_block_transformer_hiba_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_block_transformer_hiba_comprehensive" href="test_block_transformer_hiba_comprehensive.html">neuralops.tests.test_block_transformer_hiba_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_cachenotes_hardened" href="test_cachenotes_hardened.html">neuralops.tests.test_cachenotes_hardened</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for hardened CacheNotes compressor.
+Verifies:
+1. LoRA wrapper and Conv1D detection and transposition.
+2. If layer is already LoRALinear, …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_chela_slay" href="test_chela_slay.html">neuralops.tests.test_chela_slay</a></code></dt>
+<dd>
+<div class="desc"><p>Tests for CHELA-SLAY Attention Module.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_chela_slay_auto" href="test_chela_slay_auto.html">neuralops.tests.test_chela_slay_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_chela_slay_comprehensive" href="test_chela_slay_comprehensive.html">neuralops.tests.test_chela_slay_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_chunked_recurrent_scans" href="test_chunked_recurrent_scans.html">neuralops.tests.test_chunked_recurrent_scans</a></code></dt>
+<dd>
+<div class="desc"><p>Exhaustive test suite for chunked recurrent scans and low-accuracy module fixes.
+Validates chunked associative scan accuracy against token-level …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_cluster_comprehensive" href="test_cluster_comprehensive.html">neuralops.tests.test_cluster_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_compressed_attention_auto" href="test_compressed_attention_auto.html">neuralops.tests.test_compressed_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_compressed_attention_comprehensive" href="test_compressed_attention_comprehensive.html">neuralops.tests.test_compressed_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_compressed_mha_attention_auto" href="test_compressed_mha_attention_auto.html">neuralops.tests.test_compressed_mha_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_compressed_mha_attention_comprehensive" href="test_compressed_mha_attention_comprehensive.html">neuralops.tests.test_compressed_mha_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_compressors_all" href="test_compressors_all.html">neuralops.tests.test_compressors_all</a></code></dt>
+<dd>
+<div class="desc"><p>Subagent 5: All Registered Compressors Verification Suite.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_cosformer" href="test_cosformer.html">neuralops.tests.test_cosformer</a></code></dt>
+<dd>
+<div class="desc"><p>Comprehensive test suite for Cosformer Attention (cosformer.py).</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_cosformer_auto" href="test_cosformer_auto.html">neuralops.tests.test_cosformer_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_cosformer_comprehensive" href="test_cosformer_comprehensive.html">neuralops.tests.test_cosformer_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_cross_architecture_injection" href="test_cross_architecture_injection.html">neuralops.tests.test_cross_architecture_injection</a></code></dt>
+<dd>
+<div class="desc"><p>Exhaustive cross-architecture injection tests across DistilBERT, RoBERTa, GPT-2, and Qwen.
+Verifies forward pass shape, finite outputs, LoRA parameter …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_cur_compressor_comprehensive" href="test_cur_compressor_comprehensive.html">neuralops.tests.test_cur_compressor_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_datasets" href="test_datasets.html">neuralops.tests.test_datasets</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for benchmark dataset registry, loaders, and synthetic generation.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_decay_linear_attention" href="test_decay_linear_attention.html">neuralops.tests.test_decay_linear_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Comprehensive test suite for Decay Linear Attention (decay_linear_attention.py).</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_decay_linear_attention_comprehensive" href="test_decay_linear_attention_comprehensive.html">neuralops.tests.test_decay_linear_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_dobi_svd_comprehensive" href="test_dobi_svd_comprehensive.html">neuralops.tests.test_dobi_svd_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_eat" href="test_eat.html">neuralops.tests.test_eat</a></code></dt>
+<dd>
+<div class="desc"><p>Comprehensive test suite for EAT (Efficient Attention Transformer).</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_eat_auto" href="test_eat_auto.html">neuralops.tests.test_eat_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_eat_comprehensive" href="test_eat_comprehensive.html">neuralops.tests.test_eat_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_enlighten" href="test_enlighten.html">neuralops.tests.test_enlighten</a></code></dt>
+<dd>
+<div class="desc"><p>Comprehensive test suite for ENLighten compressor …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_expert_choice_moe_auto" href="test_expert_choice_moe_auto.html">neuralops.tests.test_expert_choice_moe_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_expert_choice_moe_comprehensive" href="test_expert_choice_moe_comprehensive.html">neuralops.tests.test_expert_choice_moe_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_factorised_matrix_state_auto" href="test_factorised_matrix_state_auto.html">neuralops.tests.test_factorised_matrix_state_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_factorised_matrix_state_comprehensive" href="test_factorised_matrix_state_comprehensive.html">neuralops.tests.test_factorised_matrix_state_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_file_structure" href="test_file_structure.html">neuralops.tests.test_file_structure</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for framework directory integrity, python compilation, and clean workspace.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_flash3_fp8" href="test_flash3_fp8.html">neuralops.tests.test_flash3_fp8</a></code></dt>
+<dd>
+<div class="desc"><p>Tests for FlashAttention-3 FP8 attention module …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_flash_attention3_auto" href="test_flash_attention3_auto.html">neuralops.tests.test_flash_attention3_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_flash_attention3_comprehensive" href="test_flash_attention3_comprehensive.html">neuralops.tests.test_flash_attention3_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_flash_attention3_fp8_auto" href="test_flash_attention3_fp8_auto.html">neuralops.tests.test_flash_attention3_fp8_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_flash_attention3_fp8_comprehensive" href="test_flash_attention3_fp8_comprehensive.html">neuralops.tests.test_flash_attention3_fp8_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_fms" href="test_fms.html">neuralops.tests.test_fms</a></code></dt>
+<dd>
+<div class="desc"><p>Comprehensive test suite for Factorised Matrix State Attention …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_full_attention_comprehensive" href="test_full_attention_comprehensive.html">neuralops.tests.test_full_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_full_framework_end_to_end" href="test_full_framework_end_to_end.html">neuralops.tests.test_full_framework_end_to_end</a></code></dt>
+<dd>
+<div class="desc"><p>Master End-to-End Test Suite for All Framework Features and Subsystems …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_fused_svd_kernel" href="test_fused_svd_kernel.html">neuralops.tests.test_fused_svd_kernel</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for Fused SVD-Linear Layer with in-SRAM RMSNorm, Autograd backward pass,
+and integration into SVDLinear and SVDLinearAttention modules.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_fused_svd_kernel_comprehensive" href="test_fused_svd_kernel_comprehensive.html">neuralops.tests.test_fused_svd_kernel_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_fusion_attn_auto" href="test_fusion_attn_auto.html">neuralops.tests.test_fusion_attn_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_fusion_attn_comprehensive" href="test_fusion_attn_comprehensive.html">neuralops.tests.test_fusion_attn_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_galerkin_attention_auto" href="test_galerkin_attention_auto.html">neuralops.tests.test_galerkin_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_galerkin_attention_comprehensive" href="test_galerkin_attention_comprehensive.html">neuralops.tests.test_galerkin_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_gated_delta_net_comprehensive" href="test_gated_delta_net_comprehensive.html">neuralops.tests.test_gated_delta_net_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_gated_deltanet_block_auto" href="test_gated_deltanet_block_auto.html">neuralops.tests.test_gated_deltanet_block_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_gated_deltanet_block_comprehensive" href="test_gated_deltanet_block_comprehensive.html">neuralops.tests.test_gated_deltanet_block_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_gated_linear_attention_auto" href="test_gated_linear_attention_auto.html">neuralops.tests.test_gated_linear_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_gated_linear_attention_comprehensive" href="test_gated_linear_attention_comprehensive.html">neuralops.tests.test_gated_linear_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_generalization_hardcoded_scan" href="test_generalization_hardcoded_scan.html">neuralops.tests.test_generalization_hardcoded_scan</a></code></dt>
+<dd>
+<div class="desc"><p>Verification: Hardcoded String / Shape Scan.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_goldfinch_ahn_comprehensive" href="test_goldfinch_ahn_comprehensive.html">neuralops.tests.test_goldfinch_ahn_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_gqa_comprehensive" href="test_gqa_comprehensive.html">neuralops.tests.test_gqa_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_granite_hybrid_comprehensive" href="test_granite_hybrid_comprehensive.html">neuralops.tests.test_granite_hybrid_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_griffin_ssd_comprehensive" href="test_griffin_ssd_comprehensive.html">neuralops.tests.test_griffin_ssd_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_halo_regla_comprehensive" href="test_halo_regla_comprehensive.html">neuralops.tests.test_halo_regla_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_hamming_comprehensive" href="test_hamming_comprehensive.html">neuralops.tests.test_hamming_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_hgrn2_comprehensive" href="test_hgrn2_comprehensive.html">neuralops.tests.test_hgrn2_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_hgrn2_gated_deltanet_auto" href="test_hgrn2_gated_deltanet_auto.html">neuralops.tests.test_hgrn2_gated_deltanet_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_hgrn2_gated_deltanet_comprehensive" href="test_hgrn2_gated_deltanet_comprehensive.html">neuralops.tests.test_hgrn2_gated_deltanet_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_hgrn2_layer_auto" href="test_hgrn2_layer_auto.html">neuralops.tests.test_hgrn2_layer_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_hgrn2_layer_comprehensive" href="test_hgrn2_layer_comprehensive.html">neuralops.tests.test_hgrn2_layer_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_hgrn2_outer_auto" href="test_hgrn2_outer_auto.html">neuralops.tests.test_hgrn2_outer_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_hgrn2_outer_comprehensive" href="test_hgrn2_outer_comprehensive.html">neuralops.tests.test_hgrn2_outer_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_hla_attention_auto" href="test_hla_attention_auto.html">neuralops.tests.test_hla_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_hla_attention_comprehensive" href="test_hla_attention_comprehensive.html">neuralops.tests.test_hla_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_huffman_coder" href="test_huffman_coder.html">neuralops.tests.test_huffman_coder</a></code></dt>
+<dd>
+<div class="desc"><p>Comprehensive Test Suite for Vectorized Huffman Coder &amp; Huffman Compressor.
+Tests roundtrip correctness, compression metrics, fallback LoRA freezing,
+…</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_hybrid_attention" href="test_hybrid_attention.html">neuralops.tests.test_hybrid_attention</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_hybrid_freeze" href="test_hybrid_freeze.html">neuralops.tests.test_hybrid_freeze</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for strict parameter freezing on hybrid recurrent attention modules
+and trainable parameter count thresholds.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_hymba_transx_auto" href="test_hymba_transx_auto.html">neuralops.tests.test_hymba_transx_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_hymba_transx_comprehensive" href="test_hymba_transx_comprehensive.html">neuralops.tests.test_hymba_transx_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_imports" href="test_imports.html">neuralops.tests.test_imports</a></code></dt>
+<dd>
+<div class="desc"><p>Basic tests for the trainer module …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_infini_attention_auto" href="test_infini_attention_auto.html">neuralops.tests.test_infini_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_integration_all_families" href="test_integration_all_families.html">neuralops.tests.test_integration_all_families</a></code></dt>
+<dd>
+<div class="desc"><p>Integration Matrix: All Families x Representative Modules (including Qwen3.5).</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_integration_smoke" href="test_integration_smoke.html">neuralops.tests.test_integration_smoke</a></code></dt>
+<dd>
+<div class="desc"><p>Integration smoke tests verifying end-to-end injection and forward passes per model family.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_jamba_comprehensive" href="test_jamba_comprehensive.html">neuralops.tests.test_jamba_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_jamba_info_auto" href="test_jamba_info_auto.html">neuralops.tests.test_jamba_info_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_jamba_info_comprehensive" href="test_jamba_info_comprehensive.html">neuralops.tests.test_jamba_info_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_kda_comprehensive" href="test_kda_comprehensive.html">neuralops.tests.test_kda_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_kernel_quantization_comprehensive" href="test_kernel_quantization_comprehensive.html">neuralops.tests.test_kernel_quantization_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_kvtc_hardened" href="test_kvtc_hardened.html">neuralops.tests.test_kvtc_hardened</a></code></dt>
+<dd>
+<div class="desc"><p>Comprehensive unit test suite for hardened KVTC (KV Cache Transform Coding / PCA-Quant) compressor …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_legacy_ensemble" href="test_legacy_ensemble.html">neuralops.tests.test_legacy_ensemble</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_leka_v1_auto" href="test_leka_v1_auto.html">neuralops.tests.test_leka_v1_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_leka_v1_comprehensive" href="test_leka_v1_comprehensive.html">neuralops.tests.test_leka_v1_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_leka_v2_auto" href="test_leka_v2_auto.html">neuralops.tests.test_leka_v2_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_leka_v2_comprehensive" href="test_leka_v2_comprehensive.html">neuralops.tests.test_leka_v2_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_leka_v3_auto" href="test_leka_v3_auto.html">neuralops.tests.test_leka_v3_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_leka_v3_comprehensive" href="test_leka_v3_comprehensive.html">neuralops.tests.test_leka_v3_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_linformer_attention_auto" href="test_linformer_attention_auto.html">neuralops.tests.test_linformer_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_linformer_attention_comprehensive" href="test_linformer_attention_comprehensive.html">neuralops.tests.test_linformer_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_lola_attention_auto" href="test_lola_attention_auto.html">neuralops.tests.test_lola_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_lola_attention_comprehensive" href="test_lola_attention_comprehensive.html">neuralops.tests.test_lola_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_lora" href="test_lora.html">neuralops.tests.test_lora</a></code></dt>
+<dd>
+<div class="desc"><p>Comprehensive unit tests for native LoRA module.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_lora_attention_comprehensive" href="test_lora_attention_comprehensive.html">neuralops.tests.test_lora_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_low_accuracy_modules_fixes" href="test_low_accuracy_modules_fixes.html">neuralops.tests.test_low_accuracy_modules_fixes</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests validating fixes for low-accuracy modules:
+- GPT-2 fused c_attn splitting prior to SVD
+- Aegis family positive gate bias and residual …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_lsh_attention_auto" href="test_lsh_attention_auto.html">neuralops.tests.test_lsh_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_lsh_attention_comprehensive" href="test_lsh_attention_comprehensive.html">neuralops.tests.test_lsh_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_mamba_chunked_scan" href="test_mamba_chunked_scan.html">neuralops.tests.test_mamba_chunked_scan</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_mamba_svd_flash_comprehensive" href="test_mamba_svd_flash_comprehensive.html">neuralops.tests.test_mamba_svd_flash_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_master_suite_all_203_models" href="test_master_suite_all_203_models.html">neuralops.tests.test_master_suite_all_203_models</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_minimal_nova_auto" href="test_minimal_nova_auto.html">neuralops.tests.test_minimal_nova_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_minimal_nova_comprehensive" href="test_minimal_nova_comprehensive.html">neuralops.tests.test_minimal_nova_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_minimal_svd_auto" href="test_minimal_svd_auto.html">neuralops.tests.test_minimal_svd_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_minimal_svd_comprehensive" href="test_minimal_svd_comprehensive.html">neuralops.tests.test_minimal_svd_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_mixattention_moska_auto" href="test_mixattention_moska_auto.html">neuralops.tests.test_mixattention_moska_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_mixattention_moska_comprehensive" href="test_mixattention_moska_comprehensive.html">neuralops.tests.test_mixattention_moska_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_mla_attention_auto" href="test_mla_attention_auto.html">neuralops.tests.test_mla_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_mla_attention_comprehensive" href="test_mla_attention_comprehensive.html">neuralops.tests.test_mla_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_moba_attention_auto" href="test_moba_attention_auto.html">neuralops.tests.test_moba_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_moba_attention_comprehensive" href="test_moba_attention_comprehensive.html">neuralops.tests.test_moba_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_model_family_compat" href="test_model_family_compat.html">neuralops.tests.test_model_family_compat</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_models_and_datasets_matrix" href="test_models_and_datasets_matrix.html">neuralops.tests.test_models_and_datasets_matrix</a></code></dt>
+<dd>
+<div class="desc"><p>Comprehensive Matrix Test Suite: Small Models (BERT, RoBERTa, DistilBERT, GPT-2)
+across all Datasets (GLUE tasks, WikiText-2, C4, Multi-Choice) and …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_moe_deltakv_paged_auto" href="test_moe_deltakv_paged_auto.html">neuralops.tests.test_moe_deltakv_paged_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_moe_deltakv_paged_comprehensive" href="test_moe_deltakv_paged_comprehensive.html">neuralops.tests.test_moe_deltakv_paged_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_moe_hybrid_comprehensive" href="test_moe_hybrid_comprehensive.html">neuralops.tests.test_moe_hybrid_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_multi_mode" href="test_multi_mode.html">neuralops.tests.test_multi_mode</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for MultiModeBenchmarkRunner across diverse inference modes.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_multiarch_modules" href="test_multiarch_modules.html">neuralops.tests.test_multiarch_modules</a></code></dt>
+<dd>
+<div class="desc"><p>Small, dependency-light tests for the multi-architecture contract.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_muon_optimizer" href="test_muon_optimizer.html">neuralops.tests.test_muon_optimizer</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_nasc_attention_auto" href="test_nasc_attention_auto.html">neuralops.tests.test_nasc_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_nasc_attention_comprehensive" href="test_nasc_attention_comprehensive.html">neuralops.tests.test_nasc_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_nexus_auto" href="test_nexus_auto.html">neuralops.tests.test_nexus_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_nexus_comprehensive" href="test_nexus_comprehensive.html">neuralops.tests.test_nexus_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_nha_comprehensive" href="test_nha_comprehensive.html">neuralops.tests.test_nha_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_nsa_attention_auto" href="test_nsa_attention_auto.html">neuralops.tests.test_nsa_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_nsa_attention_comprehensive" href="test_nsa_attention_comprehensive.html">neuralops.tests.test_nsa_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_numerical_stability" href="test_numerical_stability.html">neuralops.tests.test_numerical_stability</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for numerical stability, FP16/FP32 precision, and mask edge cases.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_nystrom_attention_auto" href="test_nystrom_attention_auto.html">neuralops.tests.test_nystrom_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_nystrom_attention_comprehensive" href="test_nystrom_attention_comprehensive.html">neuralops.tests.test_nystrom_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_optimized_hybrid_attention_auto" href="test_optimized_hybrid_attention_auto.html">neuralops.tests.test_optimized_hybrid_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_optimized_hybrid_attention_comprehensive" href="test_optimized_hybrid_attention_comprehensive.html">neuralops.tests.test_optimized_hybrid_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_orion_auto" href="test_orion_auto.html">neuralops.tests.test_orion_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_orion_comprehensive" href="test_orion_comprehensive.html">neuralops.tests.test_orion_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_parquet_and_storage" href="test_parquet_and_storage.html">neuralops.tests.test_parquet_and_storage</a></code></dt>
+<dd>
+<div class="desc"><p>Unit Tests for ResultsSaver, Parquet Exporter &amp; Isolated Storage.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_part10_registry_and_consolidation" href="test_part10_registry_and_consolidation.html">neuralops.tests.test_part10_registry_and_consolidation</a></code></dt>
+<dd>
+<div class="desc"><p>Part 10 Verification: Registry Health &amp; Duplicate Consolidation.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_part11_baseline_resolution" href="test_part11_baseline_resolution.html">neuralops.tests.test_part11_baseline_resolution</a></code></dt>
+<dd>
+<div class="desc"><p>Part 11 Verification: Checkpoint Resolution &amp; CLI Override.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_part1_hierarchical_dedup" href="test_part1_hierarchical_dedup.html">neuralops.tests.test_part1_hierarchical_dedup</a></code></dt>
+<dd>
+<div class="desc"><p>Part 1 Verification: Hierarchical Prefix Deduplication (RCA-1).</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_part2_weight_layout" href="test_part2_weight_layout.html">neuralops.tests.test_part2_weight_layout</a></code></dt>
+<dd>
+<div class="desc"><p>Part 2 Verification: Shape-Based Weight Layout Detection (RCA-2).</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_part3_leaf_parameter_isinstance" href="test_part3_leaf_parameter_isinstance.html">neuralops.tests.test_part3_leaf_parameter_isinstance</a></code></dt>
+<dd>
+<div class="desc"><p>Part 3 Verification: isinstance-based Parameter Targeting (RCA-3).</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_part4_dynamic_lora_alias" href="test_part4_dynamic_lora_alias.html">neuralops.tests.test_part4_dynamic_lora_alias</a></code></dt>
+<dd>
+<div class="desc"><p>Part 4 Verification: Dynamic LoRA Target Discovery &amp; Canonical Aliases (RCA-4, RCA-10).</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_part5_compressor_lora_unmerged" href="test_part5_compressor_lora_unmerged.html">neuralops.tests.test_part5_compressor_lora_unmerged</a></code></dt>
+<dd>
+<div class="desc"><p>Part 5 Verification: Preserving Unmerged LoRA Adapters for Compressor Recovery (RCA-5).</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_part6_capability_declarations" href="test_part6_capability_declarations.html">neuralops.tests.test_part6_capability_declarations</a></code></dt>
+<dd>
+<div class="desc"><p>Part 6 Verification: Capability Declarations &amp; Early Incompatibility Skipping (RCA-6).</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_part7_numerical_safety" href="test_part7_numerical_safety.html">neuralops.tests.test_part7_numerical_safety</a></code></dt>
+<dd>
+<div class="desc"><p>Part 7 Verification: Project-Wide Numerical Safety (RCA-7, RCA-8, RCA-9).</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_part8_recovery_targets" href="test_part8_recovery_targets.html">neuralops.tests.test_part8_recovery_targets</a></code></dt>
+<dd>
+<div class="desc"><p>Part 8 Verification: Precise Recovery Trainable Parameter Selection.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_part9_output_tuple" href="test_part9_output_tuple.html">neuralops.tests.test_part9_output_tuple</a></code></dt>
+<dd>
+<div class="desc"><p>Part 9 Verification: Output Tuple Standardization in UniversalAttentionWrapper.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_performer_comprehensive" href="test_performer_comprehensive.html">neuralops.tests.test_performer_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_phantom_auto" href="test_phantom_auto.html">neuralops.tests.test_phantom_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_phantom_comprehensive" href="test_phantom_comprehensive.html">neuralops.tests.test_phantom_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_primal_attention_auto" href="test_primal_attention_auto.html">neuralops.tests.test_primal_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_primal_attention_comprehensive" href="test_primal_attention_comprehensive.html">neuralops.tests.test_primal_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_production_dataset_shapes" href="test_production_dataset_shapes.html">neuralops.tests.test_production_dataset_shapes</a></code></dt>
+<dd>
+<div class="desc"><p>Production Dataset Shapes &amp; Collation Verification Test Suite …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_progressive_token_pruning_auto" href="test_progressive_token_pruning_auto.html">neuralops.tests.test_progressive_token_pruning_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_progressive_token_pruning_comprehensive" href="test_progressive_token_pruning_comprehensive.html">neuralops.tests.test_progressive_token_pruning_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_projection_factorized_attn_auto" href="test_projection_factorized_attn_auto.html">neuralops.tests.test_projection_factorized_attn_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_projection_factorized_attn_comprehensive" href="test_projection_factorized_attn_comprehensive.html">neuralops.tests.test_projection_factorized_attn_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_qcqa_attention_auto" href="test_qcqa_attention_auto.html">neuralops.tests.test_qcqa_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_qcqa_attention_comprehensive" href="test_qcqa_attention_comprehensive.html">neuralops.tests.test_qcqa_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_qwen3_5_comprehensive" href="test_qwen3_5_comprehensive.html">neuralops.tests.test_qwen3_5_comprehensive</a></code></dt>
+<dd>
+<div class="desc"><p>Subagent 6: Qwen3.5-0.8B Dedicated Test Suite (DeltaNet, GQA Attention, MoE).</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_qwen3_5_compressor_awareness" href="test_qwen3_5_compressor_awareness.html">neuralops.tests.test_qwen3_5_compressor_awareness</a></code></dt>
+<dd>
+<div class="desc"><p>Comprehensive test suite verifying architecture-aware compression, dynamic rank selection,
+recovery parameter selection, and LoRA preservation on …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_rala_attention_auto" href="test_rala_attention_auto.html">neuralops.tests.test_rala_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_rala_attention_comprehensive" href="test_rala_attention_comprehensive.html">neuralops.tests.test_rala_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_reap_moe_auto" href="test_reap_moe_auto.html">neuralops.tests.test_reap_moe_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_reap_moe_comprehensive" href="test_reap_moe_comprehensive.html">neuralops.tests.test_reap_moe_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_recurrent_ssm_attentions" href="test_recurrent_ssm_attentions.html">neuralops.tests.test_recurrent_ssm_attentions</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for all 16 Recurrent, State Space &amp; Linear DeltaNet Attention modules …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_registry" href="test_registry.html">neuralops.tests.test_registry</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for central registry, module registration, and helper module filtering.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_regla_attention_auto" href="test_regla_attention_auto.html">neuralops.tests.test_regla_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_regla_attention_comprehensive" href="test_regla_attention_comprehensive.html">neuralops.tests.test_regla_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_replace_auto" href="test_replace_auto.html">neuralops.tests.test_replace_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_replace_comprehensive" href="test_replace_comprehensive.html">neuralops.tests.test_replace_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_res_svd_auto" href="test_res_svd_auto.html">neuralops.tests.test_res_svd_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_res_svd_comprehensive" href="test_res_svd_comprehensive.html">neuralops.tests.test_res_svd_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_results_saver" href="test_results_saver.html">neuralops.tests.test_results_saver</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for ResultsSaver, metric exports, configuration archiving, and checkpoints.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_routing_attention_auto" href="test_routing_attention_auto.html">neuralops.tests.test_routing_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_routing_attention_comprehensive" href="test_routing_attention_comprehensive.html">neuralops.tests.test_routing_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_rpc_comprehensive" href="test_rpc_comprehensive.html">neuralops.tests.test_rpc_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_salt_attention_comprehensive" href="test_salt_attention_comprehensive.html">neuralops.tests.test_salt_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_salt_f" href="test_salt_f.html">neuralops.tests.test_salt_f</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_samba_m3_comprehensive" href="test_samba_m3_comprehensive.html">neuralops.tests.test_samba_m3_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_samba_moe_comprehensive" href="test_samba_moe_comprehensive.html">neuralops.tests.test_samba_moe_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_simple_ssm_auto" href="test_simple_ssm_auto.html">neuralops.tests.test_simple_ssm_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_soa_attn_auto" href="test_soa_attn_auto.html">neuralops.tests.test_soa_attn_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_soa_attn_comprehensive" href="test_soa_attn_comprehensive.html">neuralops.tests.test_soa_attn_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_sota_compression" href="test_sota_compression.html">neuralops.tests.test_sota_compression</a></code></dt>
+<dd>
+<div class="desc"><p>Unit Tests for State-of-the-Art (SOTA) Compression Engines:
+1. Dynamic Entropy SVD Compressor &amp; Dynamic Rank Allocator (dynamic_rank.py).
+2. Spectral …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_span_expanded_attention_auto" href="test_span_expanded_attention_auto.html">neuralops.tests.test_span_expanded_attention_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_span_expanded_attention_comprehensive" href="test_span_expanded_attention_comprehensive.html">neuralops.tests.test_span_expanded_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_squeezing_heads_distill_auto" href="test_squeezing_heads_distill_auto.html">neuralops.tests.test_squeezing_heads_distill_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_ssm_spectral_comprehensive" href="test_ssm_spectral_comprehensive.html">neuralops.tests.test_ssm_spectral_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_svd_audit_suite" href="test_svd_audit_suite.html">neuralops.tests.test_svd_audit_suite</a></code></dt>
+<dd>
+<div class="desc"><p>Comprehensive Audit &amp; Evaluation Suite for SVD and Low-Rank Attention Mechanisms &amp; Compression Engines …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_svd_linear_attention" href="test_svd_linear_attention.html">neuralops.tests.test_svd_linear_attention</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_svd_linear_attention_comprehensive" href="test_svd_linear_attention_comprehensive.html">neuralops.tests.test_svd_linear_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_svd_linear_decay_auto" href="test_svd_linear_decay_auto.html">neuralops.tests.test_svd_linear_decay_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_svd_linear_decay_comprehensive" href="test_svd_linear_decay_comprehensive.html">neuralops.tests.test_svd_linear_decay_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_svd_lowrank_comprehensive" href="test_svd_lowrank_comprehensive.html">neuralops.tests.test_svd_lowrank_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_svd_mamba_auto" href="test_svd_mamba_auto.html">neuralops.tests.test_svd_mamba_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_svd_mamba_comprehensive" href="test_svd_mamba_comprehensive.html">neuralops.tests.test_svd_mamba_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_sweep_orchestration" href="test_sweep_orchestration.html">neuralops.tests.test_sweep_orchestration</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for sweep orchestration, checkpoint resolution, plateau detection, and resumption.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_t5_all_attention_compat" href="test_t5_all_attention_compat.html">neuralops.tests.test_t5_all_attention_compat</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for all 27 attention replacement modules adapted for T5.
+Verifies:
+1. Forward pass is finite (no NaN/Inf).
+2. Shapes are correct [B, …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_t5_attention_compat" href="test_t5_attention_compat.html">neuralops.tests.test_t5_attention_compat</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_template_attention_comprehensive" href="test_template_attention_comprehensive.html">neuralops.tests.test_template_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_threadsafe_rank_logging" href="test_threadsafe_rank_logging.html">neuralops.tests.test_threadsafe_rank_logging</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for thread-safe QueueHandler logging and isolated rank-specific log files.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_token_compressed_comprehensive" href="test_token_compressed_comprehensive.html">neuralops.tests.test_token_compressed_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_tpa_comprehensive" href="test_tpa_comprehensive.html">neuralops.tests.test_tpa_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_track2_spectral_ssm_audit" href="test_track2_spectral_ssm_audit.html">neuralops.tests.test_track2_spectral_ssm_audit</a></code></dt>
+<dd>
+<div class="desc"><p>Track 2 Comprehensive Audit &amp; Dynamic Validation Suite.
+Audits all Spectral, SSM, and Recurrent Attention modules:
+- Forward pass correctness (output …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_triton_cosformer_comprehensive" href="test_triton_cosformer_comprehensive.html">neuralops.tests.test_triton_cosformer_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_triton_kernels_suite" href="test_triton_kernels_suite.html">neuralops.tests.test_triton_kernels_suite</a></code></dt>
+<dd>
+<div class="desc"><p>Comprehensive Unit Test Suite for Shared Triton Kernels &amp; Unified Dispatcher …</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_triton_svd_linear_attention_comprehensive" href="test_triton_svd_linear_attention_comprehensive.html">neuralops.tests.test_triton_svd_linear_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_unified_rope_comprehensive" href="test_unified_rope_comprehensive.html">neuralops.tests.test_unified_rope_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_upi_mamba_comprehensive" href="test_upi_mamba_comprehensive.html">neuralops.tests.test_upi_mamba_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_upi_stuffed_mamba_auto" href="test_upi_stuffed_mamba_auto.html">neuralops.tests.test_upi_stuffed_mamba_auto</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_vig_comprehensive" href="test_vig_comprehensive.html">neuralops.tests.test_vig_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_vspec_comprehensive" href="test_vspec_comprehensive.html">neuralops.tests.test_vspec_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_weight_copy" href="test_weight_copy.html">neuralops.tests.test_weight_copy</a></code></dt>
+<dd>
+<div class="desc"><p>Unit tests for weight copying, QKV slicing, and projection detection.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_wgqa_comprehensive" href="test_wgqa_comprehensive.html">neuralops.tests.test_wgqa_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_xattention_comprehensive" href="test_xattention_comprehensive.html">neuralops.tests.test_xattention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.tests.test_zeros_attention_comprehensive" href="test_zeros_attention_comprehensive.html">neuralops.tests.test_zeros_attention_comprehensive</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops" href="../index.html">neuralops</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="neuralops.tests.test_aasvd_exhaustive" href="test_aasvd_exhaustive.html">neuralops.tests.test_aasvd_exhaustive</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_ranks_extra" href="test_adaptive_ranks_extra.html">neuralops.tests.test_adaptive_ranks_extra</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_ranks_jg" href="test_adaptive_ranks_jg.html">neuralops.tests.test_adaptive_ranks_jg</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_span" href="test_adaptive_span.html">neuralops.tests.test_adaptive_span</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_span_comprehensive" href="test_adaptive_span_comprehensive.html">neuralops.tests.test_adaptive_span_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_sparse_attention" href="test_adaptive_sparse_attention.html">neuralops.tests.test_adaptive_sparse_attention</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_sparse_comprehensive" href="test_adaptive_sparse_comprehensive.html">neuralops.tests.test_adaptive_sparse_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_svd_attention" href="test_adaptive_svd_attention.html">neuralops.tests.test_adaptive_svd_attention</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_svd_attention_comprehensive" href="test_adaptive_svd_attention_comprehensive.html">neuralops.tests.test_adaptive_svd_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_svd_verification" href="test_adaptive_svd_verification.html">neuralops.tests.test_adaptive_svd_verification</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention" href="test_adasplash_attention.html">neuralops.tests.test_adasplash_attention</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention_auto" href="test_adasplash_attention_auto.html">neuralops.tests.test_adasplash_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention_comprehensive" href="test_adasplash_attention_comprehensive.html">neuralops.tests.test_adasplash_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_adasvd_hardened" href="test_adasvd_hardened.html">neuralops.tests.test_adasvd_hardened</a></code></li>
+<li><code><a title="neuralops.tests.test_admm_hardened" href="test_admm_hardened.html">neuralops.tests.test_admm_hardened</a></code></li>
+<li><code><a title="neuralops.tests.test_admm_pruner_distill" href="test_admm_pruner_distill.html">neuralops.tests.test_admm_pruner_distill</a></code></li>
+<li><code><a title="neuralops.tests.test_aegis_hybrid" href="test_aegis_hybrid.html">neuralops.tests.test_aegis_hybrid</a></code></li>
+<li><code><a title="neuralops.tests.test_aegis_hybrid_auto" href="test_aegis_hybrid_auto.html">neuralops.tests.test_aegis_hybrid_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_aegis_hybrid_comprehensive" href="test_aegis_hybrid_comprehensive.html">neuralops.tests.test_aegis_hybrid_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_aegis_spectron_fp8" href="test_aegis_spectron_fp8.html">neuralops.tests.test_aegis_spectron_fp8</a></code></li>
+<li><code><a title="neuralops.tests.test_aegis_spectron_fp8_auto" href="test_aegis_spectron_fp8_auto.html">neuralops.tests.test_aegis_spectron_fp8_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_aegis_spectron_fp8_comprehensive" href="test_aegis_spectron_fp8_comprehensive.html">neuralops.tests.test_aegis_spectron_fp8_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_aegis_v2" href="test_aegis_v2.html">neuralops.tests.test_aegis_v2</a></code></li>
+<li><code><a title="neuralops.tests.test_aegis_v2_auto" href="test_aegis_v2_auto.html">neuralops.tests.test_aegis_v2_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_aegis_v2_comprehensive" href="test_aegis_v2_comprehensive.html">neuralops.tests.test_aegis_v2_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_aegis_v5" href="test_aegis_v5.html">neuralops.tests.test_aegis_v5</a></code></li>
+<li><code><a title="neuralops.tests.test_aegis_v5_auto" href="test_aegis_v5_auto.html">neuralops.tests.test_aegis_v5_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_aegis_v5_comprehensive" href="test_aegis_v5_comprehensive.html">neuralops.tests.test_aegis_v5_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_aegis_v6_auto" href="test_aegis_v6_auto.html">neuralops.tests.test_aegis_v6_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_aegis_v6_comprehensive" href="test_aegis_v6_comprehensive.html">neuralops.tests.test_aegis_v6_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_all_203_models_comprehensive" href="test_all_203_models_comprehensive.html">neuralops.tests.test_all_203_models_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_all_compression_engines" href="test_all_compression_engines.html">neuralops.tests.test_all_compression_engines</a></code></li>
+<li><code><a title="neuralops.tests.test_architecture" href="test_architecture.html">neuralops.tests.test_architecture</a></code></li>
+<li><code><a title="neuralops.tests.test_armor_hardened" href="test_armor_hardened.html">neuralops.tests.test_armor_hardened</a></code></li>
+<li><code><a title="neuralops.tests.test_armor_pruner_hardened" href="test_armor_pruner_hardened.html">neuralops.tests.test_armor_pruner_hardened</a></code></li>
+<li><code><a title="neuralops.tests.test_astro_hardened" href="test_astro_hardened.html">neuralops.tests.test_astro_hardened</a></code></li>
+<li><code><a title="neuralops.tests.test_asvd_attention_auto" href="test_asvd_attention_auto.html">neuralops.tests.test_asvd_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_asvd_attention_comprehensive" href="test_asvd_attention_comprehensive.html">neuralops.tests.test_asvd_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_attention_injection" href="test_attention_injection.html">neuralops.tests.test_attention_injection</a></code></li>
+<li><code><a title="neuralops.tests.test_attention_linear_family" href="test_attention_linear_family.html">neuralops.tests.test_attention_linear_family</a></code></li>
+<li><code><a title="neuralops.tests.test_attention_modules_compat" href="test_attention_modules_compat.html">neuralops.tests.test_attention_modules_compat</a></code></li>
+<li><code><a title="neuralops.tests.test_attention_ssm_family" href="test_attention_ssm_family.html">neuralops.tests.test_attention_ssm_family</a></code></li>
+<li><code><a title="neuralops.tests.test_attention_standard_family" href="test_attention_standard_family.html">neuralops.tests.test_attention_standard_family</a></code></li>
+<li><code><a title="neuralops.tests.test_attention_svd_family" href="test_attention_svd_family.html">neuralops.tests.test_attention_svd_family</a></code></li>
+<li><code><a title="neuralops.tests.test_attention_utils" href="test_attention_utils.html">neuralops.tests.test_attention_utils</a></code></li>
+<li><code><a title="neuralops.tests.test_attentions" href="test_attentions.html">neuralops.tests.test_attentions</a></code></li>
+<li><code><a title="neuralops.tests.test_bam_umoe_auto" href="test_bam_umoe_auto.html">neuralops.tests.test_bam_umoe_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_bam_umoe_comprehensive" href="test_bam_umoe_comprehensive.html">neuralops.tests.test_bam_umoe_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_benchmark_datasets" href="test_benchmark_datasets.html">neuralops.tests.test_benchmark_datasets</a></code></li>
+<li><code><a title="neuralops.tests.test_block_transformer_hiba_auto" href="test_block_transformer_hiba_auto.html">neuralops.tests.test_block_transformer_hiba_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_block_transformer_hiba_comprehensive" href="test_block_transformer_hiba_comprehensive.html">neuralops.tests.test_block_transformer_hiba_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_cachenotes_hardened" href="test_cachenotes_hardened.html">neuralops.tests.test_cachenotes_hardened</a></code></li>
+<li><code><a title="neuralops.tests.test_chela_slay" href="test_chela_slay.html">neuralops.tests.test_chela_slay</a></code></li>
+<li><code><a title="neuralops.tests.test_chela_slay_auto" href="test_chela_slay_auto.html">neuralops.tests.test_chela_slay_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_chela_slay_comprehensive" href="test_chela_slay_comprehensive.html">neuralops.tests.test_chela_slay_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_chunked_recurrent_scans" href="test_chunked_recurrent_scans.html">neuralops.tests.test_chunked_recurrent_scans</a></code></li>
+<li><code><a title="neuralops.tests.test_cluster_comprehensive" href="test_cluster_comprehensive.html">neuralops.tests.test_cluster_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_compressed_attention_auto" href="test_compressed_attention_auto.html">neuralops.tests.test_compressed_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_compressed_attention_comprehensive" href="test_compressed_attention_comprehensive.html">neuralops.tests.test_compressed_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_compressed_mha_attention_auto" href="test_compressed_mha_attention_auto.html">neuralops.tests.test_compressed_mha_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_compressed_mha_attention_comprehensive" href="test_compressed_mha_attention_comprehensive.html">neuralops.tests.test_compressed_mha_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_compressors_all" href="test_compressors_all.html">neuralops.tests.test_compressors_all</a></code></li>
+<li><code><a title="neuralops.tests.test_cosformer" href="test_cosformer.html">neuralops.tests.test_cosformer</a></code></li>
+<li><code><a title="neuralops.tests.test_cosformer_auto" href="test_cosformer_auto.html">neuralops.tests.test_cosformer_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_cosformer_comprehensive" href="test_cosformer_comprehensive.html">neuralops.tests.test_cosformer_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_cross_architecture_injection" href="test_cross_architecture_injection.html">neuralops.tests.test_cross_architecture_injection</a></code></li>
+<li><code><a title="neuralops.tests.test_cur_compressor_comprehensive" href="test_cur_compressor_comprehensive.html">neuralops.tests.test_cur_compressor_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_datasets" href="test_datasets.html">neuralops.tests.test_datasets</a></code></li>
+<li><code><a title="neuralops.tests.test_decay_linear_attention" href="test_decay_linear_attention.html">neuralops.tests.test_decay_linear_attention</a></code></li>
+<li><code><a title="neuralops.tests.test_decay_linear_attention_comprehensive" href="test_decay_linear_attention_comprehensive.html">neuralops.tests.test_decay_linear_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_dobi_svd_comprehensive" href="test_dobi_svd_comprehensive.html">neuralops.tests.test_dobi_svd_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_eat" href="test_eat.html">neuralops.tests.test_eat</a></code></li>
+<li><code><a title="neuralops.tests.test_eat_auto" href="test_eat_auto.html">neuralops.tests.test_eat_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_eat_comprehensive" href="test_eat_comprehensive.html">neuralops.tests.test_eat_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_enlighten" href="test_enlighten.html">neuralops.tests.test_enlighten</a></code></li>
+<li><code><a title="neuralops.tests.test_expert_choice_moe_auto" href="test_expert_choice_moe_auto.html">neuralops.tests.test_expert_choice_moe_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_expert_choice_moe_comprehensive" href="test_expert_choice_moe_comprehensive.html">neuralops.tests.test_expert_choice_moe_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_factorised_matrix_state_auto" href="test_factorised_matrix_state_auto.html">neuralops.tests.test_factorised_matrix_state_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_factorised_matrix_state_comprehensive" href="test_factorised_matrix_state_comprehensive.html">neuralops.tests.test_factorised_matrix_state_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_file_structure" href="test_file_structure.html">neuralops.tests.test_file_structure</a></code></li>
+<li><code><a title="neuralops.tests.test_flash3_fp8" href="test_flash3_fp8.html">neuralops.tests.test_flash3_fp8</a></code></li>
+<li><code><a title="neuralops.tests.test_flash_attention3_auto" href="test_flash_attention3_auto.html">neuralops.tests.test_flash_attention3_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_flash_attention3_comprehensive" href="test_flash_attention3_comprehensive.html">neuralops.tests.test_flash_attention3_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_flash_attention3_fp8_auto" href="test_flash_attention3_fp8_auto.html">neuralops.tests.test_flash_attention3_fp8_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_flash_attention3_fp8_comprehensive" href="test_flash_attention3_fp8_comprehensive.html">neuralops.tests.test_flash_attention3_fp8_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_fms" href="test_fms.html">neuralops.tests.test_fms</a></code></li>
+<li><code><a title="neuralops.tests.test_full_attention_comprehensive" href="test_full_attention_comprehensive.html">neuralops.tests.test_full_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_full_framework_end_to_end" href="test_full_framework_end_to_end.html">neuralops.tests.test_full_framework_end_to_end</a></code></li>
+<li><code><a title="neuralops.tests.test_fused_svd_kernel" href="test_fused_svd_kernel.html">neuralops.tests.test_fused_svd_kernel</a></code></li>
+<li><code><a title="neuralops.tests.test_fused_svd_kernel_comprehensive" href="test_fused_svd_kernel_comprehensive.html">neuralops.tests.test_fused_svd_kernel_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_fusion_attn_auto" href="test_fusion_attn_auto.html">neuralops.tests.test_fusion_attn_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_fusion_attn_comprehensive" href="test_fusion_attn_comprehensive.html">neuralops.tests.test_fusion_attn_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_galerkin_attention_auto" href="test_galerkin_attention_auto.html">neuralops.tests.test_galerkin_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_galerkin_attention_comprehensive" href="test_galerkin_attention_comprehensive.html">neuralops.tests.test_galerkin_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_gated_delta_net_comprehensive" href="test_gated_delta_net_comprehensive.html">neuralops.tests.test_gated_delta_net_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_gated_deltanet_block_auto" href="test_gated_deltanet_block_auto.html">neuralops.tests.test_gated_deltanet_block_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_gated_deltanet_block_comprehensive" href="test_gated_deltanet_block_comprehensive.html">neuralops.tests.test_gated_deltanet_block_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_gated_linear_attention_auto" href="test_gated_linear_attention_auto.html">neuralops.tests.test_gated_linear_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_gated_linear_attention_comprehensive" href="test_gated_linear_attention_comprehensive.html">neuralops.tests.test_gated_linear_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_generalization_hardcoded_scan" href="test_generalization_hardcoded_scan.html">neuralops.tests.test_generalization_hardcoded_scan</a></code></li>
+<li><code><a title="neuralops.tests.test_goldfinch_ahn_comprehensive" href="test_goldfinch_ahn_comprehensive.html">neuralops.tests.test_goldfinch_ahn_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_gqa_comprehensive" href="test_gqa_comprehensive.html">neuralops.tests.test_gqa_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_granite_hybrid_comprehensive" href="test_granite_hybrid_comprehensive.html">neuralops.tests.test_granite_hybrid_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_griffin_ssd_comprehensive" href="test_griffin_ssd_comprehensive.html">neuralops.tests.test_griffin_ssd_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_halo_regla_comprehensive" href="test_halo_regla_comprehensive.html">neuralops.tests.test_halo_regla_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_hamming_comprehensive" href="test_hamming_comprehensive.html">neuralops.tests.test_hamming_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_hgrn2_comprehensive" href="test_hgrn2_comprehensive.html">neuralops.tests.test_hgrn2_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_hgrn2_gated_deltanet_auto" href="test_hgrn2_gated_deltanet_auto.html">neuralops.tests.test_hgrn2_gated_deltanet_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_hgrn2_gated_deltanet_comprehensive" href="test_hgrn2_gated_deltanet_comprehensive.html">neuralops.tests.test_hgrn2_gated_deltanet_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_hgrn2_layer_auto" href="test_hgrn2_layer_auto.html">neuralops.tests.test_hgrn2_layer_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_hgrn2_layer_comprehensive" href="test_hgrn2_layer_comprehensive.html">neuralops.tests.test_hgrn2_layer_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_hgrn2_outer_auto" href="test_hgrn2_outer_auto.html">neuralops.tests.test_hgrn2_outer_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_hgrn2_outer_comprehensive" href="test_hgrn2_outer_comprehensive.html">neuralops.tests.test_hgrn2_outer_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_hla_attention_auto" href="test_hla_attention_auto.html">neuralops.tests.test_hla_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_hla_attention_comprehensive" href="test_hla_attention_comprehensive.html">neuralops.tests.test_hla_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_huffman_coder" href="test_huffman_coder.html">neuralops.tests.test_huffman_coder</a></code></li>
+<li><code><a title="neuralops.tests.test_hybrid_attention" href="test_hybrid_attention.html">neuralops.tests.test_hybrid_attention</a></code></li>
+<li><code><a title="neuralops.tests.test_hybrid_freeze" href="test_hybrid_freeze.html">neuralops.tests.test_hybrid_freeze</a></code></li>
+<li><code><a title="neuralops.tests.test_hymba_transx_auto" href="test_hymba_transx_auto.html">neuralops.tests.test_hymba_transx_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_hymba_transx_comprehensive" href="test_hymba_transx_comprehensive.html">neuralops.tests.test_hymba_transx_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_imports" href="test_imports.html">neuralops.tests.test_imports</a></code></li>
+<li><code><a title="neuralops.tests.test_infini_attention_auto" href="test_infini_attention_auto.html">neuralops.tests.test_infini_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_integration_all_families" href="test_integration_all_families.html">neuralops.tests.test_integration_all_families</a></code></li>
+<li><code><a title="neuralops.tests.test_integration_smoke" href="test_integration_smoke.html">neuralops.tests.test_integration_smoke</a></code></li>
+<li><code><a title="neuralops.tests.test_jamba_comprehensive" href="test_jamba_comprehensive.html">neuralops.tests.test_jamba_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_jamba_info_auto" href="test_jamba_info_auto.html">neuralops.tests.test_jamba_info_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_jamba_info_comprehensive" href="test_jamba_info_comprehensive.html">neuralops.tests.test_jamba_info_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_kda_comprehensive" href="test_kda_comprehensive.html">neuralops.tests.test_kda_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_kernel_quantization_comprehensive" href="test_kernel_quantization_comprehensive.html">neuralops.tests.test_kernel_quantization_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_kvtc_hardened" href="test_kvtc_hardened.html">neuralops.tests.test_kvtc_hardened</a></code></li>
+<li><code><a title="neuralops.tests.test_legacy_ensemble" href="test_legacy_ensemble.html">neuralops.tests.test_legacy_ensemble</a></code></li>
+<li><code><a title="neuralops.tests.test_leka_v1_auto" href="test_leka_v1_auto.html">neuralops.tests.test_leka_v1_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_leka_v1_comprehensive" href="test_leka_v1_comprehensive.html">neuralops.tests.test_leka_v1_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_leka_v2_auto" href="test_leka_v2_auto.html">neuralops.tests.test_leka_v2_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_leka_v2_comprehensive" href="test_leka_v2_comprehensive.html">neuralops.tests.test_leka_v2_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_leka_v3_auto" href="test_leka_v3_auto.html">neuralops.tests.test_leka_v3_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_leka_v3_comprehensive" href="test_leka_v3_comprehensive.html">neuralops.tests.test_leka_v3_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_linformer_attention_auto" href="test_linformer_attention_auto.html">neuralops.tests.test_linformer_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_linformer_attention_comprehensive" href="test_linformer_attention_comprehensive.html">neuralops.tests.test_linformer_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_lola_attention_auto" href="test_lola_attention_auto.html">neuralops.tests.test_lola_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_lola_attention_comprehensive" href="test_lola_attention_comprehensive.html">neuralops.tests.test_lola_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_lora" href="test_lora.html">neuralops.tests.test_lora</a></code></li>
+<li><code><a title="neuralops.tests.test_lora_attention_comprehensive" href="test_lora_attention_comprehensive.html">neuralops.tests.test_lora_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_low_accuracy_modules_fixes" href="test_low_accuracy_modules_fixes.html">neuralops.tests.test_low_accuracy_modules_fixes</a></code></li>
+<li><code><a title="neuralops.tests.test_lsh_attention_auto" href="test_lsh_attention_auto.html">neuralops.tests.test_lsh_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_lsh_attention_comprehensive" href="test_lsh_attention_comprehensive.html">neuralops.tests.test_lsh_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_mamba_chunked_scan" href="test_mamba_chunked_scan.html">neuralops.tests.test_mamba_chunked_scan</a></code></li>
+<li><code><a title="neuralops.tests.test_mamba_svd_flash_comprehensive" href="test_mamba_svd_flash_comprehensive.html">neuralops.tests.test_mamba_svd_flash_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_master_suite_all_203_models" href="test_master_suite_all_203_models.html">neuralops.tests.test_master_suite_all_203_models</a></code></li>
+<li><code><a title="neuralops.tests.test_minimal_nova_auto" href="test_minimal_nova_auto.html">neuralops.tests.test_minimal_nova_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_minimal_nova_comprehensive" href="test_minimal_nova_comprehensive.html">neuralops.tests.test_minimal_nova_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_minimal_svd_auto" href="test_minimal_svd_auto.html">neuralops.tests.test_minimal_svd_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_minimal_svd_comprehensive" href="test_minimal_svd_comprehensive.html">neuralops.tests.test_minimal_svd_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_mixattention_moska_auto" href="test_mixattention_moska_auto.html">neuralops.tests.test_mixattention_moska_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_mixattention_moska_comprehensive" href="test_mixattention_moska_comprehensive.html">neuralops.tests.test_mixattention_moska_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_mla_attention_auto" href="test_mla_attention_auto.html">neuralops.tests.test_mla_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_mla_attention_comprehensive" href="test_mla_attention_comprehensive.html">neuralops.tests.test_mla_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_moba_attention_auto" href="test_moba_attention_auto.html">neuralops.tests.test_moba_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_moba_attention_comprehensive" href="test_moba_attention_comprehensive.html">neuralops.tests.test_moba_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_model_family_compat" href="test_model_family_compat.html">neuralops.tests.test_model_family_compat</a></code></li>
+<li><code><a title="neuralops.tests.test_models_and_datasets_matrix" href="test_models_and_datasets_matrix.html">neuralops.tests.test_models_and_datasets_matrix</a></code></li>
+<li><code><a title="neuralops.tests.test_moe_deltakv_paged_auto" href="test_moe_deltakv_paged_auto.html">neuralops.tests.test_moe_deltakv_paged_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_moe_deltakv_paged_comprehensive" href="test_moe_deltakv_paged_comprehensive.html">neuralops.tests.test_moe_deltakv_paged_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_moe_hybrid_comprehensive" href="test_moe_hybrid_comprehensive.html">neuralops.tests.test_moe_hybrid_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_multi_mode" href="test_multi_mode.html">neuralops.tests.test_multi_mode</a></code></li>
+<li><code><a title="neuralops.tests.test_multiarch_modules" href="test_multiarch_modules.html">neuralops.tests.test_multiarch_modules</a></code></li>
+<li><code><a title="neuralops.tests.test_muon_optimizer" href="test_muon_optimizer.html">neuralops.tests.test_muon_optimizer</a></code></li>
+<li><code><a title="neuralops.tests.test_nasc_attention_auto" href="test_nasc_attention_auto.html">neuralops.tests.test_nasc_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_nasc_attention_comprehensive" href="test_nasc_attention_comprehensive.html">neuralops.tests.test_nasc_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_nexus_auto" href="test_nexus_auto.html">neuralops.tests.test_nexus_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_nexus_comprehensive" href="test_nexus_comprehensive.html">neuralops.tests.test_nexus_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_nha_comprehensive" href="test_nha_comprehensive.html">neuralops.tests.test_nha_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_nsa_attention_auto" href="test_nsa_attention_auto.html">neuralops.tests.test_nsa_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_nsa_attention_comprehensive" href="test_nsa_attention_comprehensive.html">neuralops.tests.test_nsa_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_numerical_stability" href="test_numerical_stability.html">neuralops.tests.test_numerical_stability</a></code></li>
+<li><code><a title="neuralops.tests.test_nystrom_attention_auto" href="test_nystrom_attention_auto.html">neuralops.tests.test_nystrom_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_nystrom_attention_comprehensive" href="test_nystrom_attention_comprehensive.html">neuralops.tests.test_nystrom_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_optimized_hybrid_attention_auto" href="test_optimized_hybrid_attention_auto.html">neuralops.tests.test_optimized_hybrid_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_optimized_hybrid_attention_comprehensive" href="test_optimized_hybrid_attention_comprehensive.html">neuralops.tests.test_optimized_hybrid_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_orion_auto" href="test_orion_auto.html">neuralops.tests.test_orion_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_orion_comprehensive" href="test_orion_comprehensive.html">neuralops.tests.test_orion_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_parquet_and_storage" href="test_parquet_and_storage.html">neuralops.tests.test_parquet_and_storage</a></code></li>
+<li><code><a title="neuralops.tests.test_part10_registry_and_consolidation" href="test_part10_registry_and_consolidation.html">neuralops.tests.test_part10_registry_and_consolidation</a></code></li>
+<li><code><a title="neuralops.tests.test_part11_baseline_resolution" href="test_part11_baseline_resolution.html">neuralops.tests.test_part11_baseline_resolution</a></code></li>
+<li><code><a title="neuralops.tests.test_part1_hierarchical_dedup" href="test_part1_hierarchical_dedup.html">neuralops.tests.test_part1_hierarchical_dedup</a></code></li>
+<li><code><a title="neuralops.tests.test_part2_weight_layout" href="test_part2_weight_layout.html">neuralops.tests.test_part2_weight_layout</a></code></li>
+<li><code><a title="neuralops.tests.test_part3_leaf_parameter_isinstance" href="test_part3_leaf_parameter_isinstance.html">neuralops.tests.test_part3_leaf_parameter_isinstance</a></code></li>
+<li><code><a title="neuralops.tests.test_part4_dynamic_lora_alias" href="test_part4_dynamic_lora_alias.html">neuralops.tests.test_part4_dynamic_lora_alias</a></code></li>
+<li><code><a title="neuralops.tests.test_part5_compressor_lora_unmerged" href="test_part5_compressor_lora_unmerged.html">neuralops.tests.test_part5_compressor_lora_unmerged</a></code></li>
+<li><code><a title="neuralops.tests.test_part6_capability_declarations" href="test_part6_capability_declarations.html">neuralops.tests.test_part6_capability_declarations</a></code></li>
+<li><code><a title="neuralops.tests.test_part7_numerical_safety" href="test_part7_numerical_safety.html">neuralops.tests.test_part7_numerical_safety</a></code></li>
+<li><code><a title="neuralops.tests.test_part8_recovery_targets" href="test_part8_recovery_targets.html">neuralops.tests.test_part8_recovery_targets</a></code></li>
+<li><code><a title="neuralops.tests.test_part9_output_tuple" href="test_part9_output_tuple.html">neuralops.tests.test_part9_output_tuple</a></code></li>
+<li><code><a title="neuralops.tests.test_performer_comprehensive" href="test_performer_comprehensive.html">neuralops.tests.test_performer_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_phantom_auto" href="test_phantom_auto.html">neuralops.tests.test_phantom_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_phantom_comprehensive" href="test_phantom_comprehensive.html">neuralops.tests.test_phantom_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_primal_attention_auto" href="test_primal_attention_auto.html">neuralops.tests.test_primal_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_primal_attention_comprehensive" href="test_primal_attention_comprehensive.html">neuralops.tests.test_primal_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_production_dataset_shapes" href="test_production_dataset_shapes.html">neuralops.tests.test_production_dataset_shapes</a></code></li>
+<li><code><a title="neuralops.tests.test_progressive_token_pruning_auto" href="test_progressive_token_pruning_auto.html">neuralops.tests.test_progressive_token_pruning_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_progressive_token_pruning_comprehensive" href="test_progressive_token_pruning_comprehensive.html">neuralops.tests.test_progressive_token_pruning_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_projection_factorized_attn_auto" href="test_projection_factorized_attn_auto.html">neuralops.tests.test_projection_factorized_attn_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_projection_factorized_attn_comprehensive" href="test_projection_factorized_attn_comprehensive.html">neuralops.tests.test_projection_factorized_attn_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_qcqa_attention_auto" href="test_qcqa_attention_auto.html">neuralops.tests.test_qcqa_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_qcqa_attention_comprehensive" href="test_qcqa_attention_comprehensive.html">neuralops.tests.test_qcqa_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_qwen3_5_comprehensive" href="test_qwen3_5_comprehensive.html">neuralops.tests.test_qwen3_5_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_qwen3_5_compressor_awareness" href="test_qwen3_5_compressor_awareness.html">neuralops.tests.test_qwen3_5_compressor_awareness</a></code></li>
+<li><code><a title="neuralops.tests.test_rala_attention_auto" href="test_rala_attention_auto.html">neuralops.tests.test_rala_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_rala_attention_comprehensive" href="test_rala_attention_comprehensive.html">neuralops.tests.test_rala_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_reap_moe_auto" href="test_reap_moe_auto.html">neuralops.tests.test_reap_moe_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_reap_moe_comprehensive" href="test_reap_moe_comprehensive.html">neuralops.tests.test_reap_moe_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_recurrent_ssm_attentions" href="test_recurrent_ssm_attentions.html">neuralops.tests.test_recurrent_ssm_attentions</a></code></li>
+<li><code><a title="neuralops.tests.test_registry" href="test_registry.html">neuralops.tests.test_registry</a></code></li>
+<li><code><a title="neuralops.tests.test_regla_attention_auto" href="test_regla_attention_auto.html">neuralops.tests.test_regla_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_regla_attention_comprehensive" href="test_regla_attention_comprehensive.html">neuralops.tests.test_regla_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_replace_auto" href="test_replace_auto.html">neuralops.tests.test_replace_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_replace_comprehensive" href="test_replace_comprehensive.html">neuralops.tests.test_replace_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_res_svd_auto" href="test_res_svd_auto.html">neuralops.tests.test_res_svd_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_res_svd_comprehensive" href="test_res_svd_comprehensive.html">neuralops.tests.test_res_svd_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_results_saver" href="test_results_saver.html">neuralops.tests.test_results_saver</a></code></li>
+<li><code><a title="neuralops.tests.test_routing_attention_auto" href="test_routing_attention_auto.html">neuralops.tests.test_routing_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_routing_attention_comprehensive" href="test_routing_attention_comprehensive.html">neuralops.tests.test_routing_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_rpc_comprehensive" href="test_rpc_comprehensive.html">neuralops.tests.test_rpc_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_salt_attention_comprehensive" href="test_salt_attention_comprehensive.html">neuralops.tests.test_salt_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_salt_f" href="test_salt_f.html">neuralops.tests.test_salt_f</a></code></li>
+<li><code><a title="neuralops.tests.test_samba_m3_comprehensive" href="test_samba_m3_comprehensive.html">neuralops.tests.test_samba_m3_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_samba_moe_comprehensive" href="test_samba_moe_comprehensive.html">neuralops.tests.test_samba_moe_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_simple_ssm_auto" href="test_simple_ssm_auto.html">neuralops.tests.test_simple_ssm_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_soa_attn_auto" href="test_soa_attn_auto.html">neuralops.tests.test_soa_attn_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_soa_attn_comprehensive" href="test_soa_attn_comprehensive.html">neuralops.tests.test_soa_attn_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression" href="test_sota_compression.html">neuralops.tests.test_sota_compression</a></code></li>
+<li><code><a title="neuralops.tests.test_span_expanded_attention_auto" href="test_span_expanded_attention_auto.html">neuralops.tests.test_span_expanded_attention_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_span_expanded_attention_comprehensive" href="test_span_expanded_attention_comprehensive.html">neuralops.tests.test_span_expanded_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_squeezing_heads_distill_auto" href="test_squeezing_heads_distill_auto.html">neuralops.tests.test_squeezing_heads_distill_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_ssm_spectral_comprehensive" href="test_ssm_spectral_comprehensive.html">neuralops.tests.test_ssm_spectral_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_svd_audit_suite" href="test_svd_audit_suite.html">neuralops.tests.test_svd_audit_suite</a></code></li>
+<li><code><a title="neuralops.tests.test_svd_linear_attention" href="test_svd_linear_attention.html">neuralops.tests.test_svd_linear_attention</a></code></li>
+<li><code><a title="neuralops.tests.test_svd_linear_attention_comprehensive" href="test_svd_linear_attention_comprehensive.html">neuralops.tests.test_svd_linear_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_svd_linear_decay_auto" href="test_svd_linear_decay_auto.html">neuralops.tests.test_svd_linear_decay_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_svd_linear_decay_comprehensive" href="test_svd_linear_decay_comprehensive.html">neuralops.tests.test_svd_linear_decay_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_svd_lowrank_comprehensive" href="test_svd_lowrank_comprehensive.html">neuralops.tests.test_svd_lowrank_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_svd_mamba_auto" href="test_svd_mamba_auto.html">neuralops.tests.test_svd_mamba_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_svd_mamba_comprehensive" href="test_svd_mamba_comprehensive.html">neuralops.tests.test_svd_mamba_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_sweep_orchestration" href="test_sweep_orchestration.html">neuralops.tests.test_sweep_orchestration</a></code></li>
+<li><code><a title="neuralops.tests.test_t5_all_attention_compat" href="test_t5_all_attention_compat.html">neuralops.tests.test_t5_all_attention_compat</a></code></li>
+<li><code><a title="neuralops.tests.test_t5_attention_compat" href="test_t5_attention_compat.html">neuralops.tests.test_t5_attention_compat</a></code></li>
+<li><code><a title="neuralops.tests.test_template_attention_comprehensive" href="test_template_attention_comprehensive.html">neuralops.tests.test_template_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_threadsafe_rank_logging" href="test_threadsafe_rank_logging.html">neuralops.tests.test_threadsafe_rank_logging</a></code></li>
+<li><code><a title="neuralops.tests.test_token_compressed_comprehensive" href="test_token_compressed_comprehensive.html">neuralops.tests.test_token_compressed_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_tpa_comprehensive" href="test_tpa_comprehensive.html">neuralops.tests.test_tpa_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_track2_spectral_ssm_audit" href="test_track2_spectral_ssm_audit.html">neuralops.tests.test_track2_spectral_ssm_audit</a></code></li>
+<li><code><a title="neuralops.tests.test_triton_cosformer_comprehensive" href="test_triton_cosformer_comprehensive.html">neuralops.tests.test_triton_cosformer_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_triton_kernels_suite" href="test_triton_kernels_suite.html">neuralops.tests.test_triton_kernels_suite</a></code></li>
+<li><code><a title="neuralops.tests.test_triton_svd_linear_attention_comprehensive" href="test_triton_svd_linear_attention_comprehensive.html">neuralops.tests.test_triton_svd_linear_attention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_unified_rope_comprehensive" href="test_unified_rope_comprehensive.html">neuralops.tests.test_unified_rope_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_upi_mamba_comprehensive" href="test_upi_mamba_comprehensive.html">neuralops.tests.test_upi_mamba_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_upi_stuffed_mamba_auto" href="test_upi_stuffed_mamba_auto.html">neuralops.tests.test_upi_stuffed_mamba_auto</a></code></li>
+<li><code><a title="neuralops.tests.test_vig_comprehensive" href="test_vig_comprehensive.html">neuralops.tests.test_vig_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_vspec_comprehensive" href="test_vspec_comprehensive.html">neuralops.tests.test_vspec_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_weight_copy" href="test_weight_copy.html">neuralops.tests.test_weight_copy</a></code></li>
+<li><code><a title="neuralops.tests.test_wgqa_comprehensive" href="test_wgqa_comprehensive.html">neuralops.tests.test_wgqa_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_xattention_comprehensive" href="test_xattention_comprehensive.html">neuralops.tests.test_xattention_comprehensive</a></code></li>
+<li><code><a title="neuralops.tests.test_zeros_attention_comprehensive" href="test_zeros_attention_comprehensive.html">neuralops.tests.test_zeros_attention_comprehensive</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,1068 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.soka_compressor API documentation</title>
+<meta name="description" content="SoKA: Second-Order Knowledge-Aware Low-Rank Linear Compressor.
+Registered in COMPRESSOR_REGISTRY as &#39;soka&#39; …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.soka_compressor</code></h1>
+</header>
+<section id="section-intro">
+<p>SoKA: Second-Order Knowledge-Aware Low-Rank Linear Compressor.
+Registered in COMPRESSOR_REGISTRY as 'soka'.</p>
+<p>Mathematical Formulation:
+1. Weight Matrix Factorization via SVD:
+$$W = U \Sigma V^\top \approx U_r \Sigma_r V_r^\top = A B^\top$$
+where $A = U_r \Sigma_r^{1/2} \in \mathbb{R}^{d_{out} \times r}$ and $B = V_r \Sigma_r^{1/2} \in \mathbb{R}^{d_{in} \times r}$.
+2. Forward Execution:
+$$y = (x B) A^\top + b$$
+3. Singular Energy Threshold Rank Selection:
+$$r = \min \left{ k \;\middle|\; \frac{\sum_{i=1}^k \sigma_i^2}{\sum_{i=1}^{\min(d_{in}, d_{out})} \sigma_i^2} \ge \alpha \right}$$</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.soka_compressor.soka_factory"><code class="name flex">
+<span>def <span class="ident">soka_factory</span></span>(<span>model: Any,<br>comp_config: Any = None,<br>return_stats: bool = False,<br>return_tuple: bool = False,<br>**kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;soka&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;soka_compressor&#34;)
+def soka_factory(
+    model: Any,
+    comp_config: Any = None,
+    return_stats: bool = False,
+    return_tuple: bool = False,
+    **kwargs: Any,
+) -&gt; Any:
+    &#34;&#34;&#34;Factory function for SoKA compressor.&#34;&#34;&#34;
+    rank = kwargs.pop(&#34;rank&#34;, _cfg_get(comp_config, &#34;soka_rank&#34;, _cfg_get(comp_config, &#34;rank&#34;, 8)))
+    energy = kwargs.pop(
+        &#34;energy_threshold&#34;,
+        _cfg_get(comp_config, &#34;soka_energy&#34;, _cfg_get(comp_config, &#34;energy_threshold&#34;, None)),
+    )
+    max_error = kwargs.pop(&#34;max_error&#34;, _cfg_get(comp_config, &#34;max_error&#34;, 0.5))
+    fallback = kwargs.pop(
+        &#34;fallback_to_original&#34;, _cfg_get(comp_config, &#34;fallback_to_original&#34;, True)
+    )
+    target_attention_only = kwargs.pop(
+        &#34;target_attention_only&#34;, _cfg_get(comp_config, &#34;target_attention_only&#34;, False)
+    )
+
+    compressor = LowRankCompressor(
+        model,
+        rank=rank,
+        energy_threshold=energy,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        target_attention_only=target_attention_only,
+        comp_config=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_stats or return_tuple or kwargs.pop(&#34;return_both&#34;, False):
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>Factory function for SoKA compressor.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.soka_compressor.LowRankCompressor"><code class="flex name class">
+<span>class <span class="ident">LowRankCompressor</span></span>
+<span>(</span><span>model: nn.Module,<br>rank: int = 8,<br>energy_threshold: float | None = None,<br>max_error: float = 0.5,<br>target_attention_only: bool = False,<br>fallback_to_original: bool = True,<br>target_modules: list[str] | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class LowRankCompressor(BaseCompressor):
+    is_custom_attention: bool = True
+    &#34;&#34;&#34;
+    SoKA Low-Rank Linear Compressor.
+    Replaces dense nn.Linear and Conv1D layers with factorized LowRankLinear layers.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module,
+        rank: int = 8,
+        energy_threshold: float | None = None,
+        max_error: float = 0.5,
+        target_attention_only: bool = False,
+        fallback_to_original: bool = True,
+        target_modules: list[str] | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;soka&#34;, **kwargs)
+        cfg = kwargs.get(&#34;comp_config&#34;, kwargs.get(&#34;cfg&#34;))
+        if cfg is not None:
+            rank = _cfg_get(cfg, &#34;soka_rank&#34;, _cfg_get(cfg, &#34;rank&#34;, rank))
+            energy_threshold = _cfg_get(
+                cfg, &#34;soka_energy&#34;, _cfg_get(cfg, &#34;energy_threshold&#34;, energy_threshold)
+            )
+            max_error = _cfg_get(cfg, &#34;max_error&#34;, max_error)
+            fallback_to_original = _cfg_get(cfg, &#34;fallback_to_original&#34;, fallback_to_original)
+            target_attention_only = _cfg_get(cfg, &#34;target_attention_only&#34;, target_attention_only)
+
+        self.rank = max(1, int(rank))
+        self.energy_threshold = energy_threshold
+        self.max_error = float(max_error)
+        self.target_attention_only = bool(target_attention_only)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.target_modules = target_modules
+        self.compressed_layers: list[dict[str, Any]] = []
+        self.layer_errors: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
+
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        name_l = name.lower()
+        if any(k in name_l for k in [&#34;classifier&#34;, &#34;score&#34;, &#34;lm_head&#34;, &#34;pooler&#34;, &#34;embedding&#34;]):
+            return False
+
+        if self.target_attention_only:
+            attn_keywords = [
+                &#34;attn&#34;,
+                &#34;attention&#34;,
+                &#34;q_proj&#34;,
+                &#34;k_proj&#34;,
+                &#34;v_proj&#34;,
+                &#34;o_proj&#34;,
+                &#34;c_attn&#34;,
+                &#34;c_proj&#34;,
+                &#34;query&#34;,
+                &#34;key&#34;,
+                &#34;value&#34;,
+            ]
+            if not any(k in name_l for k in attn_keywords):
+                return False
+
+        base_mod = getattr(module, &#34;base_layer&#34;, module)
+        cls_name = base_mod.__class__.__name__
+        is_linear_like = (
+            isinstance(base_mod, nn.Linear)
+            or &#34;conv1d&#34; in cls_name.lower()
+            or hasattr(base_mod, &#34;nf&#34;)
+        )
+        if not is_linear_like:
+            return False
+        if isinstance(base_mod, LowRankLinear):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_modules is None:
+            return True
+        return any(t in name for t in self.target_modules)
+
+    def _select_rank(self, S: torch.Tensor, in_f: int, out_f: int) -&gt; int:
+        &#34;&#34;&#34;Determines rank dynamically based on singular energy or fixed target, capped for true reduction.&#34;&#34;&#34;
+        param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+        max_r = min(len(S), param_cap)
+
+        if self.energy_threshold is None:
+            return max(1, min(self.rank, max_r))
+        total_energy = torch.sum(S**2)
+        if total_energy &lt;= 0:
+            return max(1, min(self.rank, max_r))
+        cum_energy = torch.cumsum(S**2, dim=0) / total_energy
+        idx = torch.where(cum_energy &gt;= self.energy_threshold)[0]
+        r = idx[0].item() if len(idx) &gt; 0 else len(S)
+        return max(1, min(r, max_r))
+
+    def compress(self, **kwargs: Any) -&gt; tuple[nn.Module, dict[str, Any]]:
+        &#34;&#34;&#34;Replaces target Linear and Conv1D modules with LowRankLinear.&#34;&#34;&#34;
+        self.compressed_layers = []
+        self.layer_errors = {}
+
+        linear_layers: list[tuple[str, nn.Module]] = []
+        for name, module in self.model.named_modules():
+            if self._is_target_module(name, module):
+                linear_layers.append((name, module))
+
+        if not linear_layers:
+            logger.warning(&#34;SoKA: No compressible linear layers found.&#34;)
+            return self.model, self.get_compression_stats()
+
+        for name, module in linear_layers:
+            base_mod = getattr(module, &#34;base_layer&#34;, module)
+            raw_w = base_mod.weight.data
+            cls_name = base_mod.__class__.__name__
+            is_conv1d = (
+                &#34;conv1d&#34; in cls_name.lower()
+                or hasattr(base_mod, &#34;nf&#34;)
+                or (
+                    raw_w.ndim == 2
+                    and hasattr(base_mod, &#34;in_features&#34;)
+                    and base_mod.in_features == raw_w.shape[0]
+                    and raw_w.shape[0] &lt; raw_w.shape[1]
+                )
+            )
+
+            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
+            device = raw_w.device
+            dtype = raw_w.dtype
+            d_out, d_in = W.shape
+
+            try:
+                U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+                r = self._select_rank(S, d_in, d_out)
+                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+
+                new_layer = LowRankLinear(
+                    in_features=d_in,
+                    out_features=d_out,
+                    rank=r,
+                    bias=(base_mod.bias is not None),
+                    device=device,
+                    dtype=dtype,
+                )
+
+                # Assign factorized weights: W ≈ (U_r sqrt(S)) @ (sqrt(S) V_r^T)
+                # U: [d_out, r], V: [d_in, r]
+                new_layer.U.data = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
+                new_layer.V.data = (Vh[:r, :].T * sqrt_S.unsqueeze(0)).to(
+                    dtype=dtype, device=device
+                )
+
+                if base_mod.bias is not None:
+                    new_layer.bias.data.copy_(base_mod.bias.data)
+
+                # Frobenius reconstruction error check
+                W_rec = new_layer.weight.float()
+                norm_orig = torch.norm(W, p=&#34;fro&#34;)
+                rel_err = (torch.norm(W - W_rec, p=&#34;fro&#34;) / (norm_orig + 1e-8)).item()
+                self.layer_errors[name] = rel_err
+
+                if self.fallback_to_original and rel_err &gt; self.max_error:
+                    logger.warning(
+                        &#34;SoKA reconstruction error %.4f on %s exceeded threshold %.4f. Skipping.&#34;,
+                        rel_err,
+                        name,
+                        self.max_error,
+                    )
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    continue
+
+                compressed_layer = new_layer
+                # Preserve existing LoRA adapter weights if the source module has them
+                if (
+                    hasattr(module, &#34;lora_A&#34;)
+                    and hasattr(module, &#34;lora_B&#34;)
+                    and module.lora_A is not None
+                    and module.lora_B is not None
+                ):
+                    src_lA = getattr(module.lora_A, &#34;weight&#34;, module.lora_A)
+                    src_lB = getattr(module.lora_B, &#34;weight&#34;, module.lora_B)
+                    if hasattr(new_layer, &#34;lora_A&#34;) and new_layer.lora_A is not None:
+                        if hasattr(src_lA, &#34;data&#34;) and src_lA.shape == new_layer.lora_A.shape:
+                            new_layer.lora_A.data.copy_(src_lA.data)
+                    if hasattr(new_layer, &#34;lora_B&#34;) and new_layer.lora_B is not None:
+                        if hasattr(src_lB, &#34;data&#34;) and src_lB.shape == new_layer.lora_B.shape:
+                            new_layer.lora_B.data.copy_(src_lB.data)
+
+                if hasattr(module, &#34;base_layer&#34;):
+                    module.base_layer = compressed_layer  # put compressed layer inside wrapper
+                    # module itself (LoRALinear wrapper) remains the replacement
+                    new_module = module
+                else:
+                    new_module = compressed_layer
+                if not hasattr(module, &#34;base_layer&#34;):
+                    if name == &#34;&#34;:
+                        self.model = new_module
+                    else:
+                        replace_module(self.model, name, new_module)
+                self.compressed_layers.append(
+                    {
+                        &#34;name&#34;: name,
+                        &#34;original_shape&#34;: (d_out, d_in),
+                        &#34;rank&#34;: r,
+                        &#34;error&#34;: rel_err,
+                    }
+                )
+            except Exception as e:
+                logger.debug(&#34;SVD decomposition error in %s: %s&#34;, name, e)
+                for p in module.parameters():
+                    p.requires_grad = False
+
+        self._compressed_params = self._count_params(self.model)
+        stats = self.get_compression_stats()
+        stats.update(
+            {
+                &#34;total_layers&#34;: len(self.compressed_layers),
+                &#34;method&#34;: &#34;soka_low_rank_svd&#34;,
+                &#34;fixed_rank&#34;: self.rank,
+                &#34;energy_threshold&#34;: self.energy_threshold,
+                &#34;layer_errors&#34;: self.layer_errors,
+                &#34;target_attention_only&#34;: self.target_attention_only,
+                &#34;fallback_to_original&#34;: self.fallback_to_original,
+                &#34;max_error&#34;: self.max_error,
+            }
+        )
+        self.stats = stats
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Base class for all compressors. Not a nn.Module to avoid parameter storage.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.soka_compressor.LowRankCompressor.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>SoKA Low-Rank Linear Compressor.
+Replaces dense nn.Linear and Conv1D layers with factorized LowRankLinear layers.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.soka_compressor.LowRankCompressor.compress"><code class="name flex">
+<span>def <span class="ident">compress</span></span>(<span>self, **kwargs: Any) ‑> tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress(self, **kwargs: Any) -&gt; tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;Replaces target Linear and Conv1D modules with LowRankLinear.&#34;&#34;&#34;
+    self.compressed_layers = []
+    self.layer_errors = {}
+
+    linear_layers: list[tuple[str, nn.Module]] = []
+    for name, module in self.model.named_modules():
+        if self._is_target_module(name, module):
+            linear_layers.append((name, module))
+
+    if not linear_layers:
+        logger.warning(&#34;SoKA: No compressible linear layers found.&#34;)
+        return self.model, self.get_compression_stats()
+
+    for name, module in linear_layers:
+        base_mod = getattr(module, &#34;base_layer&#34;, module)
+        raw_w = base_mod.weight.data
+        cls_name = base_mod.__class__.__name__
+        is_conv1d = (
+            &#34;conv1d&#34; in cls_name.lower()
+            or hasattr(base_mod, &#34;nf&#34;)
+            or (
+                raw_w.ndim == 2
+                and hasattr(base_mod, &#34;in_features&#34;)
+                and base_mod.in_features == raw_w.shape[0]
+                and raw_w.shape[0] &lt; raw_w.shape[1]
+            )
+        )
+
+        W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
+        device = raw_w.device
+        dtype = raw_w.dtype
+        d_out, d_in = W.shape
+
+        try:
+            U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+            r = self._select_rank(S, d_in, d_out)
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+
+            new_layer = LowRankLinear(
+                in_features=d_in,
+                out_features=d_out,
+                rank=r,
+                bias=(base_mod.bias is not None),
+                device=device,
+                dtype=dtype,
+            )
+
+            # Assign factorized weights: W ≈ (U_r sqrt(S)) @ (sqrt(S) V_r^T)
+            # U: [d_out, r], V: [d_in, r]
+            new_layer.U.data = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
+            new_layer.V.data = (Vh[:r, :].T * sqrt_S.unsqueeze(0)).to(
+                dtype=dtype, device=device
+            )
+
+            if base_mod.bias is not None:
+                new_layer.bias.data.copy_(base_mod.bias.data)
+
+            # Frobenius reconstruction error check
+            W_rec = new_layer.weight.float()
+            norm_orig = torch.norm(W, p=&#34;fro&#34;)
+            rel_err = (torch.norm(W - W_rec, p=&#34;fro&#34;) / (norm_orig + 1e-8)).item()
+            self.layer_errors[name] = rel_err
+
+            if self.fallback_to_original and rel_err &gt; self.max_error:
+                logger.warning(
+                    &#34;SoKA reconstruction error %.4f on %s exceeded threshold %.4f. Skipping.&#34;,
+                    rel_err,
+                    name,
+                    self.max_error,
+                )
+                for p in module.parameters():
+                    p.requires_grad = False
+                continue
+
+            compressed_layer = new_layer
+            # Preserve existing LoRA adapter weights if the source module has them
+            if (
+                hasattr(module, &#34;lora_A&#34;)
+                and hasattr(module, &#34;lora_B&#34;)
+                and module.lora_A is not None
+                and module.lora_B is not None
+            ):
+                src_lA = getattr(module.lora_A, &#34;weight&#34;, module.lora_A)
+                src_lB = getattr(module.lora_B, &#34;weight&#34;, module.lora_B)
+                if hasattr(new_layer, &#34;lora_A&#34;) and new_layer.lora_A is not None:
+                    if hasattr(src_lA, &#34;data&#34;) and src_lA.shape == new_layer.lora_A.shape:
+                        new_layer.lora_A.data.copy_(src_lA.data)
+                if hasattr(new_layer, &#34;lora_B&#34;) and new_layer.lora_B is not None:
+                    if hasattr(src_lB, &#34;data&#34;) and src_lB.shape == new_layer.lora_B.shape:
+                        new_layer.lora_B.data.copy_(src_lB.data)
+
+            if hasattr(module, &#34;base_layer&#34;):
+                module.base_layer = compressed_layer  # put compressed layer inside wrapper
+                # module itself (LoRALinear wrapper) remains the replacement
+                new_module = module
+            else:
+                new_module = compressed_layer
+            if not hasattr(module, &#34;base_layer&#34;):
+                if name == &#34;&#34;:
+                    self.model = new_module
+                else:
+                    replace_module(self.model, name, new_module)
+            self.compressed_layers.append(
+                {
+                    &#34;name&#34;: name,
+                    &#34;original_shape&#34;: (d_out, d_in),
+                    &#34;rank&#34;: r,
+                    &#34;error&#34;: rel_err,
+                }
+            )
+        except Exception as e:
+            logger.debug(&#34;SVD decomposition error in %s: %s&#34;, name, e)
+            for p in module.parameters():
+                p.requires_grad = False
+
+    self._compressed_params = self._count_params(self.model)
+    stats = self.get_compression_stats()
+    stats.update(
+        {
+            &#34;total_layers&#34;: len(self.compressed_layers),
+            &#34;method&#34;: &#34;soka_low_rank_svd&#34;,
+            &#34;fixed_rank&#34;: self.rank,
+            &#34;energy_threshold&#34;: self.energy_threshold,
+            &#34;layer_errors&#34;: self.layer_errors,
+            &#34;target_attention_only&#34;: self.target_attention_only,
+            &#34;fallback_to_original&#34;: self.fallback_to_original,
+            &#34;max_error&#34;: self.max_error,
+        }
+    )
+    self.stats = stats
+    return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Replaces target Linear and Conv1D modules with LowRankLinear.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.compression_engine.soka_compressor.LowRankCompressor"><code class="flex name class">
+<span>class <span class="ident">SoKACompressor</span></span>
+<span>(</span><span>model: nn.Module,<br>rank: int = 8,<br>energy_threshold: float | None = None,<br>max_error: float = 0.5,<br>target_attention_only: bool = False,<br>fallback_to_original: bool = True,<br>target_modules: list[str] | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class LowRankCompressor(BaseCompressor):
+    is_custom_attention: bool = True
+    &#34;&#34;&#34;
+    SoKA Low-Rank Linear Compressor.
+    Replaces dense nn.Linear and Conv1D layers with factorized LowRankLinear layers.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module,
+        rank: int = 8,
+        energy_threshold: float | None = None,
+        max_error: float = 0.5,
+        target_attention_only: bool = False,
+        fallback_to_original: bool = True,
+        target_modules: list[str] | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;soka&#34;, **kwargs)
+        cfg = kwargs.get(&#34;comp_config&#34;, kwargs.get(&#34;cfg&#34;))
+        if cfg is not None:
+            rank = _cfg_get(cfg, &#34;soka_rank&#34;, _cfg_get(cfg, &#34;rank&#34;, rank))
+            energy_threshold = _cfg_get(
+                cfg, &#34;soka_energy&#34;, _cfg_get(cfg, &#34;energy_threshold&#34;, energy_threshold)
+            )
+            max_error = _cfg_get(cfg, &#34;max_error&#34;, max_error)
+            fallback_to_original = _cfg_get(cfg, &#34;fallback_to_original&#34;, fallback_to_original)
+            target_attention_only = _cfg_get(cfg, &#34;target_attention_only&#34;, target_attention_only)
+
+        self.rank = max(1, int(rank))
+        self.energy_threshold = energy_threshold
+        self.max_error = float(max_error)
+        self.target_attention_only = bool(target_attention_only)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.target_modules = target_modules
+        self.compressed_layers: list[dict[str, Any]] = []
+        self.layer_errors: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
+
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        name_l = name.lower()
+        if any(k in name_l for k in [&#34;classifier&#34;, &#34;score&#34;, &#34;lm_head&#34;, &#34;pooler&#34;, &#34;embedding&#34;]):
+            return False
+
+        if self.target_attention_only:
+            attn_keywords = [
+                &#34;attn&#34;,
+                &#34;attention&#34;,
+                &#34;q_proj&#34;,
+                &#34;k_proj&#34;,
+                &#34;v_proj&#34;,
+                &#34;o_proj&#34;,
+                &#34;c_attn&#34;,
+                &#34;c_proj&#34;,
+                &#34;query&#34;,
+                &#34;key&#34;,
+                &#34;value&#34;,
+            ]
+            if not any(k in name_l for k in attn_keywords):
+                return False
+
+        base_mod = getattr(module, &#34;base_layer&#34;, module)
+        cls_name = base_mod.__class__.__name__
+        is_linear_like = (
+            isinstance(base_mod, nn.Linear)
+            or &#34;conv1d&#34; in cls_name.lower()
+            or hasattr(base_mod, &#34;nf&#34;)
+        )
+        if not is_linear_like:
+            return False
+        if isinstance(base_mod, LowRankLinear):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_modules is None:
+            return True
+        return any(t in name for t in self.target_modules)
+
+    def _select_rank(self, S: torch.Tensor, in_f: int, out_f: int) -&gt; int:
+        &#34;&#34;&#34;Determines rank dynamically based on singular energy or fixed target, capped for true reduction.&#34;&#34;&#34;
+        param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+        max_r = min(len(S), param_cap)
+
+        if self.energy_threshold is None:
+            return max(1, min(self.rank, max_r))
+        total_energy = torch.sum(S**2)
+        if total_energy &lt;= 0:
+            return max(1, min(self.rank, max_r))
+        cum_energy = torch.cumsum(S**2, dim=0) / total_energy
+        idx = torch.where(cum_energy &gt;= self.energy_threshold)[0]
+        r = idx[0].item() if len(idx) &gt; 0 else len(S)
+        return max(1, min(r, max_r))
+
+    def compress(self, **kwargs: Any) -&gt; tuple[nn.Module, dict[str, Any]]:
+        &#34;&#34;&#34;Replaces target Linear and Conv1D modules with LowRankLinear.&#34;&#34;&#34;
+        self.compressed_layers = []
+        self.layer_errors = {}
+
+        linear_layers: list[tuple[str, nn.Module]] = []
+        for name, module in self.model.named_modules():
+            if self._is_target_module(name, module):
+                linear_layers.append((name, module))
+
+        if not linear_layers:
+            logger.warning(&#34;SoKA: No compressible linear layers found.&#34;)
+            return self.model, self.get_compression_stats()
+
+        for name, module in linear_layers:
+            base_mod = getattr(module, &#34;base_layer&#34;, module)
+            raw_w = base_mod.weight.data
+            cls_name = base_mod.__class__.__name__
+            is_conv1d = (
+                &#34;conv1d&#34; in cls_name.lower()
+                or hasattr(base_mod, &#34;nf&#34;)
+                or (
+                    raw_w.ndim == 2
+                    and hasattr(base_mod, &#34;in_features&#34;)
+                    and base_mod.in_features == raw_w.shape[0]
+                    and raw_w.shape[0] &lt; raw_w.shape[1]
+                )
+            )
+
+            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
+            device = raw_w.device
+            dtype = raw_w.dtype
+            d_out, d_in = W.shape
+
+            try:
+                U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+                r = self._select_rank(S, d_in, d_out)
+                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+
+                new_layer = LowRankLinear(
+                    in_features=d_in,
+                    out_features=d_out,
+                    rank=r,
+                    bias=(base_mod.bias is not None),
+                    device=device,
+                    dtype=dtype,
+                )
+
+                # Assign factorized weights: W ≈ (U_r sqrt(S)) @ (sqrt(S) V_r^T)
+                # U: [d_out, r], V: [d_in, r]
+                new_layer.U.data = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
+                new_layer.V.data = (Vh[:r, :].T * sqrt_S.unsqueeze(0)).to(
+                    dtype=dtype, device=device
+                )
+
+                if base_mod.bias is not None:
+                    new_layer.bias.data.copy_(base_mod.bias.data)
+
+                # Frobenius reconstruction error check
+                W_rec = new_layer.weight.float()
+                norm_orig = torch.norm(W, p=&#34;fro&#34;)
+                rel_err = (torch.norm(W - W_rec, p=&#34;fro&#34;) / (norm_orig + 1e-8)).item()
+                self.layer_errors[name] = rel_err
+
+                if self.fallback_to_original and rel_err &gt; self.max_error:
+                    logger.warning(
+                        &#34;SoKA reconstruction error %.4f on %s exceeded threshold %.4f. Skipping.&#34;,
+                        rel_err,
+                        name,
+                        self.max_error,
+                    )
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    continue
+
+                compressed_layer = new_layer
+                # Preserve existing LoRA adapter weights if the source module has them
+                if (
+                    hasattr(module, &#34;lora_A&#34;)
+                    and hasattr(module, &#34;lora_B&#34;)
+                    and module.lora_A is not None
+                    and module.lora_B is not None
+                ):
+                    src_lA = getattr(module.lora_A, &#34;weight&#34;, module.lora_A)
+                    src_lB = getattr(module.lora_B, &#34;weight&#34;, module.lora_B)
+                    if hasattr(new_layer, &#34;lora_A&#34;) and new_layer.lora_A is not None:
+                        if hasattr(src_lA, &#34;data&#34;) and src_lA.shape == new_layer.lora_A.shape:
+                            new_layer.lora_A.data.copy_(src_lA.data)
+                    if hasattr(new_layer, &#34;lora_B&#34;) and new_layer.lora_B is not None:
+                        if hasattr(src_lB, &#34;data&#34;) and src_lB.shape == new_layer.lora_B.shape:
+                            new_layer.lora_B.data.copy_(src_lB.data)
+
+                if hasattr(module, &#34;base_layer&#34;):
+                    module.base_layer = compressed_layer  # put compressed layer inside wrapper
+                    # module itself (LoRALinear wrapper) remains the replacement
+                    new_module = module
+                else:
+                    new_module = compressed_layer
+                if not hasattr(module, &#34;base_layer&#34;):
+                    if name == &#34;&#34;:
+                        self.model = new_module
+                    else:
+                        replace_module(self.model, name, new_module)
+                self.compressed_layers.append(
+                    {
+                        &#34;name&#34;: name,
+                        &#34;original_shape&#34;: (d_out, d_in),
+                        &#34;rank&#34;: r,
+                        &#34;error&#34;: rel_err,
+                    }
+                )
+            except Exception as e:
+                logger.debug(&#34;SVD decomposition error in %s: %s&#34;, name, e)
+                for p in module.parameters():
+                    p.requires_grad = False
+
+        self._compressed_params = self._count_params(self.model)
+        stats = self.get_compression_stats()
+        stats.update(
+            {
+                &#34;total_layers&#34;: len(self.compressed_layers),
+                &#34;method&#34;: &#34;soka_low_rank_svd&#34;,
+                &#34;fixed_rank&#34;: self.rank,
+                &#34;energy_threshold&#34;: self.energy_threshold,
+                &#34;layer_errors&#34;: self.layer_errors,
+                &#34;target_attention_only&#34;: self.target_attention_only,
+                &#34;fallback_to_original&#34;: self.fallback_to_original,
+                &#34;max_error&#34;: self.max_error,
+            }
+        )
+        self.stats = stats
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Base class for all compressors. Not a nn.Module to avoid parameter storage.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.soka_compressor.LowRankCompressor.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>SoKA Low-Rank Linear Compressor.
+Replaces dense nn.Linear and Conv1D layers with factorized LowRankLinear layers.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.soka_compressor.LowRankCompressor.compress"><code class="name flex">
+<span>def <span class="ident">compress</span></span>(<span>self, **kwargs: Any) ‑> tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress(self, **kwargs: Any) -&gt; tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;Replaces target Linear and Conv1D modules with LowRankLinear.&#34;&#34;&#34;
+    self.compressed_layers = []
+    self.layer_errors = {}
+
+    linear_layers: list[tuple[str, nn.Module]] = []
+    for name, module in self.model.named_modules():
+        if self._is_target_module(name, module):
+            linear_layers.append((name, module))
+
+    if not linear_layers:
+        logger.warning(&#34;SoKA: No compressible linear layers found.&#34;)
+        return self.model, self.get_compression_stats()
+
+    for name, module in linear_layers:
+        base_mod = getattr(module, &#34;base_layer&#34;, module)
+        raw_w = base_mod.weight.data
+        cls_name = base_mod.__class__.__name__
+        is_conv1d = (
+            &#34;conv1d&#34; in cls_name.lower()
+            or hasattr(base_mod, &#34;nf&#34;)
+            or (
+                raw_w.ndim == 2
+                and hasattr(base_mod, &#34;in_features&#34;)
+                and base_mod.in_features == raw_w.shape[0]
+                and raw_w.shape[0] &lt; raw_w.shape[1]
+            )
+        )
+
+        W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
+        device = raw_w.device
+        dtype = raw_w.dtype
+        d_out, d_in = W.shape
+
+        try:
+            U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+            r = self._select_rank(S, d_in, d_out)
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+
+            new_layer = LowRankLinear(
+                in_features=d_in,
+                out_features=d_out,
+                rank=r,
+                bias=(base_mod.bias is not None),
+                device=device,
+                dtype=dtype,
+            )
+
+            # Assign factorized weights: W ≈ (U_r sqrt(S)) @ (sqrt(S) V_r^T)
+            # U: [d_out, r], V: [d_in, r]
+            new_layer.U.data = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
+            new_layer.V.data = (Vh[:r, :].T * sqrt_S.unsqueeze(0)).to(
+                dtype=dtype, device=device
+            )
+
+            if base_mod.bias is not None:
+                new_layer.bias.data.copy_(base_mod.bias.data)
+
+            # Frobenius reconstruction error check
+            W_rec = new_layer.weight.float()
+            norm_orig = torch.norm(W, p=&#34;fro&#34;)
+            rel_err = (torch.norm(W - W_rec, p=&#34;fro&#34;) / (norm_orig + 1e-8)).item()
+            self.layer_errors[name] = rel_err
+
+            if self.fallback_to_original and rel_err &gt; self.max_error:
+                logger.warning(
+                    &#34;SoKA reconstruction error %.4f on %s exceeded threshold %.4f. Skipping.&#34;,
+                    rel_err,
+                    name,
+                    self.max_error,
+                )
+                for p in module.parameters():
+                    p.requires_grad = False
+                continue
+
+            compressed_layer = new_layer
+            # Preserve existing LoRA adapter weights if the source module has them
+            if (
+                hasattr(module, &#34;lora_A&#34;)
+                and hasattr(module, &#34;lora_B&#34;)
+                and module.lora_A is not None
+                and module.lora_B is not None
+            ):
+                src_lA = getattr(module.lora_A, &#34;weight&#34;, module.lora_A)
+                src_lB = getattr(module.lora_B, &#34;weight&#34;, module.lora_B)
+                if hasattr(new_layer, &#34;lora_A&#34;) and new_layer.lora_A is not None:
+                    if hasattr(src_lA, &#34;data&#34;) and src_lA.shape == new_layer.lora_A.shape:
+                        new_layer.lora_A.data.copy_(src_lA.data)
+                if hasattr(new_layer, &#34;lora_B&#34;) and new_layer.lora_B is not None:
+                    if hasattr(src_lB, &#34;data&#34;) and src_lB.shape == new_layer.lora_B.shape:
+                        new_layer.lora_B.data.copy_(src_lB.data)
+
+            if hasattr(module, &#34;base_layer&#34;):
+                module.base_layer = compressed_layer  # put compressed layer inside wrapper
+                # module itself (LoRALinear wrapper) remains the replacement
+                new_module = module
+            else:
+                new_module = compressed_layer
+            if not hasattr(module, &#34;base_layer&#34;):
+                if name == &#34;&#34;:
+                    self.model = new_module
+                else:
+                    replace_module(self.model, name, new_module)
+            self.compressed_layers.append(
+                {
+                    &#34;name&#34;: name,
+                    &#34;original_shape&#34;: (d_out, d_in),
+                    &#34;rank&#34;: r,
+                    &#34;error&#34;: rel_err,
+                }
+            )
+        except Exception as e:
+            logger.debug(&#34;SVD decomposition error in %s: %s&#34;, name, e)
+            for p in module.parameters():
+                p.requires_grad = False
+
+    self._compressed_params = self._count_params(self.model)
+    stats = self.get_compression_stats()
+    stats.update(
+        {
+            &#34;total_layers&#34;: len(self.compressed_layers),
+            &#34;method&#34;: &#34;soka_low_rank_svd&#34;,
+            &#34;fixed_rank&#34;: self.rank,
+            &#34;energy_threshold&#34;: self.energy_threshold,
+            &#34;layer_errors&#34;: self.layer_errors,
+            &#34;target_attention_only&#34;: self.target_attention_only,
+            &#34;fallback_to_original&#34;: self.fallback_to_original,
+            &#34;max_error&#34;: self.max_error,
+        }
+    )
+    self.stats = stats
+    return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Replaces target Linear and Conv1D modules with LowRankLinear.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.compression_engine.soka_compressor.LowRankLinear"><code class="flex name class">
+<span>class <span class="ident">LowRankLinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>rank: int,<br>bias: bool = True,<br>device: torch.device | None = None,<br>dtype: torch.dtype | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class LowRankLinear(nn.Module):
+    &#34;&#34;&#34;
+    Factorized Linear Layer executing as y = (x @ V) @ U^T + b.
+    Reduces parameter storage from (d_in * d_out) to r * (d_in + d_out).
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int,
+        bias: bool = True,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.rank = max(1, min(rank, in_features, out_features))
+
+        # V: [in_features, rank] -&gt; maps x to bottleneck
+        # U: [out_features, rank] -&gt; maps bottleneck to output
+        self.V = nn.Parameter(torch.empty((in_features, self.rank), device=device, dtype=dtype))
+        self.U = nn.Parameter(torch.empty((out_features, self.rank), device=device, dtype=dtype))
+
+        if bias:
+            self.bias = nn.Parameter(torch.zeros(out_features, device=device, dtype=dtype))
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+        nn.init.normal_(self.V, std=0.02)
+        nn.init.normal_(self.U, std=0.02)
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Reconstructed effective weight matrix for compatibility.&#34;&#34;&#34;
+        return torch.matmul(self.U, self.V.t().contiguous())
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        # x: [..., in_features]
+        bottleneck = torch.matmul(x, self.V)  # [..., rank]
+        out = torch.matmul(bottleneck, self.U.T)  # [..., out_features]
+        if self.bias is not None:
+            out = out + self.bias
+        return out</code></pre>
+</details>
+<div class="desc"><p>Factorized Linear Layer executing as y = (x @ V) @ U^T + b.
+Reduces parameter storage from (d_in * d_out) to r * (d_in + d_out).</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.soka_compressor.LowRankLinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Reconstructed effective weight matrix for compatibility.&#34;&#34;&#34;
+    return torch.matmul(self.U, self.V.t().contiguous())</code></pre>
+</details>
+<div class="desc"><p>Reconstructed effective weight matrix for compatibility.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.soka_compressor.LowRankLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    # x: [..., in_features]
+    bottleneck = torch.matmul(x, self.V)  # [..., rank]
+    out = torch.matmul(bottleneck, self.U.T)  # [..., out_features]
+    if self.bias is not None:
+        out = out + self.bias
+    return out</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.soka_compressor.soka_factory" href="#neuralops.compression_engine.soka_compressor.soka_factory">soka_factory</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.soka_compressor.LowRankCompressor" href="#neuralops.compression_engine.soka_compressor.LowRankCompressor">LowRankCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.soka_compressor.LowRankCompressor.compress" href="#neuralops.compression_engine.soka_compressor.LowRankCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.compression_engine.soka_compressor.LowRankCompressor.is_custom_attention" href="#neuralops.compression_engine.soka_compressor.LowRankCompressor.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.soka_compressor.LowRankCompressor" href="#neuralops.compression_engine.soka_compressor.LowRankCompressor">LowRankCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.soka_compressor.LowRankCompressor.compress" href="#neuralops.compression_engine.soka_compressor.LowRankCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.compression_engine.soka_compressor.LowRankCompressor.is_custom_attention" href="#neuralops.compression_engine.soka_compressor.LowRankCompressor.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.soka_compressor.LowRankLinear" href="#neuralops.compression_engine.soka_compressor.LowRankLinear">LowRankLinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.soka_compressor.LowRankLinear.forward" href="#neuralops.compression_engine.soka_compressor.LowRankLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.compression_engine.soka_compressor.LowRankLinear.weight" href="#neuralops.compression_engine.soka_compressor.LowRankLinear.weight">weight</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

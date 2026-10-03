@@ -1,0 +1,1454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.attentions.spectron API documentation</title>
+<meta name="description" content="SpectronAttention: Importance-Aware Low-Rank + Sparse Attention (Activation-Aware v2) …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.attentions.spectron</code></h1>
+</header>
+<section id="section-intro">
+<p>SpectronAttention: Importance-Aware Low-Rank + Sparse Attention (Activation-Aware v2).</p>
+<p>Dynamically allocates non-uniform low-rank capacities across attention projection
+matrices under a global parameter budget via Lagrangian spectral entropy
+optimization, augmented by trainable magnitude-pruned sparse residuals.</p>
+<p>Mathematical Mechanism:
+For projection matrices {W_i} with singular values {σ_ik}:
+1. Lagrangian Spectral Allocation (on ACTIVATION-WHITENED weights):
+min_{r_i} Σ (1 - Σ_{k≤r_i} σ²_ik / Σ_k σ²_ik)
+s.t.
+Σ r_i (d_in + d_out) ≤ B_target
+Solved via bisection on λ.</p>
+<pre><code>2. Activation-Aware Factorization:
+     C_X = E[x x^T]                  (EMA covariance)
+     C_X = L L^T                     (Cholesky whitening)
+     W_w = W L
+     U Σ V^T = SVD(W_w)
+     W ≈ (U_r Σ_r) (L^{-1} V_r^T)    (whitened low-rank)
+
+3. Optional Sparse Residual:
+     y = x W_down^T W_up^T + x S^T + b
+     with ‖S‖_0 ≤ (1 - ρ) · numel(W)
+</code></pre>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.attentions.spectron.allocate_ranks_spectron"><code class="name flex">
+<span>def <span class="ident">allocate_ranks_spectron</span></span>(<span>weight_matrices: list[np.ndarray],<br>target_budget: int,<br>names: list[str],<br>max_rank_factor: float = 0.75,<br>lambda_range: tuple[float, float] = (1e-05, 5.0),<br>steps: int = 100,<br>whitening_factors: list[np.ndarray | None] | None = None) ‑> dict[str, int]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def allocate_ranks_spectron(
+    weight_matrices: list[np.ndarray],
+    target_budget: int,
+    names: list[str],
+    max_rank_factor: float = 0.75,
+    lambda_range: tuple[float, float] = (1e-5, 5.0),
+    steps: int = 100,
+    whitening_factors: list[np.ndarray | None] | None = None,
+) -&gt; dict[str, int]:
+    &#34;&#34;&#34;
+    Lagrangian optimization allocating rank per weight matrix under a
+    parameter budget.
+
+    SP-FIX-01: if `whitening_factors` is given, the SVD is computed on the
+    whitened weight W @ L, so the allocation reflects the *activation-aware*
+    spectral profile — not the raw weight spectrum.
+    &#34;&#34;&#34;
+    cost_tables, param_tables = [], []
+    for i, W in enumerate(weight_matrices):
+        d_out, d_in = W.shape
+        max_r = min(d_in, d_out, max(1, int(max_rank_factor * min(d_in, d_out))))
+
+        W_eff = W
+        if whitening_factors is not None and whitening_factors[i] is not None:
+            L = whitening_factors[i]
+            if L.shape == (d_in, d_in):
+                W_eff = W @ L
+
+        s = np.linalg.svd(W_eff.astype(np.float64), compute_uv=False)
+        cum_ent = cumulative_entropy_fraction(s, max_r)
+        cost = 1.0 - cum_ent
+        cost_tables.append(cost)
+        param_tables.append((np.arange(1, max_r + 1) * (d_in + d_out)).astype(np.float64))
+
+    low, high = lambda_range
+    best_ranks = None
+    for _ in range(steps):
+        lam = 0.5 * (low + high)
+        ranks = []
+        total_params = 0.0
+        for i in range(len(weight_matrices)):
+            obj = cost_tables[i] + lam * param_tables[i]
+            idx = int(np.argmin(obj))
+            ranks.append(idx + 1)
+            total_params += param_tables[i][idx]
+        if total_params &lt;= target_budget:
+            best_ranks = ranks.copy()
+            high = lam
+        else:
+            low = lam
+
+    if best_ranks is None:
+        best_ranks = [1] * len(weight_matrices)
+        log.warning(&#34;Spectron: budget too tight → fallback to rank=1 everywhere.&#34;)
+    return {n: r for n, r in zip(names, best_ranks)}</code></pre>
+</details>
+<div class="desc"><p>Lagrangian optimization allocating rank per weight matrix under a
+parameter budget.</p>
+<p>SP-FIX-01: if <code>whitening_factors</code> is given, the SVD is computed on the
+whitened weight W @ L, so the allocation reflects the <em>activation-aware</em>
+spectral profile — not the raw weight spectrum.</p></div>
+</dd>
+<dt id="neuralops.attentions.spectron.cumulative_entropy_fraction"><code class="name flex">
+<span>def <span class="ident">cumulative_entropy_fraction</span></span>(<span>s: np.ndarray, max_rank: int) ‑> numpy.ndarray</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cumulative_entropy_fraction(s: np.ndarray, max_rank: int) -&gt; np.ndarray:
+    s2 = s.astype(np.float64) ** 2
+    total = s2.sum()
+    if total == 0:
+        return np.ones(max_rank)
+    cum = np.cumsum(s2[:max_rank]) / total
+    return cum</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.spectron.gather_attention_weights"><code class="name flex">
+<span>def <span class="ident">gather_attention_weights</span></span>(<span>model: Any) ‑> tuple[list[numpy.ndarray], list[str]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def gather_attention_weights(model: Any) -&gt; tuple[list[np.ndarray], list[str]]:
+    &#34;&#34;&#34;
+    Return flattened list of Q/K/V/O weight matrices and their layer names.
+    Supports DistilBERT, BERT/RoBERTa, GPT-2, LLaMA/Qwen.
+    &#34;&#34;&#34;
+    weights: list[np.ndarray] = []
+    names: list[str] = []
+
+    def _collect_attention_block(attn, layer_id):
+        # GPT-2 fused c_attn
+        if hasattr(attn, &#34;c_attn&#34;) and hasattr(attn, &#34;c_proj&#34;):
+            w = attn.c_attn.weight.data.cpu().numpy()
+            if w.shape[0] &lt; w.shape[1]:
+                w = w.T
+            # split into q, k, v
+            q_d = w.shape[0] // 3
+            for tag, part in zip((&#34;q&#34;, &#34;k&#34;, &#34;v&#34;), (w[:q_d], w[q_d : 2 * q_d], w[2 * q_d :])):
+                weights.append(part)
+                names.append(f&#34;layer{layer_id}_{tag}&#34;)
+            weights.append(attn.c_proj.weight.data.cpu().numpy())
+            names.append(f&#34;layer{layer_id}_o&#34;)
+            return
+
+        # BERT / RoBERTa nested
+        inner = getattr(attn, &#34;self&#34;, attn)
+        for proj, attr in ((&#34;q&#34;, &#34;query&#34;), (&#34;k&#34;, &#34;key&#34;), (&#34;v&#34;, &#34;value&#34;)):
+            if hasattr(inner, attr):
+                w = getattr(inner, attr).weight.data.cpu().numpy()
+                weights.append(w)
+                names.append(f&#34;layer{layer_id}_{proj}&#34;)
+
+        # output
+        for attr in (&#34;dense&#34;, &#34;out_proj&#34;, &#34;o_proj&#34;, &#34;out_lin&#34;):
+            if hasattr(attn, attr):
+                weights.append(getattr(attn, attr).weight.data.cpu().numpy())
+                names.append(f&#34;layer{layer_id}_o&#34;)
+                break
+
+        # Flat modules
+        for proj, names_ in (
+            (&#34;q&#34;, (&#34;q_proj&#34;, &#34;q_lin&#34;)),
+            (&#34;k&#34;, (&#34;k_proj&#34;, &#34;k_lin&#34;)),
+            (&#34;v&#34;, (&#34;v_proj&#34;, &#34;v_lin&#34;)),
+        ):
+            if not any(n.endswith(f&#34;_{proj}&#34;) for n in names if f&#34;_{proj}&#34; in n):
+                for nm in names_:
+                    if hasattr(attn, nm):
+                        weights.append(getattr(attn, nm).weight.data.cpu().numpy())
+                        names.append(f&#34;layer{layer_id}_{proj}&#34;)
+                        break
+
+    # Try whole-model traversal
+    layer_lists = []
+    for path in (
+        (&#34;distilbert&#34;, &#34;transformer&#34;, &#34;layer&#34;),
+        (&#34;roberta&#34;, &#34;encoder&#34;, &#34;layer&#34;),
+        (&#34;bert&#34;, &#34;encoder&#34;, &#34;layer&#34;),
+        (&#34;transformer&#34;, &#34;h&#34;),
+        (&#34;model&#34;, &#34;layers&#34;),
+        (&#34;encoder&#34;, &#34;layer&#34;),
+        (&#34;layers&#34;,),
+        (&#34;h&#34;,),
+    ):
+        obj = model
+        ok = True
+        for p in path:
+            if hasattr(obj, p):
+                obj = getattr(obj, p)
+            else:
+                ok = False
+                break
+        if ok and isinstance(obj, (nn.ModuleList, list)):
+            layer_lists.append(obj)
+
+    for layer_list in layer_lists:
+        for lid, layer in enumerate(layer_list):
+            for attr in (&#34;attention&#34;, &#34;attn&#34;, &#34;self_attn&#34;):
+                if hasattr(layer, attr):
+                    _collect_attention_block(getattr(layer, attr), lid)
+                    break
+        if weights:
+            break
+
+    return weights, names</code></pre>
+</details>
+<div class="desc"><p>Return flattened list of Q/K/V/O weight matrices and their layer names.
+Supports DistilBERT, BERT/RoBERTa, GPT-2, LLaMA/Qwen.</p></div>
+</dd>
+<dt id="neuralops.attentions.spectron.inject_spectron"><code class="name flex">
+<span>def <span class="ident">inject_spectron</span></span>(<span>layer: Any = None,<br>model: Any = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: nn.Module | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;spectron_inject&#34;)
+@ATTENTION_REGISTRY.register(&#34;spectron_attention_inject&#34;)
+@ATTENTION_REGISTRY.register(&#34;inject_spectron_attention&#34;)
+@ATTENTION_REGISTRY.register(&#34;inject_spectron&#34;)
+def inject_spectron(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    _depth: int = 0,
+    **kwargs: Any,
+):
+    if _depth &gt; 8:
+        logger.warning(&#34;inject_spectron: max recursion depth exceeded.&#34;)
+        return None
+
+    target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get(&#34;model&#34;, kwargs.get(&#34;layer&#34;))
+    if target is None:
+        return None
+
+    cfg = model_config if model_config is not None else getattr(target, &#34;config&#34;, None)
+
+    # Whole-model traversal
+    layer_list = None
+    for path in (
+        (&#34;distilbert&#34;, &#34;transformer&#34;, &#34;layer&#34;),
+        (&#34;roberta&#34;, &#34;encoder&#34;, &#34;layer&#34;),
+        (&#34;bert&#34;, &#34;encoder&#34;, &#34;layer&#34;),
+        (&#34;transformer&#34;, &#34;h&#34;),
+        (&#34;model&#34;, &#34;layers&#34;),
+        (&#34;encoder&#34;, &#34;layer&#34;),
+        (&#34;layers&#34;,),
+        (&#34;h&#34;,),
+    ):
+        obj = target
+        ok = True
+        for p in path:
+            if hasattr(obj, p):
+                obj = getattr(obj, p)
+            else:
+                ok = False
+                break
+        if ok and isinstance(obj, (nn.ModuleList, list)):
+            layer_list = obj
+            break
+
+    if layer_list is not None:
+        n_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_spectron(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
+            )
+            if res is not None:
+                n_injected += 1
+        return target if n_injected &gt; 0 else None
+
+    # Single-layer injection
+    src_attn = old_attn
+    if src_attn is None:
+        for attr in (&#34;attention&#34;, &#34;attn&#34;, &#34;self_attn&#34;, &#34;self&#34;):
+            if hasattr(target, attr):
+                cand = getattr(target, attr)
+                if isinstance(cand, nn.Module) and cand is not target:
+                    src_attn = getattr(cand, &#34;self&#34;, cand)
+                    break
+    if src_attn is None:
+        src_attn = target
+
+    # SP-FIX-09: idempotency guard
+    if isinstance(src_attn, SpectronAttention) or &#34;Spectron&#34; in src_attn.__class__.__name__:
+        return None
+
+    if cfg is None:
+        cfg = getattr(src_attn, &#34;config&#34;, None) or getattr(target, &#34;config&#34;, None)
+
+    h_size = _cfg_get(cfg, &#34;hidden_size&#34;, _cfg_get(cfg, &#34;dim&#34;, kwargs.get(&#34;hidden_size&#34;, 768)))
+    rank = _cfg_get(
+        comp_config,
+        &#34;svd_rank&#34;,
+        _cfg_get(comp_config, &#34;rank&#34;, kwargs.pop(&#34;rank&#34;, min(64, h_size))),
+    )
+    ranks = kwargs.pop(&#34;ranks&#34;, None)
+    if ranks is None:
+        ranks = {&#34;q&#34;: rank, &#34;k&#34;: rank, &#34;v&#34;: rank, &#34;o&#34;: rank}
+    lr = _cfg_get(comp_config, &#34;lora_rank&#34;, kwargs.get(&#34;lora_rank&#34;, 16))
+    dropout = _cfg_get(comp_config, &#34;dropout&#34;, kwargs.get(&#34;dropout&#34;, 0.1))
+    whitening = kwargs.pop(&#34;whitening&#34;, None)
+
+    try:
+        new_attn = SpectronAttention(
+            config=cfg,
+            old_attn=src_attn,
+            ranks=ranks,
+            lora_rank=lr,
+            dropout=dropout,
+            whitening=whitening,
+            **kwargs,
+        )
+        p = next(src_attn.parameters(), None)
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
+    except Exception as e:
+        logger.error(&#34;Spectron inject failed: %s&#34;, e)
+        return None
+
+    if hasattr(target, &#34;attention&#34;):
+        if hasattr(target.attention, &#34;self&#34;):
+            new_attn.is_nested_encoder = True
+            target.attention.self = new_attn
+        else:
+            new_attn.is_nested_encoder = False
+            target.attention = new_attn
+    elif hasattr(target, &#34;attn&#34;):
+        new_attn.is_nested_encoder = False
+        target.attn = new_attn
+    elif hasattr(target, &#34;self_attn&#34;):
+        new_attn.is_nested_encoder = False
+        target.self_attn = new_attn
+    elif hasattr(target, &#34;self&#34;):
+        new_attn.is_nested_encoder = True
+        target.self = new_attn
+
+    return new_attn</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.spectron.spectral_entropy"><code class="name flex">
+<span>def <span class="ident">spectral_entropy</span></span>(<span>singular_values: np.ndarray) ‑> float</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def spectral_entropy(singular_values: np.ndarray) -&gt; float:
+    s2 = singular_values.astype(np.float64) ** 2
+    total = s2.sum()
+    if total == 0:
+        return 0.0
+    p = s2 / total
+    p = p[p &gt; 1e-5]
+    return float(-np.sum(p * np.log(p)))</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.attentions.spectron.LowRankSparseLinear"><code class="flex name class">
+<span>class <span class="ident">LowRankSparseLinear</span></span>
+<span>(</span><span>down: nn.Linear,<br>up: nn.Linear,<br>sparse_weight: torch.Tensor,<br>bias: torch.Tensor | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class LowRankSparseLinear(nn.Module):
+    &#34;&#34;&#34;
+    y = up(down(x)) + F.linear(x, S) + b
+
+    S is a trainable sparse residual. Its L1 gradient encourages zero
+    entries; periodic `prune_sparse` enforces hard threshold.
+
+    SP-FIX-02: bias stored as a proper nn.Parameter.
+    &#34;&#34;&#34;
+
+    is_custom_attention: bool = False
+
+    def __init__(
+        self,
+        down: nn.Linear,
+        up: nn.Linear,
+        sparse_weight: torch.Tensor,
+        bias: torch.Tensor | None = None,
+    ) -&gt; None:
+        super().__init__()
+        self.down = down
+        self.up = up
+        self.sparse_weight = nn.Parameter(sparse_weight)
+        if bias is not None:
+            self.bias = nn.Parameter(bias.clone())
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+        self.in_features = down.in_features
+        self.out_features = up.out_features
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        return torch.matmul(self.up.weight, self.down.weight) + self.sparse_weight
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        # SP-FIX-11: dtype-safe
+        down_w = self.down.weight.to(x.dtype)
+        up_w = self.up.weight.to(x.dtype)
+        up_b = self.up.bias.to(x.dtype) if self.up.bias is not None else None
+
+        x_lr = F.linear(F.linear(x, down_w), up_w, up_b)
+        x_sp = F.linear(x, self.sparse_weight.to(x.dtype))
+        out = x_lr + x_sp
+        if self.bias is not None:
+            out = out + self.bias.to(out.dtype)
+        return out
+
+    def prune_sparse(self, sparsity: float) -&gt; None:
+        &#34;&#34;&#34;Hard threshold: keep only top (1 - sparsity) fraction of entries.&#34;&#34;&#34;
+        with torch.no_grad():
+            w = self.sparse_weight.data
+            if w.numel() == 0:
+                return
+            keep = int(w.numel() * (1.0 - sparsity))
+            if keep &lt;= 0:
+                w.zero_()
+                return
+            if keep &gt;= w.numel():
+                return
+            flat = w.abs().view(-1)
+            kth = torch.kthvalue(flat, w.numel() - keep).values
+            w.mul_(w.abs() &gt;= kth)
+
+    def sparse_l1_loss(self) -&gt; torch.Tensor:
+        return self.sparse_weight.abs().sum()</code></pre>
+</details>
+<div class="desc"><p>y = up(down(x)) + F.linear(x, S) + b</p>
+<p>S is a trainable sparse residual. Its L1 gradient encourages zero
+entries; periodic <code>prune_sparse</code> enforces hard threshold.</p>
+<p>SP-FIX-02: bias stored as a proper nn.Parameter.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.spectron.LowRankSparseLinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.spectron.LowRankSparseLinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    return torch.matmul(self.up.weight, self.down.weight) + self.sparse_weight</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.spectron.LowRankSparseLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    # SP-FIX-11: dtype-safe
+    down_w = self.down.weight.to(x.dtype)
+    up_w = self.up.weight.to(x.dtype)
+    up_b = self.up.bias.to(x.dtype) if self.up.bias is not None else None
+
+    x_lr = F.linear(F.linear(x, down_w), up_w, up_b)
+    x_sp = F.linear(x, self.sparse_weight.to(x.dtype))
+    out = x_lr + x_sp
+    if self.bias is not None:
+        out = out + self.bias.to(out.dtype)
+    return out</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+<dt id="neuralops.attentions.spectron.LowRankSparseLinear.prune_sparse"><code class="name flex">
+<span>def <span class="ident">prune_sparse</span></span>(<span>self, sparsity: float) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def prune_sparse(self, sparsity: float) -&gt; None:
+    &#34;&#34;&#34;Hard threshold: keep only top (1 - sparsity) fraction of entries.&#34;&#34;&#34;
+    with torch.no_grad():
+        w = self.sparse_weight.data
+        if w.numel() == 0:
+            return
+        keep = int(w.numel() * (1.0 - sparsity))
+        if keep &lt;= 0:
+            w.zero_()
+            return
+        if keep &gt;= w.numel():
+            return
+        flat = w.abs().view(-1)
+        kth = torch.kthvalue(flat, w.numel() - keep).values
+        w.mul_(w.abs() &gt;= kth)</code></pre>
+</details>
+<div class="desc"><p>Hard threshold: keep only top (1 - sparsity) fraction of entries.</p></div>
+</dd>
+<dt id="neuralops.attentions.spectron.LowRankSparseLinear.sparse_l1_loss"><code class="name flex">
+<span>def <span class="ident">sparse_l1_loss</span></span>(<span>self) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sparse_l1_loss(self) -&gt; torch.Tensor:
+    return self.sparse_weight.abs().sum()</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.attentions.spectron.SparsePruningCallback"><code class="flex name class">
+<span>class <span class="ident">SparsePruningCallback</span></span>
+<span>(</span><span>model: Any, prune_freq: int = 200, final_sparsity: float = 0.7)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class SparsePruningCallback(_HFTrainerCallback):
+    &#34;&#34;&#34;
+    Periodically hard-thresholds the sparse residual of every
+    SpectronAttention module in the model.
+    &#34;&#34;&#34;
+
+    def __init__(self, model: Any, prune_freq: int = 200, final_sparsity: float = 0.7):
+        self.model = model
+        self.prune_freq = prune_freq
+        self.final_sparsity = final_sparsity
+
+    def on_step_end(self, args, state, control, **kwargs):
+        if state.global_step &gt; 0 and state.global_step % self.prune_freq == 0:
+            for m in self.model.modules():
+                if isinstance(m, SpectronAttention) and m.add_sparse:
+                    m.prune_all_sparse(self.final_sparsity)</code></pre>
+</details>
+<div class="desc"><p>Periodically hard-thresholds the sparse residual of every
+SpectronAttention module in the model.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>transformers.trainer_callback.TrainerCallback</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.spectron.SparsePruningCallback.on_step_end"><code class="name flex">
+<span>def <span class="ident">on_step_end</span></span>(<span>self, args, state, control, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def on_step_end(self, args, state, control, **kwargs):
+    if state.global_step &gt; 0 and state.global_step % self.prune_freq == 0:
+        for m in self.model.modules():
+            if isinstance(m, SpectronAttention) and m.add_sparse:
+                m.prune_all_sparse(self.final_sparsity)</code></pre>
+</details>
+<div class="desc"><p>Event called at the end of a training step. If using gradient accumulation, one training step might take
+several inputs.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.attentions.spectron.SpectronAttention"><code class="flex name class">
+<span>class <span class="ident">SpectronAttention</span></span>
+<span>(</span><span>config: Any | None = None,<br>old_attn: Any | None = None,<br>dropout: float = 0.1,<br>layer_idx: int = 0,<br>ranks: dict[str, int] | None = None,<br>lora_rank: int = 16,<br>lora_alpha: float = 32.0,<br>is_decoder: bool | None = None,<br>add_sparse: bool = False,<br>sparsity_level: float = 0.7,<br>whitening: dict[str, torch.Tensor] | None = None,<br>seed: int = 42,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;spectron&#34;, supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(&#34;spectron_attention&#34;, supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(&#34;spectron_attn&#34;, supports_causal=True, supports_gqa=True)
+class SpectronAttention(BaseAttention):
+    supports_causal: bool = True
+    supports_gqa: bool = True
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        config: Any | None = None,
+        old_attn: Any | None = None,
+        dropout: float = 0.1,
+        layer_idx: int = 0,
+        ranks: dict[str, int] | None = None,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        is_decoder: bool | None = None,
+        add_sparse: bool = False,
+        sparsity_level: float = 0.7,
+        whitening: dict[str, torch.Tensor] | None = None,
+        seed: int = 42,
+        **kwargs: Any,
+    ) -&gt; None:
+        model_config = config or kwargs.get(&#34;model_config&#34;)
+        super().__init__(model_config)
+
+        torch.manual_seed(seed)
+
+        self.hidden_size = int(
+            _cfg_get(model_config, &#34;hidden_size&#34;, kwargs.get(&#34;hidden_size&#34;, 768))
+        )
+        self.num_heads = int(
+            _cfg_get(
+                model_config,
+                &#34;num_attention_heads&#34;,
+                _cfg_get(model_config, &#34;num_heads&#34;, kwargs.get(&#34;num_attention_heads&#34;, 12)),
+            )
+        )
+        self.head_dim = int(
+            _cfg_get(
+                model_config,
+                &#34;head_dim&#34;,
+                kwargs.get(&#34;head_dim&#34;, self.hidden_size // max(1, self.num_heads)),
+            )
+        )
+
+        cfg_kv = _cfg_get(
+            model_config,
+            &#34;num_key_value_heads&#34;,
+            _cfg_get(model_config, &#34;num_kv_heads&#34;, None),
+        )
+        if cfg_kv is not None:
+            self.num_kv_heads = int(cfg_kv)
+        elif kwargs.get(&#34;num_kv_heads&#34;) is not None:
+            self.num_kv_heads = int(kwargs[&#34;num_kv_heads&#34;])
+        else:
+            self.num_kv_heads = self.num_heads
+        self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
+        self.kv_repeat = max(1, self.num_heads // self.num_kv_heads)
+        self.kv_head_size = self.num_kv_heads * self.head_dim
+        self.q_head_size = self.num_heads * self.head_dim
+        self.all_head_size = self.q_head_size
+
+        # SP-FIX-04: explicit decoder detection
+        if is_decoder is not None:
+            self.is_decoder = bool(is_decoder)
+        else:
+            _mt = str(_cfg_get(model_config, &#34;model_type&#34;, &#34;&#34;) or &#34;&#34;).lower()
+            _dec_pfx = (
+                &#34;gpt&#34;,
+                &#34;qwen&#34;,
+                &#34;llama&#34;,
+                &#34;mistral&#34;,
+                &#34;gemma&#34;,
+                &#34;phi&#34;,
+                &#34;opt&#34;,
+                &#34;bloom&#34;,
+                &#34;falcon&#34;,
+                &#34;olmo&#34;,
+                &#34;mpt&#34;,
+                &#34;stablelm&#34;,
+            )
+            self.is_decoder = (
+                bool(_cfg_get(model_config, &#34;is_decoder&#34;, False))
+                or bool(_cfg_get(model_config, &#34;causal&#34;, False))
+                or any(_mt.startswith(p) for p in _dec_pfx)
+                or (old_attn is not None and hasattr(old_attn, &#34;c_attn&#34;))
+            )
+
+        self.is_nested_encoder = False
+
+        # Ranks (with global clamp)
+        default_r = int(_cfg_get(model_config, &#34;svd_rank&#34;, _cfg_get(model_config, &#34;rank&#34;, 64)))
+        default_r = max(1, min(default_r, self.hidden_size, self.all_head_size))
+        self.ranks: dict[str, int] = {}
+        for k in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;, &#34;o&#34;):
+            val = ranks.get(k, default_r) if ranks else default_r
+            self.ranks[k] = max(1, min(int(val), self.hidden_size, self.all_head_size))
+
+        self.add_sparse = bool(add_sparse)
+        self.sparsity_level = float(sparsity_level)
+        self.lora_rank = max(0, int(lora_rank)) if lora_rank else 0
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (lora_alpha / self.lora_rank) if self.lora_rank &gt; 0 else 1.0
+
+        # Whitening factors per projection (from calibration)
+        self.whitening = whitening or {}
+
+        # ---- factorised base projections (SVD) ----
+        self.q_down = nn.Linear(self.hidden_size, self.ranks[&#34;q&#34;], bias=False)
+        self.q_up = nn.Linear(self.ranks[&#34;q&#34;], self.q_head_size, bias=True)
+        self.k_down = nn.Linear(self.hidden_size, self.ranks[&#34;k&#34;], bias=False)
+        self.k_up = nn.Linear(self.ranks[&#34;k&#34;], self.kv_head_size, bias=True)
+        self.v_down = nn.Linear(self.hidden_size, self.ranks[&#34;v&#34;], bias=False)
+        self.v_up = nn.Linear(self.ranks[&#34;v&#34;], self.kv_head_size, bias=True)
+        self.o_down = nn.Linear(self.q_head_size, self.ranks[&#34;o&#34;], bias=False)
+        self.o_up = nn.Linear(self.ranks[&#34;o&#34;], self.hidden_size, bias=True)
+
+        for mod in (
+            self.q_down,
+            self.q_up,
+            self.k_down,
+            self.k_up,
+            self.v_down,
+            self.v_up,
+            self.o_down,
+            self.o_up,
+        ):
+            nn.init.orthogonal_(mod.weight)
+            if mod.bias is not None:
+                nn.init.zeros_(mod.bias)
+            mod.weight.requires_grad = False
+            if mod.bias is not None:
+                mod.bias.requires_grad = False
+
+        # ---- LoRA adapters ----
+        if self.lora_rank &gt; 0:
+            self.q_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.hidden_size))
+            self.q_lora_B = nn.Parameter(torch.zeros(self.q_head_size, self.lora_rank))
+            self.k_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.hidden_size))
+            self.k_lora_B = nn.Parameter(torch.zeros(self.kv_head_size, self.lora_rank))
+            self.v_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.hidden_size))
+            self.v_lora_B = nn.Parameter(torch.zeros(self.kv_head_size, self.lora_rank))
+            self.o_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.q_head_size))
+            self.o_lora_B = nn.Parameter(torch.zeros(self.hidden_size, self.lora_rank))
+            for p_a in (self.q_lora_A, self.k_lora_A, self.v_lora_A, self.o_lora_A):
+                nn.init.kaiming_uniform_(p_a, a=math.sqrt(5))
+        else:
+            self.register_parameter(&#34;q_lora_A&#34;, None)
+            self.register_parameter(&#34;q_lora_B&#34;, None)
+            self.register_parameter(&#34;k_lora_A&#34;, None)
+            self.register_parameter(&#34;k_lora_B&#34;, None)
+            self.register_parameter(&#34;v_lora_A&#34;, None)
+            self.register_parameter(&#34;v_lora_B&#34;, None)
+            self.register_parameter(&#34;o_lora_A&#34;, None)
+            self.register_parameter(&#34;o_lora_B&#34;, None)
+
+        # ---- optional sparse residuals (init from zero) ----
+        if self.add_sparse:
+            self.q_sparse = nn.Parameter(torch.zeros(self.q_head_size, self.hidden_size))
+            self.k_sparse = nn.Parameter(torch.zeros(self.kv_head_size, self.hidden_size))
+            self.v_sparse = nn.Parameter(torch.zeros(self.kv_head_size, self.hidden_size))
+            self.o_sparse = nn.Parameter(torch.zeros(self.hidden_size, self.q_head_size))
+        else:
+            self.register_parameter(&#34;q_sparse&#34;, None)
+            self.register_parameter(&#34;k_sparse&#34;, None)
+            self.register_parameter(&#34;v_sparse&#34;, None)
+            self.register_parameter(&#34;o_sparse&#34;, None)
+
+        dropout_p = _cfg_get(
+            model_config,
+            &#34;dropout&#34;,
+            _cfg_get(
+                model_config,
+                &#34;hidden_dropout_prob&#34;,
+                _cfg_get(model_config, &#34;attention_probs_dropout_prob&#34;, dropout),
+            ),
+        )
+        self.dropout = nn.Dropout(float(dropout_p) if dropout_p is not None else 0.1)
+
+        src_attn = old_attn or kwargs.get(&#34;pretrained_attn&#34;)
+        if src_attn is not None:
+            self.copy_weights(src_attn)
+
+    # ------------------------------------------------------------------
+    # SP-FIX-01: activation-aware factorization
+    # ------------------------------------------------------------------
+    def _factorise_and_set(
+        self,
+        W: torch.Tensor,
+        bias: torch.Tensor | None,
+        down: nn.Linear,
+        up: nn.Linear,
+        rank: int,
+        whitening_L: torch.Tensor | None = None,
+    ) -&gt; None:
+        &#34;&#34;&#34;
+        Factories W into down/up via activation-aware SVD:
+
+            if whitening_L is None:
+                U Σ V^T = SVD(W)
+                down = √Σ V^T
+                up   = U √Σ
+            else:
+                U Σ V^T = SVD(W L)
+                down = √Σ V^T L^{-1}
+                up   = U √Σ
+        &#34;&#34;&#34;
+        with torch.no_grad():
+            W_f = W.float()
+            d_out, d_in = W_f.shape
+            r = min(rank, d_out, d_in, down.out_features, up.in_features)
+            r = max(r, 1)
+
+            L = None
+            if whitening_L is not None and whitening_L.shape == (d_in, d_in):
+                L = whitening_L.float().to(W_f.device)
+
+            if L is not None:
+                eps = 1e-6 * torch.trace(L @ L.t()).item() / max(1, d_in)
+                eye = torch.eye(d_in, device=W_f.device, dtype=W_f.dtype)
+                try:
+                    L_reg = L + eps * eye  # small regularization
+                    W_eff = W_f @ L_reg
+                    U, s, Vt = torch.linalg.svd(W_eff, full_matrices=False)
+                    L_inv = torch.linalg.inv(L_reg)
+                    Vt = Vt @ L_inv  # bring back to original coordinate
+                except Exception as e:
+                    log.debug(&#34;Whitening failed on factorise (%s); fallback.&#34;, e)
+                    U, s, Vt = torch.linalg.svd(W_f, full_matrices=False)
+            else:
+                U, s, Vt = torch.linalg.svd(W_f, full_matrices=False)
+
+            sqrt_s = torch.sqrt(torch.clamp(s[:r], min=1e-12))
+            down_w = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(down.weight.device, down.weight.dtype)
+            up_w = (U[:, :r] * sqrt_s.unsqueeze(0)).to(up.weight.device, up.weight.dtype)
+
+            down.weight.data.zero_()
+            up.weight.data.zero_()
+            down.weight.data[:r, :].copy_(down_w)
+            up.weight.data[:, :r].copy_(up_w)
+            if bias is not None and up.bias is not None:
+                up.bias.data.copy_(bias.to(up.bias.device, up.bias.dtype))
+
+    # ------------------------------------------------------------------
+    # copy_weights with activation-aware factorization
+    # ------------------------------------------------------------------
+    def copy_weights(self, old_attn: Any) -&gt; None:
+        with torch.no_grad():
+            w_q, b_q = None, None
+            w_k, b_k = None, None
+            w_v, b_v = None, None
+            w_o, b_o = None, None
+
+            src_cls_name = getattr(old_attn, &#34;__class__&#34;, type(old_attn)).__name__
+            has_out_proj = any(
+                hasattr(old_attn, a)
+                for a in (
+                    &#34;dense&#34;,
+                    &#34;out_proj&#34;,
+                    &#34;c_proj&#34;,
+                    &#34;out_lin&#34;,
+                    &#34;o_proj&#34;,
+                    &#34;wo&#34;,
+                    &#34;o&#34;,
+                    &#34;proj&#34;,
+                )
+            )
+            if src_cls_name in (
+                &#34;BertSelfAttention&#34;,
+                &#34;RobertaSelfAttention&#34;,
+                &#34;XLMRobertaSelfAttention&#34;,
+                &#34;ElectraSelfAttention&#34;,
+                &#34;DebertaSelfAttention&#34;,
+            ) or (hasattr(old_attn, &#34;query&#34;) and not has_out_proj):
+                self.is_nested_encoder = True
+
+            if hasattr(old_attn, &#34;self&#34;) and hasattr(old_attn, &#34;output&#34;):
+                self.is_nested_encoder = True
+                src = old_attn.self
+                if hasattr(old_attn.output, &#34;dense&#34;):
+                    w_o, b_o = _unpack_weight_bias(old_attn.output.dense)
+            else:
+                src = old_attn
+
+            # GPT-2 fused c_attn
+            if hasattr(src, &#34;c_attn&#34;) and hasattr(src, &#34;c_proj&#34;):
+                c_w, c_b = _unpack_weight_bias(src.c_attn)
+                if c_w is not None:
+                    if c_w.shape[0] == self.hidden_size and c_w.shape[1] != self.hidden_size:
+                        c_w = c_w.t().contiguous()
+                    q_dim = self.q_head_size
+                    k_dim = self.hidden_size
+                    v_dim = self.hidden_size
+                    w_q = c_w[:q_dim, :]
+                    w_k = c_w[q_dim : q_dim + k_dim, :]
+                    w_v = c_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
+                    if c_b is not None:
+                        b_q = c_b[:q_dim]
+                        b_k = c_b[q_dim : q_dim + k_dim]
+                        b_v = c_b[q_dim + k_dim : q_dim + k_dim + v_dim]
+
+                out_w, out_b = _unpack_weight_bias(src.c_proj)
+                if out_w is not None:
+                    if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
+                        out_w = out_w.t().contiguous()
+                    w_o, b_o = out_w, out_b
+
+            # BERT / RoBERTa nested
+            elif hasattr(src, &#34;query&#34;) and hasattr(src, &#34;key&#34;) and hasattr(src, &#34;value&#34;):
+                w_q, b_q = _unpack_weight_bias(src.query)
+                w_k, b_k = _unpack_weight_bias(src.key)
+                w_v, b_v = _unpack_weight_bias(src.value)
+                if w_o is None:
+                    for attr in (&#34;dense&#34;, &#34;out_proj&#34;, &#34;o_proj&#34;):
+                        if hasattr(src, attr):
+                            w_o, b_o = _unpack_weight_bias(getattr(src, attr))
+                            break
+
+            # Qwen / LLaMA
+            elif hasattr(src, &#34;q_proj&#34;) and hasattr(src, &#34;k_proj&#34;) and hasattr(src, &#34;v_proj&#34;):
+                w_q, b_q = _unpack_weight_bias(src.q_proj)
+                w_k, b_k = _unpack_weight_bias(src.k_proj)
+                w_v, b_v = _unpack_weight_bias(src.v_proj)
+                if hasattr(src, &#34;o_proj&#34;):
+                    w_o, b_o = _unpack_weight_bias(src.o_proj)
+
+            # DistilBERT
+            elif hasattr(src, &#34;q_lin&#34;) and hasattr(src, &#34;k_lin&#34;) and hasattr(src, &#34;v_lin&#34;):
+                w_q, b_q = _unpack_weight_bias(src.q_lin)
+                w_k, b_k = _unpack_weight_bias(src.k_lin)
+                w_v, b_v = _unpack_weight_bias(src.v_lin)
+                if hasattr(src, &#34;out_lin&#34;):
+                    w_o, b_o = _unpack_weight_bias(src.out_lin)
+
+            # UniversalAdapter fallback
+            if w_q is None or w_k is None or w_v is None:
+                try:
+                    adapter = UniversalAdapter(old_attn)
+                    extracted = adapter.extract_qkv_out()
+                    if extracted:
+                        w_q = extracted.get(&#34;q_weight&#34;)
+                        b_q = extracted.get(&#34;q_bias&#34;)
+                        w_k = extracted.get(&#34;k_weight&#34;)
+                        b_k = extracted.get(&#34;k_bias&#34;)
+                        w_v = extracted.get(&#34;v_weight&#34;)
+                        b_v = extracted.get(&#34;v_bias&#34;)
+                        if w_o is None:
+                            w_o = extracted.get(&#34;out_weight&#34;)
+                            b_o = extracted.get(&#34;out_bias&#34;)
+                except Exception as e:
+                    log.debug(&#34;UniversalAdapter fallback failed: %s&#34;, e)
+
+            missing = []
+            if w_q is None:
+                missing.append(&#34;query&#34;)
+            if w_k is None:
+                missing.append(&#34;key&#34;)
+            if w_v is None:
+                missing.append(&#34;value&#34;)
+            if missing:
+                logger.warning(&#34;Spectron: missing %s; keeping random init.&#34;, missing)
+                return
+
+            def _orient(w, out_dim, in_dim):
+                if w.shape == (out_dim, in_dim):
+                    return w
+                if w.shape == (in_dim, out_dim):
+                    return w.t().contiguous()
+                return w
+
+            # ---- activation-aware factorization using self.whitening ----
+            w_q = _orient(w_q, self.q_head_size, self.hidden_size)
+            self._factorise_and_set(
+                w_q,
+                b_q,
+                self.q_down,
+                self.q_up,
+                self.ranks[&#34;q&#34;],
+                whitening_L=self.whitening.get(&#34;q&#34;, None),
+            )
+
+            # K with GQA pooling
+            if w_k.shape[0] == self.kv_head_size:
+                w_k = _orient(w_k, self.kv_head_size, self.hidden_size)
+                self._factorise_and_set(
+                    w_k,
+                    b_k,
+                    self.k_down,
+                    self.k_up,
+                    self.ranks[&#34;k&#34;],
+                    whitening_L=self.whitening.get(&#34;k&#34;, None),
+                )
+            else:
+                rep = max(1, w_k.shape[0] // self.kv_head_size)
+                w_k_pooled = (
+                    w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
+                    .mean(dim=1)
+                    .view(self.kv_head_size, -1)
+                )
+                b_k_pooled = (
+                    b_k.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
+                    if b_k is not None
+                    else None
+                )
+                self._factorise_and_set(
+                    w_k_pooled,
+                    b_k_pooled,
+                    self.k_down,
+                    self.k_up,
+                    self.ranks[&#34;k&#34;],
+                    whitening_L=self.whitening.get(&#34;k&#34;, None),
+                )
+
+            # V with GQA pooling
+            if w_v.shape[0] == self.kv_head_size:
+                w_v = _orient(w_v, self.kv_head_size, self.hidden_size)
+                self._factorise_and_set(
+                    w_v,
+                    b_v,
+                    self.v_down,
+                    self.v_up,
+                    self.ranks[&#34;v&#34;],
+                    whitening_L=self.whitening.get(&#34;v&#34;, None),
+                )
+            else:
+                rep = max(1, w_v.shape[0] // self.kv_head_size)
+                w_v_pooled = (
+                    w_v.view(self.num_kv_heads, rep, self.head_dim, -1)
+                    .mean(dim=1)
+                    .view(self.kv_head_size, -1)
+                )
+                b_v_pooled = (
+                    b_v.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
+                    if b_v is not None
+                    else None
+                )
+                self._factorise_and_set(
+                    w_v_pooled,
+                    b_v_pooled,
+                    self.v_down,
+                    self.v_up,
+                    self.ranks[&#34;v&#34;],
+                    whitening_L=self.whitening.get(&#34;v&#34;, None),
+                )
+
+            # Output projection
+            if w_o is not None and not self.is_nested_encoder:
+                w_o = _orient(w_o, self.hidden_size, self.q_head_size)
+                self._factorise_and_set(
+                    w_o,
+                    b_o,
+                    self.o_down,
+                    self.o_up,
+                    self.ranks[&#34;o&#34;],
+                    whitening_L=self.whitening.get(&#34;o&#34;, None),
+                )
+
+    # ------------------------------------------------------------------
+    # Forward helpers
+    # ------------------------------------------------------------------
+    def _linear_proj(
+        self,
+        x: torch.Tensor,
+        down: nn.Linear,
+        up: nn.Linear,
+        lora_A: nn.Parameter | None,
+        lora_B: nn.Parameter | None,
+        sparse_w: nn.Parameter | None,
+    ) -&gt; torch.Tensor:
+        out = up(down(x))
+        if self.lora_rank &gt; 0 and lora_A is not None and lora_B is not None:
+            a = lora_A.to(x.dtype)
+            b = lora_B.to(x.dtype)
+            out = out + F.linear(F.linear(x, a), b) * self.scaling
+        if self.add_sparse and sparse_w is not None:
+            out = out + F.linear(x, sparse_w.to(x.dtype))
+        return out
+
+    # ------------------------------------------------------------------
+    # Forward
+    # ------------------------------------------------------------------
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -&gt; tuple[torch.Tensor, torch.Tensor | None]:
+        B, N, _ = hidden_states.shape
+        is_cross = encoder_hidden_states is not None
+        kv_input = encoder_hidden_states if is_cross else hidden_states
+        kv_len = kv_input.shape[1]
+
+        Q = self._linear_proj(
+            hidden_states,
+            self.q_down,
+            self.q_up,
+            self.q_lora_A,
+            self.q_lora_B,
+            self.q_sparse,
+        )
+        K = self._linear_proj(
+            kv_input,
+            self.k_down,
+            self.k_up,
+            self.k_lora_A,
+            self.k_lora_B,
+            self.k_sparse,
+        )
+        V = self._linear_proj(
+            kv_input,
+            self.v_down,
+            self.v_up,
+            self.v_lora_A,
+            self.v_lora_B,
+            self.v_sparse,
+        )
+
+        Q = Q.view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        K = K.view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V = V.view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+
+        # RoPE
+        if position_embeddings is None:
+            position_embeddings = kwargs.get(&#34;position_embeddings&#34;)
+        if position_embeddings is not None and not is_cross:
+            cos, sin = position_embeddings
+            past_len = 0
+            if past_key_value is not None:
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) &gt;= 1:
+                    past_len = past_key_value[0].shape[-2]
+                elif hasattr(past_key_value, &#34;key_cache&#34;) and past_key_value.key_cache:
+                    past_len = past_key_value.key_cache[0].shape[-2]
+            cos = cos[..., past_len : past_len + N, :]
+            sin = sin[..., past_len : past_len + N, :]
+            Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
+
+        # GQA
+        if self.num_kv_heads &lt; self.num_heads:
+            K = repeat_kv(K, self.kv_repeat)
+            V = repeat_kv(V, self.kv_repeat)
+
+        scale = 1.0 / math.sqrt(self.head_dim)
+
+        # SP-FIX-04: correct causal condition
+        is_causal = self.is_decoder and not is_cross and N &gt; 1
+
+        # SP-FIX-05: removed padding/truncation hack
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+
+        if is_causal:
+            causal = (
+                torch.triu(
+                    torch.full(
+                        (N, kv_len),
+                        float(&#34;-inf&#34;),
+                        device=scores.device,
+                        dtype=torch.float32,
+                    ),
+                    diagonal=1 + max(0, kv_len - N),
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
+            scores = scores + causal
+
+        eff_mask = encoder_attention_mask if is_cross else attention_mask
+        if eff_mask is not None:
+            if eff_mask.dim() == 2:
+                scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+            elif eff_mask.dim() == 3:
+                scores = scores + eff_mask.unsqueeze(1).float()
+            elif eff_mask.dim() == 4:
+                scores = scores + eff_mask.float()
+
+        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+        attn_weights = F.softmax(scores, dim=-1).to(hidden_states.dtype)
+        attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
+        attn_weights = self.dropout(attn_weights)
+
+        if head_mask is not None:
+            hm = head_mask.to(attn_weights.dtype)
+            if hm.dim() == 1:
+                hm = hm.view(1, -1, 1, 1)
+            elif hm.dim() == 2:
+                hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
+            elif hm.dim() == 3:
+                hm = hm.unsqueeze(1)
+            attn_weights = attn_weights * hm
+
+        context = (
+            torch.matmul(attn_weights, V)
+            .transpose(1, 2)
+            .contiguous()
+            .view(B, N, self.all_head_size)
+        )
+        context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        if self.is_nested_encoder:
+            output = context
+        else:
+            output = self._linear_proj(
+                context,
+                self.o_down,
+                self.o_up,
+                self.o_lora_A,
+                self.o_lora_B,
+                self.o_sparse,
+            )
+
+        return output, (attn_weights if output_attentions else None)
+
+    # ------------------------------------------------------------------
+    def total_sparse_l1(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Sum of L1 norms of all sparse residuals. Add to training loss.&#34;&#34;&#34;
+        if not self.add_sparse:
+            return torch.zeros((), device=self.q_down.weight.device)
+        total = torch.zeros((), device=self.q_down.weight.device)
+        for s in (self.q_sparse, self.k_sparse, self.v_sparse, self.o_sparse):
+            if s is not None:
+                total = total + s.abs().sum()
+        return total
+
+    def prune_all_sparse(self, sparsity: float) -&gt; None:
+        with torch.no_grad():
+            for s in (self.q_sparse, self.k_sparse, self.v_sparse, self.o_sparse):
+                if s is None or s.numel() == 0:
+                    continue
+                keep = int(s.numel() * (1.0 - sparsity))
+                if keep &lt;= 0:
+                    s.zero_()
+                    continue
+                if keep &gt;= s.numel():
+                    continue
+                flat = s.abs().view(-1)
+                kth = torch.kthvalue(flat, s.numel() - keep).values
+                s.mul_(s.abs() &gt;= kth)</code></pre>
+</details>
+<div class="desc"><p>Every custom attention module must inherit from this.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.spectron.SpectronAttention.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.spectron.SpectronAttention.supports_causal"><code class="name">var <span class="ident">supports_causal</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.spectron.SpectronAttention.supports_gqa"><code class="name">var <span class="ident">supports_gqa</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.spectron.SpectronAttention.prune_all_sparse"><code class="name flex">
+<span>def <span class="ident">prune_all_sparse</span></span>(<span>self, sparsity: float) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def prune_all_sparse(self, sparsity: float) -&gt; None:
+    with torch.no_grad():
+        for s in (self.q_sparse, self.k_sparse, self.v_sparse, self.o_sparse):
+            if s is None or s.numel() == 0:
+                continue
+            keep = int(s.numel() * (1.0 - sparsity))
+            if keep &lt;= 0:
+                s.zero_()
+                continue
+            if keep &gt;= s.numel():
+                continue
+            flat = s.abs().view(-1)
+            kth = torch.kthvalue(flat, s.numel() - keep).values
+            s.mul_(s.abs() &gt;= kth)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.spectron.SpectronAttention.total_sparse_l1"><code class="name flex">
+<span>def <span class="ident">total_sparse_l1</span></span>(<span>self) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def total_sparse_l1(self) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Sum of L1 norms of all sparse residuals. Add to training loss.&#34;&#34;&#34;
+    if not self.add_sparse:
+        return torch.zeros((), device=self.q_down.weight.device)
+    total = torch.zeros((), device=self.q_down.weight.device)
+    for s in (self.q_sparse, self.k_sparse, self.v_sparse, self.o_sparse):
+        if s is not None:
+            total = total + s.abs().sum()
+    return total</code></pre>
+</details>
+<div class="desc"><p>Sum of L1 norms of all sparse residuals. Add to training loss.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseAttention.copy_weights" href="../core/base.html#neuralops.core.base.BaseAttention.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.extra_repr" href="../core/base.html#neuralops.core.base.BaseAttention.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.forward" href="../core/base.html#neuralops.core.base.BaseAttention.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.attentions" href="index.html">neuralops.attentions</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.attentions.spectron.allocate_ranks_spectron" href="#neuralops.attentions.spectron.allocate_ranks_spectron">allocate_ranks_spectron</a></code></li>
+<li><code><a title="neuralops.attentions.spectron.cumulative_entropy_fraction" href="#neuralops.attentions.spectron.cumulative_entropy_fraction">cumulative_entropy_fraction</a></code></li>
+<li><code><a title="neuralops.attentions.spectron.gather_attention_weights" href="#neuralops.attentions.spectron.gather_attention_weights">gather_attention_weights</a></code></li>
+<li><code><a title="neuralops.attentions.spectron.inject_spectron" href="#neuralops.attentions.spectron.inject_spectron">inject_spectron</a></code></li>
+<li><code><a title="neuralops.attentions.spectron.spectral_entropy" href="#neuralops.attentions.spectron.spectral_entropy">spectral_entropy</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.attentions.spectron.LowRankSparseLinear" href="#neuralops.attentions.spectron.LowRankSparseLinear">LowRankSparseLinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.spectron.LowRankSparseLinear.forward" href="#neuralops.attentions.spectron.LowRankSparseLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.attentions.spectron.LowRankSparseLinear.is_custom_attention" href="#neuralops.attentions.spectron.LowRankSparseLinear.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.spectron.LowRankSparseLinear.prune_sparse" href="#neuralops.attentions.spectron.LowRankSparseLinear.prune_sparse">prune_sparse</a></code></li>
+<li><code><a title="neuralops.attentions.spectron.LowRankSparseLinear.sparse_l1_loss" href="#neuralops.attentions.spectron.LowRankSparseLinear.sparse_l1_loss">sparse_l1_loss</a></code></li>
+<li><code><a title="neuralops.attentions.spectron.LowRankSparseLinear.weight" href="#neuralops.attentions.spectron.LowRankSparseLinear.weight">weight</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.spectron.SparsePruningCallback" href="#neuralops.attentions.spectron.SparsePruningCallback">SparsePruningCallback</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.spectron.SparsePruningCallback.on_step_end" href="#neuralops.attentions.spectron.SparsePruningCallback.on_step_end">on_step_end</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.spectron.SpectronAttention" href="#neuralops.attentions.spectron.SpectronAttention">SpectronAttention</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.spectron.SpectronAttention.is_custom_attention" href="#neuralops.attentions.spectron.SpectronAttention.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.spectron.SpectronAttention.prune_all_sparse" href="#neuralops.attentions.spectron.SpectronAttention.prune_all_sparse">prune_all_sparse</a></code></li>
+<li><code><a title="neuralops.attentions.spectron.SpectronAttention.supports_causal" href="#neuralops.attentions.spectron.SpectronAttention.supports_causal">supports_causal</a></code></li>
+<li><code><a title="neuralops.attentions.spectron.SpectronAttention.supports_gqa" href="#neuralops.attentions.spectron.SpectronAttention.supports_gqa">supports_gqa</a></code></li>
+<li><code><a title="neuralops.attentions.spectron.SpectronAttention.total_sparse_l1" href="#neuralops.attentions.spectron.SpectronAttention.total_sparse_l1">total_sparse_l1</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

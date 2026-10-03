@@ -1,0 +1,1168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.armor_pruner API documentation</title>
+<meta name="description" content="ARMOR: Adaptive Resilient Matrix Orthogonal Rank Pruning (2:4 Sparse Core + Low-Rank Correction).
+Registered in COMPRESSOR_REGISTRY as &#39;armor_pruner&#39;, …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.armor_pruner</code></h1>
+</header>
+<section id="section-intro">
+<p>ARMOR: Adaptive Resilient Matrix Orthogonal Rank Pruning (2:4 Sparse Core + Low-Rank Correction).
+Registered in COMPRESSOR_REGISTRY as 'armor_pruner', 'armor', and 'armor_compressor'.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.armor_pruner.armor_pruner_factory"><code class="name flex">
+<span>def <span class="ident">armor_pruner_factory</span></span>(<span>model: Any, comp_config: Any = None, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;armor_pruner_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;armor_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;armor_compressor_factory&#34;)
+def armor_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Factory function for ARMOR pruner.&#34;&#34;&#34;
+    return_stats = kwargs.pop(&#34;return_stats&#34;, kwargs.pop(&#34;return_tuple&#34;, False))
+
+    block_size = kwargs.pop(
+        &#34;block_size&#34;,
+        _cfg_get(comp_config, &#34;armor_block_size&#34;, _cfg_get(comp_config, &#34;block_size&#34;, 4)),
+    )
+    rank = kwargs.pop(
+        &#34;rank&#34;,
+        _cfg_get(comp_config, &#34;armor_rank&#34;, _cfg_get(comp_config, &#34;rank&#34;, 16)),
+    )
+    sparsity = kwargs.pop(
+        &#34;sparsity&#34;,
+        _cfg_get(comp_config, &#34;armor_sparsity&#34;, _cfg_get(comp_config, &#34;sparsity&#34;, 0.5)),
+    )
+    structured_24 = kwargs.pop(
+        &#34;structured_24&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;armor_structured_24&#34;,
+            _cfg_get(comp_config, &#34;structured_24&#34;, True),
+        ),
+    )
+    decouple = kwargs.pop(
+        &#34;decouple&#34;,
+        _cfg_get(comp_config, &#34;armor_decouple&#34;, _cfg_get(comp_config, &#34;decouple&#34;, True)),
+    )
+    recalibrate_ln = kwargs.pop(
+        &#34;recalibrate_ln&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;armor_recalibrate_ln&#34;,
+            _cfg_get(comp_config, &#34;recalibrate_ln&#34;, True),
+        ),
+    )
+    # AR-FIX-01: allow None to mean &#34;= rank&#34;.
+    lora_alpha = kwargs.pop(
+        &#34;lora_alpha&#34;,
+        _cfg_get(comp_config, &#34;armor_lora_alpha&#34;, _cfg_get(comp_config, &#34;lora_alpha&#34;, None)),
+    )
+    max_error = kwargs.pop(
+        &#34;max_error&#34;,
+        _cfg_get(comp_config, &#34;armor_max_error&#34;, _cfg_get(comp_config, &#34;max_error&#34;, 0.35)),
+    )
+    fallback_to_original = kwargs.pop(
+        &#34;fallback_to_original&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;armor_fallback_to_original&#34;,
+            _cfg_get(comp_config, &#34;fallback_to_original&#34;, True),
+        ),
+    )
+    target_attention_only = kwargs.pop(
+        &#34;target_attention_only&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;armor_target_attention_only&#34;,
+            _cfg_get(comp_config, &#34;target_attention_only&#34;, False),
+        ),
+    )
+    skip_attention_qkv = kwargs.pop(
+        &#34;skip_attention_qkv&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;armor_skip_attention_qkv&#34;,
+            _cfg_get(comp_config, &#34;skip_attention_qkv&#34;, False),
+        ),
+    )
+    skip_attention_output = kwargs.pop(
+        &#34;skip_attention_output&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;armor_skip_attention_output&#34;,
+            _cfg_get(comp_config, &#34;skip_attention_output&#34;, False),
+        ),
+    )
+
+    compressor = ARMORPruner(
+        model,
+        block_size=block_size,
+        rank=rank,
+        sparsity=sparsity,
+        structured_24=structured_24,
+        decouple=decouple,
+        recalibrate_ln=recalibrate_ln,
+        lora_alpha=lora_alpha,
+        max_error=max_error,
+        fallback_to_original=fallback_to_original,
+        target_attention_only=target_attention_only,
+        skip_attention_qkv=skip_attention_qkv,
+        skip_attention_output=skip_attention_output,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>Factory function for ARMOR pruner.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.armor_pruner.compute_resilient_taylor_saliency"><code class="name flex">
+<span>def <span class="ident">compute_resilient_taylor_saliency</span></span>(<span>weight: torch.Tensor,<br>grad: torch.Tensor | None = None,<br>activations: torch.Tensor | None = None) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_resilient_taylor_saliency(
+    weight: torch.Tensor,
+    grad: torch.Tensor | None = None,
+    activations: torch.Tensor | None = None,
+) -&gt; torch.Tensor:
+    &#34;&#34;&#34;
+    Resilient Taylor saliency with three-tier fallback:
+      1. |W · g| if gradient is valid and nonzero.
+      2. |W| · E[|x|] if activations available.
+      3. |W| · (1 + σ(W)) as fallback.
+
+    AR-FIX-12: `activations` may be a 1-D tensor of shape (in_features,) representing
+    per-channel mean |x|. In that case, broadcast along the input dimension.
+    &#34;&#34;&#34;
+    W = weight.float()
+
+    if grad is not None and torch.is_tensor(grad):
+        g = grad.float()
+        if torch.isfinite(g).all() and torch.count_nonzero(g) &gt; 0:
+            return torch.abs(W * g)
+
+    if activations is not None and torch.is_tensor(activations) and activations.numel() &gt; 0:
+        act = activations.float().to(W.device)
+
+        # Case A: (in_features,) per-channel mean
+        if act.dim() == 1 and act.numel() == W.shape[1]:
+            act_scale = act.view(1, -1).clamp(min=1e-6)
+            return torch.abs(W) * act_scale
+
+        # Case B: (N, in_features) full activations
+        if act.dim() &gt;= 2 and act.shape[-1] == W.shape[1]:
+            X = act.reshape(-1, act.shape[-1])
+            act_scale = torch.mean(torch.abs(X), dim=0, keepdim=True).to(W.device)
+            act_scale = torch.nan_to_num(act_scale, nan=1.0).clamp(min=1e-6)
+            return torch.abs(W) * act_scale
+
+    w_std = torch.std(W).item() if W.numel() &gt; 1 else 1.0
+    if not math.isfinite(w_std) or w_std &lt;= 0.0:
+        w_std = 1.0
+    return torch.abs(W) * (1.0 + w_std)</code></pre>
+</details>
+<div class="desc"><p>Resilient Taylor saliency with three-tier fallback:
+1. |W · g| if gradient is valid and nonzero.
+2. |W| · E[|x|] if activations available.
+3. |W| · (1 + σ(W)) as fallback.</p>
+<p>AR-FIX-12: <code>activations</code> may be a 1-D tensor of shape (in_features,) representing
+per-channel mean |x|. In that case, broadcast along the input dimension.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.armor_pruner.ARMORLinear"><code class="flex name class">
+<span>class <span class="ident">ARMORLinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>rank: int,<br>bias: bool = True,<br>lora_alpha: float | None = None,<br>dtype: torch.dtype = torch.float32,<br>device: torch.device | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ARMORLinear(nn.Module):
+    &#34;&#34;&#34;
+    Decoupled sparse + low-rank residual layer.
+
+    Forward:
+        y = x @ (sparse_weight ⊙ sparse_mask)^T
+            + (scaling) * (x @ lora_A^T) @ lora_B^T
+            + bias
+
+    Invariants:
+      - `sparse_weight` holds the ORIGINAL weight values (not pre-masked).
+      - `sparse_mask` (non-persistent) holds a 0/1 mask applied once per forward.
+      - `lora_alpha == rank` so `scaling == 1.0`, so the SVD residual is exact.
+    &#34;&#34;&#34;
+
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int,
+        bias: bool = True,
+        lora_alpha: float | None = None,
+        dtype: torch.dtype = torch.float32,
+        device: torch.device | None = None,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.nf = out_features
+        self.rank = max(1, min(rank, in_features, out_features))
+
+        # AR-FIX-01: default alpha to rank so scaling is 1.0 by construction.
+        self.lora_alpha = float(lora_alpha) if lora_alpha is not None else float(self.rank)
+        self.scaling = (self.lora_alpha / self.rank) if self.rank &gt; 0 else 1.0
+
+        # AR-FIX-11: store raw (un-masked) weight.
+        self.sparse_weight = nn.Parameter(
+            torch.empty(out_features, in_features, dtype=dtype, device=device),
+            requires_grad=False,
+        )
+        # AR-FIX-02: non-persistent mask.
+        self.register_buffer(
+            &#34;sparse_mask&#34;,
+            torch.ones(out_features, in_features, dtype=dtype, device=device),
+            persistent=False,
+        )
+
+        self.lora_A = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
+        self.lora_B = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
+
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device))
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+    @classmethod
+    def from_linear(
+        cls,
+        linear: nn.Linear | Any,
+        mask: torch.Tensor,
+        lora_A: torch.Tensor,
+        lora_B: torch.Tensor,
+        lora_alpha: float | None = None,
+    ) -&gt; ARMORLinear:
+        cls_name = linear.__class__.__name__.lower()
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(linear, &#34;nf&#34;)
+        raw_w = linear.weight.data
+        if is_conv1d:
+            in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+            w_data = raw_w.t().contiguous()
+        else:
+            out_f, in_f = raw_w.shape
+            w_data = raw_w
+
+        # AR-FIX-10: clamp rank to actual dims.
+        requested_rank = int(lora_A.shape[0])
+        actual_rank = max(1, min(requested_rank, in_f, out_f))
+
+        # AR-FIX-01: ensure scaling == 1.0 by default.
+        effective_alpha = float(lora_alpha) if lora_alpha is not None else float(actual_rank)
+
+        layer = cls(
+            in_features=in_f,
+            out_features=out_f,
+            rank=actual_rank,
+            bias=(getattr(linear, &#34;bias&#34;, None) is not None and linear.bias is not None),
+            lora_alpha=effective_alpha,
+            dtype=raw_w.dtype,
+            device=raw_w.device,
+        )
+        mask_dev = mask.to(dtype=w_data.dtype, device=w_data.device)
+        with torch.no_grad():
+            # AR-FIX-11: store raw weight, do not pre-mask.
+            layer.sparse_weight.data.copy_(w_data)
+            layer.sparse_mask.copy_(mask_dev)
+            layer.lora_A.data.copy_(lora_A[:actual_rank].to(dtype=raw_w.dtype, device=raw_w.device))
+            layer.lora_B.data.copy_(
+                lora_B[:, :actual_rank].to(dtype=raw_w.dtype, device=raw_w.device)
+            )
+            if (
+                getattr(linear, &#34;bias&#34;, None) is not None
+                and linear.bias is not None
+                and layer.bias is not None
+            ):
+                layer.bias.data.copy_(linear.bias.data)
+        return layer
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        # AR-FIX-09: compute in fp32, cast back to sparse_weight dtype.
+        with torch.no_grad():
+            base = (self.sparse_weight.float() * self.sparse_mask.float()).to(
+                self.sparse_weight.dtype
+            )
+            if self.lora_A is not None and self.lora_B is not None and self.rank &gt; 0:
+                lora_w = torch.matmul(self.lora_B.float(), self.lora_A.float()) * self.scaling
+                return base + lora_w.to(base.dtype)
+            return base
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        orig_shape = x.shape
+        x_flat = x.reshape(-1, self.in_features)
+
+        # 1. Sparse core. Mask applied once.
+        w_eff = self.sparse_weight * self.sparse_mask
+        out_sparse = F.linear(x_flat, w_eff)
+
+        # 2. Low-rank residual.
+        lr_dtype = self.lora_A.dtype
+        x_lr = x_flat.to(lr_dtype) if x_flat.dtype != lr_dtype else x_flat
+        out_lr = F.linear(F.linear(x_lr, self.lora_A), self.lora_B)
+        # AR-FIX-03: explicit dtype of scaling.
+        out_lr = (out_lr * self.scaling).to(out_sparse.dtype)
+
+        out = out_sparse + out_lr
+        if self.bias is not None:
+            out = out + self.bias.to(out.dtype)
+        return out.view(*orig_shape[:-1], self.out_features)</code></pre>
+</details>
+<div class="desc"><p>Decoupled sparse + low-rank residual layer.</p>
+<p>Forward
+-----=
+y = x @ (sparse_weight ⊙ sparse_mask)^T
++ (scaling) * (x @ lora_A^T) @ lora_B^T
++ bias</p>
+<p>Invariants
+-----=
+- <code>sparse_weight</code> holds the ORIGINAL weight values (not pre-masked).
+- <code>sparse_mask</code> (non-persistent) holds a 0/1 mask applied once per forward.
+- <code>lora_alpha == rank</code> so <code>scaling == 1.0</code>, so the SVD residual is exact.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.armor_pruner.ARMORLinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.armor_pruner.ARMORLinear.from_linear"><code class="name flex">
+<span>def <span class="ident">from_linear</span></span>(<span>linear: nn.Linear | Any,<br>mask: torch.Tensor,<br>lora_A: torch.Tensor,<br>lora_B: torch.Tensor,<br>lora_alpha: float | None = None) ‑> <a title="neuralops.compression_engine.armor_pruner.ARMORLinear" href="#neuralops.compression_engine.armor_pruner.ARMORLinear">ARMORLinear</a></span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.armor_pruner.ARMORLinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    # AR-FIX-09: compute in fp32, cast back to sparse_weight dtype.
+    with torch.no_grad():
+        base = (self.sparse_weight.float() * self.sparse_mask.float()).to(
+            self.sparse_weight.dtype
+        )
+        if self.lora_A is not None and self.lora_B is not None and self.rank &gt; 0:
+            lora_w = torch.matmul(self.lora_B.float(), self.lora_A.float()) * self.scaling
+            return base + lora_w.to(base.dtype)
+        return base</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.armor_pruner.ARMORLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    orig_shape = x.shape
+    x_flat = x.reshape(-1, self.in_features)
+
+    # 1. Sparse core. Mask applied once.
+    w_eff = self.sparse_weight * self.sparse_mask
+    out_sparse = F.linear(x_flat, w_eff)
+
+    # 2. Low-rank residual.
+    lr_dtype = self.lora_A.dtype
+    x_lr = x_flat.to(lr_dtype) if x_flat.dtype != lr_dtype else x_flat
+    out_lr = F.linear(F.linear(x_lr, self.lora_A), self.lora_B)
+    # AR-FIX-03: explicit dtype of scaling.
+    out_lr = (out_lr * self.scaling).to(out_sparse.dtype)
+
+    out = out_sparse + out_lr
+    if self.bias is not None:
+        out = out + self.bias.to(out.dtype)
+    return out.view(*orig_shape[:-1], self.out_features)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.compression_engine.armor_pruner.ARMORPruner"><code class="flex name class">
+<span>class <span class="ident">ARMORPruner</span></span>
+<span>(</span><span>model: nn.Module,<br>block_size: int = 4,<br>rank: int = 16,<br>sparsity: float = 0.5,<br>structured_24: bool = True,<br>decouple: bool = True,<br>recalibrate_ln: bool = True,<br>lora_alpha: float | None = None,<br>max_error: float = 0.35,<br>fallback_to_original: bool = True,<br>target_attention_only: bool = False,<br>skip_attention_qkv: bool = False,<br>skip_attention_output: bool = False,<br>target_modules: list[str] | None = None,<br>tokenizer: Any | None = None,<br>calibration_loader: Any | None = None,<br>calibration_texts: list[str] | None = None,<br>device: str | torch.device | None = None,<br>cfg: Any | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;armor_pruner&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;armor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;armor_compressor&#34;)
+class ARMORPruner(BaseCompressor):
+    &#34;&#34;&#34;Production-hardened ARMOR Pruner.&#34;&#34;&#34;
+
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        model: nn.Module,
+        block_size: int = 4,
+        rank: int = 16,
+        sparsity: float = 0.5,
+        structured_24: bool = True,
+        decouple: bool = True,
+        recalibrate_ln: bool = True,
+        lora_alpha: float | None = None,
+        max_error: float = 0.35,
+        fallback_to_original: bool = True,
+        target_attention_only: bool = False,
+        skip_attention_qkv: bool = False,
+        skip_attention_output: bool = False,
+        target_modules: list[str] | None = None,
+        tokenizer: Any | None = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
+        cfg: Any | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;armor_pruner&#34;, **kwargs)
+        conf = cfg or kwargs.get(&#34;comp_config&#34;)
+
+        self.block_size = int(
+            _cfg_get(conf, &#34;armor_block_size&#34;, _cfg_get(conf, &#34;block_size&#34;, block_size))
+        )
+        self.rank = max(1, int(_cfg_get(conf, &#34;armor_rank&#34;, _cfg_get(conf, &#34;rank&#34;, rank))))
+        self.sparsity = max(
+            0.0,
+            min(
+                float(_cfg_get(conf, &#34;armor_sparsity&#34;, _cfg_get(conf, &#34;sparsity&#34;, sparsity))),
+                0.95,
+            ),
+        )
+        self.structured_24 = bool(
+            _cfg_get(
+                conf,
+                &#34;armor_structured_24&#34;,
+                _cfg_get(conf, &#34;structured_24&#34;, structured_24),
+            )
+        )
+        self.decouple = bool(_cfg_get(conf, &#34;armor_decouple&#34;, _cfg_get(conf, &#34;decouple&#34;, decouple)))
+        self.recalibrate_ln = bool(
+            _cfg_get(
+                conf,
+                &#34;armor_recalibrate_ln&#34;,
+                _cfg_get(conf, &#34;recalibrate_ln&#34;, recalibrate_ln),
+            )
+        )
+        # AR-FIX-01: allow None, in which case it will be set to rank per-layer.
+        self.lora_alpha = (
+            float(_cfg_get(conf, &#34;armor_lora_alpha&#34;, _cfg_get(conf, &#34;lora_alpha&#34;, lora_alpha)))
+            if lora_alpha is not None
+            else None
+        )
+        self.max_error = float(
+            _cfg_get(conf, &#34;armor_max_error&#34;, _cfg_get(conf, &#34;max_error&#34;, max_error))
+        )
+        self.fallback_to_original = bool(
+            _cfg_get(
+                conf,
+                &#34;armor_fallback_to_original&#34;,
+                _cfg_get(conf, &#34;fallback_to_original&#34;, fallback_to_original),
+            )
+        )
+        self.target_attention_only = bool(
+            _cfg_get(
+                conf,
+                &#34;armor_target_attention_only&#34;,
+                _cfg_get(conf, &#34;target_attention_only&#34;, target_attention_only),
+            )
+        )
+        self.skip_attention_qkv = bool(
+            _cfg_get(
+                conf,
+                &#34;armor_skip_attention_qkv&#34;,
+                _cfg_get(conf, &#34;skip_attention_qkv&#34;, skip_attention_qkv),
+            )
+        )
+        self.skip_attention_output = bool(
+            _cfg_get(
+                conf,
+                &#34;armor_skip_attention_output&#34;,
+                _cfg_get(conf, &#34;skip_attention_output&#34;, skip_attention_output),
+            )
+        )
+        self.target_modules = target_modules
+
+        self.tokenizer = tokenizer or getattr(model, &#34;tokenizer&#34;, None)
+        self.calibration_loader = calibration_loader
+        self.calibration_texts = calibration_texts
+        self.target_device = (
+            torch.device(device)
+            if device is not None
+            else next(model.parameters(), torch.tensor(0.0)).device
+        )
+        self.comp_config = conf
+        self._compressed_params: int = 0
+
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_actual_sparsities: dict[str, float] = {}
+        self.layer_effective_ratios: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
+
+    # ------------------------------------------------------------------
+    def _is_gqa_asymmetric(self, name: str, module: nn.Module) -&gt; bool:
+        &#34;&#34;&#34;
+        AR-FIX-13: always active (not gated by skip_attention_qkv).
+        Returns True for q/k/v projections in GQA models where num_kv_heads &lt; num_heads.
+        These should be skipped entirely to avoid shape mismatches.
+        &#34;&#34;&#34;
+        cfg = getattr(self.model, &#34;config&#34;, None)
+        if cfg is None:
+            return False
+        num_heads = getattr(cfg, &#34;num_attention_heads&#34;, None)
+        num_kv_heads = getattr(cfg, &#34;num_key_value_heads&#34;, None)
+        if num_heads is None or num_kv_heads is None:
+            return False
+        if num_kv_heads &gt;= num_heads:
+            return False
+        name_lower = name.lower()
+        return any(
+            p in name_lower
+            for p in (&#34;q_proj&#34;, &#34;k_proj&#34;, &#34;v_proj&#34;, &#34;query&#34;, &#34;key&#34;, &#34;value&#34;, &#34;c_attn&#34;)
+        )
+
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        if isinstance(module, ARMORLinear):
+            return False
+        if any(
+            name.endswith(sfx)
+            for sfx in (&#34;.base_layer&#34;, &#34;.lora_A&#34;, &#34;.lora_B&#34;, &#34;.lora_dropout&#34;, &#34;.linear&#34;)
+        ):
+            return False
+
+        target_mod = getattr(module, &#34;base_layer&#34;, getattr(module, &#34;linear&#34;, module))
+        cls_name = module.__class__.__name__.lower()
+
+        weight_tensor = getattr(target_mod, &#34;weight&#34;, getattr(module, &#34;weight&#34;, None))
+        if weight_tensor is None or not hasattr(weight_tensor, &#34;dim&#34;) or weight_tensor.dim() != 2:
+            return False
+
+        # AR-FIX-05: Conv1D detection via class name.
+        target_cls = target_mod.__class__.__name__.lower()
+        is_conv1d = &#34;conv1d&#34; in target_cls
+        is_linear_like = (
+            isinstance(module, nn.Linear)
+            or isinstance(target_mod, nn.Linear)
+            or is_conv1d
+            or (
+                Conv1D is not None
+                and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D))
+            )
+            or &#34;loralinear&#34; in cls_name
+            or hasattr(module, &#34;base_layer&#34;)
+        )
+        if not is_linear_like:
+            return False
+
+        name_lower = name.lower()
+        if any(
+            skip in name_lower
+            for skip in (
+                &#34;lm_head&#34;,
+                &#34;classifier&#34;,
+                &#34;head&#34;,
+                &#34;output_layer&#34;,
+                &#34;score&#34;,
+                &#34;pooler&#34;,
+                &#34;pre_classifier&#34;,
+            )
+        ):
+            return False
+
+        # AR-FIX-15: projection O skip is opt-in.
+        if self.skip_attention_output and any(
+            nested in name_lower for nested in (&#34;attention.self.output&#34;, &#34;self.output.dense&#34;)
+        ):
+            return False
+
+        # AR-FIX-13: GQA shape guard always active.
+        if self._is_gqa_asymmetric(name, module):
+            return False
+
+        if self.target_attention_only:
+            ffn_patterns = (
+                &#34;ffn&#34;,
+                &#34;mlp&#34;,
+                &#34;lin1&#34;,
+                &#34;lin2&#34;,
+                &#34;intermediate&#34;,
+                &#34;gate_proj&#34;,
+                &#34;up_proj&#34;,
+                &#34;down_proj&#34;,
+                &#34;c_fc&#34;,
+            )
+            if any(p in name_lower for p in ffn_patterns):
+                return False
+            if &#34;output.dense&#34; in name_lower and &#34;attention&#34; not in name_lower:
+                return False
+            attn_patterns = (
+                &#34;attn&#34;,
+                &#34;attention&#34;,
+                &#34;q_proj&#34;,
+                &#34;k_proj&#34;,
+                &#34;v_proj&#34;,
+                &#34;o_proj&#34;,
+                &#34;out_lin&#34;,
+                &#34;q_lin&#34;,
+                &#34;k_lin&#34;,
+                &#34;v_lin&#34;,
+                &#34;c_attn&#34;,
+                &#34;c_proj&#34;,
+                &#34;query&#34;,
+                &#34;key&#34;,
+                &#34;value&#34;,
+                &#34;in_proj_qkv&#34;,
+                &#34;in_proj_z&#34;,
+                &#34;in_proj_b&#34;,
+                &#34;out_proj&#34;,
+            )
+            if not any(p in name_lower for p in attn_patterns):
+                return False
+        else:
+            if not should_compress_linear(self.model, name):
+                return False
+
+        if self.target_modules is not None:
+            return any(t in name for t in self.target_modules)
+        return True
+
+    # ------------------------------------------------------------------
+    def _collect_activations(self) -&gt; dict[str, torch.Tensor]:
+        &#34;&#34;&#34;
+        AR-FIX-12: Collect per-channel mean |x| instead of full activation tensors.
+        Returns {layer_name: (in_features,) float32 tensor}.
+        &#34;&#34;&#34;
+        self.model.eval()
+        activations: dict[str, list[torch.Tensor]] = {}
+        hooks = []
+
+        def make_hook(layer_name: str):
+            def hook(module, inp, outp):
+                if inp and isinstance(inp[0], torch.Tensor):
+                    x = inp[0].detach()
+                    # Per-channel mean absolute value; collapse all dims but last.
+                    if x.dim() &gt;= 2:
+                        col_mean = x.abs().mean(dim=tuple(range(x.dim() - 1)))
+                    else:
+                        col_mean = x.abs()
+                    activations.setdefault(layer_name, []).append(col_mean.cpu())
+
+            return hook
+
+        for name, module in self.model.named_modules():
+            if self._is_target_module(name, module):
+                target_mod = getattr(module, &#34;base_layer&#34;, getattr(module, &#34;linear&#34;, module))
+                hooks.append(target_mod.register_forward_hook(make_hook(name)))
+
+        try:
+            with torch.no_grad():
+                if self.calibration_loader is not None:
+                    for batch in self.calibration_loader:
+                        try:
+                            if isinstance(batch, dict):
+                                b_dev = {
+                                    k: (v.to(self.target_device) if torch.is_tensor(v) else v)
+                                    for k, v in batch.items()
+                                }
+                                self.model(**b_dev)
+                            elif torch.is_tensor(batch):
+                                self.model(batch.to(self.target_device))
+                            elif isinstance(batch, (list, tuple)):
+                                b_dev = [
+                                    (v.to(self.target_device) if torch.is_tensor(v) else v)
+                                    for v in batch
+                                ]
+                                self.model(*b_dev)
+                        except Exception as b_err:
+                            logger.debug(&#34;ARMOR calibration batch failed: %s&#34;, b_err)
+                else:
+                    calib_inputs = get_calibration_tensors(
+                        self.model,
+                        tokenizer=self.tokenizer,
+                        calibration_loader=None,
+                        calibration_texts=self.calibration_texts,
+                        device=self.target_device,
+                    )
+                    try:
+                        if isinstance(calib_inputs, dict):
+                            self.model(**calib_inputs)
+                        elif isinstance(calib_inputs, torch.Tensor):
+                            self.model(calib_inputs)
+                        elif isinstance(calib_inputs, (list, tuple)):
+                            self.model(*calib_inputs)
+                    except Exception as e:
+                        logger.debug(&#34;ARMOR calibration pass exception: %s&#34;, e)
+        finally:
+            for h in hooks:
+                h.remove()
+
+        # Aggregate per layer by mean over batches.
+        aggregated: dict[str, torch.Tensor] = {}
+        for name, lst in activations.items():
+            if lst:
+                stacked = torch.stack([t.float() for t in lst], dim=0)
+                aggregated[name] = stacked.mean(dim=0)
+        return aggregated
+
+    # ------------------------------------------------------------------
+    def compress(self, **kwargs: Any) -&gt; tuple[nn.Module, dict[str, Any]]:
+        act_map = self._collect_activations()
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.skipped_layers = []
+        self.layer_errors = {}
+        self.layer_actual_sparsities = {}
+        self.layer_effective_ratios = {}
+        total_correction_energy = 0.0
+        seen_weights: set = set()
+
+        total_base_sparse_effective = 0  # non-zero entries
+        total_base_sparse_storage = 0  # dense storage slots
+        total_correction = 0
+        total_orig = 0
+
+        targets = [
+            (name, mod)
+            for name, mod in self.model.named_modules()
+            if self._is_target_module(name, mod)
+        ]
+
+        if not targets:
+            logger.warning(&#34;ARMORPruner: No compressible target modules found.&#34;)
+            stats = self.get_compression_stats()
+            self.stats = stats
+            self.model.compression_stats = stats
+            return self.model, stats
+
+        for name, module in targets:
+            target_mod = getattr(module, &#34;base_layer&#34;, getattr(module, &#34;linear&#34;, module))
+            target_cls = target_mod.__class__.__name__.lower()
+            is_conv1d = &#34;conv1d&#34; in target_cls
+            has_lora = (hasattr(module, &#34;lora_A&#34;) and module.lora_A is not None) or hasattr(
+                module, &#34;base_layer&#34;
+            )
+
+            # AR-FIX-07: use the actual weight tensor id.
+            weight_tensor = getattr(target_mod, &#34;weight&#34;, None)
+            if weight_tensor is None:
+                self.skipped_layers.append(name)
+                continue
+            w_id = id(weight_tensor)
+            if w_id in seen_weights:
+                self.skipped_layers.append(name)
+                continue
+            seen_weights.add(w_id)
+
+            raw_w = weight_tensor.data
+            device = raw_w.device
+            dtype = raw_w.dtype
+
+            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
+            out_features, in_features = W.shape
+            grad = getattr(weight_tensor, &#34;grad&#34;, None)
+            act = act_map.get(name, None)
+
+            try:
+                saliency = compute_resilient_taylor_saliency(W, grad=grad, activations=act)
+
+                # AR-FIX-04: robust mask handling.
+                if self.structured_24:
+                    W_sparse, raw_mask = apply_24_structured_mask(W, saliency=saliency, dim=1)
+                    if raw_mask is None:
+                        mask = (W_sparse.abs() &gt; 1e-12).float()
+                    else:
+                        if raw_mask.dtype == torch.bool:
+                            mask = raw_mask.float()
+                        else:
+                            mask = (raw_mask &gt; 0.5).float()
+                else:
+                    flat = saliency.reshape(-1)
+                    k = max(1, int(flat.numel() * (1.0 - self.sparsity)))
+                    thr = torch.topk(flat, k, largest=True).values[-1]
+                    mask = (saliency &gt;= thr).float()
+                    W_sparse = W * mask
+
+                # Residual low-rank.
+                residual = W - W_sparse
+                r = min(self.rank, residual.shape[0], residual.shape[1])
+                try:
+                    U, S, Vh = torch.linalg.svd(residual, full_matrices=False)
+                    sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+                    lora_B = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
+                    lora_A = (sqrt_S.unsqueeze(1) * Vh[:r, :]).to(dtype=dtype, device=device)
+                    correction = torch.matmul(lora_B.float(), lora_A.float())
+                    total_correction_energy += torch.norm(correction).item()
+                except Exception as e:
+                    logger.debug(&#34;ARMOR residual SVD failed on %s: %s&#34;, name, e)
+                    lora_A = torch.zeros(r, in_features, dtype=dtype, device=device)
+                    lora_B = torch.zeros(out_features, r, dtype=dtype, device=device)
+
+                # AR-FIX-01: alpha defaults to rank so scaling = 1.0.
+                effective_alpha = self.lora_alpha if self.lora_alpha is not None else float(r)
+                scaling = effective_alpha / r if r &gt; 0 else 1.0
+                W_recon = W_sparse + scaling * torch.matmul(lora_B.float(), lora_A.float())
+
+                # AR-FIX-06: fast finite check.
+                if not torch.isfinite(W_recon).all():
+                    raise RuntimeError(&#34;non-finite reconstruction&#34;)
+
+                w_norm = torch.norm(W, p=&#34;fro&#34;).clamp_min(1e-8)
+                err = float(torch.norm(W - W_recon, p=&#34;fro&#34;).item() / w_norm)
+                self.layer_errors[name] = err
+
+                if err &gt; self.max_error and self.fallback_to_original:
+                    logger.warning(
+                        &#34;ARMOR reconstruction error %.4f on %s exceeded threshold %.4f.&#34;,
+                        err,
+                        name,
+                        self.max_error,
+                    )
+                    self.fallback_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    continue
+
+                orig_count = int(W.numel())
+                base_effective = int((mask &gt; 0).sum().item())
+                corr_count = int(lora_A.numel() + lora_B.numel()) if self.decouple else 0
+
+                total_base_sparse_effective += base_effective
+                total_base_sparse_storage += orig_count
+                total_correction += corr_count
+                total_orig += orig_count
+
+                actual_zero_frac = float((mask == 0).sum().item() / max(1, orig_count))
+                eff_ratio = float((base_effective + corr_count) / max(1, orig_count))
+                self.layer_actual_sparsities[name] = actual_zero_frac
+                self.layer_effective_ratios[name] = eff_ratio
+
+                if self.decouple:
+                    armor_layer = ARMORLinear.from_linear(
+                        target_mod,
+                        mask=mask,
+                        lora_A=lora_A,
+                        lora_B=lora_B,
+                        lora_alpha=effective_alpha,
+                    )
+                    if has_lora:
+                        module.base_layer = armor_layer
+                        for p_name, p in module.named_parameters():
+                            if any(t in p_name.lower() for t in (&#34;lora_a&#34;, &#34;lora_b&#34;, &#34;adapter&#34;)):
+                                if not p_name.startswith(&#34;base_layer&#34;):
+                                    with torch.no_grad():
+                                        p.data.zero_()
+                                    p.requires_grad = False
+                    elif name == &#34;&#34;:
+                        self.model = armor_layer
+                    else:
+                        replace_module(self.model, name, armor_layer)
+                else:
+                    # AR-FIX: mutation under no_grad. NOTE: this branch does NOT
+                    # reduce parameter count; it is a numerical approximation only.
+                    with torch.no_grad():
+                        if is_conv1d:
+                            weight_tensor.data.copy_(
+                                W_recon.t().contiguous().to(dtype=dtype, device=device)
+                            )
+                        else:
+                            weight_tensor.data.copy_(W_recon.to(dtype=dtype, device=device))
+
+                self.compressed_layers.append(name)
+
+            except Exception as e:
+                logger.warning(&#34;ARMOR pruning failed on %s: %s&#34;, name, e)
+                self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+
+        # AR-FIX-08: LayerNorm recalibration only when data available.
+        if self.recalibrate_ln and (
+            self.calibration_loader is not None or self.calibration_texts is not None
+        ):
+            try:
+                recalibrate_layernorms(
+                    self.model,
+                    tokenizer=self.tokenizer,
+                    calibration_loader=self.calibration_loader,
+                    calibration_texts=self.calibration_texts,
+                    device=self.target_device,
+                )
+            except Exception as e:
+                logger.warning(&#34;ARMOR LayerNorm recalibration skipped: %s&#34;, e)
+
+        # Forward sanity check.
+        forward_check_success = True
+        try:
+            self.model.eval()
+            with torch.no_grad():
+                first_param = next(self.model.parameters(), torch.tensor(0.0))
+                dev = first_param.device
+                p_dtype = (
+                    first_param.dtype if first_param.dtype.is_floating_point else torch.float32
+                )
+                cfg = getattr(self.model, &#34;config&#34;, None)
+                hidden_size = getattr(cfg, &#34;hidden_size&#34;, None)
+                try:
+                    dummy_ids = torch.zeros((1, 8), dtype=torch.long, device=dev)
+                    self.model(
+                        input_ids=dummy_ids,
+                        attention_mask=torch.ones_like(dummy_ids),
+                    )
+                except Exception:
+                    if hidden_size is not None:
+                        dummy_embeds = torch.randn(1, 8, hidden_size, dtype=p_dtype, device=dev)
+                    else:
+                        first_linear = next(
+                            (
+                                m
+                                for m in self.model.modules()
+                                if isinstance(m, (nn.Linear, ARMORLinear))
+                            ),
+                            None,
+                        )
+                        in_dim = getattr(first_linear, &#34;in_features&#34;, 8)
+                        dummy_embeds = torch.randn(1, 8, in_dim, dtype=p_dtype, device=dev)
+                    self.model(dummy_embeds)
+        except Exception as e:
+            logger.debug(&#34;ARMOR forward sanity check failed: %s&#34;, e)
+            forward_check_success = False
+
+        try:
+            self._compressed_params = self._count_params(self.model)
+        except Exception:
+            self._compressed_params = sum(p.numel() for p in self.model.parameters())
+
+        try:
+            stats = self.get_compression_stats()
+        except Exception:
+            stats = {}
+
+        avg_err = (
+            sum(self.layer_errors.values()) / len(self.layer_errors) if self.layer_errors else 0.0
+        )
+        avg_actual_sparsity = (
+            sum(self.layer_actual_sparsities.values()) / max(1, len(self.layer_actual_sparsities))
+            if self.layer_actual_sparsities
+            else (0.5 if self.structured_24 else self.sparsity)
+        )
+
+        # AR-FIX-14: honest accounting.
+        effective_param_ratio = (
+            float((total_base_sparse_effective + total_correction) / max(1, total_orig))
+            if total_orig &gt; 0
+            else 1.0
+        )
+        storage_param_ratio = (
+            float((total_base_sparse_storage + total_correction) / max(1, total_orig))
+            if total_orig &gt; 0
+            else 1.0
+        )
+
+        stats.update(
+            {
+                &#34;compressed_layers&#34;: self.compressed_layers,
+                &#34;compressed_layer_count&#34;: len(self.compressed_layers),
+                &#34;fallback_layers&#34;: self.fallback_layers,
+                &#34;fallback_layer_count&#34;: len(self.fallback_layers),
+                &#34;skipped_layers&#34;: self.skipped_layers,
+                &#34;skipped_layer_count&#34;: len(self.skipped_layers),
+                &#34;layer_errors&#34;: self.layer_errors,
+                &#34;avg_reconstruction_error&#34;: avg_err,
+                &#34;pruned_layers&#34;: len(self.compressed_layers),
+                &#34;num_compressed&#34;: len(self.compressed_layers),
+                &#34;num_fallback&#34;: len(self.fallback_layers),
+                &#34;actual_sparsity&#34;: avg_actual_sparsity,
+                &#34;layer_actual_sparsities&#34;: self.layer_actual_sparsities,
+                &#34;layer_effective_ratios&#34;: self.layer_effective_ratios,
+                # AR-FIX-14: distinguish storage from effective.
+                &#34;base_sparse_storage&#34;: total_base_sparse_storage,
+                &#34;base_sparse_effective&#34;: total_base_sparse_effective,
+                &#34;correction_params&#34;: total_correction,
+                &#34;effective_parameter_ratio&#34;: effective_param_ratio,
+                &#34;storage_parameter_ratio&#34;: storage_param_ratio,
+                &#34;effective_compression_rate&#34;: (
+                    1.0 / effective_param_ratio if effective_param_ratio &gt; 0 else 1.0
+                ),
+                &#34;storage_compression_rate&#34;: (
+                    1.0 / storage_param_ratio if storage_param_ratio &gt; 0 else 1.0
+                ),
+                &#34;rank&#34;: self.rank,
+                &#34;structured_24&#34;: self.structured_24,
+                &#34;decouple&#34;: self.decouple,
+                &#34;lora_alpha&#34;: (self.lora_alpha if self.lora_alpha is not None else &#34;=rank&#34;),
+                &#34;max_error&#34;: self.max_error,
+                &#34;target_attention_only&#34;: self.target_attention_only,
+                &#34;total_correction_energy&#34;: total_correction_energy,
+                &#34;forward_check_success&#34;: forward_check_success,
+                &#34;method&#34;: &#34;armor_sparse_plus_lowrank_decoupled&#34;,
+            }
+        )
+        self.stats = stats
+        self.model.compression_stats = stats
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Production-hardened ARMOR Pruner.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.armor_pruner.ARMORPruner.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.compress" href="../core/base.html#neuralops.core.base.BaseCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.armor_pruner.armor_pruner_factory" href="#neuralops.compression_engine.armor_pruner.armor_pruner_factory">armor_pruner_factory</a></code></li>
+<li><code><a title="neuralops.compression_engine.armor_pruner.compute_resilient_taylor_saliency" href="#neuralops.compression_engine.armor_pruner.compute_resilient_taylor_saliency">compute_resilient_taylor_saliency</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.armor_pruner.ARMORLinear" href="#neuralops.compression_engine.armor_pruner.ARMORLinear">ARMORLinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.armor_pruner.ARMORLinear.forward" href="#neuralops.compression_engine.armor_pruner.ARMORLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.compression_engine.armor_pruner.ARMORLinear.from_linear" href="#neuralops.compression_engine.armor_pruner.ARMORLinear.from_linear">from_linear</a></code></li>
+<li><code><a title="neuralops.compression_engine.armor_pruner.ARMORLinear.is_custom_attention" href="#neuralops.compression_engine.armor_pruner.ARMORLinear.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.compression_engine.armor_pruner.ARMORLinear.weight" href="#neuralops.compression_engine.armor_pruner.ARMORLinear.weight">weight</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.armor_pruner.ARMORPruner" href="#neuralops.compression_engine.armor_pruner.ARMORPruner">ARMORPruner</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.armor_pruner.ARMORPruner.is_custom_attention" href="#neuralops.compression_engine.armor_pruner.ARMORPruner.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

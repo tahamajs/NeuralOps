@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests.test_recurrent_ssm_attentions API documentation</title>
+<meta name="description" content="Unit tests for all 16 Recurrent, State Space &amp; Linear DeltaNet Attention modules …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tests.test_recurrent_ssm_attentions</code></h1>
+</header>
+<section id="section-intro">
+<p>Unit tests for all 16 Recurrent, State Space &amp; Linear DeltaNet Attention modules.</p>
+<p>Verifies:
+1. Clean instantiation from ATTENTION_REGISTRY.
+2. Forward pass output shape (2, 128, 768) with no NaNs/Infs.
+3. Backward pass gradient flow with non-null gradients on inputs and parameters.
+4. Pretrained Multi-Head Attention weight transfer via copy_weights().
+5. 2D and 4D attention mask handling.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.tests.test_recurrent_ssm_attentions.DummyConfig"><code class="flex name class">
+<span>class <span class="ident">DummyConfig</span></span>
+<span>(</span><span>hidden_size: int = 768, num_attention_heads: int = 12, rank: int = 16)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DummyConfig:
+    &#34;&#34;&#34;Mock config for 768-dim Transformer (DistilBERT / BERT).&#34;&#34;&#34;
+    def __init__(self, hidden_size: int = 768, num_attention_heads: int = 12, rank: int = 16) -&gt; None:
+        self.hidden_size = hidden_size
+        self.dim = hidden_size
+        self.num_attention_heads = num_attention_heads
+        self.num_heads = num_attention_heads
+        self.head_dim = hidden_size // num_attention_heads
+        self.rank = rank
+        self.dropout = 0.0
+        self.hidden_dropout_prob = 0.0
+        self.attention_probs_dropout_prob = 0.0</code></pre>
+</details>
+<div class="desc"><p>Mock config for 768-dim Transformer (DistilBERT / BERT).</p></div>
+</dd>
+<dt id="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions"><code class="flex name class">
+<span>class <span class="ident">TestRecurrentSSMAttentions</span></span>
+<span>(</span><span>methodName='runTest')</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestRecurrentSSMAttentions(unittest.TestCase):
+    &#34;&#34;&#34;Rigorous verification suite for all 16 recurrent &amp; SSM attention modules.&#34;&#34;&#34;
+
+    def setUp(self) -&gt; None:
+        torch.manual_seed(42)
+        self.batch_size = 2
+        self.seq_len = 128
+        self.hidden_size = 768
+        self.config = DummyConfig(hidden_size=self.hidden_size, num_attention_heads=12, rank=16)
+        self.dummy_x = torch.randn(
+            self.batch_size, self.seq_len, self.hidden_size, requires_grad=True
+        )
+        self.mask_2d = torch.ones(self.batch_size, self.seq_len)
+        self.mask_2d[:, 100:] = 0.0  # Last 28 tokens padded
+
+        # Mock pretrained MHA layer
+        self.old_mha = nn.MultiheadAttention(self.hidden_size, 12, batch_first=True)
+
+    def _test_module_lifecycle(self, key: str) -&gt; None:
+        self.assertIn(key, ATTENTION_REGISTRY, f&#34;Key &#39;{key}&#39; not in ATTENTION_REGISTRY!&#34;)
+        cls = ATTENTION_REGISTRY.get(key)
+        
+        # Instantiate
+        try:
+            mod = cls(config=self.config)
+        except TypeError:
+            try:
+                mod = cls(self.config)
+            except TypeError:
+                mod = cls(d_model=self.hidden_size)
+
+        # Weight transfer
+        if hasattr(mod, &#34;copy_weights&#34;) and callable(mod.copy_weights):
+            mod.copy_weights(self.old_mha)
+
+        # Forward pass (unmasked)
+        x = self.dummy_x.clone().detach().requires_grad_(True)
+        res = mod(x)
+        out = res[0] if isinstance(res, tuple) else res
+
+        self.assertEqual(
+            out.shape,
+            (self.batch_size, self.seq_len, self.hidden_size),
+            f&#34;Module &#39;{key}&#39; produced wrong output shape: {out.shape}&#34;,
+        )
+        self.assertFalse(torch.isnan(out).any(), f&#34;Module &#39;{key}&#39; output contains NaNs!&#34;)
+        self.assertFalse(torch.isinf(out).any(), f&#34;Module &#39;{key}&#39; output contains Infs!&#34;)
+
+        # Backward pass
+        loss = out.sum()
+        loss.backward()
+
+        self.assertIsNotNone(x.grad, f&#34;Module &#39;{key}&#39; did not backpropagate gradient to input x!&#34;)
+        self.assertFalse(torch.isnan(x.grad).any(), f&#34;Module &#39;{key}&#39; input gradients contain NaNs!&#34;)
+
+        # Forward pass (with 2D attention mask)
+        x_masked = self.dummy_x.clone().detach().requires_grad_(True)
+        res_m = mod(x_masked, attention_mask=self.mask_2d)
+        out_m = res_m[0] if isinstance(res_m, tuple) else res_m
+        self.assertEqual(out_m.shape, (self.batch_size, self.seq_len, self.hidden_size))
+        self.assertFalse(torch.isnan(out_m).any(), f&#34;Module &#39;{key}&#39; masked output contains NaNs!&#34;)
+
+    def test_01_mamba(self) -&gt; None:
+        self._test_module_lifecycle(&#34;mamba&#34;)
+
+    def test_02_mamba_svd_flash(self) -&gt; None:
+        self._test_module_lifecycle(&#34;mamba_svd_flash&#34;)
+
+    def test_03_gated_delta_net(self) -&gt; None:
+        self._test_module_lifecycle(&#34;gated_delta_net&#34;)
+
+    def test_04_gated_deltanet_block(self) -&gt; None:
+        self._test_module_lifecycle(&#34;gated_deltanet_block&#34;)
+
+    def test_05_hgrn2_layer(self) -&gt; None:
+        self._test_module_lifecycle(&#34;hgrn2_layer&#34;)
+
+    def test_06_hgrn2_gated_deltanet(self) -&gt; None:
+        self._test_module_lifecycle(&#34;hgrn2_gated_deltanet&#34;)
+
+    def test_07_hgrn2_outer(self) -&gt; None:
+        self._test_module_lifecycle(&#34;hgrn2_outer&#34;)
+
+    def test_08_griffin_ssd(self) -&gt; None:
+        self._test_module_lifecycle(&#34;griffin_ssd&#34;)
+
+    def test_09_hla_attention(self) -&gt; None:
+        self._test_module_lifecycle(&#34;hla&#34;)
+
+    def test_10_kda_attention(self) -&gt; None:
+        self._test_module_lifecycle(&#34;kda&#34;)
+
+    def test_11_simple_ssm(self) -&gt; None:
+        self._test_module_lifecycle(&#34;simple_ssm&#34;)
+
+    def test_12_decay_linear_attention(self) -&gt; None:
+        self._test_module_lifecycle(&#34;decay_linear_attention&#34;)
+
+    def test_13_gated_linear_attention(self) -&gt; None:
+        self._test_module_lifecycle(&#34;gated_linear_attention&#34;)
+
+    def test_14_factorised_matrix_state(self) -&gt; None:
+        self._test_module_lifecycle(&#34;factorised_matrix_state&#34;)
+
+    def test_15_upi_stuffed_mamba(self) -&gt; None:
+        self._test_module_lifecycle(&#34;upi_stuffed_mamba&#34;)</code></pre>
+</details>
+<div class="desc"><p>Rigorous verification suite for all 16 recurrent &amp; SSM attention modules.</p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>unittest.case.TestCase</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.setUp"><code class="name flex">
+<span>def <span class="ident">setUp</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setUp(self) -&gt; None:
+    torch.manual_seed(42)
+    self.batch_size = 2
+    self.seq_len = 128
+    self.hidden_size = 768
+    self.config = DummyConfig(hidden_size=self.hidden_size, num_attention_heads=12, rank=16)
+    self.dummy_x = torch.randn(
+        self.batch_size, self.seq_len, self.hidden_size, requires_grad=True
+    )
+    self.mask_2d = torch.ones(self.batch_size, self.seq_len)
+    self.mask_2d[:, 100:] = 0.0  # Last 28 tokens padded
+
+    # Mock pretrained MHA layer
+    self.old_mha = nn.MultiheadAttention(self.hidden_size, 12, batch_first=True)</code></pre>
+</details>
+<div class="desc"><p>Hook method for setting up the test fixture before exercising it.</p></div>
+</dd>
+<dt id="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_01_mamba"><code class="name flex">
+<span>def <span class="ident">test_01_mamba</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_01_mamba(self) -&gt; None:
+    self._test_module_lifecycle(&#34;mamba&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_02_mamba_svd_flash"><code class="name flex">
+<span>def <span class="ident">test_02_mamba_svd_flash</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_02_mamba_svd_flash(self) -&gt; None:
+    self._test_module_lifecycle(&#34;mamba_svd_flash&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_03_gated_delta_net"><code class="name flex">
+<span>def <span class="ident">test_03_gated_delta_net</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_03_gated_delta_net(self) -&gt; None:
+    self._test_module_lifecycle(&#34;gated_delta_net&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_04_gated_deltanet_block"><code class="name flex">
+<span>def <span class="ident">test_04_gated_deltanet_block</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_04_gated_deltanet_block(self) -&gt; None:
+    self._test_module_lifecycle(&#34;gated_deltanet_block&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_05_hgrn2_layer"><code class="name flex">
+<span>def <span class="ident">test_05_hgrn2_layer</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_05_hgrn2_layer(self) -&gt; None:
+    self._test_module_lifecycle(&#34;hgrn2_layer&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_06_hgrn2_gated_deltanet"><code class="name flex">
+<span>def <span class="ident">test_06_hgrn2_gated_deltanet</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_06_hgrn2_gated_deltanet(self) -&gt; None:
+    self._test_module_lifecycle(&#34;hgrn2_gated_deltanet&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_07_hgrn2_outer"><code class="name flex">
+<span>def <span class="ident">test_07_hgrn2_outer</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_07_hgrn2_outer(self) -&gt; None:
+    self._test_module_lifecycle(&#34;hgrn2_outer&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_08_griffin_ssd"><code class="name flex">
+<span>def <span class="ident">test_08_griffin_ssd</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_08_griffin_ssd(self) -&gt; None:
+    self._test_module_lifecycle(&#34;griffin_ssd&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_09_hla_attention"><code class="name flex">
+<span>def <span class="ident">test_09_hla_attention</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_09_hla_attention(self) -&gt; None:
+    self._test_module_lifecycle(&#34;hla&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_10_kda_attention"><code class="name flex">
+<span>def <span class="ident">test_10_kda_attention</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_10_kda_attention(self) -&gt; None:
+    self._test_module_lifecycle(&#34;kda&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_11_simple_ssm"><code class="name flex">
+<span>def <span class="ident">test_11_simple_ssm</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_11_simple_ssm(self) -&gt; None:
+    self._test_module_lifecycle(&#34;simple_ssm&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_12_decay_linear_attention"><code class="name flex">
+<span>def <span class="ident">test_12_decay_linear_attention</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_12_decay_linear_attention(self) -&gt; None:
+    self._test_module_lifecycle(&#34;decay_linear_attention&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_13_gated_linear_attention"><code class="name flex">
+<span>def <span class="ident">test_13_gated_linear_attention</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_13_gated_linear_attention(self) -&gt; None:
+    self._test_module_lifecycle(&#34;gated_linear_attention&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_14_factorised_matrix_state"><code class="name flex">
+<span>def <span class="ident">test_14_factorised_matrix_state</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_14_factorised_matrix_state(self) -&gt; None:
+    self._test_module_lifecycle(&#34;factorised_matrix_state&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_15_upi_stuffed_mamba"><code class="name flex">
+<span>def <span class="ident">test_15_upi_stuffed_mamba</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_15_upi_stuffed_mamba(self) -&gt; None:
+    self._test_module_lifecycle(&#34;upi_stuffed_mamba&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tests" href="index.html">neuralops.tests</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.tests.test_recurrent_ssm_attentions.DummyConfig" href="#neuralops.tests.test_recurrent_ssm_attentions.DummyConfig">DummyConfig</a></code></h4>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions" href="#neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions">TestRecurrentSSMAttentions</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.setUp" href="#neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.setUp">setUp</a></code></li>
+<li><code><a title="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_01_mamba" href="#neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_01_mamba">test_01_mamba</a></code></li>
+<li><code><a title="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_02_mamba_svd_flash" href="#neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_02_mamba_svd_flash">test_02_mamba_svd_flash</a></code></li>
+<li><code><a title="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_03_gated_delta_net" href="#neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_03_gated_delta_net">test_03_gated_delta_net</a></code></li>
+<li><code><a title="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_04_gated_deltanet_block" href="#neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_04_gated_deltanet_block">test_04_gated_deltanet_block</a></code></li>
+<li><code><a title="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_05_hgrn2_layer" href="#neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_05_hgrn2_layer">test_05_hgrn2_layer</a></code></li>
+<li><code><a title="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_06_hgrn2_gated_deltanet" href="#neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_06_hgrn2_gated_deltanet">test_06_hgrn2_gated_deltanet</a></code></li>
+<li><code><a title="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_07_hgrn2_outer" href="#neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_07_hgrn2_outer">test_07_hgrn2_outer</a></code></li>
+<li><code><a title="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_08_griffin_ssd" href="#neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_08_griffin_ssd">test_08_griffin_ssd</a></code></li>
+<li><code><a title="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_09_hla_attention" href="#neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_09_hla_attention">test_09_hla_attention</a></code></li>
+<li><code><a title="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_10_kda_attention" href="#neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_10_kda_attention">test_10_kda_attention</a></code></li>
+<li><code><a title="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_11_simple_ssm" href="#neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_11_simple_ssm">test_11_simple_ssm</a></code></li>
+<li><code><a title="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_12_decay_linear_attention" href="#neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_12_decay_linear_attention">test_12_decay_linear_attention</a></code></li>
+<li><code><a title="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_13_gated_linear_attention" href="#neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_13_gated_linear_attention">test_13_gated_linear_attention</a></code></li>
+<li><code><a title="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_14_factorised_matrix_state" href="#neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_14_factorised_matrix_state">test_14_factorised_matrix_state</a></code></li>
+<li><code><a title="neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_15_upi_stuffed_mamba" href="#neuralops.tests.test_recurrent_ssm_attentions.TestRecurrentSSMAttentions.test_15_upi_stuffed_mamba">test_15_upi_stuffed_mamba</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

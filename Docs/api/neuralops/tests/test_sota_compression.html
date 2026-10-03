@@ -1,0 +1,1322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests.test_sota_compression API documentation</title>
+<meta name="description" content="Unit Tests for State-of-the-Art (SOTA) Compression Engines:
+1. Dynamic Entropy SVD Compressor &amp; Dynamic Rank Allocator (dynamic_rank.py).
+2. Spectral …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tests.test_sota_compression</code></h1>
+</header>
+<section id="section-intro">
+<p>Unit Tests for State-of-the-Art (SOTA) Compression Engines:
+1. Dynamic Entropy SVD Compressor &amp; Dynamic Rank Allocator (dynamic_rank.py).
+2. Spectral Residual LoRA / Res-SVD Compressor (res_svd.py).
+3. Central Compressor Registry &amp; PEFT Aliases.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.tests.test_sota_compression.TestCompressorRegistrations"><code class="flex name class">
+<span>class <span class="ident">TestCompressorRegistrations</span></span>
+<span>(</span><span>methodName='runTest')</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestCompressorRegistrations(unittest.TestCase):
+    &#34;&#34;&#34;Test suite verifying framework registry integration for all compressors.&#34;&#34;&#34;
+
+    def test_registry_lookups(self) -&gt; None:
+        &#34;&#34;&#34;Verify dynamic_entropy_svd, entropy_rank_allocator, res_svd, and spectral_residual_lora.&#34;&#34;&#34;
+        # 1. dynamic_entropy_svd
+        self.assertIn(&#34;dynamic_entropy_svd&#34;, COMPRESSOR_REGISTRY)
+        cls_dynamic = COMPRESSOR_REGISTRY.get(&#34;dynamic_entropy_svd&#34;)
+        self.assertTrue(issubclass(cls_dynamic, DynamicEntropySVDCompressor))
+
+        # 2. entropy_rank_allocator
+        self.assertIn(&#34;entropy_rank_allocator&#34;, COMPRESSOR_REGISTRY)
+        cls_alloc = COMPRESSOR_REGISTRY.get(&#34;entropy_rank_allocator&#34;)
+        self.assertTrue(issubclass(cls_alloc, DynamicEntropySVDCompressor))
+
+        # 3. res_svd
+        self.assertIn(&#34;res_svd&#34;, COMPRESSOR_REGISTRY)
+        cls_res = COMPRESSOR_REGISTRY.get(&#34;res_svd&#34;)
+        self.assertTrue(issubclass(cls_res, ResSVDCompressor))
+
+        # 4. spectral_residual_lora
+        self.assertIn(&#34;spectral_residual_lora&#34;, COMPRESSOR_REGISTRY)
+        cls_spectral = COMPRESSOR_REGISTRY.get(&#34;spectral_residual_lora&#34;)
+        self.assertTrue(issubclass(cls_spectral, ResSVDCompressor))</code></pre>
+</details>
+<div class="desc"><p>Test suite verifying framework registry integration for all compressors.</p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>unittest.case.TestCase</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_sota_compression.TestCompressorRegistrations.test_registry_lookups"><code class="name flex">
+<span>def <span class="ident">test_registry_lookups</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_registry_lookups(self) -&gt; None:
+    &#34;&#34;&#34;Verify dynamic_entropy_svd, entropy_rank_allocator, res_svd, and spectral_residual_lora.&#34;&#34;&#34;
+    # 1. dynamic_entropy_svd
+    self.assertIn(&#34;dynamic_entropy_svd&#34;, COMPRESSOR_REGISTRY)
+    cls_dynamic = COMPRESSOR_REGISTRY.get(&#34;dynamic_entropy_svd&#34;)
+    self.assertTrue(issubclass(cls_dynamic, DynamicEntropySVDCompressor))
+
+    # 2. entropy_rank_allocator
+    self.assertIn(&#34;entropy_rank_allocator&#34;, COMPRESSOR_REGISTRY)
+    cls_alloc = COMPRESSOR_REGISTRY.get(&#34;entropy_rank_allocator&#34;)
+    self.assertTrue(issubclass(cls_alloc, DynamicEntropySVDCompressor))
+
+    # 3. res_svd
+    self.assertIn(&#34;res_svd&#34;, COMPRESSOR_REGISTRY)
+    cls_res = COMPRESSOR_REGISTRY.get(&#34;res_svd&#34;)
+    self.assertTrue(issubclass(cls_res, ResSVDCompressor))
+
+    # 4. spectral_residual_lora
+    self.assertIn(&#34;spectral_residual_lora&#34;, COMPRESSOR_REGISTRY)
+    cls_spectral = COMPRESSOR_REGISTRY.get(&#34;spectral_residual_lora&#34;)
+    self.assertTrue(issubclass(cls_spectral, ResSVDCompressor))</code></pre>
+</details>
+<div class="desc"><p>Verify dynamic_entropy_svd, entropy_rank_allocator, res_svd, and spectral_residual_lora.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestDynamicEntropySVD"><code class="flex name class">
+<span>class <span class="ident">TestDynamicEntropySVD</span></span>
+<span>(</span><span>methodName='runTest')</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestDynamicEntropySVD(unittest.TestCase):
+    &#34;&#34;&#34;Test suite for Dynamic Entropy SVD and rank allocation.&#34;&#34;&#34;
+
+    def setUp(self) -&gt; None:
+        torch.manual_seed(42)
+        self.batch_size = 4
+        self.seq_len = 16
+        self.hidden_dim = 64
+        self.x = torch.randn(self.batch_size, self.seq_len, self.hidden_dim)
+
+    # -------------------------------------------------------------------------
+    # 1. Singular Entropy Mathematics Tests
+    # -------------------------------------------------------------------------
+
+    def test_singular_entropy_uniform_spectrum(self) -&gt; None:
+        &#34;&#34;&#34;Uniform singular spectrum should achieve maximal entropy ln(K).&#34;&#34;&#34;
+        k = 16
+        uniform_spectrum = torch.ones(k)
+        entropy = compute_singular_entropy(uniform_spectrum, normalize=False)
+        expected_entropy = math.log(k)
+        self.assertAlmostEqual(entropy, expected_entropy, places=5)
+
+    def test_singular_entropy_single_spike(self) -&gt; None:
+        &#34;&#34;&#34;Singular spectrum with 1-hot spike should have zero entropy.&#34;&#34;&#34;
+        spectrum = torch.zeros(16)
+        spectrum[0] = 100.0
+        entropy = compute_singular_entropy(spectrum, normalize=False)
+        self.assertAlmostEqual(entropy, 0.0, places=5)
+
+    def test_singular_entropy_normalization(self) -&gt; None:
+        &#34;&#34;&#34;Normalized singular entropy must lie strictly in [0.0, 1.0].&#34;&#34;&#34;
+        spectrum = torch.tensor([10.0, 5.0, 2.0, 1.0, 0.5, 0.1])
+        norm_entropy = compute_singular_entropy(spectrum, normalize=True)
+        self.assertGreaterEqual(norm_entropy, 0.0)
+        self.assertLessEqual(norm_entropy, 1.0)
+
+    def test_singular_entropy_2d_covariance_and_weight(self) -&gt; None:
+        &#34;&#34;&#34;Compute entropy on 2D covariance and 2D rectangular weight matrices.&#34;&#34;&#34;
+        # Square symmetric covariance
+        x_samples = torch.randn(100, 32)
+        cov = x_samples.t() @ x_samples / 100.0
+        cov_entropy = compute_singular_entropy(cov)
+        self.assertGreater(cov_entropy, 0.0)
+        self.assertFalse(math.isnan(cov_entropy))
+
+        # Rectangular weight matrix
+        w = torch.randn(64, 32)
+        w_entropy = compute_singular_entropy(w)
+        self.assertGreater(w_entropy, 0.0)
+        self.assertFalse(math.isnan(w_entropy))
+
+    def test_singular_entropy_all_zeros_stability(self) -&gt; None:
+        &#34;&#34;&#34;All-zeros matrix should return 0.0 without NaN or exceptions.&#34;&#34;&#34;
+        zeros_mat = torch.zeros(32, 32)
+        entropy = compute_singular_entropy(zeros_mat)
+        self.assertEqual(entropy, 0.0)
+
+    # -------------------------------------------------------------------------
+    # 2. Dynamic Rank Budget Allocator Tests
+    # -------------------------------------------------------------------------
+
+    def test_rank_allocation_proportional_and_bounded(self) -&gt; None:
+        &#34;&#34;&#34;Higher entropy layers must receive higher rank, respecting [min_rank, max_rank].&#34;&#34;&#34;
+        entropies = {
+            &#34;layer_low&#34;: 0.5,
+            &#34;layer_mid&#34;: 2.0,
+            &#34;layer_high&#34;: 4.5,
+        }
+        min_r = 8
+        max_r = 32
+        total_budget = 48  # Average 16 per layer
+
+        ranks = allocate_entropy_ranks(
+            entropies=entropies,
+            min_rank=min_r,
+            max_rank=max_r,
+            total_rank_budget=total_budget,
+        )
+
+        # Monotonicity check
+        self.assertLessEqual(ranks[&#34;layer_low&#34;], ranks[&#34;layer_mid&#34;])
+        self.assertLessEqual(ranks[&#34;layer_mid&#34;], ranks[&#34;layer_high&#34;])
+
+        # Boundary checks
+        for name, r in ranks.items():
+            self.assertGreaterEqual(r, min_r)
+            self.assertLessEqual(r, max_r)
+
+        # Total budget sum check
+        self.assertEqual(sum(ranks.values()), total_budget)
+
+    def test_rank_allocation_physical_dimension_clamping(self) -&gt; None:
+        &#34;&#34;&#34;Layers with small physical dimensions cannot exceed min(d_in, d_out).&#34;&#34;&#34;
+        entropies = {&#34;layer_tiny&#34;: 5.0, &#34;layer_large&#34;: 5.0}
+        layer_dims = {&#34;layer_tiny&#34;: (4, 4), &#34;layer_large&#34;: (64, 64)}
+
+        ranks = allocate_entropy_ranks(
+            entropies=entropies,
+            min_rank=16,
+            max_rank=64,
+            total_rank_budget=40,
+            layer_dims=layer_dims,
+        )
+        self.assertLessEqual(ranks[&#34;layer_tiny&#34;], 4)
+        self.assertGreaterEqual(ranks[&#34;layer_large&#34;], 16)
+
+    def test_rank_allocation_parameter_budget(self) -&gt; None:
+        &#34;&#34;&#34;Parameter budget water-filling produces valid ranks under target ratio.&#34;&#34;&#34;
+        layer_dims = {
+            &#34;l1&#34;: (64, 64),
+            &#34;l2&#34;: (64, 64),
+            &#34;l3&#34;: (64, 64),
+        }
+        entropies = {&#34;l1&#34;: 1.0, &#34;l2&#34;: 2.0, &#34;l3&#34;: 3.0}
+
+        ranks = allocate_entropy_ranks(
+            entropies=entropies,
+            min_rank=4,
+            max_rank=32,
+            target_param_ratio=0.5,
+            layer_dims=layer_dims,
+        )
+
+        for name, r in ranks.items():
+            self.assertGreaterEqual(r, 4)
+            self.assertLessEqual(r, 32)
+
+    # -------------------------------------------------------------------------
+    # 3. DynamicSVDLinear Layer Tests
+    # -------------------------------------------------------------------------
+
+    def test_dynamic_svd_linear_forward_and_backward(self) -&gt; None:
+        &#34;&#34;&#34;Factorized DynamicSVDLinear computes correct shapes and supports autograd.&#34;&#34;&#34;
+        in_f = 64
+        out_f = 128
+        rank = 16
+        layer = DynamicSVDLinear(in_features=in_f, out_features=out_f, rank=rank, bias=True)
+
+        self.assertEqual(layer.V.shape, (rank, in_f))
+        self.assertEqual(layer.U.shape, (out_f, rank))
+        self.assertEqual(layer.bias.shape, (out_f,))
+
+        out = layer(self.x)
+        self.assertEqual(out.shape, (self.batch_size, self.seq_len, out_f))
+
+        loss = out.sum()
+        loss.backward()
+        self.assertIsNotNone(layer.V.grad)
+        self.assertIsNotNone(layer.U.grad)
+        self.assertIsNotNone(layer.bias.grad)
+
+    def test_dynamic_svd_linear_from_dense(self) -&gt; None:
+        &#34;&#34;&#34;Conversion from dense nn.Linear preserves close representation.&#34;&#34;&#34;
+        dense = nn.Linear(64, 64, bias=True)
+        svd_layer = DynamicSVDLinear.from_linear(dense, rank=32)
+
+        dense_out = dense(self.x)
+        svd_out = svd_layer(self.x)
+        self.assertEqual(dense_out.shape, svd_out.shape)
+
+        # Truncated SVD error check
+        rel_diff = torch.norm(dense_out - svd_out) / torch.norm(dense_out)
+        self.assertLess(rel_diff.item(), 0.5)
+
+    def test_dynamic_svd_linear_with_covariance(self) -&gt; None:
+        &#34;&#34;&#34;Activation-aware SVD initialization with empirical covariance matrix.&#34;&#34;&#34;
+        dense = nn.Linear(64, 64)
+        x_calib = torch.randn(200, 64)
+        cov = x_calib.t() @ x_calib / 200.0
+
+        svd_layer = DynamicSVDLinear.from_linear(dense, rank=16, covariance=cov)
+        out = svd_layer(self.x)
+        self.assertEqual(out.shape, (self.batch_size, self.seq_len, 64))
+
+    # -------------------------------------------------------------------------
+    # 4. DynamicEntropySVDCompressor End-to-End Tests
+    # -------------------------------------------------------------------------
+
+    def test_dynamic_entropy_svd_compressor_end_to_end(self) -&gt; None:
+        &#34;&#34;&#34;End-to-end compression of multi-layer model with calibration data.&#34;&#34;&#34;
+        model = ToyMultiLayerModel(num_layers=2, hidden_size=64)
+        orig_params = sum(p.numel() for p in model.parameters())
+
+        # Calibration dataset
+        dummy_data = torch.randn(16, 8, 64)
+        loader = DataLoader(TensorDataset(dummy_data), batch_size=4)
+
+        compressor = DynamicEntropySVDCompressor(
+            model=model,
+            min_rank=8,
+            max_rank=32,
+            target_rank=16,
+            calibration_loader=loader,
+        )
+
+        compressed_model, stats = compressor.compress()
+
+        # Check parameter reduction
+        compressed_params = sum(p.numel() for p in compressed_model.parameters())
+        self.assertLess(compressed_params, orig_params)
+        self.assertEqual(stats[&#34;original_parameters&#34;], orig_params)
+        self.assertEqual(stats[&#34;compressed_parameters&#34;], compressed_params)
+        self.assertIn(&#34;layer_entropies&#34;, stats)
+        self.assertIn(&#34;layer_ranks&#34;, stats)
+
+        # Check forward pass on compressed model
+        test_in = torch.randn(2, 8, 64)
+        logits = compressed_model(test_in)
+        self.assertEqual(logits.shape, (2, 10))
+        self.assertFalse(torch.isnan(logits).any())</code></pre>
+</details>
+<div class="desc"><p>Test suite for Dynamic Entropy SVD and rank allocation.</p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>unittest.case.TestCase</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.setUp"><code class="name flex">
+<span>def <span class="ident">setUp</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setUp(self) -&gt; None:
+    torch.manual_seed(42)
+    self.batch_size = 4
+    self.seq_len = 16
+    self.hidden_dim = 64
+    self.x = torch.randn(self.batch_size, self.seq_len, self.hidden_dim)</code></pre>
+</details>
+<div class="desc"><p>Hook method for setting up the test fixture before exercising it.</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_dynamic_entropy_svd_compressor_end_to_end"><code class="name flex">
+<span>def <span class="ident">test_dynamic_entropy_svd_compressor_end_to_end</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_dynamic_entropy_svd_compressor_end_to_end(self) -&gt; None:
+    &#34;&#34;&#34;End-to-end compression of multi-layer model with calibration data.&#34;&#34;&#34;
+    model = ToyMultiLayerModel(num_layers=2, hidden_size=64)
+    orig_params = sum(p.numel() for p in model.parameters())
+
+    # Calibration dataset
+    dummy_data = torch.randn(16, 8, 64)
+    loader = DataLoader(TensorDataset(dummy_data), batch_size=4)
+
+    compressor = DynamicEntropySVDCompressor(
+        model=model,
+        min_rank=8,
+        max_rank=32,
+        target_rank=16,
+        calibration_loader=loader,
+    )
+
+    compressed_model, stats = compressor.compress()
+
+    # Check parameter reduction
+    compressed_params = sum(p.numel() for p in compressed_model.parameters())
+    self.assertLess(compressed_params, orig_params)
+    self.assertEqual(stats[&#34;original_parameters&#34;], orig_params)
+    self.assertEqual(stats[&#34;compressed_parameters&#34;], compressed_params)
+    self.assertIn(&#34;layer_entropies&#34;, stats)
+    self.assertIn(&#34;layer_ranks&#34;, stats)
+
+    # Check forward pass on compressed model
+    test_in = torch.randn(2, 8, 64)
+    logits = compressed_model(test_in)
+    self.assertEqual(logits.shape, (2, 10))
+    self.assertFalse(torch.isnan(logits).any())</code></pre>
+</details>
+<div class="desc"><p>End-to-end compression of multi-layer model with calibration data.</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_dynamic_svd_linear_forward_and_backward"><code class="name flex">
+<span>def <span class="ident">test_dynamic_svd_linear_forward_and_backward</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_dynamic_svd_linear_forward_and_backward(self) -&gt; None:
+    &#34;&#34;&#34;Factorized DynamicSVDLinear computes correct shapes and supports autograd.&#34;&#34;&#34;
+    in_f = 64
+    out_f = 128
+    rank = 16
+    layer = DynamicSVDLinear(in_features=in_f, out_features=out_f, rank=rank, bias=True)
+
+    self.assertEqual(layer.V.shape, (rank, in_f))
+    self.assertEqual(layer.U.shape, (out_f, rank))
+    self.assertEqual(layer.bias.shape, (out_f,))
+
+    out = layer(self.x)
+    self.assertEqual(out.shape, (self.batch_size, self.seq_len, out_f))
+
+    loss = out.sum()
+    loss.backward()
+    self.assertIsNotNone(layer.V.grad)
+    self.assertIsNotNone(layer.U.grad)
+    self.assertIsNotNone(layer.bias.grad)</code></pre>
+</details>
+<div class="desc"><p>Factorized DynamicSVDLinear computes correct shapes and supports autograd.</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_dynamic_svd_linear_from_dense"><code class="name flex">
+<span>def <span class="ident">test_dynamic_svd_linear_from_dense</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_dynamic_svd_linear_from_dense(self) -&gt; None:
+    &#34;&#34;&#34;Conversion from dense nn.Linear preserves close representation.&#34;&#34;&#34;
+    dense = nn.Linear(64, 64, bias=True)
+    svd_layer = DynamicSVDLinear.from_linear(dense, rank=32)
+
+    dense_out = dense(self.x)
+    svd_out = svd_layer(self.x)
+    self.assertEqual(dense_out.shape, svd_out.shape)
+
+    # Truncated SVD error check
+    rel_diff = torch.norm(dense_out - svd_out) / torch.norm(dense_out)
+    self.assertLess(rel_diff.item(), 0.5)</code></pre>
+</details>
+<div class="desc"><p>Conversion from dense nn.Linear preserves close representation.</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_dynamic_svd_linear_with_covariance"><code class="name flex">
+<span>def <span class="ident">test_dynamic_svd_linear_with_covariance</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_dynamic_svd_linear_with_covariance(self) -&gt; None:
+    &#34;&#34;&#34;Activation-aware SVD initialization with empirical covariance matrix.&#34;&#34;&#34;
+    dense = nn.Linear(64, 64)
+    x_calib = torch.randn(200, 64)
+    cov = x_calib.t() @ x_calib / 200.0
+
+    svd_layer = DynamicSVDLinear.from_linear(dense, rank=16, covariance=cov)
+    out = svd_layer(self.x)
+    self.assertEqual(out.shape, (self.batch_size, self.seq_len, 64))</code></pre>
+</details>
+<div class="desc"><p>Activation-aware SVD initialization with empirical covariance matrix.</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_rank_allocation_parameter_budget"><code class="name flex">
+<span>def <span class="ident">test_rank_allocation_parameter_budget</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_rank_allocation_parameter_budget(self) -&gt; None:
+    &#34;&#34;&#34;Parameter budget water-filling produces valid ranks under target ratio.&#34;&#34;&#34;
+    layer_dims = {
+        &#34;l1&#34;: (64, 64),
+        &#34;l2&#34;: (64, 64),
+        &#34;l3&#34;: (64, 64),
+    }
+    entropies = {&#34;l1&#34;: 1.0, &#34;l2&#34;: 2.0, &#34;l3&#34;: 3.0}
+
+    ranks = allocate_entropy_ranks(
+        entropies=entropies,
+        min_rank=4,
+        max_rank=32,
+        target_param_ratio=0.5,
+        layer_dims=layer_dims,
+    )
+
+    for name, r in ranks.items():
+        self.assertGreaterEqual(r, 4)
+        self.assertLessEqual(r, 32)</code></pre>
+</details>
+<div class="desc"><p>Parameter budget water-filling produces valid ranks under target ratio.</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_rank_allocation_physical_dimension_clamping"><code class="name flex">
+<span>def <span class="ident">test_rank_allocation_physical_dimension_clamping</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_rank_allocation_physical_dimension_clamping(self) -&gt; None:
+    &#34;&#34;&#34;Layers with small physical dimensions cannot exceed min(d_in, d_out).&#34;&#34;&#34;
+    entropies = {&#34;layer_tiny&#34;: 5.0, &#34;layer_large&#34;: 5.0}
+    layer_dims = {&#34;layer_tiny&#34;: (4, 4), &#34;layer_large&#34;: (64, 64)}
+
+    ranks = allocate_entropy_ranks(
+        entropies=entropies,
+        min_rank=16,
+        max_rank=64,
+        total_rank_budget=40,
+        layer_dims=layer_dims,
+    )
+    self.assertLessEqual(ranks[&#34;layer_tiny&#34;], 4)
+    self.assertGreaterEqual(ranks[&#34;layer_large&#34;], 16)</code></pre>
+</details>
+<div class="desc"><p>Layers with small physical dimensions cannot exceed min(d_in, d_out).</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_rank_allocation_proportional_and_bounded"><code class="name flex">
+<span>def <span class="ident">test_rank_allocation_proportional_and_bounded</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_rank_allocation_proportional_and_bounded(self) -&gt; None:
+    &#34;&#34;&#34;Higher entropy layers must receive higher rank, respecting [min_rank, max_rank].&#34;&#34;&#34;
+    entropies = {
+        &#34;layer_low&#34;: 0.5,
+        &#34;layer_mid&#34;: 2.0,
+        &#34;layer_high&#34;: 4.5,
+    }
+    min_r = 8
+    max_r = 32
+    total_budget = 48  # Average 16 per layer
+
+    ranks = allocate_entropy_ranks(
+        entropies=entropies,
+        min_rank=min_r,
+        max_rank=max_r,
+        total_rank_budget=total_budget,
+    )
+
+    # Monotonicity check
+    self.assertLessEqual(ranks[&#34;layer_low&#34;], ranks[&#34;layer_mid&#34;])
+    self.assertLessEqual(ranks[&#34;layer_mid&#34;], ranks[&#34;layer_high&#34;])
+
+    # Boundary checks
+    for name, r in ranks.items():
+        self.assertGreaterEqual(r, min_r)
+        self.assertLessEqual(r, max_r)
+
+    # Total budget sum check
+    self.assertEqual(sum(ranks.values()), total_budget)</code></pre>
+</details>
+<div class="desc"><p>Higher entropy layers must receive higher rank, respecting [min_rank, max_rank].</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_singular_entropy_2d_covariance_and_weight"><code class="name flex">
+<span>def <span class="ident">test_singular_entropy_2d_covariance_and_weight</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_singular_entropy_2d_covariance_and_weight(self) -&gt; None:
+    &#34;&#34;&#34;Compute entropy on 2D covariance and 2D rectangular weight matrices.&#34;&#34;&#34;
+    # Square symmetric covariance
+    x_samples = torch.randn(100, 32)
+    cov = x_samples.t() @ x_samples / 100.0
+    cov_entropy = compute_singular_entropy(cov)
+    self.assertGreater(cov_entropy, 0.0)
+    self.assertFalse(math.isnan(cov_entropy))
+
+    # Rectangular weight matrix
+    w = torch.randn(64, 32)
+    w_entropy = compute_singular_entropy(w)
+    self.assertGreater(w_entropy, 0.0)
+    self.assertFalse(math.isnan(w_entropy))</code></pre>
+</details>
+<div class="desc"><p>Compute entropy on 2D covariance and 2D rectangular weight matrices.</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_singular_entropy_all_zeros_stability"><code class="name flex">
+<span>def <span class="ident">test_singular_entropy_all_zeros_stability</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_singular_entropy_all_zeros_stability(self) -&gt; None:
+    &#34;&#34;&#34;All-zeros matrix should return 0.0 without NaN or exceptions.&#34;&#34;&#34;
+    zeros_mat = torch.zeros(32, 32)
+    entropy = compute_singular_entropy(zeros_mat)
+    self.assertEqual(entropy, 0.0)</code></pre>
+</details>
+<div class="desc"><p>All-zeros matrix should return 0.0 without NaN or exceptions.</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_singular_entropy_normalization"><code class="name flex">
+<span>def <span class="ident">test_singular_entropy_normalization</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_singular_entropy_normalization(self) -&gt; None:
+    &#34;&#34;&#34;Normalized singular entropy must lie strictly in [0.0, 1.0].&#34;&#34;&#34;
+    spectrum = torch.tensor([10.0, 5.0, 2.0, 1.0, 0.5, 0.1])
+    norm_entropy = compute_singular_entropy(spectrum, normalize=True)
+    self.assertGreaterEqual(norm_entropy, 0.0)
+    self.assertLessEqual(norm_entropy, 1.0)</code></pre>
+</details>
+<div class="desc"><p>Normalized singular entropy must lie strictly in [0.0, 1.0].</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_singular_entropy_single_spike"><code class="name flex">
+<span>def <span class="ident">test_singular_entropy_single_spike</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_singular_entropy_single_spike(self) -&gt; None:
+    &#34;&#34;&#34;Singular spectrum with 1-hot spike should have zero entropy.&#34;&#34;&#34;
+    spectrum = torch.zeros(16)
+    spectrum[0] = 100.0
+    entropy = compute_singular_entropy(spectrum, normalize=False)
+    self.assertAlmostEqual(entropy, 0.0, places=5)</code></pre>
+</details>
+<div class="desc"><p>Singular spectrum with 1-hot spike should have zero entropy.</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_singular_entropy_uniform_spectrum"><code class="name flex">
+<span>def <span class="ident">test_singular_entropy_uniform_spectrum</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_singular_entropy_uniform_spectrum(self) -&gt; None:
+    &#34;&#34;&#34;Uniform singular spectrum should achieve maximal entropy ln(K).&#34;&#34;&#34;
+    k = 16
+    uniform_spectrum = torch.ones(k)
+    entropy = compute_singular_entropy(uniform_spectrum, normalize=False)
+    expected_entropy = math.log(k)
+    self.assertAlmostEqual(entropy, expected_entropy, places=5)</code></pre>
+</details>
+<div class="desc"><p>Uniform singular spectrum should achieve maximal entropy ln(K).</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestResSVD"><code class="flex name class">
+<span>class <span class="ident">TestResSVD</span></span>
+<span>(</span><span>methodName='runTest')</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestResSVD(unittest.TestCase):
+    &#34;&#34;&#34;Test suite for Spectral Residual LoRA (Res-SVD).&#34;&#34;&#34;
+
+    def setUp(self) -&gt; None:
+        torch.manual_seed(42)
+        self.batch_size = 4
+        self.seq_len = 16
+        self.in_dim = 64
+        self.out_dim = 64
+        self.x = torch.randn(self.batch_size, self.seq_len, self.in_dim)
+        self.dense = nn.Linear(self.in_dim, self.out_dim, bias=True)
+
+    # -------------------------------------------------------------------------
+    # 1. ResSVDLinear Layer Tests
+    # -------------------------------------------------------------------------
+
+    def test_res_svd_linear_construction_and_grad_freeze(self) -&gt; None:
+        &#34;&#34;&#34;ResSVDLinear freezes base weights and enables grad on adapter matrices.&#34;&#34;&#34;
+        base_r = 16
+        res_r = 4
+        res_layer = ResSVDLinear.from_linear(
+            linear=self.dense,
+            base_rank=base_r,
+            residual_rank=res_r,
+            scaling=1.0,
+            factorize_base=True,
+            freeze_base=True,
+        )
+
+        # Base must be frozen
+        self.assertFalse(res_layer.base_V.requires_grad)
+        self.assertFalse(res_layer.base_U.requires_grad)
+
+        # Adapters must be trainable
+        self.assertTrue(res_layer.lora_A.requires_grad)
+        self.assertTrue(res_layer.lora_B.requires_grad)
+
+        self.assertEqual(res_layer.base_V.shape, (base_r, self.in_dim))
+        self.assertEqual(res_layer.base_U.shape, (self.out_dim, base_r))
+        self.assertEqual(res_layer.lora_A.shape, (res_r, self.in_dim))
+        self.assertEqual(res_layer.lora_B.shape, (self.out_dim, res_r))
+
+    def test_spectral_residual_tail_reconstruction_error(self) -&gt; None:
+        &#34;&#34;&#34;Res-SVD adapter initialized from tail achieves lower error than base alone.&#34;&#34;&#34;
+        W = self.dense.weight.data.float()
+        base_r = 8
+        res_r = 8
+
+        # Base only layer
+        base_only = ResSVDLinear.from_linear(
+            linear=self.dense,
+            base_rank=base_r,
+            residual_rank=0,
+        )
+
+        # Base + Spectral Residual LoRA
+        res_svd = ResSVDLinear.from_linear(
+            linear=self.dense,
+            base_rank=base_r,
+            residual_rank=res_r,
+            scaling=1.0,
+        )
+
+        err_base = base_only.get_residual_error_norm(W)
+        err_res = res_svd.get_residual_error_norm(W)
+
+        # Tail inclusion must strictly reduce reconstruction error
+        self.assertLess(err_res, err_base)
+
+    def test_res_svd_linear_forward_and_backward(self) -&gt; None:
+        &#34;&#34;&#34;ResSVDLinear forward pass and gradient backpropagation to adapters only.&#34;&#34;&#34;
+        res_layer = ResSVDLinear.from_linear(
+            linear=self.dense,
+            base_rank=16,
+            residual_rank=4,
+            scaling=1.0,
+        )
+
+        out = res_layer(self.x)
+        self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.out_dim))
+
+        loss = out.sum()
+        loss.backward()
+
+        # Base factors should have no gradients
+        self.assertIsNone(res_layer.base_V.grad)
+        self.assertIsNone(res_layer.base_U.grad)
+
+        # LoRA adapters must have valid gradients
+        self.assertIsNotNone(res_layer.lora_A.grad)
+        self.assertIsNotNone(res_layer.lora_B.grad)
+
+    def test_res_svd_linear_merge_weights(self) -&gt; None:
+        &#34;&#34;&#34;Weight merging produces standard nn.Linear with identical output.&#34;&#34;&#34;
+        res_layer = ResSVDLinear.from_linear(
+            linear=self.dense,
+            base_rank=16,
+            residual_rank=8,
+            scaling=1.0,
+        )
+
+        merged_linear = res_layer.merge_weights()
+        self.assertIsInstance(merged_linear, nn.Linear)
+
+        out_res = res_layer(self.x)
+        out_merged = merged_linear(self.x)
+        self.assertTrue(torch.allclose(out_res, out_merged, atol=1e-4))
+
+    def test_res_svd_dense_base_mode(self) -&gt; None:
+        &#34;&#34;&#34;ResSVDLinear supports non-factorized base mode (factorize_base=False).&#34;&#34;&#34;
+        res_layer = ResSVDLinear.from_linear(
+            linear=self.dense,
+            base_rank=16,
+            residual_rank=4,
+            factorize_base=False,
+            freeze_base=True,
+        )
+
+        self.assertFalse(res_layer.base_weight.requires_grad)
+        self.assertTrue(res_layer.lora_A.requires_grad)
+        out = res_layer(self.x)
+        self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.out_dim))
+
+    # -------------------------------------------------------------------------
+    # 2. ResSVDCompressor End-to-End Tests
+    # -------------------------------------------------------------------------
+
+    def test_res_svd_compressor_end_to_end(self) -&gt; None:
+        &#34;&#34;&#34;End-to-end compression with ResSVDCompressor and parameter stats check.&#34;&#34;&#34;
+        model = ToyMultiLayerModel(num_layers=2, hidden_size=64)
+        orig_params = sum(p.numel() for p in model.parameters())
+
+        compressor = ResSVDCompressor(
+            model=model,
+            base_rank=16,
+            residual_rank=4,
+            scaling=1.0,
+            factorize_base=True,
+            freeze_base=True,
+        )
+
+        compressed_model, stats = compressor.compress()
+
+        self.assertIn(&#34;trainable_parameters&#34;, stats)
+        self.assertIn(&#34;frozen_parameters&#34;, stats)
+        self.assertIn(&#34;replaced_layers&#34;, stats)
+        self.assertGreater(stats[&#34;frozen_parameters&#34;], 0)
+        self.assertGreater(stats[&#34;trainable_parameters&#34;], 0)
+
+        # Trainable parameters should be a small fraction (PEFT)
+        self.assertLess(stats[&#34;trainable_parameters&#34;], stats[&#34;frozen_parameters&#34;])
+
+        # Forward pass verification
+        test_x = torch.randn(2, 8, 64)
+        logits = compressed_model(test_x)
+        self.assertEqual(logits.shape, (2, 10))
+        self.assertFalse(torch.isnan(logits).any())
+
+    def test_spectral_residual_lora_alias_class(self) -&gt; None:
+        &#34;&#34;&#34;SpectralResidualLoRA alias class works interchangeably.&#34;&#34;&#34;
+        model = ToyMultiLayerModel(num_layers=1, hidden_size=64)
+        compressor = SpectralResidualLoRA(
+            model=model,
+            base_rank=16,
+            residual_rank=4,
+        )
+        compressed_model, stats = compressor.compress()
+        self.assertEqual(stats[&#34;compressor_name&#34;], &#34;spectral_residual_lora&#34;)</code></pre>
+</details>
+<div class="desc"><p>Test suite for Spectral Residual LoRA (Res-SVD).</p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>unittest.case.TestCase</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_sota_compression.TestResSVD.setUp"><code class="name flex">
+<span>def <span class="ident">setUp</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setUp(self) -&gt; None:
+    torch.manual_seed(42)
+    self.batch_size = 4
+    self.seq_len = 16
+    self.in_dim = 64
+    self.out_dim = 64
+    self.x = torch.randn(self.batch_size, self.seq_len, self.in_dim)
+    self.dense = nn.Linear(self.in_dim, self.out_dim, bias=True)</code></pre>
+</details>
+<div class="desc"><p>Hook method for setting up the test fixture before exercising it.</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestResSVD.test_res_svd_compressor_end_to_end"><code class="name flex">
+<span>def <span class="ident">test_res_svd_compressor_end_to_end</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_res_svd_compressor_end_to_end(self) -&gt; None:
+    &#34;&#34;&#34;End-to-end compression with ResSVDCompressor and parameter stats check.&#34;&#34;&#34;
+    model = ToyMultiLayerModel(num_layers=2, hidden_size=64)
+    orig_params = sum(p.numel() for p in model.parameters())
+
+    compressor = ResSVDCompressor(
+        model=model,
+        base_rank=16,
+        residual_rank=4,
+        scaling=1.0,
+        factorize_base=True,
+        freeze_base=True,
+    )
+
+    compressed_model, stats = compressor.compress()
+
+    self.assertIn(&#34;trainable_parameters&#34;, stats)
+    self.assertIn(&#34;frozen_parameters&#34;, stats)
+    self.assertIn(&#34;replaced_layers&#34;, stats)
+    self.assertGreater(stats[&#34;frozen_parameters&#34;], 0)
+    self.assertGreater(stats[&#34;trainable_parameters&#34;], 0)
+
+    # Trainable parameters should be a small fraction (PEFT)
+    self.assertLess(stats[&#34;trainable_parameters&#34;], stats[&#34;frozen_parameters&#34;])
+
+    # Forward pass verification
+    test_x = torch.randn(2, 8, 64)
+    logits = compressed_model(test_x)
+    self.assertEqual(logits.shape, (2, 10))
+    self.assertFalse(torch.isnan(logits).any())</code></pre>
+</details>
+<div class="desc"><p>End-to-end compression with ResSVDCompressor and parameter stats check.</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestResSVD.test_res_svd_dense_base_mode"><code class="name flex">
+<span>def <span class="ident">test_res_svd_dense_base_mode</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_res_svd_dense_base_mode(self) -&gt; None:
+    &#34;&#34;&#34;ResSVDLinear supports non-factorized base mode (factorize_base=False).&#34;&#34;&#34;
+    res_layer = ResSVDLinear.from_linear(
+        linear=self.dense,
+        base_rank=16,
+        residual_rank=4,
+        factorize_base=False,
+        freeze_base=True,
+    )
+
+    self.assertFalse(res_layer.base_weight.requires_grad)
+    self.assertTrue(res_layer.lora_A.requires_grad)
+    out = res_layer(self.x)
+    self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.out_dim))</code></pre>
+</details>
+<div class="desc"><p>ResSVDLinear supports non-factorized base mode (factorize_base=False).</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestResSVD.test_res_svd_linear_construction_and_grad_freeze"><code class="name flex">
+<span>def <span class="ident">test_res_svd_linear_construction_and_grad_freeze</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_res_svd_linear_construction_and_grad_freeze(self) -&gt; None:
+    &#34;&#34;&#34;ResSVDLinear freezes base weights and enables grad on adapter matrices.&#34;&#34;&#34;
+    base_r = 16
+    res_r = 4
+    res_layer = ResSVDLinear.from_linear(
+        linear=self.dense,
+        base_rank=base_r,
+        residual_rank=res_r,
+        scaling=1.0,
+        factorize_base=True,
+        freeze_base=True,
+    )
+
+    # Base must be frozen
+    self.assertFalse(res_layer.base_V.requires_grad)
+    self.assertFalse(res_layer.base_U.requires_grad)
+
+    # Adapters must be trainable
+    self.assertTrue(res_layer.lora_A.requires_grad)
+    self.assertTrue(res_layer.lora_B.requires_grad)
+
+    self.assertEqual(res_layer.base_V.shape, (base_r, self.in_dim))
+    self.assertEqual(res_layer.base_U.shape, (self.out_dim, base_r))
+    self.assertEqual(res_layer.lora_A.shape, (res_r, self.in_dim))
+    self.assertEqual(res_layer.lora_B.shape, (self.out_dim, res_r))</code></pre>
+</details>
+<div class="desc"><p>ResSVDLinear freezes base weights and enables grad on adapter matrices.</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestResSVD.test_res_svd_linear_forward_and_backward"><code class="name flex">
+<span>def <span class="ident">test_res_svd_linear_forward_and_backward</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_res_svd_linear_forward_and_backward(self) -&gt; None:
+    &#34;&#34;&#34;ResSVDLinear forward pass and gradient backpropagation to adapters only.&#34;&#34;&#34;
+    res_layer = ResSVDLinear.from_linear(
+        linear=self.dense,
+        base_rank=16,
+        residual_rank=4,
+        scaling=1.0,
+    )
+
+    out = res_layer(self.x)
+    self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.out_dim))
+
+    loss = out.sum()
+    loss.backward()
+
+    # Base factors should have no gradients
+    self.assertIsNone(res_layer.base_V.grad)
+    self.assertIsNone(res_layer.base_U.grad)
+
+    # LoRA adapters must have valid gradients
+    self.assertIsNotNone(res_layer.lora_A.grad)
+    self.assertIsNotNone(res_layer.lora_B.grad)</code></pre>
+</details>
+<div class="desc"><p>ResSVDLinear forward pass and gradient backpropagation to adapters only.</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestResSVD.test_res_svd_linear_merge_weights"><code class="name flex">
+<span>def <span class="ident">test_res_svd_linear_merge_weights</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_res_svd_linear_merge_weights(self) -&gt; None:
+    &#34;&#34;&#34;Weight merging produces standard nn.Linear with identical output.&#34;&#34;&#34;
+    res_layer = ResSVDLinear.from_linear(
+        linear=self.dense,
+        base_rank=16,
+        residual_rank=8,
+        scaling=1.0,
+    )
+
+    merged_linear = res_layer.merge_weights()
+    self.assertIsInstance(merged_linear, nn.Linear)
+
+    out_res = res_layer(self.x)
+    out_merged = merged_linear(self.x)
+    self.assertTrue(torch.allclose(out_res, out_merged, atol=1e-4))</code></pre>
+</details>
+<div class="desc"><p>Weight merging produces standard nn.Linear with identical output.</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestResSVD.test_spectral_residual_lora_alias_class"><code class="name flex">
+<span>def <span class="ident">test_spectral_residual_lora_alias_class</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_spectral_residual_lora_alias_class(self) -&gt; None:
+    &#34;&#34;&#34;SpectralResidualLoRA alias class works interchangeably.&#34;&#34;&#34;
+    model = ToyMultiLayerModel(num_layers=1, hidden_size=64)
+    compressor = SpectralResidualLoRA(
+        model=model,
+        base_rank=16,
+        residual_rank=4,
+    )
+    compressed_model, stats = compressor.compress()
+    self.assertEqual(stats[&#34;compressor_name&#34;], &#34;spectral_residual_lora&#34;)</code></pre>
+</details>
+<div class="desc"><p>SpectralResidualLoRA alias class works interchangeably.</p></div>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.TestResSVD.test_spectral_residual_tail_reconstruction_error"><code class="name flex">
+<span>def <span class="ident">test_spectral_residual_tail_reconstruction_error</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_spectral_residual_tail_reconstruction_error(self) -&gt; None:
+    &#34;&#34;&#34;Res-SVD adapter initialized from tail achieves lower error than base alone.&#34;&#34;&#34;
+    W = self.dense.weight.data.float()
+    base_r = 8
+    res_r = 8
+
+    # Base only layer
+    base_only = ResSVDLinear.from_linear(
+        linear=self.dense,
+        base_rank=base_r,
+        residual_rank=0,
+    )
+
+    # Base + Spectral Residual LoRA
+    res_svd = ResSVDLinear.from_linear(
+        linear=self.dense,
+        base_rank=base_r,
+        residual_rank=res_r,
+        scaling=1.0,
+    )
+
+    err_base = base_only.get_residual_error_norm(W)
+    err_res = res_svd.get_residual_error_norm(W)
+
+    # Tail inclusion must strictly reduce reconstruction error
+    self.assertLess(err_res, err_base)</code></pre>
+</details>
+<div class="desc"><p>Res-SVD adapter initialized from tail achieves lower error than base alone.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.ToyMultiLayerModel"><code class="flex name class">
+<span>class <span class="ident">ToyMultiLayerModel</span></span>
+<span>(</span><span>num_layers: int = 3, hidden_size: int = 64)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ToyMultiLayerModel(nn.Module):
+    &#34;&#34;&#34;Multi-layer model containing several transformer blocks.&#34;&#34;&#34;
+
+    def __init__(self, num_layers: int = 3, hidden_size: int = 64) -&gt; None:
+        super().__init__()
+        self.blocks = nn.ModuleList(
+            [ToyTransformerBlock(hidden_size=hidden_size) for _ in range(num_layers)]
+        )
+        self.head = nn.Linear(hidden_size, 10)
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        h = x
+        for block in self.blocks:
+            h = block(h)
+        logits = self.head(h[:, 0, :])
+        return logits</code></pre>
+</details>
+<div class="desc"><p>Multi-layer model containing several transformer blocks.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_sota_compression.ToyMultiLayerModel.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    h = x
+    for block in self.blocks:
+        h = block(h)
+    logits = self.head(h[:, 0, :])
+    return logits</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_sota_compression.ToyTransformerBlock"><code class="flex name class">
+<span>class <span class="ident">ToyTransformerBlock</span></span>
+<span>(</span><span>hidden_size: int = 64, intermediate_size: int = 128)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ToyTransformerBlock(nn.Module):
+    &#34;&#34;&#34;Multi-layer MLP / Attention-like block for end-to-end compressor testing.&#34;&#34;&#34;
+
+    def __init__(self, hidden_size: int = 64, intermediate_size: int = 128) -&gt; None:
+        super().__init__()
+        self.q_proj = nn.Linear(hidden_size, hidden_size)
+        self.k_proj = nn.Linear(hidden_size, hidden_size)
+        self.v_proj = nn.Linear(hidden_size, hidden_size)
+        self.out_proj = nn.Linear(hidden_size, hidden_size)
+        self.mlp_in = nn.Linear(hidden_size, intermediate_size)
+        self.mlp_out = nn.Linear(intermediate_size, hidden_size)
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        # Simplified attention + MLP forward
+        q = self.q_proj(x)
+        k = self.k_proj(x)
+        v = self.v_proj(x)
+        attn = torch.softmax(torch.matmul(q, k.transpose(-1, -2)) / 8.0, dim=-1)
+        attn_out = self.out_proj(torch.matmul(attn, v))
+        h = x + attn_out
+        mlp_h = torch.relu(self.mlp_in(h))
+        out = h + self.mlp_out(mlp_h)
+        return out</code></pre>
+</details>
+<div class="desc"><p>Multi-layer MLP / Attention-like block for end-to-end compressor testing.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_sota_compression.ToyTransformerBlock.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    # Simplified attention + MLP forward
+    q = self.q_proj(x)
+    k = self.k_proj(x)
+    v = self.v_proj(x)
+    attn = torch.softmax(torch.matmul(q, k.transpose(-1, -2)) / 8.0, dim=-1)
+    attn_out = self.out_proj(torch.matmul(attn, v))
+    h = x + attn_out
+    mlp_h = torch.relu(self.mlp_in(h))
+    out = h + self.mlp_out(mlp_h)
+    return out</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tests" href="index.html">neuralops.tests</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.tests.test_sota_compression.TestCompressorRegistrations" href="#neuralops.tests.test_sota_compression.TestCompressorRegistrations">TestCompressorRegistrations</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_sota_compression.TestCompressorRegistrations.test_registry_lookups" href="#neuralops.tests.test_sota_compression.TestCompressorRegistrations.test_registry_lookups">test_registry_lookups</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_sota_compression.TestDynamicEntropySVD" href="#neuralops.tests.test_sota_compression.TestDynamicEntropySVD">TestDynamicEntropySVD</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.setUp" href="#neuralops.tests.test_sota_compression.TestDynamicEntropySVD.setUp">setUp</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_dynamic_entropy_svd_compressor_end_to_end" href="#neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_dynamic_entropy_svd_compressor_end_to_end">test_dynamic_entropy_svd_compressor_end_to_end</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_dynamic_svd_linear_forward_and_backward" href="#neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_dynamic_svd_linear_forward_and_backward">test_dynamic_svd_linear_forward_and_backward</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_dynamic_svd_linear_from_dense" href="#neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_dynamic_svd_linear_from_dense">test_dynamic_svd_linear_from_dense</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_dynamic_svd_linear_with_covariance" href="#neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_dynamic_svd_linear_with_covariance">test_dynamic_svd_linear_with_covariance</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_rank_allocation_parameter_budget" href="#neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_rank_allocation_parameter_budget">test_rank_allocation_parameter_budget</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_rank_allocation_physical_dimension_clamping" href="#neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_rank_allocation_physical_dimension_clamping">test_rank_allocation_physical_dimension_clamping</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_rank_allocation_proportional_and_bounded" href="#neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_rank_allocation_proportional_and_bounded">test_rank_allocation_proportional_and_bounded</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_singular_entropy_2d_covariance_and_weight" href="#neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_singular_entropy_2d_covariance_and_weight">test_singular_entropy_2d_covariance_and_weight</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_singular_entropy_all_zeros_stability" href="#neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_singular_entropy_all_zeros_stability">test_singular_entropy_all_zeros_stability</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_singular_entropy_normalization" href="#neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_singular_entropy_normalization">test_singular_entropy_normalization</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_singular_entropy_single_spike" href="#neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_singular_entropy_single_spike">test_singular_entropy_single_spike</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_singular_entropy_uniform_spectrum" href="#neuralops.tests.test_sota_compression.TestDynamicEntropySVD.test_singular_entropy_uniform_spectrum">test_singular_entropy_uniform_spectrum</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_sota_compression.TestResSVD" href="#neuralops.tests.test_sota_compression.TestResSVD">TestResSVD</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_sota_compression.TestResSVD.setUp" href="#neuralops.tests.test_sota_compression.TestResSVD.setUp">setUp</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestResSVD.test_res_svd_compressor_end_to_end" href="#neuralops.tests.test_sota_compression.TestResSVD.test_res_svd_compressor_end_to_end">test_res_svd_compressor_end_to_end</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestResSVD.test_res_svd_dense_base_mode" href="#neuralops.tests.test_sota_compression.TestResSVD.test_res_svd_dense_base_mode">test_res_svd_dense_base_mode</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestResSVD.test_res_svd_linear_construction_and_grad_freeze" href="#neuralops.tests.test_sota_compression.TestResSVD.test_res_svd_linear_construction_and_grad_freeze">test_res_svd_linear_construction_and_grad_freeze</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestResSVD.test_res_svd_linear_forward_and_backward" href="#neuralops.tests.test_sota_compression.TestResSVD.test_res_svd_linear_forward_and_backward">test_res_svd_linear_forward_and_backward</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestResSVD.test_res_svd_linear_merge_weights" href="#neuralops.tests.test_sota_compression.TestResSVD.test_res_svd_linear_merge_weights">test_res_svd_linear_merge_weights</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestResSVD.test_spectral_residual_lora_alias_class" href="#neuralops.tests.test_sota_compression.TestResSVD.test_spectral_residual_lora_alias_class">test_spectral_residual_lora_alias_class</a></code></li>
+<li><code><a title="neuralops.tests.test_sota_compression.TestResSVD.test_spectral_residual_tail_reconstruction_error" href="#neuralops.tests.test_sota_compression.TestResSVD.test_spectral_residual_tail_reconstruction_error">test_spectral_residual_tail_reconstruction_error</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_sota_compression.ToyMultiLayerModel" href="#neuralops.tests.test_sota_compression.ToyMultiLayerModel">ToyMultiLayerModel</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_sota_compression.ToyMultiLayerModel.forward" href="#neuralops.tests.test_sota_compression.ToyMultiLayerModel.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_sota_compression.ToyTransformerBlock" href="#neuralops.tests.test_sota_compression.ToyTransformerBlock">ToyTransformerBlock</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_sota_compression.ToyTransformerBlock.forward" href="#neuralops.tests.test_sota_compression.ToyTransformerBlock.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

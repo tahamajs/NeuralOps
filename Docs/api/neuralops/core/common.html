@@ -1,0 +1,833 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.core.common API documentation</title>
+<meta name="description" content="Unified shared primitives and utility layers for attention and compression modules.
+Centralizes repeatedly copied helpers (_cfg_get, repeat_kv, …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.core.common</code></h1>
+</header>
+<section id="section-intro">
+<p>Unified shared primitives and utility layers for attention and compression modules.
+Centralizes repeatedly copied helpers (_cfg_get, repeat_kv, _detect_decoder, LoRALinear, FactorizedLinear).</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.core.common._apply_rope"><code class="name flex">
+<span>def <span class="ident">_apply_rope</span></span>(<span>q: torch.Tensor, k: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) ‑> tuple[torch.Tensor, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def _apply_rope(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+) -&gt; tuple[torch.Tensor, torch.Tensor]:
+    &#34;&#34;&#34;
+    Applies Rotary Position Embedding (RoPE) to Query and Key tensors.
+    &#34;&#34;&#34;
+    if cos.dim() &lt; q.dim():
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    def rotate_half(x: torch.Tensor) -&gt; torch.Tensor:
+        x1 = x[..., : x.shape[-1] // 2]
+        x2 = x[..., x.shape[-1] // 2 :]
+        return torch.cat((-x2, x1), dim=-1)
+
+    q_embed = (q * cos) + (rotate_half(q) * sin)
+    k_embed = (k * cos) + (rotate_half(k) * sin)
+    return q_embed.type_as(q), k_embed.type_as(k)</code></pre>
+</details>
+<div class="desc"><p>Applies Rotary Position Embedding (RoPE) to Query and Key tensors.</p></div>
+</dd>
+<dt id="neuralops.core.common._cfg_get"><code class="name flex">
+<span>def <span class="ident">_cfg_get</span></span>(<span>config: Any, key: str, default: Any = None) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def _cfg_get(config: Any, key: str, default: Any = None) -&gt; Any:
+    &#34;&#34;&#34;
+    Safely retrieves a configuration attribute from a dict, object, or None.
+    Handles nested fallbacks without throwing AttributeErrors.
+    &#34;&#34;&#34;
+    if config is None:
+        return default
+    if isinstance(config, dict):
+        return config.get(key, default)
+    val = getattr(config, key, None)
+    return val if val is not None else default</code></pre>
+</details>
+<div class="desc"><p>Safely retrieves a configuration attribute from a dict, object, or None.
+Handles nested fallbacks without throwing AttributeErrors.</p></div>
+</dd>
+<dt id="neuralops.core.common._detect_decoder"><code class="name flex">
+<span>def <span class="ident">_detect_decoder</span></span>(<span>config: Any = None,<br>is_decoder: bool | None = None,<br>old_attn: nn.Module | None = None) ‑> bool</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def _detect_decoder(
+    config: Any = None,
+    is_decoder: bool | None = None,
+    old_attn: nn.Module | None = None,
+) -&gt; bool:
+    &#34;&#34;&#34;
+    Detects whether an attention layer should operate in causal decoder mode.
+    &#34;&#34;&#34;
+    if is_decoder is not None:
+        return bool(is_decoder)
+    if config is not None:
+        if getattr(config, &#34;is_decoder&#34;, False) or getattr(config, &#34;causal&#34;, False):
+            return True
+        mt = str(getattr(config, &#34;model_type&#34;, &#34;&#34;)).lower()
+        if mt.startswith(
+            (
+                &#34;gpt&#34;,
+                &#34;qwen&#34;,
+                &#34;llama&#34;,
+                &#34;mistral&#34;,
+                &#34;gemma&#34;,
+                &#34;phi&#34;,
+                &#34;opt&#34;,
+                &#34;bloom&#34;,
+                &#34;falcon&#34;,
+                &#34;olmo&#34;,
+                &#34;mpt&#34;,
+                &#34;stablelm&#34;,
+            )
+        ):
+            return True
+        arch = getattr(config, &#34;architectures&#34;, None)
+        if arch and any((&#34;GPT&#34; in str(a) or &#34;CausalLM&#34; in str(a)) for a in arch):
+            return True
+    if old_attn is not None:
+        if getattr(old_attn, &#34;is_decoder&#34;, False):
+            return True
+        if hasattr(old_attn, &#34;c_attn&#34;):
+            return True
+        if &#34;gpt&#34; in old_attn.__class__.__name__.lower():
+            return True
+    return False</code></pre>
+</details>
+<div class="desc"><p>Detects whether an attention layer should operate in causal decoder mode.</p></div>
+</dd>
+<dt id="neuralops.core.common.repeat_kv"><code class="name flex">
+<span>def <span class="ident">repeat_kv</span></span>(<span>hidden_states: torch.Tensor, n_rep: int) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -&gt; torch.Tensor:
+    &#34;&#34;&#34;
+    Repeats Key/Value heads along the head dimension for Grouped-Query Attention (GQA).
+    hidden_states: (batch, num_key_value_heads, seqlen, head_dim)
+    Returns: (batch, num_attention_heads, seqlen, head_dim)
+    &#34;&#34;&#34;
+    if n_rep &lt;= 1:
+        return hidden_states
+    b, h, s, d = hidden_states.shape
+    return hidden_states[:, :, None, :, :].expand(b, h, n_rep, s, d).reshape(b, h * n_rep, s, d)</code></pre>
+</details>
+<div class="desc"><p>Repeats Key/Value heads along the head dimension for Grouped-Query Attention (GQA).
+hidden_states: (batch, num_key_value_heads, seqlen, head_dim)
+Returns: (batch, num_attention_heads, seqlen, head_dim)</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.core.common.FactorizedLinear"><code class="flex name class">
+<span>class <span class="ident">FactorizedLinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>rank: int = 128,<br>lora_rank: int = 32,<br>bias: bool = True,<br>device: torch.device | None = None,<br>dtype: torch.dtype | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FactorizedLinear(nn.Module):
+    &#34;&#34;&#34;
+    Decomposed linear layer: W ≈ W2 @ W1 with optional LoRA residual branch.
+    &#34;&#34;&#34;
+
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int = 128,
+        lora_rank: int = 32,
+        bias: bool = True,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = int(in_features)
+        self.out_features = int(out_features)
+        self.rank = max(1, min(int(rank), self.in_features, self.out_features))
+        self.svd_rank = self.rank
+        self.lora_rank = (
+            min(int(lora_rank), min(self.in_features, self.out_features)) if lora_rank &gt; 0 else 0
+        )
+
+        factory_kwargs = {&#34;device&#34;: device, &#34;dtype&#34;: dtype}
+        self.lin1 = nn.Linear(self.in_features, self.rank, bias=False, **factory_kwargs)
+        self.lin2 = nn.Linear(self.rank, self.out_features, bias=bias, **factory_kwargs)
+
+        self.lin1.weight.requires_grad = False
+        self.lin2.weight.requires_grad = False
+        if self.lin2.bias is not None:
+            self.lin2.bias.requires_grad = False
+
+        if self.lora_rank &gt; 0:
+            self.lora_A = nn.Parameter(
+                torch.empty(self.lora_rank, self.in_features, **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty(self.out_features, self.lora_rank, **factory_kwargs)
+            )
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+        self.reset_parameters()
+
+    def reset_parameters(self) -&gt; None:
+        with torch.no_grad():
+            nn.init.kaiming_uniform_(self.lin1.weight, a=math.sqrt(5))
+            nn.init.kaiming_uniform_(self.lin2.weight, a=math.sqrt(5))
+            if self.lin2.bias is not None:
+                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.lin2.weight)
+                bound = 1 / math.sqrt(fan_in) if fan_in &gt; 0 else 0
+                nn.init.uniform_(self.lin2.bias, -bound, bound)
+            if self.lora_A is not None:
+                nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+                nn.init.zeros_(self.lora_B)
+
+    def freeze_base_weights(self) -&gt; None:
+        self.lin1.weight.requires_grad = False
+        self.lin2.weight.requires_grad = False
+        if self.lin2.bias is not None:
+            self.lin2.bias.requires_grad = False
+        if self.lora_A is not None:
+            self.lora_A.requires_grad = True
+            self.lora_B.requires_grad = True
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        w = torch.matmul(self.lin2.weight, self.lin1.weight)
+        if self.lora_A is not None:
+            w = w + torch.matmul(self.lora_B, self.lora_A)
+        return w
+
+    @property
+    def bias(self) -&gt; torch.Tensor | None:
+        return self.lin2.bias
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        if HAS_TRITON_COMMON and triton_dispatch is not None and x.is_cuda:
+            try:
+                out = triton_dispatch(
+                    &#34;low_rank&#34;, x, self.lin2.weight, self.lin1.weight, bias=self.lin2.bias
+                )
+            except Exception:
+                out = self.lin2(self.lin1(x))
+        else:
+            out = self.lin2(self.lin1(x))
+
+        if self.lora_A is not None:
+            if HAS_TRITON_COMMON and triton_dispatch is not None and x.is_cuda:
+                try:
+                    lora_out = triton_dispatch(&#34;low_rank&#34;, x, self.lora_B, self.lora_A, bias=None)
+                    out = out + lora_out
+                except Exception:
+                    out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
+            else:
+                out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
+        return out</code></pre>
+</details>
+<div class="desc"><p>Decomposed linear layer: W ≈ W2 @ W1 with optional LoRA residual branch.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.core.common.FactorizedLinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.core.common.FactorizedLinear.bias"><code class="name">prop <span class="ident">bias</span> : torch.Tensor | None</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def bias(self) -&gt; torch.Tensor | None:
+    return self.lin2.bias</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.core.common.FactorizedLinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    w = torch.matmul(self.lin2.weight, self.lin1.weight)
+    if self.lora_A is not None:
+        w = w + torch.matmul(self.lora_B, self.lora_A)
+    return w</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.core.common.FactorizedLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    if HAS_TRITON_COMMON and triton_dispatch is not None and x.is_cuda:
+        try:
+            out = triton_dispatch(
+                &#34;low_rank&#34;, x, self.lin2.weight, self.lin1.weight, bias=self.lin2.bias
+            )
+        except Exception:
+            out = self.lin2(self.lin1(x))
+    else:
+        out = self.lin2(self.lin1(x))
+
+    if self.lora_A is not None:
+        if HAS_TRITON_COMMON and triton_dispatch is not None and x.is_cuda:
+            try:
+                lora_out = triton_dispatch(&#34;low_rank&#34;, x, self.lora_B, self.lora_A, bias=None)
+                out = out + lora_out
+            except Exception:
+                out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
+        else:
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
+    return out</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+<dt id="neuralops.core.common.FactorizedLinear.freeze_base_weights"><code class="name flex">
+<span>def <span class="ident">freeze_base_weights</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def freeze_base_weights(self) -&gt; None:
+    self.lin1.weight.requires_grad = False
+    self.lin2.weight.requires_grad = False
+    if self.lin2.bias is not None:
+        self.lin2.bias.requires_grad = False
+    if self.lora_A is not None:
+        self.lora_A.requires_grad = True
+        self.lora_B.requires_grad = True</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.core.common.FactorizedLinear.reset_parameters"><code class="name flex">
+<span>def <span class="ident">reset_parameters</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_parameters(self) -&gt; None:
+    with torch.no_grad():
+        nn.init.kaiming_uniform_(self.lin1.weight, a=math.sqrt(5))
+        nn.init.kaiming_uniform_(self.lin2.weight, a=math.sqrt(5))
+        if self.lin2.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.lin2.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in &gt; 0 else 0
+            nn.init.uniform_(self.lin2.bias, -bound, bound)
+        if self.lora_A is not None:
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.core.common.LoRALinear"><code class="flex name class">
+<span>class <span class="ident">LoRALinear</span></span>
+<span>(</span><span>base_or_in_features: nn.Module | int,<br>out_features: int | None = None,<br>bias: bool = True,<br>lora_rank: int = 16,<br>r: int | None = None,<br>lora_alpha: float = 32.0,<br>lora_dropout: float = 0.0,<br>freeze_base: bool = False,<br>merge_weights: bool = False,<br>device: torch.device | None = None,<br>dtype: torch.dtype | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class LoRALinear(nn.Module):
+    r&#34;&#34;&#34;
+    Universal LoRA linear layer:
+    Supports both wrapper mode: LoRALinear(base_layer, r=16, ...)
+    and standalone mode: LoRALinear(in_features, out_features, bias=True, lora_rank=16, ...)
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        base_or_in_features: nn.Module | int,
+        out_features: int | None = None,
+        bias: bool = True,
+        lora_rank: int = 16,
+        r: int | None = None,
+        lora_alpha: float = 32.0,
+        lora_dropout: float = 0.0,
+        freeze_base: bool = False,
+        merge_weights: bool = False,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -&gt; None:
+        super().__init__()
+        effective_r = r if r is not None else lora_rank
+        self.lora_rank = effective_r
+        self.r = effective_r
+        self.lora_alpha = float(lora_alpha)
+        self.lora_scaling = (lora_alpha / effective_r) if effective_r &gt; 0 else 1.0
+        self.scaling = self.lora_scaling
+        self.lora_dropout = nn.Dropout(p=lora_dropout) if lora_dropout &gt; 0.0 else nn.Identity()
+        self.merged = False
+        self.merge_weights = merge_weights
+
+        factory_kwargs = {&#34;device&#34;: device, &#34;dtype&#34;: dtype}
+
+        if isinstance(base_or_in_features, nn.Module):
+            # Wrapper mode
+            self.base_layer = base_or_in_features
+            in_feat = getattr(self.base_layer, &#34;in_features&#34;, None)
+            out_feat = getattr(self.base_layer, &#34;out_features&#34;, None)
+            if in_feat is None and hasattr(self.base_layer, &#34;weight&#34;):
+                if hasattr(self.base_layer, &#34;nf&#34;):  # Conv1D
+                    in_feat, out_feat = (
+                        self.base_layer.weight.shape[0],
+                        self.base_layer.weight.shape[1],
+                    )
+                else:
+                    out_feat, in_feat = (
+                        self.base_layer.weight.shape[0],
+                        self.base_layer.weight.shape[1],
+                    )
+            self.in_features = in_feat
+            self.out_features = out_feat
+            self.is_wrapper = True
+        else:
+            # Standalone mode
+            self.is_wrapper = False
+            self.in_features = int(base_or_in_features)
+            self.out_features = int(
+                out_features if out_features is not None else base_or_in_features
+            )
+            self.weight = nn.Parameter(
+                torch.empty((self.out_features, self.in_features), **factory_kwargs)
+            )
+            if bias:
+                self.bias = nn.Parameter(torch.empty(self.out_features, **factory_kwargs))
+            else:
+                self.register_parameter(&#34;bias&#34;, None)
+
+        if self.lora_rank &gt; 0 and self.in_features and self.out_features:
+            self.lora_A = nn.Parameter(
+                torch.empty((self.lora_rank, self.in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((self.out_features, self.lora_rank), **factory_kwargs)
+            )
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+        self.reset_parameters()
+        if freeze_base:
+            self.freeze_base_weights()
+
+    def reset_parameters(self) -&gt; None:
+        if not self.is_wrapper:
+            nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+            if self.bias is not None:
+                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+                bound = 1 / math.sqrt(fan_in) if fan_in &gt; 0 else 0
+                nn.init.uniform_(self.bias, -bound, bound)
+
+        if self.lora_rank &gt; 0 and self.lora_A is not None:
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            self.lora_A.requires_grad = True
+        if self.lora_rank &gt; 0 and self.lora_B is not None:
+            nn.init.zeros_(self.lora_B)
+            self.lora_B.requires_grad = True
+
+    def freeze_base_weights(self) -&gt; None:
+        if self.is_wrapper:
+            for p in self.base_layer.parameters():
+                p.requires_grad = False
+        else:
+            self.weight.requires_grad = False
+            if self.bias is not None:
+                self.bias.requires_grad = False
+        if self.lora_A is not None:
+            self.lora_A.requires_grad = True
+        if self.lora_B is not None:
+            self.lora_B.requires_grad = True
+
+    def unfreeze_base_weights(self) -&gt; None:
+        if self.is_wrapper:
+            for p in self.base_layer.parameters():
+                p.requires_grad = True
+        else:
+            self.weight.requires_grad = True
+            if self.bias is not None:
+                self.bias.requires_grad = True
+
+    def merge(self) -&gt; None:
+        if self.merged or self.lora_rank &lt;= 0 or self.lora_A is None:
+            return
+        with torch.no_grad():
+            delta = (self.lora_B @ self.lora_A) * self.lora_scaling
+            if self.is_wrapper:
+                if hasattr(self.base_layer, &#34;nf&#34;):
+                    delta = delta.t()
+                self.base_layer.weight.data.add_(delta.to(self.base_layer.weight.dtype))
+            else:
+                self.weight.data.add_(delta.to(self.weight.dtype))
+            self.merged = True
+
+    def unmerge(self) -&gt; None:
+        if not self.merged or self.lora_rank &lt;= 0 or self.lora_A is None:
+            return
+        with torch.no_grad():
+            delta = (self.lora_B @ self.lora_A) * self.lora_scaling
+            if self.is_wrapper:
+                if hasattr(self.base_layer, &#34;nf&#34;):
+                    delta = delta.t()
+                self.base_layer.weight.data.sub_(delta.to(self.base_layer.weight.dtype))
+            else:
+                self.weight.data.sub_(delta.to(self.weight.dtype))
+            self.merged = False
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        if self.is_wrapper:
+            res = self.base_layer(x)
+        else:
+            res = F.linear(x, self.weight, self.bias)
+
+        if (
+            not self.merged
+            and self.lora_rank &gt; 0
+            and self.lora_A is not None
+            and self.lora_B is not None
+        ):
+            drop_x = self.lora_dropout(x)
+            if HAS_TRITON_COMMON and triton_dispatch is not None and drop_x.is_cuda:
+                try:
+                    lora_out = (
+                        triton_dispatch(&#34;low_rank&#34;, drop_x, self.lora_B, self.lora_A, bias=None)
+                        * self.lora_scaling
+                    )
+                except Exception:
+                    lora_out = (
+                        F.linear(F.linear(drop_x, self.lora_A), self.lora_B) * self.lora_scaling
+                    )
+            else:
+                lora_out = F.linear(F.linear(drop_x, self.lora_A), self.lora_B) * self.lora_scaling
+            res = res + lora_out
+        return res</code></pre>
+</details>
+<div class="desc"><p>Universal LoRA linear layer:
+Supports both wrapper mode: LoRALinear(base_layer, r=16, &hellip;)
+and standalone mode: LoRALinear(in_features, out_features, bias=True, lora_rank=16, &hellip;)</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.core.common.LoRALinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    if self.is_wrapper:
+        res = self.base_layer(x)
+    else:
+        res = F.linear(x, self.weight, self.bias)
+
+    if (
+        not self.merged
+        and self.lora_rank &gt; 0
+        and self.lora_A is not None
+        and self.lora_B is not None
+    ):
+        drop_x = self.lora_dropout(x)
+        if HAS_TRITON_COMMON and triton_dispatch is not None and drop_x.is_cuda:
+            try:
+                lora_out = (
+                    triton_dispatch(&#34;low_rank&#34;, drop_x, self.lora_B, self.lora_A, bias=None)
+                    * self.lora_scaling
+                )
+            except Exception:
+                lora_out = (
+                    F.linear(F.linear(drop_x, self.lora_A), self.lora_B) * self.lora_scaling
+                )
+        else:
+            lora_out = F.linear(F.linear(drop_x, self.lora_A), self.lora_B) * self.lora_scaling
+        res = res + lora_out
+    return res</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+<dt id="neuralops.core.common.LoRALinear.freeze_base_weights"><code class="name flex">
+<span>def <span class="ident">freeze_base_weights</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def freeze_base_weights(self) -&gt; None:
+    if self.is_wrapper:
+        for p in self.base_layer.parameters():
+            p.requires_grad = False
+    else:
+        self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+    if self.lora_A is not None:
+        self.lora_A.requires_grad = True
+    if self.lora_B is not None:
+        self.lora_B.requires_grad = True</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.core.common.LoRALinear.merge"><code class="name flex">
+<span>def <span class="ident">merge</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def merge(self) -&gt; None:
+    if self.merged or self.lora_rank &lt;= 0 or self.lora_A is None:
+        return
+    with torch.no_grad():
+        delta = (self.lora_B @ self.lora_A) * self.lora_scaling
+        if self.is_wrapper:
+            if hasattr(self.base_layer, &#34;nf&#34;):
+                delta = delta.t()
+            self.base_layer.weight.data.add_(delta.to(self.base_layer.weight.dtype))
+        else:
+            self.weight.data.add_(delta.to(self.weight.dtype))
+        self.merged = True</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.core.common.LoRALinear.reset_parameters"><code class="name flex">
+<span>def <span class="ident">reset_parameters</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_parameters(self) -&gt; None:
+    if not self.is_wrapper:
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in &gt; 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+
+    if self.lora_rank &gt; 0 and self.lora_A is not None:
+        nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        self.lora_A.requires_grad = True
+    if self.lora_rank &gt; 0 and self.lora_B is not None:
+        nn.init.zeros_(self.lora_B)
+        self.lora_B.requires_grad = True</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.core.common.LoRALinear.unfreeze_base_weights"><code class="name flex">
+<span>def <span class="ident">unfreeze_base_weights</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def unfreeze_base_weights(self) -&gt; None:
+    if self.is_wrapper:
+        for p in self.base_layer.parameters():
+            p.requires_grad = True
+    else:
+        self.weight.requires_grad = True
+        if self.bias is not None:
+            self.bias.requires_grad = True</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.core.common.LoRALinear.unmerge"><code class="name flex">
+<span>def <span class="ident">unmerge</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def unmerge(self) -&gt; None:
+    if not self.merged or self.lora_rank &lt;= 0 or self.lora_A is None:
+        return
+    with torch.no_grad():
+        delta = (self.lora_B @ self.lora_A) * self.lora_scaling
+        if self.is_wrapper:
+            if hasattr(self.base_layer, &#34;nf&#34;):
+                delta = delta.t()
+            self.base_layer.weight.data.sub_(delta.to(self.base_layer.weight.dtype))
+        else:
+            self.weight.data.sub_(delta.to(self.weight.dtype))
+        self.merged = False</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.core" href="index.html">neuralops.core</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.core.common._apply_rope" href="#neuralops.core.common._apply_rope">_apply_rope</a></code></li>
+<li><code><a title="neuralops.core.common._cfg_get" href="#neuralops.core.common._cfg_get">_cfg_get</a></code></li>
+<li><code><a title="neuralops.core.common._detect_decoder" href="#neuralops.core.common._detect_decoder">_detect_decoder</a></code></li>
+<li><code><a title="neuralops.core.common.repeat_kv" href="#neuralops.core.common.repeat_kv">repeat_kv</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.core.common.FactorizedLinear" href="#neuralops.core.common.FactorizedLinear">FactorizedLinear</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.core.common.FactorizedLinear.bias" href="#neuralops.core.common.FactorizedLinear.bias">bias</a></code></li>
+<li><code><a title="neuralops.core.common.FactorizedLinear.forward" href="#neuralops.core.common.FactorizedLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.core.common.FactorizedLinear.freeze_base_weights" href="#neuralops.core.common.FactorizedLinear.freeze_base_weights">freeze_base_weights</a></code></li>
+<li><code><a title="neuralops.core.common.FactorizedLinear.is_custom_attention" href="#neuralops.core.common.FactorizedLinear.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.core.common.FactorizedLinear.reset_parameters" href="#neuralops.core.common.FactorizedLinear.reset_parameters">reset_parameters</a></code></li>
+<li><code><a title="neuralops.core.common.FactorizedLinear.weight" href="#neuralops.core.common.FactorizedLinear.weight">weight</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.core.common.LoRALinear" href="#neuralops.core.common.LoRALinear">LoRALinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.core.common.LoRALinear.forward" href="#neuralops.core.common.LoRALinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.core.common.LoRALinear.freeze_base_weights" href="#neuralops.core.common.LoRALinear.freeze_base_weights">freeze_base_weights</a></code></li>
+<li><code><a title="neuralops.core.common.LoRALinear.merge" href="#neuralops.core.common.LoRALinear.merge">merge</a></code></li>
+<li><code><a title="neuralops.core.common.LoRALinear.reset_parameters" href="#neuralops.core.common.LoRALinear.reset_parameters">reset_parameters</a></code></li>
+<li><code><a title="neuralops.core.common.LoRALinear.unfreeze_base_weights" href="#neuralops.core.common.LoRALinear.unfreeze_base_weights">unfreeze_base_weights</a></code></li>
+<li><code><a title="neuralops.core.common.LoRALinear.unmerge" href="#neuralops.core.common.LoRALinear.unmerge">unmerge</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

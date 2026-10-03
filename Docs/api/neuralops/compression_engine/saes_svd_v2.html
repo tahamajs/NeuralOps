@@ -1,0 +1,1131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.saes_svd_v2 API documentation</title>
+<meta name="description" content="SAES-SVD v2: Spectrum-Aware Error-Suppressed Singular Value Decomposition.
+Registered in COMPRESSOR_REGISTRY as &#39;saes_svd_v2&#39; and &#39;saes&#39; …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.saes_svd_v2</code></h1>
+</header>
+<section id="section-intro">
+<p>SAES-SVD v2: Spectrum-Aware Error-Suppressed Singular Value Decomposition.
+Registered in COMPRESSOR_REGISTRY as 'saes_svd_v2' and 'saes'.</p>
+<p>Mathematical Formulation:
+1. Truncated SVD Baseline:
+$$W_0 \approx U_r \Sigma_r V_r^\top = A_0 B_0$$
+2. Spectral Energy Distribution:
+$$\rho_k = \frac{\sigma_k^2}{\sum_{j=1}^r \sigma_j^2}$$
+3. Error-Suppression Iterations:
+$$E_t = W_0 - A_t B_t$$
+$$A_{t+1} = A_t + E_t B_t^\top (B_t B_t^\top + \epsilon I)^{-1}$$
+$$B_{t+1} = B_t + (A_{t+1}^\top A_{t+1} + \epsilon I)^{-1} A_{t+1}^\top E_t$$</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.saes_svd_v2.saes_factory"><code class="name flex">
+<span>def <span class="ident">saes_factory</span></span>(<span>model: Any,<br>comp_config: Any = None,<br>return_stats: bool = False,<br>return_tuple: bool = False,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module | tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def saes_svd_v2_factory(
+    model: Any,
+    comp_config: Any = None,
+    return_stats: bool = False,
+    return_tuple: bool = False,
+    **kwargs: Any,
+) -&gt; nn.Module | tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;SAES-SVD v2 factory function.&#34;&#34;&#34;
+    compressor = SAESSVDCompressorV2(model, comp_config=comp_config, **kwargs)
+    compressed_model, stats = compressor.compress()
+    if return_stats or return_tuple or kwargs.pop(&#34;return_both&#34;, False):
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>SAES-SVD v2 factory function.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.saes_svd_v2.saes_svd_compressor_factory"><code class="name flex">
+<span>def <span class="ident">saes_svd_compressor_factory</span></span>(<span>model: Any,<br>comp_config: Any = None,<br>return_stats: bool = False,<br>return_tuple: bool = False,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module | tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def saes_svd_v2_factory(
+    model: Any,
+    comp_config: Any = None,
+    return_stats: bool = False,
+    return_tuple: bool = False,
+    **kwargs: Any,
+) -&gt; nn.Module | tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;SAES-SVD v2 factory function.&#34;&#34;&#34;
+    compressor = SAESSVDCompressorV2(model, comp_config=comp_config, **kwargs)
+    compressed_model, stats = compressor.compress()
+    if return_stats or return_tuple or kwargs.pop(&#34;return_both&#34;, False):
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>SAES-SVD v2 factory function.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.saes_svd_v2.saes_svd_factory"><code class="name flex">
+<span>def <span class="ident">saes_svd_factory</span></span>(<span>model: Any,<br>comp_config: Any = None,<br>return_stats: bool = False,<br>return_tuple: bool = False,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module | tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def saes_svd_v2_factory(
+    model: Any,
+    comp_config: Any = None,
+    return_stats: bool = False,
+    return_tuple: bool = False,
+    **kwargs: Any,
+) -&gt; nn.Module | tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;SAES-SVD v2 factory function.&#34;&#34;&#34;
+    compressor = SAESSVDCompressorV2(model, comp_config=comp_config, **kwargs)
+    compressed_model, stats = compressor.compress()
+    if return_stats or return_tuple or kwargs.pop(&#34;return_both&#34;, False):
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>SAES-SVD v2 factory function.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.saes_svd_v2.saes_svd_v2_factory"><code class="name flex">
+<span>def <span class="ident">saes_svd_v2_factory</span></span>(<span>model: Any,<br>comp_config: Any = None,<br>return_stats: bool = False,<br>return_tuple: bool = False,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module | tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def saes_svd_v2_factory(
+    model: Any,
+    comp_config: Any = None,
+    return_stats: bool = False,
+    return_tuple: bool = False,
+    **kwargs: Any,
+) -&gt; nn.Module | tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;SAES-SVD v2 factory function.&#34;&#34;&#34;
+    compressor = SAESSVDCompressorV2(model, comp_config=comp_config, **kwargs)
+    compressed_model, stats = compressor.compress()
+    if return_stats or return_tuple or kwargs.pop(&#34;return_both&#34;, False):
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>SAES-SVD v2 factory function.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2"><code class="flex name class">
+<span>class <span class="ident">SAESSVDCompressorV2</span></span>
+<span>(</span><span>model: nn.Module,<br>rank: int | None = None,<br>rank_ratio: float = 0.5,<br>correcting_steps: int = 2,<br>target_modules: list[str] | None = None,<br>target_attention_only: bool = False,<br>max_error: float = 0.6,<br>fallback_to_original: bool = True,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;saes_svd_v2&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;saes_svd_compressor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;saes_svd&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;saes&#34;)
+class SAESSVDCompressorV2(BaseCompressor):
+    is_custom_attention: bool = True
+    &#34;&#34;&#34;
+    SAES-SVD v2 Compressor with iterative spectrum-aware residual correction,
+    Frobenius validation, and safe fallback.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module,
+        rank: int | None = None,
+        rank_ratio: float = 0.5,
+        correcting_steps: int = 2,
+        target_modules: list[str] | None = None,
+        target_attention_only: bool = False,
+        max_error: float = 0.60,
+        fallback_to_original: bool = True,  # Fix 1: Default changed to True
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;saes_svd_v2&#34;, **kwargs)
+        cfg = kwargs.get(&#34;comp_config&#34;, kwargs.get(&#34;cfg&#34;))
+        if cfg is not None:
+            rank = _cfg_get(cfg, &#34;saes_rank&#34;, _cfg_get(cfg, &#34;rank&#34;, rank))
+            rank_ratio = _cfg_get(cfg, &#34;saes_rank_ratio&#34;, _cfg_get(cfg, &#34;rank_ratio&#34;, rank_ratio))
+            correcting_steps = _cfg_get(cfg, &#34;correcting_steps&#34;, correcting_steps)
+            max_error = _cfg_get(cfg, &#34;max_error&#34;, max_error)
+            fallback_to_original = _cfg_get(cfg, &#34;fallback_to_original&#34;, fallback_to_original)
+            target_attention_only = _cfg_get(cfg, &#34;target_attention_only&#34;, target_attention_only)
+
+        if &#34;rank&#34; in kwargs and kwargs[&#34;rank&#34;] is not None:
+            rank = kwargs[&#34;rank&#34;]
+        if &#34;fallback_to_original&#34; in kwargs:
+            fallback_to_original = bool(kwargs[&#34;fallback_to_original&#34;])
+
+        self.rank = rank
+        self.rank_ratio = float(rank_ratio)
+        self.correcting_steps = int(correcting_steps)
+        self.target_modules = target_modules
+        self.target_attention_only = bool(target_attention_only)
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+        self.replaced_layers: list[dict[str, Any]] = []
+
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        &#34;&#34;&#34;
+        Fix 6: Unified critical-layer protection delegated to should_compress_linear.
+        &#34;&#34;&#34;
+        name_l = name.lower()
+        if self.target_attention_only:
+            attn_keywords = [
+                &#34;attn&#34;,
+                &#34;attention&#34;,
+                &#34;q_proj&#34;,
+                &#34;k_proj&#34;,
+                &#34;v_proj&#34;,
+                &#34;o_proj&#34;,
+                &#34;c_attn&#34;,
+                &#34;c_proj&#34;,
+                &#34;query&#34;,
+                &#34;key&#34;,
+                &#34;value&#34;,
+            ]
+            if not any(k in name_l for k in attn_keywords):
+                return False
+
+        base_mod = getattr(module, &#34;base_layer&#34;, module)
+        cls_name = base_mod.__class__.__name__.lower()
+        # Fix 3: Reliable Conv1D check using class name and hasattr(nf)
+        is_linear_like = (
+            isinstance(base_mod, nn.Linear) or &#34;conv1d&#34; in cls_name or hasattr(base_mod, &#34;nf&#34;)
+        )
+        if not is_linear_like:
+            return False
+        if isinstance(base_mod, SVDLinear):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_modules is None:
+            return True
+        return any(t in name for t in self.target_modules)
+
+    def compress_linear(
+        self,
+        layer: nn.Module,
+        rank: int | None = None,
+        name: str = &#34;&#34;,
+    ) -&gt; SVDLinear | None:
+        &#34;&#34;&#34;Decompose a single linear or Conv1D layer with spectrum-aware error suppression.&#34;&#34;&#34;
+        base_layer = getattr(layer, &#34;base_layer&#34;, layer)
+        raw_w = base_layer.weight.data
+        cls_name = base_layer.__class__.__name__.lower()
+        # Fix 3: Conv1D detection by class name or nf attribute
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(base_layer, &#34;nf&#34;)
+
+        if is_conv1d:
+            W = raw_w.t().contiguous().float()
+            out_f = W.shape[0]
+            in_f = W.shape[1]
+        else:
+            W = raw_w.float()
+            out_f = getattr(base_layer, &#34;out_features&#34;, W.shape[0])
+            in_f = getattr(base_layer, &#34;in_features&#34;, W.shape[1])
+
+        max_r = min(out_f, in_f)
+        # Cap rank to guarantee parameter reduction
+        param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+        effective_max_r = min(max_r, param_cap)
+
+        if rank is not None:
+            r = max(1, min(rank, effective_max_r))
+        else:
+            r = max(1, min(int(round(max_r * self.rank_ratio)), effective_max_r))
+
+        device = base_layer.weight.device
+        dtype = base_layer.weight.dtype
+
+        # Compute full SVD in FP32
+        try:
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        except Exception as e:
+            logger.warning(&#34;SAES-SVD SVD failure for %s: %s&#34;, name, e)
+            return None
+
+        # Initial symmetric square-root singular value allocation
+        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+        A = U[:, :r] * sqrt_S.unsqueeze(0)  # [out_features, r]
+        B = sqrt_S.unsqueeze(1) * Vt[:r, :]  # [r, in_features]
+
+        # Iterative residual error suppression
+        eps_eye = 1e-6 * torch.eye(r, device=W.device, dtype=torch.float32)
+        for _ in range(self.correcting_steps):
+            E = W - A @ B
+            # Update A towards residual gradient
+            BBt = B @ B.t().contiguous() + eps_eye
+            A = A + E @ B.t().contiguous() @ torch.linalg.pinv(BBt)
+
+            # Update B towards residual gradient
+            AtA = A.t().contiguous() @ A + eps_eye
+            B = B + torch.linalg.pinv(AtA) @ A.t().contiguous() @ (W - A @ B)
+
+        # Compute relative Frobenius reconstruction error
+        W_rec = A @ B
+        norm_orig = torch.norm(W, p=&#34;fro&#34;)
+        rel_err = (torch.norm(W - W_rec, p=&#34;fro&#34;) / (norm_orig + 1e-8)).item()
+
+        # Fix 2: Always log a warning when reconstruction error exceeds max_error
+        if rel_err &gt; self.max_error:
+            logger.warning(
+                &#34;SAES-SVD reconstruction error %.4f on %s exceeded threshold %.4f%s&#34;,
+                rel_err,
+                name,
+                self.max_error,
+                (
+                    &#34;. Keeping original layer.&#34;
+                    if self.fallback_to_original
+                    else &#34;. Proceeding with compressed layer.&#34;
+                ),
+            )
+            if self.fallback_to_original:
+                return None
+
+        has_bias = getattr(base_layer, &#34;bias&#34;, None) is not None
+        has_lora = hasattr(layer, &#34;lora_A&#34;) and hasattr(layer, &#34;lora_B&#34;)
+        lora_r = getattr(layer, &#34;r&#34;, 0) if has_lora else 0
+
+        svd_layer = SVDLinear(
+            in_features=in_f,
+            out_features=out_f,
+            rank=r,
+            bias=has_bias,
+            dtype=dtype,
+            device=device,
+            lora_r=lora_r,
+        )
+        svd_layer.set_low_rank_factors(
+            U_factor=A.to(dtype=dtype, device=device),
+            V_factor=B.to(dtype=dtype, device=device),
+        )
+        # Fix 5: Ensure bias is copied correctly for both Linear and Conv1D
+        if has_bias and svd_layer.bias is not None:
+            svd_layer.bias.data.copy_(base_layer.bias.data.to(dtype=dtype, device=device))
+
+        if has_lora and svd_layer.use_lora:
+            try:
+                if hasattr(layer.lora_A, &#34;weight&#34;):
+                    svd_layer.lora_A.weight.data.copy_(layer.lora_A.weight.data)
+                if hasattr(layer.lora_B, &#34;weight&#34;):
+                    svd_layer.lora_B.weight.data.copy_(layer.lora_B.weight.data)
+            except Exception as e_lora:
+                logger.warning(&#34;Could not preserve LoRA adapters in SAES-SVD: %s&#34;, e_lora)
+
+        # Store metadata on module
+        svd_layer.reconstruction_error = rel_err
+        svd_layer.rank = r
+        return svd_layer
+
+    def compress(self) -&gt; tuple[nn.Module, dict[str, Any]]:
+        &#34;&#34;&#34;Compress all linear and Conv1D layers in the model.&#34;&#34;&#34;
+        self.layer_errors = {}
+        self.layer_ranks = {}
+        self.replaced_layers = []
+
+        target_layers = [
+            (name, mod)
+            for name, mod in self.model.named_modules()
+            if self._is_target_module(name, mod)
+        ]
+
+        if not target_layers:
+            logger.warning(&#34;SAES-SVD v2: No compressible linear layers found.&#34;)
+            return self.model, self.get_compression_stats()
+
+        for name, module in target_layers:
+            svd_layer = self.compress_linear(module, rank=self.rank, name=name)
+            if svd_layer is not None:
+                err = getattr(svd_layer, &#34;reconstruction_error&#34;, 0.0)
+                r = getattr(svd_layer, &#34;rank&#34;, self.rank)
+                self.layer_errors[name] = err
+                self.layer_ranks[name] = r
+                # Fix 4: Include per-layer rank and error in returned stats
+                self.replaced_layers.append({&#34;name&#34;: name, &#34;rank&#34;: r, &#34;error&#34;: err})
+                replace_module(self.model, name, svd_layer)
+            else:
+                for p in module.parameters():
+                    p.requires_grad = False
+
+        self._compressed_params = self._count_params(self.model)
+        stats = self.get_compression_stats()
+        # Fix 4 &amp; Fix 6: Detailed per-layer stats, errors, ranks, and fallback status
+        stats.update(
+            {
+                &#34;layer_errors&#34;: self.layer_errors,
+                &#34;layer_ranks&#34;: self.layer_ranks,
+                &#34;replaced_layers&#34;: self.replaced_layers,
+                &#34;compressed_layers&#34;: len(self.replaced_layers),
+                &#34;max_error&#34;: self.max_error,
+                &#34;fallback_to_original&#34;: self.fallback_to_original,
+                &#34;correcting_steps&#34;: self.correcting_steps,
+                &#34;target_attention_only&#34;: self.target_attention_only,
+            }
+        )
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Base class for all compressors. Not a nn.Module to avoid parameter storage.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>SAES-SVD v2 Compressor with iterative spectrum-aware residual correction,
+Frobenius validation, and safe fallback.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2.compress"><code class="name flex">
+<span>def <span class="ident">compress</span></span>(<span>self) ‑> tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress(self) -&gt; tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;Compress all linear and Conv1D layers in the model.&#34;&#34;&#34;
+    self.layer_errors = {}
+    self.layer_ranks = {}
+    self.replaced_layers = []
+
+    target_layers = [
+        (name, mod)
+        for name, mod in self.model.named_modules()
+        if self._is_target_module(name, mod)
+    ]
+
+    if not target_layers:
+        logger.warning(&#34;SAES-SVD v2: No compressible linear layers found.&#34;)
+        return self.model, self.get_compression_stats()
+
+    for name, module in target_layers:
+        svd_layer = self.compress_linear(module, rank=self.rank, name=name)
+        if svd_layer is not None:
+            err = getattr(svd_layer, &#34;reconstruction_error&#34;, 0.0)
+            r = getattr(svd_layer, &#34;rank&#34;, self.rank)
+            self.layer_errors[name] = err
+            self.layer_ranks[name] = r
+            # Fix 4: Include per-layer rank and error in returned stats
+            self.replaced_layers.append({&#34;name&#34;: name, &#34;rank&#34;: r, &#34;error&#34;: err})
+            replace_module(self.model, name, svd_layer)
+        else:
+            for p in module.parameters():
+                p.requires_grad = False
+
+    self._compressed_params = self._count_params(self.model)
+    stats = self.get_compression_stats()
+    # Fix 4 &amp; Fix 6: Detailed per-layer stats, errors, ranks, and fallback status
+    stats.update(
+        {
+            &#34;layer_errors&#34;: self.layer_errors,
+            &#34;layer_ranks&#34;: self.layer_ranks,
+            &#34;replaced_layers&#34;: self.replaced_layers,
+            &#34;compressed_layers&#34;: len(self.replaced_layers),
+            &#34;max_error&#34;: self.max_error,
+            &#34;fallback_to_original&#34;: self.fallback_to_original,
+            &#34;correcting_steps&#34;: self.correcting_steps,
+            &#34;target_attention_only&#34;: self.target_attention_only,
+        }
+    )
+    return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Compress all linear and Conv1D layers in the model.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2.compress_linear"><code class="name flex">
+<span>def <span class="ident">compress_linear</span></span>(<span>self, layer: nn.Module, rank: int | None = None, name: str = '') ‑> <a title="neuralops.compression_engine.aa_svd_compressor.SVDLinear" href="aa_svd_compressor.html#neuralops.compression_engine.aa_svd_compressor.SVDLinear">SVDLinear</a> | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress_linear(
+    self,
+    layer: nn.Module,
+    rank: int | None = None,
+    name: str = &#34;&#34;,
+) -&gt; SVDLinear | None:
+    &#34;&#34;&#34;Decompose a single linear or Conv1D layer with spectrum-aware error suppression.&#34;&#34;&#34;
+    base_layer = getattr(layer, &#34;base_layer&#34;, layer)
+    raw_w = base_layer.weight.data
+    cls_name = base_layer.__class__.__name__.lower()
+    # Fix 3: Conv1D detection by class name or nf attribute
+    is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(base_layer, &#34;nf&#34;)
+
+    if is_conv1d:
+        W = raw_w.t().contiguous().float()
+        out_f = W.shape[0]
+        in_f = W.shape[1]
+    else:
+        W = raw_w.float()
+        out_f = getattr(base_layer, &#34;out_features&#34;, W.shape[0])
+        in_f = getattr(base_layer, &#34;in_features&#34;, W.shape[1])
+
+    max_r = min(out_f, in_f)
+    # Cap rank to guarantee parameter reduction
+    param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+    effective_max_r = min(max_r, param_cap)
+
+    if rank is not None:
+        r = max(1, min(rank, effective_max_r))
+    else:
+        r = max(1, min(int(round(max_r * self.rank_ratio)), effective_max_r))
+
+    device = base_layer.weight.device
+    dtype = base_layer.weight.dtype
+
+    # Compute full SVD in FP32
+    try:
+        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+    except Exception as e:
+        logger.warning(&#34;SAES-SVD SVD failure for %s: %s&#34;, name, e)
+        return None
+
+    # Initial symmetric square-root singular value allocation
+    sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+    A = U[:, :r] * sqrt_S.unsqueeze(0)  # [out_features, r]
+    B = sqrt_S.unsqueeze(1) * Vt[:r, :]  # [r, in_features]
+
+    # Iterative residual error suppression
+    eps_eye = 1e-6 * torch.eye(r, device=W.device, dtype=torch.float32)
+    for _ in range(self.correcting_steps):
+        E = W - A @ B
+        # Update A towards residual gradient
+        BBt = B @ B.t().contiguous() + eps_eye
+        A = A + E @ B.t().contiguous() @ torch.linalg.pinv(BBt)
+
+        # Update B towards residual gradient
+        AtA = A.t().contiguous() @ A + eps_eye
+        B = B + torch.linalg.pinv(AtA) @ A.t().contiguous() @ (W - A @ B)
+
+    # Compute relative Frobenius reconstruction error
+    W_rec = A @ B
+    norm_orig = torch.norm(W, p=&#34;fro&#34;)
+    rel_err = (torch.norm(W - W_rec, p=&#34;fro&#34;) / (norm_orig + 1e-8)).item()
+
+    # Fix 2: Always log a warning when reconstruction error exceeds max_error
+    if rel_err &gt; self.max_error:
+        logger.warning(
+            &#34;SAES-SVD reconstruction error %.4f on %s exceeded threshold %.4f%s&#34;,
+            rel_err,
+            name,
+            self.max_error,
+            (
+                &#34;. Keeping original layer.&#34;
+                if self.fallback_to_original
+                else &#34;. Proceeding with compressed layer.&#34;
+            ),
+        )
+        if self.fallback_to_original:
+            return None
+
+    has_bias = getattr(base_layer, &#34;bias&#34;, None) is not None
+    has_lora = hasattr(layer, &#34;lora_A&#34;) and hasattr(layer, &#34;lora_B&#34;)
+    lora_r = getattr(layer, &#34;r&#34;, 0) if has_lora else 0
+
+    svd_layer = SVDLinear(
+        in_features=in_f,
+        out_features=out_f,
+        rank=r,
+        bias=has_bias,
+        dtype=dtype,
+        device=device,
+        lora_r=lora_r,
+    )
+    svd_layer.set_low_rank_factors(
+        U_factor=A.to(dtype=dtype, device=device),
+        V_factor=B.to(dtype=dtype, device=device),
+    )
+    # Fix 5: Ensure bias is copied correctly for both Linear and Conv1D
+    if has_bias and svd_layer.bias is not None:
+        svd_layer.bias.data.copy_(base_layer.bias.data.to(dtype=dtype, device=device))
+
+    if has_lora and svd_layer.use_lora:
+        try:
+            if hasattr(layer.lora_A, &#34;weight&#34;):
+                svd_layer.lora_A.weight.data.copy_(layer.lora_A.weight.data)
+            if hasattr(layer.lora_B, &#34;weight&#34;):
+                svd_layer.lora_B.weight.data.copy_(layer.lora_B.weight.data)
+        except Exception as e_lora:
+            logger.warning(&#34;Could not preserve LoRA adapters in SAES-SVD: %s&#34;, e_lora)
+
+    # Store metadata on module
+    svd_layer.reconstruction_error = rel_err
+    svd_layer.rank = r
+    return svd_layer</code></pre>
+</details>
+<div class="desc"><p>Decompose a single linear or Conv1D layer with spectrum-aware error suppression.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2"><code class="flex name class">
+<span>class <span class="ident">SAESCompressor</span></span>
+<span>(</span><span>model: nn.Module,<br>rank: int | None = None,<br>rank_ratio: float = 0.5,<br>correcting_steps: int = 2,<br>target_modules: list[str] | None = None,<br>target_attention_only: bool = False,<br>max_error: float = 0.6,<br>fallback_to_original: bool = True,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;saes_svd_v2&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;saes_svd_compressor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;saes_svd&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;saes&#34;)
+class SAESSVDCompressorV2(BaseCompressor):
+    is_custom_attention: bool = True
+    &#34;&#34;&#34;
+    SAES-SVD v2 Compressor with iterative spectrum-aware residual correction,
+    Frobenius validation, and safe fallback.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module,
+        rank: int | None = None,
+        rank_ratio: float = 0.5,
+        correcting_steps: int = 2,
+        target_modules: list[str] | None = None,
+        target_attention_only: bool = False,
+        max_error: float = 0.60,
+        fallback_to_original: bool = True,  # Fix 1: Default changed to True
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;saes_svd_v2&#34;, **kwargs)
+        cfg = kwargs.get(&#34;comp_config&#34;, kwargs.get(&#34;cfg&#34;))
+        if cfg is not None:
+            rank = _cfg_get(cfg, &#34;saes_rank&#34;, _cfg_get(cfg, &#34;rank&#34;, rank))
+            rank_ratio = _cfg_get(cfg, &#34;saes_rank_ratio&#34;, _cfg_get(cfg, &#34;rank_ratio&#34;, rank_ratio))
+            correcting_steps = _cfg_get(cfg, &#34;correcting_steps&#34;, correcting_steps)
+            max_error = _cfg_get(cfg, &#34;max_error&#34;, max_error)
+            fallback_to_original = _cfg_get(cfg, &#34;fallback_to_original&#34;, fallback_to_original)
+            target_attention_only = _cfg_get(cfg, &#34;target_attention_only&#34;, target_attention_only)
+
+        if &#34;rank&#34; in kwargs and kwargs[&#34;rank&#34;] is not None:
+            rank = kwargs[&#34;rank&#34;]
+        if &#34;fallback_to_original&#34; in kwargs:
+            fallback_to_original = bool(kwargs[&#34;fallback_to_original&#34;])
+
+        self.rank = rank
+        self.rank_ratio = float(rank_ratio)
+        self.correcting_steps = int(correcting_steps)
+        self.target_modules = target_modules
+        self.target_attention_only = bool(target_attention_only)
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+        self.replaced_layers: list[dict[str, Any]] = []
+
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        &#34;&#34;&#34;
+        Fix 6: Unified critical-layer protection delegated to should_compress_linear.
+        &#34;&#34;&#34;
+        name_l = name.lower()
+        if self.target_attention_only:
+            attn_keywords = [
+                &#34;attn&#34;,
+                &#34;attention&#34;,
+                &#34;q_proj&#34;,
+                &#34;k_proj&#34;,
+                &#34;v_proj&#34;,
+                &#34;o_proj&#34;,
+                &#34;c_attn&#34;,
+                &#34;c_proj&#34;,
+                &#34;query&#34;,
+                &#34;key&#34;,
+                &#34;value&#34;,
+            ]
+            if not any(k in name_l for k in attn_keywords):
+                return False
+
+        base_mod = getattr(module, &#34;base_layer&#34;, module)
+        cls_name = base_mod.__class__.__name__.lower()
+        # Fix 3: Reliable Conv1D check using class name and hasattr(nf)
+        is_linear_like = (
+            isinstance(base_mod, nn.Linear) or &#34;conv1d&#34; in cls_name or hasattr(base_mod, &#34;nf&#34;)
+        )
+        if not is_linear_like:
+            return False
+        if isinstance(base_mod, SVDLinear):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_modules is None:
+            return True
+        return any(t in name for t in self.target_modules)
+
+    def compress_linear(
+        self,
+        layer: nn.Module,
+        rank: int | None = None,
+        name: str = &#34;&#34;,
+    ) -&gt; SVDLinear | None:
+        &#34;&#34;&#34;Decompose a single linear or Conv1D layer with spectrum-aware error suppression.&#34;&#34;&#34;
+        base_layer = getattr(layer, &#34;base_layer&#34;, layer)
+        raw_w = base_layer.weight.data
+        cls_name = base_layer.__class__.__name__.lower()
+        # Fix 3: Conv1D detection by class name or nf attribute
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(base_layer, &#34;nf&#34;)
+
+        if is_conv1d:
+            W = raw_w.t().contiguous().float()
+            out_f = W.shape[0]
+            in_f = W.shape[1]
+        else:
+            W = raw_w.float()
+            out_f = getattr(base_layer, &#34;out_features&#34;, W.shape[0])
+            in_f = getattr(base_layer, &#34;in_features&#34;, W.shape[1])
+
+        max_r = min(out_f, in_f)
+        # Cap rank to guarantee parameter reduction
+        param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+        effective_max_r = min(max_r, param_cap)
+
+        if rank is not None:
+            r = max(1, min(rank, effective_max_r))
+        else:
+            r = max(1, min(int(round(max_r * self.rank_ratio)), effective_max_r))
+
+        device = base_layer.weight.device
+        dtype = base_layer.weight.dtype
+
+        # Compute full SVD in FP32
+        try:
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        except Exception as e:
+            logger.warning(&#34;SAES-SVD SVD failure for %s: %s&#34;, name, e)
+            return None
+
+        # Initial symmetric square-root singular value allocation
+        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+        A = U[:, :r] * sqrt_S.unsqueeze(0)  # [out_features, r]
+        B = sqrt_S.unsqueeze(1) * Vt[:r, :]  # [r, in_features]
+
+        # Iterative residual error suppression
+        eps_eye = 1e-6 * torch.eye(r, device=W.device, dtype=torch.float32)
+        for _ in range(self.correcting_steps):
+            E = W - A @ B
+            # Update A towards residual gradient
+            BBt = B @ B.t().contiguous() + eps_eye
+            A = A + E @ B.t().contiguous() @ torch.linalg.pinv(BBt)
+
+            # Update B towards residual gradient
+            AtA = A.t().contiguous() @ A + eps_eye
+            B = B + torch.linalg.pinv(AtA) @ A.t().contiguous() @ (W - A @ B)
+
+        # Compute relative Frobenius reconstruction error
+        W_rec = A @ B
+        norm_orig = torch.norm(W, p=&#34;fro&#34;)
+        rel_err = (torch.norm(W - W_rec, p=&#34;fro&#34;) / (norm_orig + 1e-8)).item()
+
+        # Fix 2: Always log a warning when reconstruction error exceeds max_error
+        if rel_err &gt; self.max_error:
+            logger.warning(
+                &#34;SAES-SVD reconstruction error %.4f on %s exceeded threshold %.4f%s&#34;,
+                rel_err,
+                name,
+                self.max_error,
+                (
+                    &#34;. Keeping original layer.&#34;
+                    if self.fallback_to_original
+                    else &#34;. Proceeding with compressed layer.&#34;
+                ),
+            )
+            if self.fallback_to_original:
+                return None
+
+        has_bias = getattr(base_layer, &#34;bias&#34;, None) is not None
+        has_lora = hasattr(layer, &#34;lora_A&#34;) and hasattr(layer, &#34;lora_B&#34;)
+        lora_r = getattr(layer, &#34;r&#34;, 0) if has_lora else 0
+
+        svd_layer = SVDLinear(
+            in_features=in_f,
+            out_features=out_f,
+            rank=r,
+            bias=has_bias,
+            dtype=dtype,
+            device=device,
+            lora_r=lora_r,
+        )
+        svd_layer.set_low_rank_factors(
+            U_factor=A.to(dtype=dtype, device=device),
+            V_factor=B.to(dtype=dtype, device=device),
+        )
+        # Fix 5: Ensure bias is copied correctly for both Linear and Conv1D
+        if has_bias and svd_layer.bias is not None:
+            svd_layer.bias.data.copy_(base_layer.bias.data.to(dtype=dtype, device=device))
+
+        if has_lora and svd_layer.use_lora:
+            try:
+                if hasattr(layer.lora_A, &#34;weight&#34;):
+                    svd_layer.lora_A.weight.data.copy_(layer.lora_A.weight.data)
+                if hasattr(layer.lora_B, &#34;weight&#34;):
+                    svd_layer.lora_B.weight.data.copy_(layer.lora_B.weight.data)
+            except Exception as e_lora:
+                logger.warning(&#34;Could not preserve LoRA adapters in SAES-SVD: %s&#34;, e_lora)
+
+        # Store metadata on module
+        svd_layer.reconstruction_error = rel_err
+        svd_layer.rank = r
+        return svd_layer
+
+    def compress(self) -&gt; tuple[nn.Module, dict[str, Any]]:
+        &#34;&#34;&#34;Compress all linear and Conv1D layers in the model.&#34;&#34;&#34;
+        self.layer_errors = {}
+        self.layer_ranks = {}
+        self.replaced_layers = []
+
+        target_layers = [
+            (name, mod)
+            for name, mod in self.model.named_modules()
+            if self._is_target_module(name, mod)
+        ]
+
+        if not target_layers:
+            logger.warning(&#34;SAES-SVD v2: No compressible linear layers found.&#34;)
+            return self.model, self.get_compression_stats()
+
+        for name, module in target_layers:
+            svd_layer = self.compress_linear(module, rank=self.rank, name=name)
+            if svd_layer is not None:
+                err = getattr(svd_layer, &#34;reconstruction_error&#34;, 0.0)
+                r = getattr(svd_layer, &#34;rank&#34;, self.rank)
+                self.layer_errors[name] = err
+                self.layer_ranks[name] = r
+                # Fix 4: Include per-layer rank and error in returned stats
+                self.replaced_layers.append({&#34;name&#34;: name, &#34;rank&#34;: r, &#34;error&#34;: err})
+                replace_module(self.model, name, svd_layer)
+            else:
+                for p in module.parameters():
+                    p.requires_grad = False
+
+        self._compressed_params = self._count_params(self.model)
+        stats = self.get_compression_stats()
+        # Fix 4 &amp; Fix 6: Detailed per-layer stats, errors, ranks, and fallback status
+        stats.update(
+            {
+                &#34;layer_errors&#34;: self.layer_errors,
+                &#34;layer_ranks&#34;: self.layer_ranks,
+                &#34;replaced_layers&#34;: self.replaced_layers,
+                &#34;compressed_layers&#34;: len(self.replaced_layers),
+                &#34;max_error&#34;: self.max_error,
+                &#34;fallback_to_original&#34;: self.fallback_to_original,
+                &#34;correcting_steps&#34;: self.correcting_steps,
+                &#34;target_attention_only&#34;: self.target_attention_only,
+            }
+        )
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Base class for all compressors. Not a nn.Module to avoid parameter storage.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>SAES-SVD v2 Compressor with iterative spectrum-aware residual correction,
+Frobenius validation, and safe fallback.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2.compress"><code class="name flex">
+<span>def <span class="ident">compress</span></span>(<span>self) ‑> tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress(self) -&gt; tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;Compress all linear and Conv1D layers in the model.&#34;&#34;&#34;
+    self.layer_errors = {}
+    self.layer_ranks = {}
+    self.replaced_layers = []
+
+    target_layers = [
+        (name, mod)
+        for name, mod in self.model.named_modules()
+        if self._is_target_module(name, mod)
+    ]
+
+    if not target_layers:
+        logger.warning(&#34;SAES-SVD v2: No compressible linear layers found.&#34;)
+        return self.model, self.get_compression_stats()
+
+    for name, module in target_layers:
+        svd_layer = self.compress_linear(module, rank=self.rank, name=name)
+        if svd_layer is not None:
+            err = getattr(svd_layer, &#34;reconstruction_error&#34;, 0.0)
+            r = getattr(svd_layer, &#34;rank&#34;, self.rank)
+            self.layer_errors[name] = err
+            self.layer_ranks[name] = r
+            # Fix 4: Include per-layer rank and error in returned stats
+            self.replaced_layers.append({&#34;name&#34;: name, &#34;rank&#34;: r, &#34;error&#34;: err})
+            replace_module(self.model, name, svd_layer)
+        else:
+            for p in module.parameters():
+                p.requires_grad = False
+
+    self._compressed_params = self._count_params(self.model)
+    stats = self.get_compression_stats()
+    # Fix 4 &amp; Fix 6: Detailed per-layer stats, errors, ranks, and fallback status
+    stats.update(
+        {
+            &#34;layer_errors&#34;: self.layer_errors,
+            &#34;layer_ranks&#34;: self.layer_ranks,
+            &#34;replaced_layers&#34;: self.replaced_layers,
+            &#34;compressed_layers&#34;: len(self.replaced_layers),
+            &#34;max_error&#34;: self.max_error,
+            &#34;fallback_to_original&#34;: self.fallback_to_original,
+            &#34;correcting_steps&#34;: self.correcting_steps,
+            &#34;target_attention_only&#34;: self.target_attention_only,
+        }
+    )
+    return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Compress all linear and Conv1D layers in the model.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2.compress_linear"><code class="name flex">
+<span>def <span class="ident">compress_linear</span></span>(<span>self, layer: nn.Module, rank: int | None = None, name: str = '') ‑> <a title="neuralops.compression_engine.aa_svd_compressor.SVDLinear" href="aa_svd_compressor.html#neuralops.compression_engine.aa_svd_compressor.SVDLinear">SVDLinear</a> | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress_linear(
+    self,
+    layer: nn.Module,
+    rank: int | None = None,
+    name: str = &#34;&#34;,
+) -&gt; SVDLinear | None:
+    &#34;&#34;&#34;Decompose a single linear or Conv1D layer with spectrum-aware error suppression.&#34;&#34;&#34;
+    base_layer = getattr(layer, &#34;base_layer&#34;, layer)
+    raw_w = base_layer.weight.data
+    cls_name = base_layer.__class__.__name__.lower()
+    # Fix 3: Conv1D detection by class name or nf attribute
+    is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(base_layer, &#34;nf&#34;)
+
+    if is_conv1d:
+        W = raw_w.t().contiguous().float()
+        out_f = W.shape[0]
+        in_f = W.shape[1]
+    else:
+        W = raw_w.float()
+        out_f = getattr(base_layer, &#34;out_features&#34;, W.shape[0])
+        in_f = getattr(base_layer, &#34;in_features&#34;, W.shape[1])
+
+    max_r = min(out_f, in_f)
+    # Cap rank to guarantee parameter reduction
+    param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+    effective_max_r = min(max_r, param_cap)
+
+    if rank is not None:
+        r = max(1, min(rank, effective_max_r))
+    else:
+        r = max(1, min(int(round(max_r * self.rank_ratio)), effective_max_r))
+
+    device = base_layer.weight.device
+    dtype = base_layer.weight.dtype
+
+    # Compute full SVD in FP32
+    try:
+        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+    except Exception as e:
+        logger.warning(&#34;SAES-SVD SVD failure for %s: %s&#34;, name, e)
+        return None
+
+    # Initial symmetric square-root singular value allocation
+    sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+    A = U[:, :r] * sqrt_S.unsqueeze(0)  # [out_features, r]
+    B = sqrt_S.unsqueeze(1) * Vt[:r, :]  # [r, in_features]
+
+    # Iterative residual error suppression
+    eps_eye = 1e-6 * torch.eye(r, device=W.device, dtype=torch.float32)
+    for _ in range(self.correcting_steps):
+        E = W - A @ B
+        # Update A towards residual gradient
+        BBt = B @ B.t().contiguous() + eps_eye
+        A = A + E @ B.t().contiguous() @ torch.linalg.pinv(BBt)
+
+        # Update B towards residual gradient
+        AtA = A.t().contiguous() @ A + eps_eye
+        B = B + torch.linalg.pinv(AtA) @ A.t().contiguous() @ (W - A @ B)
+
+    # Compute relative Frobenius reconstruction error
+    W_rec = A @ B
+    norm_orig = torch.norm(W, p=&#34;fro&#34;)
+    rel_err = (torch.norm(W - W_rec, p=&#34;fro&#34;) / (norm_orig + 1e-8)).item()
+
+    # Fix 2: Always log a warning when reconstruction error exceeds max_error
+    if rel_err &gt; self.max_error:
+        logger.warning(
+            &#34;SAES-SVD reconstruction error %.4f on %s exceeded threshold %.4f%s&#34;,
+            rel_err,
+            name,
+            self.max_error,
+            (
+                &#34;. Keeping original layer.&#34;
+                if self.fallback_to_original
+                else &#34;. Proceeding with compressed layer.&#34;
+            ),
+        )
+        if self.fallback_to_original:
+            return None
+
+    has_bias = getattr(base_layer, &#34;bias&#34;, None) is not None
+    has_lora = hasattr(layer, &#34;lora_A&#34;) and hasattr(layer, &#34;lora_B&#34;)
+    lora_r = getattr(layer, &#34;r&#34;, 0) if has_lora else 0
+
+    svd_layer = SVDLinear(
+        in_features=in_f,
+        out_features=out_f,
+        rank=r,
+        bias=has_bias,
+        dtype=dtype,
+        device=device,
+        lora_r=lora_r,
+    )
+    svd_layer.set_low_rank_factors(
+        U_factor=A.to(dtype=dtype, device=device),
+        V_factor=B.to(dtype=dtype, device=device),
+    )
+    # Fix 5: Ensure bias is copied correctly for both Linear and Conv1D
+    if has_bias and svd_layer.bias is not None:
+        svd_layer.bias.data.copy_(base_layer.bias.data.to(dtype=dtype, device=device))
+
+    if has_lora and svd_layer.use_lora:
+        try:
+            if hasattr(layer.lora_A, &#34;weight&#34;):
+                svd_layer.lora_A.weight.data.copy_(layer.lora_A.weight.data)
+            if hasattr(layer.lora_B, &#34;weight&#34;):
+                svd_layer.lora_B.weight.data.copy_(layer.lora_B.weight.data)
+        except Exception as e_lora:
+            logger.warning(&#34;Could not preserve LoRA adapters in SAES-SVD: %s&#34;, e_lora)
+
+    # Store metadata on module
+    svd_layer.reconstruction_error = rel_err
+    svd_layer.rank = r
+    return svd_layer</code></pre>
+</details>
+<div class="desc"><p>Decompose a single linear or Conv1D layer with spectrum-aware error suppression.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.saes_svd_v2.saes_factory" href="#neuralops.compression_engine.saes_svd_v2.saes_factory">saes_factory</a></code></li>
+<li><code><a title="neuralops.compression_engine.saes_svd_v2.saes_svd_compressor_factory" href="#neuralops.compression_engine.saes_svd_v2.saes_svd_compressor_factory">saes_svd_compressor_factory</a></code></li>
+<li><code><a title="neuralops.compression_engine.saes_svd_v2.saes_svd_factory" href="#neuralops.compression_engine.saes_svd_v2.saes_svd_factory">saes_svd_factory</a></code></li>
+<li><code><a title="neuralops.compression_engine.saes_svd_v2.saes_svd_v2_factory" href="#neuralops.compression_engine.saes_svd_v2.saes_svd_v2_factory">saes_svd_v2_factory</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2" href="#neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2">SAESSVDCompressorV2</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2.compress" href="#neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2.compress">compress</a></code></li>
+<li><code><a title="neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2.compress_linear" href="#neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2.compress_linear">compress_linear</a></code></li>
+<li><code><a title="neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2.is_custom_attention" href="#neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2" href="#neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2">SAESSVDCompressorV2</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2.compress" href="#neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2.compress">compress</a></code></li>
+<li><code><a title="neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2.compress_linear" href="#neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2.compress_linear">compress_linear</a></code></li>
+<li><code><a title="neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2.is_custom_attention" href="#neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

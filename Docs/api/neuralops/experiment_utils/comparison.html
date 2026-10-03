@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.experiment_utils.comparison API documentation</title>
+<meta name="description" content="Experiment Comparison Engine – side-by-side diff, parallel coordinates,
+metric delta tables, and run diff for training runs.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.experiment_utils.comparison</code></h1>
+</header>
+<section id="section-intro">
+<p>Experiment Comparison Engine – side-by-side diff, parallel coordinates,
+metric delta tables, and run diff for training runs.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.experiment_utils.comparison.compare_runs_api"><code class="name flex">
+<span>def <span class="ident">compare_runs_api</span></span>(<span>run_ids: list[str], baseline_id: str | None = None) ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compare_runs_api(run_ids: list[str], baseline_id: str | None = None) -&gt; dict:
+    &#34;&#34;&#34;API-friendly wrapper.&#34;&#34;&#34;
+    comparator = ExperimentComparator(run_ids, baseline_id)
+    result = comparator.compare()
+    return {
+        &#34;run_ids&#34;: result.run_ids,
+        &#34;metrics_table&#34;: result.metrics_table,
+        &#34;config_diff&#34;: result.config_diff,
+        &#34;hyperparameter_table&#34;: result.hyperparameter_table,
+        &#34;metric_deltas&#34;: result.metric_deltas,
+        &#34;timeline_data&#34;: result.timeline_data,
+        &#34;parallel_coords&#34;: result.parallel_coords,
+        &#34;best_run_id&#34;: result.best_run_id,
+        &#34;summary&#34;: result.summary,
+    }</code></pre>
+</details>
+<div class="desc"><p>API-friendly wrapper.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.experiment_utils.comparison.ComparisonResult"><code class="flex name class">
+<span>class <span class="ident">ComparisonResult</span></span>
+<span>(</span><span>run_ids: list[str],<br>metrics_table: list[dict[str, typing.Any]],<br>config_diff: dict[str, typing.Any],<br>hyperparameter_table: list[dict[str, typing.Any]],<br>metric_deltas: list[dict[str, typing.Any]],<br>timeline_data: dict[str, list[float]],<br>parallel_coords: dict[str, typing.Any],<br>best_run_id: str | None = None,<br>summary: str = '')</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class ComparisonResult:
+    &#34;&#34;&#34;Result of comparing multiple training runs.&#34;&#34;&#34;
+
+    run_ids: list[str]
+    metrics_table: list[dict[str, Any]]  # one row per run
+    config_diff: dict[str, Any]  # DeepDiff between configs
+    hyperparameter_table: list[dict[str, Any]]  # hyperparams across runs
+    metric_deltas: list[dict[str, Any]]  # delta from baseline
+    timeline_data: dict[str, list[float]]  # for loss curve overlay
+    parallel_coords: dict[str, Any]  # data for parallel coords plot
+    best_run_id: str | None = None
+    summary: str = &#34;&#34;</code></pre>
+</details>
+<div class="desc"><p>Result of comparing multiple training runs.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.experiment_utils.comparison.ComparisonResult.best_run_id"><code class="name">var <span class="ident">best_run_id</span> : str | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.comparison.ComparisonResult.config_diff"><code class="name">var <span class="ident">config_diff</span> : dict[str, typing.Any]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.comparison.ComparisonResult.hyperparameter_table"><code class="name">var <span class="ident">hyperparameter_table</span> : list[dict[str, typing.Any]]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.comparison.ComparisonResult.metric_deltas"><code class="name">var <span class="ident">metric_deltas</span> : list[dict[str, typing.Any]]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.comparison.ComparisonResult.metrics_table"><code class="name">var <span class="ident">metrics_table</span> : list[dict[str, typing.Any]]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.comparison.ComparisonResult.parallel_coords"><code class="name">var <span class="ident">parallel_coords</span> : dict[str, typing.Any]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.comparison.ComparisonResult.run_ids"><code class="name">var <span class="ident">run_ids</span> : list[str]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.comparison.ComparisonResult.summary"><code class="name">var <span class="ident">summary</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.comparison.ComparisonResult.timeline_data"><code class="name">var <span class="ident">timeline_data</span> : dict[str, list[float]]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.experiment_utils.comparison.ExperimentComparator"><code class="flex name class">
+<span>class <span class="ident">ExperimentComparator</span></span>
+<span>(</span><span>run_ids: list[str], baseline_id: str | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ExperimentComparator:
+    &#34;&#34;&#34;
+    Compare multiple TrainingRuns with rich diff output.
+    Inspired by ZenML&#39;s comparison tool, MLflow compare, and RagaAI diff.
+    &#34;&#34;&#34;
+
+    def __init__(self, run_ids: list[str], baseline_id: str | None = None) -&gt; None:
+        self.run_ids = run_ids
+        self.baseline_id = baseline_id or (run_ids[0] if run_ids else None)
+        self.runs: list[TrainingRun] = []
+
+    def load_runs(self) -&gt; None:
+        &#34;&#34;&#34;Load runs from disk or config.&#34;&#34;&#34;
+        self.runs = list(TrainingRun.objects.filter(id__in=self.run_ids).order_by(&#34;created_at&#34;))
+
+    def compare(self) -&gt; ComparisonResult:
+        &#34;&#34;&#34;Compare.&#34;&#34;&#34;
+        self.load_runs()
+        if len(self.runs) &lt; 2:
+            raise ValueError(&#34;Need at least 2 runs to compare&#34;)
+
+        baseline = next((r for r in self.runs if str(r.id) == self.baseline_id), self.runs[0])
+        result = ComparisonResult(
+            run_ids=[str(r.id) for r in self.runs],
+            metrics_table=self._build_metrics_table(),
+            config_diff=self._build_config_diff(),
+            hyperparameter_table=self._build_hyperparameter_table(),
+            metric_deltas=self._build_metric_deltas(baseline),
+            timeline_data=self._build_timeline_overlay(),
+            parallel_coords=self._build_parallel_coords(),
+            best_run_id=self._find_best_run(),
+            summary=&#34;&#34;,
+        )
+        result.summary = self._generate_summary(result)
+        return result
+
+    def _build_metrics_table(self) -&gt; list[dict[str, Any]]:
+        &#34;&#34;&#34;build metrics table.&#34;&#34;&#34;
+        rows = []
+        for run in self.runs:
+            metrics = run.final_metrics or {}
+            config = run.config or {}
+            rows.append(
+                {
+                    &#34;run_id&#34;: str(run.id),
+                    &#34;name&#34;: run.name or str(run.id)[:8],
+                    &#34;status&#34;: run.status,
+                    &#34;created_at&#34;: run.created_at.isoformat(),
+                    &#34;epochs&#34;: config.get(&#34;epochs&#34;, &#34;N/A&#34;),
+                    &#34;batch_size&#34;: config.get(&#34;batch_size&#34;, &#34;N/A&#34;),
+                    &#34;learning_rate&#34;: config.get(&#34;learning_rate&#34;, &#34;N/A&#34;),
+                    &#34;model_name&#34;: config.get(&#34;model_name&#34;, &#34;N/A&#34;),
+                    &#34;eval_accuracy&#34;: metrics.get(&#34;eval_accuracy&#34;),
+                    &#34;eval_loss&#34;: metrics.get(&#34;eval_loss&#34;),
+                    &#34;eval_f1&#34;: metrics.get(&#34;eval_f1&#34;),
+                    &#34;duration_seconds&#34;: run.actual_duration,
+                }
+            )
+        return rows
+
+    def _build_config_diff(self) -&gt; dict[str, Any]:
+        &#34;&#34;&#34;build config diff.&#34;&#34;&#34;
+        configs = {str(r.id): r.config for r in self.runs}
+        first_id = str(self.runs[0].id)
+        diffs = {}
+        for rid, cfg in configs.items():
+            if rid != first_id:
+                diff = DeepDiff(configs[first_id], cfg, ignore_order=True, verbose_level=2)
+                diffs[rid] = diff
+        return {
+            &#34;baseline_id&#34;: first_id,
+            &#34;diffs&#34;: diffs,
+            &#34;all_config_keys&#34;: list(set().union(*[set(c.keys()) for c in configs.values()])),
+        }
+
+    def _build_hyperparameter_table(self) -&gt; list[dict[str, Any]]:
+        &#34;&#34;&#34;build hyperparameter table.&#34;&#34;&#34;
+        hp_keys = [
+            &#34;learning_rate&#34;,
+            &#34;batch_size&#34;,
+            &#34;epochs&#34;,
+            &#34;max_seq_length&#34;,
+            &#34;compression_rank&#34;,
+            &#34;lora_r&#34;,
+            &#34;lora_alpha&#34;,
+            &#34;weight_decay&#34;,
+            &#34;warmup_steps&#34;,
+            &#34;grad_accum&#34;,
+            &#34;max_grad_norm&#34;,
+        ]
+        rows = []
+        for run in self.runs:
+            config = run.config or {}
+            row = {&#34;run_id&#34;: str(run.id), &#34;name&#34;: run.name or str(run.id)[:8]}
+            for k in hp_keys:
+                row[k] = config.get(k)
+            rows.append(row)
+        return rows
+
+    def _build_metric_deltas(self, baseline: TrainingRun) -&gt; list[dict[str, Any]]:
+        &#34;&#34;&#34;build metric deltas.&#34;&#34;&#34;
+        base_metrics = baseline.final_metrics or {}
+        deltas = []
+        metric_keys = [
+            &#34;eval_accuracy&#34;,
+            &#34;eval_loss&#34;,
+            &#34;eval_f1&#34;,
+            &#34;eval_precision&#34;,
+            &#34;eval_recall&#34;,
+        ]
+        for run in self.runs:
+            if str(run.id) == str(baseline.id):
+                continue
+            run_metrics = run.final_metrics or {}
+            delta_row = {&#34;run_id&#34;: str(run.id), &#34;name&#34;: run.name or str(run.id)[:8]}
+            for k in metric_keys:
+                base_v = base_metrics.get(k)
+                run_v = run_metrics.get(k)
+                if base_v is not None and run_v is not None:
+                    delta_row[k] = round(run_v - base_v, 6)
+                    delta_row[f&#34;{k}_pct&#34;] = (
+                        round(((run_v - base_v) / abs(base_v)) * 100, 2) if base_v != 0 else None
+                    )
+                else:
+                    delta_row[k] = None
+            deltas.append(delta_row)
+        return deltas
+
+    def _build_timeline_overlay(self) -&gt; dict[str, list[float]]:
+        &#34;&#34;&#34;Extract training history for overlaid loss curves.&#34;&#34;&#34;
+        timeline = {&#34;steps&#34;: [], &#34;series&#34;: {}}
+        for run in self.runs:
+            history = run.training_history or {}
+            steps = history.get(&#34;steps&#34;, [])
+            losses = history.get(&#34;losses&#34;, [])
+            if steps and losses:
+                if len(steps) &gt; len(timeline[&#34;steps&#34;]):
+                    timeline[&#34;steps&#34;] = steps
+                timeline[&#34;series&#34;][str(run.id)] = losses
+        return timeline
+
+    def _build_parallel_coords(self) -&gt; dict[str, Any]:
+        &#34;&#34;&#34;Build data for a parallel coordinates plot (hyperparams + metrics).&#34;&#34;&#34;
+        dimensions = [
+            &#34;learning_rate&#34;,
+            &#34;batch_size&#34;,
+            &#34;epochs&#34;,
+            &#34;max_seq_length&#34;,
+            &#34;compression_rank&#34;,
+            &#34;eval_accuracy&#34;,
+            &#34;eval_loss&#34;,
+            &#34;eval_f1&#34;,
+        ]
+        data = []
+        for run in self.runs:
+            config = run.config or {}
+            metrics = run.final_metrics or {}
+            point = {&#34;run_id&#34;: str(run.id), &#34;name&#34;: run.name or str(run.id)[:8]}
+            for d in dimensions:
+                point[d] = config.get(d) or metrics.get(d)
+            data.append(point)
+        return {&#34;dimensions&#34;: dimensions, &#34;data&#34;: data}
+
+    def _find_best_run(self) -&gt; str | None:
+        &#34;&#34;&#34;find best run.&#34;&#34;&#34;
+        best = None
+        best_acc = -1
+        for run in self.runs:
+            acc = (run.final_metrics or {}).get(&#34;eval_accuracy&#34;, -1)
+            if acc is not None and acc &gt; best_acc:
+                best_acc = acc
+                best = str(run.id)
+        return best
+
+    def _generate_summary(self, result: ComparisonResult) -&gt; str:
+        &#34;&#34;&#34;generate summary.&#34;&#34;&#34;
+        lines = [f&#34;Comparison of {len(self.runs)} runs.&#34;]
+        if result.best_run_id:
+            best_run = next((r for r in self.runs if str(r.id) == result.best_run_id), None)
+            if best_run:
+                lines.append(f&#34;Best run: {best_run.name or result.best_run_id[:8]}&#34;)
+        # Count improvements
+        improved = sum(
+            1
+            for d in result.metric_deltas
+            if d.get(&#34;eval_accuracy&#34;) is not None and d[&#34;eval_accuracy&#34;] &gt; 0
+        )
+        lines.append(f&#34;{improved} run(s) improved over baseline in accuracy.&#34;)
+        return &#34; &#34;.join(lines)</code></pre>
+</details>
+<div class="desc"><p>Compare multiple TrainingRuns with rich diff output.
+Inspired by ZenML's comparison tool, MLflow compare, and RagaAI diff.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.experiment_utils.comparison.ExperimentComparator.compare"><code class="name flex">
+<span>def <span class="ident">compare</span></span>(<span>self) ‑> <a title="neuralops.experiment_utils.comparison.ComparisonResult" href="#neuralops.experiment_utils.comparison.ComparisonResult">ComparisonResult</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compare(self) -&gt; ComparisonResult:
+    &#34;&#34;&#34;Compare.&#34;&#34;&#34;
+    self.load_runs()
+    if len(self.runs) &lt; 2:
+        raise ValueError(&#34;Need at least 2 runs to compare&#34;)
+
+    baseline = next((r for r in self.runs if str(r.id) == self.baseline_id), self.runs[0])
+    result = ComparisonResult(
+        run_ids=[str(r.id) for r in self.runs],
+        metrics_table=self._build_metrics_table(),
+        config_diff=self._build_config_diff(),
+        hyperparameter_table=self._build_hyperparameter_table(),
+        metric_deltas=self._build_metric_deltas(baseline),
+        timeline_data=self._build_timeline_overlay(),
+        parallel_coords=self._build_parallel_coords(),
+        best_run_id=self._find_best_run(),
+        summary=&#34;&#34;,
+    )
+    result.summary = self._generate_summary(result)
+    return result</code></pre>
+</details>
+<div class="desc"><p>Compare.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.comparison.ExperimentComparator.load_runs"><code class="name flex">
+<span>def <span class="ident">load_runs</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_runs(self) -&gt; None:
+    &#34;&#34;&#34;Load runs from disk or config.&#34;&#34;&#34;
+    self.runs = list(TrainingRun.objects.filter(id__in=self.run_ids).order_by(&#34;created_at&#34;))</code></pre>
+</details>
+<div class="desc"><p>Load runs from disk or config.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.experiment_utils" href="index.html">neuralops.experiment_utils</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.experiment_utils.comparison.compare_runs_api" href="#neuralops.experiment_utils.comparison.compare_runs_api">compare_runs_api</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.experiment_utils.comparison.ComparisonResult" href="#neuralops.experiment_utils.comparison.ComparisonResult">ComparisonResult</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.experiment_utils.comparison.ComparisonResult.best_run_id" href="#neuralops.experiment_utils.comparison.ComparisonResult.best_run_id">best_run_id</a></code></li>
+<li><code><a title="neuralops.experiment_utils.comparison.ComparisonResult.config_diff" href="#neuralops.experiment_utils.comparison.ComparisonResult.config_diff">config_diff</a></code></li>
+<li><code><a title="neuralops.experiment_utils.comparison.ComparisonResult.hyperparameter_table" href="#neuralops.experiment_utils.comparison.ComparisonResult.hyperparameter_table">hyperparameter_table</a></code></li>
+<li><code><a title="neuralops.experiment_utils.comparison.ComparisonResult.metric_deltas" href="#neuralops.experiment_utils.comparison.ComparisonResult.metric_deltas">metric_deltas</a></code></li>
+<li><code><a title="neuralops.experiment_utils.comparison.ComparisonResult.metrics_table" href="#neuralops.experiment_utils.comparison.ComparisonResult.metrics_table">metrics_table</a></code></li>
+<li><code><a title="neuralops.experiment_utils.comparison.ComparisonResult.parallel_coords" href="#neuralops.experiment_utils.comparison.ComparisonResult.parallel_coords">parallel_coords</a></code></li>
+<li><code><a title="neuralops.experiment_utils.comparison.ComparisonResult.run_ids" href="#neuralops.experiment_utils.comparison.ComparisonResult.run_ids">run_ids</a></code></li>
+<li><code><a title="neuralops.experiment_utils.comparison.ComparisonResult.summary" href="#neuralops.experiment_utils.comparison.ComparisonResult.summary">summary</a></code></li>
+<li><code><a title="neuralops.experiment_utils.comparison.ComparisonResult.timeline_data" href="#neuralops.experiment_utils.comparison.ComparisonResult.timeline_data">timeline_data</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.experiment_utils.comparison.ExperimentComparator" href="#neuralops.experiment_utils.comparison.ExperimentComparator">ExperimentComparator</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.experiment_utils.comparison.ExperimentComparator.compare" href="#neuralops.experiment_utils.comparison.ExperimentComparator.compare">compare</a></code></li>
+<li><code><a title="neuralops.experiment_utils.comparison.ExperimentComparator.load_runs" href="#neuralops.experiment_utils.comparison.ExperimentComparator.load_runs">load_runs</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

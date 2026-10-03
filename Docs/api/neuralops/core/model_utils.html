@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.core.model_utils API documentation</title>
+<meta name="description" content="Generic helpers: calibration, weight‑copying, safe module replacement,
+activation collection.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.core.model_utils</code></h1>
+</header>
+<section id="section-intro">
+<p>Generic helpers: calibration, weight‑copying, safe module replacement,
+activation collection.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.core.model_utils.activation_hooks"><code class="name flex">
+<span>def <span class="ident">activation_hooks</span></span>(<span>model: torch.nn.modules.module.Module,<br>target_module_type: type = torch.nn.modules.linear.Linear,<br>collect_input: bool = True,<br>collect_output: bool = False) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@contextmanager
+def activation_hooks(
+    model: nn.Module,
+    target_module_type: type = nn.Linear,
+    collect_input: bool = True,
+    collect_output: bool = False,
+) -&gt; Any:
+    &#34;&#34;&#34;Context manager that collects activations for all modules of a given type.&#34;&#34;&#34;
+    activations: dict[str, Any] = {}
+    hooks = []
+
+    def make_hook(name) -&gt; Any:
+        &#34;&#34;&#34;Make hook.&#34;&#34;&#34;
+
+        def hook(module, input, output) -&gt; None:
+            &#34;&#34;&#34;Hook.&#34;&#34;&#34;
+            data = {}
+            if collect_input:
+                data[&#34;input&#34;] = input[0].detach()
+            if collect_output:
+                data[&#34;output&#34;] = (
+                    output.detach() if isinstance(output, torch.Tensor) else output[0].detach()
+                )
+            activations[name] = data
+
+        return hook
+
+    for name, module in model.named_modules():
+        if isinstance(module, target_module_type):
+            hooks.append(module.register_forward_hook(make_hook(name)))
+
+    try:
+        yield activations
+    finally:
+        for hook in hooks:
+            hook.remove()</code></pre>
+</details>
+<div class="desc"><p>Context manager that collects activations for all modules of a given type.</p></div>
+</dd>
+<dt id="neuralops.core.model_utils.copy_attention_weights"><code class="name flex">
+<span>def <span class="ident">copy_attention_weights</span></span>(<span>src_module: torch.nn.modules.module.Module,<br>dst_module: torch.nn.modules.module.Module,<br>source_map: dict[str, list[str]] | None = None) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def copy_attention_weights(
+    src_module: nn.Module,
+    dst_module: nn.Module,
+    source_map: dict[str, list[str]] | None = None,
+) -&gt; None:
+    &#34;&#34;&#34;
+    Copy pretrained attention weights from src to dst.
+    Tries multiple possible attribute names for each projection.
+    &#34;&#34;&#34;
+    if source_map is None:
+        source_map = ATTENTION_WEIGHT_MAP
+    for target_attr, src_attrs in source_map.items():
+        src = None
+        for attr in src_attrs:
+            if hasattr(src_module, attr):
+                src = getattr(src_module, attr)
+                break
+        if src is None:
+            raise ValueError(
+                f&#34;Cannot find source for &#39;{target_attr}&#39; in &#34;
+                f&#34;{src_module.__class__.__name__}. Tried: {src_attrs}&#34;
+            )
+        dst = getattr(dst_module, target_attr)
+        dst.weight.data.copy_(src.weight.data)
+        if src.bias is not None and dst.bias is not None:
+            dst.bias.data.copy_(src.bias.data)
+        elif src.bias is None and dst.bias is not None:
+            nn.init.zeros_(dst.bias)</code></pre>
+</details>
+<div class="desc"><p>Copy pretrained attention weights from src to dst.
+Tries multiple possible attribute names for each projection.</p></div>
+</dd>
+<dt id="neuralops.core.model_utils.count_parameters"><code class="name flex">
+<span>def <span class="ident">count_parameters</span></span>(<span>model: torch.nn.modules.module.Module, trainable_only: bool = False) ‑> int</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def count_parameters(model: nn.Module, trainable_only: bool = False) -&gt; int:
+    &#34;&#34;&#34;Count parameters.&#34;&#34;&#34;
+    if trainable_only:
+        return sum(p.numel() for p in model.parameters() if p.requires_grad)
+    return sum(p.numel() for p in model.parameters())</code></pre>
+</details>
+<div class="desc"><p>Count parameters.</p></div>
+</dd>
+<dt id="neuralops.core.model_utils.count_params"><code class="name flex">
+<span>def <span class="ident">count_params</span></span>(<span>model: torch.nn.modules.module.Module, trainable_only: bool = False) ‑> int</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def count_parameters(model: nn.Module, trainable_only: bool = False) -&gt; int:
+    &#34;&#34;&#34;Count parameters.&#34;&#34;&#34;
+    if trainable_only:
+        return sum(p.numel() for p in model.parameters() if p.requires_grad)
+    return sum(p.numel() for p in model.parameters())</code></pre>
+</details>
+<div class="desc"><p>Count parameters.</p></div>
+</dd>
+<dt id="neuralops.core.model_utils.get_parent_and_child_name"><code class="name flex">
+<span>def <span class="ident">get_parent_and_child_name</span></span>(<span>model: torch.nn.modules.module.Module, full_name: str) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_parent_and_child_name(model: nn.Module, full_name: str) -&gt; Any:
+    &#34;&#34;&#34;Return (parent_module, child_attribute_name), supporting ModuleList and ModuleDict.&#34;&#34;&#34;
+    parts = [p for p in full_name.split(&#34;.&#34;) if p]
+    parent = model
+    for part in parts[:-1]:
+        if isinstance(parent, (nn.ModuleList, list)):
+            parent = parent[int(part)]
+        elif isinstance(parent, (nn.ModuleDict, dict)):
+            parent = parent[part]
+        else:
+            parent = getattr(parent, part)
+    return parent, parts[-1]</code></pre>
+</details>
+<div class="desc"><p>Return (parent_module, child_attribute_name), supporting ModuleList and ModuleDict.</p></div>
+</dd>
+<dt id="neuralops.core.model_utils.replace_module"><code class="name flex">
+<span>def <span class="ident">replace_module</span></span>(<span>model: torch.nn.modules.module.Module,<br>full_name: str,<br>new_module: torch.nn.modules.module.Module) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def replace_module(model: nn.Module, full_name: str, new_module: nn.Module) -&gt; None:
+    &#34;&#34;&#34;Replace a sub-module identified by its dotted name, supporting ModuleList and ModuleDict.&#34;&#34;&#34;
+    parts = [p for p in full_name.split(&#34;.&#34;) if p]
+    parent = model
+    for part in parts[:-1]:
+        if isinstance(parent, (nn.ModuleList, list)):
+            parent = parent[int(part)]
+        elif isinstance(parent, (nn.ModuleDict, dict)):
+            parent = parent[part]
+        else:
+            parent = getattr(parent, part)
+    last = parts[-1]
+    if isinstance(parent, (nn.ModuleList, list)):
+        parent[int(last)] = new_module
+    elif isinstance(parent, (nn.ModuleDict, dict)):
+        parent[last] = new_module
+    else:
+        setattr(parent, last, new_module)</code></pre>
+</details>
+<div class="desc"><p>Replace a sub-module identified by its dotted name, supporting ModuleList and ModuleDict.</p></div>
+</dd>
+<dt id="neuralops.core.model_utils.run_calibration_forward"><code class="name flex">
+<span>def <span class="ident">run_calibration_forward</span></span>(<span>model: torch.nn.modules.module.Module,<br>tokenizer,<br>texts: list[str],<br>device: torch.device | None = None,<br>max_length: int = 128) ‑> torch.nn.modules.module.Module</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_calibration_forward(
+    model: nn.Module,
+    tokenizer,
+    texts: list[str],
+    device: torch.device | None = None,
+    max_length: int = 128,
+) -&gt; nn.Module:
+    &#34;&#34;&#34;Run a single forward pass on calibration texts; return model (in eval).&#34;&#34;&#34;
+    model.eval()
+    inputs = tokenizer(
+        texts, return_tensors=&#34;pt&#34;, padding=True, truncation=True, max_length=max_length
+    )
+    if device is None:
+        device = next(model.parameters()).device
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+    with torch.no_grad():
+        model(**inputs)
+    return model</code></pre>
+</details>
+<div class="desc"><p>Run a single forward pass on calibration texts; return model (in eval).</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.core" href="index.html">neuralops.core</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.core.model_utils.activation_hooks" href="#neuralops.core.model_utils.activation_hooks">activation_hooks</a></code></li>
+<li><code><a title="neuralops.core.model_utils.copy_attention_weights" href="#neuralops.core.model_utils.copy_attention_weights">copy_attention_weights</a></code></li>
+<li><code><a title="neuralops.core.model_utils.count_parameters" href="#neuralops.core.model_utils.count_parameters">count_parameters</a></code></li>
+<li><code><a title="neuralops.core.model_utils.count_params" href="#neuralops.core.model_utils.count_params">count_params</a></code></li>
+<li><code><a title="neuralops.core.model_utils.get_parent_and_child_name" href="#neuralops.core.model_utils.get_parent_and_child_name">get_parent_and_child_name</a></code></li>
+<li><code><a title="neuralops.core.model_utils.replace_module" href="#neuralops.core.model_utils.replace_module">replace_module</a></code></li>
+<li><code><a title="neuralops.core.model_utils.run_calibration_forward" href="#neuralops.core.model_utils.run_calibration_forward">run_calibration_forward</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

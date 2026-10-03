@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests.test_adaptive_ranks_jg API documentation</title>
+<meta name="description" content="Unit tests for Adaptive Ranks Compressor with Jacobian-Gated SVD (JG-SVD).
+Tests all 9 core properties:
+1. GELU derivative squared at y=0 is 0.25 …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tests.test_adaptive_ranks_jg</code></h1>
+</header>
+<section id="section-intro">
+<p>Unit tests for Adaptive Ranks Compressor with Jacobian-Gated SVD (JG-SVD).
+Tests all 9 core properties:
+1. GELU derivative squared at y=0 is 0.25 (phi=0.5, pdf=0, prime=0.5 -&gt; prime^2=0.25)
+2. GELU derivative squared at y=5 is ~1.0 (saturation in active region)
+3. GELU derivative squared at y=-5 is ~0.0 (saturation in inactive region)
+4. SiLU derivative squared at y=0 is 0.25 (sig=0.5, sig*(1+0)=0.5 -&gt; 0.25)
+5. Activation detection: DistilBERT ('ffn.lin1') -&gt; 'gelu'
+6. Activation detection: Qwen ('gate_proj', 'up_proj') -&gt; 'silu'
+7. Attention Q/K detection: 'q_lin', 'k_lin', 'q_proj', 'k_proj' detected, 'out_lin'/'o_proj' not detected
+8. Backward compatibility: use_jg_svd=False runs standard adaptive ranks compression identically
+9. Opt-in JG-SVD: use_jg_svd=True initializes, accepts flags, and performs JG-weighted compression</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.tests.test_adaptive_ranks_jg.test_1_gelu_derivative_at_zero"><code class="name flex">
+<span>def <span class="ident">test_1_gelu_derivative_at_zero</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_1_gelu_derivative_at_zero():
+    &#34;&#34;&#34;GELU derivative squared at y=0 should equal 0.25.&#34;&#34;&#34;
+    y = torch.tensor([0.0], dtype=torch.float32)
+    val = _gelu_derivative_sq(y).item()
+    assert abs(val - 0.25) &lt; 1e-5, f&#34;Expected 0.25, got {val}&#34;
+    print(&#34;[PASS] Test 1: GELU derivative squared at y=0 is 0.25&#34;)</code></pre>
+</details>
+<div class="desc"><p>GELU derivative squared at y=0 should equal 0.25.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_ranks_jg.test_2_gelu_derivative_at_positive"><code class="name flex">
+<span>def <span class="ident">test_2_gelu_derivative_at_positive</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_2_gelu_derivative_at_positive():
+    &#34;&#34;&#34;GELU derivative squared at y=5 should saturate near 1.0.&#34;&#34;&#34;
+    y = torch.tensor([5.0], dtype=torch.float32)
+    val = _gelu_derivative_sq(y).item()
+    assert abs(val - 1.0) &lt; 1e-3, f&#34;Expected ~1.0, got {val}&#34;
+    print(&#34;[PASS] Test 2: GELU derivative squared at y=5 is ~1.0&#34;)</code></pre>
+</details>
+<div class="desc"><p>GELU derivative squared at y=5 should saturate near 1.0.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_ranks_jg.test_3_gelu_derivative_at_negative"><code class="name flex">
+<span>def <span class="ident">test_3_gelu_derivative_at_negative</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_3_gelu_derivative_at_negative():
+    &#34;&#34;&#34;GELU derivative squared at y=-5 should saturate near 0.0.&#34;&#34;&#34;
+    y = torch.tensor([-5.0], dtype=torch.float32)
+    val = _gelu_derivative_sq(y).item()
+    assert abs(val - 0.0) &lt; 1e-4, f&#34;Expected ~0.0, got {val}&#34;
+    print(&#34;[PASS] Test 3: GELU derivative squared at y=-5 is ~0.0&#34;)</code></pre>
+</details>
+<div class="desc"><p>GELU derivative squared at y=-5 should saturate near 0.0.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_ranks_jg.test_4_silu_derivative_at_zero"><code class="name flex">
+<span>def <span class="ident">test_4_silu_derivative_at_zero</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_4_silu_derivative_at_zero():
+    &#34;&#34;&#34;SiLU derivative squared at y=0 should equal 0.25.&#34;&#34;&#34;
+    y = torch.tensor([0.0], dtype=torch.float32)
+    val = _silu_derivative_sq(y).item()
+    assert abs(val - 0.25) &lt; 1e-5, f&#34;Expected 0.25, got {val}&#34;
+    print(&#34;[PASS] Test 4: SiLU derivative squared at y=0 is 0.25&#34;)</code></pre>
+</details>
+<div class="desc"><p>SiLU derivative squared at y=0 should equal 0.25.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_ranks_jg.test_5_activation_detection_distilbert"><code class="name flex">
+<span>def <span class="ident">test_5_activation_detection_distilbert</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_5_activation_detection_distilbert():
+    &#34;&#34;&#34;Detect activation type maps DistilBERT ffn.lin1 and intermediate.dense to gelu.&#34;&#34;&#34;
+    assert _detect_activation_type(&#34;transformer.layer.0.ffn.lin1&#34;) == &#34;gelu&#34;
+    assert _detect_activation_type(&#34;roberta.encoder.layer.0.intermediate.dense&#34;) == &#34;gelu&#34;
+    assert _detect_activation_type(&#34;transformer.layer.0.ffn.lin2&#34;) == &#34;none&#34;
+    print(&#34;[PASS] Test 5: Activation detection correctly identifies GELU layers&#34;)</code></pre>
+</details>
+<div class="desc"><p>Detect activation type maps DistilBERT ffn.lin1 and intermediate.dense to gelu.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_ranks_jg.test_6_activation_detection_qwen"><code class="name flex">
+<span>def <span class="ident">test_6_activation_detection_qwen</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_6_activation_detection_qwen():
+    &#34;&#34;&#34;Detect activation type maps Qwen/LLaMA SwiGLU projections to silu.&#34;&#34;&#34;
+    assert _detect_activation_type(&#34;model.layers.0.mlp.gate_proj&#34;) == &#34;silu&#34;
+    assert _detect_activation_type(&#34;model.layers.0.mlp.up_proj&#34;) == &#34;silu&#34;
+    assert _detect_activation_type(&#34;model.layers.0.mlp.down_proj&#34;) == &#34;none&#34;
+    print(&#34;[PASS] Test 6: Activation detection correctly identifies SiLU SwiGLU layers&#34;)</code></pre>
+</details>
+<div class="desc"><p>Detect activation type maps Qwen/LLaMA SwiGLU projections to silu.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_ranks_jg.test_7_attention_qk_detection"><code class="name flex">
+<span>def <span class="ident">test_7_attention_qk_detection</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_7_attention_qk_detection():
+    &#34;&#34;&#34;Detect attention Q and K layers for softmax Jacobian scalar weighting.&#34;&#34;&#34;
+    assert _is_attention_qk(&#34;transformer.layer.0.attention.q_lin&#34;) is True
+    assert _is_attention_qk(&#34;transformer.layer.0.attention.k_lin&#34;) is True
+    assert _is_attention_qk(&#34;model.layers.0.self_attn.q_proj&#34;) is True
+    assert _is_attention_qk(&#34;model.layers.0.self_attn.k_proj&#34;) is True
+    assert _is_attention_qk(&#34;transformer.layer.0.attention.out_lin&#34;) is False
+    assert _is_attention_qk(&#34;model.layers.0.self_attn.o_proj&#34;) is False
+    assert _is_attention_qk(&#34;transformer.layer.0.attention.v_lin&#34;) is False
+    print(&#34;[PASS] Test 7: Attention Q/K detection correctly filters Q/K vs V/O projections&#34;)</code></pre>
+</details>
+<div class="desc"><p>Detect attention Q and K layers for softmax Jacobian scalar weighting.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_ranks_jg.test_8_backward_compatibility_jg_off"><code class="name flex">
+<span>def <span class="ident">test_8_backward_compatibility_jg_off</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_8_backward_compatibility_jg_off():
+    &#34;&#34;&#34;Default compressor with use_jg_svd=False runs without error and leaves used_jg_svd False.&#34;&#34;&#34;
+    model = nn.Sequential(
+        nn.Linear(64, 64),
+        nn.ReLU(),
+        nn.Linear(64, 64),
+    )
+    compressor = AdaptiveRanksCompressor(model, min_rank=16, use_jg_svd=False)
+    assert compressor.use_jg_svd is False
+    compressed_model, stats = compressor.compress()
+    assert stats[&#34;use_jg_svd&#34;] is False
+    assert all(v is False for v in stats[&#34;used_jg_svd&#34;].values())
+    print(&#34;[PASS] Test 8: Backward compatibility preserved when use_jg_svd=False&#34;)</code></pre>
+</details>
+<div class="desc"><p>Default compressor with use_jg_svd=False runs without error and leaves used_jg_svd False.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_ranks_jg.test_9_opt_in_jg_svd_on"><code class="name flex">
+<span>def <span class="ident">test_9_opt_in_jg_svd_on</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_9_opt_in_jg_svd_on():
+    &#34;&#34;&#34;Opt-in compressor with use_jg_svd=True factorizes with JG weighting.&#34;&#34;&#34;
+    model = nn.Sequential(
+        nn.Linear(64, 64),
+        nn.GELU(),
+        nn.Linear(64, 64),
+    )
+    compressor = AdaptiveRanksCompressor(
+        model,
+        min_rank=16,
+        use_jg_svd=True,
+        calibration_texts=[&#34;This is a test calibration sentence for JG-SVD verification.&#34;],
+    )
+    assert compressor.use_jg_svd is True
+    assert compressor.use_cholesky_jg is True
+
+    # Test factorization directly
+    W = torch.randn(64, 64)
+    cov = torch.eye(64) + 0.1 * torch.randn(64, 64)
+    cov = cov.T @ cov
+    D = torch.ones(64) * 0.25
+    A, B, err = compressor._factorize_with_JG(W, cov, D, r=16)
+    assert A.shape == (64, 16)
+    assert B.shape == (16, 64)
+    assert math.isfinite(err)
+    print(f&#34;[PASS] Test 9: JG-SVD factorization computed successfully (reconstruction error={err:.4f})&#34;)</code></pre>
+</details>
+<div class="desc"><p>Opt-in compressor with use_jg_svd=True factorizes with JG weighting.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tests" href="index.html">neuralops.tests</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.tests.test_adaptive_ranks_jg.test_1_gelu_derivative_at_zero" href="#neuralops.tests.test_adaptive_ranks_jg.test_1_gelu_derivative_at_zero">test_1_gelu_derivative_at_zero</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_ranks_jg.test_2_gelu_derivative_at_positive" href="#neuralops.tests.test_adaptive_ranks_jg.test_2_gelu_derivative_at_positive">test_2_gelu_derivative_at_positive</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_ranks_jg.test_3_gelu_derivative_at_negative" href="#neuralops.tests.test_adaptive_ranks_jg.test_3_gelu_derivative_at_negative">test_3_gelu_derivative_at_negative</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_ranks_jg.test_4_silu_derivative_at_zero" href="#neuralops.tests.test_adaptive_ranks_jg.test_4_silu_derivative_at_zero">test_4_silu_derivative_at_zero</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_ranks_jg.test_5_activation_detection_distilbert" href="#neuralops.tests.test_adaptive_ranks_jg.test_5_activation_detection_distilbert">test_5_activation_detection_distilbert</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_ranks_jg.test_6_activation_detection_qwen" href="#neuralops.tests.test_adaptive_ranks_jg.test_6_activation_detection_qwen">test_6_activation_detection_qwen</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_ranks_jg.test_7_attention_qk_detection" href="#neuralops.tests.test_adaptive_ranks_jg.test_7_attention_qk_detection">test_7_attention_qk_detection</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_ranks_jg.test_8_backward_compatibility_jg_off" href="#neuralops.tests.test_adaptive_ranks_jg.test_8_backward_compatibility_jg_off">test_8_backward_compatibility_jg_off</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_ranks_jg.test_9_opt_in_jg_svd_on" href="#neuralops.tests.test_adaptive_ranks_jg.test_9_opt_in_jg_svd_on">test_9_opt_in_jg_svd_on</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

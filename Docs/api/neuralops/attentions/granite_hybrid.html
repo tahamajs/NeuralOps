@@ -1,0 +1,937 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.attentions.granite_hybrid API documentation</title>
+<meta name="description" content="Granite Hybrid Attention-SSM Layer with MoE Feed-Forward …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.attentions.granite_hybrid</code></h1>
+</header>
+<section id="section-intro">
+<p>Granite Hybrid Attention-SSM Layer with MoE Feed-Forward.</p>
+<p>Combines Mamba-2 SSM recurrent layers with dense Multihead Attention (MHA) and
+Top-k Mixture-of-Experts (MoE) feed-forward, with LoRA adapters and pretrained weight transfer.
+Hardened across DistilBERT, RoBERTa, GPT-2, and Qwen3.5 architectures.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.attentions.granite_hybrid.apply_rotary_pos_emb"><code class="name flex">
+<span>def <span class="ident">apply_rotary_pos_emb</span></span>(<span>q: torch.Tensor,<br>k: torch.Tensor,<br>cos: torch.Tensor,<br>sin: torch.Tensor,<br>position_ids: torch.Tensor | None = None) ‑> tuple[torch.Tensor, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+    position_ids: torch.Tensor | None = None,
+) -&gt; tuple[torch.Tensor, torch.Tensor]:
+    if cos is None or sin is None:
+        return q, k
+
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    while cos.dim() &lt; q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    if cos.shape[-2] != q.shape[-2]:
+        cos = cos[..., : q.shape[-2], :]
+        sin = sin[..., : q.shape[-2], :]
+
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+
+    if rotary_dim &lt;= head_dim:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() &gt; 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() &gt; 0 else k_rot_embed
+    else:
+        cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
+        q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
+        k = (k * cos_cut.to(k.dtype)) + (_rotate_half(k) * sin_cut.to(k.dtype))
+
+    return q, k</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.granite_hybrid.inject_granite_hybrid"><code class="name flex">
+<span>def <span class="ident">inject_granite_hybrid</span></span>(<span>layer: Any = None,<br>model: Any = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: nn.Module | None = None,<br>lora_rank: int = 16,<br>**kwargs: Any) ‑> Any | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;granite_hybrid_inject&#34;)
+@ATTENTION_REGISTRY.register(&#34;inject_granite_hybrid&#34;)
+def inject_granite_hybrid(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    lora_rank: int = 16,
+    **kwargs: Any,
+) -&gt; Any | None:
+    r&#34;&#34;&#34;Injection hook for GraniteHybridBlock supporting single layers and whole models.&#34;&#34;&#34;
+    target = layer if layer is not None else model
+    cfg = model_config or getattr(target, &#34;config&#34;, None) or kwargs.get(&#34;config&#34;)
+
+    # 1. Whole model traversal support
+    if target is not None and (
+        hasattr(target, &#34;transformer&#34;)
+        or hasattr(target, &#34;distilbert&#34;)
+        or hasattr(target, &#34;roberta&#34;)
+        or hasattr(target, &#34;bert&#34;)
+        or (hasattr(target, &#34;model&#34;) and not hasattr(target, &#34;forward&#34;))
+    ):
+        layer_list = None
+        if hasattr(target, &#34;distilbert&#34;) and hasattr(target.distilbert, &#34;transformer&#34;):
+            layer_list = target.distilbert.transformer.layer
+        elif hasattr(target, &#34;roberta&#34;) and hasattr(target.roberta, &#34;encoder&#34;):
+            layer_list = target.roberta.encoder.layer
+        elif hasattr(target, &#34;bert&#34;) and hasattr(target.bert, &#34;encoder&#34;):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, &#34;transformer&#34;) and hasattr(target.transformer, &#34;h&#34;):
+            layer_list = target.transformer.h
+        elif hasattr(target, &#34;model&#34;) and hasattr(target.model, &#34;layers&#34;):
+            layer_list = target.model.layers
+        elif hasattr(target, &#34;encoder&#34;) and hasattr(target.encoder, &#34;layer&#34;):
+            layer_list = target.encoder.layer
+
+        if layer_list is not None:
+            num_injected = 0
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                res = inject_granite_hybrid(
+                    layer=lyr,
+                    model_config=cfg,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    lora_rank=lora_rank,
+                    **kwargs,
+                )
+                if res is not None:
+                    num_injected += 1
+            return target if num_injected &gt; 0 else None
+
+    # 2. Single layer injection
+    curr_attn = old_attn
+    if curr_attn is None and target is not None:
+        if hasattr(target, &#34;attention&#34;):
+            if hasattr(target.attention, &#34;self&#34;):
+                curr_attn = target.attention.self
+            else:
+                curr_attn = target.attention
+        elif hasattr(target, &#34;self&#34;):
+            curr_attn = target.self
+        elif hasattr(target, &#34;attn&#34;):
+            curr_attn = target.attn
+        elif hasattr(target, &#34;self_attn&#34;):
+            curr_attn = target.self_attn
+
+    if curr_attn is None and target is not None and hasattr(target, &#34;forward&#34;):
+        curr_attn = target
+
+    if curr_attn is None and cfg is None:
+        return None
+
+    try:
+        new_layer = GraniteHybridBlock(
+            config=cfg,
+            old_attn=curr_attn,
+            lora_rank=lora_rank,
+            **kwargs,
+        )
+    except Exception as ex:
+        logger.warning(&#34;Failed to instantiate GraniteHybridBlock: %s&#34;, ex)
+        return None
+
+    if target is not None:
+        if hasattr(target, &#34;attention&#34;):
+            if hasattr(target.attention, &#34;self&#34;):
+                target.attention.self = new_layer
+                new_layer.is_nested_encoder = True
+            else:
+                target.attention = new_layer
+        elif hasattr(target, &#34;self&#34;):
+            target.self = new_layer
+            new_layer.is_nested_encoder = True
+        elif hasattr(target, &#34;attn&#34;):
+            target.attn = new_layer
+        elif hasattr(target, &#34;self_attn&#34;):
+            target.self_attn = new_layer
+
+    return new_layer</code></pre>
+</details>
+<div class="desc"><p>Injection hook for GraniteHybridBlock supporting single layers and whole models.</p></div>
+</dd>
+<dt id="neuralops.attentions.granite_hybrid.repeat_kv"><code class="name flex">
+<span>def <span class="ident">repeat_kv</span></span>(<span>hidden_states: torch.Tensor, n_rep: int) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -&gt; torch.Tensor:
+    r&#34;&#34;&#34;Expands grouped key/value heads to match query heads.&#34;&#34;&#34;
+    if n_rep == 1:
+        return hidden_states
+    batch, num_kv_heads, slen, head_dim = hidden_states.shape
+    hidden_states = hidden_states[:, :, None, :, :].expand(
+        batch, num_kv_heads, n_rep, slen, head_dim
+    )
+    return hidden_states.reshape(batch, num_kv_heads * n_rep, slen, head_dim)</code></pre>
+</details>
+<div class="desc"><p>Expands grouped key/value heads to match query heads.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.attentions.granite_hybrid.GraniteHybridBlock"><code class="flex name class">
+<span>class <span class="ident">GraniteHybridBlock</span></span>
+<span>(</span><span>config: Any | None = None,<br>rank: int | None = None,<br>dim: int | None = None,<br>num_heads: int | None = None,<br>num_experts: int = 4,<br>top_k: int = 2,<br>ratio: int = 2,<br>pretrained_attn: nn.Module | None = None,<br>old_attn: nn.Module | None = None,<br>comp_config: Any | None = None,<br>lora_rank: int = 16,<br>lora_alpha: float = 32.0,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;granite_hybrid&#34;)
+@ATTENTION_REGISTRY.register(&#34;granite_hybrid_block&#34;)
+class GraniteHybridBlock(BaseAttention):
+    r&#34;&#34;&#34;Granite Hybrid Attention-SSM Layer with MoE Feed-Forward and LoRA Adaptation.&#34;&#34;&#34;
+
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        config: Any | None = None,
+        rank: int | None = None,
+        dim: int | None = None,
+        num_heads: int | None = None,
+        num_experts: int = 4,
+        top_k: int = 2,
+        ratio: int = 2,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
+        comp_config: Any | None = None,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(config, rank)
+        src_attn = pretrained_attn if pretrained_attn is not None else old_attn
+
+        def _get(k: str, default: Any = None) -&gt; Any:
+            for obj in (
+                config,
+                comp_config,
+                getattr(config, &#34;compression_config&#34;, None),
+            ):
+                if obj is not None and hasattr(obj, k):
+                    val = getattr(obj, k)
+                    if val is not None:
+                        return val
+            return kwargs.get(k, default)
+
+        if dim is None:
+            dim = _get(&#34;hidden_size&#34;, _get(&#34;d_model&#34;, _get(&#34;n_embd&#34;, _get(&#34;dim&#34;, None))))
+        if dim is None and src_attn is not None:
+            dim = getattr(src_attn, &#34;hidden_size&#34;, getattr(src_attn, &#34;embed_dim&#34;, None))
+            if dim is None:
+                for cand in (&#34;q_proj&#34;, &#34;q_lin&#34;, &#34;query&#34;, &#34;c_attn&#34;):
+                    m = getattr(src_attn, cand, None)
+                    if m is not None and hasattr(m, &#34;in_features&#34;):
+                        dim = m.in_features
+                        break
+        dim = dim or kwargs.get(&#34;hidden_size&#34;, kwargs.get(&#34;d_model&#34;, kwargs.get(&#34;dim&#34;, 768)))
+
+        if num_heads is None:
+            num_heads = _get(&#34;num_attention_heads&#34;, _get(&#34;num_heads&#34;, None))
+        if num_heads is None and src_attn is not None:
+            num_heads = getattr(
+                src_attn, &#34;num_heads&#34;, getattr(src_attn, &#34;num_attention_heads&#34;, None)
+            )
+        num_heads = num_heads or kwargs.get(&#34;num_attention_heads&#34;, kwargs.get(&#34;num_heads&#34;, 8))
+
+        self.dim: int = int(dim)
+        self.num_heads: int = int(num_heads)
+
+        resolved_head_dim = _get(&#34;head_dim&#34;, None)
+        if resolved_head_dim is None and src_attn is not None:
+            resolved_head_dim = getattr(src_attn, &#34;head_dim&#34;, None)
+        if resolved_head_dim is None:
+            resolved_head_dim = self.dim // max(1, self.num_heads)
+        self.head_dim: int = int(resolved_head_dim)
+
+        kv_heads = _get(&#34;num_key_value_heads&#34;, None)
+        if kv_heads is None and src_attn is not None:
+            kv_heads = getattr(
+                src_attn,
+                &#34;num_key_value_heads&#34;,
+                getattr(src_attn, &#34;num_kv_heads&#34;, getattr(src_attn, &#34;n_kv_heads&#34;, None)),
+            )
+            if (
+                kv_heads is None
+                and hasattr(src_attn, &#34;k_proj&#34;)
+                and hasattr(src_attn.k_proj, &#34;out_features&#34;)
+                and self.head_dim &gt; 0
+            ):
+                kv_heads = src_attn.k_proj.out_features // self.head_dim
+        self.num_kv_heads: int = int(kv_heads if kv_heads is not None else self.num_heads)
+        self.kv_head_size: int = self.num_kv_heads * self.head_dim
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
+
+        # Decoder detection
+        model_type = str(_get(&#34;model_type&#34;, &#34;&#34;)).lower()
+        is_dec = _get(
+            &#34;is_decoder&#34;,
+            _get(&#34;is_causal&#34;, kwargs.get(&#34;is_causal&#34;, kwargs.get(&#34;is_decoder&#34;, False))),
+        )
+        _mt = (model_type or &#34;&#34;).lower()
+        _decoder_prefixes = (
+            &#34;gpt&#34;,
+            &#34;qwen&#34;,
+            &#34;llama&#34;,
+            &#34;mistral&#34;,
+            &#34;gemma&#34;,
+            &#34;phi&#34;,
+            &#34;opt&#34;,
+            &#34;bloom&#34;,
+            &#34;falcon&#34;,
+            &#34;olmo&#34;,
+            &#34;mpt&#34;,
+            &#34;stablelm&#34;,
+        )
+        if any(_mt.startswith(p) for p in _decoder_prefixes):
+            is_dec = True
+        self.is_decoder: bool = bool(is_dec)
+
+        # LoRA setup
+        self.lora_rank: int = int(_get(&#34;lora_rank&#34;, kwargs.get(&#34;lora_rank&#34;, lora_rank)))
+        self.lora_alpha: float = float(_get(&#34;lora_alpha&#34;, kwargs.get(&#34;lora_alpha&#34;, lora_alpha)))
+        self.freeze_base: bool = self.lora_rank &gt; 0
+
+        self.mamba: Mamba2 = Mamba2(d_model=self.dim)
+
+        self.q_proj = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.k_proj = LoRALinear(
+            self.dim,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.v_proj = LoRALinear(
+            self.dim,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+
+        num_exp = int(_get(&#34;num_experts&#34;, kwargs.get(&#34;num_experts&#34;, num_experts)))
+        tk = int(_get(&#34;top_k&#34;, kwargs.get(&#34;top_k&#34;, top_k)))
+        int(_get(&#34;ratio&#34;, kwargs.get(&#34;ratio&#34;, ratio)))
+        self.moe: MixtureOfExperts = MixtureOfExperts(self.dim, self.dim * 4, num_exp, tk)
+        self.alpha = nn.Parameter(torch.tensor(3.0))
+        self.moe_scale = nn.Parameter(torch.zeros(1))
+        self.is_nested_encoder = False
+        self.output_scale = nn.Parameter(torch.ones(1))
+
+        self.rotary_emb = getattr(src_attn, &#34;rotary_emb&#34;, None) if src_attn is not None else None
+        self.comp_config = comp_config
+
+        if src_attn is not None:
+            self.copy_weights(src_attn)
+
+    def copy_weights(self, old_attn: Any) -&gt; None:
+        if old_attn is None:
+            return
+
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
+            &#34;q&#34;: (None, None),
+            &#34;k&#34;: (None, None),
+            &#34;v&#34;: (None, None),
+            &#34;o&#34;: (None, None),
+        }
+
+        try:
+            adapter = UniversalAdapter()
+            for p in [&#34;q&#34;, &#34;k&#34;, &#34;v&#34;, &#34;o&#34;]:
+                w, b = adapter.get_weight_bias(old_attn, p)
+                if w is not None:
+                    extracted[p] = (w, b)
+        except Exception as e:
+            print(f&#34;copy_weights failed: {e}&#34;)
+            logger.warning(f&#34;copy_weights failed: {e}&#34;)
+
+        if hasattr(old_attn, &#34;c_attn&#34;) and extracted[&#34;q&#34;][0] is None:
+            c_w, c_b = _unpack_weight_bias(old_attn.c_attn)
+            if c_w is not None:
+                if c_w.dim() == 2 and c_w.shape[1] == 3 * self.dim:
+                    c_w = c_w.t().contiguous()
+                split_size = c_w.size(0) // 3
+                extracted[&#34;q&#34;] = (
+                    c_w[:split_size],
+                    c_b[:split_size] if c_b is not None else None,
+                )
+                extracted[&#34;k&#34;] = (
+                    c_w[split_size : 2 * split_size],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted[&#34;v&#34;] = (
+                    c_w[2 * split_size :],
+                    c_b[2 * split_size :] if c_b is not None else None,
+                )
+
+            if hasattr(old_attn, &#34;c_proj&#34;) and extracted[&#34;o&#34;][0] is None:
+                o_w, o_b = _unpack_weight_bias(old_attn.c_proj)
+                if o_w is not None:
+                    if o_w.dim() == 2 and o_w.shape[0] != self.dim and o_w.shape[1] == self.dim:
+                        o_w = o_w.t().contiguous()
+                    extracted[&#34;o&#34;] = (o_w, o_b)
+
+        elif hasattr(old_attn, &#34;self&#34;) and hasattr(old_attn.self, &#34;query&#34;):
+            s = old_attn.self
+            for proj_key, sub_name in [(&#34;q&#34;, &#34;query&#34;), (&#34;k&#34;, &#34;key&#34;), (&#34;v&#34;, &#34;value&#34;)]:
+                extracted[proj_key] = _unpack_weight_bias(getattr(s, sub_name, None))
+            if hasattr(old_attn, &#34;output&#34;) and hasattr(old_attn.output, &#34;dense&#34;):
+                extracted[&#34;o&#34;] = _unpack_weight_bias(old_attn.output.dense)
+
+        else:
+            candidates = {
+                &#34;q&#34;: [&#34;q_proj&#34;, &#34;q_lin&#34;, &#34;query&#34;],
+                &#34;k&#34;: [&#34;k_proj&#34;, &#34;k_lin&#34;, &#34;key&#34;],
+                &#34;v&#34;: [&#34;v_proj&#34;, &#34;v_lin&#34;, &#34;value&#34;],
+                &#34;o&#34;: [&#34;out_proj&#34;, &#34;out_lin&#34;, &#34;o_proj&#34;, &#34;dense&#34;],
+            }
+            for proj_key, names in candidates.items():
+                if extracted[proj_key][0] is None:
+                    for name in names:
+                        if hasattr(old_attn, name):
+                            cw, cb = _unpack_weight_bias(getattr(old_attn, name))
+                            if cw is not None:
+                                extracted[proj_key] = (cw, cb)
+                                break
+
+        target_map = {
+            &#34;q&#34;: self.q_proj,
+            &#34;k&#34;: self.k_proj,
+            &#34;v&#34;: self.v_proj,
+            &#34;o&#34;: self.out_proj,
+        }
+        with torch.no_grad():
+            for proj_key, target_mod in target_map.items():
+                w, b = extracted[proj_key]
+                if w is not None:
+                    if w.shape == target_mod.weight.shape:
+                        target_mod.weight.copy_(w)
+                    elif w.t().contiguous().shape == target_mod.weight.shape:
+                        target_mod.weight.copy_(w.t().contiguous())
+                    elif (
+                        w.shape[0] &lt; target_mod.weight.shape[0]
+                        and target_mod.weight.shape[0] % w.shape[0] == 0
+                    ):
+                        repeats = target_mod.weight.shape[0] // w.shape[0]
+                        target_mod.weight.copy_(w.repeat(repeats, 1))
+                    else:
+                        min_0 = min(target_mod.weight.shape[0], w.shape[0])
+                        min_1 = min(target_mod.weight.shape[1], w.shape[1])
+                        target_mod.weight.zero_()
+                        target_mod.weight[:min_0, :min_1].copy_(w[:min_0, :min_1])
+
+                    if b is not None and getattr(target_mod, &#34;bias&#34;, None) is not None:
+                        if b.shape == target_mod.bias.shape:
+                            target_mod.bias.copy_(b)
+                        elif (
+                            b.shape[0] &lt; target_mod.bias.shape[0]
+                            and target_mod.bias.shape[0] % b.shape[0] == 0
+                        ):
+                            repeats = target_mod.bias.shape[0] // b.shape[0]
+                            target_mod.bias.copy_(b.repeat(repeats))
+
+        if self.freeze_base:
+            for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
+                mod.freeze_base_weights()
+
+    def _attn_forward(
+        self,
+        q_in: torch.Tensor,
+        k_in: torch.Tensor,
+        v_in: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        **kwargs: Any,
+    ) -&gt; tuple[torch.Tensor, torch.Tensor | None]:
+        B, L_q, _ = q_in.shape
+        L_k = k_in.shape[1]
+        H = self.num_heads
+        H_kv = self.num_kv_heads
+        Dh = self.head_dim
+
+        q = self.q_proj(q_in).view(B, L_q, H, Dh).transpose(1, 2).contiguous()
+        k = self.k_proj(k_in).view(B, L_k, H_kv, Dh).transpose(1, 2).contiguous()
+        v = self.v_proj(v_in).view(B, L_k, H_kv, Dh).transpose(1, 2).contiguous()
+
+        # RoPE application
+        pos_emb = (
+            position_embeddings
+            if position_embeddings is not None
+            else kwargs.get(&#34;position_embeddings&#34;)
+        )
+        pos_ids = kwargs.get(&#34;position_ids&#34;)
+        if pos_emb is not None:
+            if isinstance(pos_emb, (tuple, list)) and len(pos_emb) &gt;= 2:
+                cos, sin = pos_emb[0], pos_emb[1]
+                q, k = apply_rotary_pos_emb(q, k, cos, sin, pos_ids)
+        elif self.rotary_emb is not None:
+            rotary_mod = self.rotary_emb
+            if pos_ids is None:
+                pos_ids = torch.arange(L_q, device=q_in.device).unsqueeze(0).expand(B, -1)
+            try:
+                cos, sin = rotary_mod(q, seq_len=L_k)
+            except Exception:
+                try:
+                    cos, sin = rotary_mod(q, pos_ids)
+                except Exception:
+                    try:
+                        cos, sin = rotary_mod(q)
+                    except Exception:
+                        cos, sin = None, None
+            if cos is not None and sin is not None:
+                q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
+
+        if self.kv_repeat &gt; 1:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        scale = 1.0 / math.sqrt(Dh)
+        scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
+
+        if self.is_decoder and L_q == L_k:
+            causal_mask = torch.triu(torch.full((L_q, L_k), -1e4, device=q_in.device), diagonal=1)
+            scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
+
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                pad_mask = (attention_mask == 0).view(B, 1, 1, L_k)
+                scores = scores.masked_fill(pad_mask, -10000.0)
+            elif attention_mask.dim() == 3:
+                scores = scores + attention_mask.unsqueeze(1)
+            elif attention_mask.dim() == 4:
+                scores = scores + attention_mask
+
+        attn_weights = F.softmax(scores, dim=-1)
+        attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
+        context = torch.matmul(attn_weights, v)
+        context = context.transpose(1, 2).contiguous().view(B, L_q, self.all_head_size)
+        if self.is_nested_encoder:
+            out = context
+        else:
+            out = self.out_proj(context)
+        return out, attn_weights
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -&gt; tuple[torch.Tensor, torch.Tensor | None]:
+        if encoder_hidden_states is not None:
+            return hidden_states, None
+
+        while isinstance(hidden_states, (tuple, list)):
+            hidden_states = hidden_states[0]
+
+        attn_out, attn_weights = self._attn_forward(
+            hidden_states,
+            hidden_states,
+            hidden_states,
+            attention_mask=attention_mask,
+            position_embeddings=position_embeddings,
+            **kwargs,
+        )
+
+        mamba_out = self.mamba(hidden_states)
+        gate = torch.sigmoid(self.alpha)
+        x = gate * attn_out + (1.0 - gate) * mamba_out
+        x = x + self.moe_scale * self.moe(x)
+
+        if x.shape[-1] != hidden_states.shape[-1]:
+            if x.shape[-1] &lt; hidden_states.shape[-1]:
+                x = F.pad(x, (0, hidden_states.shape[-1] - x.shape[-1]))
+            else:
+                x = x[..., : hidden_states.shape[-1]]
+
+        return x, (attn_weights if output_attentions else None)</code></pre>
+</details>
+<div class="desc"><p>Granite Hybrid Attention-SSM Layer with MoE Feed-Forward and LoRA Adaptation.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.granite_hybrid.GraniteHybridBlock.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseAttention.copy_weights" href="../core/base.html#neuralops.core.base.BaseAttention.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.extra_repr" href="../core/base.html#neuralops.core.base.BaseAttention.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.forward" href="../core/base.html#neuralops.core.base.BaseAttention.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.attentions.granite_hybrid.Mamba2"><code class="flex name class">
+<span>class <span class="ident">Mamba2</span></span>
+<span>(</span><span>d_model: int, d_state: int = 16, d_conv: int = 4, expand: int = 2, **kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Mamba2(nn.Module):
+    r&#34;&#34;&#34;Simplified Mamba-2 State Space Model (SSM) block.&#34;&#34;&#34;
+
+    def __init__(
+        self,
+        d_model: int,
+        d_state: int = 16,
+        d_conv: int = 4,
+        expand: int = 2,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__()
+        self.d_model: int = d_model
+        self.d_state: int = d_state
+        self.expand: int = expand
+        inner_dim: int = d_model * expand
+
+        self.in_proj: nn.Linear = nn.Linear(d_model, inner_dim * 2)
+        self.conv1d: nn.Conv1d = nn.Conv1d(
+            inner_dim, inner_dim, d_conv, groups=inner_dim, padding=d_conv - 1
+        )
+        self.dt_proj: nn.Linear = nn.Linear(inner_dim, inner_dim)
+        self.A_log: nn.Parameter = nn.Parameter(torch.log(torch.rand(inner_dim, d_state) * 0.1))
+        self.D: nn.Parameter = nn.Parameter(torch.ones(inner_dim))
+        self.out_proj: nn.Linear = nn.Linear(inner_dim, d_model)
+
+    def forward(self, x: torch.Tensor, **kwargs: Any) -&gt; torch.Tensor:
+        B, L, D = x.shape
+        inner_dim = self.in_proj.out_features // 2
+        x_proj = self.in_proj(x)
+        x_ssm, z = x_proj.chunk(2, dim=-1)
+        x_ssm = (
+            self.conv1d(x_ssm.transpose(1, 2).contiguous())[..., :L].transpose(1, 2).contiguous()
+        )
+        dt = F.softplus(self.dt_proj(x_ssm))
+        A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x.dtype)
+
+        dA_exp_arg = torch.clamp(torch.einsum(&#34;bli,in-&gt;blin&#34;, dt, A), min=-20.0, max=0.0)
+        dA = torch.exp(dA_exp_arg)
+        dBX = torch.einsum(&#34;bli,blin-&gt;blin&#34;, x_ssm, dt.unsqueeze(-1))
+
+        # Numerically stable recurrence bounded without exponential overflow
+        h_t = torch.zeros(B, inner_dim, self.d_state, device=x.device, dtype=x.dtype)
+        h_list = []
+        for t in range(L):
+            h_t = dA[:, t] * h_t + dBX[:, t]
+            h_t = torch.clamp(h_t, min=-1e4, max=1e4)
+            h_list.append(h_t)
+        h = torch.stack(h_list, dim=1)
+
+        out = (h * self.D.view(1, 1, inner_dim, 1)).sum(dim=-1) * F.silu(z)
+        return self.out_proj(out)</code></pre>
+</details>
+<div class="desc"><p>Simplified Mamba-2 State Space Model (SSM) block.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.granite_hybrid.Mamba2.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor, **kwargs: Any) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor, **kwargs: Any) -&gt; torch.Tensor:
+    B, L, D = x.shape
+    inner_dim = self.in_proj.out_features // 2
+    x_proj = self.in_proj(x)
+    x_ssm, z = x_proj.chunk(2, dim=-1)
+    x_ssm = (
+        self.conv1d(x_ssm.transpose(1, 2).contiguous())[..., :L].transpose(1, 2).contiguous()
+    )
+    dt = F.softplus(self.dt_proj(x_ssm))
+    A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x.dtype)
+
+    dA_exp_arg = torch.clamp(torch.einsum(&#34;bli,in-&gt;blin&#34;, dt, A), min=-20.0, max=0.0)
+    dA = torch.exp(dA_exp_arg)
+    dBX = torch.einsum(&#34;bli,blin-&gt;blin&#34;, x_ssm, dt.unsqueeze(-1))
+
+    # Numerically stable recurrence bounded without exponential overflow
+    h_t = torch.zeros(B, inner_dim, self.d_state, device=x.device, dtype=x.dtype)
+    h_list = []
+    for t in range(L):
+        h_t = dA[:, t] * h_t + dBX[:, t]
+        h_t = torch.clamp(h_t, min=-1e4, max=1e4)
+        h_list.append(h_t)
+    h = torch.stack(h_list, dim=1)
+
+    out = (h * self.D.view(1, 1, inner_dim, 1)).sum(dim=-1) * F.silu(z)
+    return self.out_proj(out)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.attentions.granite_hybrid.MixtureOfExperts"><code class="flex name class">
+<span>class <span class="ident">MixtureOfExperts</span></span>
+<span>(</span><span>dim: int, ff_dim: int, num_experts: int = 4, top_k: int = 2, **kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class MixtureOfExperts(nn.Module):
+    r&#34;&#34;&#34;Top-$k$ Token-Choice Mixture-of-Experts (MoE) Layer.&#34;&#34;&#34;
+
+    def __init__(
+        self,
+        dim: int,
+        ff_dim: int,
+        num_experts: int = 4,
+        top_k: int = 2,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__()
+        self.output_scale = nn.Parameter(torch.ones(1))
+        self.dim: int = dim
+        self.num_experts: int = num_experts
+        self.top_k = top_k
+        self.experts: nn.ModuleList = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Linear(dim, ff_dim),
+                    nn.GELU(),
+                    nn.Linear(ff_dim, dim),
+                )
+                for _ in range(num_experts)
+            ]
+        )
+        self.router: nn.Linear = nn.Linear(dim, num_experts)
+
+    def forward(self, x: torch.Tensor, **kwargs: Any) -&gt; torch.Tensor:
+        B, L, D = x.shape
+        scores = self.router(x)  # (B, L, E)
+        k = min(self.top_k, scores.shape[-1])
+        weights, indices = torch.topk(scores, k, dim=-1)
+        weights = F.softmax(weights, dim=-1)
+        out = torch.zeros_like(x)
+        for e in range(self.num_experts):
+            mask = (indices == e).any(dim=-1)  # (B, L)
+            if mask.any():
+                selected_weights = (weights * (indices == e).float()).sum(dim=-1, keepdim=True)
+                out += (
+                    mask.unsqueeze(-1) * selected_weights * self.experts[e](x * mask.unsqueeze(-1))
+                )
+        return out</code></pre>
+</details>
+<div class="desc"><p>Top-$k$ Token-Choice Mixture-of-Experts (MoE) Layer.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.granite_hybrid.MixtureOfExperts.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor, **kwargs: Any) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor, **kwargs: Any) -&gt; torch.Tensor:
+    B, L, D = x.shape
+    scores = self.router(x)  # (B, L, E)
+    k = min(self.top_k, scores.shape[-1])
+    weights, indices = torch.topk(scores, k, dim=-1)
+    weights = F.softmax(weights, dim=-1)
+    out = torch.zeros_like(x)
+    for e in range(self.num_experts):
+        mask = (indices == e).any(dim=-1)  # (B, L)
+        if mask.any():
+            selected_weights = (weights * (indices == e).float()).sum(dim=-1, keepdim=True)
+            out += (
+                mask.unsqueeze(-1) * selected_weights * self.experts[e](x * mask.unsqueeze(-1))
+            )
+    return out</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.attentions" href="index.html">neuralops.attentions</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.attentions.granite_hybrid.apply_rotary_pos_emb" href="#neuralops.attentions.granite_hybrid.apply_rotary_pos_emb">apply_rotary_pos_emb</a></code></li>
+<li><code><a title="neuralops.attentions.granite_hybrid.inject_granite_hybrid" href="#neuralops.attentions.granite_hybrid.inject_granite_hybrid">inject_granite_hybrid</a></code></li>
+<li><code><a title="neuralops.attentions.granite_hybrid.repeat_kv" href="#neuralops.attentions.granite_hybrid.repeat_kv">repeat_kv</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.attentions.granite_hybrid.GraniteHybridBlock" href="#neuralops.attentions.granite_hybrid.GraniteHybridBlock">GraniteHybridBlock</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.granite_hybrid.GraniteHybridBlock.is_custom_attention" href="#neuralops.attentions.granite_hybrid.GraniteHybridBlock.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.granite_hybrid.Mamba2" href="#neuralops.attentions.granite_hybrid.Mamba2">Mamba2</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.granite_hybrid.Mamba2.forward" href="#neuralops.attentions.granite_hybrid.Mamba2.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.granite_hybrid.MixtureOfExperts" href="#neuralops.attentions.granite_hybrid.MixtureOfExperts">MixtureOfExperts</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.granite_hybrid.MixtureOfExperts.forward" href="#neuralops.attentions.granite_hybrid.MixtureOfExperts.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

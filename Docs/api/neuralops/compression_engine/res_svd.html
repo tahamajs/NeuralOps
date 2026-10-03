@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.res_svd API documentation</title>
+<meta name="description" content="Spectral Residual Low-Rank Adaptation (Res-SVD / Spectral Residual LoRA) …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.res_svd</code></h1>
+</header>
+<section id="section-intro">
+<p>Spectral Residual Low-Rank Adaptation (Res-SVD / Spectral Residual LoRA).</p>
+<p>Decomposes dense weight matrices into:
+1. Frozen Base Low-Rank Factors: $W_{\text{base}} = U_r \Sigma_r V_r^\top$ (rank $r$, frozen).
+2. Trainable Residual Adapters: Initialized directly from the top-$k$ singular directions of the
+residual error $E = W - W_{\text{base}} = \sum_{j=r+1}^{r+k} \sigma_j u_j v_j^\top$.
+$$A = \sqrt{\Sigma_{\text{tail}}} V_{\text{tail}}^\top, \quad B = U_{\text{tail}} \sqrt{\Sigma_{\text{tail}}}$$
+ensuring $\Delta W = B A \approx E$ at zero-shot initialization.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.res_svd.res_svd_compressor_factory"><code class="name flex">
+<span>def <span class="ident">res_svd_compressor_factory</span></span>(<span>model: Any, comp_config: Any = None, **kwargs: Any) ‑> torch.nn.modules.module.Module</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def res_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -&gt; nn.Module:
+    &#34;&#34;&#34;Res-SVD factory function.&#34;&#34;&#34;
+    compressor = ResSVDCompressor(model, comp_config=comp_config, **kwargs)
+    compressed_model, _ = compressor.compress()
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>Res-SVD factory function.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.res_svd.res_svd_factory"><code class="name flex">
+<span>def <span class="ident">res_svd_factory</span></span>(<span>model: Any, comp_config: Any = None, **kwargs: Any) ‑> torch.nn.modules.module.Module</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def res_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -&gt; nn.Module:
+    &#34;&#34;&#34;Res-SVD factory function.&#34;&#34;&#34;
+    compressor = ResSVDCompressor(model, comp_config=comp_config, **kwargs)
+    compressed_model, _ = compressor.compress()
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>Res-SVD factory function.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.res_svd.spectral_residual_lora_factory"><code class="name flex">
+<span>def <span class="ident">spectral_residual_lora_factory</span></span>(<span>model: Any, comp_config: Any = None, **kwargs: Any) ‑> torch.nn.modules.module.Module</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def spectral_residual_lora_factory(model: Any, comp_config: Any = None, **kwargs: Any) -&gt; nn.Module:
+    &#34;&#34;&#34;Spectral Residual LoRA factory function.&#34;&#34;&#34;
+    compressor = SpectralResidualLoRA(model, comp_config=comp_config, **kwargs)
+    compressed_model, _ = compressor.compress()
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>Spectral Residual LoRA factory function.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.res_svd.ResSVDCompressor"><code class="flex name class">
+<span>class <span class="ident">ResSVDCompressor</span></span>
+<span>(</span><span>model: nn.Module,<br>base_rank: int = 32,<br>residual_rank: int = 8,<br>scaling: float = 1.0,<br>factorize_base: bool = True,<br>freeze_base: bool = True,<br>target_modules: list[str] | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ResSVDCompressor(BaseCompressor):
+    &#34;&#34;&#34;
+    Spectral Residual LoRA (Res-SVD) Compressor.
+
+    Replaces standard Linear layers with ResSVDLinear modules, truncating base weights
+    at rank r (frozen) and initializing adapter matrices A, B directly from the residual error tail.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module,
+        base_rank: int = 32,
+        residual_rank: int = 8,
+        scaling: float = 1.0,
+        factorize_base: bool = True,
+        freeze_base: bool = True,
+        target_modules: list[str] | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;res_svd&#34;, **kwargs)
+        cfg = kwargs.get(&#34;comp_config&#34;, kwargs.get(&#34;cfg&#34;))
+        if cfg is not None:
+            base_rank = getattr(cfg, &#34;base_rank&#34;, getattr(cfg, &#34;rank&#34;, base_rank))
+            residual_rank = getattr(cfg, &#34;residual_rank&#34;, residual_rank)
+            scaling = getattr(cfg, &#34;scaling&#34;, getattr(cfg, &#34;lora_alpha&#34;, scaling))
+            factorize_base = getattr(cfg, &#34;factorize_base&#34;, factorize_base)
+            freeze_base = getattr(cfg, &#34;freeze_base&#34;, freeze_base)
+
+        if &#34;rank&#34; in kwargs and kwargs[&#34;rank&#34;] is not None:
+            base_rank = kwargs[&#34;rank&#34;]
+
+        self.base_rank = base_rank
+        self.residual_rank = residual_rank
+        self.scaling = scaling
+        self.factorize_base = factorize_base
+        self.freeze_base = freeze_base
+        self.target_modules = target_modules
+        self.replaced_layers: list[str] = []
+
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        &#34;&#34;&#34;Check whether module is an eligible nn.Linear layer matching filter.&#34;&#34;&#34;
+        if not isinstance(module, nn.Linear):
+            return False
+        if isinstance(module, ResSVDLinear):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_modules is None:
+            return True
+        return any(t in name for t in self.target_modules)
+
+    def compress(self) -&gt; tuple[nn.Module, dict[str, Any]]:
+        &#34;&#34;&#34;
+        Compress target linear layers into ResSVDLinear modules.
+
+        Returns:
+            Tuple[nn.Module, Dict[str, Any]]: Compressed model and compression statistics.
+        &#34;&#34;&#34;
+        self.replaced_layers = []
+
+        # Find target linear layers
+        target_layers = [
+            (name, mod)
+            for name, mod in self.model.named_modules()
+            if self._is_target_module(name, mod)
+        ]
+
+        if not target_layers:
+            logger.warning(&#34;No compressible linear layers found in model.&#34;)
+            return self.model, self.get_compression_stats()
+
+        for name, old_linear in target_layers:
+            res_layer = ResSVDLinear.from_linear(
+                linear=old_linear,
+                base_rank=self.base_rank,
+                residual_rank=self.residual_rank,
+                scaling=self.scaling,
+                factorize_base=self.factorize_base,
+                freeze_base=self.freeze_base,
+            )
+            replace_module(self.model, name, res_layer)
+            self.replaced_layers.append(name)
+
+        # Calculate statistics
+        total_params = self._count_params(self.model)
+        trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+        frozen_params = total_params - trainable_params
+
+        stats = self.get_compression_stats()
+        stats[&#34;trainable_parameters&#34;] = trainable_params
+        stats[&#34;frozen_parameters&#34;] = frozen_params
+        stats[&#34;trainable_percentage&#34;] = (
+            (trainable_params / total_params * 100.0) if total_params &gt; 0 else 0.0
+        )
+        stats[&#34;base_rank&#34;] = self.base_rank
+        stats[&#34;residual_rank&#34;] = self.residual_rank
+        stats[&#34;replaced_layers&#34;] = self.replaced_layers
+
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Spectral Residual LoRA (Res-SVD) Compressor.</p>
+<p>Replaces standard Linear layers with ResSVDLinear modules, truncating base weights
+at rank r (frozen) and initializing adapter matrices A, B directly from the residual error tail.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li>neuralops.compression_engine.res_svd.ResSVDCompressorRegistered</li>
+<li><a title="neuralops.compression_engine.res_svd.SpectralResidualLoRA" href="#neuralops.compression_engine.res_svd.SpectralResidualLoRA">SpectralResidualLoRA</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.res_svd.ResSVDCompressor.compress"><code class="name flex">
+<span>def <span class="ident">compress</span></span>(<span>self) ‑> tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress(self) -&gt; tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;
+    Compress target linear layers into ResSVDLinear modules.
+
+    Returns:
+        Tuple[nn.Module, Dict[str, Any]]: Compressed model and compression statistics.
+    &#34;&#34;&#34;
+    self.replaced_layers = []
+
+    # Find target linear layers
+    target_layers = [
+        (name, mod)
+        for name, mod in self.model.named_modules()
+        if self._is_target_module(name, mod)
+    ]
+
+    if not target_layers:
+        logger.warning(&#34;No compressible linear layers found in model.&#34;)
+        return self.model, self.get_compression_stats()
+
+    for name, old_linear in target_layers:
+        res_layer = ResSVDLinear.from_linear(
+            linear=old_linear,
+            base_rank=self.base_rank,
+            residual_rank=self.residual_rank,
+            scaling=self.scaling,
+            factorize_base=self.factorize_base,
+            freeze_base=self.freeze_base,
+        )
+        replace_module(self.model, name, res_layer)
+        self.replaced_layers.append(name)
+
+    # Calculate statistics
+    total_params = self._count_params(self.model)
+    trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+    frozen_params = total_params - trainable_params
+
+    stats = self.get_compression_stats()
+    stats[&#34;trainable_parameters&#34;] = trainable_params
+    stats[&#34;frozen_parameters&#34;] = frozen_params
+    stats[&#34;trainable_percentage&#34;] = (
+        (trainable_params / total_params * 100.0) if total_params &gt; 0 else 0.0
+    )
+    stats[&#34;base_rank&#34;] = self.base_rank
+    stats[&#34;residual_rank&#34;] = self.residual_rank
+    stats[&#34;replaced_layers&#34;] = self.replaced_layers
+
+    return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Compress target linear layers into ResSVDLinear modules.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Tuple[nn.Module, Dict[str, Any]]</code></dt>
+<dd>Compressed model and compression statistics.</dd>
+</dl></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.compression_engine.res_svd.ResSVDLinear"><code class="flex name class">
+<span>class <span class="ident">ResSVDLinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>base_rank: int = 32,<br>residual_rank: int = 8,<br>scaling: float = 1.0,<br>factorize_base: bool = True,<br>bias: bool = True,<br>dtype: torch.dtype = torch.float32,<br>device: torch.device | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ResSVDLinear(nn.Module):
+    &#34;&#34;&#34;
+    Spectral Residual LoRA (Res-SVD) Linear Layer.
+
+    Executes forward pass as:
+    y = x @ W_base^T + scaling * (x @ A^T) @ B^T + bias
+    where W_base is either factorized as (base_V, base_U) with requires_grad=False,
+    and (lora_A, lora_B) are trainable adapter matrices initialized from the residual tail.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        base_rank: int = 32,
+        residual_rank: int = 8,
+        scaling: float = 1.0,
+        factorize_base: bool = True,
+        bias: bool = True,
+        dtype: torch.dtype = torch.float32,
+        device: torch.device | None = None,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        max_possible_rank = min(in_features, out_features)
+
+        # Bounds validation
+        self.base_rank = max(1, min(base_rank, max_possible_rank))
+        remaining_rank = max(0, max_possible_rank - self.base_rank)
+        self.residual_rank = max(0, min(residual_rank, remaining_rank))
+        self.scaling = float(scaling)
+        self.factorize_base = factorize_base
+
+        # Base parameters (Frozen)
+        if self.factorize_base:
+            self.base_V = nn.Parameter(
+                torch.empty(self.base_rank, in_features, dtype=dtype, device=device),
+                requires_grad=False,
+            )
+            self.base_U = nn.Parameter(
+                torch.empty(out_features, self.base_rank, dtype=dtype, device=device),
+                requires_grad=False,
+            )
+        else:
+            self.base_weight = nn.Parameter(
+                torch.empty(out_features, in_features, dtype=dtype, device=device),
+                requires_grad=False,
+            )
+
+        # Trainable Residual LoRA Adapters
+        if self.residual_rank &gt; 0:
+            self.lora_A = nn.Parameter(
+                torch.empty(self.residual_rank, in_features, dtype=dtype, device=device),
+                requires_grad=True,
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty(out_features, self.residual_rank, dtype=dtype, device=device),
+                requires_grad=True,
+            )
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device))
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+        self.reset_parameters()
+
+    def reset_parameters(self) -&gt; None:
+        &#34;&#34;&#34;Kaiming uniform parameter initialization for base and zero for adapters.&#34;&#34;&#34;
+        if self.factorize_base:
+            nn.init.kaiming_uniform_(self.base_V, a=math.sqrt(5))
+            nn.init.kaiming_uniform_(self.base_U, a=math.sqrt(5))
+        else:
+            nn.init.kaiming_uniform_(self.base_weight, a=math.sqrt(5))
+
+        if self.residual_rank &gt; 0:
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+
+        if self.bias is not None:
+            fan_in = self.in_features
+            bound = 1 / math.sqrt(fan_in) if fan_in &gt; 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Reconstructed effective weight matrix for compatibility.&#34;&#34;&#34;
+        if self.factorize_base:
+            base = torch.matmul(self.base_U, self.base_V)
+        else:
+            base = self.base_weight
+        if self.residual_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            res = self.scaling * torch.matmul(self.lora_B, self.lora_A)
+            return base + res
+        return base
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        &#34;&#34;&#34;
+        Forward execution:
+        y = Base(x) + scaling * (x @ A^T) @ B^T + bias
+        &#34;&#34;&#34;
+        # RESEARCH FIX: Two-stage factorized forward for frozen base to minimize memory footprint
+        if self.factorize_base:
+            base_intermediate = F.linear(x, self.base_V)
+            base_out = F.linear(base_intermediate, self.base_U)
+        else:
+            base_out = F.linear(x, self.base_weight)
+
+        # Trainable spectral residual LoRA adapter forward
+        if self.residual_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            res_intermediate = F.linear(x, self.lora_A)
+            res_out = self.scaling * F.linear(res_intermediate, self.lora_B)
+            out = base_out + res_out
+        else:
+            out = base_out
+
+        if self.bias is not None:
+            out = out + self.bias
+
+        return out
+
+    @classmethod
+    def from_linear(
+        cls,
+        linear: nn.Linear,
+        base_rank: int = 32,
+        residual_rank: int = 8,
+        scaling: float = 1.0,
+        factorize_base: bool = True,
+        freeze_base: bool = True,
+    ) -&gt; ResSVDLinear:
+        &#34;&#34;&#34;
+        Construct ResSVDLinear by decomposing a pretrained nn.Linear weight:
+        1. Base factors U_r, V_r from the dominant top-r singular components.
+        2. Residual adapter factors A, B directly initialized from the residual tail (r+1 to r+k).
+
+        Args:
+            linear: Source dense linear layer.
+            base_rank: Rank r for the frozen base matrix.
+            residual_rank: Rank k for the trainable residual adapter.
+            scaling: Multiplier alpha / k for adapter output.
+            factorize_base: Whether to store base weights as factorized U, V matrices.
+            freeze_base: Whether to freeze base factors (requires_grad=False).
+
+        Returns:
+            ResSVDLinear: Spectral residual LoRA module.
+        &#34;&#34;&#34;
+        in_f = linear.in_features
+        out_f = linear.out_features
+        max_rank = min(in_f, out_f)
+
+        r = max(1, min(base_rank, max_rank))
+        rem = max(0, max_rank - r)
+        k = max(0, min(residual_rank, rem))
+
+        new_layer = cls(
+            in_features=in_f,
+            out_features=out_f,
+            base_rank=r,
+            residual_rank=k,
+            scaling=scaling,
+            factorize_base=factorize_base,
+            bias=linear.bias is not None,
+            dtype=linear.weight.dtype,
+            device=linear.weight.device,
+        )
+
+        W = linear.weight.data.float()  # (out_f, in_f)
+
+        # SVD decomposition of source weight
+        U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+
+        # 1. Base Truncation (Dominant Top-r Singular Components)
+        U_base = U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)  # (out_f, r)
+        V_base = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]  # (r, in_f)
+
+        if factorize_base:
+            new_layer.base_U.data.copy_(U_base.to(dtype=linear.weight.dtype))
+            new_layer.base_V.data.copy_(V_base.to(dtype=linear.weight.dtype))
+            new_layer.base_U.requires_grad = not freeze_base
+            new_layer.base_V.requires_grad = not freeze_base
+        else:
+            W_base = (U[:, :r] * S[:r].unsqueeze(0)) @ Vh[:r, :]
+            new_layer.base_weight.data.copy_(W_base.to(dtype=linear.weight.dtype))
+            new_layer.base_weight.requires_grad = not freeze_base
+
+        # 2. Residual Tail Initialization (Singular directions r to r+k)
+        # RESEARCH FIX: Analytical spectral initialization of LoRA adapter weights (A, B) directly
+        # from the residual tail E = W - U_r V_r minimizes initial reconstruction loss to zero-shot optimality.
+        if k &gt; 0:
+            S_tail = S[r : r + k]
+            U_tail = U[:, r : r + k]
+            Vh_tail = Vh[r : r + k, :]
+
+            # Scale S_tail by adapter scaling factor gamma: (B @ A) * gamma = E_tail
+            scale_factor = max(1e-8, float(scaling))
+            S_tail_scaled = S_tail / scale_factor
+
+            sqrt_S = torch.sqrt(torch.clamp(S_tail_scaled, min=0.0))
+            lora_A_init = sqrt_S.unsqueeze(1) * Vh_tail  # (k, in_f)
+            lora_B_init = U_tail * sqrt_S.unsqueeze(0)  # (out_f, k)
+
+            new_layer.lora_A.data.copy_(lora_A_init.to(dtype=linear.weight.dtype))
+            new_layer.lora_B.data.copy_(lora_B_init.to(dtype=linear.weight.dtype))
+            new_layer.lora_A.requires_grad = True
+            new_layer.lora_B.requires_grad = True
+
+        # Copy bias if present
+        if linear.bias is not None:
+            new_layer.bias.data.copy_(linear.bias.data)
+
+        return new_layer
+
+    def merge_weights(self) -&gt; nn.Linear:
+        &#34;&#34;&#34;
+        Merge frozen base weights and trainable residual adapter weights into a dense nn.Linear.
+
+        Returns:
+            nn.Linear: Standard dense linear layer with merged weights.
+        &#34;&#34;&#34;
+        device = next(self.parameters()).device
+        dtype = self.base_U.dtype if self.factorize_base else self.base_weight.dtype
+
+        merged_linear = nn.Linear(
+            self.in_features,
+            self.out_features,
+            bias=self.bias is not None,
+            device=device,
+            dtype=dtype,
+        )
+
+        with torch.no_grad():
+            if self.factorize_base:
+                W_base = self.base_U.float() @ self.base_V.float()
+            else:
+                W_base = self.base_weight.float()
+
+            if self.residual_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+                delta_W = self.scaling * (self.lora_B.float() @ self.lora_A.float())
+                W_total = W_base + delta_W
+            else:
+                W_total = W_base
+
+            merged_linear.weight.data.copy_(W_total.to(dtype=dtype))
+            if self.bias is not None:
+                merged_linear.bias.data.copy_(self.bias.data)
+
+        return merged_linear
+
+    def get_residual_error_norm(self, original_weight: torch.Tensor | None = None) -&gt; float:
+        &#34;&#34;&#34;
+        Calculate relative Frobenius norm reconstruction error:
+        || W_orig - (W_base + scaling * B @ A) ||_F / || W_orig ||_F
+        &#34;&#34;&#34;
+        with torch.no_grad():
+            if self.factorize_base:
+                W_approx = self.base_U.float() @ self.base_V.float()
+            else:
+                W_approx = self.base_weight.float()
+
+            if self.residual_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+                W_approx = W_approx + self.scaling * (self.lora_B.float() @ self.lora_A.float())
+
+            if original_weight is not None:
+                W_orig = original_weight.float().to(W_approx.device)
+                error = torch.norm(W_orig - W_approx, p=&#34;fro&#34;) / (
+                    torch.norm(W_orig, p=&#34;fro&#34;) + 1e-12
+                )
+                return float(error.item())
+
+            return 0.0
+
+    def extra_repr(self) -&gt; str:
+        return (
+            f&#34;in_features={self.in_features}, out_features={self.out_features}, &#34;
+            f&#34;base_rank={self.base_rank}, residual_rank={self.residual_rank}, &#34;
+            f&#34;scaling={self.scaling}, factorize_base={self.factorize_base}&#34;
+        )</code></pre>
+</details>
+<div class="desc"><p>Spectral Residual LoRA (Res-SVD) Linear Layer.</p>
+<p>Executes forward pass as:
+y = x @ W_base^T + scaling * (x @ A^T) @ B^T + bias
+where W_base is either factorized as (base_V, base_U) with requires_grad=False,
+and (lora_A, lora_B) are trainable adapter matrices initialized from the residual tail.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.res_svd.ResSVDLinear.from_linear"><code class="name flex">
+<span>def <span class="ident">from_linear</span></span>(<span>linear: nn.Linear,<br>base_rank: int = 32,<br>residual_rank: int = 8,<br>scaling: float = 1.0,<br>factorize_base: bool = True,<br>freeze_base: bool = True) ‑> <a title="neuralops.compression_engine.res_svd.ResSVDLinear" href="#neuralops.compression_engine.res_svd.ResSVDLinear">ResSVDLinear</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Construct ResSVDLinear by decomposing a pretrained nn.Linear weight:
+1. Base factors U_r, V_r from the dominant top-r singular components.
+2. Residual adapter factors A, B directly initialized from the residual tail (r+1 to r+k).</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>linear</code></strong></dt>
+<dd>Source dense linear layer.</dd>
+<dt><strong><code>base_rank</code></strong></dt>
+<dd>Rank r for the frozen base matrix.</dd>
+<dt><strong><code>residual_rank</code></strong></dt>
+<dd>Rank k for the trainable residual adapter.</dd>
+<dt><strong><code>scaling</code></strong></dt>
+<dd>Multiplier alpha / k for adapter output.</dd>
+<dt><strong><code>factorize_base</code></strong></dt>
+<dd>Whether to store base weights as factorized U, V matrices.</dd>
+<dt><strong><code>freeze_base</code></strong></dt>
+<dd>Whether to freeze base factors (requires_grad=False).</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code><a title="neuralops.compression_engine.res_svd.ResSVDLinear" href="#neuralops.compression_engine.res_svd.ResSVDLinear">ResSVDLinear</a></code></dt>
+<dd>Spectral residual LoRA module.</dd>
+</dl></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.res_svd.ResSVDLinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Reconstructed effective weight matrix for compatibility.&#34;&#34;&#34;
+    if self.factorize_base:
+        base = torch.matmul(self.base_U, self.base_V)
+    else:
+        base = self.base_weight
+    if self.residual_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        res = self.scaling * torch.matmul(self.lora_B, self.lora_A)
+        return base + res
+    return base</code></pre>
+</details>
+<div class="desc"><p>Reconstructed effective weight matrix for compatibility.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.res_svd.ResSVDLinear.extra_repr"><code class="name flex">
+<span>def <span class="ident">extra_repr</span></span>(<span>self) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def extra_repr(self) -&gt; str:
+    return (
+        f&#34;in_features={self.in_features}, out_features={self.out_features}, &#34;
+        f&#34;base_rank={self.base_rank}, residual_rank={self.residual_rank}, &#34;
+        f&#34;scaling={self.scaling}, factorize_base={self.factorize_base}&#34;
+    )</code></pre>
+</details>
+<div class="desc"><p>Return the extra representation of the module.</p>
+<p>To print customized extra information, you should re-implement
+this method in your own modules. Both single-line and multi-line
+strings are acceptable.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.res_svd.ResSVDLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    &#34;&#34;&#34;
+    Forward execution:
+    y = Base(x) + scaling * (x @ A^T) @ B^T + bias
+    &#34;&#34;&#34;
+    # RESEARCH FIX: Two-stage factorized forward for frozen base to minimize memory footprint
+    if self.factorize_base:
+        base_intermediate = F.linear(x, self.base_V)
+        base_out = F.linear(base_intermediate, self.base_U)
+    else:
+        base_out = F.linear(x, self.base_weight)
+
+    # Trainable spectral residual LoRA adapter forward
+    if self.residual_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        res_intermediate = F.linear(x, self.lora_A)
+        res_out = self.scaling * F.linear(res_intermediate, self.lora_B)
+        out = base_out + res_out
+    else:
+        out = base_out
+
+    if self.bias is not None:
+        out = out + self.bias
+
+    return out</code></pre>
+</details>
+<div class="desc"><p>Forward execution:
+y = Base(x) + scaling * (x @ A^T) @ B^T + bias</p></div>
+</dd>
+<dt id="neuralops.compression_engine.res_svd.ResSVDLinear.get_residual_error_norm"><code class="name flex">
+<span>def <span class="ident">get_residual_error_norm</span></span>(<span>self, original_weight: torch.Tensor | None = None) ‑> float</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_residual_error_norm(self, original_weight: torch.Tensor | None = None) -&gt; float:
+    &#34;&#34;&#34;
+    Calculate relative Frobenius norm reconstruction error:
+    || W_orig - (W_base + scaling * B @ A) ||_F / || W_orig ||_F
+    &#34;&#34;&#34;
+    with torch.no_grad():
+        if self.factorize_base:
+            W_approx = self.base_U.float() @ self.base_V.float()
+        else:
+            W_approx = self.base_weight.float()
+
+        if self.residual_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            W_approx = W_approx + self.scaling * (self.lora_B.float() @ self.lora_A.float())
+
+        if original_weight is not None:
+            W_orig = original_weight.float().to(W_approx.device)
+            error = torch.norm(W_orig - W_approx, p=&#34;fro&#34;) / (
+                torch.norm(W_orig, p=&#34;fro&#34;) + 1e-12
+            )
+            return float(error.item())
+
+        return 0.0</code></pre>
+</details>
+<div class="desc"><p>Calculate relative Frobenius norm reconstruction error:
+|| W_orig - (W_base + scaling * B @ A) ||_F / || W_orig ||_F</p></div>
+</dd>
+<dt id="neuralops.compression_engine.res_svd.ResSVDLinear.merge_weights"><code class="name flex">
+<span>def <span class="ident">merge_weights</span></span>(<span>self) ‑> torch.nn.modules.linear.Linear</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def merge_weights(self) -&gt; nn.Linear:
+    &#34;&#34;&#34;
+    Merge frozen base weights and trainable residual adapter weights into a dense nn.Linear.
+
+    Returns:
+        nn.Linear: Standard dense linear layer with merged weights.
+    &#34;&#34;&#34;
+    device = next(self.parameters()).device
+    dtype = self.base_U.dtype if self.factorize_base else self.base_weight.dtype
+
+    merged_linear = nn.Linear(
+        self.in_features,
+        self.out_features,
+        bias=self.bias is not None,
+        device=device,
+        dtype=dtype,
+    )
+
+    with torch.no_grad():
+        if self.factorize_base:
+            W_base = self.base_U.float() @ self.base_V.float()
+        else:
+            W_base = self.base_weight.float()
+
+        if self.residual_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            delta_W = self.scaling * (self.lora_B.float() @ self.lora_A.float())
+            W_total = W_base + delta_W
+        else:
+            W_total = W_base
+
+        merged_linear.weight.data.copy_(W_total.to(dtype=dtype))
+        if self.bias is not None:
+            merged_linear.bias.data.copy_(self.bias.data)
+
+    return merged_linear</code></pre>
+</details>
+<div class="desc"><p>Merge frozen base weights and trainable residual adapter weights into a dense nn.Linear.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>nn.Linear</code></dt>
+<dd>Standard dense linear layer with merged weights.</dd>
+</dl></div>
+</dd>
+<dt id="neuralops.compression_engine.res_svd.ResSVDLinear.reset_parameters"><code class="name flex">
+<span>def <span class="ident">reset_parameters</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_parameters(self) -&gt; None:
+    &#34;&#34;&#34;Kaiming uniform parameter initialization for base and zero for adapters.&#34;&#34;&#34;
+    if self.factorize_base:
+        nn.init.kaiming_uniform_(self.base_V, a=math.sqrt(5))
+        nn.init.kaiming_uniform_(self.base_U, a=math.sqrt(5))
+    else:
+        nn.init.kaiming_uniform_(self.base_weight, a=math.sqrt(5))
+
+    if self.residual_rank &gt; 0:
+        nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        nn.init.zeros_(self.lora_B)
+
+    if self.bias is not None:
+        fan_in = self.in_features
+        bound = 1 / math.sqrt(fan_in) if fan_in &gt; 0 else 0
+        nn.init.uniform_(self.bias, -bound, bound)</code></pre>
+</details>
+<div class="desc"><p>Kaiming uniform parameter initialization for base and zero for adapters.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.compression_engine.res_svd.SpectralResidualLoRA"><code class="flex name class">
+<span>class <span class="ident">SpectralResidualLoRA</span></span>
+<span>(</span><span>*args: Any, **kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class SpectralResidualLoRA(ResSVDCompressor):
+    &#34;&#34;&#34;PEFT-focused wrapper for Spectral Residual LoRA.&#34;&#34;&#34;
+
+    def __init__(self, *args: Any, **kwargs: Any) -&gt; None:
+        super().__init__(*args, **kwargs)
+        self.name = &#34;spectral_residual_lora&#34;</code></pre>
+</details>
+<div class="desc"><p>PEFT-focused wrapper for Spectral Residual LoRA.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.compression_engine.res_svd.ResSVDCompressor" href="#neuralops.compression_engine.res_svd.ResSVDCompressor">ResSVDCompressor</a></li>
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li>neuralops.compression_engine.res_svd.SpectralResidualLoRARegistered</li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.compression_engine.res_svd.ResSVDCompressor" href="#neuralops.compression_engine.res_svd.ResSVDCompressor">ResSVDCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.compression_engine.res_svd.ResSVDCompressor.compress" href="#neuralops.compression_engine.res_svd.ResSVDCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.compression_engine.res_svd.ResSVDCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.compression_engine.res_svd.ResSVDCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.res_svd.res_svd_compressor_factory" href="#neuralops.compression_engine.res_svd.res_svd_compressor_factory">res_svd_compressor_factory</a></code></li>
+<li><code><a title="neuralops.compression_engine.res_svd.res_svd_factory" href="#neuralops.compression_engine.res_svd.res_svd_factory">res_svd_factory</a></code></li>
+<li><code><a title="neuralops.compression_engine.res_svd.spectral_residual_lora_factory" href="#neuralops.compression_engine.res_svd.spectral_residual_lora_factory">spectral_residual_lora_factory</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.res_svd.ResSVDCompressor" href="#neuralops.compression_engine.res_svd.ResSVDCompressor">ResSVDCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.res_svd.ResSVDCompressor.compress" href="#neuralops.compression_engine.res_svd.ResSVDCompressor.compress">compress</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.res_svd.ResSVDLinear" href="#neuralops.compression_engine.res_svd.ResSVDLinear">ResSVDLinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.res_svd.ResSVDLinear.extra_repr" href="#neuralops.compression_engine.res_svd.ResSVDLinear.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.compression_engine.res_svd.ResSVDLinear.forward" href="#neuralops.compression_engine.res_svd.ResSVDLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.compression_engine.res_svd.ResSVDLinear.from_linear" href="#neuralops.compression_engine.res_svd.ResSVDLinear.from_linear">from_linear</a></code></li>
+<li><code><a title="neuralops.compression_engine.res_svd.ResSVDLinear.get_residual_error_norm" href="#neuralops.compression_engine.res_svd.ResSVDLinear.get_residual_error_norm">get_residual_error_norm</a></code></li>
+<li><code><a title="neuralops.compression_engine.res_svd.ResSVDLinear.merge_weights" href="#neuralops.compression_engine.res_svd.ResSVDLinear.merge_weights">merge_weights</a></code></li>
+<li><code><a title="neuralops.compression_engine.res_svd.ResSVDLinear.reset_parameters" href="#neuralops.compression_engine.res_svd.ResSVDLinear.reset_parameters">reset_parameters</a></code></li>
+<li><code><a title="neuralops.compression_engine.res_svd.ResSVDLinear.weight" href="#neuralops.compression_engine.res_svd.ResSVDLinear.weight">weight</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.res_svd.SpectralResidualLoRA" href="#neuralops.compression_engine.res_svd.SpectralResidualLoRA">SpectralResidualLoRA</a></code></h4>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

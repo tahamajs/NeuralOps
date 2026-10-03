@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.fwsvd_compressor API documentation</title>
+<meta name="description" content="Fisher-Weighted Singular Value Decomposition (FWSVD) Compressor …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.fwsvd_compressor</code></h1>
+</header>
+<section id="section-intro">
+<p>Fisher-Weighted Singular Value Decomposition (FWSVD) Compressor.</p>
+<p>Computes diagonal Fisher information matrix F_i = E[x_i^2] from calibration activations,
+weights the weight matrix W by diag(sqrt(F_i)), computes truncated SVD,
+and unweights factors by diag(1 / sqrt(F_i)).
+Uses the same structural SVDLinear replacement and fallback error logic as AASVD.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.fwsvd_compressor.FWSVDCompressor"><code class="flex name class">
+<span>class <span class="ident">FWSVDCompressor</span></span>
+<span>(</span><span>model: nn.Module,<br>tokenizer: Any | None = None,<br>rank: int = 64,<br>max_error: float = 0.5,<br>fallback_to_original: bool = True,<br>calibration_texts: list[str] | None = None,<br>device: str | torch.device | None = None,<br>target_modules: list[str] | None = None,<br>target_attention_only: bool = True,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;fwsvd&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;fwsvd_compressor&#34;)
+class FWSVDCompressor(BaseCompressor):
+    &#34;&#34;&#34;
+    Fisher-Weighted SVD Compressor.
+    Projects weights using diagonal Fisher activation weights F_i = E[x_i^2].
+    Replaces dense nn.Linear with SVDLinear.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module,
+        tokenizer: Any | None = None,
+        rank: int = 64,
+        max_error: float = 0.50,
+        fallback_to_original: bool = True,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
+        target_modules: list[str] | None = None,
+        target_attention_only: bool = True,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;fwsvd&#34;, **kwargs)
+        cfg = kwargs.get(&#34;comp_config&#34;, kwargs.get(&#34;cfg&#34;))
+        if cfg is not None:
+            rank = getattr(cfg, &#34;fwsvd_rank&#34;, getattr(cfg, &#34;rank&#34;, rank))
+            tokenizer = getattr(cfg, &#34;tokenizer&#34;, tokenizer)
+            calibration_texts = getattr(cfg, &#34;calibration_texts&#34;, calibration_texts)
+            max_error = getattr(cfg, &#34;fwsvd_max_error&#34;, getattr(cfg, &#34;max_error&#34;, max_error))
+            fallback_to_original = getattr(
+                cfg,
+                &#34;fwsvd_fallback_to_original&#34;,
+                getattr(cfg, &#34;fallback_to_original&#34;, fallback_to_original),
+            )
+            target_attention_only = getattr(
+                cfg,
+                &#34;fwsvd_target_attention_only&#34;,
+                getattr(cfg, &#34;target_attention_only&#34;, target_attention_only),
+            )
+
+        target_attention_only = kwargs.get(
+            &#34;target_attention_only&#34;,
+            kwargs.get(&#34;fwsvd_target_attention_only&#34;, target_attention_only),
+        )
+        self.rank = rank
+        self.max_error = max_error
+        self.fallback_to_original = fallback_to_original
+        self.tokenizer = tokenizer
+        self.calibration_texts = calibration_texts or DEFAULT_CALIBRATION_CORPUS
+        self.target_modules = target_modules
+        self.target_attention_only = target_attention_only
+        self.device = (
+            torch.device(device) if device is not None else next(model.parameters()).device
+        )
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        if isinstance(module, SVDLinear):
+            return False
+        if any(
+            name.endswith(sfx) for sfx in [&#34;.base_layer&#34;, &#34;.lora_A&#34;, &#34;.lora_B&#34;, &#34;.lora_dropout&#34;]
+        ):
+            return False
+
+        target_mod = getattr(module, &#34;base_layer&#34;, module)
+        cls_name = module.__class__.__name__.lower()
+        target_cls = target_mod.__class__.__name__.lower()
+
+        is_linear_like = (
+            isinstance(module, nn.Linear)
+            or isinstance(target_mod, nn.Linear)
+            or &#34;conv1d&#34; in cls_name
+            or &#34;conv1d&#34; in target_cls
+            or hasattr(module, &#34;nf&#34;)
+            or hasattr(target_mod, &#34;nf&#34;)
+            or &#34;loralinear&#34; in cls_name
+            or hasattr(module, &#34;base_layer&#34;)
+        )
+        if not is_linear_like:
+            return False
+        name_lower = name.lower()
+        if any(
+            skip in name_lower
+            for skip in [
+                &#34;lm_head&#34;,
+                &#34;classifier&#34;,
+                &#34;head&#34;,
+                &#34;output_layer&#34;,
+                &#34;score&#34;,
+                &#34;pooler&#34;,
+            ]
+        ):
+            return False
+
+        if self.target_attention_only:
+            ffn_patterns = [
+                &#34;ffn&#34;,
+                &#34;mlp&#34;,
+                &#34;lin1&#34;,
+                &#34;lin2&#34;,
+                &#34;intermediate&#34;,
+                &#34;gate_proj&#34;,
+                &#34;up_proj&#34;,
+                &#34;down_proj&#34;,
+                &#34;c_fc&#34;,
+            ]
+            if any(p in name_lower for p in ffn_patterns):
+                return False
+            if &#34;output.dense&#34; in name_lower and &#34;attention&#34; not in name_lower:
+                return False
+            attn_patterns = [
+                &#34;attn&#34;,
+                &#34;attention&#34;,
+                &#34;q_proj&#34;,
+                &#34;k_proj&#34;,
+                &#34;v_proj&#34;,
+                &#34;o_proj&#34;,
+                &#34;out_lin&#34;,
+                &#34;q_lin&#34;,
+                &#34;k_lin&#34;,
+                &#34;v_lin&#34;,
+                &#34;c_attn&#34;,
+                &#34;c_proj&#34;,
+                &#34;query&#34;,
+                &#34;key&#34;,
+                &#34;value&#34;,
+            ]
+            if not any(p in name_lower for p in attn_patterns):
+                return False
+        else:
+            if not should_compress_linear(self.model, name):
+                return False
+
+        if self.target_modules is not None:
+            return any(t in name for t in self.target_modules)
+        return True
+
+    def compress_linear(
+        self,
+        layer: nn.Module,
+        rank: int | None = None,
+        fisher_diag: torch.Tensor | None = None,
+    ) -&gt; tuple[SVDLinear | None, float, int]:
+        try:
+            target_mod = getattr(layer, &#34;base_layer&#34;, layer)
+            cls_name = layer.__class__.__name__.lower()
+            target_cls = target_mod.__class__.__name__.lower()
+            is_conv1d = (
+                &#34;conv1d&#34; in cls_name
+                or &#34;conv1d&#34; in target_cls
+                or hasattr(layer, &#34;nf&#34;)
+                or hasattr(target_mod, &#34;nf&#34;)
+            )
+            weight_tensor = getattr(target_mod, &#34;weight&#34;, getattr(layer, &#34;weight&#34;, None))
+            if weight_tensor is None:
+                return None, float(&#34;inf&#34;), 0
+
+            raw_w = weight_tensor.data
+
+            if is_conv1d:
+                in_feat, out_feat = raw_w.shape[0], raw_w.shape[1]
+                W = raw_w.t().contiguous().float()
+            else:
+                out_feat, in_feat = raw_w.shape[0], raw_w.shape[1]
+                W = raw_w.float()
+
+            r = get_dynamic_compression_rank(
+                in_feat,
+                out_feat,
+                model_or_family=self.model,
+                default_rank=rank or self.rank,
+                comp_config=getattr(self, &#34;comp_config&#34;, None),
+            )
+            max_allowed_rank = max(
+                1,
+                min(
+                    in_feat,
+                    out_feat,
+                    int(0.75 * (in_feat * out_feat) / (in_feat + out_feat)),
+                ),
+            )
+            r = min(r, max_allowed_rank)
+            W_norm = torch.norm(W, p=&#34;fro&#34;).item()
+
+            sqrt_f: torch.Tensor | None = None
+            inv_sqrt_f: torch.Tensor | None = None
+
+            if fisher_diag is not None and fisher_diag.shape == (in_feat,):
+                f_clamped = fisher_diag.to(device=layer.weight.device, dtype=torch.float32).clamp(
+                    min=1e-8
+                )
+                sqrt_f = torch.sqrt(f_clamped)
+                inv_sqrt_f = 1.0 / sqrt_f
+
+            if sqrt_f is not None and inv_sqrt_f is not None:
+                W_weighted = W * sqrt_f.unsqueeze(0)
+            else:
+                W_weighted = W
+
+            W_weighted_dev = W_weighted.to(device=layer.weight.device, dtype=torch.float32)
+            U, S, Vt = torch.linalg.svd(W_weighted_dev, full_matrices=False)
+
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            U_r = U[:, :r] * sqrt_S.unsqueeze(0)
+            V_r = sqrt_S.unsqueeze(1) * Vt[:r, :]
+
+            if inv_sqrt_f is not None:
+                V_r = V_r * inv_sqrt_f.unsqueeze(0)
+
+            W_recon = torch.matmul(U_r, V_r)
+            err = float(torch.norm(W - W_recon, p=&#34;fro&#34;).item() / max(W_norm, 1e-12))
+
+            dtype = weight_tensor.dtype
+            device = weight_tensor.device
+            bias_tensor = getattr(target_mod, &#34;bias&#34;, getattr(layer, &#34;bias&#34;, None))
+
+            svd_layer = SVDLinear(
+                in_features=in_feat,
+                out_features=out_feat,
+                rank=r,
+                bias=bias_tensor is not None,
+                dtype=dtype,
+                device=device,
+                lora_r=getattr(self, &#34;lora_r&#34;, 0),
+                lora_alpha=getattr(self, &#34;lora_alpha&#34;, 1.0),
+            )
+            svd_layer.set_low_rank_factors(
+                U_r.to(device=device, dtype=dtype),
+                V_r.to(device=device, dtype=dtype),
+            )
+            if bias_tensor is not None and svd_layer.bias is not None:
+                svd_layer.bias.data.copy_(bias_tensor.data)
+
+            svd_layer.reconstruction_error = err
+            svd_layer.rank = r
+            return svd_layer, err, r
+        except Exception as e:
+            logger.warning(&#34;FWSVD factorization failed on linear: %s&#34;, e)
+            return None, float(&#34;inf&#34;), 0
+
+    def compress(self) -&gt; tuple[nn.Module, dict[str, Any]]:
+        self.model.eval()
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.layer_errors = {}
+        self.layer_ranks = {}
+
+        fishers: dict[str, torch.Tensor] = {}
+
+        if self.tokenizer is None:
+            logger.info(&#34;No tokenizer provided for FWSVD; proceeding with standard unweighted SVD.&#34;)
+        else:
+            hooks = []
+
+            def make_hook(name: str):
+                def hook(module: nn.Module, inp: tuple[torch.Tensor, ...], outp: Any):
+                    if not inp or inp[0] is None:
+                        return
+                    x = inp[0].detach()
+                    dev_type = x.device.type
+                    autocast_ctx = (
+                        torch.autocast(device_type=dev_type, enabled=False)
+                        if hasattr(torch, &#34;autocast&#34;) and dev_type in (&#34;cuda&#34;, &#34;cpu&#34;)
+                        else contextlib.nullcontext()
+                    )
+                    with autocast_ctx:
+                        target_mod = getattr(module, &#34;base_layer&#34;, module)
+                        cls_name = module.__class__.__name__.lower()
+                        target_cls = target_mod.__class__.__name__.lower()
+                        is_conv1d = (
+                            &#34;conv1d&#34; in cls_name
+                            or &#34;conv1d&#34; in target_cls
+                            or hasattr(module, &#34;nf&#34;)
+                            or hasattr(target_mod, &#34;nf&#34;)
+                        )
+                        weight_tensor = getattr(
+                            target_mod, &#34;weight&#34;, getattr(module, &#34;weight&#34;, None)
+                        )
+                        if weight_tensor is None:
+                            return
+                        in_f = weight_tensor.shape[0] if is_conv1d else weight_tensor.shape[1]
+                        x_fp32 = x.float()
+                        x_flat = x_fp32.reshape(-1, in_f)
+                        mask = x_flat.abs().sum(dim=-1) &gt; 1e-5
+                        if mask.sum() == 0:
+                            return
+                        x_active = x_flat[mask]
+                        batch_fisher = torch.mean(x_active**2, dim=0).cpu()
+
+                    if name not in fishers:
+                        fishers[name] = batch_fisher
+                    else:
+                        fishers[name] = 0.5 * (fishers[name] + batch_fisher)
+
+                return hook
+
+            for name, module in self.model.named_modules():
+                if self._is_target_module(name, module):
+                    hooks.append(module.register_forward_hook(make_hook(name)))
+
+            try:
+                inputs = self.tokenizer(
+                    self.calibration_texts,
+                    return_tensors=&#34;pt&#34;,
+                    padding=True,
+                    truncation=True,
+                    max_length=512,
+                )
+                inputs = {k: v.to(self.device) for k, v in inputs.items()}
+                with torch.no_grad():
+                    self.model(**inputs)
+            except Exception as e:
+                logger.debug(&#34;FWSVD calibration forward pass exception: %s&#34;, e)
+
+            for h in hooks:
+                h.remove()
+
+        for name, module in list(self.model.named_modules()):
+            if self._is_target_module(name, module):
+                f_diag = fishers.get(name)
+                svd_layer, err, r = self.compress_linear(module, rank=self.rank, fisher_diag=f_diag)
+                self.layer_errors[name] = err
+                self.layer_ranks[name] = r
+
+                if svd_layer is None or err &gt; self.max_error:
+                    if self.fallback_to_original:
+                        logger.warning(
+                            &#34;FWSVD reconstruction error %.4f on %s exceeded threshold %.4f. Skipping compression (fallback).&#34;,
+                            err,
+                            name,
+                            self.max_error,
+                        )
+                        self.fallback_layers.append(name)
+                        continue
+                    else:
+                        if svd_layer is None:
+                            self.fallback_layers.append(name)
+                            continue
+
+                if hasattr(module, &#34;base_layer&#34;):
+                    module.base_layer = svd_layer
+                else:
+                    replace_module(self.model, name, svd_layer)
+                self.compressed_layers.append(name)
+
+        stats = {
+            &#34;compressed_layers&#34;: len(self.compressed_layers),
+            &#34;fallback_layers&#34;: len(self.fallback_layers),
+            &#34;avg_reconstruction_error&#34;: (
+                float(sum(self.layer_errors.values()) / max(1, len(self.layer_errors)))
+                if self.layer_errors
+                else 0.0
+            ),
+            &#34;layer_ranks&#34;: self.layer_ranks,
+        }
+        self.model.compression_stats = stats
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Fisher-Weighted SVD Compressor.
+Projects weights using diagonal Fisher activation weights F_i = E[x_i^2].
+Replaces dense nn.Linear with SVDLinear.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.fwsvd_compressor.FWSVDCompressor.compress_linear"><code class="name flex">
+<span>def <span class="ident">compress_linear</span></span>(<span>self,<br>layer: nn.Module,<br>rank: int | None = None,<br>fisher_diag: torch.Tensor | None = None) ‑> tuple[<a title="neuralops.compression_engine.aa_svd_compressor.SVDLinear" href="aa_svd_compressor.html#neuralops.compression_engine.aa_svd_compressor.SVDLinear">SVDLinear</a> | None, float, int]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress_linear(
+    self,
+    layer: nn.Module,
+    rank: int | None = None,
+    fisher_diag: torch.Tensor | None = None,
+) -&gt; tuple[SVDLinear | None, float, int]:
+    try:
+        target_mod = getattr(layer, &#34;base_layer&#34;, layer)
+        cls_name = layer.__class__.__name__.lower()
+        target_cls = target_mod.__class__.__name__.lower()
+        is_conv1d = (
+            &#34;conv1d&#34; in cls_name
+            or &#34;conv1d&#34; in target_cls
+            or hasattr(layer, &#34;nf&#34;)
+            or hasattr(target_mod, &#34;nf&#34;)
+        )
+        weight_tensor = getattr(target_mod, &#34;weight&#34;, getattr(layer, &#34;weight&#34;, None))
+        if weight_tensor is None:
+            return None, float(&#34;inf&#34;), 0
+
+        raw_w = weight_tensor.data
+
+        if is_conv1d:
+            in_feat, out_feat = raw_w.shape[0], raw_w.shape[1]
+            W = raw_w.t().contiguous().float()
+        else:
+            out_feat, in_feat = raw_w.shape[0], raw_w.shape[1]
+            W = raw_w.float()
+
+        r = get_dynamic_compression_rank(
+            in_feat,
+            out_feat,
+            model_or_family=self.model,
+            default_rank=rank or self.rank,
+            comp_config=getattr(self, &#34;comp_config&#34;, None),
+        )
+        max_allowed_rank = max(
+            1,
+            min(
+                in_feat,
+                out_feat,
+                int(0.75 * (in_feat * out_feat) / (in_feat + out_feat)),
+            ),
+        )
+        r = min(r, max_allowed_rank)
+        W_norm = torch.norm(W, p=&#34;fro&#34;).item()
+
+        sqrt_f: torch.Tensor | None = None
+        inv_sqrt_f: torch.Tensor | None = None
+
+        if fisher_diag is not None and fisher_diag.shape == (in_feat,):
+            f_clamped = fisher_diag.to(device=layer.weight.device, dtype=torch.float32).clamp(
+                min=1e-8
+            )
+            sqrt_f = torch.sqrt(f_clamped)
+            inv_sqrt_f = 1.0 / sqrt_f
+
+        if sqrt_f is not None and inv_sqrt_f is not None:
+            W_weighted = W * sqrt_f.unsqueeze(0)
+        else:
+            W_weighted = W
+
+        W_weighted_dev = W_weighted.to(device=layer.weight.device, dtype=torch.float32)
+        U, S, Vt = torch.linalg.svd(W_weighted_dev, full_matrices=False)
+
+        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+        U_r = U[:, :r] * sqrt_S.unsqueeze(0)
+        V_r = sqrt_S.unsqueeze(1) * Vt[:r, :]
+
+        if inv_sqrt_f is not None:
+            V_r = V_r * inv_sqrt_f.unsqueeze(0)
+
+        W_recon = torch.matmul(U_r, V_r)
+        err = float(torch.norm(W - W_recon, p=&#34;fro&#34;).item() / max(W_norm, 1e-12))
+
+        dtype = weight_tensor.dtype
+        device = weight_tensor.device
+        bias_tensor = getattr(target_mod, &#34;bias&#34;, getattr(layer, &#34;bias&#34;, None))
+
+        svd_layer = SVDLinear(
+            in_features=in_feat,
+            out_features=out_feat,
+            rank=r,
+            bias=bias_tensor is not None,
+            dtype=dtype,
+            device=device,
+            lora_r=getattr(self, &#34;lora_r&#34;, 0),
+            lora_alpha=getattr(self, &#34;lora_alpha&#34;, 1.0),
+        )
+        svd_layer.set_low_rank_factors(
+            U_r.to(device=device, dtype=dtype),
+            V_r.to(device=device, dtype=dtype),
+        )
+        if bias_tensor is not None and svd_layer.bias is not None:
+            svd_layer.bias.data.copy_(bias_tensor.data)
+
+        svd_layer.reconstruction_error = err
+        svd_layer.rank = r
+        return svd_layer, err, r
+    except Exception as e:
+        logger.warning(&#34;FWSVD factorization failed on linear: %s&#34;, e)
+        return None, float(&#34;inf&#34;), 0</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.compress" href="../core/base.html#neuralops.core.base.BaseCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.fwsvd_compressor.FWSVDCompressor" href="#neuralops.compression_engine.fwsvd_compressor.FWSVDCompressor">FWSVDCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.fwsvd_compressor.FWSVDCompressor.compress_linear" href="#neuralops.compression_engine.fwsvd_compressor.FWSVDCompressor.compress_linear">compress_linear</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

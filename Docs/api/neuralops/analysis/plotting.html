@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.analysis.plotting API documentation</title>
+<meta name="description" content="Comprehensive plotting functions for model analysis.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.analysis.plotting</code></h1>
+</header>
+<section id="section-intro">
+<p>Comprehensive plotting functions for model analysis.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.analysis.plotting.create_comprehensive_plots"><code class="name flex">
+<span>def <span class="ident">create_comprehensive_plots</span></span>(<span>df: pandas.DataFrame, output_dir: str, figsize: tuple[int, int] = (18, 16)) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def create_comprehensive_plots(
+    df: pd.DataFrame, output_dir: str, figsize: tuple[int, int] = (18, 16)
+) -&gt; None:
+    &#34;&#34;&#34;Build and return comprehensive plots.&#34;&#34;&#34;
+    os.makedirs(output_dir, exist_ok=True)
+    set_style()
+    fig, axes = plt.subplots(3, 3, figsize=figsize)
+    fig.suptitle(
+        &#34;SVD Compression Analysis: Comprehensive Results&#34;,
+        fontsize=16,
+        fontweight=&#34;bold&#34;,
+    )
+    # 1. Accuracy vs Rank by model
+    ax = axes[0, 0]
+    for model in df[&#34;model&#34;].unique():
+        sub = df[df[&#34;model&#34;] == model].groupby(&#34;rank&#34;)[&#34;accuracy&#34;].mean().reset_index()
+        ax.plot(sub[&#34;rank&#34;], sub[&#34;accuracy&#34;], marker=&#34;o&#34;, label=model, linewidth=2)
+    ax.set_title(&#34;Accuracy vs Rank (by Model)&#34;)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    # 2. Accuracy vs Rank by task
+    ax = axes[0, 1]
+    for task in df[&#34;task&#34;].unique():
+        sub = df[df[&#34;task&#34;] == task].groupby(&#34;rank&#34;)[&#34;accuracy&#34;].mean().reset_index()
+        ax.plot(sub[&#34;rank&#34;], sub[&#34;accuracy&#34;], marker=&#34;s&#34;, label=task, linewidth=2)
+    ax.set_title(&#34;Accuracy vs Rank (by Task)&#34;)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    # 3. Speedup factor
+    ax = axes[0, 2]
+    if &#34;speedup_factor&#34; in df.columns:
+        for model in df[&#34;model&#34;].unique():
+            sub = df[df[&#34;model&#34;] == model].groupby(&#34;rank&#34;)[&#34;speedup_factor&#34;].mean()
+            ax.plot(sub.index, sub.values, marker=&#34;^&#34;, label=model, linewidth=2)
+        ax.set_title(&#34;Speedup vs Rank&#34;)
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+    else:
+        ax.text(
+            0.5,
+            0.5,
+            &#34;No speedup data&#34;,
+            ha=&#34;center&#34;,
+            va=&#34;center&#34;,
+            transform=ax.transAxes,
+        )
+    # 4. Parameter reduction
+    ax = axes[1, 0]
+    if &#34;param_reduction&#34; in df.columns:
+        pd_data = df.groupby([&#34;model&#34;, &#34;rank&#34;])[&#34;param_reduction&#34;].mean().reset_index()
+        models = pd_data[&#34;model&#34;].unique()
+        width = 0.8 / len(models)
+        for i, m in enumerate(models):
+            sub = pd_data[pd_data[&#34;model&#34;] == m]
+            x = sub[&#34;rank&#34;] + (i - len(models) / 2) * width
+            ax.bar(x, sub[&#34;param_reduction&#34;], width=width, label=m)
+        ax.set_title(&#34;Parameter Reduction&#34;)
+        ax.legend()
+        ax.grid(True, axis=&#34;y&#34;, alpha=0.3)
+    else:
+        ax.text(
+            0.5,
+            0.5,
+            &#34;No param reduction&#34;,
+            ha=&#34;center&#34;,
+            va=&#34;center&#34;,
+            transform=ax.transAxes,
+        )
+    # 5. Accuracy drop distribution
+    ax = axes[1, 1]
+    if &#34;accuracy_drop&#34; in df.columns:
+        drops = df[&#34;accuracy_drop&#34;].dropna()
+        ax.hist(drops, bins=20, color=&#34;lightcoral&#34;, edgecolor=&#34;darkred&#34;, alpha=0.7)
+        ax.axvline(drops.mean(), color=&#34;blue&#34;, linestyle=&#34;-&#34;, label=f&#34;Mean: {drops.mean():.3f}&#34;)
+        ax.set_title(&#34;Accuracy Drop Distribution&#34;)
+        ax.legend()
+        ax.grid(True, axis=&#34;y&#34;, alpha=0.3)
+    else:
+        ax.text(
+            0.5,
+            0.5,
+            &#34;No accuracy drop&#34;,
+            ha=&#34;center&#34;,
+            va=&#34;center&#34;,
+            transform=ax.transAxes,
+        )
+    # 6. Memory reduction
+    ax = axes[1, 2]
+    if &#34;memory_reduction&#34; in df.columns:
+        mem = df.groupby(&#34;rank&#34;)[&#34;memory_reduction&#34;].mean().reset_index()
+        ax.bar(
+            mem[&#34;rank&#34;],
+            mem[&#34;memory_reduction&#34;],
+            color=&#34;lightgreen&#34;,
+            edgecolor=&#34;darkgreen&#34;,
+        )
+        ax.set_title(&#34;Avg Memory Reduction&#34;)
+        ax.grid(True, axis=&#34;y&#34;, alpha=0.3)
+    else:
+        ax.text(
+            0.5,
+            0.5,
+            &#34;No memory reduction&#34;,
+            ha=&#34;center&#34;,
+            va=&#34;center&#34;,
+            transform=ax.transAxes,
+        )
+    # 7. Accuracy by task type
+    ax = axes[2, 0]
+    if &#34;task_type&#34; in df.columns:
+        for tt in df[&#34;task_type&#34;].unique():
+            sub = df[df[&#34;task_type&#34;] == tt].groupby(&#34;rank&#34;)[&#34;accuracy&#34;].mean().reset_index()
+            ax.plot(sub[&#34;rank&#34;], sub[&#34;accuracy&#34;], marker=&#34;D&#34;, label=tt, linewidth=2)
+        ax.set_title(&#34;Accuracy by Task Type&#34;)
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+    else:
+        ax.text(0.5, 0.5, &#34;No task type&#34;, ha=&#34;center&#34;, va=&#34;center&#34;, transform=ax.transAxes)
+    # 8. Compression ratio heatmap
+    ax = axes[2, 1]
+    if &#34;compression_ratio&#34; in df.columns:
+        pivot = df.pivot_table(
+            index=&#34;model&#34;, columns=&#34;rank&#34;, values=&#34;compression_ratio&#34;, aggfunc=&#34;mean&#34;
+        )
+        im = ax.imshow(pivot.values, cmap=&#34;YlOrRd&#34;, aspect=&#34;auto&#34;)
+        ax.set_xticks(range(len(pivot.columns)))
+        ax.set_xticklabels(pivot.columns)
+        ax.set_yticks(range(len(pivot.index)))
+        ax.set_yticklabels(pivot.index)
+        plt.colorbar(im, ax=ax, label=&#34;Compression Ratio&#34;)
+        ax.set_title(&#34;Compression Ratio Heatmap&#34;)
+    else:
+        ax.text(0.5, 0.5, &#34;No comp ratio&#34;, ha=&#34;center&#34;, va=&#34;center&#34;, transform=ax.transAxes)
+    # 9. Best config per dataset
+    ax = axes[2, 2]
+    best = []
+    for task in df[&#34;task&#34;].unique():
+        sub = df[df[&#34;task&#34;] == task]
+        if &#34;accuracy&#34; in sub.columns:
+            idx = sub[&#34;accuracy&#34;].idxmax()
+            best.append(sub.loc[idx])
+    if best:
+        best_df = pd.DataFrame(best)
+        ax.barh(best_df[&#34;task&#34;], best_df[&#34;accuracy&#34;], color=&#34;skyblue&#34;, edgecolor=&#34;navy&#34;)
+        ax.set_title(&#34;Best Configuration per Dataset&#34;)
+        for i, (acc, model, rank) in enumerate(
+            zip(best_df[&#34;accuracy&#34;], best_df[&#34;model&#34;], best_df[&#34;rank&#34;])
+        ):
+            ax.text(acc + 0.005, i, f&#34;{model} r={int(rank)}&#34;, va=&#34;center&#34;, fontsize=8)
+    else:
+        ax.text(0.5, 0.5, &#34;No best config&#34;, ha=&#34;center&#34;, va=&#34;center&#34;, transform=ax.transAxes)
+    plt.tight_layout()
+    plt.savefig(Path(output_dir) / &#34;comprehensive_analysis.png&#34;, dpi=300, bbox_inches=&#34;tight&#34;)
+    plt.close()</code></pre>
+</details>
+<div class="desc"><p>Build and return comprehensive plots.</p></div>
+</dd>
+<dt id="neuralops.analysis.plotting.plot_accuracy_curve"><code class="name flex">
+<span>def <span class="ident">plot_accuracy_curve</span></span>(<span>history, metrics, config, output_dir, opts) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_accuracy_curve(history, metrics, config, output_dir, opts) -&gt; Any:
+    &#34;&#34;&#34;Plot accuracy curve.&#34;&#34;&#34;
+    steps = [h.get(&#34;step&#34;, i) for i, h in enumerate(history) if &#34;eval_accuracy&#34; in h]
+    acc = [h[&#34;eval_accuracy&#34;] for h in history if &#34;eval_accuracy&#34; in h]
+    if not steps:
+        return []
+    fig, ax = plt.subplots(figsize=opts.get(&#34;figsize&#34;, [10, 6]))
+    ax.plot(steps, acc, &#34;o-&#34;, color=&#34;#5DC963&#34;, markersize=4)
+    ax.set_xlabel(&#34;Step&#34;)
+    ax.set_ylabel(&#34;Accuracy&#34;)
+    ax.set_title(&#34;Validation Accuracy&#34;)
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    path = Path(output_dir) / &#34;accuracy_curve.png&#34;
+    fig.savefig(path, dpi=opts.get(&#34;dpi&#34;, 150), bbox_inches=&#34;tight&#34;)
+    plt.close()
+    return [str(path)]</code></pre>
+</details>
+<div class="desc"><p>Plot accuracy curve.</p></div>
+</dd>
+<dt id="neuralops.analysis.plotting.plot_accuracy_curves"><code class="name flex">
+<span>def <span class="ident">plot_accuracy_curves</span></span>(<span>history, metrics, config, output_dir, opts) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_accuracy_curve(history, metrics, config, output_dir, opts) -&gt; Any:
+    &#34;&#34;&#34;Plot accuracy curve.&#34;&#34;&#34;
+    steps = [h.get(&#34;step&#34;, i) for i, h in enumerate(history) if &#34;eval_accuracy&#34; in h]
+    acc = [h[&#34;eval_accuracy&#34;] for h in history if &#34;eval_accuracy&#34; in h]
+    if not steps:
+        return []
+    fig, ax = plt.subplots(figsize=opts.get(&#34;figsize&#34;, [10, 6]))
+    ax.plot(steps, acc, &#34;o-&#34;, color=&#34;#5DC963&#34;, markersize=4)
+    ax.set_xlabel(&#34;Step&#34;)
+    ax.set_ylabel(&#34;Accuracy&#34;)
+    ax.set_title(&#34;Validation Accuracy&#34;)
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    path = Path(output_dir) / &#34;accuracy_curve.png&#34;
+    fig.savefig(path, dpi=opts.get(&#34;dpi&#34;, 150), bbox_inches=&#34;tight&#34;)
+    plt.close()
+    return [str(path)]</code></pre>
+</details>
+<div class="desc"><p>Plot accuracy curve.</p></div>
+</dd>
+<dt id="neuralops.analysis.plotting.plot_attention_heatmap"><code class="name flex">
+<span>def <span class="ident">plot_attention_heatmap</span></span>(<span>history, metrics, config, output_dir, opts) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_attention_heatmap(history, metrics, config, output_dir, opts) -&gt; Any:
+    &#34;&#34;&#34;Plot attention heatmap.&#34;&#34;&#34;
+    attn_path = Path(output_dir).parent / &#34;artifacts&#34; / &#34;attention_sample.json&#34;
+    if not attn_path.exists():
+        return []
+    with open(attn_path) as f:
+        attn_data = json.load(f)
+    matrix = np.array(attn_data.get(&#34;matrix&#34;, []))
+    tokens = attn_data.get(&#34;tokens&#34;, None)
+    layer = attn_data.get(&#34;layer&#34;, 0)
+    head = attn_data.get(&#34;head&#34;, 0)
+    # Simple heatmap
+    fig, ax = plt.subplots(figsize=(10, 8))
+    sns.heatmap(matrix, cmap=&#34;viridis&#34;, xticklabels=tokens, yticklabels=tokens, ax=ax)
+    ax.set_title(f&#34;Attention Heatmap – Layer {layer} Head {head}&#34;)
+    path = Path(output_dir) / &#34;attention_heatmap.png&#34;
+    fig.savefig(path, dpi=150, bbox_inches=&#34;tight&#34;)
+    plt.close()
+    return [str(path)]</code></pre>
+</details>
+<div class="desc"><p>Plot attention heatmap.</p></div>
+</dd>
+<dt id="neuralops.analysis.plotting.plot_confusion_matrix"><code class="name flex">
+<span>def <span class="ident">plot_confusion_matrix</span></span>(<span>history, metrics, config, output_dir, opts) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_confusion_matrix(history, metrics, config, output_dir, opts) -&gt; Any:
+    &#34;&#34;&#34;Plot confusion matrix.&#34;&#34;&#34;
+    preds_path = Path(output_dir).parent / &#34;artifacts&#34; / &#34;eval_predictions.json&#34;
+    if not preds_path.exists():
+        return []
+    with open(preds_path) as f:
+        data = json.load(f)
+    labels = data.get(&#34;labels&#34;, [])
+    preds = data.get(&#34;predictions&#34;, [])
+    if not labels:
+        return []
+    from sklearn.metrics import confusion_matrix
+
+    cm = confusion_matrix(labels, preds)
+    class_names = opts.get(&#34;class_names&#34;, None)
+    fig, ax = plt.subplots(figsize=opts.get(&#34;figsize&#34;, [10, 8]))
+    sns.heatmap(
+        cm,
+        annot=True,
+        fmt=&#34;d&#34;,
+        cmap=&#34;Blues&#34;,
+        xticklabels=class_names,
+        yticklabels=class_names,
+        ax=ax,
+    )
+    ax.set_xlabel(&#34;Predicted&#34;)
+    ax.set_ylabel(&#34;True&#34;)
+    ax.set_title(&#34;Confusion Matrix&#34;)
+    path = Path(output_dir) / &#34;confusion_matrix.png&#34;
+    fig.savefig(path, dpi=opts.get(&#34;dpi&#34;, 150), bbox_inches=&#34;tight&#34;)
+    plt.close()
+    return [str(path)]</code></pre>
+</details>
+<div class="desc"><p>Plot confusion matrix.</p></div>
+</dd>
+<dt id="neuralops.analysis.plotting.plot_gpu_memory"><code class="name flex">
+<span>def <span class="ident">plot_gpu_memory</span></span>(<span>history, metrics, config, output_dir, opts) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_gpu_memory(history, metrics, config, output_dir, opts) -&gt; Any:
+    &#34;&#34;&#34;Plot gpu memory.&#34;&#34;&#34;
+    gpu_steps = [h.get(&#34;step&#34;, i) for i, h in enumerate(history) if &#34;gpu_mem&#34; in h]
+    gpu = [h[&#34;gpu_mem&#34;] for h in history if &#34;gpu_mem&#34; in h]
+    cpu_steps = [h.get(&#34;step&#34;, i) for i, h in enumerate(history) if &#34;cpu_mem&#34; in h]
+    cpu = [h[&#34;cpu_mem&#34;] for h in history if &#34;cpu_mem&#34; in h]
+    if not gpu_steps and not cpu_steps:
+        return []
+    fig, ax = plt.subplots(figsize=opts.get(&#34;figsize&#34;, [10, 4]))
+    if gpu_steps:
+        ax.plot(gpu_steps, gpu, label=&#34;GPU Mem (MB)&#34;, color=&#34;#3B528B&#34;)
+    if cpu_steps:
+        ax.plot(cpu_steps, cpu, label=&#34;CPU Mem (MB)&#34;, color=&#34;#5DC963&#34;)
+    ax.set_xlabel(&#34;Step&#34;)
+    ax.set_ylabel(&#34;Memory (MB)&#34;)
+    ax.set_title(&#34;Memory Usage&#34;)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    path = Path(output_dir) / &#34;gpu_memory.png&#34;
+    fig.savefig(path, dpi=opts.get(&#34;dpi&#34;, 150), bbox_inches=&#34;tight&#34;)
+    plt.close()
+    return [str(path)]</code></pre>
+</details>
+<div class="desc"><p>Plot gpu memory.</p></div>
+</dd>
+<dt id="neuralops.analysis.plotting.plot_gradient_flow"><code class="name flex">
+<span>def <span class="ident">plot_gradient_flow</span></span>(<span>history, metrics, config, output_dir, opts) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_training_time(history, metrics, config, output_dir, opts) -&gt; Any:
+    &#34;&#34;&#34;Plot training time.&#34;&#34;&#34;
+    times = [
+        h.get(&#34;elapsed&#34;, i * 0.01) for i, h in enumerate(history) if &#34;elapsed&#34; in h or &#34;step&#34; in h
+    ]
+    if not times:
+        return []
+    fig, ax = plt.subplots(figsize=opts.get(&#34;figsize&#34;, [10, 4]))
+    ax.plot(range(len(times)), times, color=&#34;#440154&#34;)
+    ax.set_xlabel(&#34;Step&#34;)
+    ax.set_ylabel(&#34;Time (s)&#34;)
+    ax.set_title(&#34;Training Time vs Steps&#34;)
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    path = Path(output_dir) / &#34;training_time.png&#34;
+    fig.savefig(path, dpi=opts.get(&#34;dpi&#34;, 150), bbox_inches=&#34;tight&#34;)
+    plt.close()
+    return [str(path)]</code></pre>
+</details>
+<div class="desc"><p>Plot training time.</p></div>
+</dd>
+<dt id="neuralops.analysis.plotting.plot_loss_curve"><code class="name flex">
+<span>def <span class="ident">plot_loss_curve</span></span>(<span>history, metrics, config, output_dir, opts) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_loss_curve(history, metrics, config, output_dir, opts) -&gt; Any:
+    &#34;&#34;&#34;Plot loss curve.&#34;&#34;&#34;
+    steps = [h.get(&#34;step&#34;, i) for i, h in enumerate(history) if &#34;loss&#34; in h]
+    train = [h[&#34;loss&#34;] for h in history if &#34;loss&#34; in h]
+    eval_steps = [h.get(&#34;step&#34;, i) for i, h in enumerate(history) if &#34;eval_loss&#34; in h]
+    eval_l = [h[&#34;eval_loss&#34;] for h in history if &#34;eval_loss&#34; in h]
+
+    smooth = opts.get(&#34;loss_smooth&#34;, 0.6)
+    if smooth &gt; 0 and len(train) &gt; 5:
+        window = max(1, int(len(train) * smooth / 10))
+        train = uniform_filter1d(np.array(train), size=window)
+
+    fig, ax = plt.subplots(figsize=opts.get(&#34;figsize&#34;, [10, 6]))
+    ax.plot(steps, train, label=&#34;Train Loss&#34;, color=&#34;#3B528B&#34;)
+    if eval_steps:
+        ax.plot(eval_steps, eval_l, &#34;o-&#34;, label=&#34;Eval Loss&#34;, color=&#34;#21908C&#34;, markersize=4)
+    ax.set_xlabel(&#34;Step&#34;)
+    ax.set_ylabel(&#34;Loss&#34;)
+    ax.set_title(&#34;Training &amp; Validation Loss&#34;)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    path = Path(output_dir) / &#34;loss_curve.png&#34;
+    fig.savefig(path, dpi=opts.get(&#34;dpi&#34;, 150), bbox_inches=&#34;tight&#34;)
+    plt.close()
+    return [str(path)]</code></pre>
+</details>
+<div class="desc"><p>Plot loss curve.</p></div>
+</dd>
+<dt id="neuralops.analysis.plotting.plot_loss_curves"><code class="name flex">
+<span>def <span class="ident">plot_loss_curves</span></span>(<span>history, metrics, config, output_dir, opts) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_loss_curve(history, metrics, config, output_dir, opts) -&gt; Any:
+    &#34;&#34;&#34;Plot loss curve.&#34;&#34;&#34;
+    steps = [h.get(&#34;step&#34;, i) for i, h in enumerate(history) if &#34;loss&#34; in h]
+    train = [h[&#34;loss&#34;] for h in history if &#34;loss&#34; in h]
+    eval_steps = [h.get(&#34;step&#34;, i) for i, h in enumerate(history) if &#34;eval_loss&#34; in h]
+    eval_l = [h[&#34;eval_loss&#34;] for h in history if &#34;eval_loss&#34; in h]
+
+    smooth = opts.get(&#34;loss_smooth&#34;, 0.6)
+    if smooth &gt; 0 and len(train) &gt; 5:
+        window = max(1, int(len(train) * smooth / 10))
+        train = uniform_filter1d(np.array(train), size=window)
+
+    fig, ax = plt.subplots(figsize=opts.get(&#34;figsize&#34;, [10, 6]))
+    ax.plot(steps, train, label=&#34;Train Loss&#34;, color=&#34;#3B528B&#34;)
+    if eval_steps:
+        ax.plot(eval_steps, eval_l, &#34;o-&#34;, label=&#34;Eval Loss&#34;, color=&#34;#21908C&#34;, markersize=4)
+    ax.set_xlabel(&#34;Step&#34;)
+    ax.set_ylabel(&#34;Loss&#34;)
+    ax.set_title(&#34;Training &amp; Validation Loss&#34;)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    path = Path(output_dir) / &#34;loss_curve.png&#34;
+    fig.savefig(path, dpi=opts.get(&#34;dpi&#34;, 150), bbox_inches=&#34;tight&#34;)
+    plt.close()
+    return [str(path)]</code></pre>
+</details>
+<div class="desc"><p>Plot loss curve.</p></div>
+</dd>
+<dt id="neuralops.analysis.plotting.plot_lr_schedule"><code class="name flex">
+<span>def <span class="ident">plot_lr_schedule</span></span>(<span>history, metrics, config, output_dir, opts) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_lr_schedule(history, metrics, config, output_dir, opts) -&gt; Any:
+    &#34;&#34;&#34;Plot lr schedule.&#34;&#34;&#34;
+    steps = [h.get(&#34;step&#34;, i) for i, h in enumerate(history) if &#34;learning_rate&#34; in h]
+    lr = [h[&#34;learning_rate&#34;] for h in history if &#34;learning_rate&#34; in h]
+    if not steps:
+        return []
+    fig, ax = plt.subplots(figsize=opts.get(&#34;figsize&#34;, [10, 4]))
+    ax.plot(steps, lr, color=&#34;#FDE725&#34;)
+    ax.set_xlabel(&#34;Step&#34;)
+    ax.set_ylabel(&#34;LR&#34;)
+    ax.set_title(&#34;Learning Rate Schedule&#34;)
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    path = Path(output_dir) / &#34;lr_schedule.png&#34;
+    fig.savefig(path, dpi=opts.get(&#34;dpi&#34;, 150), bbox_inches=&#34;tight&#34;)
+    plt.close()
+    return [str(path)]</code></pre>
+</details>
+<div class="desc"><p>Plot lr schedule.</p></div>
+</dd>
+<dt id="neuralops.analysis.plotting.plot_parameter_distribution"><code class="name flex">
+<span>def <span class="ident">plot_parameter_distribution</span></span>(<span>history, metrics, config, output_dir, opts) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_parameter_distribution(history, metrics, config, output_dir, opts) -&gt; Any:
+    &#34;&#34;&#34;Plot parameter distribution.&#34;&#34;&#34;
+    param_path = Path(output_dir).parent / &#34;artifacts&#34; / &#34;param_counts.json&#34;
+    if not param_path.exists():
+        return []
+    with open(param_path) as f:
+        param_data = json.load(f)
+    layers = list(param_data.keys())
+    counts = list(param_data.values())
+    fig, ax = plt.subplots(figsize=opts.get(&#34;figsize&#34;, [8, 6]))
+    ax.barh(layers, counts, color=&#34;#21908C&#34;)
+    ax.set_xlabel(&#34;Parameter Count&#34;)
+    ax.set_title(&#34;Parameter Distribution per Layer&#34;)
+    plt.tight_layout()
+    path = Path(output_dir) / &#34;parameter_count.png&#34;
+    fig.savefig(path, dpi=opts.get(&#34;dpi&#34;, 150), bbox_inches=&#34;tight&#34;)
+    plt.close()
+    return [str(path)]</code></pre>
+</details>
+<div class="desc"><p>Plot parameter distribution.</p></div>
+</dd>
+<dt id="neuralops.analysis.plotting.plot_pareto_front"><code class="name flex">
+<span>def <span class="ident">plot_pareto_front</span></span>(<span>df, output_dir, x_metric='speedup_factor', y_metric='accuracy') ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_pareto_front(df, output_dir, x_metric=&#34;speedup_factor&#34;, y_metric=&#34;accuracy&#34;) -&gt; None:
+    &#34;&#34;&#34;Plot pareto front.&#34;&#34;&#34;
+    set_style()
+    points = df[[x_metric, y_metric, &#34;model&#34;, &#34;rank&#34;]].dropna().values
+    pareto = []
+    for i, p in enumerate(points):
+        dominated = False
+        for q in points:
+            if q[0] &gt;= p[0] and q[1] &gt;= p[1] and (q[0] &gt; p[0] or q[1] &gt; p[1]):
+                dominated = True
+                break
+        if not dominated:
+            pareto.append(p)
+    pareto_df = pd.DataFrame(pareto, columns=[x_metric, y_metric, &#34;model&#34;, &#34;rank&#34;])
+    fig, ax = plt.subplots(figsize=(10, 8))
+    for model in df[&#34;model&#34;].unique():
+        sub = df[df[&#34;model&#34;] == model]
+        ax.scatter(sub[x_metric], sub[y_metric], label=model, alpha=0.5)
+    ax.scatter(
+        pareto_df[x_metric],
+        pareto_df[y_metric],
+        color=&#34;red&#34;,
+        s=150,
+        marker=&#34;*&#34;,
+        label=&#34;Pareto front&#34;,
+    )
+    ax.set_xlabel(x_metric.replace(&#34;_&#34;, &#34; &#34;).capitalize())
+    ax.set_ylabel(y_metric.capitalize())
+    ax.set_title(&#34;Pareto Frontier of Configurations&#34;)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(Path(output_dir) / &#34;pareto_front.png&#34;, dpi=150)
+    plt.close()</code></pre>
+</details>
+<div class="desc"><p>Plot pareto front.</p></div>
+</dd>
+<dt id="neuralops.analysis.plotting.plot_radar_chart"><code class="name flex">
+<span>def <span class="ident">plot_radar_chart</span></span>(<span>history, metrics, config, output_dir, opts) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_radar_chart(history, metrics, config, output_dir, opts) -&gt; Any:
+    &#34;&#34;&#34;Plot radar chart.&#34;&#34;&#34;
+    if not metrics:
+        return []
+    numeric = {k: v for k, v in metrics.items() if isinstance(v, (int, float))}
+    if len(numeric) &lt; 3:
+        return []
+    categories = list(numeric.keys())
+    values = list(numeric.values())
+    angles = np.linspace(0, 2 * np.pi, len(categories), endpoint=False).tolist()
+    values = values + values[:1]
+    angles += angles[:1]
+    fig, ax = plt.subplots(figsize=opts.get(&#34;figsize&#34;, [8, 8]), subplot_kw=dict(polar=True))
+    ax.fill(angles, values, alpha=0.25, color=&#34;#3B528B&#34;)
+    ax.plot(angles, values, color=&#34;#3B528B&#34;, linewidth=2)
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(categories)
+    ax.set_title(&#34;Performance Radar Chart&#34;)
+    plt.tight_layout()
+    path = Path(output_dir) / &#34;radar_chart.png&#34;
+    fig.savefig(path, dpi=opts.get(&#34;dpi&#34;, 150), bbox_inches=&#34;tight&#34;)
+    plt.close()
+    return [str(path)]</code></pre>
+</details>
+<div class="desc"><p>Plot radar chart.</p></div>
+</dd>
+<dt id="neuralops.analysis.plotting.plot_rank_allocation"><code class="name flex">
+<span>def <span class="ident">plot_rank_allocation</span></span>(<span>recommended_ranks, output_dir) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_rank_allocation(recommended_ranks, output_dir) -&gt; None:
+    &#34;&#34;&#34;Plot rank allocation.&#34;&#34;&#34;
+    set_style()
+    fig, ax = plt.subplots(figsize=(12, 6))
+    layers = list(range(len(recommended_ranks)))
+    ax.bar(layers, recommended_ranks, color=&#34;steelblue&#34;, edgecolor=&#34;navy&#34;)
+    ax.set_xlabel(&#34;Layer Index&#34;)
+    ax.set_ylabel(&#34;Recommended Rank&#34;)
+    ax.set_title(&#34;Layer‑wise Rank Allocation Recommendation&#34;)
+    ax.grid(True, axis=&#34;y&#34;, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(Path(output_dir) / &#34;rank_allocation.png&#34;, dpi=150)
+    plt.close()</code></pre>
+</details>
+<div class="desc"><p>Plot rank allocation.</p></div>
+</dd>
+<dt id="neuralops.analysis.plotting.plot_tradeoff"><code class="name flex">
+<span>def <span class="ident">plot_tradeoff</span></span>(<span>df, output_dir, metric='accuracy') ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_tradeoff(df, output_dir, metric=&#34;accuracy&#34;) -&gt; None:
+    &#34;&#34;&#34;Plot tradeoff.&#34;&#34;&#34;
+    set_style()
+    fig, ax = plt.subplots(figsize=(10, 8))
+    for model in df[&#34;model&#34;].unique():
+        sub = df[df[&#34;model&#34;] == model].dropna(subset=[&#34;speedup_factor&#34;, metric])
+        ax.scatter(sub[&#34;speedup_factor&#34;], sub[metric], s=100, label=model, alpha=0.7)
+    ax.set_xlabel(&#34;Speedup Factor&#34;)
+    ax.set_ylabel(metric.capitalize())
+    ax.set_title(&#34;Accuracy vs Speedup Tradeoff&#34;)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(Path(output_dir) / &#34;tradeoff.png&#34;, dpi=150, bbox_inches=&#34;tight&#34;)
+    plt.close()</code></pre>
+</details>
+<div class="desc"><p>Plot tradeoff.</p></div>
+</dd>
+<dt id="neuralops.analysis.plotting.plot_training_history"><code class="name flex">
+<span>def <span class="ident">plot_training_history</span></span>(<span>history: dict, save_path: str) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_training_history(history: dict, save_path: str) -&gt; None:
+    &#34;&#34;&#34;Plot training history.&#34;&#34;&#34;
+    fig, ax = plt.subplots(figsize=(8, 5))
+    if history.get(&#34;train_steps&#34;) and history.get(&#34;train_loss&#34;):
+        ax.plot(
+            history[&#34;train_steps&#34;],
+            history[&#34;train_loss&#34;],
+            label=&#34;Train Loss&#34;,
+            color=&#34;blue&#34;,
+        )
+    if history.get(&#34;eval_steps&#34;) and history.get(&#34;eval_loss&#34;):
+        ax.plot(
+            history[&#34;eval_steps&#34;],
+            history[&#34;eval_loss&#34;],
+            label=&#34;Eval Loss&#34;,
+            color=&#34;red&#34;,
+            marker=&#34;o&#34;,
+        )
+    ax.set_xlabel(&#34;Steps&#34;)
+    ax.set_ylabel(&#34;Loss&#34;)
+    ax.set_title(&#34;Training History&#34;)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    plt.savefig(save_path, dpi=150, bbox_inches=&#34;tight&#34;)
+    plt.close()</code></pre>
+</details>
+<div class="desc"><p>Plot training history.</p></div>
+</dd>
+<dt id="neuralops.analysis.plotting.plot_training_time"><code class="name flex">
+<span>def <span class="ident">plot_training_time</span></span>(<span>history, metrics, config, output_dir, opts) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_training_time(history, metrics, config, output_dir, opts) -&gt; Any:
+    &#34;&#34;&#34;Plot training time.&#34;&#34;&#34;
+    times = [
+        h.get(&#34;elapsed&#34;, i * 0.01) for i, h in enumerate(history) if &#34;elapsed&#34; in h or &#34;step&#34; in h
+    ]
+    if not times:
+        return []
+    fig, ax = plt.subplots(figsize=opts.get(&#34;figsize&#34;, [10, 4]))
+    ax.plot(range(len(times)), times, color=&#34;#440154&#34;)
+    ax.set_xlabel(&#34;Step&#34;)
+    ax.set_ylabel(&#34;Time (s)&#34;)
+    ax.set_title(&#34;Training Time vs Steps&#34;)
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    path = Path(output_dir) / &#34;training_time.png&#34;
+    fig.savefig(path, dpi=opts.get(&#34;dpi&#34;, 150), bbox_inches=&#34;tight&#34;)
+    plt.close()
+    return [str(path)]</code></pre>
+</details>
+<div class="desc"><p>Plot training time.</p></div>
+</dd>
+<dt id="neuralops.analysis.plotting.set_style"><code class="name flex">
+<span>def <span class="ident">set_style</span></span>(<span>) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_style() -&gt; None:
+    &#34;&#34;&#34;Set the style.&#34;&#34;&#34;
+    plt.style.use(&#34;seaborn-v0_8-darkgrid&#34;)
+    sns.set_palette(&#34;husl&#34;)
+    sns.set_context(&#34;paper&#34;, font_scale=1.2)</code></pre>
+</details>
+<div class="desc"><p>Set the style.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.analysis" href="index.html">neuralops.analysis</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.analysis.plotting.create_comprehensive_plots" href="#neuralops.analysis.plotting.create_comprehensive_plots">create_comprehensive_plots</a></code></li>
+<li><code><a title="neuralops.analysis.plotting.plot_accuracy_curve" href="#neuralops.analysis.plotting.plot_accuracy_curve">plot_accuracy_curve</a></code></li>
+<li><code><a title="neuralops.analysis.plotting.plot_accuracy_curves" href="#neuralops.analysis.plotting.plot_accuracy_curves">plot_accuracy_curves</a></code></li>
+<li><code><a title="neuralops.analysis.plotting.plot_attention_heatmap" href="#neuralops.analysis.plotting.plot_attention_heatmap">plot_attention_heatmap</a></code></li>
+<li><code><a title="neuralops.analysis.plotting.plot_confusion_matrix" href="#neuralops.analysis.plotting.plot_confusion_matrix">plot_confusion_matrix</a></code></li>
+<li><code><a title="neuralops.analysis.plotting.plot_gpu_memory" href="#neuralops.analysis.plotting.plot_gpu_memory">plot_gpu_memory</a></code></li>
+<li><code><a title="neuralops.analysis.plotting.plot_gradient_flow" href="#neuralops.analysis.plotting.plot_gradient_flow">plot_gradient_flow</a></code></li>
+<li><code><a title="neuralops.analysis.plotting.plot_loss_curve" href="#neuralops.analysis.plotting.plot_loss_curve">plot_loss_curve</a></code></li>
+<li><code><a title="neuralops.analysis.plotting.plot_loss_curves" href="#neuralops.analysis.plotting.plot_loss_curves">plot_loss_curves</a></code></li>
+<li><code><a title="neuralops.analysis.plotting.plot_lr_schedule" href="#neuralops.analysis.plotting.plot_lr_schedule">plot_lr_schedule</a></code></li>
+<li><code><a title="neuralops.analysis.plotting.plot_parameter_distribution" href="#neuralops.analysis.plotting.plot_parameter_distribution">plot_parameter_distribution</a></code></li>
+<li><code><a title="neuralops.analysis.plotting.plot_pareto_front" href="#neuralops.analysis.plotting.plot_pareto_front">plot_pareto_front</a></code></li>
+<li><code><a title="neuralops.analysis.plotting.plot_radar_chart" href="#neuralops.analysis.plotting.plot_radar_chart">plot_radar_chart</a></code></li>
+<li><code><a title="neuralops.analysis.plotting.plot_rank_allocation" href="#neuralops.analysis.plotting.plot_rank_allocation">plot_rank_allocation</a></code></li>
+<li><code><a title="neuralops.analysis.plotting.plot_tradeoff" href="#neuralops.analysis.plotting.plot_tradeoff">plot_tradeoff</a></code></li>
+<li><code><a title="neuralops.analysis.plotting.plot_training_history" href="#neuralops.analysis.plotting.plot_training_history">plot_training_history</a></code></li>
+<li><code><a title="neuralops.analysis.plotting.plot_training_time" href="#neuralops.analysis.plotting.plot_training_time">plot_training_time</a></code></li>
+<li><code><a title="neuralops.analysis.plotting.set_style" href="#neuralops.analysis.plotting.set_style">set_style</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

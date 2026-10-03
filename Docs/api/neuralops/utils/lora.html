@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.utils.lora API documentation</title>
+<meta name="description" content="Native, zero-dependency LoRA (Low-Rank Adaptation) module for PyTorch models …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.utils.lora</code></h1>
+</header>
+<section id="section-intro">
+<p>Native, zero-dependency LoRA (Low-Rank Adaptation) module for PyTorch models.</p>
+<p>Provides standalone low-rank adapters for linear layers without requiring external
+PEFT packages. Supports Qwen, BERT, DistilBERT, RoBERTa, GPT-2, and T5 architectures.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.utils.lora.apply_lora"><code class="name flex">
+<span>def <span class="ident">apply_lora</span></span>(<span>model: nn.Module,<br>r: int = 16,<br>alpha: float = 32.0,<br>dropout: float = 0.05,<br>target_modules: Iterable[str] | str | None = None) ‑> tuple[torch.nn.modules.module.Module, int]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_lora(
+    model: nn.Module,
+    r: int = 16,
+    alpha: float = 32.0,
+    dropout: float = 0.05,
+    target_modules: Iterable[str] | str | None = None,
+) -&gt; tuple[nn.Module, int]:
+    &#34;&#34;&#34;Freeze base model parameters and inject LoRALinear into matching target modules.
+
+    Args:
+        model: PyTorch module (e.g. Qwen2, DistilBERT, RoBERTa, GPT-2).
+        r: LoRA rank dimension.
+        alpha: LoRA scaling factor (scaling = alpha / r).
+        dropout: Dropout probability applied to LoRA adapter input.
+        target_modules: Iterable or comma-separated string of target submodule names.
+
+    Returns:
+        Tuple of (model, number_of_adapted_linear_layers).
+    &#34;&#34;&#34;
+    if target_modules is None:
+        targets = set(DEFAULT_TARGET_MODULES)
+    elif isinstance(target_modules, str):
+        targets = {t.strip() for t in target_modules.split(&#34;,&#34;) if t.strip()}
+    else:
+        targets = set(target_modules)
+
+    # 1. Freeze all existing parameters in the model
+    for p in model.parameters():
+        p.requires_grad = False
+
+    adapted_count = 0
+
+    def _replace_linear_recursive(module: nn.Module, prefix: str = &#34;&#34;) -&gt; None:
+        nonlocal adapted_count
+        for name, child in list(module.named_children()):
+            full_name = f&#34;{prefix}.{name}&#34; if prefix else name
+            # Check if this child&#39;s name matches any target module
+            is_target = any(target in name for target in targets) or any(
+                target == name for target in targets
+            )
+            is_linear_like = isinstance(child, nn.Linear) or child.__class__.__name__ == &#34;Conv1D&#34;
+
+            if is_linear_like and is_target:
+                # Do not adapt classification heads
+                if any(head in name.lower() for head in (&#34;score&#34;, &#34;classifier&#34;, &#34;lm_head&#34;)):
+                    continue
+                wrapped = LoRALinear(child, r=r, alpha=alpha, dropout=dropout)
+                setattr(module, name, wrapped)
+                adapted_count += 1
+            else:
+                _replace_linear_recursive(child, full_name)
+
+    _replace_linear_recursive(model)
+    return model, adapted_count</code></pre>
+</details>
+<div class="desc"><p>Freeze base model parameters and inject LoRALinear into matching target modules.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>model</code></strong></dt>
+<dd>PyTorch module (e.g. Qwen2, DistilBERT, RoBERTa, GPT-2).</dd>
+<dt><strong><code>r</code></strong></dt>
+<dd>LoRA rank dimension.</dd>
+<dt><strong><code>alpha</code></strong></dt>
+<dd>LoRA scaling factor (scaling = alpha / r).</dd>
+<dt><strong><code>dropout</code></strong></dt>
+<dd>Dropout probability applied to LoRA adapter input.</dd>
+<dt><strong><code>target_modules</code></strong></dt>
+<dd>Iterable or comma-separated string of target submodule names.</dd>
+</dl>
+<p>Returns
+-----=
+Tuple of (model, number_of_adapted_linear_layers).</p></div>
+</dd>
+<dt id="neuralops.utils.lora.find_all_linear_submodule_names"><code class="name flex">
+<span>def <span class="ident">find_all_linear_submodule_names</span></span>(<span>model: nn.Module) ‑> set[str]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def find_all_linear_submodule_names(model: nn.Module) -&gt; set[str]:
+    &#34;&#34;&#34;Dynamically extract all Linear/Conv1D layer leaf names from model, excluding task heads.&#34;&#34;&#34;
+    names = set()
+    for name, module in model.named_modules():
+        is_linear_like = isinstance(
+            module, (nn.Linear, nn.Conv1d)
+        ) or module.__class__.__name__ in (&#34;Conv1D&#34;, &#34;Linear&#34;, &#34;LoRALinear&#34;)
+        if is_linear_like:
+            if not any(head in name.lower() for head in (&#34;score&#34;, &#34;classifier&#34;, &#34;lm_head&#34;)):
+                leaf_name = name.split(&#34;.&#34;)[-1]
+                names.add(leaf_name)
+    return names</code></pre>
+</details>
+<div class="desc"><p>Dynamically extract all Linear/Conv1D layer leaf names from model, excluding task heads.</p></div>
+</dd>
+<dt id="neuralops.utils.lora.get_lora_trainable_parameters"><code class="name flex">
+<span>def <span class="ident">get_lora_trainable_parameters</span></span>(<span>model: nn.Module) ‑> list[torch.nn.parameter.Parameter]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_lora_trainable_parameters(model: nn.Module) -&gt; list[nn.Parameter]:
+    &#34;&#34;&#34;Return all parameters that require gradients (LoRA adapters + task heads).&#34;&#34;&#34;
+    return [p for p in model.parameters() if p.requires_grad]</code></pre>
+</details>
+<div class="desc"><p>Return all parameters that require gradients (LoRA adapters + task heads).</p></div>
+</dd>
+<dt id="neuralops.utils.lora.load_lora_weights"><code class="name flex">
+<span>def <span class="ident">load_lora_weights</span></span>(<span>model: nn.Module, load_path: str, strict: bool = False) ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_lora_weights(model: nn.Module, load_path: str, strict: bool = False) -&gt; dict:
+    &#34;&#34;&#34;Load trainable parameters from saved checkpoint into model.&#34;&#34;&#34;
+    with open(load_path, &#34;rb&#34;) as f:
+        payload = torch.load(f, map_location=&#34;cpu&#34;, weights_only=False)
+    state_dict = payload.get(&#34;state_dict&#34;, payload) if isinstance(payload, dict) else payload
+    missing, unexpected = model.load_state_dict(state_dict, strict=strict)
+    return {
+        &#34;missing_keys&#34;: missing,
+        &#34;unexpected_keys&#34;: unexpected,
+        &#34;metadata&#34;: payload.get(&#34;metadata&#34;, {}) if isinstance(payload, dict) else {},
+    }</code></pre>
+</details>
+<div class="desc"><p>Load trainable parameters from saved checkpoint into model.</p></div>
+</dd>
+<dt id="neuralops.utils.lora.save_lora_weights"><code class="name flex">
+<span>def <span class="ident">save_lora_weights</span></span>(<span>model: nn.Module, save_path: str, metadata: dict | None = None) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def save_lora_weights(model: nn.Module, save_path: str, metadata: dict | None = None) -&gt; None:
+    &#34;&#34;&#34;Save only trainable parameters (LoRA weights + task head) to disk.&#34;&#34;&#34;
+    trainable_state = {
+        name: param.detach().cpu()
+        for name, param in model.named_parameters()
+        if param.requires_grad
+    }
+    payload = {
+        &#34;state_dict&#34;: trainable_state,
+        &#34;metadata&#34;: metadata or {},
+    }
+    with open(save_path, &#34;wb&#34;) as f:
+        torch.save(payload, f)</code></pre>
+</details>
+<div class="desc"><p>Save only trainable parameters (LoRA weights + task head) to disk.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.utils.lora.LoRALinear"><code class="flex name class">
+<span>class <span class="ident">LoRALinear</span></span>
+<span>(</span><span>linear: nn.Module, r: int = 16, alpha: float = 32.0, dropout: float = 0.05)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class LoRALinear(nn.Module):
+    &#34;&#34;&#34;Linear layer wrapped with Low-Rank Adaptation (LoRA) adapters.&#34;&#34;&#34;
+
+    def __init__(
+        self,
+        linear: nn.Module,
+        r: int = 16,
+        alpha: float = 32.0,
+        dropout: float = 0.05,
+    ) -&gt; None:
+        super().__init__()
+        if hasattr(linear, &#34;in_features&#34;):
+            self.in_features = linear.in_features
+            self.out_features = linear.out_features
+        elif hasattr(linear, &#34;weight&#34;):
+            # HuggingFace Conv1D (used in GPT-2) has weight shape [in_features, out_features]
+            self.in_features = linear.weight.shape[0]
+            self.out_features = linear.weight.shape[1]
+        else:
+            raise ValueError(f&#34;Unsupported linear module: {type(linear)}&#34;)
+        self.r = int(r)
+        self.alpha = float(alpha)
+        self.scaling = float(alpha) / max(1, self.r) if self.r &gt; 0 else 1.0
+        self.merged = False
+
+        # Base linear layer (frozen)
+        self.base_layer = linear
+        self.base_layer.weight.requires_grad = False
+        if self.base_layer.bias is not None:
+            self.base_layer.bias.requires_grad = False
+
+        device = linear.weight.device
+        # Trainable LoRA parameters are kept in FP32 for numerical stability
+        # and compatibility with torch.amp.GradScaler in mixed precision.
+        dtype = torch.float32
+
+        # LoRA trainable low-rank matrices
+        if self.r &gt; 0:
+            self.lora_A = nn.Linear(
+                self.in_features, self.r, bias=False, device=device, dtype=dtype
+            )
+            self.lora_B = nn.Linear(
+                self.r, self.out_features, bias=False, device=device, dtype=dtype
+            )
+            self.lora_dropout = nn.Dropout(dropout) if dropout &gt; 0.0 else nn.Identity()
+            self.reset_parameters()
+        else:
+            self.lora_A = None
+            self.lora_B = None
+            self.lora_dropout = nn.Identity()
+
+    def reset_parameters(self) -&gt; None:
+        &#34;&#34;&#34;Initialize lora_A with Kaiming uniform and lora_B with zeros.&#34;&#34;&#34;
+        if self.r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
+            zeros_(self.lora_B.weight)
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Expose base layer weight for compatibility with hooks and inspectors.&#34;&#34;&#34;
+        return self.base_layer.weight
+
+    @property
+    def bias(self) -&gt; torch.Tensor | None:
+        &#34;&#34;&#34;Expose base layer bias for compatibility with hooks and inspectors.&#34;&#34;&#34;
+        return self.base_layer.bias
+
+    def merge(self) -&gt; None:
+        &#34;&#34;&#34;In-place merge LoRA delta weight into the base linear layer.&#34;&#34;&#34;
+        if self.r &gt; 0 and not self.merged and self.lora_A is not None and self.lora_B is not None:
+            delta_w = (self.lora_B.weight @ self.lora_A.weight) * self.scaling
+            is_conv1d = &#34;conv1d&#34; in self.base_layer.__class__.__name__.lower() or (
+                not isinstance(self.base_layer, nn.Linear)
+                and self.base_layer.weight.shape == (self.in_features, self.out_features)
+            )
+            if is_conv1d:
+                delta_w = delta_w.t()
+            self.base_layer.weight.data.add_(delta_w.to(self.base_layer.weight.dtype))
+            self.merged = True
+
+    def unmerge(self) -&gt; None:
+        &#34;&#34;&#34;Subtract LoRA delta weight to revert the base linear layer to unmerged state.&#34;&#34;&#34;
+        if self.r &gt; 0 and self.merged and self.lora_A is not None and self.lora_B is not None:
+            delta_w = (self.lora_B.weight @ self.lora_A.weight) * self.scaling
+            is_conv1d = &#34;conv1d&#34; in self.base_layer.__class__.__name__.lower() or (
+                not isinstance(self.base_layer, nn.Linear)
+                and self.base_layer.weight.shape == (self.in_features, self.out_features)
+            )
+            if is_conv1d:
+                delta_w = delta_w.t()
+            self.base_layer.weight.data.sub_(delta_w.to(self.base_layer.weight.dtype))
+            self.merged = False
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Forward pass combining base projection with low-rank adapter delta.&#34;&#34;&#34;
+        base_out = self.base_layer(x)
+        if self.r &gt; 0 and not self.merged and self.lora_A is not None and self.lora_B is not None:
+            lora_in = self.lora_dropout(x).to(dtype=self.lora_A.weight.dtype)
+            lora_out = self.lora_B(self.lora_A(lora_in)) * self.scaling
+            return base_out + lora_out.to(dtype=base_out.dtype)
+        return base_out
+
+    def __repr__(self) -&gt; str:
+        return (
+            f&#34;LoRALinear(in_features={self.in_features}, out_features={self.out_features}, &#34;
+            f&#34;r={self.r}, alpha={self.alpha}, scaling={self.scaling:.4f})&#34;
+        )</code></pre>
+</details>
+<div class="desc"><p>Linear layer wrapped with Low-Rank Adaptation (LoRA) adapters.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.utils.lora.LoRALinear.bias"><code class="name">prop <span class="ident">bias</span> : torch.Tensor | None</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def bias(self) -&gt; torch.Tensor | None:
+    &#34;&#34;&#34;Expose base layer bias for compatibility with hooks and inspectors.&#34;&#34;&#34;
+    return self.base_layer.bias</code></pre>
+</details>
+<div class="desc"><p>Expose base layer bias for compatibility with hooks and inspectors.</p></div>
+</dd>
+<dt id="neuralops.utils.lora.LoRALinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Expose base layer weight for compatibility with hooks and inspectors.&#34;&#34;&#34;
+    return self.base_layer.weight</code></pre>
+</details>
+<div class="desc"><p>Expose base layer weight for compatibility with hooks and inspectors.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.utils.lora.LoRALinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Forward pass combining base projection with low-rank adapter delta.&#34;&#34;&#34;
+    base_out = self.base_layer(x)
+    if self.r &gt; 0 and not self.merged and self.lora_A is not None and self.lora_B is not None:
+        lora_in = self.lora_dropout(x).to(dtype=self.lora_A.weight.dtype)
+        lora_out = self.lora_B(self.lora_A(lora_in)) * self.scaling
+        return base_out + lora_out.to(dtype=base_out.dtype)
+    return base_out</code></pre>
+</details>
+<div class="desc"><p>Forward pass combining base projection with low-rank adapter delta.</p></div>
+</dd>
+<dt id="neuralops.utils.lora.LoRALinear.merge"><code class="name flex">
+<span>def <span class="ident">merge</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def merge(self) -&gt; None:
+    &#34;&#34;&#34;In-place merge LoRA delta weight into the base linear layer.&#34;&#34;&#34;
+    if self.r &gt; 0 and not self.merged and self.lora_A is not None and self.lora_B is not None:
+        delta_w = (self.lora_B.weight @ self.lora_A.weight) * self.scaling
+        is_conv1d = &#34;conv1d&#34; in self.base_layer.__class__.__name__.lower() or (
+            not isinstance(self.base_layer, nn.Linear)
+            and self.base_layer.weight.shape == (self.in_features, self.out_features)
+        )
+        if is_conv1d:
+            delta_w = delta_w.t()
+        self.base_layer.weight.data.add_(delta_w.to(self.base_layer.weight.dtype))
+        self.merged = True</code></pre>
+</details>
+<div class="desc"><p>In-place merge LoRA delta weight into the base linear layer.</p></div>
+</dd>
+<dt id="neuralops.utils.lora.LoRALinear.reset_parameters"><code class="name flex">
+<span>def <span class="ident">reset_parameters</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_parameters(self) -&gt; None:
+    &#34;&#34;&#34;Initialize lora_A with Kaiming uniform and lora_B with zeros.&#34;&#34;&#34;
+    if self.r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
+        zeros_(self.lora_B.weight)</code></pre>
+</details>
+<div class="desc"><p>Initialize lora_A with Kaiming uniform and lora_B with zeros.</p></div>
+</dd>
+<dt id="neuralops.utils.lora.LoRALinear.unmerge"><code class="name flex">
+<span>def <span class="ident">unmerge</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def unmerge(self) -&gt; None:
+    &#34;&#34;&#34;Subtract LoRA delta weight to revert the base linear layer to unmerged state.&#34;&#34;&#34;
+    if self.r &gt; 0 and self.merged and self.lora_A is not None and self.lora_B is not None:
+        delta_w = (self.lora_B.weight @ self.lora_A.weight) * self.scaling
+        is_conv1d = &#34;conv1d&#34; in self.base_layer.__class__.__name__.lower() or (
+            not isinstance(self.base_layer, nn.Linear)
+            and self.base_layer.weight.shape == (self.in_features, self.out_features)
+        )
+        if is_conv1d:
+            delta_w = delta_w.t()
+        self.base_layer.weight.data.sub_(delta_w.to(self.base_layer.weight.dtype))
+        self.merged = False</code></pre>
+</details>
+<div class="desc"><p>Subtract LoRA delta weight to revert the base linear layer to unmerged state.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.utils" href="index.html">neuralops.utils</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.utils.lora.apply_lora" href="#neuralops.utils.lora.apply_lora">apply_lora</a></code></li>
+<li><code><a title="neuralops.utils.lora.find_all_linear_submodule_names" href="#neuralops.utils.lora.find_all_linear_submodule_names">find_all_linear_submodule_names</a></code></li>
+<li><code><a title="neuralops.utils.lora.get_lora_trainable_parameters" href="#neuralops.utils.lora.get_lora_trainable_parameters">get_lora_trainable_parameters</a></code></li>
+<li><code><a title="neuralops.utils.lora.load_lora_weights" href="#neuralops.utils.lora.load_lora_weights">load_lora_weights</a></code></li>
+<li><code><a title="neuralops.utils.lora.save_lora_weights" href="#neuralops.utils.lora.save_lora_weights">save_lora_weights</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.utils.lora.LoRALinear" href="#neuralops.utils.lora.LoRALinear">LoRALinear</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.utils.lora.LoRALinear.bias" href="#neuralops.utils.lora.LoRALinear.bias">bias</a></code></li>
+<li><code><a title="neuralops.utils.lora.LoRALinear.forward" href="#neuralops.utils.lora.LoRALinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.utils.lora.LoRALinear.merge" href="#neuralops.utils.lora.LoRALinear.merge">merge</a></code></li>
+<li><code><a title="neuralops.utils.lora.LoRALinear.reset_parameters" href="#neuralops.utils.lora.LoRALinear.reset_parameters">reset_parameters</a></code></li>
+<li><code><a title="neuralops.utils.lora.LoRALinear.unmerge" href="#neuralops.utils.lora.LoRALinear.unmerge">unmerge</a></code></li>
+<li><code><a title="neuralops.utils.lora.LoRALinear.weight" href="#neuralops.utils.lora.LoRALinear.weight">weight</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

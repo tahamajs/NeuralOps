@@ -1,0 +1,1051 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.frandi_compressor API documentation</title>
+<meta name="description" content="FRanDI: Feature-Regression Aligned SVD Compressor — Production-Hardened (v2) …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.frandi_compressor</code></h1>
+</header>
+<section id="section-intro">
+<p>FRanDI: Feature-Regression Aligned SVD Compressor — Production-Hardened (v2).</p>
+<p>Registered as 'frandi' and 'frandi_compressor'.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.frandi_compressor.frandi_factory"><code class="name flex">
+<span>def <span class="ident">frandi_factory</span></span>(<span>model: nn.Module,<br>comp_config: Any | None = None,<br>rank: int | None = None,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module | tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;frandi&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;frandi_compressor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;frandi_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;frandi_compressor_factory&#34;)
+def frandi_factory(
+    model: nn.Module,
+    comp_config: Any | None = None,
+    rank: int | None = None,
+    **kwargs: Any,
+) -&gt; nn.Module | tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;Factory function for FRanDI compressor.&#34;&#34;&#34;
+    effective_rank = rank or _cfg_get(comp_config, &#34;frandi_rank&#34;, _cfg_get(comp_config, &#34;rank&#34;, 8))
+    energy = _cfg_get(
+        comp_config,
+        &#34;frandi_energy_threshold&#34;,
+        _cfg_get(comp_config, &#34;energy_threshold&#34;, None),
+    )
+    lora_r = kwargs.pop(&#34;lora_r&#34;, _cfg_get(comp_config, &#34;lora_r&#34;, 0))
+    lora_alpha = kwargs.pop(&#34;lora_alpha&#34;, _cfg_get(comp_config, &#34;lora_alpha&#34;, 1.0))
+    max_error = kwargs.pop(
+        &#34;max_error&#34;,
+        _cfg_get(comp_config, &#34;frandi_max_error&#34;, _cfg_get(comp_config, &#34;max_error&#34;, 0.5)),
+    )
+    target_attention_only = kwargs.pop(
+        &#34;target_attention_only&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;frandi_target_attention_only&#34;,
+            _cfg_get(comp_config, &#34;target_attention_only&#34;, False),
+        ),
+    )
+    fallback = kwargs.pop(
+        &#34;fallback_to_original&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;frandi_fallback_to_original&#34;,
+            _cfg_get(comp_config, &#34;fallback_to_original&#34;, True),
+        ),
+    )
+    return_stats = kwargs.pop(&#34;return_stats&#34;, kwargs.pop(&#34;return_tuple&#34;, False))
+
+    compressor = FRanDICompressor(
+        model,
+        rank=effective_rank,
+        energy_threshold=energy,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        max_error=max_error,
+        target_attention_only=target_attention_only,
+        fallback_to_original=fallback,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    try:
+        compressed_model.compression_stats = stats
+    except Exception:
+        pass
+    if return_stats:
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>Factory function for FRanDI compressor.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.frandi_compressor.FRanDICompressor"><code class="flex name class">
+<span>class <span class="ident">FRanDICompressor</span></span>
+<span>(</span><span>model: nn.Module | None = None,<br>rank: int = 8,<br>energy_threshold: float | None = None,<br>calibration_loader: Any | None = None,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>max_error: float = 0.5,<br>target_attention_only: bool = False,<br>fallback_to_original: bool = True,<br>skip_attention_qkv: bool = False,<br>cfg: Any | None = None,<br>target_layers: list[str] | None = None,<br>num_calibration_batches: int = 16,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;frandi_compressor_class&#34;)
+class FRanDICompressor(BaseCompressor):
+    &#34;&#34;&#34;
+    FRanDI (Feature-Regression aligned SVD) Compressor.
+    &#34;&#34;&#34;
+
+    is_custom_attention: bool = False
+
+    def __init__(
+        self,
+        model: nn.Module | None = None,
+        rank: int = 8,
+        energy_threshold: float | None = None,
+        calibration_loader: Any | None = None,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        max_error: float = 0.5,
+        target_attention_only: bool = False,
+        fallback_to_original: bool = True,
+        skip_attention_qkv: bool = False,
+        cfg: Any | None = None,
+        target_layers: list[str] | None = None,
+        num_calibration_batches: int = 16,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model if model is not None else nn.Identity(), name=&#34;frandi&#34;, **kwargs)
+        cfg = cfg or kwargs.get(&#34;comp_config&#34;)
+        self.cfg = cfg
+
+        self.rank = int(_cfg_get(cfg, &#34;frandi_rank&#34;, _cfg_get(cfg, &#34;rank&#34;, rank)))
+        self.energy_threshold = _cfg_get(
+            cfg,
+            &#34;frandi_energy_threshold&#34;,
+            _cfg_get(cfg, &#34;energy_threshold&#34;, energy_threshold),
+        )
+        self.calibration_loader = calibration_loader or _cfg_get(cfg, &#34;calibration_loader&#34;, None)
+        self.lora_r = int(_cfg_get(cfg, &#34;lora_r&#34;, _cfg_get(cfg, &#34;lora_rank&#34;, lora_r)))
+        self.lora_alpha = float(_cfg_get(cfg, &#34;lora_alpha&#34;, lora_alpha))
+        c_max_error = _cfg_get(cfg, &#34;frandi_max_error&#34;, _cfg_get(cfg, &#34;max_error&#34;, max_error))
+        if c_max_error is None or c_max_error == 0.5:
+            c_max_error = adaptive_max_error(self.rank, 768, 768, &#34;distilbert&#34;)
+
+        self.max_error = float(c_max_error)
+        self.target_attention_only = bool(
+            _cfg_get(
+                cfg,
+                &#34;frandi_target_attention_only&#34;,
+                _cfg_get(cfg, &#34;target_attention_only&#34;, target_attention_only),
+            )
+        )
+        self.fallback_to_original = bool(
+            _cfg_get(
+                cfg,
+                &#34;frandi_fallback_to_original&#34;,
+                _cfg_get(cfg, &#34;fallback_to_original&#34;, fallback_to_original),
+            )
+        )
+        self.skip_attention_qkv = bool(_cfg_get(cfg, &#34;skip_attention_qkv&#34;, skip_attention_qkv))
+
+        # FR-FIX-12: treat empty list as None.
+        tl = target_layers or _cfg_get(cfg, &#34;target_layers&#34;, None)
+        if tl is not None and len(tl) == 0:
+            tl = None
+        self.target_layers = tl
+
+        self.num_calibration_batches = max(
+            1, int(_cfg_get(cfg, &#34;num_calibration_batches&#34;, num_calibration_batches))
+        )
+
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self._compressed_params: int = 0
+
+    # ------------------------------------------------------------------
+    def _is_gqa_asymmetric(self, name: str, module: nn.Module) -&gt; bool:
+        # FR-FIX-17: GQA guard always active.
+        cfg = getattr(self.model, &#34;config&#34;, None)
+        if cfg is None:
+            return False
+        num_heads = getattr(cfg, &#34;num_attention_heads&#34;, None)
+        num_kv_heads = getattr(cfg, &#34;num_key_value_heads&#34;, None)
+        if num_heads is None or num_kv_heads is None:
+            return False
+        if num_kv_heads &gt;= num_heads:
+            return False
+        name_lower = name.lower()
+        return any(
+            p in name_lower
+            for p in (&#34;q_proj&#34;, &#34;k_proj&#34;, &#34;v_proj&#34;, &#34;query&#34;, &#34;key&#34;, &#34;value&#34;, &#34;c_attn&#34;)
+        )
+
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        name_lower = name.lower()
+        if any(part in name.split(&#34;.&#34;) for part in [&#34;lora_A&#34;, &#34;lora_B&#34;, &#34;base_layer&#34;]):
+            return False
+        if any(
+            skip in name_lower
+            for skip in [
+                &#34;classifier&#34;,
+                &#34;score&#34;,
+                &#34;lm_head&#34;,
+                &#34;pooler&#34;,
+                &#34;embedding&#34;,
+                &#34;router&#34;,
+                &#34;gate&#34;,
+            ]
+        ):
+            return False
+
+        if self.target_attention_only:
+            if not any(attn_kw in name_lower for attn_kw in _ATTN_NAMES):
+                return False
+
+        if self._is_gqa_asymmetric(name, module):
+            return False
+
+        target_mod = getattr(module, &#34;base_layer&#34;, module)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_linear = isinstance(target_mod, nn.Linear)
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+        if not (is_linear or is_conv1d) or isinstance(target_mod, FRanDILinear):
+            return False
+
+        try:
+            if not should_compress_linear(self.model, name):
+                return False
+        except Exception:
+            pass
+
+        if self.target_layers is not None:
+            return any(t in name for t in self.target_layers)
+        return True
+
+    # ------------------------------------------------------------------
+    # FR-FIX-04: bounded calibration loop, FR-FIX-14: fp32 accumulation
+    # ------------------------------------------------------------------
+    def _collect_covariances(self) -&gt; dict[str, torch.Tensor]:
+        if self.calibration_loader is None or not hasattr(self.model, &#34;named_modules&#34;):
+            return {}
+
+        covariances: dict[str, torch.Tensor] = {}
+        counts: dict[str, int] = {}
+        hooks = []
+
+        def make_hook(layer_name: str):
+            def hook(module, inputs, output):
+                if len(inputs) &gt; 0 and isinstance(inputs[0], torch.Tensor):
+                    x = inputs[0].detach().float()
+                    target_mod = getattr(module, &#34;base_layer&#34;, module)
+                    cls_name = target_mod.__class__.__name__.lower()
+                    is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+                    in_f = target_mod.weight.shape[0] if is_conv1d else target_mod.weight.shape[1]
+                    if x.shape[-1] != in_f:
+                        return
+                    x_flat = x.reshape(-1, in_f)
+                    # FR-FIX-14: accumulate in fp32
+                    cov = torch.matmul(x_flat.t().contiguous(), x_flat).float()
+                    if layer_name not in covariances:
+                        covariances[layer_name] = cov
+                        counts[layer_name] = x_flat.size(0)
+                    else:
+                        covariances[layer_name] = covariances[layer_name] + cov
+                        counts[layer_name] += x_flat.size(0)
+
+            return hook
+
+        for name, module in self.model.named_modules():
+            if self._is_target_module(name, module):
+                hooks.append(module.register_forward_hook(make_hook(name)))
+
+        device = next(self.model.parameters(), torch.tensor(0.0)).device
+        self.model.eval()
+        try:
+            with torch.no_grad():
+                n_seen = 0
+                for batch in self.calibration_loader:
+                    if n_seen &gt;= self.num_calibration_batches:
+                        break
+                    try:
+                        if isinstance(batch, dict):
+                            b = {
+                                k: v.to(device)
+                                for k, v in batch.items()
+                                if isinstance(v, torch.Tensor)
+                            }
+                            _ = self.model(**b)
+                        elif isinstance(batch, (list, tuple)):
+                            _ = self.model(batch[0].to(device))
+                        elif isinstance(batch, torch.Tensor):
+                            _ = self.model(batch.to(device))
+                        n_seen += 1
+                    except Exception as e:
+                        logger.debug(&#34;FRanDI calibration batch failed: %s&#34;, e)
+        finally:
+            for h in hooks:
+                h.remove()
+
+        # Average
+        for name in list(covariances.keys()):
+            covariances[name] = covariances[name] / max(1, counts[name])
+            covariances[name] = covariances[name].cpu()
+
+        return covariances
+
+    # ------------------------------------------------------------------
+    def compress(self, model: nn.Module | None = None) -&gt; tuple[nn.Module, dict[str, Any]]:
+        from neuralops.core.model_utils import replace_module
+
+        if model is not None:
+            self.model = model
+            try:
+                self._original_params = self._count_params(self.model)
+            except Exception:
+                self._original_params = sum(p.numel() for p in self.model.parameters())
+
+        covs = self._collect_covariances()
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.skipped_layers = []
+        self.layer_errors = {}
+        seen_weights: set = set()
+
+        total_orig_params = 0
+        total_comp_params = 0
+
+        # FR-FIX-13: threshold scales with requested rank.
+        min_rank_threshold = max(4, self.rank // 2)
+
+        for name, module in list(self.model.named_modules()):
+            if not self._is_target_module(name, module):
+                continue
+
+            target_mod = getattr(module, &#34;base_layer&#34;, module)
+            if not hasattr(target_mod, &#34;weight&#34;) or target_mod.weight is None:
+                continue
+
+            w_id = id(target_mod.weight)
+            if w_id in seen_weights:
+                self.skipped_layers.append(name)
+                continue
+            seen_weights.add(w_id)
+
+            cls_name = target_mod.__class__.__name__.lower()
+            is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+            raw_w = target_mod.weight.data
+            W_target = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
+            out_f, in_f = W_target.shape
+            orig_params = in_f * out_f
+            total_orig_params += orig_params
+
+            max_rank = min(in_f, out_f)
+            bound_r = (in_f * out_f) // max(1, in_f + out_f)
+            # FR-FIX-13
+            if max_rank &lt; min_rank_threshold or bound_r &lt; max(1, self.rank // 4):
+                self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+                total_comp_params += orig_params
+                continue
+
+            cov = covs.get(name, None)
+            try:
+                frandi_layer = FRanDILinear.from_linear(
+                    module,
+                    rank=self.rank,
+                    energy_threshold=self.energy_threshold,
+                    cov_matrix=cov,
+                    lora_r=self.lora_r,
+                    lora_alpha=self.lora_alpha,
+                )
+                W_comp = frandi_layer.get_weight().float()
+                W_norm = torch.norm(W_target, p=&#34;fro&#34;).clamp_min(1e-8)
+                err = float(torch.norm(W_target - W_comp, p=&#34;fro&#34;).item() / W_norm)
+                self.layer_errors[name] = err
+
+                if err &gt; self.max_error:
+                    if self.fallback_to_original:
+                        self.fallback_layers.append(name)
+                        for p in module.parameters():
+                            p.requires_grad = False
+                        total_comp_params += orig_params
+                        continue
+
+                # Preserve wrapper if present (e.g. LoRALinear)
+                if hasattr(module, &#34;base_layer&#34;):
+                    module.base_layer = frandi_layer
+                else:
+                    replace_module(self.model, name, frandi_layer)
+
+                self.compressed_layers.append(name)
+                actual_rank = int(getattr(frandi_layer, &#34;rank&#34;, self.rank))
+                comp_params = actual_rank * (in_f + out_f)
+                if getattr(frandi_layer, &#34;lora_r&#34;, 0) &gt; 0:
+                    comp_params += int(frandi_layer.lora_r) * (in_f + out_f)
+                total_comp_params += comp_params
+            except Exception as e:
+                logger.debug(&#34;FRanDI error on %s: %s&#34;, name, e)
+                self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+                total_comp_params += orig_params
+
+        # FR-FIX-07: forward sanity check
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                first_p = next(self.model.parameters(), None)
+                dev = first_p.device if first_p is not None else torch.device(&#34;cpu&#34;)
+                dummy = torch.randint(0, 100, (1, 8), device=dev, dtype=torch.long)
+                attn = torch.ones_like(dummy)
+                try:
+                    self.model(input_ids=dummy, attention_mask=attn)
+                except Exception:
+                    try:
+                        self.model(dummy)
+                    except Exception:
+                        first_linear = next(
+                            (
+                                m
+                                for m in self.model.modules()
+                                if isinstance(m, (nn.Linear, FRanDILinear))
+                            ),
+                            None,
+                        )
+                        in_dim = getattr(first_linear, &#34;in_features&#34;, 8)
+                        dt = first_p.dtype if first_p is not None else torch.float32
+                        dummy_float = torch.randn(1, 8, in_dim, device=dev, dtype=dt)
+                        self.model(dummy_float)
+        except Exception as e:
+            logger.debug(&#34;FRanDI forward sanity check failed: %s&#34;, e)
+            forward_check_success = False
+
+        effective_ratio = total_comp_params / total_orig_params if total_orig_params &gt; 0 else 1.0
+
+        try:
+            self._compressed_params = self._count_params(self.model)
+        except Exception:
+            self._compressed_params = sum(p.numel() for p in self.model.parameters())
+
+        try:
+            stats = self.get_compression_stats()
+        except Exception:
+            stats = {}
+
+        avg_err = (
+            sum(self.layer_errors.values()) / len(self.layer_errors) if self.layer_errors else 0.0
+        )
+        stats.update(
+            {
+                &#34;compressed_layers&#34;: self.compressed_layers,
+                &#34;compressed_layer_count&#34;: len(self.compressed_layers),
+                &#34;fallback_layers&#34;: self.fallback_layers,
+                &#34;fallback_layer_count&#34;: len(self.fallback_layers),
+                &#34;skipped_layers&#34;: self.skipped_layers,
+                &#34;skipped_layer_count&#34;: len(self.skipped_layers),
+                &#34;num_compressed&#34;: len(self.compressed_layers),
+                &#34;num_fallback&#34;: len(self.fallback_layers),
+                &#34;num_skipped&#34;: len(self.skipped_layers),
+                &#34;layer_errors&#34;: self.layer_errors,
+                &#34;avg_reconstruction_error&#34;: avg_err,
+                &#34;frandi_rank&#34;: self.rank,
+                &#34;energy_threshold&#34;: self.energy_threshold,
+                &#34;lora_r&#34;: self.lora_r,
+                &#34;lora_alpha&#34;: self.lora_alpha,
+                &#34;max_error&#34;: self.max_error,
+                &#34;effective_parameter_ratio&#34;: round(effective_ratio, 4),
+                &#34;forward_check_success&#34;: forward_check_success,
+                &#34;method&#34;: &#34;frandi&#34;,
+            }
+        )
+        logger.info(
+            &#34;Compressor frandi finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f&#34;,
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
+        )
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>FRanDI (Feature-Regression aligned SVD) Compressor.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.frandi_compressor.FRanDICompressor.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.compress" href="../core/base.html#neuralops.core.base.BaseCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.compression_engine.frandi_compressor.FRanDILinear"><code class="flex name class">
+<span>class <span class="ident">FRanDILinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>rank: int = 8,<br>bias: bool = True,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>dtype: torch.dtype | None = None,<br>device: torch.device | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FRanDILinear(nn.Module):
+    &#34;&#34;&#34;
+    Feature-Regression Aligned Factorized Linear Layer with optional LoRA.
+
+    W ≈ B @ A
+      - A (rank, in_features): input feature-aligned basis
+      - B (out_features, rank): output expansion matrix
+
+    Forward:
+      y = (x @ A^T) @ B^T + bias
+          + (alpha/r) * (x @ lora_A^T @ lora_B^T)
+    &#34;&#34;&#34;
+
+    # FR-FIX-09: NOT an attention module.
+    is_custom_attention: bool = False
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int = 8,
+        bias: bool = True,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.rank = max(1, min(rank, in_features, out_features))
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (lora_alpha / lora_r) if lora_r &gt; 0 else 1.0
+
+        requires_grad_base = not (self.lora_r &gt; 0)
+
+        # FR-FIX-02: init in fp32 for numerical stability, cast to dtype.
+        A_init = torch.empty(self.rank, in_features, dtype=torch.float32, device=device)
+        nn.init.orthogonal_(A_init)
+        self.A = nn.Parameter(A_init.to(dtype=dtype), requires_grad=requires_grad_base)
+
+        self.B = nn.Parameter(
+            torch.empty(out_features, self.rank, dtype=dtype, device=device),
+            requires_grad=requires_grad_base,
+        )
+        nn.init.xavier_uniform_(self.B.float())
+        with torch.no_grad():
+            self.B.data = self.B.data.to(dtype=dtype) if dtype is not None else self.B.data
+
+        if bias:
+            self.bias = nn.Parameter(
+                torch.zeros(out_features, dtype=dtype, device=device),
+                requires_grad=requires_grad_base,
+            )
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+        # FR-FIX-03: LoRA in the same dtype as base.
+        if self.lora_r &gt; 0:
+            self.lora_A = nn.Parameter(
+                torch.empty((self.lora_r, in_features), dtype=dtype, device=device)
+            )
+            self.lora_B = nn.Parameter(
+                torch.zeros((out_features, self.lora_r), dtype=dtype, device=device)
+            )
+            with torch.no_grad():
+                tmp = self.lora_A.data.float()
+                nn.init.kaiming_uniform_(tmp, a=math.sqrt(5))
+                self.lora_A.data.copy_(tmp.to(dtype=dtype) if dtype is not None else tmp)
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+        # FR-FIX-15: weight cache
+        self._cached_weight: torch.Tensor | None = None
+        self._cached_version: int = -1
+
+    # ---- cache management ----
+    def _current_version(self) -&gt; int:
+        v = 0
+        for p in (self.A, self.B):
+            v += getattr(p, &#34;_version&#34;, 0)
+        if self.lora_A is not None:
+            v += getattr(self.lora_A, &#34;_version&#34;, 0)
+        if self.lora_B is not None:
+            v += getattr(self.lora_B, &#34;_version&#34;, 0)
+        return v
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        # FR-FIX-15: cache in eval mode.
+        if (
+            not self.training
+            and self._cached_weight is not None
+            and self._cached_version == self._current_version()
+        ):
+            return self._cached_weight
+        W = torch.matmul(self.B.float(), self.A.float()).to(self.A.dtype)
+        if not self.training:
+            self._cached_weight = W
+            self._cached_version = self._current_version()
+        return W
+
+    def get_weight(self) -&gt; torch.Tensor:
+        return self.weight
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        orig_shape = x.shape
+        x_flat = x.reshape(-1, self.in_features)
+
+        x_a = F.linear(x_flat, self.A)  # (N, rank)
+        out = F.linear(x_a, self.B, self.bias)  # (N, out)
+
+        if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x_flat, self.lora_A), self.lora_B)
+            out = out + self.scaling * lora_out
+
+        return out.view(*orig_shape[:-1], self.out_features)
+
+    # FR-FIX-16: merge() for PEFT/HF compatibility
+    @torch.no_grad()
+    def merge(self) -&gt; None:
+        &#34;&#34;&#34;Fold LoRA delta into base factors (approximate, additive).&#34;&#34;&#34;
+        if self.lora_r &lt;= 0 or self.lora_A is None or self.lora_B is None:
+            return
+        # Merge into B: B_new = B + (alpha/r) * (lora_B @ lora_A) @ pinv(A)
+        # Simpler: absorb into B by solving B_new A = B A + delta_BA
+        # We use a least-squares approach via pseudoinverse.
+        A_f = self.A.float()
+        delta = self.scaling * torch.matmul(self.lora_B.float(), self.lora_A.float())
+        # Solve for B_new such that B_new @ A = B @ A + delta:
+        # B_new = B + delta @ A^+
+        A_pinv = torch.linalg.pinv(A_f)
+        B_new = self.B.float() + delta @ A_pinv
+        self.B.data.copy_(B_new.to(self.B.dtype))
+        # Reset LoRA to zero
+        self.lora_A.data.zero_()
+        self.lora_B.data.zero_()
+        self._cached_weight = None
+
+    def merge_and_unload(self) -&gt; FRanDILinear:
+        self.merge()
+        return self
+
+    def unmerge(self) -&gt; None:
+        # Not implemented (would require tracking original B).
+        raise NotImplementedError(&#34;FRanDILinear.unmerge is not supported.&#34;)
+
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _select_rank(
+        S: torch.Tensor,
+        rank: int = 8,
+        energy_threshold: float | None = None,
+    ) -&gt; int:
+        # FR-FIX-11: cap at `rank` even when energy threshold is used.
+        max_rank = min(int(rank), len(S))
+        if energy_threshold is None:
+            return max(1, max_rank)
+        total_energy = (S**2).sum().clamp_min(1e-12)
+        cum_energy = (S**2).cumsum(dim=0) / total_energy
+        idx = torch.where(cum_energy &gt;= energy_threshold)[0]
+        if len(idx) &gt; 0:
+            return max(1, min(int(idx[0].item()) + 1, max_rank))
+        return max(1, max_rank)
+
+    @classmethod
+    def from_linear(
+        cls,
+        linear: nn.Linear | Any,
+        rank: int = 8,
+        energy_threshold: float | None = None,
+        cov_matrix: torch.Tensor | None = None,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+    ) -&gt; FRanDILinear:
+        target_mod = getattr(linear, &#34;base_layer&#34;, linear)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+        raw_w = target_mod.weight.data
+
+        if is_conv1d:
+            in_f = raw_w.shape[0]
+            out_f = raw_w.shape[1]
+            W_float = raw_w.t().contiguous().float()
+        else:
+            out_f, in_f = raw_w.shape
+            W_float = raw_w.float()
+
+        bias = (
+            target_mod.bias.data
+            if getattr(target_mod, &#34;bias&#34;, None) is not None and target_mod.bias is not None
+            else None
+        )
+
+        existing_lora_A = getattr(linear, &#34;lora_A&#34;, None)
+        existing_lora_B = getattr(linear, &#34;lora_B&#34;, None)
+
+        B_data: torch.Tensor | None = None
+        A_data: torch.Tensor | None = None
+        r: int = 1
+
+        # ---- Whitening path ----
+        if cov_matrix is not None and cov_matrix.shape == (in_f, in_f):
+            try:
+                cov_f = cov_matrix.float()
+                trace_val = torch.diagonal(cov_f).sum().item()
+                reg = max(1e-6, 1e-4 * trace_val / max(in_f, 1))
+
+                # FR-FIX-05: add regularization without materializing eye.
+                cov_reg = cov_f.clone()
+                idx = torch.arange(in_f, device=cov_reg.device)
+                cov_reg[idx, idx] += reg
+
+                L = torch.linalg.cholesky(cov_reg)  # (in, in) lower triangular
+                W_tilde = torch.matmul(W_float, L)  # (out, in)
+
+                U, S, Vt = torch.linalg.svd(W_tilde, full_matrices=False)
+                r = cls._select_rank(S, rank=rank, energy_threshold=energy_threshold)
+                r = max(1, min(r, out_f, in_f))
+
+                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+                B_data = U[:, :r] * sqrt_S.unsqueeze(0)  # (out, r)
+                A_tilde = sqrt_S.unsqueeze(1) * Vt[:r, :]  # (r, in)
+
+                # FR-FIX-10: solve for A such that A @ L = A_tilde.
+                # Transposed: L^T @ A^T = A_tilde^T. L^T is upper triangular.
+                A_solved = torch.linalg.solve_triangular(
+                    L.t().contiguous(),
+                    A_tilde.t().contiguous(),
+                    upper=True,
+                )
+                A_data = A_solved.t().contiguous()  # (r, in)
+            except Exception as e:
+                logger.debug(&#34;FRanDI whitening failed: %s; falling back to plain SVD&#34;, e)
+                B_data = None
+                A_data = None
+
+        # ---- Plain SVD path ----
+        if B_data is None or A_data is None:
+            U, S, Vt = torch.linalg.svd(W_float, full_matrices=False)
+            r = cls._select_rank(S, rank=rank, energy_threshold=energy_threshold)
+            r = max(1, min(r, out_f, in_f))
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            B_data = U[:, :r] * sqrt_S.unsqueeze(0)
+            A_data = sqrt_S.unsqueeze(1) * Vt[:r, :]
+
+        # Determine effective LoRA rank
+        effective_lora_r = int(lora_r)
+        if existing_lora_A is not None and hasattr(existing_lora_A, &#34;weight&#34;):
+            try:
+                effective_lora_r = int(existing_lora_A.weight.shape[0])
+            except (AttributeError, IndexError, TypeError):
+                pass
+
+        frandi_layer = cls(
+            in_features=in_f,
+            out_features=out_f,
+            rank=r,
+            bias=bias is not None,
+            lora_r=effective_lora_r,
+            lora_alpha=lora_alpha,
+            dtype=raw_w.dtype,
+            device=raw_w.device,
+        )
+
+        with torch.no_grad():
+            frandi_layer.A.data.copy_(A_data[:r, :].to(dtype=raw_w.dtype, device=raw_w.device))
+            frandi_layer.B.data.copy_(B_data[:, :r].to(dtype=raw_w.dtype, device=raw_w.device))
+
+            if bias is not None and frandi_layer.bias is not None:
+                frandi_layer.bias.data.copy_(bias.to(dtype=raw_w.dtype, device=raw_w.device))
+
+            if (
+                existing_lora_A is not None
+                and existing_lora_B is not None
+                and frandi_layer.lora_A is not None
+            ):
+                w_A = getattr(existing_lora_A, &#34;weight&#34;, existing_lora_A)
+                w_B = getattr(existing_lora_B, &#34;weight&#34;, existing_lora_B)
+                if hasattr(w_A, &#34;data&#34;) and hasattr(w_B, &#34;data&#34;):
+                    try:
+                        if w_A.shape == frandi_layer.lora_A.shape:
+                            frandi_layer.lora_A.data.copy_(w_A.data)
+                        if w_B.shape == frandi_layer.lora_B.shape:
+                            frandi_layer.lora_B.data.copy_(w_B.data)
+                        frandi_layer.lora_A.requires_grad = True
+                        frandi_layer.lora_B.requires_grad = True
+                    except Exception as e:
+                        logger.debug(&#34;FRanDI LoRA copy failed: %s&#34;, e)
+
+        return frandi_layer</code></pre>
+</details>
+<div class="desc"><p>Feature-Regression Aligned Factorized Linear Layer with optional LoRA.</p>
+<p>W ≈ B @ A
+- A (rank, in_features): input feature-aligned basis
+- B (out_features, rank): output expansion matrix</p>
+<p>Forward
+-----=
+y = (x @ A^T) @ B^T + bias
++ (alpha/r) * (x @ lora_A^T @ lora_B^T)</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.frandi_compressor.FRanDILinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.frandi_compressor.FRanDILinear.from_linear"><code class="name flex">
+<span>def <span class="ident">from_linear</span></span>(<span>linear: nn.Linear | Any,<br>rank: int = 8,<br>energy_threshold: float | None = None,<br>cov_matrix: torch.Tensor | None = None,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0) ‑> <a title="neuralops.compression_engine.frandi_compressor.FRanDILinear" href="#neuralops.compression_engine.frandi_compressor.FRanDILinear">FRanDILinear</a></span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.frandi_compressor.FRanDILinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    # FR-FIX-15: cache in eval mode.
+    if (
+        not self.training
+        and self._cached_weight is not None
+        and self._cached_version == self._current_version()
+    ):
+        return self._cached_weight
+    W = torch.matmul(self.B.float(), self.A.float()).to(self.A.dtype)
+    if not self.training:
+        self._cached_weight = W
+        self._cached_version = self._current_version()
+    return W</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.frandi_compressor.FRanDILinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    orig_shape = x.shape
+    x_flat = x.reshape(-1, self.in_features)
+
+    x_a = F.linear(x_flat, self.A)  # (N, rank)
+    out = F.linear(x_a, self.B, self.bias)  # (N, out)
+
+    if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        lora_out = F.linear(F.linear(x_flat, self.lora_A), self.lora_B)
+        out = out + self.scaling * lora_out
+
+    return out.view(*orig_shape[:-1], self.out_features)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+<dt id="neuralops.compression_engine.frandi_compressor.FRanDILinear.get_weight"><code class="name flex">
+<span>def <span class="ident">get_weight</span></span>(<span>self) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_weight(self) -&gt; torch.Tensor:
+    return self.weight</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.compression_engine.frandi_compressor.FRanDILinear.merge"><code class="name flex">
+<span>def <span class="ident">merge</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@torch.no_grad()
+def merge(self) -&gt; None:
+    &#34;&#34;&#34;Fold LoRA delta into base factors (approximate, additive).&#34;&#34;&#34;
+    if self.lora_r &lt;= 0 or self.lora_A is None or self.lora_B is None:
+        return
+    # Merge into B: B_new = B + (alpha/r) * (lora_B @ lora_A) @ pinv(A)
+    # Simpler: absorb into B by solving B_new A = B A + delta_BA
+    # We use a least-squares approach via pseudoinverse.
+    A_f = self.A.float()
+    delta = self.scaling * torch.matmul(self.lora_B.float(), self.lora_A.float())
+    # Solve for B_new such that B_new @ A = B @ A + delta:
+    # B_new = B + delta @ A^+
+    A_pinv = torch.linalg.pinv(A_f)
+    B_new = self.B.float() + delta @ A_pinv
+    self.B.data.copy_(B_new.to(self.B.dtype))
+    # Reset LoRA to zero
+    self.lora_A.data.zero_()
+    self.lora_B.data.zero_()
+    self._cached_weight = None</code></pre>
+</details>
+<div class="desc"><p>Fold LoRA delta into base factors (approximate, additive).</p></div>
+</dd>
+<dt id="neuralops.compression_engine.frandi_compressor.FRanDILinear.merge_and_unload"><code class="name flex">
+<span>def <span class="ident">merge_and_unload</span></span>(<span>self) ‑> <a title="neuralops.compression_engine.frandi_compressor.FRanDILinear" href="#neuralops.compression_engine.frandi_compressor.FRanDILinear">FRanDILinear</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def merge_and_unload(self) -&gt; FRanDILinear:
+    self.merge()
+    return self</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.compression_engine.frandi_compressor.FRanDILinear.unmerge"><code class="name flex">
+<span>def <span class="ident">unmerge</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def unmerge(self) -&gt; None:
+    # Not implemented (would require tracking original B).
+    raise NotImplementedError(&#34;FRanDILinear.unmerge is not supported.&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.frandi_compressor.frandi_factory" href="#neuralops.compression_engine.frandi_compressor.frandi_factory">frandi_factory</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.frandi_compressor.FRanDICompressor" href="#neuralops.compression_engine.frandi_compressor.FRanDICompressor">FRanDICompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.frandi_compressor.FRanDICompressor.is_custom_attention" href="#neuralops.compression_engine.frandi_compressor.FRanDICompressor.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.frandi_compressor.FRanDILinear" href="#neuralops.compression_engine.frandi_compressor.FRanDILinear">FRanDILinear</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.compression_engine.frandi_compressor.FRanDILinear.forward" href="#neuralops.compression_engine.frandi_compressor.FRanDILinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.compression_engine.frandi_compressor.FRanDILinear.from_linear" href="#neuralops.compression_engine.frandi_compressor.FRanDILinear.from_linear">from_linear</a></code></li>
+<li><code><a title="neuralops.compression_engine.frandi_compressor.FRanDILinear.get_weight" href="#neuralops.compression_engine.frandi_compressor.FRanDILinear.get_weight">get_weight</a></code></li>
+<li><code><a title="neuralops.compression_engine.frandi_compressor.FRanDILinear.is_custom_attention" href="#neuralops.compression_engine.frandi_compressor.FRanDILinear.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.compression_engine.frandi_compressor.FRanDILinear.merge" href="#neuralops.compression_engine.frandi_compressor.FRanDILinear.merge">merge</a></code></li>
+<li><code><a title="neuralops.compression_engine.frandi_compressor.FRanDILinear.merge_and_unload" href="#neuralops.compression_engine.frandi_compressor.FRanDILinear.merge_and_unload">merge_and_unload</a></code></li>
+<li><code><a title="neuralops.compression_engine.frandi_compressor.FRanDILinear.unmerge" href="#neuralops.compression_engine.frandi_compressor.FRanDILinear.unmerge">unmerge</a></code></li>
+<li><code><a title="neuralops.compression_engine.frandi_compressor.FRanDILinear.weight" href="#neuralops.compression_engine.frandi_compressor.FRanDILinear.weight">weight</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

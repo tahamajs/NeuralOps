@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests.test_adaptive_sparse_attention API documentation</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tests.test_adaptive_sparse_attention</code></h1>
+</header>
+<section id="section-intro">
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.tests.test_adaptive_sparse_attention.test_causal_mask_before_topk"><code class="name flex">
+<span>def <span class="ident">test_causal_mask_before_topk</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_causal_mask_before_topk():
+    # In decoder mode, future tokens must receive -10000.0 before sort, meaning attention weights to future tokens are strictly zero
+    p = AdaptiveSparseAttention(d_model=64, num_heads=4, is_decoder=True, is_causal=True, sparsity_ratio=0.5)
+    L = 6
+    x = torch.randn(1, L, 64)
+    _, attn = p(x, output_attentions=True)
+    assert attn is not None
+    # For any query i, key j &gt; i must have attention weight exactly 0
+    for i in range(L):
+        for j in range(i + 1, L):
+            assert torch.all(attn[:, :, i, j] == 0.0), f&#34;Future position ({i}, {j}) has non-zero attention {attn[:, :, i, j]}&#34;</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_sparse_attention.test_default_sparsity_per_family"><code class="name flex">
+<span>def <span class="ident">test_default_sparsity_per_family</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_default_sparsity_per_family():
+    # 1. Encoder model_type (e.g., &#39;bert&#39;, &#39;roberta&#39;) defaults to 0.1
+    cfg_enc = SimpleNamespace(model_type=&#34;bert&#34;, num_attention_heads=4, hidden_size=64, is_decoder=False)
+    p_enc = AdaptiveSparseAttention(config=cfg_enc)
+    assert p_enc.default_sparsity == pytest.approx(0.1, abs=1e-3)
+    assert not p_enc.is_decoder
+
+    # 2. Decoder model_type (e.g., &#39;gpt2&#39;, &#39;qwen&#39;) defaults to 0.5
+    cfg_dec = SimpleNamespace(model_type=&#34;gpt2&#34;, num_attention_heads=4, hidden_size=64, is_decoder=True)
+    p_dec = AdaptiveSparseAttention(config=cfg_dec)
+    assert p_dec.default_sparsity == pytest.approx(0.5, abs=1e-3)
+    assert p_dec.is_decoder
+
+    # 3. Explicit sparsity_ratio passed in comp_config or kwargs overrides defaults
+    comp_cfg = SimpleNamespace(adaptive_sparsity_ratio=0.35)
+    p_override = AdaptiveSparseAttention(config=cfg_enc, comp_config=comp_cfg)
+    assert p_override.default_sparsity == pytest.approx(0.35, abs=1e-3)
+
+    # 4. adaptive_sparse_encoder_sparsity config parameter
+    p_custom_enc = AdaptiveSparseAttention(config=cfg_enc, adaptive_sparse_encoder_sparsity=0.15)
+    assert p_custom_enc.default_sparsity == pytest.approx(0.15, abs=1e-3)
+
+    # Verify sparsity_logits is learnable (requires_grad=True)
+    assert p_enc.sparsity_logits.requires_grad
+    assert p_dec.sparsity_logits.requires_grad</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_sparse_attention.test_head_mask_shapes"><code class="name flex">
+<span>def <span class="ident">test_head_mask_shapes</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_head_mask_shapes():
+    p = AdaptiveSparseAttention(d_model=64, num_heads=4)
+    x = torch.randn(2, 8, 64)
+    H = 4
+    B = 2
+
+    # Shape [H]
+    hm_1d = torch.ones(H)
+    out1, _ = p(x, head_mask=hm_1d)
+    assert out1.shape == (B, 8, 64)
+
+    # Shape [B, H]
+    hm_2d = torch.ones(B, H)
+    out2, _ = p(x, head_mask=hm_2d)
+    assert out2.shape == (B, 8, 64)
+
+    # Shape [B, H, 1, 1]
+    hm_4d = torch.ones(B, H, 1, 1)
+    out4, _ = p(x, head_mask=hm_4d)
+    assert out4.shape == (B, 8, 64)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_sparse_attention.test_injection_safety"><code class="name flex">
+<span>def <span class="ident">test_injection_safety</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_injection_safety():
+    class MissingProjectionsLayer(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.dummy = nn.Linear(64, 64)
+
+    # Layer lacks attention weights
+    layer = MissingProjectionsLayer()
+    res = inject_adaptive_sparse(layer=layer)
+    assert res is None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_sparse_attention.test_lora_freezing"><code class="name flex">
+<span>def <span class="ident">test_lora_freezing</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_lora_freezing():
+    class DummyAttn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.q_proj = nn.Linear(64, 64)
+            self.k_proj = nn.Linear(64, 64)
+            self.v_proj = nn.Linear(64, 64)
+            self.out_proj = nn.Linear(64, 64)
+
+    old = DummyAttn()
+    p = AdaptiveSparseAttention(d_model=64, num_heads=4, pretrained_attn=old, lora_rank=16)
+    for mod in (p.q_proj, p.k_proj, p.v_proj, p.out_proj):
+        assert not mod.weight.requires_grad
+        if mod.bias is not None:
+            assert not mod.bias.requires_grad
+        assert mod.lora_A.requires_grad
+        assert mod.lora_B.requires_grad</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_sparse_attention.test_nested_encoder_bypass"><code class="name flex">
+<span>def <span class="ident">test_nested_encoder_bypass</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_nested_encoder_bypass():
+    class MockBertSelfAttention(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.query = nn.Linear(64, 64)
+            self.key = nn.Linear(64, 64)
+            self.value = nn.Linear(64, 64)
+            # Notice: no out_proj, no dense, no c_proj
+
+    src = MockBertSelfAttention()
+    p = AdaptiveSparseAttention(d_model=64, num_heads=4, pretrained_attn=src)
+    assert p.is_nested_encoder is True
+
+    # Forward should return context directly without crashing
+    x = torch.randn(2, 8, 64)
+    out, _ = p(x)
+    assert out.shape == (2, 8, 64)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_sparse_attention.test_rope_fallback_both_signatures"><code class="name flex">
+<span>def <span class="ident">test_rope_fallback_both_signatures</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_rope_fallback_both_signatures():
+    # 1. Signature with (x, seq_len)
+    class MockRotarySeqLen(nn.Module):
+        def forward(self, x, seq_len=None):
+            B, H, N, d = x.shape
+            cos = torch.ones(B, 1, N, d)
+            sin = torch.zeros(B, 1, N, d)
+            return cos, sin
+
+    # 2. Signature with (x, position_ids)
+    class MockRotaryPosIds(nn.Module):
+        def forward(self, x, position_ids=None):
+            B, H, N, d = x.shape
+            cos = torch.ones(B, 1, N, d)
+            sin = torch.zeros(B, 1, N, d)
+            return cos, sin
+
+    p1 = AdaptiveSparseAttention(d_model=64, num_heads=4)
+    p1.rotary_emb = MockRotarySeqLen()
+    x = torch.randn(2, 8, 64)
+    out1, _ = p1(x, position_embeddings=None)
+    assert out1.shape == (2, 8, 64)
+    assert torch.isfinite(out1).all()
+
+    p2 = AdaptiveSparseAttention(d_model=64, num_heads=4)
+    p2.rotary_emb = MockRotaryPosIds()
+    out2, _ = p2(x, position_embeddings=None)
+    assert out2.shape == (2, 8, 64)
+    assert torch.isfinite(out2).all()</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_sparse_attention.test_topk_threshold_correctness"><code class="name flex">
+<span>def <span class="ident">test_topk_threshold_correctness</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_topk_threshold_correctness():
+    sparsity = 0.5
+    L = 10
+    H = 4
+    # Bidirectional encoder with fixed 50% sparsity
+    p = AdaptiveSparseAttention(d_model=64, num_heads=H, is_decoder=False, is_causal=False, sparsity_ratio=sparsity)
+    p.eval()  # Set eval mode to avoid dropout zeroing entries
+    x = torch.randn(2, L, 64)
+    _, attn = p(x, output_attentions=True)
+    assert attn is not None
+    # For each row of each head, top-k entries carry dominant mass (k = 5)
+    expected_k = int(round((1.0 - sparsity) * L))
+    topk_mass = torch.topk(attn, expected_k, dim=-1).values.sum(dim=-1)
+    assert torch.all(topk_mass &gt; 0.65)
+    assert (attn &lt; 0.05).float().mean().item() &gt; 0.25</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_sparse_attention.test_weight_copy_all_four_architectures"><code class="name flex">
+<span>def <span class="ident">test_weight_copy_all_four_architectures</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_weight_copy_all_four_architectures():
+    hidden_size = 64
+    num_heads = 4
+    head_dim = 16
+
+    # 1. DistilBERT style: q_lin, k_lin, v_lin, out_lin
+    class MockDistilBertAttn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.q_lin = nn.Linear(hidden_size, hidden_size)
+            self.k_lin = nn.Linear(hidden_size, hidden_size)
+            self.v_lin = nn.Linear(hidden_size, hidden_size)
+            self.out_lin = nn.Linear(hidden_size, hidden_size)
+
+    d_src = MockDistilBertAttn()
+    d_block = AdaptiveSparseAttention(d_model=hidden_size, num_heads=num_heads, pretrained_attn=d_src)
+    for name, mod in [(&#34;q&#34;, d_block.q_proj), (&#34;k&#34;, d_block.k_proj), (&#34;v&#34;, d_block.v_proj), (&#34;o&#34;, d_block.out_proj)]:
+        assert float(torch.norm(mod.weight).item()) &gt; 1e-4
+
+    # 2. RoBERTa style: self.query, self.key, self.value, output.dense
+    class MockRobertaSelf(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.query = nn.Linear(hidden_size, hidden_size)
+            self.key = nn.Linear(hidden_size, hidden_size)
+            self.value = nn.Linear(hidden_size, hidden_size)
+
+    class MockRobertaOutput(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.dense = nn.Linear(hidden_size, hidden_size)
+
+    class MockRobertaAttn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.self = MockRobertaSelf()
+            self.output = MockRobertaOutput()
+
+    r_src = MockRobertaAttn()
+    r_block = AdaptiveSparseAttention(d_model=hidden_size, num_heads=num_heads, pretrained_attn=r_src)
+    for name, mod in [(&#34;q&#34;, r_block.q_proj), (&#34;k&#34;, r_block.k_proj), (&#34;v&#34;, r_block.v_proj), (&#34;o&#34;, r_block.out_proj)]:
+        assert float(torch.norm(mod.weight).item()) &gt; 1e-4
+
+    # 3. GPT-2 style: c_attn [hidden_size, 3 * hidden_size], c_proj [hidden_size, hidden_size]
+    class MockConv1D(nn.Module):
+        def __init__(self, in_f, out_f):
+            super().__init__()
+            self.weight = nn.Parameter(torch.randn(in_f, out_f))
+            self.bias = nn.Parameter(torch.zeros(out_f))
+
+    class MockGPT2Attn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.c_attn = MockConv1D(hidden_size, 3 * hidden_size)
+            self.c_proj = MockConv1D(hidden_size, hidden_size)
+
+    g_src = MockGPT2Attn()
+    g_block = AdaptiveSparseAttention(d_model=hidden_size, num_heads=num_heads, pretrained_attn=g_src)
+    for name, mod in [(&#34;q&#34;, g_block.q_proj), (&#34;k&#34;, g_block.k_proj), (&#34;v&#34;, g_block.v_proj), (&#34;o&#34;, g_block.out_proj)]:
+        assert float(torch.norm(mod.weight).item()) &gt; 1e-4
+
+    # 4. Qwen / LLaMA style: q_proj, k_proj, v_proj, o_proj with GQA (num_kv_heads=2 &lt; num_heads=4)
+    class MockQwenAttn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.head_dim = head_dim
+            self.num_heads = num_heads
+            self.num_key_value_heads = 2
+            self.q_proj = nn.Linear(hidden_size, num_heads * head_dim)
+            self.k_proj = nn.Linear(hidden_size, 2 * head_dim)
+            self.v_proj = nn.Linear(hidden_size, 2 * head_dim)
+            self.o_proj = nn.Linear(num_heads * head_dim, hidden_size)
+
+    q_src = MockQwenAttn()
+    cfg_qwen = SimpleNamespace(model_type=&#34;qwen2&#34;, num_attention_heads=num_heads, num_key_value_heads=2, hidden_size=hidden_size)
+    q_block = AdaptiveSparseAttention(config=cfg_qwen, pretrained_attn=q_src)
+    assert q_block.num_kv_heads == 2
+    assert q_block.kv_repeat == 2
+    for name, mod in [(&#34;q&#34;, q_block.q_proj), (&#34;k&#34;, q_block.k_proj), (&#34;v&#34;, q_block.v_proj), (&#34;o&#34;, q_block.out_proj)]:
+        assert float(torch.norm(mod.weight).item()) &gt; 1e-4</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tests" href="index.html">neuralops.tests</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.tests.test_adaptive_sparse_attention.test_causal_mask_before_topk" href="#neuralops.tests.test_adaptive_sparse_attention.test_causal_mask_before_topk">test_causal_mask_before_topk</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_sparse_attention.test_default_sparsity_per_family" href="#neuralops.tests.test_adaptive_sparse_attention.test_default_sparsity_per_family">test_default_sparsity_per_family</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_sparse_attention.test_head_mask_shapes" href="#neuralops.tests.test_adaptive_sparse_attention.test_head_mask_shapes">test_head_mask_shapes</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_sparse_attention.test_injection_safety" href="#neuralops.tests.test_adaptive_sparse_attention.test_injection_safety">test_injection_safety</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_sparse_attention.test_lora_freezing" href="#neuralops.tests.test_adaptive_sparse_attention.test_lora_freezing">test_lora_freezing</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_sparse_attention.test_nested_encoder_bypass" href="#neuralops.tests.test_adaptive_sparse_attention.test_nested_encoder_bypass">test_nested_encoder_bypass</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_sparse_attention.test_rope_fallback_both_signatures" href="#neuralops.tests.test_adaptive_sparse_attention.test_rope_fallback_both_signatures">test_rope_fallback_both_signatures</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_sparse_attention.test_topk_threshold_correctness" href="#neuralops.tests.test_adaptive_sparse_attention.test_topk_threshold_correctness">test_topk_threshold_correctness</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_sparse_attention.test_weight_copy_all_four_architectures" href="#neuralops.tests.test_adaptive_sparse_attention.test_weight_copy_all_four_architectures">test_weight_copy_all_four_architectures</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

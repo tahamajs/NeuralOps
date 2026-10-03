@@ -1,0 +1,1249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.runners API documentation</title>
+<meta name="description" content="Unified module runner suite.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.runners</code></h1>
+</header>
+<section id="section-intro">
+<p>Unified module runner suite.</p>
+</section>
+<section>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+<dl>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_a3" href="run_all_4_a3.html">neuralops.runners.run_all_4_a3</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating a3.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_aasvd" href="run_all_4_aasvd.html">neuralops.runners.run_all_4_aasvd</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating aasvd.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_adaptive_compressor" href="run_all_4_adaptive_compressor.html">neuralops.runners.run_all_4_adaptive_compressor</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating adaptive_compressor.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_adaptive_ranks" href="run_all_4_adaptive_ranks.html">neuralops.runners.run_all_4_adaptive_ranks</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating adaptive_ranks.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_adaptive_span" href="run_all_4_adaptive_span.html">neuralops.runners.run_all_4_adaptive_span</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating adaptive_span.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_adaptive_sparse" href="run_all_4_adaptive_sparse.html">neuralops.runners.run_all_4_adaptive_sparse</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating adaptive_sparse.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_adaptive_sparse_attention" href="run_all_4_adaptive_sparse_attention.html">neuralops.runners.run_all_4_adaptive_sparse_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating adaptive_sparse_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_adaptive_svd_attention" href="run_all_4_adaptive_svd_attention.html">neuralops.runners.run_all_4_adaptive_svd_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating adaptive_svd_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_adaptive_svd_attn" href="run_all_4_adaptive_svd_attn.html">neuralops.runners.run_all_4_adaptive_svd_attn</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating adaptive_svd_attn.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_adasplash" href="run_all_4_adasplash.html">neuralops.runners.run_all_4_adasplash</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating adasplash.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_adasvd" href="run_all_4_adasvd.html">neuralops.runners.run_all_4_adasvd</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating adasvd.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_admm" href="run_all_4_admm.html">neuralops.runners.run_all_4_admm</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating admm.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_admm_pruner" href="run_all_4_admm_pruner.html">neuralops.runners.run_all_4_admm_pruner</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating admm_pruner.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_aegis_hybrid" href="run_all_4_aegis_hybrid.html">neuralops.runners.run_all_4_aegis_hybrid</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating aegis_hybrid.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_aegis_spectron_fp8" href="run_all_4_aegis_spectron_fp8.html">neuralops.runners.run_all_4_aegis_spectron_fp8</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating aegis_spectron_fp8.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_aegis_v1" href="run_all_4_aegis_v1.html">neuralops.runners.run_all_4_aegis_v1</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating aegis_v1.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_aegis_v1_module" href="run_all_4_aegis_v1_module.html">neuralops.runners.run_all_4_aegis_v1_module</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating aegis_v1_module.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_aegis_v2" href="run_all_4_aegis_v2.html">neuralops.runners.run_all_4_aegis_v2</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating aegis_v2.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_aegis_v3" href="run_all_4_aegis_v3.html">neuralops.runners.run_all_4_aegis_v3</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating aegis_v3.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_aegis_v3_module" href="run_all_4_aegis_v3_module.html">neuralops.runners.run_all_4_aegis_v3_module</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating aegis_v3_module.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_aegis_v4" href="run_all_4_aegis_v4.html">neuralops.runners.run_all_4_aegis_v4</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating aegis_v4.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_aegis_v4_module" href="run_all_4_aegis_v4_module.html">neuralops.runners.run_all_4_aegis_v4_module</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating aegis_v4_module.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_aegis_v5" href="run_all_4_aegis_v5.html">neuralops.runners.run_all_4_aegis_v5</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating aegis_v5.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_aegis_v5_module" href="run_all_4_aegis_v5_module.html">neuralops.runners.run_all_4_aegis_v5_module</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating aegis_v5_module.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_aegis_v6" href="run_all_4_aegis_v6.html">neuralops.runners.run_all_4_aegis_v6</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating aegis_v6.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_armor" href="run_all_4_armor.html">neuralops.runners.run_all_4_armor</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating armor.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_astro" href="run_all_4_astro.html">neuralops.runners.run_all_4_astro</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating astro.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_asvd" href="run_all_4_asvd.html">neuralops.runners.run_all_4_asvd</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating asvd.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_bam_umoe" href="run_all_4_bam_umoe.html">neuralops.runners.run_all_4_bam_umoe</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating bam_umoe.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_block_transformer_hiba" href="run_all_4_block_transformer_hiba.html">neuralops.runners.run_all_4_block_transformer_hiba</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating block_transformer_hiba.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_cachenotes" href="run_all_4_cachenotes.html">neuralops.runners.run_all_4_cachenotes</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating cachenotes.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_chela_slay" href="run_all_4_chela_slay.html">neuralops.runners.run_all_4_chela_slay</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating chela_slay.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_cluster" href="run_all_4_cluster.html">neuralops.runners.run_all_4_cluster</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating cluster.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_come" href="run_all_4_come.html">neuralops.runners.run_all_4_come</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating come.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_compressed_attention" href="run_all_4_compressed_attention.html">neuralops.runners.run_all_4_compressed_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating compressed_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_compressed_attention_layer" href="run_all_4_compressed_attention_layer.html">neuralops.runners.run_all_4_compressed_attention_layer</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating compressed_attention_layer.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_compressed_mha" href="run_all_4_compressed_mha.html">neuralops.runners.run_all_4_compressed_mha</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating compressed_mha.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_cosformer" href="run_all_4_cosformer.html">neuralops.runners.run_all_4_cosformer</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating cosformer.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_cur" href="run_all_4_cur.html">neuralops.runners.run_all_4_cur</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating cur.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_cur_linear" href="run_all_4_cur_linear.html">neuralops.runners.run_all_4_cur_linear</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating cur_linear.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_cur_moe" href="run_all_4_cur_moe.html">neuralops.runners.run_all_4_cur_moe</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating cur_moe.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_cure" href="run_all_4_cure.html">neuralops.runners.run_all_4_cure</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating cure.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_decay_linear_attention" href="run_all_4_decay_linear_attention.html">neuralops.runners.run_all_4_decay_linear_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating decay_linear_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_delta_kv" href="run_all_4_delta_kv.html">neuralops.runners.run_all_4_delta_kv</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating delta_kv.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_direct_svd" href="run_all_4_direct_svd.html">neuralops.runners.run_all_4_direct_svd</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating direct_svd.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_dobi" href="run_all_4_dobi.html">neuralops.runners.run_all_4_dobi</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating dobi.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_dynamic_entropy" href="run_all_4_dynamic_entropy.html">neuralops.runners.run_all_4_dynamic_entropy</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating dynamic_entropy.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_eat" href="run_all_4_eat.html">neuralops.runners.run_all_4_eat</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating eat.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_enlighten" href="run_all_4_enlighten.html">neuralops.runners.run_all_4_enlighten</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating enlighten.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_entropy_budget" href="run_all_4_entropy_budget.html">neuralops.runners.run_all_4_entropy_budget</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating entropy_budget.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_erc" href="run_all_4_erc.html">neuralops.runners.run_all_4_erc</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating erc.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_expert_choice_moe" href="run_all_4_expert_choice_moe.html">neuralops.runners.run_all_4_expert_choice_moe</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating expert_choice_moe.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_factorised_matrix_state" href="run_all_4_factorised_matrix_state.html">neuralops.runners.run_all_4_factorised_matrix_state</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating factorised_matrix_state.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_faq" href="run_all_4_faq.html">neuralops.runners.run_all_4_faq</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating faq.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_fasa" href="run_all_4_fasa.html">neuralops.runners.run_all_4_fasa</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating fasa.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_flap" href="run_all_4_flap.html">neuralops.runners.run_all_4_flap</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating flap.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_flash3" href="run_all_4_flash3.html">neuralops.runners.run_all_4_flash3</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating flash3.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_flash3_fp8" href="run_all_4_flash3_fp8.html">neuralops.runners.run_all_4_flash3_fp8</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating flash3_fp8.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_flat_llm" href="run_all_4_flat_llm.html">neuralops.runners.run_all_4_flat_llm</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating flat_llm.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_fms" href="run_all_4_fms.html">neuralops.runners.run_all_4_fms</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating fms.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_frandi" href="run_all_4_frandi.html">neuralops.runners.run_all_4_frandi</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating frandi.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_full" href="run_all_4_full.html">neuralops.runners.run_all_4_full</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating full.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_fused_svd_kernel" href="run_all_4_fused_svd_kernel.html">neuralops.runners.run_all_4_fused_svd_kernel</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating fused_svd_kernel.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_fusion_attn" href="run_all_4_fusion_attn.html">neuralops.runners.run_all_4_fusion_attn</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating fusion_attn.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_galerkin" href="run_all_4_galerkin.html">neuralops.runners.run_all_4_galerkin</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating galerkin.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_galerkin_attention" href="run_all_4_galerkin_attention.html">neuralops.runners.run_all_4_galerkin_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating galerkin_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_gated_delta_net" href="run_all_4_gated_delta_net.html">neuralops.runners.run_all_4_gated_delta_net</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating gated_delta_net.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_gated_deltanet_block" href="run_all_4_gated_deltanet_block.html">neuralops.runners.run_all_4_gated_deltanet_block</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating gated_deltanet_block.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_gated_linear_attention" href="run_all_4_gated_linear_attention.html">neuralops.runners.run_all_4_gated_linear_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating gated_linear_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_goldfinch_ahn" href="run_all_4_goldfinch_ahn.html">neuralops.runners.run_all_4_goldfinch_ahn</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating goldfinch_ahn.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_gqa" href="run_all_4_gqa.html">neuralops.runners.run_all_4_gqa</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating gqa.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_granite_hybrid" href="run_all_4_granite_hybrid.html">neuralops.runners.run_all_4_granite_hybrid</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating granite_hybrid.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_grecodec" href="run_all_4_grecodec.html">neuralops.runners.run_all_4_grecodec</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating grecodec.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_griffin_ssd" href="run_all_4_griffin_ssd.html">neuralops.runners.run_all_4_griffin_ssd</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating griffin_ssd.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_halo_regla" href="run_all_4_halo_regla.html">neuralops.runners.run_all_4_halo_regla</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating halo_regla.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_hamming" href="run_all_4_hamming.html">neuralops.runners.run_all_4_hamming</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating hamming.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_hashed_linear" href="run_all_4_hashed_linear.html">neuralops.runners.run_all_4_hashed_linear</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating hashed_linear.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_hashednets" href="run_all_4_hashednets.html">neuralops.runners.run_all_4_hashednets</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating hashednets.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_hgrn2" href="run_all_4_hgrn2.html">neuralops.runners.run_all_4_hgrn2</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating hgrn2.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_hgrn2_gated_deltanet" href="run_all_4_hgrn2_gated_deltanet.html">neuralops.runners.run_all_4_hgrn2_gated_deltanet</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating hgrn2_gated_deltanet.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_hgrn2_layer" href="run_all_4_hgrn2_layer.html">neuralops.runners.run_all_4_hgrn2_layer</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating hgrn2_layer.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_hgrn2_outer" href="run_all_4_hgrn2_outer.html">neuralops.runners.run_all_4_hgrn2_outer</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating hgrn2_outer.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_hla" href="run_all_4_hla.html">neuralops.runners.run_all_4_hla</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating hla.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_hla_attention" href="run_all_4_hla_attention.html">neuralops.runners.run_all_4_hla_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating hla_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_huffman" href="run_all_4_huffman.html">neuralops.runners.run_all_4_huffman</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating huffman.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_huffman_coder" href="run_all_4_huffman_coder.html">neuralops.runners.run_all_4_huffman_coder</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating huffman_coder.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_hybrid_svd" href="run_all_4_hybrid_svd.html">neuralops.runners.run_all_4_hybrid_svd</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating hybrid_svd.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_hybrid_svd_layer" href="run_all_4_hybrid_svd_layer.html">neuralops.runners.run_all_4_hybrid_svd_layer</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating hybrid_svd_layer.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_hybridkv" href="run_all_4_hybridkv.html">neuralops.runners.run_all_4_hybridkv</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating hybridkv.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_hymba_transx" href="run_all_4_hymba_transx.html">neuralops.runners.run_all_4_hymba_transx</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating hymba_transx.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_infini" href="run_all_4_infini.html">neuralops.runners.run_all_4_infini</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating infini.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_infini_attention" href="run_all_4_infini_attention.html">neuralops.runners.run_all_4_infini_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating infini_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_jamba" href="run_all_4_jamba.html">neuralops.runners.run_all_4_jamba</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating jamba.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_jamba_info" href="run_all_4_jamba_info.html">neuralops.runners.run_all_4_jamba_info</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating jamba_info.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_kda" href="run_all_4_kda.html">neuralops.runners.run_all_4_kda</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating kda.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_kmeans" href="run_all_4_kmeans.html">neuralops.runners.run_all_4_kmeans</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating kmeans.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_kronecker" href="run_all_4_kronecker.html">neuralops.runners.run_all_4_kronecker</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating kronecker.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_kronecker_linear" href="run_all_4_kronecker_linear.html">neuralops.runners.run_all_4_kronecker_linear</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating kronecker_linear.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_kronecker_tt_lora" href="run_all_4_kronecker_tt_lora.html">neuralops.runners.run_all_4_kronecker_tt_lora</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating kronecker_tt_lora.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_kvtc" href="run_all_4_kvtc.html">neuralops.runners.run_all_4_kvtc</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating kvtc.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_leka_v1" href="run_all_4_leka_v1.html">neuralops.runners.run_all_4_leka_v1</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating leka_v1.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_leka_v2" href="run_all_4_leka_v2.html">neuralops.runners.run_all_4_leka_v2</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating leka_v2.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_leka_v3" href="run_all_4_leka_v3.html">neuralops.runners.run_all_4_leka_v3</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating leka_v3.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_liftr" href="run_all_4_liftr.html">neuralops.runners.run_all_4_liftr</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating liftr.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_lillama" href="run_all_4_lillama.html">neuralops.runners.run_all_4_lillama</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating lillama.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_linformer" href="run_all_4_linformer.html">neuralops.runners.run_all_4_linformer</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating linformer.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_lola_attention" href="run_all_4_lola_attention.html">neuralops.runners.run_all_4_lola_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating lola_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_lola_attn" href="run_all_4_lola_attn.html">neuralops.runners.run_all_4_lola_attn</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating lola_attn.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_lora_attention" href="run_all_4_lora_attention.html">neuralops.runners.run_all_4_lora_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating lora_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_lora_attn" href="run_all_4_lora_attn.html">neuralops.runners.run_all_4_lora_attn</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating lora_attn.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_lsc" href="run_all_4_lsc.html">neuralops.runners.run_all_4_lsc</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating lsc.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_lsh" href="run_all_4_lsh.html">neuralops.runners.run_all_4_lsh</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating lsh.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_lsh_attention" href="run_all_4_lsh_attention.html">neuralops.runners.run_all_4_lsh_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating lsh_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_mamba" href="run_all_4_mamba.html">neuralops.runners.run_all_4_mamba</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating mamba.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_mamba_inject" href="run_all_4_mamba_inject.html">neuralops.runners.run_all_4_mamba_inject</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating mamba_inject.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_mamba_shedder" href="run_all_4_mamba_shedder.html">neuralops.runners.run_all_4_mamba_shedder</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating mamba_shedder.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_mamba_svd_flash" href="run_all_4_mamba_svd_flash.html">neuralops.runners.run_all_4_mamba_svd_flash</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating mamba_svd_flash.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_mgie_budget" href="run_all_4_mgie_budget.html">neuralops.runners.run_all_4_mgie_budget</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating mgie_budget.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_mgie_svd" href="run_all_4_mgie_svd.html">neuralops.runners.run_all_4_mgie_svd</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating mgie_svd.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_minimal_aurora" href="run_all_4_minimal_aurora.html">neuralops.runners.run_all_4_minimal_aurora</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating minimal_aurora.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_minimal_nova" href="run_all_4_minimal_nova.html">neuralops.runners.run_all_4_minimal_nova</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating minimal_nova.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_minimal_prism" href="run_all_4_minimal_prism.html">neuralops.runners.run_all_4_minimal_prism</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating minimal_prism.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_minimal_svd" href="run_all_4_minimal_svd.html">neuralops.runners.run_all_4_minimal_svd</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating minimal_svd.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_minimal_svd_v2" href="run_all_4_minimal_svd_v2.html">neuralops.runners.run_all_4_minimal_svd_v2</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating minimal_svd_v2.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_mixattention_moska" href="run_all_4_mixattention_moska.html">neuralops.runners.run_all_4_mixattention_moska</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating mixattention_moska.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_mla" href="run_all_4_mla.html">neuralops.runners.run_all_4_mla</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating mla.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_mlorq" href="run_all_4_mlorq.html">neuralops.runners.run_all_4_mlorq</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating mlorq.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_moba" href="run_all_4_moba.html">neuralops.runners.run_all_4_moba</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating moba.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_modegpt" href="run_all_4_modegpt.html">neuralops.runners.run_all_4_modegpt</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating modegpt.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_moe_deltakv_paged" href="run_all_4_moe_deltakv_paged.html">neuralops.runners.run_all_4_moe_deltakv_paged</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating moe_deltakv_paged.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_nasc" href="run_all_4_nasc.html">neuralops.runners.run_all_4_nasc</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating nasc.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_nasc_attention" href="run_all_4_nasc_attention.html">neuralops.runners.run_all_4_nasc_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating nasc_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_nexus" href="run_all_4_nexus.html">neuralops.runners.run_all_4_nexus</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating nexus.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_nha" href="run_all_4_nha.html">neuralops.runners.run_all_4_nha</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating nha.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_nha_compressor" href="run_all_4_nha_compressor.html">neuralops.runners.run_all_4_nha_compressor</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating nha_compressor.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_nli_softmax" href="run_all_4_nli_softmax.html">neuralops.runners.run_all_4_nli_softmax</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating nli_softmax.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_nmf" href="run_all_4_nmf.html">neuralops.runners.run_all_4_nmf</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating nmf.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_nsa" href="run_all_4_nsa.html">neuralops.runners.run_all_4_nsa</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating nsa.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_nsa_attention" href="run_all_4_nsa_attention.html">neuralops.runners.run_all_4_nsa_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating nsa_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_nystrom" href="run_all_4_nystrom.html">neuralops.runners.run_all_4_nystrom</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating nystrom.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_oats" href="run_all_4_oats.html">neuralops.runners.run_all_4_oats</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating oats.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_oha" href="run_all_4_oha.html">neuralops.runners.run_all_4_oha</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating oha.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_optimal_subspace_projection" href="run_all_4_optimal_subspace_projection.html">neuralops.runners.run_all_4_optimal_subspace_projection</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating optimal_subspace_projection.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_optimized_hybrid_attention" href="run_all_4_optimized_hybrid_attention.html">neuralops.runners.run_all_4_optimized_hybrid_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating optimized_hybrid_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_orion" href="run_all_4_orion.html">neuralops.runners.run_all_4_orion</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating orion.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_orion_module" href="run_all_4_orion_module.html">neuralops.runners.run_all_4_orion_module</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating orion_module.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_padre" href="run_all_4_padre.html">neuralops.runners.run_all_4_padre</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating padre.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_performer" href="run_all_4_performer.html">neuralops.runners.run_all_4_performer</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating performer.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_phantom" href="run_all_4_phantom.html">neuralops.runners.run_all_4_phantom</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating phantom.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_primal" href="run_all_4_primal.html">neuralops.runners.run_all_4_primal</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating primal.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_progressive_token_pruning" href="run_all_4_progressive_token_pruning.html">neuralops.runners.run_all_4_progressive_token_pruning</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating progressive_token_pruning.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_projection_factorized_attn" href="run_all_4_projection_factorized_attn.html">neuralops.runners.run_all_4_projection_factorized_attn</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating projection_factorized_attn.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_proxsparse" href="run_all_4_proxsparse.html">neuralops.runners.run_all_4_proxsparse</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating proxsparse.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_proxsparse_pruner" href="run_all_4_proxsparse_pruner.html">neuralops.runners.run_all_4_proxsparse_pruner</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating proxsparse_pruner.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_qcqa" href="run_all_4_qcqa.html">neuralops.runners.run_all_4_qcqa</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating qcqa.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_rala" href="run_all_4_rala.html">neuralops.runners.run_all_4_rala</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating rala.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_rala_compressor" href="run_all_4_rala_compressor.html">neuralops.runners.run_all_4_rala_compressor</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating rala_compressor.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_reap_moe" href="run_all_4_reap_moe.html">neuralops.runners.run_all_4_reap_moe</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating reap_moe.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_regla" href="run_all_4_regla.html">neuralops.runners.run_all_4_regla</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating regla.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_replace" href="run_all_4_replace.html">neuralops.runners.run_all_4_replace</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating replace.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_replaceme" href="run_all_4_replaceme.html">neuralops.runners.run_all_4_replaceme</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating replaceme.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_res_svd" href="run_all_4_res_svd.html">neuralops.runners.run_all_4_res_svd</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating res_svd.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_roast" href="run_all_4_roast.html">neuralops.runners.run_all_4_roast</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating roast.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_roast_hashed_linear" href="run_all_4_roast_hashed_linear.html">neuralops.runners.run_all_4_roast_hashed_linear</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating roast_hashed_linear.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_rotational_slicegpt_int4" href="run_all_4_rotational_slicegpt_int4.html">neuralops.runners.run_all_4_rotational_slicegpt_int4</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating rotational_slicegpt_int4.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_routing" href="run_all_4_routing.html">neuralops.runners.run_all_4_routing</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating routing.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_rpc" href="run_all_4_rpc.html">neuralops.runners.run_all_4_rpc</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating rpc.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_rpca" href="run_all_4_rpca.html">neuralops.runners.run_all_4_rpca</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating rpca.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_saes_svd_compressor" href="run_all_4_saes_svd_compressor.html">neuralops.runners.run_all_4_saes_svd_compressor</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating saes_svd_compressor.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_saes_svd_v2" href="run_all_4_saes_svd_v2.html">neuralops.runners.run_all_4_saes_svd_v2</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating saes_svd_v2.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_salr" href="run_all_4_salr.html">neuralops.runners.run_all_4_salr</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating salr.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_salt" href="run_all_4_salt.html">neuralops.runners.run_all_4_salt</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating salt.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_salt_attention" href="run_all_4_salt_attention.html">neuralops.runners.run_all_4_salt_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating salt_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_samba_m3" href="run_all_4_samba_m3.html">neuralops.runners.run_all_4_samba_m3</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating samba_m3.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_samba_moe" href="run_all_4_samba_moe.html">neuralops.runners.run_all_4_samba_moe</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating samba_moe.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_sambam3" href="run_all_4_sambam3.html">neuralops.runners.run_all_4_sambam3</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating sambam3.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_sambamoe" href="run_all_4_sambamoe.html">neuralops.runners.run_all_4_sambamoe</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating sambamoe.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_sdrm" href="run_all_4_sdrm.html">neuralops.runners.run_all_4_sdrm</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating sdrm.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_simple_ssm" href="run_all_4_simple_ssm.html">neuralops.runners.run_all_4_simple_ssm</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating simple_ssm.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_slicegpt" href="run_all_4_slicegpt.html">neuralops.runners.run_all_4_slicegpt</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating slicegpt.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_slicegpt_pca" href="run_all_4_slicegpt_pca.html">neuralops.runners.run_all_4_slicegpt_pca</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating slicegpt_pca.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_slim" href="run_all_4_slim.html">neuralops.runners.run_all_4_slim</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating slim.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_smart_weighted_ensemble" href="run_all_4_smart_weighted_ensemble.html">neuralops.runners.run_all_4_smart_weighted_ensemble</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating smart_weighted_ensemble.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_soa_attn" href="run_all_4_soa_attn.html">neuralops.runners.run_all_4_soa_attn</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating soa_attn.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_soa_fused_module" href="run_all_4_soa_fused_module.html">neuralops.runners.run_all_4_soa_fused_module</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating soa_fused_module.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_soa_module" href="run_all_4_soa_module.html">neuralops.runners.run_all_4_soa_module</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating soa_module.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_soafusedattention" href="run_all_4_soafusedattention.html">neuralops.runners.run_all_4_soafusedattention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating soafusedattention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_soka" href="run_all_4_soka.html">neuralops.runners.run_all_4_soka</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating soka.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_span_expanded" href="run_all_4_span_expanded.html">neuralops.runners.run_all_4_span_expanded</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating span_expanded.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_sparsegpt" href="run_all_4_sparsegpt.html">neuralops.runners.run_all_4_sparsegpt</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating sparsegpt.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_spectra_v2" href="run_all_4_spectra_v2.html">neuralops.runners.run_all_4_spectra_v2</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating spectra_v2.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_spectraformer" href="run_all_4_spectraformer.html">neuralops.runners.run_all_4_spectraformer</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating spectraformer.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_spectraformer_attention" href="run_all_4_spectraformer_attention.html">neuralops.runners.run_all_4_spectraformer_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating spectraformer_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_spectral_mamba" href="run_all_4_spectral_mamba.html">neuralops.runners.run_all_4_spectral_mamba</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating spectral_mamba.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_spectron" href="run_all_4_spectron.html">neuralops.runners.run_all_4_spectron</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating spectron.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_squeezing_heads" href="run_all_4_squeezing_heads.html">neuralops.runners.run_all_4_squeezing_heads</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating squeezing_heads.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_squeezing_heads_distill" href="run_all_4_squeezing_heads_distill.html">neuralops.runners.run_all_4_squeezing_heads_distill</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating squeezing_heads_distill.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_squeezing_heads_distiller" href="run_all_4_squeezing_heads_distiller.html">neuralops.runners.run_all_4_squeezing_heads_distiller</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating squeezing_heads_distiller.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_subspace_projection" href="run_all_4_subspace_projection.html">neuralops.runners.run_all_4_subspace_projection</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating subspace_projection.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_svd" href="run_all_4_svd.html">neuralops.runners.run_all_4_svd</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating svd.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_svd-mamba" href="run_all_4_svd-mamba.html">neuralops.runners.run_all_4_svd-mamba</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating svd-mamba.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_svd_compressed" href="run_all_4_svd_compressed.html">neuralops.runners.run_all_4_svd_compressed</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating svd_compressed.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_svd_linear" href="run_all_4_svd_linear.html">neuralops.runners.run_all_4_svd_linear</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating svd_linear.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_svd_linear_attn" href="run_all_4_svd_linear_attn.html">neuralops.runners.run_all_4_svd_linear_attn</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating svd_linear_attn.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_svd_linear_decay" href="run_all_4_svd_linear_decay.html">neuralops.runners.run_all_4_svd_linear_decay</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating svd_linear_decay.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_svd_llm_v2" href="run_all_4_svd_llm_v2.html">neuralops.runners.run_all_4_svd_llm_v2</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating svd_llm_v2.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_svd_mamba" href="run_all_4_svd_mamba.html">neuralops.runners.run_all_4_svd_mamba</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating svd_mamba.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_svd_proj" href="run_all_4_svd_proj.html">neuralops.runners.run_all_4_svd_proj</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating svd_proj.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_svd_proj_attn" href="run_all_4_svd_proj_attn.html">neuralops.runners.run_all_4_svd_proj_attn</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating svd_proj_attn.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_svd_projection" href="run_all_4_svd_projection.html">neuralops.runners.run_all_4_svd_projection</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating svd_projection.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_svd_sequence" href="run_all_4_svd_sequence.html">neuralops.runners.run_all_4_svd_sequence</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating svd_sequence.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_svd_sequence_attention" href="run_all_4_svd_sequence_attention.html">neuralops.runners.run_all_4_svd_sequence_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating svd_sequence_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_swift_svd" href="run_all_4_swift_svd.html">neuralops.runners.run_all_4_swift_svd</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating swift_svd.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_swift_svd_act" href="run_all_4_swift_svd_act.html">neuralops.runners.run_all_4_swift_svd_act</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating swift_svd_act.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_template_attention" href="run_all_4_template_attention.html">neuralops.runners.run_all_4_template_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating template_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_tlinformer" href="run_all_4_tlinformer.html">neuralops.runners.run_all_4_tlinformer</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating tlinformer.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_tlinformer_attention" href="run_all_4_tlinformer_attention.html">neuralops.runners.run_all_4_tlinformer_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating tlinformer_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_token_compressed" href="run_all_4_token_compressed.html">neuralops.runners.run_all_4_token_compressed</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating token_compressed.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_tomoe" href="run_all_4_tomoe.html">neuralops.runners.run_all_4_tomoe</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating tomoe.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_tomoe_compressor" href="run_all_4_tomoe_compressor.html">neuralops.runners.run_all_4_tomoe_compressor</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating tomoe_compressor.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_tpa" href="run_all_4_tpa.html">neuralops.runners.run_all_4_tpa</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating tpa.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_triton_cosformer" href="run_all_4_triton_cosformer.html">neuralops.runners.run_all_4_triton_cosformer</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating triton_cosformer.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_triton_svd_linear_attention" href="run_all_4_triton_svd_linear_attention.html">neuralops.runners.run_all_4_triton_svd_linear_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating triton_svd_linear_attention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_unified_rope" href="run_all_4_unified_rope.html">neuralops.runners.run_all_4_unified_rope</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating unified_rope.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_uniql" href="run_all_4_uniql.html">neuralops.runners.run_all_4_uniql</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating uniql.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_upi_mamba" href="run_all_4_upi_mamba.html">neuralops.runners.run_all_4_upi_mamba</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating upi_mamba.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_upi_stuffed_mamba" href="run_all_4_upi_stuffed_mamba.html">neuralops.runners.run_all_4_upi_stuffed_mamba</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating upi_stuffed_mamba.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_vig" href="run_all_4_vig.html">neuralops.runners.run_all_4_vig</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating vig.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_vspec" href="run_all_4_vspec.html">neuralops.runners.run_all_4_vspec</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating vspec.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_weighted_ensemble" href="run_all_4_weighted_ensemble.html">neuralops.runners.run_all_4_weighted_ensemble</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating weighted_ensemble.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_wgqa" href="run_all_4_wgqa.html">neuralops.runners.run_all_4_wgqa</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating wgqa.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_xattention" href="run_all_4_xattention.html">neuralops.runners.run_all_4_xattention</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating xattention.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_zerokv_neo" href="run_all_4_zerokv_neo.html">neuralops.runners.run_all_4_zerokv_neo</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating zerokv_neo.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.run_all_4_zeros" href="run_all_4_zeros.html">neuralops.runners.run_all_4_zeros</a></code></dt>
+<dd>
+<div class="desc"><p>Wrapper for orchestrating zeros.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.runners.unified_orchestrator" href="unified_orchestrator.html">neuralops.runners.unified_orchestrator</a></code></dt>
+<dd>
+<div class="desc"><p>Unified Orchestrator Backend for NeuralOps.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops" href="../index.html">neuralops</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="neuralops.runners.run_all_4_a3" href="run_all_4_a3.html">neuralops.runners.run_all_4_a3</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_aasvd" href="run_all_4_aasvd.html">neuralops.runners.run_all_4_aasvd</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_adaptive_compressor" href="run_all_4_adaptive_compressor.html">neuralops.runners.run_all_4_adaptive_compressor</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_adaptive_ranks" href="run_all_4_adaptive_ranks.html">neuralops.runners.run_all_4_adaptive_ranks</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_adaptive_span" href="run_all_4_adaptive_span.html">neuralops.runners.run_all_4_adaptive_span</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_adaptive_sparse" href="run_all_4_adaptive_sparse.html">neuralops.runners.run_all_4_adaptive_sparse</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_adaptive_sparse_attention" href="run_all_4_adaptive_sparse_attention.html">neuralops.runners.run_all_4_adaptive_sparse_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_adaptive_svd_attention" href="run_all_4_adaptive_svd_attention.html">neuralops.runners.run_all_4_adaptive_svd_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_adaptive_svd_attn" href="run_all_4_adaptive_svd_attn.html">neuralops.runners.run_all_4_adaptive_svd_attn</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_adasplash" href="run_all_4_adasplash.html">neuralops.runners.run_all_4_adasplash</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_adasvd" href="run_all_4_adasvd.html">neuralops.runners.run_all_4_adasvd</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_admm" href="run_all_4_admm.html">neuralops.runners.run_all_4_admm</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_admm_pruner" href="run_all_4_admm_pruner.html">neuralops.runners.run_all_4_admm_pruner</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_aegis_hybrid" href="run_all_4_aegis_hybrid.html">neuralops.runners.run_all_4_aegis_hybrid</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_aegis_spectron_fp8" href="run_all_4_aegis_spectron_fp8.html">neuralops.runners.run_all_4_aegis_spectron_fp8</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_aegis_v1" href="run_all_4_aegis_v1.html">neuralops.runners.run_all_4_aegis_v1</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_aegis_v1_module" href="run_all_4_aegis_v1_module.html">neuralops.runners.run_all_4_aegis_v1_module</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_aegis_v2" href="run_all_4_aegis_v2.html">neuralops.runners.run_all_4_aegis_v2</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_aegis_v3" href="run_all_4_aegis_v3.html">neuralops.runners.run_all_4_aegis_v3</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_aegis_v3_module" href="run_all_4_aegis_v3_module.html">neuralops.runners.run_all_4_aegis_v3_module</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_aegis_v4" href="run_all_4_aegis_v4.html">neuralops.runners.run_all_4_aegis_v4</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_aegis_v4_module" href="run_all_4_aegis_v4_module.html">neuralops.runners.run_all_4_aegis_v4_module</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_aegis_v5" href="run_all_4_aegis_v5.html">neuralops.runners.run_all_4_aegis_v5</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_aegis_v5_module" href="run_all_4_aegis_v5_module.html">neuralops.runners.run_all_4_aegis_v5_module</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_aegis_v6" href="run_all_4_aegis_v6.html">neuralops.runners.run_all_4_aegis_v6</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_armor" href="run_all_4_armor.html">neuralops.runners.run_all_4_armor</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_astro" href="run_all_4_astro.html">neuralops.runners.run_all_4_astro</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_asvd" href="run_all_4_asvd.html">neuralops.runners.run_all_4_asvd</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_bam_umoe" href="run_all_4_bam_umoe.html">neuralops.runners.run_all_4_bam_umoe</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_block_transformer_hiba" href="run_all_4_block_transformer_hiba.html">neuralops.runners.run_all_4_block_transformer_hiba</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_cachenotes" href="run_all_4_cachenotes.html">neuralops.runners.run_all_4_cachenotes</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_chela_slay" href="run_all_4_chela_slay.html">neuralops.runners.run_all_4_chela_slay</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_cluster" href="run_all_4_cluster.html">neuralops.runners.run_all_4_cluster</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_come" href="run_all_4_come.html">neuralops.runners.run_all_4_come</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_compressed_attention" href="run_all_4_compressed_attention.html">neuralops.runners.run_all_4_compressed_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_compressed_attention_layer" href="run_all_4_compressed_attention_layer.html">neuralops.runners.run_all_4_compressed_attention_layer</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_compressed_mha" href="run_all_4_compressed_mha.html">neuralops.runners.run_all_4_compressed_mha</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_cosformer" href="run_all_4_cosformer.html">neuralops.runners.run_all_4_cosformer</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_cur" href="run_all_4_cur.html">neuralops.runners.run_all_4_cur</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_cur_linear" href="run_all_4_cur_linear.html">neuralops.runners.run_all_4_cur_linear</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_cur_moe" href="run_all_4_cur_moe.html">neuralops.runners.run_all_4_cur_moe</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_cure" href="run_all_4_cure.html">neuralops.runners.run_all_4_cure</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_decay_linear_attention" href="run_all_4_decay_linear_attention.html">neuralops.runners.run_all_4_decay_linear_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_delta_kv" href="run_all_4_delta_kv.html">neuralops.runners.run_all_4_delta_kv</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_direct_svd" href="run_all_4_direct_svd.html">neuralops.runners.run_all_4_direct_svd</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_dobi" href="run_all_4_dobi.html">neuralops.runners.run_all_4_dobi</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_dynamic_entropy" href="run_all_4_dynamic_entropy.html">neuralops.runners.run_all_4_dynamic_entropy</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_eat" href="run_all_4_eat.html">neuralops.runners.run_all_4_eat</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_enlighten" href="run_all_4_enlighten.html">neuralops.runners.run_all_4_enlighten</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_entropy_budget" href="run_all_4_entropy_budget.html">neuralops.runners.run_all_4_entropy_budget</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_erc" href="run_all_4_erc.html">neuralops.runners.run_all_4_erc</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_expert_choice_moe" href="run_all_4_expert_choice_moe.html">neuralops.runners.run_all_4_expert_choice_moe</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_factorised_matrix_state" href="run_all_4_factorised_matrix_state.html">neuralops.runners.run_all_4_factorised_matrix_state</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_faq" href="run_all_4_faq.html">neuralops.runners.run_all_4_faq</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_fasa" href="run_all_4_fasa.html">neuralops.runners.run_all_4_fasa</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_flap" href="run_all_4_flap.html">neuralops.runners.run_all_4_flap</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_flash3" href="run_all_4_flash3.html">neuralops.runners.run_all_4_flash3</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_flash3_fp8" href="run_all_4_flash3_fp8.html">neuralops.runners.run_all_4_flash3_fp8</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_flat_llm" href="run_all_4_flat_llm.html">neuralops.runners.run_all_4_flat_llm</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_fms" href="run_all_4_fms.html">neuralops.runners.run_all_4_fms</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_frandi" href="run_all_4_frandi.html">neuralops.runners.run_all_4_frandi</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_full" href="run_all_4_full.html">neuralops.runners.run_all_4_full</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_fused_svd_kernel" href="run_all_4_fused_svd_kernel.html">neuralops.runners.run_all_4_fused_svd_kernel</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_fusion_attn" href="run_all_4_fusion_attn.html">neuralops.runners.run_all_4_fusion_attn</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_galerkin" href="run_all_4_galerkin.html">neuralops.runners.run_all_4_galerkin</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_galerkin_attention" href="run_all_4_galerkin_attention.html">neuralops.runners.run_all_4_galerkin_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_gated_delta_net" href="run_all_4_gated_delta_net.html">neuralops.runners.run_all_4_gated_delta_net</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_gated_deltanet_block" href="run_all_4_gated_deltanet_block.html">neuralops.runners.run_all_4_gated_deltanet_block</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_gated_linear_attention" href="run_all_4_gated_linear_attention.html">neuralops.runners.run_all_4_gated_linear_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_goldfinch_ahn" href="run_all_4_goldfinch_ahn.html">neuralops.runners.run_all_4_goldfinch_ahn</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_gqa" href="run_all_4_gqa.html">neuralops.runners.run_all_4_gqa</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_granite_hybrid" href="run_all_4_granite_hybrid.html">neuralops.runners.run_all_4_granite_hybrid</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_grecodec" href="run_all_4_grecodec.html">neuralops.runners.run_all_4_grecodec</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_griffin_ssd" href="run_all_4_griffin_ssd.html">neuralops.runners.run_all_4_griffin_ssd</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_halo_regla" href="run_all_4_halo_regla.html">neuralops.runners.run_all_4_halo_regla</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_hamming" href="run_all_4_hamming.html">neuralops.runners.run_all_4_hamming</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_hashed_linear" href="run_all_4_hashed_linear.html">neuralops.runners.run_all_4_hashed_linear</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_hashednets" href="run_all_4_hashednets.html">neuralops.runners.run_all_4_hashednets</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_hgrn2" href="run_all_4_hgrn2.html">neuralops.runners.run_all_4_hgrn2</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_hgrn2_gated_deltanet" href="run_all_4_hgrn2_gated_deltanet.html">neuralops.runners.run_all_4_hgrn2_gated_deltanet</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_hgrn2_layer" href="run_all_4_hgrn2_layer.html">neuralops.runners.run_all_4_hgrn2_layer</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_hgrn2_outer" href="run_all_4_hgrn2_outer.html">neuralops.runners.run_all_4_hgrn2_outer</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_hla" href="run_all_4_hla.html">neuralops.runners.run_all_4_hla</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_hla_attention" href="run_all_4_hla_attention.html">neuralops.runners.run_all_4_hla_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_huffman" href="run_all_4_huffman.html">neuralops.runners.run_all_4_huffman</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_huffman_coder" href="run_all_4_huffman_coder.html">neuralops.runners.run_all_4_huffman_coder</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_hybrid_svd" href="run_all_4_hybrid_svd.html">neuralops.runners.run_all_4_hybrid_svd</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_hybrid_svd_layer" href="run_all_4_hybrid_svd_layer.html">neuralops.runners.run_all_4_hybrid_svd_layer</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_hybridkv" href="run_all_4_hybridkv.html">neuralops.runners.run_all_4_hybridkv</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_hymba_transx" href="run_all_4_hymba_transx.html">neuralops.runners.run_all_4_hymba_transx</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_infini" href="run_all_4_infini.html">neuralops.runners.run_all_4_infini</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_infini_attention" href="run_all_4_infini_attention.html">neuralops.runners.run_all_4_infini_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_jamba" href="run_all_4_jamba.html">neuralops.runners.run_all_4_jamba</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_jamba_info" href="run_all_4_jamba_info.html">neuralops.runners.run_all_4_jamba_info</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_kda" href="run_all_4_kda.html">neuralops.runners.run_all_4_kda</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_kmeans" href="run_all_4_kmeans.html">neuralops.runners.run_all_4_kmeans</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_kronecker" href="run_all_4_kronecker.html">neuralops.runners.run_all_4_kronecker</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_kronecker_linear" href="run_all_4_kronecker_linear.html">neuralops.runners.run_all_4_kronecker_linear</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_kronecker_tt_lora" href="run_all_4_kronecker_tt_lora.html">neuralops.runners.run_all_4_kronecker_tt_lora</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_kvtc" href="run_all_4_kvtc.html">neuralops.runners.run_all_4_kvtc</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_leka_v1" href="run_all_4_leka_v1.html">neuralops.runners.run_all_4_leka_v1</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_leka_v2" href="run_all_4_leka_v2.html">neuralops.runners.run_all_4_leka_v2</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_leka_v3" href="run_all_4_leka_v3.html">neuralops.runners.run_all_4_leka_v3</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_liftr" href="run_all_4_liftr.html">neuralops.runners.run_all_4_liftr</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_lillama" href="run_all_4_lillama.html">neuralops.runners.run_all_4_lillama</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_linformer" href="run_all_4_linformer.html">neuralops.runners.run_all_4_linformer</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_lola_attention" href="run_all_4_lola_attention.html">neuralops.runners.run_all_4_lola_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_lola_attn" href="run_all_4_lola_attn.html">neuralops.runners.run_all_4_lola_attn</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_lora_attention" href="run_all_4_lora_attention.html">neuralops.runners.run_all_4_lora_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_lora_attn" href="run_all_4_lora_attn.html">neuralops.runners.run_all_4_lora_attn</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_lsc" href="run_all_4_lsc.html">neuralops.runners.run_all_4_lsc</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_lsh" href="run_all_4_lsh.html">neuralops.runners.run_all_4_lsh</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_lsh_attention" href="run_all_4_lsh_attention.html">neuralops.runners.run_all_4_lsh_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_mamba" href="run_all_4_mamba.html">neuralops.runners.run_all_4_mamba</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_mamba_inject" href="run_all_4_mamba_inject.html">neuralops.runners.run_all_4_mamba_inject</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_mamba_shedder" href="run_all_4_mamba_shedder.html">neuralops.runners.run_all_4_mamba_shedder</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_mamba_svd_flash" href="run_all_4_mamba_svd_flash.html">neuralops.runners.run_all_4_mamba_svd_flash</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_mgie_budget" href="run_all_4_mgie_budget.html">neuralops.runners.run_all_4_mgie_budget</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_mgie_svd" href="run_all_4_mgie_svd.html">neuralops.runners.run_all_4_mgie_svd</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_minimal_aurora" href="run_all_4_minimal_aurora.html">neuralops.runners.run_all_4_minimal_aurora</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_minimal_nova" href="run_all_4_minimal_nova.html">neuralops.runners.run_all_4_minimal_nova</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_minimal_prism" href="run_all_4_minimal_prism.html">neuralops.runners.run_all_4_minimal_prism</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_minimal_svd" href="run_all_4_minimal_svd.html">neuralops.runners.run_all_4_minimal_svd</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_minimal_svd_v2" href="run_all_4_minimal_svd_v2.html">neuralops.runners.run_all_4_minimal_svd_v2</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_mixattention_moska" href="run_all_4_mixattention_moska.html">neuralops.runners.run_all_4_mixattention_moska</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_mla" href="run_all_4_mla.html">neuralops.runners.run_all_4_mla</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_mlorq" href="run_all_4_mlorq.html">neuralops.runners.run_all_4_mlorq</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_moba" href="run_all_4_moba.html">neuralops.runners.run_all_4_moba</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_modegpt" href="run_all_4_modegpt.html">neuralops.runners.run_all_4_modegpt</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_moe_deltakv_paged" href="run_all_4_moe_deltakv_paged.html">neuralops.runners.run_all_4_moe_deltakv_paged</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_nasc" href="run_all_4_nasc.html">neuralops.runners.run_all_4_nasc</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_nasc_attention" href="run_all_4_nasc_attention.html">neuralops.runners.run_all_4_nasc_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_nexus" href="run_all_4_nexus.html">neuralops.runners.run_all_4_nexus</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_nha" href="run_all_4_nha.html">neuralops.runners.run_all_4_nha</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_nha_compressor" href="run_all_4_nha_compressor.html">neuralops.runners.run_all_4_nha_compressor</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_nli_softmax" href="run_all_4_nli_softmax.html">neuralops.runners.run_all_4_nli_softmax</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_nmf" href="run_all_4_nmf.html">neuralops.runners.run_all_4_nmf</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_nsa" href="run_all_4_nsa.html">neuralops.runners.run_all_4_nsa</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_nsa_attention" href="run_all_4_nsa_attention.html">neuralops.runners.run_all_4_nsa_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_nystrom" href="run_all_4_nystrom.html">neuralops.runners.run_all_4_nystrom</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_oats" href="run_all_4_oats.html">neuralops.runners.run_all_4_oats</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_oha" href="run_all_4_oha.html">neuralops.runners.run_all_4_oha</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_optimal_subspace_projection" href="run_all_4_optimal_subspace_projection.html">neuralops.runners.run_all_4_optimal_subspace_projection</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_optimized_hybrid_attention" href="run_all_4_optimized_hybrid_attention.html">neuralops.runners.run_all_4_optimized_hybrid_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_orion" href="run_all_4_orion.html">neuralops.runners.run_all_4_orion</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_orion_module" href="run_all_4_orion_module.html">neuralops.runners.run_all_4_orion_module</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_padre" href="run_all_4_padre.html">neuralops.runners.run_all_4_padre</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_performer" href="run_all_4_performer.html">neuralops.runners.run_all_4_performer</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_phantom" href="run_all_4_phantom.html">neuralops.runners.run_all_4_phantom</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_primal" href="run_all_4_primal.html">neuralops.runners.run_all_4_primal</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_progressive_token_pruning" href="run_all_4_progressive_token_pruning.html">neuralops.runners.run_all_4_progressive_token_pruning</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_projection_factorized_attn" href="run_all_4_projection_factorized_attn.html">neuralops.runners.run_all_4_projection_factorized_attn</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_proxsparse" href="run_all_4_proxsparse.html">neuralops.runners.run_all_4_proxsparse</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_proxsparse_pruner" href="run_all_4_proxsparse_pruner.html">neuralops.runners.run_all_4_proxsparse_pruner</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_qcqa" href="run_all_4_qcqa.html">neuralops.runners.run_all_4_qcqa</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_rala" href="run_all_4_rala.html">neuralops.runners.run_all_4_rala</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_rala_compressor" href="run_all_4_rala_compressor.html">neuralops.runners.run_all_4_rala_compressor</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_reap_moe" href="run_all_4_reap_moe.html">neuralops.runners.run_all_4_reap_moe</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_regla" href="run_all_4_regla.html">neuralops.runners.run_all_4_regla</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_replace" href="run_all_4_replace.html">neuralops.runners.run_all_4_replace</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_replaceme" href="run_all_4_replaceme.html">neuralops.runners.run_all_4_replaceme</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_res_svd" href="run_all_4_res_svd.html">neuralops.runners.run_all_4_res_svd</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_roast" href="run_all_4_roast.html">neuralops.runners.run_all_4_roast</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_roast_hashed_linear" href="run_all_4_roast_hashed_linear.html">neuralops.runners.run_all_4_roast_hashed_linear</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_rotational_slicegpt_int4" href="run_all_4_rotational_slicegpt_int4.html">neuralops.runners.run_all_4_rotational_slicegpt_int4</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_routing" href="run_all_4_routing.html">neuralops.runners.run_all_4_routing</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_rpc" href="run_all_4_rpc.html">neuralops.runners.run_all_4_rpc</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_rpca" href="run_all_4_rpca.html">neuralops.runners.run_all_4_rpca</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_saes_svd_compressor" href="run_all_4_saes_svd_compressor.html">neuralops.runners.run_all_4_saes_svd_compressor</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_saes_svd_v2" href="run_all_4_saes_svd_v2.html">neuralops.runners.run_all_4_saes_svd_v2</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_salr" href="run_all_4_salr.html">neuralops.runners.run_all_4_salr</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_salt" href="run_all_4_salt.html">neuralops.runners.run_all_4_salt</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_salt_attention" href="run_all_4_salt_attention.html">neuralops.runners.run_all_4_salt_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_samba_m3" href="run_all_4_samba_m3.html">neuralops.runners.run_all_4_samba_m3</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_samba_moe" href="run_all_4_samba_moe.html">neuralops.runners.run_all_4_samba_moe</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_sambam3" href="run_all_4_sambam3.html">neuralops.runners.run_all_4_sambam3</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_sambamoe" href="run_all_4_sambamoe.html">neuralops.runners.run_all_4_sambamoe</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_sdrm" href="run_all_4_sdrm.html">neuralops.runners.run_all_4_sdrm</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_simple_ssm" href="run_all_4_simple_ssm.html">neuralops.runners.run_all_4_simple_ssm</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_slicegpt" href="run_all_4_slicegpt.html">neuralops.runners.run_all_4_slicegpt</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_slicegpt_pca" href="run_all_4_slicegpt_pca.html">neuralops.runners.run_all_4_slicegpt_pca</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_slim" href="run_all_4_slim.html">neuralops.runners.run_all_4_slim</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_smart_weighted_ensemble" href="run_all_4_smart_weighted_ensemble.html">neuralops.runners.run_all_4_smart_weighted_ensemble</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_soa_attn" href="run_all_4_soa_attn.html">neuralops.runners.run_all_4_soa_attn</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_soa_fused_module" href="run_all_4_soa_fused_module.html">neuralops.runners.run_all_4_soa_fused_module</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_soa_module" href="run_all_4_soa_module.html">neuralops.runners.run_all_4_soa_module</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_soafusedattention" href="run_all_4_soafusedattention.html">neuralops.runners.run_all_4_soafusedattention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_soka" href="run_all_4_soka.html">neuralops.runners.run_all_4_soka</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_span_expanded" href="run_all_4_span_expanded.html">neuralops.runners.run_all_4_span_expanded</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_sparsegpt" href="run_all_4_sparsegpt.html">neuralops.runners.run_all_4_sparsegpt</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_spectra_v2" href="run_all_4_spectra_v2.html">neuralops.runners.run_all_4_spectra_v2</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_spectraformer" href="run_all_4_spectraformer.html">neuralops.runners.run_all_4_spectraformer</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_spectraformer_attention" href="run_all_4_spectraformer_attention.html">neuralops.runners.run_all_4_spectraformer_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_spectral_mamba" href="run_all_4_spectral_mamba.html">neuralops.runners.run_all_4_spectral_mamba</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_spectron" href="run_all_4_spectron.html">neuralops.runners.run_all_4_spectron</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_squeezing_heads" href="run_all_4_squeezing_heads.html">neuralops.runners.run_all_4_squeezing_heads</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_squeezing_heads_distill" href="run_all_4_squeezing_heads_distill.html">neuralops.runners.run_all_4_squeezing_heads_distill</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_squeezing_heads_distiller" href="run_all_4_squeezing_heads_distiller.html">neuralops.runners.run_all_4_squeezing_heads_distiller</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_subspace_projection" href="run_all_4_subspace_projection.html">neuralops.runners.run_all_4_subspace_projection</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_svd" href="run_all_4_svd.html">neuralops.runners.run_all_4_svd</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_svd-mamba" href="run_all_4_svd-mamba.html">neuralops.runners.run_all_4_svd-mamba</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_svd_compressed" href="run_all_4_svd_compressed.html">neuralops.runners.run_all_4_svd_compressed</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_svd_linear" href="run_all_4_svd_linear.html">neuralops.runners.run_all_4_svd_linear</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_svd_linear_attn" href="run_all_4_svd_linear_attn.html">neuralops.runners.run_all_4_svd_linear_attn</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_svd_linear_decay" href="run_all_4_svd_linear_decay.html">neuralops.runners.run_all_4_svd_linear_decay</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_svd_llm_v2" href="run_all_4_svd_llm_v2.html">neuralops.runners.run_all_4_svd_llm_v2</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_svd_mamba" href="run_all_4_svd_mamba.html">neuralops.runners.run_all_4_svd_mamba</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_svd_proj" href="run_all_4_svd_proj.html">neuralops.runners.run_all_4_svd_proj</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_svd_proj_attn" href="run_all_4_svd_proj_attn.html">neuralops.runners.run_all_4_svd_proj_attn</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_svd_projection" href="run_all_4_svd_projection.html">neuralops.runners.run_all_4_svd_projection</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_svd_sequence" href="run_all_4_svd_sequence.html">neuralops.runners.run_all_4_svd_sequence</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_svd_sequence_attention" href="run_all_4_svd_sequence_attention.html">neuralops.runners.run_all_4_svd_sequence_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_swift_svd" href="run_all_4_swift_svd.html">neuralops.runners.run_all_4_swift_svd</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_swift_svd_act" href="run_all_4_swift_svd_act.html">neuralops.runners.run_all_4_swift_svd_act</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_template_attention" href="run_all_4_template_attention.html">neuralops.runners.run_all_4_template_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_tlinformer" href="run_all_4_tlinformer.html">neuralops.runners.run_all_4_tlinformer</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_tlinformer_attention" href="run_all_4_tlinformer_attention.html">neuralops.runners.run_all_4_tlinformer_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_token_compressed" href="run_all_4_token_compressed.html">neuralops.runners.run_all_4_token_compressed</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_tomoe" href="run_all_4_tomoe.html">neuralops.runners.run_all_4_tomoe</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_tomoe_compressor" href="run_all_4_tomoe_compressor.html">neuralops.runners.run_all_4_tomoe_compressor</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_tpa" href="run_all_4_tpa.html">neuralops.runners.run_all_4_tpa</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_triton_cosformer" href="run_all_4_triton_cosformer.html">neuralops.runners.run_all_4_triton_cosformer</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_triton_svd_linear_attention" href="run_all_4_triton_svd_linear_attention.html">neuralops.runners.run_all_4_triton_svd_linear_attention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_unified_rope" href="run_all_4_unified_rope.html">neuralops.runners.run_all_4_unified_rope</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_uniql" href="run_all_4_uniql.html">neuralops.runners.run_all_4_uniql</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_upi_mamba" href="run_all_4_upi_mamba.html">neuralops.runners.run_all_4_upi_mamba</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_upi_stuffed_mamba" href="run_all_4_upi_stuffed_mamba.html">neuralops.runners.run_all_4_upi_stuffed_mamba</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_vig" href="run_all_4_vig.html">neuralops.runners.run_all_4_vig</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_vspec" href="run_all_4_vspec.html">neuralops.runners.run_all_4_vspec</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_weighted_ensemble" href="run_all_4_weighted_ensemble.html">neuralops.runners.run_all_4_weighted_ensemble</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_wgqa" href="run_all_4_wgqa.html">neuralops.runners.run_all_4_wgqa</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_xattention" href="run_all_4_xattention.html">neuralops.runners.run_all_4_xattention</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_zerokv_neo" href="run_all_4_zerokv_neo.html">neuralops.runners.run_all_4_zerokv_neo</a></code></li>
+<li><code><a title="neuralops.runners.run_all_4_zeros" href="run_all_4_zeros.html">neuralops.runners.run_all_4_zeros</a></code></li>
+<li><code><a title="neuralops.runners.unified_orchestrator" href="unified_orchestrator.html">neuralops.runners.unified_orchestrator</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

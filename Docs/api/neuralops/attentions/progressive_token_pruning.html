@@ -1,0 +1,1051 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.attentions.progressive_token_pruning API documentation</title>
+<meta name="description" content="Progressive Token Pruning (PTP) – Production-Hardened (v2) …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.attentions.progressive_token_pruning</code></h1>
+</header>
+<section id="section-intro">
+<p>Progressive Token Pruning (PTP) – Production-Hardened (v2).</p>
+<p>Learnable Progressive Token Pruning module with guaranteed [CLS] retention,
+multi-head attention capabilities, and full multi-architecture support.</p>
+<p>⚠️
+IMPORTANT — WHAT PTP ACTUALLY DOES
+⚠️</p>
+<p>PTP is a <strong>compute optimization</strong>, not a parameter compressor. It prunes
+tokens at <em>inference time</em> by keeping the top-k highest-scoring tokens per
+sequence (plus the always-preserved first token). The full token sequence
+still flows through the model; only the attention operation is restricted
+to a subset of keys/values.</p>
+<p>Consequences
+-----=
+- Parameter count is NOT reduced (it may even slightly grow due to the
+score network).
+- KV cache is NOT reduced (all tokens are still stored).
+- FLOPs during attention ARE reduced (≈ keep_ratio × L²).
+- Long-context inference is significantly faster.</p>
+<p>If your goal is parameter compression, use SVD/MLA/quantization instead
+(or apply them <em>after</em> PTP). If your goal is inference speedup, PTP is
+appropriate, but the pipeline should label it as a <em>compute optimizer</em>,
+not a <em>compressor</em>.</p>
+<p>Bug-fix map (v2):
+PTP-FIX-01
+<strong>KV-cache support</strong> for decoder inference. Both tuple and
+DynamicCache formats are supported.
+PTP-FIX-02
+<strong>RoPE past_len offset</strong> for KV-cache.
+PTP-FIX-03
+<strong>Removed double <code>scores[:, 0] = 1e4</code> assignment.</strong>
+PTP-FIX-04
+<strong>Score network shares weights across layers</strong> (optional
+shared scorer) to minimize parameter overhead.
+PTP-FIX-05
+<strong>Correct <code>_rotate_half</code> for odd head_dim.</strong>
+PTP-FIX-06
+<strong>Position_ids forwarded to RoPE</strong> when present.
+PTP-FIX-07
+<strong>Injection rewritten</strong>: single-pass, no mutation during
+iteration; nested encoders handled correctly.
+PTP-FIX-08
+<strong>Removed broken <code>comp_config if 'comp_config' in locals()</code></strong>.
+PTP-FIX-09
+<strong>Forward sanity check</strong> added.
+PTP-FIX-10
+<strong>Added <code>dense</code>, <code>c_proj</code>, <code>o_proj</code> aliases.</strong>
+PTP-FIX-11
+<strong><code>target_layer_idx</code> honored in whole-model traversal.</strong>
+PTP-FIX-12
+<strong>Class-level <code>is_custom_attention = True</code></strong> (it does replace
+attention in the graph, but flags that it is not a compressor).</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.attentions.progressive_token_pruning.inject_progressive_token_pruning"><code class="name flex">
+<span>def <span class="ident">inject_progressive_token_pruning</span></span>(<span>layer: Any = None,<br>model: Any = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: nn.Module | None = None,<br>target_layer_idx: int | None = None,<br>shared_scorer: <a title="neuralops.attentions.progressive_token_pruning.SharedTokenScorer" href="#neuralops.attentions.progressive_token_pruning.SharedTokenScorer">SharedTokenScorer</a> | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def inject_progressive_token_pruning(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    target_layer_idx: int | None = None,
+    shared_scorer: SharedTokenScorer | None = None,
+    **kwargs: Any,
+):
+    # PTP-FIX-07: cleaner injection.
+    target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get(&#34;model&#34;, kwargs.get(&#34;layer&#34;))
+    if target is None:
+        return None
+
+    cfg = model_config if model_config is not None else getattr(target, &#34;config&#34;, None)
+
+    # ---------------- Whole-model traversal ----------------
+    if layer is None and model is not None:
+        found = _find_layer_list(model)
+        if found is None:
+            logger.warning(&#34;PTP: could not locate transformer layer list.&#34;)
+            return None
+        parent, attr, layer_list = found
+        num_injected = 0
+        tot = len(layer_list)
+        # If shared_scorer requested, create it once.
+        if shared_scorer is None and kwargs.get(&#34;share_scorer&#34;, False):
+            dim = getattr(getattr(model, &#34;config&#34;, None), &#34;hidden_size&#34;, None) or kwargs.get(
+                &#34;hidden_size&#34;, 768
+            )
+            shared_scorer = SharedTokenScorer(int(dim), hidden=64)
+
+        for idx, lyr in enumerate(layer_list):
+            if target_layer_idx is not None and idx != target_layer_idx:
+                continue
+            res = inject_progressive_token_pruning(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                shared_scorer=shared_scorer,
+                **{k: v for k, v in kwargs.items() if k != &#34;share_scorer&#34;},
+            )
+            if res is not None:
+                num_injected += 1
+        return model if num_injected &gt; 0 else None
+
+    # ---------------- Single-layer injection ----------------
+    try:
+        src_attn = old_attn
+        if src_attn is None:
+            for attr in (&#34;attention&#34;, &#34;self_attn&#34;, &#34;attn&#34;, &#34;self&#34;):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if isinstance(cand, nn.Module) and cand is not target:
+                        src_attn = getattr(cand, &#34;self&#34;, cand)
+                        break
+        if src_attn is None:
+            src_attn = target
+
+        if isinstance(src_attn, ProgressiveTokenPruning):
+            return None
+
+        new_attn = ProgressiveTokenPruning(
+            config=cfg or getattr(src_attn, &#34;config&#34;, None),
+            pretrained_attn=src_attn if src_attn is not target else None,
+            shared_scorer=shared_scorer,
+            **kwargs,
+        )
+
+        # Attach
+        if hasattr(target, &#34;attention&#34;):
+            if hasattr(target.attention, &#34;self&#34;):
+                target.attention.self = new_attn
+                new_attn.is_nested_encoder = True
+            else:
+                target.attention = new_attn
+            return new_attn
+        if hasattr(target, &#34;self_attn&#34;):
+            target.self_attn = new_attn
+            return new_attn
+        if hasattr(target, &#34;attn&#34;):
+            target.attn = new_attn
+            return new_attn
+        if hasattr(target, &#34;self&#34;):
+            target.self = new_attn
+            new_attn.is_nested_encoder = True
+            return new_attn
+        return None
+    except Exception as e:
+        logger.exception(&#34;PTP injection failed: %s&#34;, e)
+        return None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.progressive_token_pruning.inject_ptp"><code class="name flex">
+<span>def <span class="ident">inject_ptp</span></span>(<span>layer: Any = None,<br>model: Any = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: nn.Module | None = None,<br>target_layer_idx: int | None = None,<br>shared_scorer: <a title="neuralops.attentions.progressive_token_pruning.SharedTokenScorer" href="#neuralops.attentions.progressive_token_pruning.SharedTokenScorer">SharedTokenScorer</a> | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def inject_progressive_token_pruning(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    target_layer_idx: int | None = None,
+    shared_scorer: SharedTokenScorer | None = None,
+    **kwargs: Any,
+):
+    # PTP-FIX-07: cleaner injection.
+    target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get(&#34;model&#34;, kwargs.get(&#34;layer&#34;))
+    if target is None:
+        return None
+
+    cfg = model_config if model_config is not None else getattr(target, &#34;config&#34;, None)
+
+    # ---------------- Whole-model traversal ----------------
+    if layer is None and model is not None:
+        found = _find_layer_list(model)
+        if found is None:
+            logger.warning(&#34;PTP: could not locate transformer layer list.&#34;)
+            return None
+        parent, attr, layer_list = found
+        num_injected = 0
+        tot = len(layer_list)
+        # If shared_scorer requested, create it once.
+        if shared_scorer is None and kwargs.get(&#34;share_scorer&#34;, False):
+            dim = getattr(getattr(model, &#34;config&#34;, None), &#34;hidden_size&#34;, None) or kwargs.get(
+                &#34;hidden_size&#34;, 768
+            )
+            shared_scorer = SharedTokenScorer(int(dim), hidden=64)
+
+        for idx, lyr in enumerate(layer_list):
+            if target_layer_idx is not None and idx != target_layer_idx:
+                continue
+            res = inject_progressive_token_pruning(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                shared_scorer=shared_scorer,
+                **{k: v for k, v in kwargs.items() if k != &#34;share_scorer&#34;},
+            )
+            if res is not None:
+                num_injected += 1
+        return model if num_injected &gt; 0 else None
+
+    # ---------------- Single-layer injection ----------------
+    try:
+        src_attn = old_attn
+        if src_attn is None:
+            for attr in (&#34;attention&#34;, &#34;self_attn&#34;, &#34;attn&#34;, &#34;self&#34;):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if isinstance(cand, nn.Module) and cand is not target:
+                        src_attn = getattr(cand, &#34;self&#34;, cand)
+                        break
+        if src_attn is None:
+            src_attn = target
+
+        if isinstance(src_attn, ProgressiveTokenPruning):
+            return None
+
+        new_attn = ProgressiveTokenPruning(
+            config=cfg or getattr(src_attn, &#34;config&#34;, None),
+            pretrained_attn=src_attn if src_attn is not target else None,
+            shared_scorer=shared_scorer,
+            **kwargs,
+        )
+
+        # Attach
+        if hasattr(target, &#34;attention&#34;):
+            if hasattr(target.attention, &#34;self&#34;):
+                target.attention.self = new_attn
+                new_attn.is_nested_encoder = True
+            else:
+                target.attention = new_attn
+            return new_attn
+        if hasattr(target, &#34;self_attn&#34;):
+            target.self_attn = new_attn
+            return new_attn
+        if hasattr(target, &#34;attn&#34;):
+            target.attn = new_attn
+            return new_attn
+        if hasattr(target, &#34;self&#34;):
+            target.self = new_attn
+            new_attn.is_nested_encoder = True
+            return new_attn
+        return None
+    except Exception as e:
+        logger.exception(&#34;PTP injection failed: %s&#34;, e)
+        return None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.attentions.progressive_token_pruning.ProgressiveTokenPruning"><code class="flex name class">
+<span>class <span class="ident">ProgressiveTokenPruning</span></span>
+<span>(</span><span>config: Any | None = None,<br>d_model: int | None = None,<br>keep_ratio: float = 0.8,<br>rank: int | None = 64,<br>pretrained_attn: nn.Module | None = None,<br>old_attn: nn.Module | None = None,<br>shared_scorer: <a title="neuralops.attentions.progressive_token_pruning.SharedTokenScorer" href="#neuralops.attentions.progressive_token_pruning.SharedTokenScorer">SharedTokenScorer</a> | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;progressive_token_pruning&#34;)
+@ATTENTION_REGISTRY.register(&#34;ptp&#34;)
+class ProgressiveTokenPruning(BaseAttention):
+    &#34;&#34;&#34;
+    Progressive Token Pruning attention.
+
+    Forward:
+      1. Score each token (score_network or shared scorer).
+      2. Force-keep the first token ([CLS]).
+      3. Keep the top-k tokens (k = ceil(L · keep_ratio)).
+      4. Compute attention over the reduced set of keys/values.
+      5. Return output with the original (B, L, D) shape.
+
+    KV-cache: supported for decoder inference.
+    &#34;&#34;&#34;
+
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        config: Any | None = None,
+        d_model: int | None = None,
+        keep_ratio: float = 0.8,
+        rank: int | None = 64,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
+        shared_scorer: SharedTokenScorer | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        if rank is None:
+            rank = 64
+        super().__init__(config, rank)
+        self.config = config
+        comp_config = getattr(config, &#34;compression_config&#34;, None)
+
+        # PTP-FIX-12: dimension resolution.
+        self.d_model = int(
+            getattr(config, &#34;hidden_size&#34;, None) or d_model or kwargs.get(&#34;hidden_size&#34;) or 768
+        )
+        self.dim = self.d_model
+        self.num_heads = int(
+            getattr(config, &#34;num_attention_heads&#34;, kwargs.get(&#34;num_attention_heads&#34;, 12))
+        )
+        self.num_kv_heads = int(
+            getattr(
+                config,
+                &#34;num_key_value_heads&#34;,
+                kwargs.get(&#34;num_key_value_heads&#34;, self.num_heads),
+            )
+        )
+        self.head_dim = int(
+            getattr(
+                config,
+                &#34;head_dim&#34;,
+                kwargs.get(&#34;head_dim&#34;, self.dim // max(1, self.num_heads)),
+            )
+        )
+        self.all_head_size = self.num_heads * self.head_dim
+        self.all_kv_head_size = self.num_kv_heads * self.head_dim
+        self.keep_ratio = float(
+            getattr(comp_config, &#34;keep_ratio&#34;, kwargs.get(&#34;keep_ratio&#34;, keep_ratio))
+        )
+
+        is_dec = getattr(config, &#34;is_decoder&#34;, kwargs.get(&#34;is_decoder&#34;, False))
+        if kwargs.get(&#34;is_causal&#34;, False):
+            is_dec = True
+        self.is_decoder = bool(is_dec)
+        self.is_causal = bool(is_dec)
+        self.is_nested_encoder = False
+
+        self.lora_rank = int(
+            getattr(
+                config,
+                &#34;lora_rank&#34;,
+                getattr(comp_config, &#34;lora_rank&#34;, kwargs.get(&#34;lora_rank&#34;, 16)),
+            )
+            if config
+            else 16
+        )
+        self.lora_alpha = float(
+            getattr(
+                config,
+                &#34;lora_alpha&#34;,
+                getattr(comp_config, &#34;lora_alpha&#34;, kwargs.get(&#34;lora_alpha&#34;, 32.0)),
+            )
+            if config
+            else 32.0
+        )
+        self.freeze_base = self.lora_rank &gt; 0
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.supports_gqa = True
+
+        # Projections
+        self.q_lin = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.k_lin = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.v_lin = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.out_lin = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+
+        # Aliases
+        self.q_proj = self.q_lin
+        self.k_proj = self.k_lin
+        self.v_proj = self.v_lin
+        self.out_proj = self.out_lin
+        self.query = self.q_lin
+        self.key = self.k_lin
+        self.value = self.v_lin
+        self.dense = self.out_lin  # PTP-FIX-10
+        self.c_proj = self.out_lin  # PTP-FIX-10
+        self.o_proj = self.out_lin  # PTP-FIX-10
+
+        # PTP-FIX-04: optional shared scorer.
+        if shared_scorer is not None:
+            self.score_network = shared_scorer
+            self._uses_shared_scorer = True
+        else:
+            self.score_network = SharedTokenScorer(self.dim, hidden=64)
+            self._uses_shared_scorer = False
+
+        dropout_p = (
+            getattr(
+                config,
+                &#34;dropout&#34;,
+                getattr(config, &#34;attention_probs_dropout_prob&#34;, 0.1),
+            )
+            if config
+            else 0.1
+        )
+        self.dropout = nn.Dropout(dropout_p)
+
+        src = (
+            pretrained_attn
+            if pretrained_attn is not None
+            else (old_attn if old_attn is not None else kwargs.get(&#34;source_attn&#34;))
+        )
+        if src is not None:
+            self.copy_weights(src)
+
+    # ------------------------------------------------------------------
+    @property
+    def gate(self):
+        return None
+
+    @property
+    def random_proj(self):
+        return None
+
+    # ------------------------------------------------------------------
+    def copy_weights(self, src: Any) -&gt; None:
+        if src is None:
+            return
+
+        cls_name = src.__class__.__name__
+        has_out_lin = hasattr(src, &#34;out_lin&#34;) or hasattr(src, &#34;c_proj&#34;) or hasattr(src, &#34;o_proj&#34;)
+        is_nested = False
+        if (
+            (
+                hasattr(src, &#34;self&#34;)
+                and hasattr(src.self, &#34;query&#34;)
+                and hasattr(src, &#34;output&#34;)
+                and hasattr(src.output, &#34;dense&#34;)
+            )
+            or (
+                cls_name
+                in (
+                    &#34;BertSelfAttention&#34;,
+                    &#34;RobertaSelfAttention&#34;,
+                    &#34;XLMRobertaSelfAttention&#34;,
+                    &#34;ElectraSelfAttention&#34;,
+                    &#34;DebertaSelfAttention&#34;,
+                )
+                or (cls_name.endswith(&#34;SelfAttention&#34;) and &#34;distil&#34; not in cls_name.lower())
+            )
+            and not has_out_lin
+        ):
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
+
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
+            &#34;q&#34;: (None, None),
+            &#34;k&#34;: (None, None),
+            &#34;v&#34;: (None, None),
+            &#34;o&#34;: (None, None),
+        }
+
+        # 1. GPT-2 fused
+        if hasattr(src, &#34;c_attn&#34;) and src.c_attn is not None:
+            c_attn_mod = src.c_attn
+            base_c = getattr(c_attn_mod, &#34;base_layer&#34;, c_attn_mod)
+            c_w = getattr(base_c, &#34;weight&#34;, getattr(c_attn_mod, &#34;weight&#34;, None))
+            if c_w is not None:
+                c_w = c_w.data.clone()
+                is_conv = (
+                    c_attn_mod.__class__.__name__ == &#34;Conv1D&#34;
+                    or base_c.__class__.__name__ == &#34;Conv1D&#34;
+                    or (c_w.ndim == 2 and c_w.shape[0] &lt; c_w.shape[1])
+                )
+                if is_conv:
+                    c_w = c_w.t().contiguous()
+                split = c_w.size(0) // 3
+                bias_mod = getattr(base_c, &#34;bias&#34;, getattr(c_attn_mod, &#34;bias&#34;, None))
+                c_b = bias_mod.data.clone() if bias_mod is not None else None
+                extracted[&#34;q&#34;] = (
+                    c_w[:split, :],
+                    c_b[:split] if c_b is not None else None,
+                )
+                extracted[&#34;k&#34;] = (
+                    c_w[split : 2 * split, :],
+                    c_b[split : 2 * split] if c_b is not None else None,
+                )
+                extracted[&#34;v&#34;] = (
+                    c_w[2 * split :, :],
+                    c_b[2 * split :] if c_b is not None else None,
+                )
+
+            if hasattr(src, &#34;c_proj&#34;) and src.c_proj is not None:
+                c_proj_mod = src.c_proj
+                base_o = getattr(c_proj_mod, &#34;base_layer&#34;, c_proj_mod)
+                o_w = getattr(base_o, &#34;weight&#34;, getattr(c_proj_mod, &#34;weight&#34;, None))
+                if o_w is not None:
+                    o_w = o_w.data.clone()
+                    is_conv_o = (
+                        c_proj_mod.__class__.__name__ == &#34;Conv1D&#34;
+                        or base_o.__class__.__name__ == &#34;Conv1D&#34;
+                        or (o_w.ndim == 2 and o_w.shape[0] &lt; o_w.shape[1])
+                    )
+                    if is_conv_o:
+                        o_w = o_w.t().contiguous()
+                    bias_o = getattr(base_o, &#34;bias&#34;, getattr(c_proj_mod, &#34;bias&#34;, None))
+                    extracted[&#34;o&#34;] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
+
+        # 2. RoBERTa nested
+        elif hasattr(src, &#34;self&#34;) and hasattr(src.self, &#34;query&#34;):
+            s = src.self
+            for key, sub in ((&#34;q&#34;, &#34;query&#34;), (&#34;k&#34;, &#34;key&#34;), (&#34;v&#34;, &#34;value&#34;)):
+                mod = getattr(s, sub, None)
+                if mod is not None and hasattr(mod, &#34;weight&#34;):
+                    extracted[key] = (
+                        mod.weight.data.clone(),
+                        mod.bias.data.clone() if mod.bias is not None else None,
+                    )
+            if hasattr(src, &#34;output&#34;) and hasattr(src.output, &#34;dense&#34;):
+                out_mod = src.output.dense
+                extracted[&#34;o&#34;] = (
+                    out_mod.weight.data.clone(),
+                    out_mod.bias.data.clone() if out_mod.bias is not None else None,
+                )
+
+        # 3. Flat modules
+        else:
+            candidates = {
+                &#34;q&#34;: (&#34;q_lin&#34;, &#34;q_proj&#34;, &#34;query&#34;),
+                &#34;k&#34;: (&#34;k_lin&#34;, &#34;k_proj&#34;, &#34;key&#34;),
+                &#34;v&#34;: (&#34;v_lin&#34;, &#34;v_proj&#34;, &#34;value&#34;),
+                &#34;o&#34;: (&#34;out_lin&#34;, &#34;out_proj&#34;, &#34;dense&#34;, &#34;o_proj&#34;),
+            }
+            for key, names in candidates.items():
+                for n in names:
+                    if hasattr(src, n):
+                        mod = getattr(src, n)
+                        if mod is not None and hasattr(mod, &#34;weight&#34;):
+                            extracted[key] = (
+                                mod.weight.data.clone(),
+                                mod.bias.data.clone() if mod.bias is not None else None,
+                            )
+                            break
+
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != &#34;o&#34; or not self.is_nested_encoder)
+        ]
+        if missing:
+            try:
+                from neuralops.core.adapters import UniversalAdapter
+
+                adapter = UniversalAdapter()
+                for k in missing:
+                    w, b = adapter.get_weight_bias(src, k)
+                    if w is not None:
+                        extracted[k] = (w.clone(), b.clone() if b is not None else None)
+            except Exception as e:
+                logger.debug(&#34;UniversalAdapter fallback failed: %s&#34;, e)
+
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != &#34;o&#34; or not self.is_nested_encoder)
+        ]
+        if missing_after:
+            raise RuntimeError(
+                f&#34;ProgressiveTokenPruning copy_weights failed: missing &#34;
+                f&#34;mandatory projections {missing_after} from {src.__class__.__name__}.&#34;
+            )
+
+        target_map = {
+            &#34;q&#34;: self.q_lin,
+            &#34;k&#34;: self.k_lin,
+            &#34;v&#34;: self.v_lin,
+            &#34;o&#34;: self.out_lin,
+        }
+
+        with torch.no_grad():
+            for key, target_mod in target_map.items():
+                w, b = extracted[key]
+                if w is None:
+                    if key == &#34;o&#34; and self.is_nested_encoder:
+                        nn.init.eye_(target_mod.weight)
+                        if target_mod.bias is not None:
+                            nn.init.zeros_(target_mod.bias)
+                        continue
+                    continue
+
+                if w.shape == target_mod.weight.shape:
+                    target_mod.weight.copy_(w)
+                elif w.t().contiguous().shape == target_mod.weight.shape:
+                    target_mod.weight.copy_(w.t().contiguous())
+                elif (
+                    w.shape[0] &lt; target_mod.weight.shape[0]
+                    and target_mod.weight.shape[0] % w.shape[0] == 0
+                ):
+                    repeats = target_mod.weight.shape[0] // w.shape[0]
+                    target_mod.weight.copy_(w.repeat(repeats, 1))
+                else:
+                    min_0 = min(target_mod.weight.shape[0], w.shape[0])
+                    min_1 = min(target_mod.weight.shape[1], w.shape[1])
+                    target_mod.weight.zero_()
+                    target_mod.weight[:min_0, :min_1].copy_(w[:min_0, :min_1])
+
+                if b is not None and target_mod.bias is not None:
+                    if b.shape == target_mod.bias.shape:
+                        target_mod.bias.copy_(b)
+                    else:
+                        min_b = min(target_mod.bias.shape[0], b.shape[0])
+                        target_mod.bias.zero_()
+                        target_mod.bias[:min_b].copy_(b[:min_b])
+                elif target_mod.bias is not None:
+                    nn.init.zeros_(target_mod.bias)
+
+                fnorm = float(torch.linalg.norm(target_mod.weight.float()).item())
+                if fnorm &lt; 1e-4:
+                    logger.warning(
+                        &#34;PTP: &#39;%s&#39; weight has near-zero norm (%.2e).&#34;,
+                        key,
+                        fnorm,
+                    )
+
+        if self.freeze_base:
+            for m in (self.q_lin, self.k_lin, self.v_lin, self.out_lin):
+                m.freeze_base_weights()
+
+    # ------------------------------------------------------------------
+    # Forward
+    # ------------------------------------------------------------------
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        layer_idx: int = 0,
+        *args: Any,
+        **kwargs: Any,
+    ) -&gt; tuple[torch.Tensor, torch.Tensor | None]:
+        if encoder_hidden_states is not None:
+            raise NotImplementedError(&#34;PTP does not support cross-attention.&#34;)
+
+        x = hidden_states
+        B, L, D = x.shape
+
+        valid_mask = get_token_valid_mask(attention_mask, B, L, x.device)
+
+        # PTP-FIX-03: single assignment.
+        scores = self.score_network(x)  # (B, L)
+        # PTP-FIX-11: only force [CLS] if position 0 is valid.
+        first_valid = valid_mask[:, 0].unsqueeze(-1)  # (B, 1)
+        scores = torch.where(first_valid, scores, scores)
+        # Force first token to top priority (only if valid).
+        scores = scores.masked_fill(~valid_mask, -1e4)
+        if first_valid.any():
+            scores[:, 0] = torch.where(
+                first_valid.squeeze(-1),
+                torch.full_like(scores[:, 0], 1e4),
+                scores[:, 0],
+            )
+
+        k_tokens = max(1, min(L, int(math.ceil(L * self.keep_ratio))))
+        top_scores, top_indices = torch.topk(scores, k_tokens, dim=-1)
+        top_indices, _ = torch.sort(top_indices, dim=-1)
+
+        # Projections
+        q = self.q_lin(x).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        k_new = self.k_lin(x).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        v_new = self.v_lin(x).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+
+        # ---------------- KV-cache (PTP-FIX-01) ----------------
+        past_k = past_v = None
+        past_len = 0
+        if past_key_value is not None and self.is_decoder is not False:
+            # Tuple cache
+            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) &gt;= 2:
+                past_k, past_v = past_key_value[0], past_key_value[1]
+                past_len = past_k.shape[-2]
+            # HF DynamicCache
+            elif hasattr(past_key_value, &#34;key_cache&#34;) and past_key_value.key_cache:
+                idx = min(layer_idx, len(past_key_value.key_cache) - 1)
+                past_k = past_key_value.key_cache[idx]
+                past_v = past_key_value.value_cache[idx]
+                past_len = past_k.shape[-2]
+
+        # ---------------- RoPE with past_len offset (PTP-FIX-02) ----------------
+        if position_embeddings is None:
+            position_embeddings = kwargs.get(&#34;position_embeddings&#34;)
+        if position_embeddings is not None:
+            cos, sin = position_embeddings
+            if past_len &gt; 0 and cos.shape[-2] &gt;= past_len + L:
+                cos = cos[..., past_len : past_len + L, :]
+                sin = sin[..., past_len : past_len + L, :]
+            q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin)
+
+        # ---------------- Gather pruned K/V ----------------
+        # Note: PTP prunes tokens ONLY for the current chunk (new tokens).
+        # With KV-cache, past tokens are always used in full.
+        top_idx_exp = (
+            top_indices.unsqueeze(1).unsqueeze(-1).expand(-1, self.num_kv_heads, -1, self.head_dim)
+        )
+        k_pruned = torch.gather(k_new, 2, top_idx_exp)  # (B, H_kv, k_tokens, d)
+        v_pruned = torch.gather(v_new, 2, top_idx_exp)
+
+        if past_k is not None and past_v is not None:
+            # Concatenate past (full) with current (pruned).
+            k_all = torch.cat([past_k, k_pruned], dim=-2)
+            v_all = torch.cat([past_v, v_pruned], dim=-2)
+            # Keep track of original positions for causal masking.
+            past_positions = torch.arange(past_len, device=x.device).view(1, 1, -1)
+            past_positions = past_positions.expand(B, 1, -1)
+            current_positions = (
+                torch.gather(
+                    top_indices,
+                    1,
+                    torch.arange(k_tokens, device=x.device).unsqueeze(0).expand(B, -1),
+                )
+                + past_len
+            )  # positions in the full sequence
+            k_positions = torch.cat(
+                [past_positions, current_positions.unsqueeze(1)],
+                dim=-1,
+            )  # (B, 1, past_len + k_tokens)
+        else:
+            k_all = k_pruned
+            v_all = v_pruned
+            k_positions = top_indices.unsqueeze(1)  # (B, 1, k_tokens)
+
+        # ---------------- GQA repeat ----------------
+        if self.num_heads != self.num_kv_heads:
+            k_all = repeat_kv(k_all, self.kv_repeat)
+            v_all = repeat_kv(v_all, self.kv_repeat)
+
+        # ---------------- Attention scores ----------------
+        scale = 1.0 / math.sqrt(self.head_dim)
+        attn_scores = (
+            torch.matmul(q.float(), k_all.float().transpose(-2, -1).contiguous()) * scale
+        )  # (B, H, L, past_len + k_tokens)
+
+        # ---------------- Causal mask ----------------
+        if self.is_decoder:
+            q_pos = (past_len + torch.arange(L, device=x.device)).view(1, 1, L, 1)
+            causal = k_positions.unsqueeze(2) &gt; q_pos
+            attn_scores = attn_scores.masked_fill(causal, -1e4)
+
+        # ---------------- Valid-key mask for current chunk ----------------
+        # Past keys are always valid (they were valid when cached).
+        current_valid = torch.gather(valid_mask, 1, top_indices)  # (B, k_tokens)
+        if past_k is not None:
+            # Assume past keys are all valid (they were cached after masking).
+            all_valid = torch.cat(
+                [
+                    torch.ones(B, past_len, device=x.device, dtype=torch.bool),
+                    current_valid,
+                ],
+                dim=1,
+            )  # (B, past_len + k_tokens)
+        else:
+            all_valid = current_valid
+        attn_scores = attn_scores.masked_fill(~all_valid.unsqueeze(1).unsqueeze(2), -1e4)
+
+        probs = F.softmax(attn_scores, dim=-1).to(x.dtype)
+        probs = torch.nan_to_num(probs, nan=0.0)
+        probs = self.dropout(probs)
+
+        # head_mask handling
+        if head_mask is not None:
+            if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
+                probs = probs * head_mask.view(1, self.num_heads, 1, 1).to(probs.dtype)
+            elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
+                probs = probs * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(
+                    probs.dtype
+                )
+            elif head_mask.dim() == 4:
+                probs = probs * head_mask.to(probs.dtype)
+
+        attn_out = (
+            torch.matmul(probs, v_all)
+            .permute(0, 2, 1, 3)
+            .contiguous()
+            .view(B, L, self.all_head_size)
+        )
+
+        # ---------------- Update KV-cache ----------------
+        if past_key_value is not None:
+            if hasattr(past_key_value, &#34;update&#34;):
+                # HF DynamicCache: store the FULL k_new, v_new (not pruned),
+                # so that future queries can access them.
+                past_key_value.update(k_new, v_new, layer_idx)
+
+        if self.is_nested_encoder:
+            return attn_out, (probs if output_attentions else None)
+
+        out = self.out_lin(attn_out)
+        return out, (probs if output_attentions else None)</code></pre>
+</details>
+<div class="desc"><p>Progressive Token Pruning attention.</p>
+<p>Forward
+-----=
+1. Score each token (score_network or shared scorer).
+2. Force-keep the first token ([CLS]).
+3. Keep the top-k tokens (k = ceil(L · keep_ratio)).
+4. Compute attention over the reduced set of keys/values.
+5. Return output with the original (B, L, D) shape.</p>
+<p>KV-cache: supported for decoder inference.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.progressive_token_pruning.ProgressiveTokenPruning.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.progressive_token_pruning.ProgressiveTokenPruning.gate"><code class="name">prop <span class="ident">gate</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def gate(self):
+    return None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.progressive_token_pruning.ProgressiveTokenPruning.random_proj"><code class="name">prop <span class="ident">random_proj</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def random_proj(self):
+    return None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseAttention.copy_weights" href="../core/base.html#neuralops.core.base.BaseAttention.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.extra_repr" href="../core/base.html#neuralops.core.base.BaseAttention.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.forward" href="../core/base.html#neuralops.core.base.BaseAttention.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.attentions.progressive_token_pruning.SharedTokenScorer"><code class="flex name class">
+<span>class <span class="ident">SharedTokenScorer</span></span>
+<span>(</span><span>dim: int, hidden: int = 64)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class SharedTokenScorer(nn.Module):
+    &#34;&#34;&#34;
+    Optional token scorer that is shared across all PTP layers to reduce
+    parameter overhead. When `share_scorer=True` is passed to all PTP
+    instances, they reference the same scorer module.
+    &#34;&#34;&#34;
+
+    def __init__(self, dim: int, hidden: int = 64) -&gt; None:
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(dim, hidden),
+            nn.GELU(),
+            nn.Linear(hidden, 1),
+        )
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        return torch.sigmoid(self.net(x)).squeeze(-1)  # (B, L)</code></pre>
+</details>
+<div class="desc"><p>Optional token scorer that is shared across all PTP layers to reduce
+parameter overhead. When <code>share_scorer=True</code> is passed to all PTP
+instances, they reference the same scorer module.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.progressive_token_pruning.SharedTokenScorer.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    return torch.sigmoid(self.net(x)).squeeze(-1)  # (B, L)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.attentions" href="index.html">neuralops.attentions</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.attentions.progressive_token_pruning.inject_progressive_token_pruning" href="#neuralops.attentions.progressive_token_pruning.inject_progressive_token_pruning">inject_progressive_token_pruning</a></code></li>
+<li><code><a title="neuralops.attentions.progressive_token_pruning.inject_ptp" href="#neuralops.attentions.progressive_token_pruning.inject_ptp">inject_ptp</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.attentions.progressive_token_pruning.ProgressiveTokenPruning" href="#neuralops.attentions.progressive_token_pruning.ProgressiveTokenPruning">ProgressiveTokenPruning</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.progressive_token_pruning.ProgressiveTokenPruning.gate" href="#neuralops.attentions.progressive_token_pruning.ProgressiveTokenPruning.gate">gate</a></code></li>
+<li><code><a title="neuralops.attentions.progressive_token_pruning.ProgressiveTokenPruning.is_custom_attention" href="#neuralops.attentions.progressive_token_pruning.ProgressiveTokenPruning.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.progressive_token_pruning.ProgressiveTokenPruning.random_proj" href="#neuralops.attentions.progressive_token_pruning.ProgressiveTokenPruning.random_proj">random_proj</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.progressive_token_pruning.SharedTokenScorer" href="#neuralops.attentions.progressive_token_pruning.SharedTokenScorer">SharedTokenScorer</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.progressive_token_pruning.SharedTokenScorer.forward" href="#neuralops.attentions.progressive_token_pruning.SharedTokenScorer.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

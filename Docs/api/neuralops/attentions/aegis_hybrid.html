@@ -1,0 +1,1622 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.attentions.aegis_hybrid API documentation</title>
+<meta name="description" content="Aegis-Hybrid Attention — Production-Hardened (v2) …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.attentions.aegis_hybrid</code></h1>
+</header>
+<section id="section-intro">
+<p>Aegis-Hybrid Attention — Production-Hardened (v2).</p>
+<p>Combines
+-----=
+1. Local sliding-window attention (chunked).
+2. Optional global linear attention via FAVOR+ style kernel features.
+3. Trainable LoRA adapters on top of frozen low-rank base.
+4. Learnable fusion gate between local and global branches.</p>
+<p>Fixes (v2):
+AH-FIX-01
+<code>FactorizedLinear.is_custom_attention = False</code>.
+AH-FIX-02
+<code>use_global</code> is configurable; global path restored with proper
+learnable kernel feature map.
+AH-FIX-03
+Fast <code>weight</code> property (no full matmul on each access).
+AH-FIX-04
+GQA-aware SVD initialization with <code>repeat_interleave</code> pooling.
+AH-FIX-05
+Robust GPT-2 Conv1D handling (checks layout at runtime).
+AH-FIX-06
+Comprehensive mask normalization (2D/3D/4D).
+AH-FIX-07
+Correct <code>past_len</code> derived from <code>past_key_value</code> shape, not
+from <code>N_kv - N</code> (which is wrong for cross-attention).
+AH-FIX-08
+Full <code><a title="neuralops.attentions.aegis_hybrid.inject_aegis_hybrid" href="#neuralops.attentions.aegis_hybrid.inject_aegis_hybrid">inject_aegis_hybrid()</a></code> with recursion + idempotency guard.
+AH-FIX-09
+RoPE supported via <code>position_embeddings</code> or <code>self.rotary_emb</code>.
+AH-FIX-10
+dtype-safe attention matmul.
+AH-FIX-11
+<code>local_window</code> default consistent (256).
+AH-FIX-12
+Storage accounting.
+AH-FIX-13
+<code>output_hidden_states</code> / <code>return_dict</code> / <code>*args</code> supported.
+AH-FIX-14
+<code><a title="neuralops.attentions.aegis_hybrid.FactorizedLinear" href="#neuralops.attentions.aegis_hybrid.FactorizedLinear">FactorizedLinear</a></code> uses <code>down</code>/<code>up</code> names for consistency
+with the rest of the framework, with backward-compat aliases
+<code>lin1</code>/<code>lin2</code>.
+AH-FIX-15
+Optional activation whitening via <code>whitening</code> dict.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.attentions.aegis_hybrid.apply_rotary_pos_emb"><code class="name flex">
+<span>def <span class="ident">apply_rotary_pos_emb</span></span>(<span>q, k, cos, sin)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_rotary_pos_emb(q, k, cos, sin):
+    if cos is None or sin is None:
+        return q, k
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(1)
+        sin = sin.unsqueeze(0).unsqueeze(1)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+    while cos.dim() &lt; q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    head_dim = q.shape[-1]
+    rotary_dim = 2 * (min(cos.shape[-1], head_dim, k.shape[-1]) // 2)
+    if rotary_dim == 0:
+        return q, k
+
+    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+
+    cos_q = cos[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
+    sin_q = sin[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
+    cos_k = cos[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
+    sin_k = sin[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
+
+    q_rot_emb = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
+    k_rot_emb = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
+
+    q_out = torch.cat([q_rot_emb, q_pass], dim=-1) if q_pass.shape[-1] &gt; 0 else q_rot_emb
+    k_out = torch.cat([k_rot_emb, k_pass], dim=-1) if k_pass.shape[-1] &gt; 0 else k_rot_emb
+    return q_out, k_out</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.inject_aegis_hybrid"><code class="name flex">
+<span>def <span class="ident">inject_aegis_hybrid</span></span>(<span>layer: Any = None,<br>model: Any = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: nn.Module | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;aegis_hybrid_inject&#34;)
+@ATTENTION_REGISTRY.register(&#34;inject_aegis_hybrid&#34;)
+def inject_aegis_hybrid(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    _depth: int = 0,
+    **kwargs: Any,
+):
+    if _depth &gt; 8:
+        logger.warning(&#34;inject_aegis_hybrid: max recursion depth exceeded.&#34;)
+        return None
+
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+
+    cfg = model_config if model_config is not None else getattr(target, &#34;config&#34;, None)
+
+    # Whole-model traversal
+    layer_list = None
+    for path in (
+        (&#34;distilbert&#34;, &#34;transformer&#34;, &#34;layer&#34;),
+        (&#34;roberta&#34;, &#34;encoder&#34;, &#34;layer&#34;),
+        (&#34;bert&#34;, &#34;encoder&#34;, &#34;layer&#34;),
+        (&#34;transformer&#34;, &#34;h&#34;),
+        (&#34;model&#34;, &#34;layers&#34;),
+        (&#34;encoder&#34;, &#34;layer&#34;),
+        (&#34;layers&#34;,),
+        (&#34;h&#34;,),
+    ):
+        obj = target
+        ok = True
+        for p in path:
+            if hasattr(obj, p):
+                obj = getattr(obj, p)
+            else:
+                ok = False
+                break
+        if ok and isinstance(obj, (nn.ModuleList, list)):
+            layer_list = obj
+            break
+
+    if layer_list is not None:
+        n_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_aegis_hybrid(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
+            )
+            if res is not None:
+                n_injected += 1
+        return target if n_injected &gt; 0 else None
+
+    # Single-layer
+    src = old_attn
+    if src is None:
+        for attr in (&#34;attention&#34;, &#34;attn&#34;, &#34;self_attn&#34;, &#34;self&#34;):
+            if hasattr(target, attr):
+                cand = getattr(target, attr)
+                if isinstance(cand, nn.Module) and cand is not target:
+                    src = getattr(cand, &#34;self&#34;, cand)
+                    break
+    if src is None:
+        src = target
+
+    # Idempotency guard
+    if isinstance(src, AegisHybridAttention) or &#34;AegisHybrid&#34; in src.__class__.__name__:
+        return None
+
+    h_size = getattr(cfg, &#34;hidden_size&#34;, None) if cfg else None
+    if h_size is None:
+        for attr in (&#34;out_lin&#34;, &#34;dense&#34;, &#34;c_proj&#34;, &#34;o_proj&#34;, &#34;out_proj&#34;):
+            m = getattr(src, attr, None)
+            if m is not None and hasattr(m, &#34;out_features&#34;):
+                h_size = m.out_features
+                break
+    h_size = int(h_size or kwargs.get(&#34;hidden_size&#34;, 768))
+
+    n_heads = getattr(cfg, &#34;num_attention_heads&#34;, None) if cfg else None
+    if n_heads is None:
+        n_heads = getattr(
+            src,
+            &#34;num_attention_heads&#34;,
+            getattr(src, &#34;num_heads&#34;, kwargs.get(&#34;num_heads&#34;, 12)),
+        )
+    n_heads = int(n_heads)
+
+    dec = _detect_decoder(cfg, kwargs.get(&#34;is_decoder&#34;), src)
+
+    aegis_cfg = AegisHybridConfig(
+        hidden_size=h_size,
+        num_attention_heads=n_heads,
+        head_dim=kwargs.get(&#34;head_dim&#34;, h_size // max(1, n_heads)),
+        num_key_value_heads=(getattr(cfg, &#34;num_key_value_heads&#34;, n_heads) if cfg else n_heads),
+        local_window=kwargs.get(
+            &#34;local_window&#34;,
+            getattr(comp_config, &#34;local_window&#34;, 256) if comp_config else 256,
+        ),
+        rank=kwargs.pop(
+            &#34;rank&#34;,
+            (getattr(comp_config, &#34;rank&#34;, min(128, h_size)) if comp_config else min(128, h_size)),
+        ),
+        lora_rank=kwargs.get(
+            &#34;lora_rank&#34;, getattr(comp_config, &#34;lora_rank&#34;, 32) if comp_config else 32
+        ),
+        dropout=kwargs.get(&#34;dropout&#34;, getattr(comp_config, &#34;dropout&#34;, 0.1) if comp_config else 0.1),
+        is_decoder=dec,
+        use_global=kwargs.get(
+            &#34;use_global&#34;,
+            getattr(comp_config, &#34;use_global&#34;, True) if comp_config else True,
+        ),
+    )
+
+    try:
+        new_attn = AegisHybridAttention(
+            config=aegis_cfg,
+            pretrained_attn=src if src is not target else None,
+            whitening=kwargs.pop(&#34;whitening&#34;, None),
+        )
+    except Exception as e:
+        logger.error(&#34;inject_aegis_hybrid: construction failed: %s&#34;, e)
+        return None
+
+    p = next(src.parameters(), None)
+    if p is not None:
+        new_attn.to(device=p.device, dtype=p.dtype)
+
+    spliced = False
+    if hasattr(target, &#34;attention&#34;):
+        if hasattr(target.attention, &#34;self&#34;):
+            new_attn.is_nested_encoder = True
+            target.attention.self = new_attn
+        else:
+            new_attn.is_nested_encoder = False
+            target.attention = new_attn
+        spliced = True
+    elif hasattr(target, &#34;self_attn&#34;):
+        new_attn.is_nested_encoder = False
+        target.self_attn = new_attn
+        spliced = True
+    elif hasattr(target, &#34;attn&#34;):
+        new_attn.is_nested_encoder = False
+        target.attn = new_attn
+        spliced = True
+    elif hasattr(target, &#34;self&#34;):
+        new_attn.is_nested_encoder = True
+        target.self = new_attn
+        spliced = True
+
+    if not spliced:
+        logger.error(
+            &#34;inject_aegis_hybrid: no writable attention attribute on %s&#34;,
+            type(target).__name__,
+        )
+        return None
+
+    return new_attn</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridAttention"><code class="flex name class">
+<span>class <span class="ident">AegisHybridAttention</span></span>
+<span>(</span><span>config: Any | None = None,<br>hidden_size: int | None = None,<br>num_heads: int | None = None,<br>pretrained_attn: nn.Module | None = None,<br>rank: int | None = None,<br>lora_rank: int | None = None,<br>is_decoder: bool | None = None,<br>whitening: dict[str, torch.Tensor] | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(
+    &#34;aegis_hybrid&#34;, supports_causal=True, supports_gqa=True, supports_rope=True
+)
+@ATTENTION_REGISTRY.register(
+    &#34;aegis_hybrid_attn&#34;, supports_causal=True, supports_gqa=True, supports_rope=True
+)
+@ATTENTION_REGISTRY.register(
+    &#34;aegis_hybrid_attention&#34;,
+    supports_causal=True,
+    supports_gqa=True,
+    supports_rope=True,
+)
+class AegisHybridAttention(BaseAttention):
+    supports_causal: bool = True
+    supports_gqa: bool = True
+    supports_rope: bool = True
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        config: Any | None = None,
+        hidden_size: int | None = None,
+        num_heads: int | None = None,
+        pretrained_attn: nn.Module | None = None,
+        rank: int | None = None,
+        lora_rank: int | None = None,
+        is_decoder: bool | None = None,
+        whitening: dict[str, torch.Tensor] | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        try:
+            super().__init__(config, rank if rank is not None else 128)
+        except TypeError:
+            super().__init__(config)
+
+        if not isinstance(config, AegisHybridConfig):
+            cfg_src = config if config is not None else kwargs
+            h_size = hidden_size or getattr(cfg_src, &#34;hidden_size&#34;, 768)
+            n_heads = num_heads or getattr(
+                cfg_src, &#34;num_attention_heads&#34;, getattr(cfg_src, &#34;n_heads&#34;, 12)
+            )
+            n_kv = getattr(
+                cfg_src,
+                &#34;num_key_value_heads&#34;,
+                getattr(cfg_src, &#34;num_kv_heads&#34;, n_heads),
+            )
+            h_dim = getattr(cfg_src, &#34;head_dim&#34;, None) or (h_size // max(1, n_heads))
+            r = rank or getattr(cfg_src, &#34;rank&#34;, min(128, h_size))
+            l_r = lora_rank or getattr(cfg_src, &#34;lora_rank&#34;, 32)
+
+            dec = _detect_decoder(config, is_decoder, pretrained_attn)
+            config = AegisHybridConfig(
+                hidden_size=h_size,
+                num_attention_heads=n_heads,
+                head_dim=h_dim,
+                num_key_value_heads=n_kv,
+                local_window=kwargs.get(&#34;local_window&#34;, 256),
+                rank=r,
+                lora_rank=l_r,
+                is_decoder=dec,
+                use_global=kwargs.get(&#34;use_global&#34;, True),
+                kernel_feature_dim=kwargs.get(&#34;kernel_feature_dim&#34;, 128),
+                chunk_size=kwargs.get(&#34;chunk_size&#34;, 64),
+            )
+
+        self.config = config
+        self.hidden_size: int = int(config.hidden_size)
+        self.num_heads: int = int(config.num_attention_heads)
+        self.head_dim: int = int(config.head_dim)
+        self.num_kv_heads: int = int(config.num_key_value_heads or self.num_heads)
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
+        self.local_window: int = int(config.local_window)
+        self.rank: int = max(1, min(int(config.rank), self.hidden_size))
+        self.lora_rank: int = max(1, min(int(config.lora_rank), self.hidden_size))
+        self.dropout = nn.Dropout(config.dropout)
+
+        self.is_decoder: bool = _detect_decoder(config, is_decoder, pretrained_attn)
+        self.use_global: bool = bool(config.use_global)
+        self.is_nested_encoder: bool = False
+        self.rotary_emb = getattr(pretrained_attn, &#34;rotary_emb&#34;, None)
+
+        self.whitening = whitening or {}
+
+        # ---- projections ----
+        self.q_proj = FactorizedLinear(
+            self.hidden_size,
+            self.all_head_size,
+            rank=self.rank,
+            lora_rank=self.lora_rank,
+            bias=True,
+        )
+        self.k_proj = FactorizedLinear(
+            self.hidden_size,
+            self.all_kv_head_size,
+            rank=self.rank,
+            lora_rank=self.lora_rank,
+            bias=True,
+        )
+        self.v_proj = FactorizedLinear(
+            self.hidden_size,
+            self.all_kv_head_size,
+            rank=self.rank,
+            lora_rank=self.lora_rank,
+            bias=True,
+        )
+        self.out_proj = FactorizedLinear(
+            self.all_head_size,
+            self.hidden_size,
+            rank=self.rank,
+            lora_rank=self.lora_rank,
+            bias=True,
+        )
+
+        # ---- kernel feature map ----
+        self.kernel_map = KernelFeatureMap(
+            head_dim=self.head_dim,
+            num_features=config.kernel_feature_dim,
+            seed=config.kernel_seed,
+        )
+
+        # ---- fusion gate (per-head, init ~0.88 to local) ----
+        self.fusion_beta = nn.Parameter(torch.zeros(self.num_heads))
+
+        # AH-FIX-12: storage accounting
+        self._orig_storage_bytes = 0
+        self._comp_storage_bytes = 0
+
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    # ---- aliases ----
+    @property
+    def query(self):
+        return self.q_proj
+
+    @property
+    def key(self):
+        return self.k_proj
+
+    @property
+    def value(self):
+        return self.v_proj
+
+    @property
+    def dense(self):
+        return self.out_proj
+
+    @property
+    def q_lin(self):
+        return self.q_proj
+
+    @property
+    def k_lin(self):
+        return self.k_proj
+
+    @property
+    def v_lin(self):
+        return self.v_proj
+
+    @property
+    def out_lin(self):
+        return self.out_proj
+
+    @property
+    def o_proj(self):
+        return self.out_proj
+
+    @property
+    def c_proj(self):
+        return self.out_proj
+
+    # ------------------------------------------------------------------
+    # AH-FIX-04: GQA-aware SVD init
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _svd_init(
+        w: torch.Tensor,
+        b: torch.Tensor | None,
+        proj: FactorizedLinear,
+        whitening_L: torch.Tensor | None = None,
+    ) -&gt; None:
+        with torch.no_grad():
+            W = w.detach().float()
+            out_dim, in_dim = W.shape
+            target_out, target_in = proj.out_features, proj.in_features
+
+            # GQA: pool or repeat along output dim
+            if out_dim &gt; target_out and out_dim % target_out == 0:
+                rep = out_dim // target_out
+                W = W.view(target_out, rep, in_dim).mean(dim=1)
+                if b is not None:
+                    b = b.view(target_out, rep).mean(dim=1)
+            elif out_dim &lt; target_out and target_out % out_dim == 0:
+                rep = target_out // out_dim
+                W = W.repeat_interleave(rep, dim=0)
+                if b is not None:
+                    b = b.repeat_interleave(rep)
+
+            if W.shape[0] != target_out or W.shape[1] != target_in:
+                raise ValueError(
+                    f&#34;FactorizedLinear shape mismatch after GQA pooling: &#34;
+                    f&#34;{tuple(W.shape)} vs ({target_out}, {target_in})&#34;
+                )
+
+            # Optional whitening
+            L = None
+            if whitening_L is not None:
+                Lw = whitening_L.float().to(W.device)
+                if Lw.shape == (target_in, target_in):
+                    eps = 1e-6 * torch.trace(Lw @ Lw.t()).item() / max(1, target_in)
+                    L = Lw + eps * torch.eye(target_in, device=W.device, dtype=W.dtype)
+
+            if L is not None:
+                try:
+                    W_eff = W @ L
+                    U, S, Vh = torch.linalg.svd(W_eff, full_matrices=False)
+                    L_inv = torch.linalg.inv(L)
+                    Vh = Vh @ L_inv
+                except Exception:
+                    U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+            else:
+                U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+
+            r = min(proj.rank, U.size(1), Vh.size(0))
+            proj.down.weight.data.zero_()
+            proj.up.weight.data.zero_()
+            proj.down.weight.data[:r, :].copy_(Vh[:r, :].to(proj.down.weight.dtype))
+            US = U[:, :r] @ torch.diag(S[:r])
+            proj.up.weight.data[:, :r].copy_(US.to(proj.up.weight.dtype))
+
+            if b is not None and proj.up.bias is not None:
+                n = min(b.numel(), proj.up.bias.numel())
+                proj.up.bias.data[:n].copy_(b.detach()[:n].to(proj.up.bias.dtype))
+            elif proj.up.bias is not None:
+                proj.up.bias.data.zero_()
+
+            # Invalidate cache
+            proj._cached_weight = None
+            proj._cached_versions = ()
+
+    # ------------------------------------------------------------------
+    # AH-FIX-05: copy_weights with proper Conv1D handling
+    # ------------------------------------------------------------------
+    def copy_weights(self, old_attn: nn.Module) -&gt; None:
+        try:
+            for p in old_attn.parameters():
+                self._orig_storage_bytes += p.numel() * p.element_size()
+        except Exception:
+            pass
+
+        from neuralops.core.adapters import UniversalAdapter
+
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
+            &#34;q&#34;: (None, None),
+            &#34;k&#34;: (None, None),
+            &#34;v&#34;: (None, None),
+            &#34;o&#34;: (None, None),
+        }
+
+        # UniversalAdapter first
+        for p in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;, &#34;o&#34;):
+            try:
+                w, b = UniversalAdapter.get_weight_bias(old_attn, p)
+                if w is not None:
+                    extracted[p] = (w, b)
+            except Exception:
+                pass
+
+        # GPT-2 fused c_attn
+        if hasattr(old_attn, &#34;c_attn&#34;) and extracted[&#34;q&#34;][0] is None:
+            c = old_attn.c_attn
+            c_w = c.weight.data.clone()
+            # Conv1D stores weight as (in, out) → transpose to (out, in)
+            if (
+                c_w.shape[1] == 3 * self.hidden_size
+                or c_w.ndim == 2
+                and c_w.shape[0] &lt; c_w.shape[1]
+            ):
+                c_w = c_w.t().contiguous()
+            split = c_w.size(0) // 3
+            c_b = getattr(c, &#34;bias&#34;, None)
+            c_b = c_b.data.clone() if c_b is not None else None
+            extracted[&#34;q&#34;] = (c_w[:split], c_b[:split] if c_b is not None else None)
+            extracted[&#34;k&#34;] = (
+                c_w[split : 2 * split],
+                c_b[split : 2 * split] if c_b is not None else None,
+            )
+            extracted[&#34;v&#34;] = (
+                c_w[2 * split :],
+                c_b[2 * split :] if c_b is not None else None,
+            )
+
+        if hasattr(old_attn, &#34;c_proj&#34;) and extracted[&#34;o&#34;][0] is None:
+            c = old_attn.c_proj
+            w_o = c.weight.data.clone()
+            if w_o.ndim == 2 and w_o.shape[0] &lt; w_o.shape[1]:
+                w_o = w_o.t().contiguous()
+            b_o = getattr(c, &#34;bias&#34;, None)
+            extracted[&#34;o&#34;] = (w_o, b_o.data.clone() if b_o is not None else None)
+
+        # Nested BERT/RoBERTa
+        if hasattr(old_attn, &#34;self&#34;) and hasattr(old_attn.self, &#34;query&#34;):
+            s = old_attn.self
+            for key, sub in ((&#34;q&#34;, &#34;query&#34;), (&#34;k&#34;, &#34;key&#34;), (&#34;v&#34;, &#34;value&#34;)):
+                if extracted[key][0] is None:
+                    m = getattr(s, sub, None)
+                    if m is not None and hasattr(m, &#34;weight&#34;):
+                        b = getattr(m, &#34;bias&#34;, None)
+                        extracted[key] = (
+                            m.weight.data.clone(),
+                            b.data.clone() if b is not None else None,
+                        )
+            if (
+                extracted[&#34;o&#34;][0] is None
+                and hasattr(old_attn, &#34;output&#34;)
+                and hasattr(old_attn.output, &#34;dense&#34;)
+            ):
+                d = old_attn.output.dense
+                b = getattr(d, &#34;bias&#34;, None)
+                extracted[&#34;o&#34;] = (
+                    d.weight.data.clone(),
+                    b.data.clone() if b is not None else None,
+                )
+
+        # Flat modules
+        named_map = {
+            &#34;q&#34;: (&#34;q_proj&#34;, &#34;q_lin&#34;, &#34;query&#34;),
+            &#34;k&#34;: (&#34;k_proj&#34;, &#34;k_lin&#34;, &#34;key&#34;),
+            &#34;v&#34;: (&#34;v_proj&#34;, &#34;v_lin&#34;, &#34;value&#34;),
+            &#34;o&#34;: (&#34;o_proj&#34;, &#34;out_proj&#34;, &#34;out_lin&#34;, &#34;dense&#34;),
+        }
+        for key, names in named_map.items():
+            if extracted[key][0] is None:
+                for n in names:
+                    if hasattr(old_attn, n):
+                        m = getattr(old_attn, n)
+                        if m is not None and hasattr(m, &#34;weight&#34;):
+                            b = getattr(m, &#34;bias&#34;, None)
+                            extracted[key] = (
+                                m.weight.data.clone(),
+                                b.data.clone() if b is not None else None,
+                            )
+                            break
+
+        # Apply SVD init
+        for key, target in (
+            (&#34;q&#34;, self.q_proj),
+            (&#34;k&#34;, self.k_proj),
+            (&#34;v&#34;, self.v_proj),
+            (&#34;o&#34;, self.out_proj),
+        ):
+            w, b = extracted[key]
+            if w is not None:
+                try:
+                    self._svd_init(
+                        w,
+                        b,
+                        target,
+                        whitening_L=self.whitening.get(key, None),
+                    )
+                except Exception as e:
+                    logger.warning(&#34;Aegis-Hybrid SVD init failed for &#39;%s&#39;: %s&#34;, key, e)
+            elif key == &#34;o&#34; and self.is_nested_encoder:
+                # Identity for nested encoder output (bypassed externally)
+                with torch.no_grad():
+                    r = min(target.out_features, target.in_features, target.rank)
+                    target.down.weight.data.zero_()
+                    target.up.weight.data.zero_()
+                    target.down.weight.data[:r, :r].fill_diagonal_(1.0)
+                    target.up.weight.data[:r, :r].fill_diagonal_(1.0)
+
+        # storage accounting
+        try:
+            for m in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
+                for p in m.parameters():
+                    self._comp_storage_bytes += p.numel() * p.element_size()
+        except Exception:
+            pass
+
+    # ------------------------------------------------------------------
+    # AH-FIX-06: comprehensive mask normalization
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _prepare_valid_mask(attention_mask, B, L, device) -&gt; torch.Tensor | None:
+        if attention_mask is None:
+            return None
+
+        def _to_bool(t):
+            if t.dtype == torch.bool:
+                return t
+            if t.dtype.is_floating_point:
+                return t &gt; -1e4
+            return t &gt; 0
+
+        if attention_mask.dim() == 2:
+            m = _to_bool(attention_mask)
+            if m.shape == (B, L):
+                return m
+            if m.shape[0] == B and m.shape[1] != L:
+                m = m[:, :L]
+                if m.shape[1] == L:
+                    return m
+        elif attention_mask.dim() == 3:
+            m = _to_bool(attention_mask)
+            if m.shape[0] == B and m.shape[-1] == L:
+                return m[:, -1, :]
+        elif attention_mask.dim() == 4:
+            m = _to_bool(attention_mask)
+            m = m.any(dim=-2)
+            if m.dim() == 3:
+                m = m.squeeze(1)
+            if m.shape == (B, L):
+                return m
+        return None
+
+    # ------------------------------------------------------------------
+    # AH-FIX-07: correct past_len from cache shape
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _read_past_kv(past_key_value, layer_idx=0):
+        if past_key_value is None:
+            return None, None
+        if hasattr(past_key_value, &#34;key_cache&#34;) and hasattr(past_key_value, &#34;value_cache&#34;):
+            if not past_key_value.key_cache:
+                return None, None
+            idx = min(layer_idx, len(past_key_value.key_cache) - 1)
+            return past_key_value.key_cache[idx], past_key_value.value_cache[idx]
+        if isinstance(past_key_value, (tuple, list)) and len(past_key_value) &gt;= 2:
+            return past_key_value[0], past_key_value[1]
+        return None, None
+
+    # ------------------------------------------------------------------
+    # Forward
+    # ------------------------------------------------------------------
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        layer_idx: int = 0,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        if not hidden_states.is_contiguous():
+            hidden_states = hidden_states.contiguous()
+
+        B, N, _ = hidden_states.shape
+        device = hidden_states.device
+        Dh = self.head_dim
+
+        is_cross = encoder_hidden_states is not None
+        kv_input = encoder_hidden_states if is_cross else hidden_states
+        N_kv_new = kv_input.shape[1]
+
+        Q = self.q_proj(hidden_states).view(B, N, self.num_heads, Dh).transpose(1, 2).contiguous()
+        K_new = (
+            self.k_proj(kv_input)
+            .view(B, N_kv_new, self.num_kv_heads, Dh)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        V_new = (
+            self.v_proj(kv_input)
+            .view(B, N_kv_new, self.num_kv_heads, Dh)
+            .transpose(1, 2)
+            .contiguous()
+        )
+
+        # ---- RoPE ----
+        if position_embeddings is None:
+            position_embeddings = kwargs.get(&#34;position_embeddings&#34;)
+        if position_embeddings is not None and not is_cross:
+            cos, sin = position_embeddings
+            past_k_probe, _ = self._read_past_kv(past_key_value, layer_idx)
+            past_len_rope = 0 if past_k_probe is None else past_k_probe.shape[-2]
+            cos = cos[..., past_len_rope : past_len_rope + N, :]
+            sin = sin[..., past_len_rope : past_len_rope + N, :]
+            Q, K_new = apply_rotary_pos_emb(Q, K_new, cos, sin)
+
+        # ---- KV cache ----
+        past_k, past_v = self._read_past_kv(past_key_value, layer_idx)
+        if past_k is not None and not is_cross:
+            K_cat = torch.cat([past_k, K_new], dim=-2)
+            V_cat = torch.cat([past_v, V_new], dim=-2)
+            past_len = past_k.shape[-2]
+        else:
+            K_cat, V_cat = K_new, V_new
+            past_len = 0
+
+        if past_key_value is not None and hasattr(past_key_value, &#34;update&#34;) and not is_cross:
+            past_key_value.update(K_new, V_new, layer_idx)
+
+        N_kv = K_cat.shape[2]
+
+        K_full = repeat_kv(K_cat, self.kv_repeat) if self.kv_repeat &gt; 1 else K_cat
+        V_full = repeat_kv(V_cat, self.kv_repeat) if self.kv_repeat &gt; 1 else V_cat
+
+        # ---- mask ----
+        eff_mask = encoder_attention_mask if is_cross else attention_mask
+        token_valid = self._prepare_valid_mask(eff_mask, B, N_kv, device)
+
+        # ---- local sliding window ----
+        local_out, attn_local = _local_window_attention_chunked(
+            Q,
+            K_full,
+            V_full,
+            window=self.local_window,
+            token_valid=token_valid,
+            is_decoder=self.is_decoder and not is_cross,
+            past_len=past_len,
+            dropout_p=self.config.dropout,
+            training=self.training,
+        )
+
+        # ---- global linear attention (optional) ----
+        if self.use_global:
+            global_out = _global_linear_attention(
+                Q,
+                K_full,
+                V_full,
+                self.kernel_map,
+                token_valid,
+            )
+            beta = torch.sigmoid(self.fusion_beta).view(1, self.num_heads, 1, 1)
+            # β → local, (1-β) → global
+            fused = beta * local_out + (1.0 - beta) * global_out
+        else:
+            fused = local_out
+
+        # ---- head_mask ----
+        if head_mask is not None:
+            hm = head_mask.to(fused.dtype)
+            if hm.dim() == 1:
+                hm = hm.view(1, -1, 1, 1)
+            elif hm.dim() == 2:
+                hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
+            elif hm.dim() == 3:
+                hm = hm.unsqueeze(-1)
+            fused = fused * hm
+
+        fused = fused.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+        fused = torch.nan_to_num(fused, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        if self.is_nested_encoder:
+            final = fused
+        else:
+            final = self.out_proj(fused)
+
+        final = torch.nan_to_num(final, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        return final.to(hidden_states.dtype), (attn_local if output_attentions else None)
+
+    # ------------------------------------------------------------------
+    def storage_bytes(self) -&gt; dict[str, int]:
+        def _sz(p):
+            if isinstance(p, (nn.Parameter, torch.Tensor)):
+                return p.numel() * p.element_size()
+            return 0
+
+        out = {}
+        for name, m in (
+            (&#34;q_proj&#34;, self.q_proj),
+            (&#34;k_proj&#34;, self.k_proj),
+            (&#34;v_proj&#34;, self.v_proj),
+            (&#34;out_proj&#34;, self.out_proj),
+            (&#34;kernel_map&#34;, self.kernel_map),
+        ):
+            out[name] = sum(_sz(p) for p in m.parameters())
+        out[&#34;fusion_beta&#34;] = _sz(self.fusion_beta)
+        out[&#34;total&#34;] = sum(out.values())
+        return out</code></pre>
+</details>
+<div class="desc"><p>Every custom attention module must inherit from this.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridAttention.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridAttention.supports_causal"><code class="name">var <span class="ident">supports_causal</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridAttention.supports_gqa"><code class="name">var <span class="ident">supports_gqa</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridAttention.supports_rope"><code class="name">var <span class="ident">supports_rope</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridAttention.c_proj"><code class="name">prop <span class="ident">c_proj</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def c_proj(self):
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridAttention.dense"><code class="name">prop <span class="ident">dense</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def dense(self):
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridAttention.k_lin"><code class="name">prop <span class="ident">k_lin</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def k_lin(self):
+    return self.k_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridAttention.key"><code class="name">prop <span class="ident">key</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def key(self):
+    return self.k_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridAttention.o_proj"><code class="name">prop <span class="ident">o_proj</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def o_proj(self):
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridAttention.out_lin"><code class="name">prop <span class="ident">out_lin</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def out_lin(self):
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridAttention.q_lin"><code class="name">prop <span class="ident">q_lin</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def q_lin(self):
+    return self.q_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridAttention.query"><code class="name">prop <span class="ident">query</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def query(self):
+    return self.q_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridAttention.v_lin"><code class="name">prop <span class="ident">v_lin</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def v_lin(self):
+    return self.v_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridAttention.value"><code class="name">prop <span class="ident">value</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def value(self):
+    return self.v_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridAttention.storage_bytes"><code class="name flex">
+<span>def <span class="ident">storage_bytes</span></span>(<span>self) ‑> dict[str, int]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def storage_bytes(self) -&gt; dict[str, int]:
+    def _sz(p):
+        if isinstance(p, (nn.Parameter, torch.Tensor)):
+            return p.numel() * p.element_size()
+        return 0
+
+    out = {}
+    for name, m in (
+        (&#34;q_proj&#34;, self.q_proj),
+        (&#34;k_proj&#34;, self.k_proj),
+        (&#34;v_proj&#34;, self.v_proj),
+        (&#34;out_proj&#34;, self.out_proj),
+        (&#34;kernel_map&#34;, self.kernel_map),
+    ):
+        out[name] = sum(_sz(p) for p in m.parameters())
+    out[&#34;fusion_beta&#34;] = _sz(self.fusion_beta)
+    out[&#34;total&#34;] = sum(out.values())
+    return out</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseAttention.copy_weights" href="../core/base.html#neuralops.core.base.BaseAttention.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.extra_repr" href="../core/base.html#neuralops.core.base.BaseAttention.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.forward" href="../core/base.html#neuralops.core.base.BaseAttention.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridConfig"><code class="flex name class">
+<span>class <span class="ident">AegisHybridConfig</span></span>
+<span>(</span><span>hidden_size: int = 768,<br>num_attention_heads: int = 12,<br>head_dim: int = 64,<br>num_key_value_heads: int | None = None,<br>local_window: int = 256,<br>rank: int = 128,<br>lora_rank: int = 32,<br>dropout: float = 0.1,<br>use_adaptive_pruning: bool = False,<br>gate_init_bias: float = 1.8,<br>is_decoder: bool = False,<br>use_global: bool = True,<br>kernel_feature_dim: int = 128,<br>kernel_seed: int = 1234,<br>chunk_size: int = 64)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class AegisHybridConfig:
+    hidden_size: int = 768
+    num_attention_heads: int = 12
+    head_dim: int = 64
+    num_key_value_heads: int | None = None
+    local_window: int = 256
+    rank: int = 128
+    lora_rank: int = 32
+    dropout: float = 0.1
+    use_adaptive_pruning: bool = False
+    gate_init_bias: float = 1.8
+    is_decoder: bool = False
+    use_global: bool = True
+    kernel_feature_dim: int = 128
+    kernel_seed: int = 1234
+    chunk_size: int = 64
+
+    def __post_init__(self) -&gt; None:
+        if self.num_key_value_heads is None:
+            self.num_key_value_heads = self.num_attention_heads</code></pre>
+</details>
+<div class="desc"><p>AegisHybridConfig(hidden_size: 'int' = 768, num_attention_heads: 'int' = 12, head_dim: 'int' = 64, num_key_value_heads: 'int | None' = None, local_window: 'int' = 256, rank: 'int' = 128, lora_rank: 'int' = 32, dropout: 'float' = 0.1, use_adaptive_pruning: 'bool' = False, gate_init_bias: 'float' = 1.8, is_decoder: 'bool' = False, use_global: 'bool' = True, kernel_feature_dim: 'int' = 128, kernel_seed: 'int' = 1234, chunk_size: 'int' = 64)</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridConfig.chunk_size"><code class="name">var <span class="ident">chunk_size</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridConfig.dropout"><code class="name">var <span class="ident">dropout</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridConfig.gate_init_bias"><code class="name">var <span class="ident">gate_init_bias</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridConfig.head_dim"><code class="name">var <span class="ident">head_dim</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridConfig.hidden_size"><code class="name">var <span class="ident">hidden_size</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridConfig.is_decoder"><code class="name">var <span class="ident">is_decoder</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridConfig.kernel_feature_dim"><code class="name">var <span class="ident">kernel_feature_dim</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridConfig.kernel_seed"><code class="name">var <span class="ident">kernel_seed</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridConfig.local_window"><code class="name">var <span class="ident">local_window</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridConfig.lora_rank"><code class="name">var <span class="ident">lora_rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridConfig.num_attention_heads"><code class="name">var <span class="ident">num_attention_heads</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridConfig.num_key_value_heads"><code class="name">var <span class="ident">num_key_value_heads</span> : int | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridConfig.rank"><code class="name">var <span class="ident">rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridConfig.use_adaptive_pruning"><code class="name">var <span class="ident">use_adaptive_pruning</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.AegisHybridConfig.use_global"><code class="name">var <span class="ident">use_global</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.FactorizedLinear"><code class="flex name class">
+<span>class <span class="ident">FactorizedLinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>rank: int = 128,<br>lora_rank: int = 32,<br>bias: bool = True,<br>device: torch.device | None = None,<br>dtype: torch.dtype | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FactorizedLinear(nn.Module):
+    &#34;&#34;&#34;
+    Low-rank factorized linear + LoRA:
+        y = (x @ V.T) @ U.T + LoRA(x) + b
+    &#34;&#34;&#34;
+
+    is_custom_attention: bool = False  # AH-FIX-01
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int = 128,
+        lora_rank: int = 32,
+        bias: bool = True,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = int(in_features)
+        self.out_features = int(out_features)
+        self.rank = max(1, min(int(rank), self.in_features, self.out_features))
+        self.svd_rank = self.rank
+        self.lora_rank = (
+            min(int(lora_rank), min(self.in_features, self.out_features)) if lora_rank &gt; 0 else 0
+        )
+
+        fk = {&#34;device&#34;: device, &#34;dtype&#34;: dtype}
+        # AH-FIX-14: consistent `down`/`up` naming
+        self.down = nn.Linear(self.in_features, self.rank, bias=False, **fk)
+        self.up = nn.Linear(self.rank, self.out_features, bias=bias, **fk)
+
+        self.down.weight.requires_grad = False
+        self.up.weight.requires_grad = False
+        if self.up.bias is not None:
+            self.up.bias.requires_grad = False
+
+        if self.lora_rank &gt; 0:
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **fk))
+            self.lora_B = nn.Parameter(torch.empty(self.out_features, self.lora_rank, **fk))
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+        # AH-FIX-03: cached weight, invalidated on parameter mutation
+        self._cached_weight: torch.Tensor | None = None
+        self._cached_versions: tuple[int, ...] = ()
+
+        self.reset_parameters()
+
+    # -- backward-compat aliases --
+    @property
+    def lin1(self):
+        return self.down
+
+    @property
+    def lin2(self):
+        return self.up
+
+    def reset_parameters(self) -&gt; None:
+        with torch.no_grad():
+            nn.init.kaiming_uniform_(self.down.weight, a=math.sqrt(5))
+            nn.init.kaiming_uniform_(self.up.weight, a=math.sqrt(5))
+            if self.up.bias is not None:
+                nn.init.zeros_(self.up.bias)
+            if self.lora_A is not None:
+                nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+                nn.init.zeros_(self.lora_B)
+
+    def _current_versions(self) -&gt; tuple[int, ...]:
+        vs = [
+            getattr(self.down.weight, &#34;_version&#34;, 0),
+            getattr(self.up.weight, &#34;_version&#34;, 0),
+        ]
+        if self.lora_A is not None:
+            vs.append(getattr(self.lora_A, &#34;_version&#34;, 0))
+            vs.append(getattr(self.lora_B, &#34;_version&#34;, 0))
+        return tuple(vs)
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        # AH-FIX-03
+        if (
+            not self.training
+            and self._cached_weight is not None
+            and self._cached_versions == self._current_versions()
+        ):
+            return self._cached_weight
+        w = torch.matmul(self.up.weight.float(), self.down.weight.float())
+        if self.lora_A is not None:
+            w = w + torch.matmul(self.lora_B.float(), self.lora_A.float())
+        w = w.to(self.up.weight.dtype)
+        if not self.training:
+            self._cached_weight = w
+            self._cached_versions = self._current_versions()
+        return w
+
+    @property
+    def bias(self) -&gt; torch.Tensor | None:
+        return self.up.bias
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        orig_dtype = x.dtype
+        x_down = x.to(self.down.weight.dtype)
+        latent = self.down(x_down)
+        latent_up = latent.to(self.up.weight.dtype)
+        out = self.up(latent_up)
+        if self.lora_A is not None:
+            a = self.lora_A.to(orig_dtype) if self.lora_A.dtype != orig_dtype else self.lora_A
+            b = self.lora_B.to(orig_dtype) if self.lora_B.dtype != orig_dtype else self.lora_B
+            out = out.to(orig_dtype) + F.linear(F.linear(x, a), b)
+        return out.to(orig_dtype)</code></pre>
+</details>
+<div class="desc"><p>Low-rank factorized linear + LoRA:
+y = (x @ V.T) @ U.T + LoRA(x) + b</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_hybrid.FactorizedLinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_hybrid.FactorizedLinear.bias"><code class="name">prop <span class="ident">bias</span> : torch.Tensor | None</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def bias(self) -&gt; torch.Tensor | None:
+    return self.up.bias</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.FactorizedLinear.lin1"><code class="name">prop <span class="ident">lin1</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def lin1(self):
+    return self.down</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.FactorizedLinear.lin2"><code class="name">prop <span class="ident">lin2</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def lin2(self):
+    return self.up</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.FactorizedLinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    # AH-FIX-03
+    if (
+        not self.training
+        and self._cached_weight is not None
+        and self._cached_versions == self._current_versions()
+    ):
+        return self._cached_weight
+    w = torch.matmul(self.up.weight.float(), self.down.weight.float())
+    if self.lora_A is not None:
+        w = w + torch.matmul(self.lora_B.float(), self.lora_A.float())
+    w = w.to(self.up.weight.dtype)
+    if not self.training:
+        self._cached_weight = w
+        self._cached_versions = self._current_versions()
+    return w</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_hybrid.FactorizedLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    orig_dtype = x.dtype
+    x_down = x.to(self.down.weight.dtype)
+    latent = self.down(x_down)
+    latent_up = latent.to(self.up.weight.dtype)
+    out = self.up(latent_up)
+    if self.lora_A is not None:
+        a = self.lora_A.to(orig_dtype) if self.lora_A.dtype != orig_dtype else self.lora_A
+        b = self.lora_B.to(orig_dtype) if self.lora_B.dtype != orig_dtype else self.lora_B
+        out = out.to(orig_dtype) + F.linear(F.linear(x, a), b)
+    return out.to(orig_dtype)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.FactorizedLinear.reset_parameters"><code class="name flex">
+<span>def <span class="ident">reset_parameters</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_parameters(self) -&gt; None:
+    with torch.no_grad():
+        nn.init.kaiming_uniform_(self.down.weight, a=math.sqrt(5))
+        nn.init.kaiming_uniform_(self.up.weight, a=math.sqrt(5))
+        if self.up.bias is not None:
+            nn.init.zeros_(self.up.bias)
+        if self.lora_A is not None:
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.attentions.aegis_hybrid.KernelFeatureMap"><code class="flex name class">
+<span>class <span class="ident">KernelFeatureMap</span></span>
+<span>(</span><span>head_dim: int, num_features: int = 128, seed: int = 1234)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class KernelFeatureMap(nn.Module):
+    &#34;&#34;&#34;FAVOR+ style random Fourier features with deterministic seed.&#34;&#34;&#34;
+
+    is_custom_attention: bool = False
+
+    def __init__(self, head_dim: int, num_features: int = 128, seed: int = 1234):
+        super().__init__()
+        self.head_dim = int(head_dim)
+        self.num_features = int(num_features)
+        gen = torch.Generator(device=&#34;cpu&#34;).manual_seed(int(seed))
+        proj = torch.randn(self.head_dim, self.num_features, generator=gen)
+        # Orthogonal init if m &lt;= d
+        if self.num_features &lt;= self.head_dim:
+            q, _ = torch.linalg.qr(torch.randn(self.head_dim, self.num_features, generator=gen))
+            proj = q
+        self.register_buffer(&#34;proj&#34;, proj * math.sqrt(self.head_dim))
+        self.scale = 1.0 / math.sqrt(self.num_features)
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        with torch.autocast(device_type=x.device.type, enabled=False):
+            x_f = x.float()
+            proj = self.proj.float()
+            phi = torch.matmul(x_f, proj)
+            norm_sq = (x_f * x_f).sum(dim=-1, keepdim=True) / 2.0
+            raw = phi - norm_sq
+            max_val = raw.detach().max()
+            exp_in = torch.clamp(raw - max_val, min=-20.0, max=8.0)
+            return (self.scale * torch.exp(exp_in)).to(x.dtype)</code></pre>
+</details>
+<div class="desc"><p>FAVOR+ style random Fourier features with deterministic seed.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_hybrid.KernelFeatureMap.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_hybrid.KernelFeatureMap.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    with torch.autocast(device_type=x.device.type, enabled=False):
+        x_f = x.float()
+        proj = self.proj.float()
+        phi = torch.matmul(x_f, proj)
+        norm_sq = (x_f * x_f).sum(dim=-1, keepdim=True) / 2.0
+        raw = phi - norm_sq
+        max_val = raw.detach().max()
+        exp_in = torch.clamp(raw - max_val, min=-20.0, max=8.0)
+        return (self.scale * torch.exp(exp_in)).to(x.dtype)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.attentions" href="index.html">neuralops.attentions</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.attentions.aegis_hybrid.apply_rotary_pos_emb" href="#neuralops.attentions.aegis_hybrid.apply_rotary_pos_emb">apply_rotary_pos_emb</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.inject_aegis_hybrid" href="#neuralops.attentions.aegis_hybrid.inject_aegis_hybrid">inject_aegis_hybrid</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridAttention" href="#neuralops.attentions.aegis_hybrid.AegisHybridAttention">AegisHybridAttention</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridAttention.c_proj" href="#neuralops.attentions.aegis_hybrid.AegisHybridAttention.c_proj">c_proj</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridAttention.dense" href="#neuralops.attentions.aegis_hybrid.AegisHybridAttention.dense">dense</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridAttention.is_custom_attention" href="#neuralops.attentions.aegis_hybrid.AegisHybridAttention.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridAttention.k_lin" href="#neuralops.attentions.aegis_hybrid.AegisHybridAttention.k_lin">k_lin</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridAttention.key" href="#neuralops.attentions.aegis_hybrid.AegisHybridAttention.key">key</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridAttention.o_proj" href="#neuralops.attentions.aegis_hybrid.AegisHybridAttention.o_proj">o_proj</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridAttention.out_lin" href="#neuralops.attentions.aegis_hybrid.AegisHybridAttention.out_lin">out_lin</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridAttention.q_lin" href="#neuralops.attentions.aegis_hybrid.AegisHybridAttention.q_lin">q_lin</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridAttention.query" href="#neuralops.attentions.aegis_hybrid.AegisHybridAttention.query">query</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridAttention.storage_bytes" href="#neuralops.attentions.aegis_hybrid.AegisHybridAttention.storage_bytes">storage_bytes</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridAttention.supports_causal" href="#neuralops.attentions.aegis_hybrid.AegisHybridAttention.supports_causal">supports_causal</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridAttention.supports_gqa" href="#neuralops.attentions.aegis_hybrid.AegisHybridAttention.supports_gqa">supports_gqa</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridAttention.supports_rope" href="#neuralops.attentions.aegis_hybrid.AegisHybridAttention.supports_rope">supports_rope</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridAttention.v_lin" href="#neuralops.attentions.aegis_hybrid.AegisHybridAttention.v_lin">v_lin</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridAttention.value" href="#neuralops.attentions.aegis_hybrid.AegisHybridAttention.value">value</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridConfig" href="#neuralops.attentions.aegis_hybrid.AegisHybridConfig">AegisHybridConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridConfig.chunk_size" href="#neuralops.attentions.aegis_hybrid.AegisHybridConfig.chunk_size">chunk_size</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridConfig.dropout" href="#neuralops.attentions.aegis_hybrid.AegisHybridConfig.dropout">dropout</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridConfig.gate_init_bias" href="#neuralops.attentions.aegis_hybrid.AegisHybridConfig.gate_init_bias">gate_init_bias</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridConfig.head_dim" href="#neuralops.attentions.aegis_hybrid.AegisHybridConfig.head_dim">head_dim</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridConfig.hidden_size" href="#neuralops.attentions.aegis_hybrid.AegisHybridConfig.hidden_size">hidden_size</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridConfig.is_decoder" href="#neuralops.attentions.aegis_hybrid.AegisHybridConfig.is_decoder">is_decoder</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridConfig.kernel_feature_dim" href="#neuralops.attentions.aegis_hybrid.AegisHybridConfig.kernel_feature_dim">kernel_feature_dim</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridConfig.kernel_seed" href="#neuralops.attentions.aegis_hybrid.AegisHybridConfig.kernel_seed">kernel_seed</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridConfig.local_window" href="#neuralops.attentions.aegis_hybrid.AegisHybridConfig.local_window">local_window</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridConfig.lora_rank" href="#neuralops.attentions.aegis_hybrid.AegisHybridConfig.lora_rank">lora_rank</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridConfig.num_attention_heads" href="#neuralops.attentions.aegis_hybrid.AegisHybridConfig.num_attention_heads">num_attention_heads</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridConfig.num_key_value_heads" href="#neuralops.attentions.aegis_hybrid.AegisHybridConfig.num_key_value_heads">num_key_value_heads</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridConfig.rank" href="#neuralops.attentions.aegis_hybrid.AegisHybridConfig.rank">rank</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridConfig.use_adaptive_pruning" href="#neuralops.attentions.aegis_hybrid.AegisHybridConfig.use_adaptive_pruning">use_adaptive_pruning</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.AegisHybridConfig.use_global" href="#neuralops.attentions.aegis_hybrid.AegisHybridConfig.use_global">use_global</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.aegis_hybrid.FactorizedLinear" href="#neuralops.attentions.aegis_hybrid.FactorizedLinear">FactorizedLinear</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.attentions.aegis_hybrid.FactorizedLinear.bias" href="#neuralops.attentions.aegis_hybrid.FactorizedLinear.bias">bias</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.FactorizedLinear.forward" href="#neuralops.attentions.aegis_hybrid.FactorizedLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.FactorizedLinear.is_custom_attention" href="#neuralops.attentions.aegis_hybrid.FactorizedLinear.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.FactorizedLinear.lin1" href="#neuralops.attentions.aegis_hybrid.FactorizedLinear.lin1">lin1</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.FactorizedLinear.lin2" href="#neuralops.attentions.aegis_hybrid.FactorizedLinear.lin2">lin2</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.FactorizedLinear.reset_parameters" href="#neuralops.attentions.aegis_hybrid.FactorizedLinear.reset_parameters">reset_parameters</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.FactorizedLinear.weight" href="#neuralops.attentions.aegis_hybrid.FactorizedLinear.weight">weight</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.aegis_hybrid.KernelFeatureMap" href="#neuralops.attentions.aegis_hybrid.KernelFeatureMap">KernelFeatureMap</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.aegis_hybrid.KernelFeatureMap.forward" href="#neuralops.attentions.aegis_hybrid.KernelFeatureMap.forward">forward</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_hybrid.KernelFeatureMap.is_custom_attention" href="#neuralops.attentions.aegis_hybrid.KernelFeatureMap.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests.test_adasvd_hardened API documentation</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tests.test_adasvd_hardened</code></h1>
+</header>
+<section id="section-intro">
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.tests.test_adasvd_hardened.test_activation_whitening_and_weighted_als"><code class="name flex">
+<span>def <span class="ident">test_activation_whitening_and_weighted_als</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_activation_whitening_and_weighted_als():
+    &#34;&#34;&#34;Verify Cholesky whitening and weighted ALS reduce activation error.&#34;&#34;&#34;
+    torch.manual_seed(42)
+    in_f, out_f, r = 64, 64, 16
+    lin = nn.Linear(in_f, out_f, bias=False)
+
+    # Create non-isotropic input activations X with distinct dominant directions
+    X = torch.randn(200, in_f)
+    X[:, :8] *= 5.0
+    C_X = (X.t() @ X) / X.size(0)
+
+    comp = AdaSVDCompressor(nn.Sequential(lin), rank=r, num_iters=5, use_weighted_als=True)
+    svd_layer, err, iters = comp.compress_linear(lin, rank=r, covariance=C_X, X_calib=X)
+
+    assert svd_layer is not None
+    assert err &lt; 0.60
+
+    # Check that reconstructed output approximates true output on X
+    y_true = lin(X)
+    y_pred = svd_layer(X)
+    act_err = torch.norm(y_true - y_pred, p=&#34;fro&#34;).item() / torch.norm(y_true, p=&#34;fro&#34;).item()
+    assert act_err &lt; 0.60</code></pre>
+</details>
+<div class="desc"><p>Verify Cholesky whitening and weighted ALS reduce activation error.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasvd_hardened.test_als_refinement_error_monotonicity"><code class="name flex">
+<span>def <span class="ident">test_als_refinement_error_monotonicity</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_als_refinement_error_monotonicity():
+    &#34;&#34;&#34;Verify that ALS refinement never increases error over initial SVD.&#34;&#34;&#34;
+    lin = nn.Linear(128, 128)
+    comp = AdaSVDCompressor(nn.Sequential(lin), rank=16, num_iters=10, target_attention_only=False)
+    svd_layer, final_err, iters = comp.compress_linear(lin, rank=16)
+
+    # Compute baseline SVD reconstruction error directly
+    W = lin.weight.data.float()
+    U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+    r = svd_layer.rank
+    sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+    recon_svd = (U[:, :r] * sqrt_S.unsqueeze(0)) @ (sqrt_S.unsqueeze(1) * Vt[:r, :])
+    init_err = float(torch.norm(W - recon_svd, p=&#34;fro&#34;).item() / torch.norm(W, p=&#34;fro&#34;).item())
+
+    assert final_err &lt;= init_err + 1e-6, f&#34;ALS error ({final_err}) must not exceed initial SVD error ({init_err})&#34;</code></pre>
+</details>
+<div class="desc"><p>Verify that ALS refinement never increases error over initial SVD.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasvd_hardened.test_cfg_get"><code class="name flex">
+<span>def <span class="ident">test_cfg_get</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_cfg_get():
+    &#34;&#34;&#34;Verify _cfg_get handles None, dict, and object attributes correctly.&#34;&#34;&#34;
+    assert _cfg_get(None, &#34;foo&#34;, 42) == 42
+    assert _cfg_get({&#34;foo&#34;: 10}, &#34;foo&#34;, 42) == 10
+    assert _cfg_get({&#34;bar&#34;: 10}, &#34;foo&#34;, 42) == 42
+
+    class DummyCfg:
+        foo = 99
+    assert _cfg_get(DummyCfg(), &#34;foo&#34;, 42) == 99
+    assert _cfg_get(DummyCfg(), &#34;bar&#34;, 42) == 42</code></pre>
+</details>
+<div class="desc"><p>Verify _cfg_get handles None, dict, and object attributes correctly.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasvd_hardened.test_effective_rank_calculation"><code class="name flex">
+<span>def <span class="ident">test_effective_rank_calculation</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_effective_rank_calculation():
+    &#34;&#34;&#34;Verify Shannon entropy effective rank calculation.&#34;&#34;&#34;
+    k = 32
+    W_uniform = torch.eye(k)
+    erank_uni = AdaSVDCompressor._compute_effective_rank(W_uniform)
+    assert abs(erank_uni - k) &lt; 1.0
+
+    u = torch.randn(k, 1)
+    v = torch.randn(1, k)
+    W_rank1 = u @ v
+    erank_r1 = AdaSVDCompressor._compute_effective_rank(W_rank1)
+    assert abs(erank_r1 - 1.0) &lt; 0.2</code></pre>
+</details>
+<div class="desc"><p>Verify Shannon entropy effective rank calculation.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasvd_hardened.test_factory_with_none_and_dict_config"><code class="name flex">
+<span>def <span class="ident">test_factory_with_none_and_dict_config</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_factory_with_none_and_dict_config():
+    &#34;&#34;&#34;Verify adasvd_factory works with None, dict, and custom object configs.&#34;&#34;&#34;
+    model = DummyLoRAModel(32, 32, r=2)
+    # 1. With None
+    m1 = adasvd_factory(model, comp_config=None)
+    assert m1 is not None
+
+    # 2. With dict config
+    model2 = DummyLoRAModel(32, 32, r=2)
+    cfg_dict = {&#34;adasvd_max_error&#34;: 0.85, &#34;adasvd_min_rank&#34;: 8, &#34;adasvd_target_attention_only&#34;: False}
+    m2 = adasvd_factory(model2, comp_config=cfg_dict)
+    assert m2 is not None
+
+    # 3. With explicit kwargs
+    model3 = DummyLoRAModel(32, 32, r=2)
+    m3 = adasvd_factory(model3, max_error=0.90, min_rank=4, target_attention_only=False)
+    assert m3 is not None</code></pre>
+</details>
+<div class="desc"><p>Verify adasvd_factory works with None, dict, and custom object configs.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasvd_hardened.test_gating_aware_d_for_ffn_lin1"><code class="name flex">
+<span>def <span class="ident">test_gating_aware_d_for_ffn_lin1</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_gating_aware_d_for_ffn_lin1():
+    &#34;&#34;&#34;Test that ffn.lin1 gets gating-aware D, lin2 gets variance.&#34;&#34;&#34;
+    from neuralops.compression_engine.adasvd_compressor import AdaSVDCompressor
+
+    # We need a dummy compressor - use a tiny model
+    model = torch.nn.Sequential(
+        torch.nn.Linear(64, 128),   # would be &#34;lin1&#34;
+        torch.nn.GELU(),
+        torch.nn.Linear(128, 64),   # would be &#34;lin2&#34;
+    )
+    # Manually test the detector
+    comp = AdaSVDCompressor.__new__(AdaSVDCompressor)
+
+    assert comp._is_followed_by_gelu(&#34;ffn.lin1&#34;) == True
+    assert comp._is_followed_by_gelu(&#34;ffn.lin2&#34;) == False
+    assert comp._is_followed_by_gelu(&#34;attention.q_lin&#34;) == False
+    assert comp._is_followed_by_gelu(&#34;intermediate.dense&#34;) == True
+    assert comp._is_followed_by_gelu(&#34;gate_proj&#34;) == True
+    assert comp._is_followed_by_gelu(&#34;down_proj&#34;) == False
+    print(&#34;[PASS] test_gating_aware_d_for_ffn_lin1 passed&#34;)</code></pre>
+</details>
+<div class="desc"><p>Test that ffn.lin1 gets gating-aware D, lin2 gets variance.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasvd_hardened.test_gelu_derivative_squared"><code class="name flex">
+<span>def <span class="ident">test_gelu_derivative_squared</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_gelu_derivative_squared():
+    &#34;&#34;&#34;Test GELU derivative squared values at known points.&#34;&#34;&#34;
+    import math
+
+    from neuralops.compression_engine.adasvd_compressor import AdaSVDCompressor
+
+    # GELU&#39;(0) = 0.5 + 0 = 0.5, so GELU&#39;(0)^2 = 0.25
+    y = torch.tensor([0.0])
+    result = AdaSVDCompressor._gelu_derivative_squared(y)
+    assert abs(result.item() - 0.25) &lt; 1e-5, f&#34;GELU&#39;(0)^2 should be 0.25, got {result.item()}&#34;
+
+    # For large positive y, GELU&#39;(y) ≈ 1, so squared ≈ 1
+    y = torch.tensor([5.0])
+    result = AdaSVDCompressor._gelu_derivative_squared(y)
+    assert abs(result.item() - 1.0) &lt; 0.01, f&#34;GELU&#39;(5)^2 should be ~1, got {result.item()}&#34;
+
+    # For large negative y, GELU&#39;(y) ≈ 0, so squared ≈ 0
+    y = torch.tensor([-5.0])
+    result = AdaSVDCompressor._gelu_derivative_squared(y)
+    assert result.item() &lt; 0.01, f&#34;GELU&#39;(-5)^2 should be ~0, got {result.item()}&#34;
+    print(&#34;[PASS] test_gelu_derivative_squared passed&#34;)</code></pre>
+</details>
+<div class="desc"><p>Test GELU derivative squared values at known points.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasvd_hardened.test_lora_and_conv1d_detection_and_preservation"><code class="name flex">
+<span>def <span class="ident">test_lora_and_conv1d_detection_and_preservation</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_lora_and_conv1d_detection_and_preservation():
+    &#34;&#34;&#34;Verify LoRALinear wrappers are preserved and Conv1D weights transposed correctly.&#34;&#34;&#34;
+    model = DummyLoRAModel(64, 64, r=4)
+    # Set known LoRA parameters
+    model.query.lora_A.weight.data.fill_(0.7)
+    model.query.lora_B.weight.data.fill_(0.7)
+    orig_lora_a = model.query.lora_A.weight.clone()
+
+    comp = AdaSVDCompressor(model, rank=16, max_error=1.0, target_attention_only=False)
+    comp.compress()
+
+    # Query should remain LoRALinear, with inner base_layer as SVDLinear
+    assert isinstance(model.query, LoRALinear), f&#34;Expected LoRALinear, got {type(model.query)}&#34;
+    assert isinstance(model.query.base_layer, SVDLinear), f&#34;Expected SVDLinear in base_layer, got {type(model.query.base_layer)}&#34;
+    assert torch.equal(model.query.lora_A.weight, orig_lora_a), &#34;LoRA weights were altered!&#34;
+
+    # Conv layer should be replaced by SVDLinear
+    assert isinstance(model.conv, SVDLinear), f&#34;Expected Conv1D replaced by SVDLinear, got {type(model.conv)}&#34;
+
+    # Forward pass works
+    x = torch.randn(2, 64)
+    out = model(x)
+    assert out.shape == (2, 2)
+    assert torch.isfinite(out).all()
+
+    # Check recovery params: LoRA and classifier are trainable, base factors frozen
+    rec = get_recovery_params(model)
+    rec_names = [n for n, p in model.named_parameters() if p.requires_grad]
+    assert any(&#34;lora_A&#34; in n for n in rec_names), &#34;lora_A must be trainable&#34;
+    assert any(&#34;lora_B&#34; in n for n in rec_names), &#34;lora_B must be trainable&#34;
+    assert not any(&#34;base_layer&#34; in n for n in rec_names), &#34;base_layer factors must be frozen&#34;</code></pre>
+</details>
+<div class="desc"><p>Verify LoRALinear wrappers are preserved and Conv1D weights transposed correctly.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasvd_hardened.test_mean_shift_absorption"><code class="name flex">
+<span>def <span class="ident">test_mean_shift_absorption</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_mean_shift_absorption():
+    &#34;&#34;&#34;Verify mean-shift bias absorption centers activations and reduces reconstruction error.&#34;&#34;&#34;
+    torch.manual_seed(42)
+    class SimpleTwoLinear(nn.Module):
+        def __init__(self, in_f=64, out_f=64):
+            super().__init__()
+            self.l1 = nn.Linear(in_f, out_f)
+            self.l2 = nn.Linear(out_f, out_f)
+        def forward(self, x):
+            return self.l2(self.l1(x))
+
+    model = SimpleTwoLinear(64, 64)
+    X = torch.randn(256, 64) + 10.0  # Large mean offset
+    with torch.no_grad():
+        Y_no_compress = model(X)
+
+    comp = AdaSVDCompressor(model, rank=16, target_attention_only=False, use_mean_shift=True, use_weighted_als=False)
+    comp.compress(calibration_data=X)
+
+    with torch.no_grad():
+        Y_compress = model(X)
+
+    err = (Y_no_compress - Y_compress).norm() / Y_no_compress.norm()
+    print(f&#34;Mean-shift test error: {err:.6f}&#34;)
+    assert err &lt; 0.25, f&#34;Error too high: {err}&#34;</code></pre>
+</details>
+<div class="desc"><p>Verify mean-shift bias absorption centers activations and reduces reconstruction error.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasvd_hardened.test_rank_floor_and_reduction_bounds"><code class="name flex">
+<span>def <span class="ident">test_rank_floor_and_reduction_bounds</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_rank_floor_and_reduction_bounds():
+    &#34;&#34;&#34;Verify minimum rank floor and parameter reduction constraints.&#34;&#34;&#34;
+    class CustomModel(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.tiny = nn.Linear(32, 32)
+            self.wide = nn.Linear(768, 2304)  # Mimics GPT-2 c_attn
+        def forward(self, x):
+            return self.tiny(x)
+
+    model = CustomModel()
+    comp = AdaSVDCompressor(model, rank=432, min_rank=16, target_attention_only=False)
+    comp.compress()
+
+    # For tiny layer (32x32): param reduction requires r * (32+32) &lt; 32*32 -&gt; r &lt; 16
+    # max_param_r = 0.75 * (32*32)/64 = 12
+    # So tiny rank is clamped to max_param_r
+    assert comp.layer_ranks[&#34;tiny&#34;] &lt;= 12
+    tiny_svd = model.tiny
+    assert tiny_svd.rank * (32 + 32) &lt; 32 * 32
+
+    # For wide layer (768x2304, like c_attn):
+    # max_param_r = 432, rank floor &gt;= 288
+    assert comp.layer_ranks[&#34;wide&#34;] &gt;= 288
+    assert comp.layer_ranks[&#34;wide&#34;] &lt;= 432</code></pre>
+</details>
+<div class="desc"><p>Verify minimum rank floor and parameter reduction constraints.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasvd_hardened.test_reconstruction_error_and_fallback"><code class="name flex">
+<span>def <span class="ident">test_reconstruction_error_and_fallback</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_reconstruction_error_and_fallback():
+    &#34;&#34;&#34;Verify fallback to original layer when reconstruction error exceeds max_error.&#34;&#34;&#34;
+    class TwoLinearModel(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.l1 = nn.Linear(64, 64)
+            self.l2 = nn.Linear(64, 64)
+        def forward(self, x):
+            return self.l2(self.l1(x))
+
+    model = TwoLinearModel()
+    # With max_error=0.0001, compression should fail error threshold and fall back to original
+    comp = AdaSVDCompressor(model, rank=4, max_error=1e-5, fallback_to_original=True, target_attention_only=False)
+    comp.compress()
+
+    assert len(comp.fallback_layers) &gt; 0, &#34;Expected layers to fall back&#34;
+    assert len(comp.compressed_layers) == 0, &#34;No layers should have compressed&#34;
+    assert isinstance(model.l1, nn.Linear), &#34;l1 should remain nn.Linear on fallback&#34;
+    assert isinstance(model.l2, nn.Linear), &#34;l2 should remain nn.Linear on fallback&#34;</code></pre>
+</details>
+<div class="desc"><p>Verify fallback to original layer when reconstruction error exceeds max_error.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasvd_hardened.test_strs_rank_search"><code class="name flex">
+<span>def <span class="ident">test_strs_rank_search</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_strs_rank_search():
+    &#34;&#34;&#34;Verify STRS finds minimal rank satisfying max_error constraint.&#34;&#34;&#34;
+    torch.manual_seed(42)
+    in_f, out_f = 64, 64
+    lin = nn.Linear(in_f, out_f)
+    comp = AdaSVDCompressor(nn.Sequential(lin), use_weighted_als=False, max_error=0.45)
+    svd_layer, err, iters = comp.compress_linear(lin, rank=32)
+    assert svd_layer is not None
+    assert err &lt;= 0.45 or svd_layer.rank &gt;= 16</code></pre>
+</details>
+<div class="desc"><p>Verify STRS finds minimal rank satisfying max_error constraint.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasvd_hardened.test_two_sided_als_improves_over_svd"><code class="name flex">
+<span>def <span class="ident">test_two_sided_als_improves_over_svd</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_two_sided_als_improves_over_svd():
+    &#34;&#34;&#34;Verify two-sided weighted ALS converges and provides competitive or improved error vs SVD.&#34;&#34;&#34;
+    torch.manual_seed(42)
+    W = torch.randn(64, 64)
+    X = torch.randn(256, 64)
+
+    C_X = X.T @ X / 256
+    Y = X @ W.T
+    D_var = Y.var(0)
+
+    lin = nn.Linear(64, 64)
+    comp = AdaSVDCompressor(nn.Sequential(lin), target_attention_only=False)
+
+    A_svd, B_svd = comp._init_whitened_svd(W, 16, C_X)
+    recon_svd = A_svd @ B_svd
+    err_svd = torch.norm(W @ X.T - recon_svd @ X.T) / torch.norm(W @ X.T)
+
+    A_als, B_als, err_als, iters = comp._two_sided_als(
+        W, 16, C_X, D_var, X_calib=X, num_iters=10
+    )
+
+    print(f&#34;SVD error:  {err_svd:.6f}&#34;)
+    print(f&#34;ALS error:  {err_als:.6f}&#34;)
+    assert err_als &lt;= err_svd * 1.05, f&#34;ALS made error worse: {err_als} &gt; {err_svd}&#34;</code></pre>
+</details>
+<div class="desc"><p>Verify two-sided weighted ALS converges and provides competitive or improved error vs SVD.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.tests.test_adasvd_hardened.DummyLoRAModel"><code class="flex name class">
+<span>class <span class="ident">DummyLoRAModel</span></span>
+<span>(</span><span>in_f=64, out_f=64, r=4)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DummyLoRAModel(nn.Module):
+    def __init__(self, in_f=64, out_f=64, r=4):
+        super().__init__()
+        base = nn.Linear(in_f, out_f)
+        self.query = LoRALinear(base, r=r, alpha=8)
+        self.conv = Conv1D(out_f, in_f)  # [in_f, out_f] in weight
+        self.classifier = nn.Linear(out_f, 2)
+
+    def forward(self, x):
+        h = self.query(x)
+        h = self.conv(h)
+        return self.classifier(h)</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_adasvd_hardened.DummyLoRAModel.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x) ‑> Callable[..., typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x):
+    h = self.query(x)
+    h = self.conv(h)
+    return self.classifier(h)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tests" href="index.html">neuralops.tests</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.tests.test_adasvd_hardened.test_activation_whitening_and_weighted_als" href="#neuralops.tests.test_adasvd_hardened.test_activation_whitening_and_weighted_als">test_activation_whitening_and_weighted_als</a></code></li>
+<li><code><a title="neuralops.tests.test_adasvd_hardened.test_als_refinement_error_monotonicity" href="#neuralops.tests.test_adasvd_hardened.test_als_refinement_error_monotonicity">test_als_refinement_error_monotonicity</a></code></li>
+<li><code><a title="neuralops.tests.test_adasvd_hardened.test_cfg_get" href="#neuralops.tests.test_adasvd_hardened.test_cfg_get">test_cfg_get</a></code></li>
+<li><code><a title="neuralops.tests.test_adasvd_hardened.test_effective_rank_calculation" href="#neuralops.tests.test_adasvd_hardened.test_effective_rank_calculation">test_effective_rank_calculation</a></code></li>
+<li><code><a title="neuralops.tests.test_adasvd_hardened.test_factory_with_none_and_dict_config" href="#neuralops.tests.test_adasvd_hardened.test_factory_with_none_and_dict_config">test_factory_with_none_and_dict_config</a></code></li>
+<li><code><a title="neuralops.tests.test_adasvd_hardened.test_gating_aware_d_for_ffn_lin1" href="#neuralops.tests.test_adasvd_hardened.test_gating_aware_d_for_ffn_lin1">test_gating_aware_d_for_ffn_lin1</a></code></li>
+<li><code><a title="neuralops.tests.test_adasvd_hardened.test_gelu_derivative_squared" href="#neuralops.tests.test_adasvd_hardened.test_gelu_derivative_squared">test_gelu_derivative_squared</a></code></li>
+<li><code><a title="neuralops.tests.test_adasvd_hardened.test_lora_and_conv1d_detection_and_preservation" href="#neuralops.tests.test_adasvd_hardened.test_lora_and_conv1d_detection_and_preservation">test_lora_and_conv1d_detection_and_preservation</a></code></li>
+<li><code><a title="neuralops.tests.test_adasvd_hardened.test_mean_shift_absorption" href="#neuralops.tests.test_adasvd_hardened.test_mean_shift_absorption">test_mean_shift_absorption</a></code></li>
+<li><code><a title="neuralops.tests.test_adasvd_hardened.test_rank_floor_and_reduction_bounds" href="#neuralops.tests.test_adasvd_hardened.test_rank_floor_and_reduction_bounds">test_rank_floor_and_reduction_bounds</a></code></li>
+<li><code><a title="neuralops.tests.test_adasvd_hardened.test_reconstruction_error_and_fallback" href="#neuralops.tests.test_adasvd_hardened.test_reconstruction_error_and_fallback">test_reconstruction_error_and_fallback</a></code></li>
+<li><code><a title="neuralops.tests.test_adasvd_hardened.test_strs_rank_search" href="#neuralops.tests.test_adasvd_hardened.test_strs_rank_search">test_strs_rank_search</a></code></li>
+<li><code><a title="neuralops.tests.test_adasvd_hardened.test_two_sided_als_improves_over_svd" href="#neuralops.tests.test_adasvd_hardened.test_two_sided_als_improves_over_svd">test_two_sided_als_improves_over_svd</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.tests.test_adasvd_hardened.DummyLoRAModel" href="#neuralops.tests.test_adasvd_hardened.DummyLoRAModel">DummyLoRAModel</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_adasvd_hardened.DummyLoRAModel.forward" href="#neuralops.tests.test_adasvd_hardened.DummyLoRAModel.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

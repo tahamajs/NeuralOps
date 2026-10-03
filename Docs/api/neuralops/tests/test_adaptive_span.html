@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests.test_adaptive_span API documentation</title>
+<meta name="description" content="Unit tests for AdaptiveSpanAttention module.
+Verifies all 8 core properties:
+1. Module instantiates with correct span initialization (span_logits = …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tests.test_adaptive_span</code></h1>
+</header>
+<section id="section-intro">
+<p>Unit tests for AdaptiveSpanAttention module.
+Verifies all 8 core properties:
+1. Module instantiates with correct span initialization (span_logits = 4.0, sigmoid ~ 0.982).
+2. Span regularization loss is non-negative and strictly positive for initialized spans.
+3. Multi-module span loss aggregation: get_total_span_loss computes correct average across layers.
+4. Forward pass produces expected shape [B, N, D] and finite outputs.
+5. Softmax NaN safety: completely masked rows produce 0 attention without NaN or inf.
+6. Gradient flow: span_logits receives non-zero gradients when span regularization loss is backpropagated.
+7. Registry registration: 'adaptive_span' and 'adaptive_span_attention' are registered.
+8. Supports causal, bidirectional, and GQA flags appropriately.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.tests.test_adaptive_span.test_1_instantiation_and_span_init"><code class="name flex">
+<span>def <span class="ident">test_1_instantiation_and_span_init</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_1_instantiation_and_span_init():
+    &#34;&#34;&#34;Verify AdaptiveSpanAttention initializes with span_logits=4.0 and current_span near max_span.&#34;&#34;&#34;
+    attn = AdaptiveSpanAttention(hidden_size=256, num_heads=4, max_span=64)
+    assert hasattr(attn, &#34;span_logits&#34;), &#34;Missing span_logits parameter&#34;
+    assert attn.span_logits.shape == (4,), f&#34;Expected shape (4,), got {attn.span_logits.shape}&#34;
+    # sigmoid(4.0) ~ 0.9820
+    expected_ratio = torch.sigmoid(torch.tensor(4.0)).item()
+    expected_span = expected_ratio * 64
+    assert torch.allclose(attn.current_span, torch.full((4,), expected_span), atol=1e-3), (
+        f&#34;Expected span ~ {expected_span}, got {attn.current_span}&#34;
+    )
+    print(&#34;[PASS] Test 1: Instantiation and span initialization verified&#34;)</code></pre>
+</details>
+<div class="desc"><p>Verify AdaptiveSpanAttention initializes with span_logits=4.0 and current_span near max_span.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_span.test_2_span_regularization_loss_positive"><code class="name flex">
+<span>def <span class="ident">test_2_span_regularization_loss_positive</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_2_span_regularization_loss_positive():
+    &#34;&#34;&#34;Verify get_span_regularization_loss returns a positive scalar loss.&#34;&#34;&#34;
+    attn = AdaptiveSpanAttention(hidden_size=256, num_heads=4, max_span=64)
+    loss = attn.get_span_regularization_loss(lambda_span=0.01)
+    assert isinstance(loss, torch.Tensor), &#34;Expected torch.Tensor loss&#34;
+    assert loss.dim() == 0, f&#34;Expected scalar loss, got dim {loss.dim()}&#34;
+    assert loss.item() &gt; 0.0, f&#34;Expected strictly positive loss, got {loss.item()}&#34;
+    # At logits=4.0, normalized span ~ 0.982, lambda=0.01 -&gt; ~ 0.00982
+    expected = 0.01 * torch.sigmoid(torch.tensor(4.0)).item()
+    assert abs(loss.item() - expected) &lt; 1e-4, f&#34;Expected {expected:.5f}, got {loss.item():.5f}&#34;
+    print(f&#34;[PASS] Test 2: Span regularization loss is strictly positive ({loss.item():.5f})&#34;)</code></pre>
+</details>
+<div class="desc"><p>Verify get_span_regularization_loss returns a positive scalar loss.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_span.test_3_multi_module_span_loss_aggregation"><code class="name flex">
+<span>def <span class="ident">test_3_multi_module_span_loss_aggregation</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_3_multi_module_span_loss_aggregation():
+    &#34;&#34;&#34;Verify get_total_span_loss aggregates across multiple layers in a model.&#34;&#34;&#34;
+    class ToyModel(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.layer0 = AdaptiveSpanAttention(hidden_size=128, num_heads=2, max_span=32)
+            self.layer1 = AdaptiveSpanAttention(hidden_size=128, num_heads=2, max_span=32)
+            # Set layer0 logits to 0.0 (sigmoid = 0.5) and layer1 to 4.0 (~0.982)
+            self.layer0.span_logits.data.fill_(0.0)
+            self.layer1.span_logits.data.fill_(4.0)
+
+    model = ToyModel()
+    total_loss = get_total_span_loss(model, lambda_span=0.02)
+    # Expected: 0.02 * (0.5 + sigmoid(4.0)) / 2 = 0.01 * (0.5 + 0.98201) = 0.01482
+    exp_0 = 0.02 * 0.5
+    exp_1 = 0.02 * torch.sigmoid(torch.tensor(4.0)).item()
+    expected = (exp_0 + exp_1) / 2.0
+    assert abs(total_loss.item() - expected) &lt; 1e-4, f&#34;Expected {expected:.5f}, got {total_loss.item():.5f}&#34;
+    print(f&#34;[PASS] Test 3: Multi-module span loss aggregation verified ({total_loss.item():.5f})&#34;)</code></pre>
+</details>
+<div class="desc"><p>Verify get_total_span_loss aggregates across multiple layers in a model.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_span.test_4_forward_pass_output_shape"><code class="name flex">
+<span>def <span class="ident">test_4_forward_pass_output_shape</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_4_forward_pass_output_shape():
+    &#34;&#34;&#34;Verify forward pass returns expected output shape [B, N, D] with finite values.&#34;&#34;&#34;
+    attn = AdaptiveSpanAttention(hidden_size=128, num_heads=4, max_span=32)
+    B, N, D = 2, 16, 128
+    x = torch.randn(B, N, D)
+    out, attn_weights = attn(x)
+    assert out.shape == (B, N, D), f&#34;Expected shape {(B, N, D)}, got {out.shape}&#34;
+    assert torch.isfinite(out).all(), &#34;Output contains NaN or Inf&#34;
+    print(&#34;[PASS] Test 4: Forward pass output shape and finite values verified&#34;)</code></pre>
+</details>
+<div class="desc"><p>Verify forward pass returns expected output shape [B, N, D] with finite values.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_span.test_5_softmax_nan_safety_all_masked"><code class="name flex">
+<span>def <span class="ident">test_5_softmax_nan_safety_all_masked</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_5_softmax_nan_safety_all_masked():
+    &#34;&#34;&#34;Verify fully masked rows do not result in NaNs in attention or output.&#34;&#34;&#34;
+    attn = AdaptiveSpanAttention(hidden_size=128, num_heads=4, max_span=32)
+    B, N, D = 2, 8, 128
+    x = torch.randn(B, N, D)
+    # Mask out the last token completely for all queries
+    mask = torch.zeros(B, 1, N, N)
+    mask[:, :, :, -1] = -10000.0  # Entire key position -1 is masked out
+    # Also mask an entire row (e.g. query row 0 has all keys masked)
+    mask[0, 0, 0, :] = -10000.0
+
+    out, attn_weights = attn(x, attention_mask=mask, output_attentions=True)
+    assert torch.isfinite(out).all(), &#34;Output has NaNs when rows/keys are fully masked&#34;
+    if attn_weights is not None:
+        assert torch.isfinite(attn_weights).all(), &#34;Attn weights have NaNs when fully masked&#34;
+        # The fully masked row should have zero attention weights
+        assert (attn_weights[0, :, 0, :] == 0.0).all(), &#34;Fully masked query row should have 0 attention&#34;
+    print(&#34;[PASS] Test 5: Softmax NaN safety on all-masked rows verified&#34;)</code></pre>
+</details>
+<div class="desc"><p>Verify fully masked rows do not result in NaNs in attention or output.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_span.test_6_gradient_flow_to_span_logits"><code class="name flex">
+<span>def <span class="ident">test_6_gradient_flow_to_span_logits</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_6_gradient_flow_to_span_logits():
+    &#34;&#34;&#34;Verify span_logits receives non-zero gradients when span regularization loss is backpropagated.&#34;&#34;&#34;
+    attn = AdaptiveSpanAttention(hidden_size=128, num_heads=4, max_span=32)
+    x = torch.randn(2, 16, 128)
+    out, _ = attn(x)
+    task_loss = out.sum()
+    span_loss = attn.get_span_regularization_loss(lambda_span=0.05)
+    total_loss = task_loss + span_loss
+    total_loss.backward()
+
+    assert attn.span_logits.grad is not None, &#34;span_logits received no gradient&#34;
+    assert (attn.span_logits.grad != 0.0).all(), f&#34;span_logits grad is zero: {attn.span_logits.grad}&#34;
+    # Span regularization penalizes large spans, so its gradient contribution should be positive
+    assert (attn.span_logits.grad &gt; 0.0).any(), &#34;Gradient should push span_logits to shrink&#34;
+    print(f&#34;[PASS] Test 6: Gradient flow to span_logits verified (grads: {attn.span_logits.grad.tolist()})&#34;)</code></pre>
+</details>
+<div class="desc"><p>Verify span_logits receives non-zero gradients when span regularization loss is backpropagated.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_span.test_7_registry_keys"><code class="name flex">
+<span>def <span class="ident">test_7_registry_keys</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_7_registry_keys():
+    &#34;&#34;&#34;Verify &#39;adaptive_span&#39; and &#39;adaptive_span_attention&#39; are present in ATTENTION_REGISTRY.&#34;&#34;&#34;
+    assert &#34;adaptive_span&#34; in ATTENTION_REGISTRY, &#34;&#39;adaptive_span&#39; not found in ATTENTION_REGISTRY&#34;
+    assert &#34;adaptive_span_attention&#34; in ATTENTION_REGISTRY, &#34;&#39;adaptive_span_attention&#39; not found in ATTENTION_REGISTRY&#34;
+    reg_cls = ATTENTION_REGISTRY.get(&#34;adaptive_span&#34;)
+    assert reg_cls is AdaptiveSpanAttention, f&#34;Expected AdaptiveSpanAttention, got {reg_cls}&#34;
+    print(&#34;[PASS] Test 7: ATTENTION_REGISTRY registrations verified&#34;)</code></pre>
+</details>
+<div class="desc"><p>Verify 'adaptive_span' and 'adaptive_span_attention' are present in ATTENTION_REGISTRY.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adaptive_span.test_8_attention_flags"><code class="name flex">
+<span>def <span class="ident">test_8_attention_flags</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_8_attention_flags():
+    &#34;&#34;&#34;Verify supports_causal, supports_bidirectional, supports_gqa, and is_custom_attention flags.&#34;&#34;&#34;
+    assert AdaptiveSpanAttention.supports_causal is True
+    assert AdaptiveSpanAttention.supports_bidirectional is True
+    assert AdaptiveSpanAttention.supports_gqa is True
+    assert AdaptiveSpanAttention.is_custom_attention is True
+    assert AdaptiveSpanAttention.supports_rope is True
+    print(&#34;[PASS] Test 8: Attention flags (causal, bidirectional, gqa, is_custom_attention, rope) verified&#34;)</code></pre>
+</details>
+<div class="desc"><p>Verify supports_causal, supports_bidirectional, supports_gqa, and is_custom_attention flags.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tests" href="index.html">neuralops.tests</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.tests.test_adaptive_span.test_1_instantiation_and_span_init" href="#neuralops.tests.test_adaptive_span.test_1_instantiation_and_span_init">test_1_instantiation_and_span_init</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_span.test_2_span_regularization_loss_positive" href="#neuralops.tests.test_adaptive_span.test_2_span_regularization_loss_positive">test_2_span_regularization_loss_positive</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_span.test_3_multi_module_span_loss_aggregation" href="#neuralops.tests.test_adaptive_span.test_3_multi_module_span_loss_aggregation">test_3_multi_module_span_loss_aggregation</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_span.test_4_forward_pass_output_shape" href="#neuralops.tests.test_adaptive_span.test_4_forward_pass_output_shape">test_4_forward_pass_output_shape</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_span.test_5_softmax_nan_safety_all_masked" href="#neuralops.tests.test_adaptive_span.test_5_softmax_nan_safety_all_masked">test_5_softmax_nan_safety_all_masked</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_span.test_6_gradient_flow_to_span_logits" href="#neuralops.tests.test_adaptive_span.test_6_gradient_flow_to_span_logits">test_6_gradient_flow_to_span_logits</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_span.test_7_registry_keys" href="#neuralops.tests.test_adaptive_span.test_7_registry_keys">test_7_registry_keys</a></code></li>
+<li><code><a title="neuralops.tests.test_adaptive_span.test_8_attention_flags" href="#neuralops.tests.test_adaptive_span.test_8_attention_flags">test_8_attention_flags</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

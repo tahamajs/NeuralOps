@@ -1,0 +1,1217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.coopq_quantizer API documentation</title>
+<meta name="description" content="CoopQ: Cooperative Game-Theoretic Bit Allocation Quantizer with STE and Per-Channel Asymmetric Calibration.
+Registered in COMPRESSOR_REGISTRY as …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.coopq_quantizer</code></h1>
+</header>
+<section id="section-intro">
+<p>CoopQ: Cooperative Game-Theoretic Bit Allocation Quantizer with STE and Per-Channel Asymmetric Calibration.
+Registered in COMPRESSOR_REGISTRY as 'coopq'.</p>
+<p>Mathematical Formulation:
+1. Min Bit-Width Floor Enforcement:
+$$b_l \ge b_{\min} = 4, \quad \forall l \in {1, \dots, L}$$
+2. Per-Channel Asymmetric Scale &amp; Zero-Point Calibration:
+$$\text{scale}<em ij>i = \max\left( \frac{\max_j W</em>} - \min_j W_{ij}}{2^b - 1}, 10^{-8} \right), \quad z_i = \operatorname{clamp}\left( \left\lfloor -\frac{\min_j W_{ij}}{\text{scale<em ij>i} \right\rceil, 0, 2^b - 1 \right)$$
+$$\widehat{W}</em>_i$$
+3. Straight-Through Estimator (STE) Gradient Backpropagation:
+$$\frac{\partial \mathcal{L}}{\partial W} = \frac{\partial \mathcal{L}}{\partial \widehat{W}}$$} = \left( \operatorname{clamp}\left( \left\lfloor \frac{W_{ij}}{\text{scale}_i} \right\rceil + z_i, 0, 2^b - 1 \right) - z_i \right) \cdot \text{scale</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.coopq_quantizer.coopq_factory"><code class="name flex">
+<span>def <span class="ident">coopq_factory</span></span>(<span>model: Any, comp_config: Any = None, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;coopq&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;coopq_quantizer&#34;)
+def coopq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;CoopQ compressor factory function.&#34;&#34;&#34;
+    bits = kwargs.pop(&#34;bits&#34;, _cfg_get(comp_config, &#34;coopq_bits&#34;, _cfg_get(comp_config, &#34;bits&#34;, 4)))
+    min_bits = kwargs.pop(
+        &#34;min_bits&#34;,
+        _cfg_get(comp_config, &#34;coopq_min_bits&#34;, _cfg_get(comp_config, &#34;min_bits&#34;, 4)),
+    )
+    max_bits = kwargs.pop(
+        &#34;max_bits&#34;,
+        _cfg_get(comp_config, &#34;coopq_max_bits&#34;, _cfg_get(comp_config, &#34;max_bits&#34;, 8)),
+    )
+    symmetric = kwargs.pop(
+        &#34;symmetric&#34;,
+        _cfg_get(comp_config, &#34;coopq_symmetric&#34;, _cfg_get(comp_config, &#34;symmetric&#34;, False)),
+    )
+    per_channel = kwargs.pop(
+        &#34;per_channel&#34;,
+        _cfg_get(comp_config, &#34;coopq_per_channel&#34;, _cfg_get(comp_config, &#34;per_channel&#34;, True)),
+    )
+    use_ste = kwargs.pop(
+        &#34;use_ste&#34;,
+        _cfg_get(comp_config, &#34;coopq_use_ste&#34;, _cfg_get(comp_config, &#34;use_ste&#34;, True)),
+    )
+    recalibrate_ln = kwargs.pop(
+        &#34;recalibrate_ln&#34;, _cfg_get(comp_config, &#34;coopq_recalibrate_ln&#34;, True)
+    )
+    target_attention_only = kwargs.pop(
+        &#34;target_attention_only&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;coopq_target_attention_only&#34;,
+            _cfg_get(comp_config, &#34;target_attention_only&#34;, False),
+        ),
+    )
+
+    compressor = CoopQQuantizer(
+        model,
+        bits=bits,
+        min_bits=min_bits,
+        max_bits=max_bits,
+        symmetric=symmetric,
+        per_channel=per_channel,
+        use_ste=use_ste,
+        recalibrate_ln=recalibrate_ln,
+        target_attention_only=target_attention_only,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    try:
+        compressed_model.compression_stats = stats
+    except Exception as e:
+        logger.warning(&#34;Failed to attach compression_stats: %s&#34;, e)
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>CoopQ compressor factory function.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.coopq_quantizer.quantize_dequantize_coopq"><code class="name flex">
+<span>def <span class="ident">quantize_dequantize_coopq</span></span>(<span>tensor: torch.Tensor,<br>bits: int = 4,<br>symmetric: bool = False,<br>per_channel: bool = True,<br>use_ste: bool = False) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def quantize_dequantize_coopq(
+    tensor: torch.Tensor,
+    bits: int = 4,
+    symmetric: bool = False,
+    per_channel: bool = True,
+    use_ste: bool = False,
+) -&gt; torch.Tensor:
+    &#34;&#34;&#34;
+    Calibrates per-channel / tensor-wide scale and zero-point for INT(bits) and applies
+    symmetric or asymmetric uniform quantization with optional STE.
+    Enforces minimum bit-width floor b &gt;= 4.
+    &#34;&#34;&#34;
+    if tensor.numel() == 0:
+        return tensor
+
+    bits = max(4, int(bits))
+    orig_dtype = tensor.dtype
+    t = tensor.float()
+
+    if symmetric:
+        qmin = float(-(2 ** (bits - 1)))
+        qmax = float((2 ** (bits - 1)) - 1)
+        if per_channel and t.ndim &gt;= 2:
+            dim_to_reduce = tuple(range(1, t.ndim))
+            max_abs = torch.amax(torch.abs(t), dim=dim_to_reduce, keepdim=True)
+            scale = torch.clamp(max_abs / max(float(qmax), 1.0), min=1e-8)
+            zero_point = torch.zeros_like(scale)
+        else:
+            max_abs = torch.max(torch.abs(t))
+            scale = torch.clamp(max_abs / max(float(qmax), 1.0), min=1e-8)
+            zero_point = torch.tensor(0.0, device=t.device, dtype=t.dtype)
+    else:
+        # Asymmetric quantization with explicit zero-point offset calibration
+        qmin = 0.0
+        qmax = float((2**bits) - 1)
+        if per_channel and t.ndim &gt;= 2:
+            dim_to_reduce = tuple(range(1, t.ndim))
+            min_val = torch.amin(t, dim=dim_to_reduce, keepdim=True)
+            max_val = torch.amax(t, dim=dim_to_reduce, keepdim=True)
+            scale = torch.clamp((max_val - min_val) / max(float(qmax), 1.0), min=1e-8)
+            zero_point = torch.clamp(torch.round(-min_val / scale), qmin, qmax)
+        else:
+            min_val = torch.min(t)
+            max_val = torch.max(t)
+            scale = torch.clamp((max_val - min_val) / max(float(qmax), 1.0), min=1e-8)
+            zero_point = torch.clamp(torch.round(-min_val / scale), qmin, qmax)
+
+    if use_ste and t.requires_grad:
+        out = CoopQSTEFakeQuantize.apply(t, scale, zero_point, qmin, qmax)
+    else:
+        q = torch.clamp(torch.round(t / scale) + zero_point, qmin, qmax)
+        out = (q - zero_point) * scale
+
+    return out.to(dtype=orig_dtype)</code></pre>
+</details>
+<div class="desc"><p>Calibrates per-channel / tensor-wide scale and zero-point for INT(bits) and applies
+symmetric or asymmetric uniform quantization with optional STE.
+Enforces minimum bit-width floor b &gt;= 4.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.coopq_quantizer.CoopQLinear"><code class="flex name class">
+<span>class <span class="ident">CoopQLinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>bias: bool = True,<br>bits: int = 4,<br>symmetric: bool = False,<br>per_channel: bool = True,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CoopQLinear(nn.Module):
+    &#34;&#34;&#34;
+    CoopQ Linear layer with per-channel asymmetric quantization and STE backpropagation.
+    Supports both standard nn.Linear and Conv1D weight representations.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        bits: int = 4,
+        symmetric: bool = False,
+        per_channel: bool = True,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.nf = out_features  # Conv1D compatibility
+        self.bits = max(4, int(bits))
+        self.symmetric = symmetric
+        self.per_channel = per_channel
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r &gt; 0 else 1.0
+
+        self.weight = nn.Parameter(torch.empty(out_features, in_features))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features))
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+        if self.lora_r &gt; 0:
+            self.lora_A = nn.Parameter(torch.empty(self.lora_r, in_features))
+            self.lora_B = nn.Parameter(torch.zeros(out_features, self.lora_r))
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+        nn.init.kaiming_uniform_(self.weight, a=5**0.5)
+        if self.bias is not None:
+            nn.init.zeros_(self.bias)
+
+    @classmethod
+    def from_linear(
+        cls,
+        linear: nn.Module,
+        bits: int = 4,
+        symmetric: bool = False,
+        per_channel: bool = True,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+    ) -&gt; CoopQLinear:
+        cls_name = linear.__class__.__name__.lower()
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(linear, &#34;nf&#34;)
+        raw_w = linear.weight.data
+
+        if is_conv1d:
+            in_f = raw_w.shape[0]
+            out_f = raw_w.shape[1]
+            w_data = raw_w.t().contiguous()
+        else:
+            out_f = raw_w.shape[0]
+            in_f = raw_w.shape[1]
+            w_data = raw_w.contiguous()
+
+        layer = cls(
+            in_features=in_f,
+            out_features=out_f,
+            bias=getattr(linear, &#34;bias&#34;, None) is not None and linear.bias is not None,
+            bits=bits,
+            symmetric=symmetric,
+            per_channel=per_channel,
+            lora_r=lora_r,
+            lora_alpha=lora_alpha,
+        )
+        layer.weight.data.copy_(w_data)
+        if getattr(linear, &#34;bias&#34;, None) is not None and linear.bias is not None:
+            layer.bias.data.copy_(linear.bias.data)
+        return layer
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        w_q = quantize_dequantize_coopq(
+            self.weight,
+            bits=self.bits,
+            symmetric=self.symmetric,
+            per_channel=self.per_channel,
+            use_ste=self.training,
+        )
+        b_q = None
+        if self.bias is not None:
+            b_q = quantize_dequantize_coopq(
+                self.bias,
+                bits=self.bits,
+                symmetric=self.symmetric,
+                per_channel=False,
+                use_ste=self.training,
+            )
+        out = F.linear(
+            x,
+            w_q.to(dtype=x.dtype, device=x.device),
+            b_q.to(dtype=x.dtype, device=x.device) if b_q is not None else None,
+        )
+        if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B)
+            out = out + (self.scaling * lora_out).to(out.dtype)
+        return out</code></pre>
+</details>
+<div class="desc"><p>CoopQ Linear layer with per-channel asymmetric quantization and STE backpropagation.
+Supports both standard nn.Linear and Conv1D weight representations.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.coopq_quantizer.CoopQLinear.from_linear"><code class="name flex">
+<span>def <span class="ident">from_linear</span></span>(<span>linear: nn.Module,<br>bits: int = 4,<br>symmetric: bool = False,<br>per_channel: bool = True,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0) ‑> <a title="neuralops.compression_engine.coopq_quantizer.CoopQLinear" href="#neuralops.compression_engine.coopq_quantizer.CoopQLinear">CoopQLinear</a></span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.coopq_quantizer.CoopQLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    w_q = quantize_dequantize_coopq(
+        self.weight,
+        bits=self.bits,
+        symmetric=self.symmetric,
+        per_channel=self.per_channel,
+        use_ste=self.training,
+    )
+    b_q = None
+    if self.bias is not None:
+        b_q = quantize_dequantize_coopq(
+            self.bias,
+            bits=self.bits,
+            symmetric=self.symmetric,
+            per_channel=False,
+            use_ste=self.training,
+        )
+    out = F.linear(
+        x,
+        w_q.to(dtype=x.dtype, device=x.device),
+        b_q.to(dtype=x.dtype, device=x.device) if b_q is not None else None,
+    )
+    if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B)
+        out = out + (self.scaling * lora_out).to(out.dtype)
+    return out</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.compression_engine.coopq_quantizer.CoopQQuantizer"><code class="flex name class">
+<span>class <span class="ident">CoopQQuantizer</span></span>
+<span>(</span><span>model: nn.Module,<br>bits: int = 4,<br>min_bits: int = 4,<br>max_bits: int = 8,<br>symmetric: bool = False,<br>per_channel: bool = True,<br>use_ste: bool = True,<br>recalibrate_ln: bool = True,<br>target_attention_only: bool = False,<br>tokenizer: Any | None = None,<br>calibration_loader: Any | None = None,<br>calibration_texts: list[str] | None = None,<br>device: str | torch.device | None = None,<br>cfg: Any | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CoopQQuantizer(BaseCompressor):
+    &#34;&#34;&#34;
+    CoopQ: Cooperative Game-Theoretic Bit Allocation Quantization.
+    Allocates discrete bit-widths (&gt;= 4 bits) across transformer layers
+    proportional to layer sensitivity (Frobenius energy / variance), guaranteeing
+    a target mean bit-budget under strict distortion minimization.
+
+    Args:
+        model: PyTorch model.
+        bits: Target average bit-width (default 4).
+        min_bits: Minimum allowable bit-width per layer (floor enforced at &gt;= 4).
+        max_bits: Maximum allowable bit-width per layer (default 8).
+        symmetric: Whether to use symmetric quantization (default False for asymmetric calibration).
+        per_channel: Whether to use per-channel scale factors (default True).
+        use_ste: Whether to substitute nn.Linear with CoopQLinear for QAT (default True).
+        target_attention_only: If True, only quantize attention projection layers (skip FFN/MLP).
+        cfg: Optional configuration dictionary, namespace, or object.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module,
+        bits: int = 4,
+        min_bits: int = 4,
+        max_bits: int = 8,
+        symmetric: bool = False,
+        per_channel: bool = True,
+        use_ste: bool = True,
+        recalibrate_ln: bool = True,
+        target_attention_only: bool = False,
+        tokenizer: Any | None = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
+        cfg: Any | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;coopq&#34;, **kwargs)
+        # Extract config values with _cfg_get fallbacks
+        c_bits = _cfg_get(cfg, &#34;coopq_bits&#34;, _cfg_get(cfg, &#34;bits&#34;, bits))
+        c_min_bits = _cfg_get(cfg, &#34;coopq_min_bits&#34;, _cfg_get(cfg, &#34;min_bits&#34;, min_bits))
+        c_max_bits = _cfg_get(cfg, &#34;coopq_max_bits&#34;, _cfg_get(cfg, &#34;max_bits&#34;, max_bits))
+        c_symmetric = _cfg_get(cfg, &#34;coopq_symmetric&#34;, _cfg_get(cfg, &#34;symmetric&#34;, symmetric))
+        c_per_channel = _cfg_get(
+            cfg, &#34;coopq_per_channel&#34;, _cfg_get(cfg, &#34;per_channel&#34;, per_channel)
+        )
+        c_use_ste = _cfg_get(cfg, &#34;coopq_use_ste&#34;, _cfg_get(cfg, &#34;use_ste&#34;, use_ste))
+        c_recalibrate_ln = _cfg_get(
+            cfg, &#34;coopq_recalibrate_ln&#34;, _cfg_get(cfg, &#34;recalibrate_ln&#34;, recalibrate_ln)
+        )
+        c_target_attn = _cfg_get(
+            cfg,
+            &#34;coopq_target_attention_only&#34;,
+            _cfg_get(cfg, &#34;target_attention_only&#34;, target_attention_only),
+        )
+
+        self.min_bits = max(4, int(c_min_bits))
+        self.max_bits = max(self.min_bits, int(c_max_bits))
+        self.bits = max(self.min_bits, min(int(c_bits), self.max_bits))
+        self.symmetric = bool(c_symmetric)
+        self.per_channel = bool(c_per_channel)
+        self.use_ste = bool(c_use_ste)
+        self.recalibrate_ln = bool(c_recalibrate_ln)
+        self.target_attention_only = bool(c_target_attn)
+
+        self.tokenizer = tokenizer or getattr(model, &#34;tokenizer&#34;, None)
+        self.calibration_loader = calibration_loader
+        self.calibration_texts = calibration_texts
+        self.target_device = (
+            torch.device(device)
+            if device is not None
+            else (next(model.parameters(), torch.tensor(0.0)).device)
+        )
+        self.stats: dict[str, Any] = {}
+
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        &#34;&#34;&#34;Identify candidate linear/Conv1D/LoRALinear modules.&#34;&#34;&#34;
+        cls_name = module.__class__.__name__.lower()
+        has_base = hasattr(module, &#34;base_layer&#34;)
+        base_cls = module.base_layer.__class__.__name__.lower() if has_base else &#34;&#34;
+
+        is_linear = isinstance(module, nn.Linear) or &#34;linear&#34; in cls_name
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(module, &#34;nf&#34;)
+        is_lora = has_base and (
+            isinstance(module.base_layer, nn.Linear)
+            or &#34;conv1d&#34; in base_cls
+            or hasattr(module.base_layer, &#34;nf&#34;)
+        )
+
+        if not (is_linear or is_conv1d or is_lora):
+            return False
+
+        if isinstance(module, CoopQLinear) or (
+            has_base and isinstance(module.base_layer, CoopQLinear)
+        ):
+            return False
+
+        name_lower = name.lower()
+        if any(
+            skip in name_lower
+            for skip in [
+                &#34;classifier&#34;,
+                &#34;score&#34;,
+                &#34;lm_head&#34;,
+                &#34;pooler&#34;,
+                &#34;embed&#34;,
+                &#34;logits_processor&#34;,
+                &#34;pre_classifier&#34;,
+                &#34;head&#34;,
+            ]
+        ):
+            return False
+
+        if self.target_attention_only:
+            ffn_patterns = [
+                &#34;ffn&#34;,
+                &#34;mlp&#34;,
+                &#34;lin1&#34;,
+                &#34;lin2&#34;,
+                &#34;intermediate&#34;,
+                &#34;gate_proj&#34;,
+                &#34;up_proj&#34;,
+                &#34;down_proj&#34;,
+                &#34;c_fc&#34;,
+            ]
+            if any(p in name_lower for p in ffn_patterns):
+                return False
+            if &#34;output.dense&#34; in name_lower and &#34;attention&#34; not in name_lower:
+                return False
+            attn_patterns = [
+                &#34;attn&#34;,
+                &#34;attention&#34;,
+                &#34;q_proj&#34;,
+                &#34;k_proj&#34;,
+                &#34;v_proj&#34;,
+                &#34;o_proj&#34;,
+                &#34;out_lin&#34;,
+                &#34;q_lin&#34;,
+                &#34;k_lin&#34;,
+                &#34;v_lin&#34;,
+                &#34;c_attn&#34;,
+                &#34;c_proj&#34;,
+                &#34;query&#34;,
+                &#34;key&#34;,
+                &#34;value&#34;,
+                &#34;in_proj_qkv&#34;,
+                &#34;out_proj&#34;,
+            ]
+            if not any(p in name_lower for p in attn_patterns):
+                return False
+
+        return True
+
+    def _calculate_layer_sensitivities(self) -&gt; dict[str, float]:
+        &#34;&#34;&#34;Compute sensitivity metric per target layer based on normalized Frobenius energy and variance.&#34;&#34;&#34;
+        sensitivities: dict[str, float] = {}
+        for name, module in self.model.named_modules():
+            if self._is_target_module(name, module):
+                target_mod = getattr(module, &#34;base_layer&#34;, getattr(module, &#34;linear&#34;, module))
+                raw_w = target_mod.weight.data
+                cls_name = module.__class__.__name__.lower()
+                is_conv1d = (
+                    &#34;conv1d&#34; in cls_name or hasattr(module, &#34;nf&#34;) or hasattr(target_mod, &#34;nf&#34;)
+                )
+                W = raw_w.t().float() if is_conv1d else raw_w.float()
+                frob_norm = torch.norm(W, p=&#34;fro&#34;).item() / (W.numel() ** 0.5 + 1e-8)
+                std_val = torch.std(W).item() if W.numel() &gt; 1 else 0.0
+                sensitivities[name] = float(frob_norm + std_val)
+        return sensitivities
+
+    def _allocate_bits(self, sensitivities: dict[str, float]) -&gt; dict[str, int]:
+        &#34;&#34;&#34;Allocate discrete integer bit-widths satisfying mean(bits) &lt;= self.bits with floor &gt;= min_bits (&gt;= 4).&#34;&#34;&#34;
+        if not sensitivities:
+            return {}
+
+        total_sens = sum(sensitivities.values()) + 1e-8
+        num_layers = len(sensitivities)
+        target_total_bits = self.bits * num_layers
+
+        # Allowed bit-levels with floor &gt;= self.min_bits (&gt;= 4)
+        allowed_bits = [b for b in [4, 5, 6, 7, 8] if self.min_bits &lt;= b &lt;= self.max_bits]
+        if not allowed_bits:
+            allowed_bits = [self.min_bits]
+
+        # Continuous allocation proportional to sensitivity
+        raw_allocations: dict[str, float] = {}
+        mean_sens = total_sens / num_layers
+        for name, sens in sensitivities.items():
+            sens_ratio = sens / mean_sens
+            raw_bits = self.bits + (sens_ratio - 1.0) * (self.max_bits - self.min_bits) / 2.0
+            raw_allocations[name] = max(float(self.min_bits), min(float(self.max_bits), raw_bits))
+
+        discrete_allocations: dict[str, int] = {}
+        for name, raw_b in raw_allocations.items():
+            closest_b = min(allowed_bits, key=lambda b: abs(b - raw_b))
+            discrete_allocations[name] = closest_b
+
+        # Adjust sum to match target total bits budget
+        current_sum = sum(discrete_allocations.values())
+        sorted_names = sorted(sensitivities.keys(), key=lambda k: sensitivities[k], reverse=True)
+
+        if current_sum &gt; target_total_bits:
+            for name in reversed(sorted_names):
+                curr_b = discrete_allocations[name]
+                valid_lower = [b for b in allowed_bits if b &lt; curr_b]
+                if valid_lower:
+                    discrete_allocations[name] = max(valid_lower)
+                    current_sum = sum(discrete_allocations.values())
+                    if current_sum &lt;= target_total_bits:
+                        break
+        elif current_sum &lt; target_total_bits:
+            for name in sorted_names:
+                curr_b = discrete_allocations[name]
+                valid_higher = [b for b in allowed_bits if b &gt; curr_b]
+                if valid_higher:
+                    discrete_allocations[name] = min(valid_higher)
+                    current_sum = sum(discrete_allocations.values())
+                    if current_sum &gt;= target_total_bits:
+                        break
+
+        # Ensure strict min_bits floor on all layers
+        for k in discrete_allocations:
+            discrete_allocations[k] = max(self.min_bits, discrete_allocations[k])
+
+        return discrete_allocations
+
+    def compress(self) -&gt; tuple[nn.Module, dict[str, Any]]:
+        &#34;&#34;&#34;Quantize linear layers with layer-specific bit allocation (&gt;= 4 bits) and per-channel asymmetric calibration.&#34;&#34;&#34;
+        sensitivities = self._calculate_layer_sensitivities()
+        bit_allocations = self._allocate_bits(sensitivities)
+
+        total_bits_weighted = 0
+        total_params_linear = 0
+        compressed_layers = []
+        fallback_layers = []
+
+        for name, module in list(self.model.named_modules()):
+            if not self._is_target_module(name, module):
+                # When target_attention_only is True, unselected FFN/MLP layers must be frozen during fine-tuning
+                if self.target_attention_only:
+                    is_lin_like = (
+                        isinstance(module, nn.Linear)
+                        or &#34;conv1d&#34; in module.__class__.__name__.lower()
+                        or hasattr(module, &#34;base_layer&#34;)
+                    )
+                    if is_lin_like:
+                        for p in module.parameters():
+                            p.requires_grad = False
+                continue
+
+            if name not in bit_allocations:
+                continue
+
+            target_mod = getattr(module, &#34;base_layer&#34;, getattr(module, &#34;linear&#34;, module))
+            cls_name = module.__class__.__name__.lower()
+            is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(module, &#34;nf&#34;) or hasattr(target_mod, &#34;nf&#34;)
+            has_lora = (hasattr(module, &#34;lora_A&#34;) and module.lora_A is not None) or hasattr(
+                module, &#34;base_layer&#34;
+            )
+
+            layer_bits = bit_allocations[name]
+            num_params = target_mod.weight.numel()
+            total_bits_weighted += layer_bits * num_params
+            total_params_linear += num_params
+
+            if self.use_ste:
+                src_lora_r = 0
+                src_lora_alpha = 1.0
+                if (
+                    hasattr(module, &#34;lora_A&#34;)
+                    and hasattr(module, &#34;lora_B&#34;)
+                    and module.lora_A is not None
+                    and module.lora_B is not None
+                ):
+                    src_lA = getattr(module.lora_A, &#34;weight&#34;, module.lora_A)
+                    if hasattr(src_lA, &#34;shape&#34;) and len(src_lA.shape) == 2:
+                        src_lora_r = src_lA.shape[0]
+                    src_lora_alpha = getattr(module, &#34;lora_alpha&#34;, float(src_lora_r))
+
+                coopq_layer = CoopQLinear.from_linear(
+                    target_mod,
+                    bits=layer_bits,
+                    symmetric=self.symmetric,
+                    per_channel=self.per_channel,
+                    lora_r=src_lora_r,
+                    lora_alpha=src_lora_alpha,
+                )
+                new_layer = coopq_layer
+                compressed_layer = new_layer
+                # Preserve existing LoRA adapter weights if the source module has them
+                if (
+                    hasattr(module, &#34;lora_A&#34;)
+                    and hasattr(module, &#34;lora_B&#34;)
+                    and module.lora_A is not None
+                    and module.lora_B is not None
+                ):
+                    src_lA = getattr(module.lora_A, &#34;weight&#34;, module.lora_A)
+                    src_lB = getattr(module.lora_B, &#34;weight&#34;, module.lora_B)
+                    if hasattr(new_layer, &#34;lora_A&#34;) and new_layer.lora_A is not None:
+                        if hasattr(src_lA, &#34;data&#34;) and src_lA.shape == new_layer.lora_A.shape:
+                            new_layer.lora_A.data.copy_(src_lA.data)
+                    if hasattr(new_layer, &#34;lora_B&#34;) and new_layer.lora_B is not None:
+                        if hasattr(src_lB, &#34;data&#34;) and src_lB.shape == new_layer.lora_B.shape:
+                            new_layer.lora_B.data.copy_(src_lB.data)
+
+                if hasattr(module, &#34;base_layer&#34;):
+                    module.base_layer = compressed_layer  # put compressed layer inside wrapper
+                    # module itself (LoRALinear wrapper) remains the replacement
+                    new_module = module
+                else:
+                    new_module = compressed_layer
+
+                if not hasattr(module, &#34;base_layer&#34;):
+                    if name == &#34;&#34;:
+                        self.model = new_module
+                    else:
+                        replace_module(self.model, name, new_module)
+            else:
+                raw_w = target_mod.weight.data
+                W = raw_w.t().float() if is_conv1d else raw_w.float()
+                W_quant = quantize_dequantize_coopq(
+                    W,
+                    bits=layer_bits,
+                    symmetric=self.symmetric,
+                    per_channel=self.per_channel,
+                    use_ste=False,
+                )
+                if is_conv1d:
+                    target_mod.weight.data.copy_(
+                        W_quant.t().contiguous().to(dtype=raw_w.dtype, device=raw_w.device)
+                    )
+                else:
+                    target_mod.weight.data.copy_(
+                        W_quant.contiguous().to(dtype=raw_w.dtype, device=raw_w.device)
+                    )
+
+                if target_mod.bias is not None:
+                    b_quant = quantize_dequantize_coopq(
+                        target_mod.bias.data.float(),
+                        bits=layer_bits,
+                        symmetric=self.symmetric,
+                        per_channel=False,
+                        use_ste=False,
+                    )
+                    target_mod.bias.data.copy_(
+                        b_quant.to(dtype=target_mod.bias.dtype, device=target_mod.bias.device)
+                    )
+
+            # Preserve pre-existing LoRA adapter parameters and trainability
+            if has_lora:
+                for p_name, p in module.named_parameters():
+                    if any(t in p_name.lower() for t in (&#34;lora_a&#34;, &#34;lora_b&#34;, &#34;adapter&#34;)):
+                        p.requires_grad = True
+
+            compressed_layers.append(name)
+
+        # LayerNorm Recalibration
+        if self.recalibrate_ln:
+            recalibrate_layernorms(
+                self.model,
+                tokenizer=self.tokenizer,
+                calibration_loader=self.calibration_loader,
+                calibration_texts=self.calibration_texts,
+                device=self.target_device,
+            )
+
+        avg_bits = (
+            total_bits_weighted / total_params_linear
+            if total_params_linear &gt; 0
+            else float(self.bits)
+        )
+        effective_compression_rate = 16.0 / max(avg_bits, 1e-3)
+        stats = self.get_compression_stats()
+        stats.update(
+            {
+                &#34;target_bits&#34;: self.bits,
+                &#34;min_bits_floor&#34;: self.min_bits,
+                &#34;average_allocated_bits&#34;: round(avg_bits, 2),
+                &#34;layer_bit_allocations&#34;: bit_allocations,
+                &#34;compressed_layers&#34;: compressed_layers,
+                &#34;compressed_layer_count&#34;: len(compressed_layers),
+                &#34;fallback_layers&#34;: fallback_layers,
+                &#34;fallback_layer_count&#34;: len(fallback_layers),
+                &#34;symmetric&#34;: self.symmetric,
+                &#34;per_channel&#34;: self.per_channel,
+                &#34;use_ste&#34;: self.use_ste,
+                &#34;target_attention_only&#34;: self.target_attention_only,
+                &#34;effective_compression_rate&#34;: round(effective_compression_rate, 2),
+                &#34;recalibrate_ln&#34;: self.recalibrate_ln,
+                &#34;method&#34;: &#34;coopq_asymmetric_ste_bmin4&#34;,
+                &#34;theoretical_vram_saving&#34;: f&#34;{(1.0 - avg_bits / 16.0) * 100:.1f}% vs FP16&#34;,
+            }
+        )
+        self.stats = stats
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>CoopQ: Cooperative Game-Theoretic Bit Allocation Quantization.
+Allocates discrete bit-widths (&gt;= 4 bits) across transformer layers
+proportional to layer sensitivity (Frobenius energy / variance), guaranteeing
+a target mean bit-budget under strict distortion minimization.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>model</code></strong></dt>
+<dd>PyTorch model.</dd>
+<dt><strong><code>bits</code></strong></dt>
+<dd>Target average bit-width (default 4).</dd>
+<dt><strong><code>min_bits</code></strong></dt>
+<dd>Minimum allowable bit-width per layer (floor enforced at &gt;= 4).</dd>
+<dt><strong><code>max_bits</code></strong></dt>
+<dd>Maximum allowable bit-width per layer (default 8).</dd>
+<dt><strong><code>symmetric</code></strong></dt>
+<dd>Whether to use symmetric quantization (default False for asymmetric calibration).</dd>
+<dt><strong><code>per_channel</code></strong></dt>
+<dd>Whether to use per-channel scale factors (default True).</dd>
+<dt><strong><code>use_ste</code></strong></dt>
+<dd>Whether to substitute nn.Linear with CoopQLinear for QAT (default True).</dd>
+<dt><strong><code>target_attention_only</code></strong></dt>
+<dd>If True, only quantize attention projection layers (skip FFN/MLP).</dd>
+<dt><strong><code>cfg</code></strong></dt>
+<dd>Optional configuration dictionary, namespace, or object.</dd>
+</dl></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.coopq_quantizer.CoopQQuantizer.compress"><code class="name flex">
+<span>def <span class="ident">compress</span></span>(<span>self) ‑> tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress(self) -&gt; tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;Quantize linear layers with layer-specific bit allocation (&gt;= 4 bits) and per-channel asymmetric calibration.&#34;&#34;&#34;
+    sensitivities = self._calculate_layer_sensitivities()
+    bit_allocations = self._allocate_bits(sensitivities)
+
+    total_bits_weighted = 0
+    total_params_linear = 0
+    compressed_layers = []
+    fallback_layers = []
+
+    for name, module in list(self.model.named_modules()):
+        if not self._is_target_module(name, module):
+            # When target_attention_only is True, unselected FFN/MLP layers must be frozen during fine-tuning
+            if self.target_attention_only:
+                is_lin_like = (
+                    isinstance(module, nn.Linear)
+                    or &#34;conv1d&#34; in module.__class__.__name__.lower()
+                    or hasattr(module, &#34;base_layer&#34;)
+                )
+                if is_lin_like:
+                    for p in module.parameters():
+                        p.requires_grad = False
+            continue
+
+        if name not in bit_allocations:
+            continue
+
+        target_mod = getattr(module, &#34;base_layer&#34;, getattr(module, &#34;linear&#34;, module))
+        cls_name = module.__class__.__name__.lower()
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(module, &#34;nf&#34;) or hasattr(target_mod, &#34;nf&#34;)
+        has_lora = (hasattr(module, &#34;lora_A&#34;) and module.lora_A is not None) or hasattr(
+            module, &#34;base_layer&#34;
+        )
+
+        layer_bits = bit_allocations[name]
+        num_params = target_mod.weight.numel()
+        total_bits_weighted += layer_bits * num_params
+        total_params_linear += num_params
+
+        if self.use_ste:
+            src_lora_r = 0
+            src_lora_alpha = 1.0
+            if (
+                hasattr(module, &#34;lora_A&#34;)
+                and hasattr(module, &#34;lora_B&#34;)
+                and module.lora_A is not None
+                and module.lora_B is not None
+            ):
+                src_lA = getattr(module.lora_A, &#34;weight&#34;, module.lora_A)
+                if hasattr(src_lA, &#34;shape&#34;) and len(src_lA.shape) == 2:
+                    src_lora_r = src_lA.shape[0]
+                src_lora_alpha = getattr(module, &#34;lora_alpha&#34;, float(src_lora_r))
+
+            coopq_layer = CoopQLinear.from_linear(
+                target_mod,
+                bits=layer_bits,
+                symmetric=self.symmetric,
+                per_channel=self.per_channel,
+                lora_r=src_lora_r,
+                lora_alpha=src_lora_alpha,
+            )
+            new_layer = coopq_layer
+            compressed_layer = new_layer
+            # Preserve existing LoRA adapter weights if the source module has them
+            if (
+                hasattr(module, &#34;lora_A&#34;)
+                and hasattr(module, &#34;lora_B&#34;)
+                and module.lora_A is not None
+                and module.lora_B is not None
+            ):
+                src_lA = getattr(module.lora_A, &#34;weight&#34;, module.lora_A)
+                src_lB = getattr(module.lora_B, &#34;weight&#34;, module.lora_B)
+                if hasattr(new_layer, &#34;lora_A&#34;) and new_layer.lora_A is not None:
+                    if hasattr(src_lA, &#34;data&#34;) and src_lA.shape == new_layer.lora_A.shape:
+                        new_layer.lora_A.data.copy_(src_lA.data)
+                if hasattr(new_layer, &#34;lora_B&#34;) and new_layer.lora_B is not None:
+                    if hasattr(src_lB, &#34;data&#34;) and src_lB.shape == new_layer.lora_B.shape:
+                        new_layer.lora_B.data.copy_(src_lB.data)
+
+            if hasattr(module, &#34;base_layer&#34;):
+                module.base_layer = compressed_layer  # put compressed layer inside wrapper
+                # module itself (LoRALinear wrapper) remains the replacement
+                new_module = module
+            else:
+                new_module = compressed_layer
+
+            if not hasattr(module, &#34;base_layer&#34;):
+                if name == &#34;&#34;:
+                    self.model = new_module
+                else:
+                    replace_module(self.model, name, new_module)
+        else:
+            raw_w = target_mod.weight.data
+            W = raw_w.t().float() if is_conv1d else raw_w.float()
+            W_quant = quantize_dequantize_coopq(
+                W,
+                bits=layer_bits,
+                symmetric=self.symmetric,
+                per_channel=self.per_channel,
+                use_ste=False,
+            )
+            if is_conv1d:
+                target_mod.weight.data.copy_(
+                    W_quant.t().contiguous().to(dtype=raw_w.dtype, device=raw_w.device)
+                )
+            else:
+                target_mod.weight.data.copy_(
+                    W_quant.contiguous().to(dtype=raw_w.dtype, device=raw_w.device)
+                )
+
+            if target_mod.bias is not None:
+                b_quant = quantize_dequantize_coopq(
+                    target_mod.bias.data.float(),
+                    bits=layer_bits,
+                    symmetric=self.symmetric,
+                    per_channel=False,
+                    use_ste=False,
+                )
+                target_mod.bias.data.copy_(
+                    b_quant.to(dtype=target_mod.bias.dtype, device=target_mod.bias.device)
+                )
+
+        # Preserve pre-existing LoRA adapter parameters and trainability
+        if has_lora:
+            for p_name, p in module.named_parameters():
+                if any(t in p_name.lower() for t in (&#34;lora_a&#34;, &#34;lora_b&#34;, &#34;adapter&#34;)):
+                    p.requires_grad = True
+
+        compressed_layers.append(name)
+
+    # LayerNorm Recalibration
+    if self.recalibrate_ln:
+        recalibrate_layernorms(
+            self.model,
+            tokenizer=self.tokenizer,
+            calibration_loader=self.calibration_loader,
+            calibration_texts=self.calibration_texts,
+            device=self.target_device,
+        )
+
+    avg_bits = (
+        total_bits_weighted / total_params_linear
+        if total_params_linear &gt; 0
+        else float(self.bits)
+    )
+    effective_compression_rate = 16.0 / max(avg_bits, 1e-3)
+    stats = self.get_compression_stats()
+    stats.update(
+        {
+            &#34;target_bits&#34;: self.bits,
+            &#34;min_bits_floor&#34;: self.min_bits,
+            &#34;average_allocated_bits&#34;: round(avg_bits, 2),
+            &#34;layer_bit_allocations&#34;: bit_allocations,
+            &#34;compressed_layers&#34;: compressed_layers,
+            &#34;compressed_layer_count&#34;: len(compressed_layers),
+            &#34;fallback_layers&#34;: fallback_layers,
+            &#34;fallback_layer_count&#34;: len(fallback_layers),
+            &#34;symmetric&#34;: self.symmetric,
+            &#34;per_channel&#34;: self.per_channel,
+            &#34;use_ste&#34;: self.use_ste,
+            &#34;target_attention_only&#34;: self.target_attention_only,
+            &#34;effective_compression_rate&#34;: round(effective_compression_rate, 2),
+            &#34;recalibrate_ln&#34;: self.recalibrate_ln,
+            &#34;method&#34;: &#34;coopq_asymmetric_ste_bmin4&#34;,
+            &#34;theoretical_vram_saving&#34;: f&#34;{(1.0 - avg_bits / 16.0) * 100:.1f}% vs FP16&#34;,
+        }
+    )
+    self.stats = stats
+    return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Quantize linear layers with layer-specific bit allocation (&gt;= 4 bits) and per-channel asymmetric calibration.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.compression_engine.coopq_quantizer.CoopQSTEFakeQuantize"><code class="flex name class">
+<span>class <span class="ident">CoopQSTEFakeQuantize</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CoopQSTEFakeQuantize(torch.autograd.Function):
+    &#34;&#34;&#34;
+    Straight-Through Estimator (STE) fake-quantization autograd function for CoopQ.
+    Forwards per-channel quantized-dequantized weights and passes gradients through on backward pass.
+    &#34;&#34;&#34;
+
+    @staticmethod
+    def forward(
+        ctx: Any,
+        x: torch.Tensor,
+        scale: torch.Tensor,
+        zero_point: torch.Tensor,
+        qmin: float,
+        qmax: float,
+    ) -&gt; torch.Tensor:
+        ctx.save_for_backward(scale, zero_point)
+        ctx.qmin = qmin
+        ctx.qmax = qmax
+
+        # Quantize and clamp
+        q = torch.clamp(torch.round(x / scale) + zero_point, qmin, qmax)
+        # De-quantize
+        dq = (q - zero_point) * scale
+        return dq
+
+    @staticmethod
+    def backward(
+        ctx: Any, grad_output: torch.Tensor
+    ) -&gt; tuple[torch.Tensor, None, None, None, None]:
+        # STE passes gradient uninhibited to parameter tensor
+        grad_x = grad_output.clone()
+        return grad_x, None, None, None, None</code></pre>
+</details>
+<div class="desc"><p>Straight-Through Estimator (STE) fake-quantization autograd function for CoopQ.
+Forwards per-channel quantized-dequantized weights and passes gradients through on backward pass.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.autograd.function.Function</li>
+<li>torch.autograd.function._SingleLevelFunction</li>
+<li>torch._C._FunctionBase</li>
+<li>torch.autograd.function.FunctionCtx</li>
+<li>torch.autograd.function._HookMixin</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.coopq_quantizer.CoopQSTEFakeQuantize.backward"><code class="name flex">
+<span>def <span class="ident">backward</span></span>(<span>ctx: Any, grad_output: torch.Tensor) ‑> tuple[torch.Tensor, None, None, None, None]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def backward(
+    ctx: Any, grad_output: torch.Tensor
+) -&gt; tuple[torch.Tensor, None, None, None, None]:
+    # STE passes gradient uninhibited to parameter tensor
+    grad_x = grad_output.clone()
+    return grad_x, None, None, None, None</code></pre>
+</details>
+<div class="desc"><p>Define a formula for differentiating the operation with backward mode automatic differentiation.</p>
+<p>This function is to be overridden by all subclasses.
+(Defining this function is equivalent to defining the <code>vjp</code> function.)</p>
+<p>It must accept a context :attr:<code>ctx</code> as the first argument, followed by
+as many outputs as the :func:<code>forward</code> returned (None will be passed in
+for non tensor outputs of the forward function),
+and it should return as many tensors, as there were inputs to
+:func:<code>forward</code>. Each argument is the gradient w.r.t the given output,
+and each returned value should be the gradient w.r.t. the
+corresponding input. If an input is not a Tensor or is a Tensor not
+requiring grads, you can just pass None as a gradient for that input.</p>
+<p>The context can be used to retrieve tensors saved during the forward
+pass. It also has an attribute :attr:<code>ctx.needs_input_grad</code> as a tuple
+of booleans representing whether each input needs gradient. E.g.,
+:func:<code>backward</code> will have <code>ctx.needs_input_grad[0] = True</code> if the
+first input to :func:<code>forward</code> needs gradient computed w.r.t. the
+output.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.coopq_quantizer.CoopQSTEFakeQuantize.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>ctx: Any,<br>x: torch.Tensor,<br>scale: torch.Tensor,<br>zero_point: torch.Tensor,<br>qmin: float,<br>qmax: float) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def forward(
+    ctx: Any,
+    x: torch.Tensor,
+    scale: torch.Tensor,
+    zero_point: torch.Tensor,
+    qmin: float,
+    qmax: float,
+) -&gt; torch.Tensor:
+    ctx.save_for_backward(scale, zero_point)
+    ctx.qmin = qmin
+    ctx.qmax = qmax
+
+    # Quantize and clamp
+    q = torch.clamp(torch.round(x / scale) + zero_point, qmin, qmax)
+    # De-quantize
+    dq = (q - zero_point) * scale
+    return dq</code></pre>
+</details>
+<div class="desc"><p>Define the forward of the custom autograd Function.</p>
+<p>This function is to be overridden by all subclasses.
+There are two ways to define forward:</p>
+<p>Usage 1 (Combined forward and ctx)::</p>
+<pre><code>@staticmethod
+def forward(ctx: Any, *args: Any, **kwargs: Any) -&gt; Any:
+    pass
+</code></pre>
+<ul>
+<li>It must accept a context ctx as the first argument, followed by any
+number of arguments (tensors or other types).</li>
+<li>See :ref:<code>combining-forward-context</code> for more details</li>
+</ul>
+<p>Usage 2 (Separate forward and ctx)::</p>
+<pre><code>@staticmethod
+def forward(*args: Any, **kwargs: Any) -&gt; Any:
+    pass
+
+
+@staticmethod
+def setup_context(ctx: Any, inputs: Tuple[Any, ...], output: Any) -&gt; None:
+    pass
+</code></pre>
+<ul>
+<li>The forward no longer accepts a ctx argument.</li>
+<li>Instead, you must also override the :meth:<code>torch.autograd.Function.setup_context</code>
+staticmethod to handle setting up the <code>ctx</code> object.
+<code>output</code> is the output of the forward, <code>inputs</code> are a Tuple of inputs
+to the forward.</li>
+<li>See :ref:<code>extending-autograd</code> for more details</li>
+</ul>
+<p>The context can be used to store arbitrary data that can be then
+retrieved during the backward pass. Tensors should not be stored
+directly on <code>ctx</code> (though this is not currently enforced for
+backward compatibility). Instead, tensors should be saved either with
+:func:<code>ctx.save_for_backward</code> if they are intended to be used in
+<code>backward</code> (equivalently, <code>vjp</code>) or :func:<code>ctx.save_for_forward</code>
+if they are intended to be used for in <code>jvp</code>.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.coopq_quantizer.coopq_factory" href="#neuralops.compression_engine.coopq_quantizer.coopq_factory">coopq_factory</a></code></li>
+<li><code><a title="neuralops.compression_engine.coopq_quantizer.quantize_dequantize_coopq" href="#neuralops.compression_engine.coopq_quantizer.quantize_dequantize_coopq">quantize_dequantize_coopq</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.coopq_quantizer.CoopQLinear" href="#neuralops.compression_engine.coopq_quantizer.CoopQLinear">CoopQLinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.coopq_quantizer.CoopQLinear.forward" href="#neuralops.compression_engine.coopq_quantizer.CoopQLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.compression_engine.coopq_quantizer.CoopQLinear.from_linear" href="#neuralops.compression_engine.coopq_quantizer.CoopQLinear.from_linear">from_linear</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.coopq_quantizer.CoopQQuantizer" href="#neuralops.compression_engine.coopq_quantizer.CoopQQuantizer">CoopQQuantizer</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.coopq_quantizer.CoopQQuantizer.compress" href="#neuralops.compression_engine.coopq_quantizer.CoopQQuantizer.compress">compress</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.coopq_quantizer.CoopQSTEFakeQuantize" href="#neuralops.compression_engine.coopq_quantizer.CoopQSTEFakeQuantize">CoopQSTEFakeQuantize</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.coopq_quantizer.CoopQSTEFakeQuantize.backward" href="#neuralops.compression_engine.coopq_quantizer.CoopQSTEFakeQuantize.backward">backward</a></code></li>
+<li><code><a title="neuralops.compression_engine.coopq_quantizer.CoopQSTEFakeQuantize.forward" href="#neuralops.compression_engine.coopq_quantizer.CoopQSTEFakeQuantize.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>
