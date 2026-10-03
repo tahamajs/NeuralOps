@@ -190,7 +190,7 @@ def run_single_task(task):
 
     cmd = [
         sys.executable,
-        task.get("runner", "neuralops/run_quality_sweep.py"),
+        task.get("runner", "neuralops/benchmarks/run_quality_sweep.py"),
         "--modules", task["module"],
         "--model", task["model"],
         "--model_family", task["model_family"],
