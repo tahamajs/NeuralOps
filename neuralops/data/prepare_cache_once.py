@@ -2,9 +2,9 @@ import sys
 from pathlib import Path
 
 # Add project & framework paths
-proj_dir = Path(__file__).resolve().parent.parent.parent.parent
+proj_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(proj_dir))
-sys.path.insert(0, str(proj_dir / "Codes"))
+# sys.path updated
 
 from neuralops.data.cached_tensors import get_cached_tokenized_dataset
 

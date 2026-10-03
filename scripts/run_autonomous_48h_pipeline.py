@@ -211,7 +211,7 @@ def run_single_task(task):
         cmd.extend(["--dataset_dir", task["dataset_dir"]])
 
     env = os.environ.copy()
-    env["PYTHONPATH"] = f"Codes;{env.get('PYTHONPATH', '')}" if os.name == "nt" else f"Codes:{env.get('PYTHONPATH', '')}"
+    env["PYTHONPATH"] = f".;{env.get('PYTHONPATH', '')}" if os.name == "nt" else f".:{env.get('PYTHONPATH', '')}"
     env["TORCH_ALLOW_TF32_CUBLAS_OVERRIDE"] = "1"
     env["CUDA_LAUNCH_BLOCKING"] = "0"
     env["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"

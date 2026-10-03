@@ -36,12 +36,12 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 HERE = Path(__file__).resolve().parent
 CODES = HERE.parent
 ROOT = CODES.parent
-sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "Codes")]
+sys.path[:0] = [str(CODES), str(ROOT)]
 
 from datasets import load_dataset, load_from_disk
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.eval_all_models_datasets import apply_module_to_model
-from neuralops.run_quality_sweep import evaluate_comprehensive, prepare_eval_batches
+from neuralops.benchmarks.run_quality_sweep import evaluate_comprehensive, prepare_eval_batches
 
 LOG = logging.getLogger("BaselineComparison")
 logging.basicConfig(

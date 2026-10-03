@@ -51,7 +51,7 @@ def main():
             "-u",
             str(
                 project_root
-                / "Codes"
+                
                 / "neuralops"
                 / "benchmarks"
                 / "run_gpt2_sweep.py"

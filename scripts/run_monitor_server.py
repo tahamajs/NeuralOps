@@ -34,7 +34,7 @@ try:
 except Exception:
     HAS_LOCAL_PROBE = False
 
-WEB_DIR = os.path.join(PROJECT_DIR, "Codes", "framework", "web")
+WEB_DIR = os.path.join(PROJECT_DIR, "Docs")
 HARVESTED_JSON = os.path.join(PROJECT_DIR, "results", "harvested_benchmark_data.json")
 DOCS_DIR = os.path.join(PROJECT_DIR, "Docs")
 
