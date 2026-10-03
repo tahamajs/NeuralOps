@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.core.pruning_utils API documentation</title>
+<meta name="description" content="Pruning Utilities and Saliency Estimation for Structural Pruning and Layer Shedding …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.core.pruning_utils</code></h1>
+</header>
+<section id="section-intro">
+<p>Pruning Utilities and Saliency Estimation for Structural Pruning and Layer Shedding.</p>
+<p>Provides shared mathematical routines:
+1. First-order Taylor expansion saliency: S_ij = |W_ij * g_ij| or data-driven S_ij = |W_ij| * E[|x_j|]
+2. Second-order Empirical Hessian / Inverse Hessian saliency: S_ij = |W_ij|^2 / [H^-1]_jj
+3. Semi-structured 2:4 sparsity projection: Pi_2:4(W, S)
+4. Block-structured sparsity projection: Pi_BxB(W, S)
+5. Layer shedding sensitivity / residual magnitude metrics
+6. Fallback calibration data generation</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.core.pruning_utils.adaptive_max_error"><code class="name flex">
+<span>def <span class="ident">adaptive_max_error</span></span>(<span>rank: int | float | None,<br>in_features: int,<br>out_features: int,<br>family: str | None = None) ‑> float</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def adaptive_max_error(
+    rank: int | float | None,
+    in_features: int,
+    out_features: int,
+    family: str | None = None,
+) -&gt; float:
+    &#34;&#34;&#34;
+    Higher error is acceptable when rank is a small fraction
+    of matrix size, because LoRA recovery can compensate.
+    &#34;&#34;&#34;
+    min_dim = max(1, min(in_features, out_features))
+    if rank is None or rank &lt;= 0:
+        ratio = 0.1
+    elif isinstance(rank, float) and rank &lt;= 1.0:
+        ratio = rank
+    else:
+        ratio = float(rank) / min_dim
+
+    if ratio &gt;= 0.5:
+        base_err = 0.35
+    elif ratio &gt;= 0.25:
+        base_err = 0.55
+    elif ratio &gt;= 0.10:
+        base_err = 0.75
+    else:
+        base_err = 0.95
+
+    if family in (&#34;bert&#34;, &#34;distilbert&#34;, &#34;roberta&#34;):
+        base_err = max(base_err, 0.85)
+
+    return base_err</code></pre>
+</details>
+<div class="desc"><p>Higher error is acceptable when rank is a small fraction
+of matrix size, because LoRA recovery can compensate.</p></div>
+</dd>
+<dt id="neuralops.core.pruning_utils.apply_24_structured_mask"><code class="name flex">
+<span>def <span class="ident">apply_24_structured_mask</span></span>(<span>weight: torch.Tensor, saliency: torch.Tensor | None = None, dim: int = 1) ‑> tuple[torch.Tensor, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_24_structured_mask(
+    weight: torch.Tensor,
+    saliency: torch.Tensor | None = None,
+    dim: int = 1,
+) -&gt; tuple[torch.Tensor, torch.Tensor]:
+    &#34;&#34;&#34;
+    Applies strict N:M (2:4) structured sparsity mask along the specified dimension.
+    In every consecutive block of 4 elements, exactly 2 elements with highest saliency are kept.
+
+    Args:
+        weight: Weight tensor [d_out, d_in]
+        saliency: Optional saliency tensor [d_out, d_in]. If None, uses |weight|.
+        dim: Dimension along which 2:4 pattern is applied (1 for columns, 0 for rows)
+
+    Returns:
+        masked_weight: Pruned weight tensor of same shape and dtype as input
+        mask: Binary mask tensor [d_out, d_in]
+    &#34;&#34;&#34;
+    W = weight.clone()
+    if saliency is None:
+        S = torch.abs(W)
+    else:
+        S = saliency.to(W.device)
+
+    d_out, d_in = W.shape
+    mask = torch.ones_like(W)
+
+    if dim == 1:
+        # Apply across columns (groups of 4 input features)
+        num_blocks = d_in // 4
+        if num_blocks &gt; 0:
+            W[:, : num_blocks * 4].reshape(d_out, num_blocks, 4)
+            S_sub = S[:, : num_blocks * 4].reshape(d_out, num_blocks, 4)
+            # Find top 2 indices in each block of 4
+            _, top_idx = torch.topk(S_sub, k=2, dim=-1, largest=True)
+            mask_sub = torch.zeros_like(S_sub)
+            mask_sub.scatter_(-1, top_idx, 1.0)
+            mask[:, : num_blocks * 4] = mask_sub.reshape(d_out, num_blocks * 4)
+
+        # Handle remainder if d_in is not divisible by 4 (H5: strict 50% target)
+        remainder = d_in % 4
+        if remainder &gt; 0:
+            start = num_blocks * 4
+            target_keep_total = d_in // 2
+            kept_in_blocks = num_blocks * 2
+            keep = max(0, target_keep_total - kept_in_blocks)
+            if keep &gt; 0:
+                S_rem = S[:, start:]
+                _, top_idx = torch.topk(S_rem, k=min(keep, remainder), dim=-1, largest=True)
+                mask_rem = torch.zeros_like(S_rem)
+                mask_rem.scatter_(-1, top_idx, 1.0)
+                mask[:, start:] = mask_rem
+            else:
+                mask[:, start:] = 0.0
+    else:
+        # Apply across rows
+        num_blocks = d_out // 4
+        if num_blocks &gt; 0:
+            W[: num_blocks * 4, :].reshape(num_blocks, 4, d_in)
+            S_sub = S[: num_blocks * 4, :].reshape(num_blocks, 4, d_in)
+            _, top_idx = torch.topk(S_sub, k=2, dim=1, largest=True)
+            mask_sub = torch.zeros_like(S_sub)
+            mask_sub.scatter_(1, top_idx, 1.0)
+            mask[: num_blocks * 4, :] = mask_sub.reshape(num_blocks * 4, d_in)
+
+        # Handle remainder if d_out is not divisible by 4 (H5: strict 50% target)
+        remainder = d_out % 4
+        if remainder &gt; 0:
+            start = num_blocks * 4
+            target_keep_total = d_out // 2
+            kept_in_blocks = num_blocks * 2
+            keep = max(0, target_keep_total - kept_in_blocks)
+            if keep &gt; 0:
+                S_rem = S[start:, :]
+                _, top_idx = torch.topk(S_rem, k=min(keep, remainder), dim=0, largest=True)
+                mask_rem = torch.zeros_like(S_rem)
+                mask_rem.scatter_(0, top_idx, 1.0)
+                mask[start:, :] = mask_rem
+            else:
+                mask[start:, :] = 0.0
+
+    masked_weight = W * mask
+    return masked_weight.to(dtype=weight.dtype), mask</code></pre>
+</details>
+<div class="desc"><p>Applies strict N:M (2:4) structured sparsity mask along the specified dimension.
+In every consecutive block of 4 elements, exactly 2 elements with highest saliency are kept.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>weight</code></strong></dt>
+<dd>Weight tensor [d_out, d_in]</dd>
+<dt><strong><code>saliency</code></strong></dt>
+<dd>Optional saliency tensor [d_out, d_in]. If None, uses |weight|.</dd>
+<dt><strong><code>dim</code></strong></dt>
+<dd>Dimension along which 2:4 pattern is applied (1 for columns, 0 for rows)</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>masked_weight</code></dt>
+<dd>Pruned weight tensor of same shape and dtype as input</dd>
+<dt><code>mask</code></dt>
+<dd>Binary mask tensor [d_out, d_in]</dd>
+</dl></div>
+</dd>
+<dt id="neuralops.core.pruning_utils.apply_block_mask"><code class="name flex">
+<span>def <span class="ident">apply_block_mask</span></span>(<span>weight: torch.Tensor,<br>block_size: tuple[int, int] = (4, 4),<br>sparsity: float = 0.5,<br>saliency: torch.Tensor | None = None) ‑> tuple[torch.Tensor, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_block_mask(
+    weight: torch.Tensor,
+    block_size: tuple[int, int] = (4, 4),
+    sparsity: float = 0.5,
+    saliency: torch.Tensor | None = None,
+) -&gt; tuple[torch.Tensor, torch.Tensor]:
+    &#34;&#34;&#34;
+    Applies block-structured sparsity by pruning entire (B_r x B_c) blocks based on block Frobenius norm / saliency.
+
+    Args:
+        weight: Weight tensor [d_out, d_in]
+        block_size: (block_rows, block_cols)
+        sparsity: Target block sparsity ratio in [0, 1)
+        saliency: Optional saliency tensor
+
+    Returns:
+        masked_weight: Pruned weight tensor
+        mask: Block binary mask
+    &#34;&#34;&#34;
+    W = weight.clone()
+    br, bc = block_size
+    d_out, d_in = W.shape
+    S = saliency if saliency is not None else torch.abs(W)
+
+    nb_r = d_out // br
+    nb_c = d_in // bc
+
+    if nb_r == 0 or nb_c == 0:
+        return W, torch.ones_like(W)
+
+    # Reshape into blocks
+    (W[: nb_r * br, : nb_c * bc].reshape(nb_r, br, nb_c, bc).permute(0, 2, 1, 3))
+    S_blocks = S[: nb_r * br, : nb_c * bc].reshape(nb_r, br, nb_c, bc).permute(0, 2, 1, 3)
+
+    # Block saliency: sum of element saliency within each block
+    block_scores = S_blocks.sum(dim=(2, 3))  # [nb_r, nb_c]
+    total_blocks = nb_r * nb_c
+    k_keep = max(1, int(total_blocks * (1.0 - sparsity)))
+
+    flat_scores = block_scores.reshape(-1)
+    threshold = torch.topk(flat_scores, k=k_keep, largest=True).values[-1]
+
+    block_mask = (block_scores &gt;= threshold).float()  # [nb_r, nb_c]
+    # Expand back to original shape
+    expanded_mask = block_mask.unsqueeze(-1).unsqueeze(-1).expand(nb_r, nb_c, br, bc)
+    expanded_mask = expanded_mask.permute(0, 2, 1, 3).reshape(nb_r * br, nb_c * bc)
+
+    full_mask = torch.ones_like(W)
+    full_mask[: nb_r * br, : nb_c * bc] = expanded_mask
+
+    masked_weight = W * full_mask
+    return masked_weight.to(dtype=weight.dtype), full_mask</code></pre>
+</details>
+<div class="desc"><p>Applies block-structured sparsity by pruning entire (B_r x B_c) blocks based on block Frobenius norm / saliency.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>weight</code></strong></dt>
+<dd>Weight tensor [d_out, d_in]</dd>
+<dt><strong><code>block_size</code></strong></dt>
+<dd>(block_rows, block_cols)</dd>
+<dt><strong><code>sparsity</code></strong></dt>
+<dd>Target block sparsity ratio in [0, 1)</dd>
+<dt><strong><code>saliency</code></strong></dt>
+<dd>Optional saliency tensor</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>masked_weight</code></dt>
+<dd>Pruned weight tensor</dd>
+<dt><code>mask</code></dt>
+<dd>Block binary mask</dd>
+</dl></div>
+</dd>
+<dt id="neuralops.core.pruning_utils.compute_empirical_hessian"><code class="name flex">
+<span>def <span class="ident">compute_empirical_hessian</span></span>(<span>activations: torch.Tensor,<br>damping: float = 0.0001,<br>device: torch.device | None = None) ‑> tuple[torch.Tensor, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_empirical_hessian(
+    activations: torch.Tensor,
+    damping: float = 1e-4,
+    device: torch.device | None = None,
+) -&gt; tuple[torch.Tensor, torch.Tensor]:
+    &#34;&#34;&#34;
+    Computes empirical Hessian H = (2/N) X^T X + lambda * I and its inverse H^-1
+    with multi-tier diagonal damping to prevent singular matrix inversions.
+
+    Args:
+        activations: Input activations of shape [N, d_in] or [B, L, d_in]
+        damping: Regularization damping ratio relative to mean diagonal magnitude
+
+    Returns:
+        H: Empirical Hessian [d_in, d_in]
+        H_inv: Numerically stabilized Inverse Hessian [d_in, d_in]
+    &#34;&#34;&#34;
+    if activations.dim() == 3:
+        # Flatten batch and sequence dimensions: [B*L, d_in]
+        X = activations.reshape(-1, activations.shape[-1]).float()
+    elif activations.dim() == 2:
+        X = activations.float()
+    else:
+        X = activations.reshape(-1, activations.shape[-1]).float()
+
+    if device is not None:
+        X = X.to(device)
+    else:
+        device = X.device
+
+    N, d_in = X.shape
+    if N == 0 or d_in == 0:
+        H = torch.eye(d_in, device=device)
+        return H, H
+
+    # H = (2/N) * X^T X
+    H = (2.0 / float(max(N, 1))) * torch.matmul(X.T, X)
+    diag_mean = torch.diagonal(H).mean().item()
+    if not math.isfinite(diag_mean) or diag_mean &lt;= 0.0:
+        diag_mean = 1.0
+
+    reg = max(float(damping) * diag_mean, 1e-5)
+    H_reg = H + reg * torch.eye(d_in, device=device)
+
+    # Multi-tier inversion strategy: Cholesky -&gt; Standard LU Inv -&gt; Moore-Penrose Pseudo-Inv
+    H_inv = None
+    # 1. Cholesky inversion
+    try:
+        L = torch.linalg.cholesky(H_reg)
+        H_inv = torch.cholesky_inverse(L)
+    except (
+        AttributeError,
+        KeyError,
+        RuntimeError,
+        TypeError,
+        ValueError,
+        OSError,
+        ImportError,
+    ):
+        pass
+
+    # 2. Standard LU inversion with progressive damping boost if needed
+    if H_inv is None or not torch.isfinite(H_inv).all():
+        for boost in [1.0, 5.0, 25.0, 100.0]:
+            try:
+                H_boosted = H + (reg * boost) * torch.eye(d_in, device=device)
+                inv_candidate = torch.linalg.inv(H_boosted)
+                if torch.isfinite(inv_candidate).all():
+                    H_inv = inv_candidate
+                    break
+            except Exception:
+                continue
+
+    # 3. Robust Moore-Penrose Pseudo-Inverse fallback
+    if H_inv is None or not torch.isfinite(H_inv).all():
+        try:
+            H_inv = torch.linalg.pinv(H_reg)
+        except Exception:
+            H_inv = (1.0 / reg) * torch.eye(d_in, device=device)
+
+    # Ensure no NaN / Inf in returned tensors with realistic dynamic range
+    H_inv = torch.nan_to_num(H_inv, nan=0.0, posinf=1e8, neginf=-1e8)
+    H_reg = torch.nan_to_num(H_reg, nan=0.0, posinf=1e8, neginf=-1e8)
+
+    return H_reg, H_inv</code></pre>
+</details>
+<div class="desc"><p>Computes empirical Hessian H = (2/N) X^T X + lambda * I and its inverse H^-1
+with multi-tier diagonal damping to prevent singular matrix inversions.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>activations</code></strong></dt>
+<dd>Input activations of shape [N, d_in] or [B, L, d_in]</dd>
+<dt><strong><code>damping</code></strong></dt>
+<dd>Regularization damping ratio relative to mean diagonal magnitude</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>H</code></dt>
+<dd>Empirical Hessian [d_in, d_in]</dd>
+<dt><code>H_inv</code></dt>
+<dd>Numerically stabilized Inverse Hessian [d_in, d_in]</dd>
+</dl></div>
+</dd>
+<dt id="neuralops.core.pruning_utils.compute_hessian_saliency"><code class="name flex">
+<span>def <span class="ident">compute_hessian_saliency</span></span>(<span>weight: torch.Tensor, H_inv: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_hessian_saliency(
+    weight: torch.Tensor,
+    H_inv: torch.Tensor,
+) -&gt; torch.Tensor:
+    &#34;&#34;&#34;
+    Computes Optimal Brain Surgeon (OBS) second-order saliency:
+    S_ij = (W_ij)^2 / (2 * [H^-1]_jj)
+
+    Args:
+        weight: Weight tensor [d_out, d_in]
+        H_inv: Inverse Hessian matrix [d_in, d_in]
+
+    Returns:
+        saliency: Saliency tensor [d_out, d_in]
+    &#34;&#34;&#34;
+    W = weight.float()
+    diag = torch.diagonal(H_inv).unsqueeze(0).to(W.device)  # [1, d_in]
+    diag = torch.clamp(diag, min=1e-8)
+    return (W**2) / (2.0 * diag)</code></pre>
+</details>
+<div class="desc"><p>Computes Optimal Brain Surgeon (OBS) second-order saliency:
+S_ij = (W_ij)^2 / (2 * [H^-1]_jj)</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>weight</code></strong></dt>
+<dd>Weight tensor [d_out, d_in]</dd>
+<dt><strong><code>H_inv</code></strong></dt>
+<dd>Inverse Hessian matrix [d_in, d_in]</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>saliency</code></dt>
+<dd>Saliency tensor [d_out, d_in]</dd>
+</dl></div>
+</dd>
+<dt id="neuralops.core.pruning_utils.compute_taylor_first_order_saliency"><code class="name flex">
+<span>def <span class="ident">compute_taylor_first_order_saliency</span></span>(<span>weight: torch.Tensor,<br>activations: torch.Tensor | None = None,<br>grad: torch.Tensor | None = None) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_taylor_first_order_saliency(
+    weight: torch.Tensor,
+    activations: torch.Tensor | None = None,
+    grad: torch.Tensor | None = None,
+) -&gt; torch.Tensor:
+    &#34;&#34;&#34;
+    Computes 1st-order Taylor expansion parameter saliency:
+    S_ij = |W_ij * g_ij| or S_ij = |W_ij| * E[|x_j|] when gradients are unavailable.
+
+    Args:
+        weight: Weight tensor [d_out, d_in]
+        activations: Optional input activations [..., d_in]
+        grad: Optional parameter gradient tensor [d_out, d_in]
+
+    Returns:
+        saliency: Saliency tensor of same shape as weight [d_out, d_in]
+    &#34;&#34;&#34;
+    W = weight.float()
+    if grad is not None:
+        return torch.abs(W * grad.float())
+
+    if activations is not None:
+        if activations.dim() == 3:
+            X = activations.reshape(-1, activations.shape[-1]).float()
+        elif activations.dim() == 2:
+            X = activations.float()
+        else:
+            X = activations.reshape(-1, activations.shape[-1]).float()
+        # Mean absolute activation per input feature
+        act_norm = torch.mean(torch.abs(X), dim=0, keepdim=True).to(W.device)  # [1, d_in]
+        if act_norm.shape[1] == W.shape[1]:
+            return torch.abs(W) * act_norm
+
+    # Fallback to magnitude
+    return torch.abs(W)</code></pre>
+</details>
+<div class="desc"><p>Computes 1st-order Taylor expansion parameter saliency:
+S_ij = |W_ij * g_ij| or S_ij = |W_ij| * E[|x_j|] when gradients are unavailable.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>weight</code></strong></dt>
+<dd>Weight tensor [d_out, d_in]</dd>
+<dt><strong><code>activations</code></strong></dt>
+<dd>Optional input activations [&hellip;, d_in]</dd>
+<dt><strong><code>grad</code></strong></dt>
+<dd>Optional parameter gradient tensor [d_out, d_in]</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>saliency</code></dt>
+<dd>Saliency tensor of same shape as weight [d_out, d_in]</dd>
+</dl></div>
+</dd>
+<dt id="neuralops.core.pruning_utils.get_calibration_tensors"><code class="name flex">
+<span>def <span class="ident">get_calibration_tensors</span></span>(<span>model: nn.Module,<br>tokenizer: Any | None = None,<br>calibration_loader: Any | None = None,<br>calibration_texts: list[str] | None = None,<br>device: torch.device | None = None,<br>sample_size: int = 8,<br>seq_len: int = 32,<br>hidden_dim: int | None = None) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_calibration_tensors(
+    model: nn.Module,
+    tokenizer: Any | None = None,
+    calibration_loader: Any | None = None,
+    calibration_texts: list[str] | None = None,
+    device: torch.device | None = None,
+    sample_size: int = 8,
+    seq_len: int = 32,
+    hidden_dim: int | None = None,
+) -&gt; Any:
+    &#34;&#34;&#34;
+    Generate or extract calibration inputs for a model.
+    Handles tokenizers, DataLoaders, and synthetic tensor fallbacks.
+    &#34;&#34;&#34;
+    if device is None:
+        try:
+            device = next(model.parameters()).device
+        except StopIteration:
+            device = torch.device(&#34;cpu&#34;)
+
+    if calibration_loader is not None:
+        for batch in calibration_loader:
+            if isinstance(batch, dict):
+                return {k: v.to(device) if hasattr(v, &#34;to&#34;) else v for k, v in batch.items()}
+            elif isinstance(batch, (tuple, list)):
+                return [b.to(device) if hasattr(b, &#34;to&#34;) else b for b in batch]
+            elif isinstance(batch, torch.Tensor):
+                return batch.to(device)
+
+    if tokenizer is not None:
+        texts = list(calibration_texts or DEFAULT_CALIB_TEXTS)
+        try:
+            # H4: Do not artificially repeat texts; clamp sample_size to available unique texts
+            actual_samples = min(sample_size, len(texts))
+            texts = texts[:actual_samples]
+            encoded = tokenizer(
+                texts,
+                return_tensors=&#34;pt&#34;,
+                padding=True,
+                truncation=True,
+                max_length=seq_len,
+            )
+            return {k: v.to(device) for k, v in encoded.items()}
+        except (
+            AttributeError,
+            KeyError,
+            RuntimeError,
+            TypeError,
+            ValueError,
+            OSError,
+            ImportError,
+        ):
+            pass
+
+    # Synthetic fallback
+    if hidden_dim is None:
+        for m in model.modules():
+            if isinstance(m, nn.Linear):
+                hidden_dim = m.in_features
+                break
+        if hidden_dim is None:
+            hidden_dim = 64
+
+    # Try input_ids (for language models) or continuous hidden states (for sequential/vision)
+    v_size = None
+    for m in model.modules():
+        if isinstance(m, nn.Embedding):
+            v_size = m.num_embeddings
+            break
+    if v_size is None:
+        v_size = getattr(getattr(model, &#34;config&#34;, None), &#34;vocab_size&#34;, 1000)
+    low_idx = min(1, max(0, v_size // 4))
+    high_idx = max(low_idx + 1, v_size - 1)
+    input_ids = torch.randint(
+        low_idx, high_idx, (sample_size, seq_len), device=device, dtype=torch.long
+    )
+    eos_token_id = getattr(getattr(model, &#34;config&#34;, None), &#34;eos_token_id&#34;, 1) or 1
+    input_ids[:, -1] = eos_token_id
+    return {
+        &#34;input_ids&#34;: input_ids,
+        &#34;attention_mask&#34;: torch.ones((sample_size, seq_len), device=device, dtype=torch.long),
+    }</code></pre>
+</details>
+<div class="desc"><p>Generate or extract calibration inputs for a model.
+Handles tokenizers, DataLoaders, and synthetic tensor fallbacks.</p></div>
+</dd>
+<dt id="neuralops.core.pruning_utils.recalibrate_layernorms"><code class="name flex">
+<span>def <span class="ident">recalibrate_layernorms</span></span>(<span>model: nn.Module,<br>calibration_inputs: Any | None = None,<br>tokenizer: Any | None = None,<br>calibration_loader: Any | None = None,<br>calibration_texts: list[str] | None = None,<br>device: torch.device | None = None,<br>target_stds: dict[nn.Module, float] | None = None) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def recalibrate_layernorms(
+    model: nn.Module,
+    calibration_inputs: Any | None = None,
+    tokenizer: Any | None = None,
+    calibration_loader: Any | None = None,
+    calibration_texts: list[str] | None = None,
+    device: torch.device | None = None,
+    target_stds: dict[nn.Module, float] | None = None,
+) -&gt; None:
+    &#34;&#34;&#34;
+    Recalibrates LayerNorm and RMSNorm scaling parameters post-compression
+    to restore representation variance.
+    Excludes classification heads, embeddings, and poolers to prevent downstream drift (H22).
+    &#34;&#34;&#34;
+    PROTECTED_KEYWORDS = [
+        &#34;classifier&#34;,
+        &#34;score&#34;,
+        &#34;lm_head&#34;,
+        &#34;pooler&#34;,
+        &#34;head&#34;,
+        &#34;embed&#34;,
+        &#34;wte&#34;,
+        &#34;wpe&#34;,
+        &#34;shared&#34;,
+        &#34;logits&#34;,
+    ]
+    norm_modules = []
+    for name, m in model.named_modules():
+        name_l = name.lower()
+        if any(k in name_l for k in PROTECTED_KEYWORDS):
+            continue
+        if isinstance(m, nn.LayerNorm) or &#34;norm&#34; in m.__class__.__name__.lower():
+            if hasattr(m, &#34;weight&#34;) and m.weight is not None:
+                norm_modules.append(m)
+
+    if not norm_modules:
+        return
+
+    if calibration_inputs is None:
+        calibration_inputs = get_calibration_tensors(
+            model,
+            tokenizer=tokenizer,
+            calibration_loader=calibration_loader,
+            calibration_texts=calibration_texts,
+            device=device,
+        )
+
+    scales: dict[nn.Module, float] = {}
+    hooks = []
+
+    def make_hook(mod: nn.Module):
+        def hook(module: nn.Module, inp: tuple[torch.Tensor, ...], out: Any):
+            if inp and isinstance(inp[0], torch.Tensor):
+                x = inp[0].detach().float()
+                std = torch.sqrt(torch.var(x, dim=-1, keepdim=True) + 1e-6).mean().item()
+                if std &gt; 0 and math.isfinite(std):
+                    scales[mod] = std
+
+        return hook
+
+    for m in norm_modules:
+        hooks.append(m.register_forward_hook(make_hook(m)))
+
+    model.eval()
+    with torch.no_grad():
+        try:
+            if isinstance(calibration_inputs, dict):
+                model(**calibration_inputs)
+            elif isinstance(calibration_inputs, torch.Tensor):
+                model(calibration_inputs)
+            elif isinstance(calibration_inputs, (list, tuple)):
+                model(*calibration_inputs)
+        except (
+            AttributeError,
+            KeyError,
+            RuntimeError,
+            TypeError,
+            ValueError,
+            OSError,
+            ImportError,
+        ):
+            pass
+
+    for h in hooks:
+        h.remove()
+
+    for m, std in scales.items():
+        if hasattr(m, &#34;weight&#34;) and m.weight is not None:
+            with torch.no_grad():
+                if std &gt; 1e-4:
+                    if target_stds is not None and m in target_stds:
+                        # B3: Exact ratio scaling when pre-compression target std is recorded
+                        target_std = target_stds[m]
+                        correction_factor = max(0.5, min(2.0, float(target_std) / float(std)))
+                        m.weight.data.mul_(correction_factor)
+                    else:
+                        correction_factor = 1.0 / std
+                        dampened = 0.8 + 0.2 * max(0.5, min(2.0, correction_factor))
+                        m.weight.data.mul_(dampened)</code></pre>
+</details>
+<div class="desc"><p>Recalibrates LayerNorm and RMSNorm scaling parameters post-compression
+to restore representation variance.
+Excludes classification heads, embeddings, and poolers to prevent downstream drift (H22).</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.core" href="index.html">neuralops.core</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.core.pruning_utils.adaptive_max_error" href="#neuralops.core.pruning_utils.adaptive_max_error">adaptive_max_error</a></code></li>
+<li><code><a title="neuralops.core.pruning_utils.apply_24_structured_mask" href="#neuralops.core.pruning_utils.apply_24_structured_mask">apply_24_structured_mask</a></code></li>
+<li><code><a title="neuralops.core.pruning_utils.apply_block_mask" href="#neuralops.core.pruning_utils.apply_block_mask">apply_block_mask</a></code></li>
+<li><code><a title="neuralops.core.pruning_utils.compute_empirical_hessian" href="#neuralops.core.pruning_utils.compute_empirical_hessian">compute_empirical_hessian</a></code></li>
+<li><code><a title="neuralops.core.pruning_utils.compute_hessian_saliency" href="#neuralops.core.pruning_utils.compute_hessian_saliency">compute_hessian_saliency</a></code></li>
+<li><code><a title="neuralops.core.pruning_utils.compute_taylor_first_order_saliency" href="#neuralops.core.pruning_utils.compute_taylor_first_order_saliency">compute_taylor_first_order_saliency</a></code></li>
+<li><code><a title="neuralops.core.pruning_utils.get_calibration_tensors" href="#neuralops.core.pruning_utils.get_calibration_tensors">get_calibration_tensors</a></code></li>
+<li><code><a title="neuralops.core.pruning_utils.recalibrate_layernorms" href="#neuralops.core.pruning_utils.recalibrate_layernorms">recalibrate_layernorms</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

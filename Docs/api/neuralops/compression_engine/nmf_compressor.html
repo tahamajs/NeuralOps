@@ -1,0 +1,858 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.nmf_compressor API documentation</title>
+<meta name="description" content="NMF: Non-negative Matrix Factorization Linear Compressor …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.nmf_compressor</code></h1>
+</header>
+<section id="section-intro">
+<p>NMF: Non-negative Matrix Factorization Linear Compressor.</p>
+<p>Registered in COMPRESSOR_REGISTRY as 'nmf', 'nmf_compressor'.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.nmf_compressor.nmf_factory"><code class="name flex">
+<span>def <span class="ident">nmf_factory</span></span>(<span>model: nn.Module,<br>comp_config: Any | None = None,<br>rank: int | None = None,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module | tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;nmf_factory&#34;)
+def nmf_factory(
+    model: nn.Module,
+    comp_config: Any | None = None,
+    rank: int | None = None,
+    **kwargs: Any,
+) -&gt; nn.Module | tuple[nn.Module, dict[str, Any]]:
+    effective_rank = rank or _cfg_get(comp_config, &#34;nmf_rank&#34;, _cfg_get(comp_config, &#34;rank&#34;, 64))
+    max_iter = _cfg_get(comp_config, &#34;nmf_max_iter&#34;, 100)
+    target_attention_only = kwargs.pop(
+        &#34;target_attention_only&#34;,
+        _cfg_get(comp_config, &#34;target_attention_only&#34;, False),
+    )
+    lora_r = kwargs.pop(&#34;lora_r&#34;, _cfg_get(comp_config, &#34;lora_r&#34;, 0))
+    lora_alpha = kwargs.pop(&#34;lora_alpha&#34;, _cfg_get(comp_config, &#34;lora_alpha&#34;, 1.0))
+    max_error = kwargs.pop(&#34;max_error&#34;, _cfg_get(comp_config, &#34;max_error&#34;, 0.70))
+    fallback = kwargs.pop(
+        &#34;fallback_to_original&#34;,
+        _cfg_get(comp_config, &#34;fallback_to_original&#34;, True),
+    )
+    return_stats = kwargs.pop(&#34;return_stats&#34;, kwargs.pop(&#34;return_tuple&#34;, False))
+
+    compressor = NMFCompressor(
+        model,
+        rank=effective_rank,
+        max_iter=max_iter,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        target_attention_only=target_attention_only,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.nmf_compressor.NMFCompressor"><code class="flex name class">
+<span>class <span class="ident">NMFCompressor</span></span>
+<span>(</span><span>model: nn.Module | None = None,<br>rank: int = 64,<br>max_iter: int = 100,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>cfg: Any | None = None,<br>target_layers: list[str] | None = None,<br>target_attention_only: bool = False,<br>max_error: float = 0.7,<br>fallback_to_original: bool = True,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;nmf&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;nmf_compressor&#34;)
+class NMFCompressor(BaseCompressor):
+    &#34;&#34;&#34;
+    NMF Compressor: decomposes linear layer magnitudes into non-negative
+    low-rank factors, preserving the sign pattern of the original weight.
+    &#34;&#34;&#34;
+
+    # NMF-FIX-01
+    is_custom_attention: bool = False
+
+    def __init__(
+        self,
+        model: nn.Module | None = None,
+        rank: int = 64,
+        max_iter: int = 100,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        cfg: Any | None = None,
+        target_layers: list[str] | None = None,
+        target_attention_only: bool = False,
+        max_error: float = 0.70,
+        fallback_to_original: bool = True,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model if model is not None else nn.Identity(), name=&#34;nmf&#34;, **kwargs)
+        conf = cfg or kwargs.get(&#34;comp_config&#34;)
+
+        self.rank = int(rank or _cfg_get(conf, &#34;nmf_rank&#34;, _cfg_get(conf, &#34;rank&#34;, 64)))
+        self.max_iter = int(max_iter or _cfg_get(conf, &#34;nmf_max_iter&#34;, 100))
+        self.lora_r = int(_cfg_get(conf, &#34;lora_r&#34;, lora_r))
+        self.lora_alpha = float(_cfg_get(conf, &#34;lora_alpha&#34;, lora_alpha))
+        self.cfg = conf
+        self.target_layers = target_layers or _cfg_get(conf, &#34;target_layers&#34;, None)
+        if self.target_layers is not None and len(self.target_layers) == 0:
+            self.target_layers = None
+        self.target_attention_only = bool(
+            target_attention_only or _cfg_get(conf, &#34;target_attention_only&#34;, False)
+        )
+        self.max_error = float(_cfg_get(conf, &#34;max_error&#34;, max_error))
+        self.fallback_to_original = bool(
+            _cfg_get(conf, &#34;fallback_to_original&#34;, fallback_to_original)
+        )
+        self.compressed_layers: list[dict[str, Any]] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+
+    # ------------------------------------------------------------------
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        name_l = name.lower()
+        if any(
+            k in name_l
+            for k in (
+                &#34;classifier&#34;,
+                &#34;score&#34;,
+                &#34;lm_head&#34;,
+                &#34;pooler&#34;,
+                &#34;embedding&#34;,
+                &#34;layernorm&#34;,
+                &#34;rmsnorm&#34;,
+                &#34;batchnorm&#34;,
+            )
+        ):
+            return False
+
+        if isinstance(module, (nn.LayerNorm, nn.RMSNorm, nn.Embedding, NMFLinear)):
+            return False
+
+        cls_name = module.__class__.__name__.lower()
+        is_linear_like = (
+            isinstance(module, nn.Linear)
+            or &#34;conv1d&#34; in cls_name
+            or hasattr(module, &#34;nf&#34;)
+            or hasattr(module, &#34;base_layer&#34;)
+        )
+        if not is_linear_like:
+            return False
+
+        try:
+            from neuralops.utils.compat import should_compress_linear
+
+            if not should_compress_linear(self.model, name):
+                return False
+        except Exception:
+            pass
+
+        if self.target_attention_only and not any(k in name_l for k in _ATTN_NAMES):
+            return False
+
+        if self.target_layers is None:
+            return True
+        return any(t in name for t in self.target_layers)
+
+    # ------------------------------------------------------------------
+    def compress(self, model: nn.Module | None = None) -&gt; tuple[nn.Module, dict[str, Any]]:
+        if model is not None:
+            self.model = model
+            try:
+                self._original_params = self._count_params(self.model)
+            except Exception:
+                self._original_params = sum(p.numel() for p in self.model.parameters())
+
+        from neuralops.core.model_utils import replace_module
+
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.skipped_layers = []
+
+        # NMF-FIX-07: accurate accounting.
+        total_orig_storage = 0
+        total_comp_storage = 0
+        seen_weights = set()
+
+        for name, module in list(self.model.named_modules()):
+            if not self._is_target_module(name, module):
+                continue
+
+            base_module = getattr(module, &#34;base_layer&#34;, module)
+            w = getattr(base_module, &#34;weight&#34;, None)
+            if w is None:
+                continue
+            w_id = id(w)
+            if w_id in seen_weights:
+                self.skipped_layers.append(name)
+                continue
+            seen_weights.add(w_id)
+
+            raw_w = w.data
+            orig_device = raw_w.device
+            orig_bytes = raw_w.numel() * raw_w.element_size()
+            if getattr(base_module, &#34;bias&#34;, None) is not None:
+                orig_bytes += base_module.bias.numel() * base_module.bias.element_size()
+            total_orig_storage += orig_bytes
+
+            # rank budget
+            if raw_w.ndim == 2:
+                cls_name = base_module.__class__.__name__.lower()
+                is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(base_module, &#34;nf&#34;)
+                W_shape = (raw_w.shape[1], raw_w.shape[0]) if is_conv1d else raw_w.shape
+            else:
+                W_shape = raw_w.shape
+            max_rank = min(W_shape)
+            r = min(self.rank, max_rank)
+
+            try:
+                nmf_layer = NMFLinear.from_linear(
+                    module,
+                    rank=r,
+                    max_iter=self.max_iter,
+                    lora_r=self.lora_r,
+                    lora_alpha=self.lora_alpha,
+                )
+
+                # NMF-FIX-09: error on the exact forward path.
+                W_rec = nmf_layer.weight.float().to(orig_device)
+                W_orig = raw_w.float().to(orig_device)
+                if is_conv1d:
+                    W_orig = W_orig.t().contiguous()
+                    W_rec = W_rec.t().contiguous() if W_rec.shape != W_orig.shape else W_rec
+
+                num = torch.norm(W_orig - W_rec, p=&#34;fro&#34;)
+                den = torch.norm(W_orig, p=&#34;fro&#34;).clamp_min(1e-12)
+                err = float((num / den).item())
+
+                if self.fallback_to_original and err &gt; self.max_error:
+                    logger.warning(
+                        &#34;NMF: err=%.4f on %s &gt; max_error=%.4f; fallback.&#34;,
+                        err,
+                        name,
+                        self.max_error,
+                    )
+                    self.fallback_layers.append(name)
+                    total_comp_storage += orig_bytes
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    continue
+
+                # NMF-FIX-04: preserve wrapper.
+                if hasattr(module, &#34;base_layer&#34;):
+                    module.base_layer = nmf_layer
+                else:
+                    replace_module(self.model, name, nmf_layer)
+
+                self.compressed_layers.append(
+                    {
+                        &#34;name&#34;: name,
+                        &#34;rank&#34;: nmf_layer.rank,
+                        &#34;relative_error&#34;: float(err),
+                    }
+                )
+
+                # Storage: H + V + W_sign + bias + LoRA
+                comp_bytes = (
+                    nmf_layer.H.numel() * nmf_layer.H.element_size()
+                    + nmf_layer.V.numel() * nmf_layer.V.element_size()
+                    + nmf_layer.W_sign.numel() * nmf_layer.W_sign.element_size()
+                )
+                if nmf_layer.bias is not None:
+                    comp_bytes += nmf_layer.bias.numel() * nmf_layer.bias.element_size()
+                if nmf_layer.lora_A is not None:
+                    comp_bytes += nmf_layer.lora_A.numel() * nmf_layer.lora_A.element_size()
+                if nmf_layer.lora_B is not None:
+                    comp_bytes += nmf_layer.lora_B.numel() * nmf_layer.lora_B.element_size()
+                total_comp_storage += comp_bytes
+
+            except Exception as e:
+                logger.warning(&#34;NMF: failed on %s: %s&#34;, name, e)
+                self.fallback_layers.append(name)
+                total_comp_storage += orig_bytes
+                for p in module.parameters():
+                    p.requires_grad = False
+
+        # Forward sanity check
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                dev = next(self.model.parameters(), torch.tensor(0.0)).device
+                dummy = torch.randint(0, 100, (1, 8), device=dev, dtype=torch.long)
+                try:
+                    self.model(input_ids=dummy)
+                except Exception:
+                    self.model(dummy)
+        except Exception as e:
+            logger.warning(&#34;NMF forward sanity check failed: %s&#34;, e)
+            forward_check_success = False
+
+        try:
+            self._compressed_params = self._count_params(self.model)
+        except Exception:
+            self._compressed_params = sum(p.numel() for p in self.model.parameters())
+
+        storage_ratio = total_orig_storage / total_comp_storage if total_comp_storage &gt; 0 else 1.0
+        effective_ratio = total_comp_storage / total_orig_storage if total_orig_storage &gt; 0 else 1.0
+
+        stats = self.get_compression_stats()
+        stats.update(
+            {
+                &#34;num_compressed&#34;: len(self.compressed_layers),
+                &#34;num_compressed_layers&#34;: len(self.compressed_layers),
+                &#34;compressed_layer_count&#34;: len(self.compressed_layers),
+                &#34;fallback_layers&#34;: self.fallback_layers,
+                &#34;fallback_layer_count&#34;: len(self.fallback_layers),
+                &#34;skipped_layers&#34;: self.skipped_layers,
+                &#34;skipped_layer_count&#34;: len(self.skipped_layers),
+                &#34;nmf_rank&#34;: self.rank,
+                &#34;max_iter&#34;: self.max_iter,
+                &#34;compressed_layers&#34;: self.compressed_layers,
+                &#34;orig_storage_bytes&#34;: total_orig_storage,
+                &#34;comp_storage_bytes&#34;: total_comp_storage,
+                &#34;storage_compression_ratio&#34;: round(storage_ratio, 3),
+                &#34;effective_parameter_ratio&#34;: round(effective_ratio, 4),
+                &#34;storage_reduction_pct&#34;: round(100.0 * (1.0 - effective_ratio), 2),
+                &#34;forward_check_success&#34;: forward_check_success,
+                &#34;method&#34;: &#34;nmf&#34;,
+            }
+        )
+        self.stats = stats
+        return self.model, stats
+
+    # ------------------------------------------------------------------
+    def compress_linear(self, linear: nn.Module) -&gt; NMFLinear:
+        return NMFLinear.from_linear(
+            linear,
+            rank=self.rank,
+            max_iter=self.max_iter,
+            lora_r=self.lora_r,
+            lora_alpha=self.lora_alpha,
+        )</code></pre>
+</details>
+<div class="desc"><p>NMF Compressor: decomposes linear layer magnitudes into non-negative
+low-rank factors, preserving the sign pattern of the original weight.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.nmf_compressor.NMFCompressor.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.nmf_compressor.NMFCompressor.compress_linear"><code class="name flex">
+<span>def <span class="ident">compress_linear</span></span>(<span>self, linear: nn.Module) ‑> <a title="neuralops.compression_engine.nmf_compressor.NMFLinear" href="#neuralops.compression_engine.nmf_compressor.NMFLinear">NMFLinear</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress_linear(self, linear: nn.Module) -&gt; NMFLinear:
+    return NMFLinear.from_linear(
+        linear,
+        rank=self.rank,
+        max_iter=self.max_iter,
+        lora_r=self.lora_r,
+        lora_alpha=self.lora_alpha,
+    )</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.compress" href="../core/base.html#neuralops.core.base.BaseCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.compression_engine.nmf_compressor.NMFLinear"><code class="flex name class">
+<span>class <span class="ident">NMFLinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>rank: int = 64,<br>bias: bool = True,<br>dtype: torch.dtype | None = None,<br>device: torch.device | None = None,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class NMFLinear(nn.Module):
+    &#34;&#34;&#34;
+    Linear layer with weight factorized via sign-aware NMF:
+
+        W = H @ V * W_sign
+
+    where H ≥ 0, V ≥ 0, and W_sign ∈ {-1, +1} stores the sign of the original
+    weight. Since `torch.sign` cannot be reconstructed by NMF, we factor the
+    magnitude |W| with non-negative factors and remember the sign separately.
+
+    Storage: H (out × r), V (r × in), W_sign (out × in as int8 or fp16).
+    Note: W_sign storage is non-trivial (out × in elements). If storage is
+    the priority, use a signed-NMF variant that avoids storing W_sign.
+    &#34;&#34;&#34;
+
+    # NMF-FIX-01
+    is_custom_attention: bool = False
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int = 64,
+        bias: bool = True,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = int(in_features)
+        self.out_features = int(out_features)
+        self.nf = self.out_features
+        self.rank = max(1, min(rank, in_features, out_features))
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r &gt; 0 else 1.0
+
+        # NMF-FIX-02: W_sign always registered (default: all +1).
+        # Stored as fp16 to keep memory reasonable; sign is exact in fp16.
+        _dtype = dtype if dtype is not None else torch.float32
+        self.H = nn.Parameter(
+            torch.empty(out_features, self.rank, dtype=_dtype, device=device),
+            requires_grad=False,
+        )
+        self.V = nn.Parameter(
+            torch.empty(self.rank, in_features, dtype=_dtype, device=device),
+            requires_grad=False,
+        )
+        bound = 1.0 / math.sqrt(max(1, in_features))
+        nn.init.uniform_(self.H, 0.0, bound)
+        nn.init.uniform_(self.V, 0.0, bound)
+
+        self.register_buffer(
+            &#34;W_sign&#34;,
+            torch.ones(out_features, in_features, dtype=_dtype, device=device),
+            persistent=True,
+        )
+
+        if bias:
+            self.bias = nn.Parameter(
+                torch.zeros(out_features, dtype=_dtype, device=device),
+                requires_grad=False,
+            )
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+        if self.lora_r &gt; 0:
+            self.lora_A = nn.Parameter(
+                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device)
+            )
+            self.lora_B = nn.Parameter(
+                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device)
+            )
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+    # ------------------------------------------------------------------
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Reconstructed effective weight matrix: H @ V * W_sign.&#34;&#34;&#34;
+        W_mag = torch.matmul(self.H.float(), self.V.float())
+        return (W_mag * self.W_sign.float()).to(self.H.dtype)
+
+    def get_weight(self) -&gt; torch.Tensor:
+        return self.weight
+
+    # ------------------------------------------------------------------
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        orig_shape = x.shape
+        x_flat = x.reshape(-1, self.in_features)
+
+        # NMF-FIX-06: dtype-safe
+        x_v = F.linear(x_flat, self.V.to(dtype=x_flat.dtype))
+        F.linear(x_v, self.H.to(dtype=x_v.dtype))
+        # Sign-aware reconstruction: y = x @ W^T where W = H@V * W_sign.
+        # (H@V * W_sign) @ x = (H@V) @ (W_sign * x) element-wise? No —
+        # we must build the effective weight for F.linear.
+        # Alternative: rely on `weight` for correctness.
+        W_eff = self.weight.to(dtype=x_flat.dtype)
+        out = F.linear(x_flat, W_eff)
+
+        if self.bias is not None:
+            out = out + self.bias.to(dtype=x_flat.dtype)
+
+        if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            out = out + self.scaling * F.linear(
+                F.linear(x_flat.float(), self.lora_A), self.lora_B
+            ).to(out.dtype)
+
+        return out.view(*orig_shape[:-1], self.out_features)
+
+    # ------------------------------------------------------------------
+    @classmethod
+    def from_linear(
+        cls,
+        linear: nn.Module,
+        rank: int = 64,
+        max_iter: int = 30,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+    ) -&gt; NMFLinear:
+        &#34;&#34;&#34;
+        Fit sign-aware NMF on the given Linear / Conv1D / LoRALinear module
+        using multiplicative updates (Lee &amp; Seung 2001) with NNDSVD init.
+        &#34;&#34;&#34;
+        base_layer = getattr(linear, &#34;base_layer&#34;, linear)
+        raw_w = base_layer.weight.data
+        orig_dtype = raw_w.dtype
+        orig_device = raw_w.device
+
+        cls_name = base_layer.__class__.__name__.lower()
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(base_layer, &#34;nf&#34;)
+
+        if is_conv1d:
+            W = raw_w.t().contiguous()
+            in_f = raw_w.shape[0]
+            out_f = raw_w.shape[1]
+        else:
+            W = raw_w
+            out_f, in_f = W.shape
+
+        bias = base_layer.bias.data if getattr(base_layer, &#34;bias&#34;, None) is not None else None
+
+        # ---------------- Rank budget (NMF-FIX-08) ----------------
+        max_r = min(out_f, in_f)
+        # rank*(in+out) &lt; in*out  →  rank &lt; in*out / (in+out)
+        param_cap = max(1, (in_f * out_f) // max(1, in_f + out_f))
+        r = max(1, min(int(rank), max_r, param_cap))
+
+        # ---------------- Sign-aware factorization ----------------
+        # Decompose |W| with NMF; store sign(W) separately.
+        W_f = W.float()
+        W_sign = torch.sign(W_f)
+        W_sign[W_sign == 0] = 1.0  # NMF-FIX-10
+        W_abs = W_f.abs().clamp_min(1e-6)
+
+        # NMF-FIX-05: compute on GPU if available, return to orig device.
+        compute_device = torch.device(&#34;cuda&#34;) if torch.cuda.is_available() else torch.device(&#34;cpu&#34;)
+        W_abs_c = W_abs.to(compute_device)
+
+        # ---- NNDSVD init ----
+        k = min(r + 10, max_r)
+        try:
+            U, S, V = torch.svd_lowrank(W_abs_c, q=k, niter=2)
+            Vt = V.t().contiguous()[:r, :]
+            U = U[:, :r]
+            S = S[:r]
+
+            H_init = torch.zeros(out_f, r, device=compute_device, dtype=W_abs_c.dtype)
+            V_init = torch.zeros(r, in_f, device=compute_device, dtype=W_abs_c.dtype)
+            if r &gt; 0 and S.numel() &gt; 0:
+                s0 = S[0].clamp_min(1e-12)
+                H_init[:, 0] = (s0.sqrt() * U[:, 0].abs()).clamp_min(1e-6)
+                V_init[0, :] = (s0.sqrt() * Vt[0, :].abs()).clamp_min(1e-6)
+            for j in range(1, r):
+                x, y = U[:, j], Vt[j, :]
+                x_p, x_n = x.clamp_min(0), (-x).clamp_min(0)
+                y_p, y_n = y.clamp_min(0), (-y).clamp_min(0)
+                mp = x_p.norm() * y_p.norm()
+                mn = x_n.norm() * y_n.norm()
+                if mp &gt;= mn:
+                    u = x_p / x_p.norm().clamp_min(1e-10)
+                    v = y_p / y_p.norm().clamp_min(1e-10)
+                    sigma = mp
+                else:
+                    u = x_n / x_n.norm().clamp_min(1e-10)
+                    v = y_n / y_n.norm().clamp_min(1e-10)
+                    sigma = mn
+                H_init[:, j] = (S[j].clamp_min(1e-12).sqrt() * sigma.sqrt() * u).clamp_min(1e-6)
+                V_init[j, :] = (S[j].clamp_min(1e-12).sqrt() * sigma.sqrt() * v).clamp_min(1e-6)
+        except Exception:
+            torch.manual_seed(42)
+            H_init = torch.rand(out_f, r, device=compute_device) * 0.1 + 1e-4
+            V_init = torch.rand(r, in_f, device=compute_device) * 0.1 + 1e-4
+
+        # ---- Multiplicative updates ----
+        n_iter = min(max(1, int(max_iter)), 50)
+        H = H_init.clone()
+        V = V_init.clone()
+        try:
+            for _ in range(n_iter):
+                HT = H.t().contiguous()
+                HTW = torch.matmul(HT, W_abs_c)
+                HTHV = torch.matmul(torch.matmul(HT, H), V).clamp_min(1e-10)
+                V = V * (HTW / HTHV)
+
+                VT = V.t().contiguous()
+                WVT = torch.matmul(W_abs_c, VT)
+                HVVT = torch.matmul(torch.matmul(H, V), VT).clamp_min(1e-10)
+                H = H * (WVT / HVVT)
+        except Exception:
+            pass  # keep H_init, V_init on failure
+
+        # ---- Build target layer (NMF-FIX-05: return to orig device/dtype) ----
+        existing_lora_r = getattr(linear, &#34;r&#34;, getattr(linear, &#34;lora_r&#34;, 0))
+        eff_lora_r = existing_lora_r if existing_lora_r &gt; 0 else lora_r
+        eff_lora_alpha = getattr(linear, &#34;lora_alpha&#34;, getattr(linear, &#34;alpha&#34;, lora_alpha))
+
+        nmf_layer = cls(
+            in_features=in_f,
+            out_features=out_f,
+            rank=r,
+            bias=(bias is not None),
+            dtype=orig_dtype,
+            device=orig_device,
+            lora_r=eff_lora_r,
+            lora_alpha=eff_lora_alpha,
+        )
+
+        with torch.no_grad():
+            nmf_layer.H.data.copy_(H.detach().to(device=orig_device, dtype=orig_dtype))
+            nmf_layer.V.data.copy_(V.detach().to(device=orig_device, dtype=orig_dtype))
+            nmf_layer.W_sign.data.copy_(W_sign.to(device=orig_device, dtype=orig_dtype))
+            if bias is not None and nmf_layer.bias is not None:
+                nmf_layer.bias.data.copy_(bias.to(device=orig_device, dtype=orig_dtype))
+
+        # Preserve existing LoRA weights if present
+        if (
+            hasattr(linear, &#34;lora_A&#34;)
+            and hasattr(linear, &#34;lora_B&#34;)
+            and nmf_layer.lora_A is not None
+            and nmf_layer.lora_B is not None
+        ):
+            with torch.no_grad():
+                src_A = (
+                    linear.lora_A.weight.data
+                    if hasattr(linear.lora_A, &#34;weight&#34;)
+                    else linear.lora_A.data
+                )
+                src_B = (
+                    linear.lora_B.weight.data
+                    if hasattr(linear.lora_B, &#34;weight&#34;)
+                    else linear.lora_B.data
+                )
+                if src_A.shape == nmf_layer.lora_A.shape and src_B.shape == nmf_layer.lora_B.shape:
+                    nmf_layer.lora_A.copy_(
+                        src_A.to(nmf_layer.lora_A.device, dtype=nmf_layer.lora_A.dtype)
+                    )
+                    nmf_layer.lora_B.copy_(
+                        src_B.to(nmf_layer.lora_B.device, dtype=nmf_layer.lora_B.dtype)
+                    )
+            nmf_layer.lora_A.requires_grad = True
+            nmf_layer.lora_B.requires_grad = True
+
+        return nmf_layer</code></pre>
+</details>
+<div class="desc"><p>Linear layer with weight factorized via sign-aware NMF:</p>
+<pre><code>W = H @ V * W_sign
+</code></pre>
+<p>where H ≥ 0, V ≥ 0, and W_sign ∈ {-1, +1} stores the sign of the original
+weight. Since <code>torch.sign</code> cannot be reconstructed by NMF, we factor the
+magnitude |W| with non-negative factors and remember the sign separately.</p>
+<p>Storage: H (out × r), V (r × in), W_sign (out × in as int8 or fp16).
+Note: W_sign storage is non-trivial (out × in elements). If storage is
+the priority, use a signed-NMF variant that avoids storing W_sign.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.nmf_compressor.NMFLinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.nmf_compressor.NMFLinear.from_linear"><code class="name flex">
+<span>def <span class="ident">from_linear</span></span>(<span>linear: nn.Module,<br>rank: int = 64,<br>max_iter: int = 30,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0) ‑> <a title="neuralops.compression_engine.nmf_compressor.NMFLinear" href="#neuralops.compression_engine.nmf_compressor.NMFLinear">NMFLinear</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Fit sign-aware NMF on the given Linear / Conv1D / LoRALinear module
+using multiplicative updates (Lee &amp; Seung 2001) with NNDSVD init.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.nmf_compressor.NMFLinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Reconstructed effective weight matrix: H @ V * W_sign.&#34;&#34;&#34;
+    W_mag = torch.matmul(self.H.float(), self.V.float())
+    return (W_mag * self.W_sign.float()).to(self.H.dtype)</code></pre>
+</details>
+<div class="desc"><p>Reconstructed effective weight matrix: H @ V * W_sign.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.nmf_compressor.NMFLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    orig_shape = x.shape
+    x_flat = x.reshape(-1, self.in_features)
+
+    # NMF-FIX-06: dtype-safe
+    x_v = F.linear(x_flat, self.V.to(dtype=x_flat.dtype))
+    F.linear(x_v, self.H.to(dtype=x_v.dtype))
+    # Sign-aware reconstruction: y = x @ W^T where W = H@V * W_sign.
+    # (H@V * W_sign) @ x = (H@V) @ (W_sign * x) element-wise? No —
+    # we must build the effective weight for F.linear.
+    # Alternative: rely on `weight` for correctness.
+    W_eff = self.weight.to(dtype=x_flat.dtype)
+    out = F.linear(x_flat, W_eff)
+
+    if self.bias is not None:
+        out = out + self.bias.to(dtype=x_flat.dtype)
+
+    if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        out = out + self.scaling * F.linear(
+            F.linear(x_flat.float(), self.lora_A), self.lora_B
+        ).to(out.dtype)
+
+    return out.view(*orig_shape[:-1], self.out_features)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+<dt id="neuralops.compression_engine.nmf_compressor.NMFLinear.get_weight"><code class="name flex">
+<span>def <span class="ident">get_weight</span></span>(<span>self) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_weight(self) -&gt; torch.Tensor:
+    return self.weight</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.nmf_compressor.nmf_factory" href="#neuralops.compression_engine.nmf_compressor.nmf_factory">nmf_factory</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.nmf_compressor.NMFCompressor" href="#neuralops.compression_engine.nmf_compressor.NMFCompressor">NMFCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.nmf_compressor.NMFCompressor.compress_linear" href="#neuralops.compression_engine.nmf_compressor.NMFCompressor.compress_linear">compress_linear</a></code></li>
+<li><code><a title="neuralops.compression_engine.nmf_compressor.NMFCompressor.is_custom_attention" href="#neuralops.compression_engine.nmf_compressor.NMFCompressor.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.nmf_compressor.NMFLinear" href="#neuralops.compression_engine.nmf_compressor.NMFLinear">NMFLinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.nmf_compressor.NMFLinear.forward" href="#neuralops.compression_engine.nmf_compressor.NMFLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.compression_engine.nmf_compressor.NMFLinear.from_linear" href="#neuralops.compression_engine.nmf_compressor.NMFLinear.from_linear">from_linear</a></code></li>
+<li><code><a title="neuralops.compression_engine.nmf_compressor.NMFLinear.get_weight" href="#neuralops.compression_engine.nmf_compressor.NMFLinear.get_weight">get_weight</a></code></li>
+<li><code><a title="neuralops.compression_engine.nmf_compressor.NMFLinear.is_custom_attention" href="#neuralops.compression_engine.nmf_compressor.NMFLinear.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.compression_engine.nmf_compressor.NMFLinear.weight" href="#neuralops.compression_engine.nmf_compressor.NMFLinear.weight">weight</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

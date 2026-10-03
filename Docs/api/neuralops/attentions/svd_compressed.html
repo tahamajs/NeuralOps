@@ -1,0 +1,1605 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.attentions.svd_compressed API documentation</title>
+<meta name="description" content="SVD-Compressed Attention with Importance-Aware Lagrangian Rank Allocation …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.attentions.svd_compressed</code></h1>
+</header>
+<section id="section-intro">
+<p>SVD-Compressed Attention with Importance-Aware Lagrangian Rank Allocation.</p>
+<p>Truncated Singular Value Decomposition (SVD) attention compression module with
+Lagrangian spectral-entropy optimal rank budgeting and optional low-rank plus sparse residual decomposition.</p>
+<p>Mathematical Mechanism:
+For projection weight matrices ${W_i}<em j="1">{i=1}^M$ across all transformer attention sub-layers:
+1. <strong>Spectral Information Loss &amp; Parameter Cost:</strong>
+$$E_i(r) = \frac{\sum</em>}^r \sigma_{i, j}^2}{\sum_{j=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_{i, j}^2}, \quad \operatorname{Cost<em _text_in="\text{in" i_="i,">i(r) = 1 - E_i(r)$$
+$$\operatorname{Params}_i(r) = r \cdot (d</em>)$$
+2. }} + d_{i, \text{out}<strong>Lagrangian Global Rank Optimization:</strong>
+$$\min_{{r_i}} \sum_{i=1}^M \operatorname{Cost}<em i="1">i(r_i) \quad \text{subject to} \quad \sum</em>}^M \operatorname{Params<em _text_target="\text{target">i(r_i) \le B</em>$$
+3. }<strong>Low-Rank Factorized Multi-Head Projections:</strong>
+$$W_i \approx W_{i}^{\text{up}} W_{i}^{\text{down}}, \quad W_{i}^{\text{down}} \in \mathbb{R}^{r_i \times d_{\text{in}}}, \, W_{i}^{\text{up}} \in \mathbb{R}^{d_{\text{out}} \times r_i}$$
+$$\operatorname{Attn}(Q, K, V) = \operatorname{Softmax}\left(\frac{Q K^T}{\sqrt{d}} + M\right) V$$</p>
+<p>Computational Complexity:
+- Low-rank projection per token: $\mathcal{O}(d_{\text{in}} r_i + r_i d_{\text{out}})$.
+- Attention matrix evaluation: $\mathcal{O}(B \cdot H \cdot N^2 \cdot d)$.
+- Total per-layer complexity: $\mathcal{O}(B \cdot N \cdot (d_{\text{in}} r + r d_{\text{out}}) + B \cdot H \cdot N^2 \cdot d)$.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.attentions.svd_compressed.apply_rotary_pos_emb"><code class="name flex">
+<span>def <span class="ident">apply_rotary_pos_emb</span></span>(<span>q: torch.Tensor,<br>k: torch.Tensor,<br>cos: torch.Tensor,<br>sin: torch.Tensor,<br>position_ids: torch.Tensor | None = None,<br>unsqueeze_dim: int = 1) ‑> tuple[torch.Tensor, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+    position_ids: torch.Tensor | None = None,
+    unsqueeze_dim: int = 1,
+) -&gt; tuple[torch.Tensor, torch.Tensor]:
+    &#34;&#34;&#34;Applies Rotary Position Embedding (RoPE) with partial dimension and independent seq-len support.&#34;&#34;&#34;
+    if cos is None or sin is None:
+        return q, k
+
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(1)
+        sin = sin.unsqueeze(0).unsqueeze(1)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    while cos.dim() &lt; q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    head_dim = q.shape[-1]
+    rotary_dim = 2 * (min(cos.shape[-1], head_dim, k.shape[-1]) // 2)
+    if rotary_dim == 0:
+        return q, k
+
+    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+
+    cos_q = cos[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
+    sin_q = sin[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
+
+    cos_k = cos[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
+    sin_k = sin[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
+
+    q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
+    k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
+
+    q_out = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.shape[-1] &gt; 0 else q_rot_embed
+    k_out = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.shape[-1] &gt; 0 else k_rot_embed
+    return q_out, k_out</code></pre>
+</details>
+<div class="desc"><p>Applies Rotary Position Embedding (RoPE) with partial dimension and independent seq-len support.</p></div>
+</dd>
+<dt id="neuralops.attentions.svd_compressed.calculate_spectral_entropy"><code class="name flex">
+<span>def <span class="ident">calculate_spectral_entropy</span></span>(<span>singular_values: numpy.ndarray) ‑> float</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def calculate_spectral_entropy(singular_values: np.ndarray) -&gt; float:
+    r&#34;&#34;&#34;Compute normalized spectral entropy of singular value distribution.&#34;&#34;&#34;
+    s = singular_values.astype(np.float64)
+    s_sum = s.sum()
+    if s_sum == 0:
+        return 0.0
+    prob = s / s_sum
+    prob = prob[prob &gt; 1e-5]
+    return float(-np.sum(prob * np.log(prob)))</code></pre>
+</details>
+<div class="desc"><p>Compute normalized spectral entropy of singular value distribution.</p></div>
+</dd>
+<dt id="neuralops.attentions.svd_compressed.compute_cumulative_entropy"><code class="name flex">
+<span>def <span class="ident">compute_cumulative_entropy</span></span>(<span>singular_values: numpy.ndarray, max_rank: int) ‑> numpy.ndarray</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_cumulative_entropy(singular_values: np.ndarray, max_rank: int) -&gt; np.ndarray:
+    r&#34;&#34;&#34;Compute cumulative spectral energy fraction retained by top-$k$ singular values.&#34;&#34;&#34;
+    s = singular_values.astype(np.float64)
+    s_sq = s**2
+    total = s_sq.sum()
+    if total == 0:
+        return np.ones(max_rank)
+    cum = np.cumsum(s_sq[:max_rank]) / total
+    return cum</code></pre>
+</details>
+<div class="desc"><p>Compute cumulative spectral energy fraction retained by top-$k$ singular values.</p></div>
+</dd>
+<dt id="neuralops.attentions.svd_compressed.compute_metrics"><code class="name flex">
+<span>def <span class="ident">compute_metrics</span></span>(<span>eval_pred: Any) ‑> dict[str, float]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_metrics(eval_pred: Any) -&gt; dict[str, float]:
+    r&#34;&#34;&#34;Compute classification evaluation accuracy.&#34;&#34;&#34;
+    logits, labels = eval_pred
+    preds = logits.argmax(-1)
+    return {&#34;accuracy&#34;: float((preds == labels).mean().item())}</code></pre>
+</details>
+<div class="desc"><p>Compute classification evaluation accuracy.</p></div>
+</dd>
+<dt id="neuralops.attentions.svd_compressed.gather_all_attention_weights"><code class="name flex">
+<span>def <span class="ident">gather_all_attention_weights</span></span>(<span>model: Any) ‑> tuple[list[numpy.ndarray], list[str]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def gather_all_attention_weights(model: Any) -&gt; tuple[list[np.ndarray], list[str]]:
+    r&#34;&#34;&#34;Gather attention projection weights and layer names across model layers.&#34;&#34;&#34;
+    weights = []
+    names = []
+    for layer_idx in range(len(model.distilbert.transformer.layer)):
+        distil_layer = model.distilbert.transformer.layer[layer_idx]
+        attn = distil_layer.attention
+        for proj in [&#34;q_lin&#34;, &#34;k_lin&#34;, &#34;v_lin&#34;, &#34;out_lin&#34;]:
+            w = getattr(attn, proj).weight.data.cpu().numpy()
+            weights.append(w)
+            proj_short = proj.replace(&#34;_lin&#34;, &#34;&#34;)
+            names.append(f&#34;layer{layer_idx}_{proj_short}&#34;)
+    return weights, names</code></pre>
+</details>
+<div class="desc"><p>Gather attention projection weights and layer names across model layers.</p></div>
+</dd>
+<dt id="neuralops.attentions.svd_compressed.get_num_labels_and_is_regression"><code class="name flex">
+<span>def <span class="ident">get_num_labels_and_is_regression</span></span>(<span>task: str) ‑> tuple[int, bool]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_num_labels_and_is_regression(task: str) -&gt; tuple[int, bool]:
+    r&#34;&#34;&#34;Return class count and regression indicator for GLUE task.&#34;&#34;&#34;
+    if task == &#34;stsb&#34;:
+        return 1, True
+    if task == &#34;cola&#34;:
+        return 2, False
+    mapping = {
+        &#34;sst2&#34;: 2,
+        &#34;mrpc&#34;: 2,
+        &#34;qqp&#34;: 2,
+        &#34;mnli&#34;: 3,
+        &#34;qnli&#34;: 2,
+        &#34;rte&#34;: 2,
+        &#34;wnli&#34;: 2,
+    }
+    return mapping[task], False</code></pre>
+</details>
+<div class="desc"><p>Return class count and regression indicator for GLUE task.</p></div>
+</dd>
+<dt id="neuralops.attentions.svd_compressed.inject_all_layers"><code class="name flex">
+<span>def <span class="ident">inject_all_layers</span></span>(<span>model: Any = None,<br>rank_dict: dict[str, int] | None = None,<br>dropout: float = 0.1,<br>add_sparse: bool = False,<br>sparsity: float = 0.0,<br>config: Any = None,<br>**kwargs) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def inject_all_layers(
+    model: Any = None,
+    rank_dict: dict[str, int] | None = None,
+    dropout: float = 0.1,
+    add_sparse: bool = False,
+    sparsity: float = 0.0,
+    config: Any = None,
+    **kwargs,
+) -&gt; Any:
+    r&#34;&#34;&#34;Inject SVDCompressedAttention into all transformer layers of model.&#34;&#34;&#34;
+    if rank_dict is None:
+        return inject_svd_compressed(model=model, model_config=config, **kwargs)
+    for layer_idx in range(len(model.distilbert.transformer.layer)):
+        distil_layer = model.distilbert.transformer.layer[layer_idx]
+        old_attn = distil_layer.attention
+        ranks = {}
+        for proj in [&#34;q&#34;, &#34;k&#34;, &#34;v&#34;, &#34;out&#34;]:
+            key = f&#34;layer{layer_idx}_{proj}&#34;
+            if proj == &#34;out&#34;:
+                ranks[&#34;o&#34;] = rank_dict[key]
+            else:
+                ranks[proj] = rank_dict[key]
+        new_attn = SVDCompressedAttention(
+            model_config=config,
+            dropout=dropout,
+            layer_idx=layer_idx,
+            pretrained_attn=old_attn,
+            ranks=ranks,
+            add_sparse=add_sparse,
+            sparsity_level=sparsity,
+        )
+        if hasattr(distil_layer, &#34;attention&#34;) and hasattr(distil_layer.attention, &#34;self&#34;):
+            distil_layer.attention.self = new_attn
+        else:
+            distil_layer.attention = new_attn</code></pre>
+</details>
+<div class="desc"><p>Inject SVDCompressedAttention into all transformer layers of model.</p></div>
+</dd>
+<dt id="neuralops.attentions.svd_compressed.inject_svd_compressed"><code class="name flex">
+<span>def <span class="ident">inject_svd_compressed</span></span>(<span>model: torch.nn.modules.module.Module | None = None,<br>layer: torch.nn.modules.module.Module | None = None,<br>model_config: Any | None = None,<br>comp_config: Any | None = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: Any | None = None,<br>lora_rank: int | None = None,<br>**kwargs: Any) ‑> <a title="neuralops.attentions.svd_compressed.SVDCompressedAttention" href="#neuralops.attentions.svd_compressed.SVDCompressedAttention">SVDCompressedAttention</a> | torch.nn.modules.module.Module | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;svd_compressed_inject&#34;)
+@ATTENTION_REGISTRY.register(&#34;svd_compressed_attention_inject&#34;)
+@ATTENTION_REGISTRY.register(&#34;inject_svd_compressed&#34;)
+@ATTENTION_REGISTRY.register(&#34;inject_svd_compressed_attention&#34;)
+def inject_svd_compressed(
+    model: nn.Module | None = None,
+    layer: nn.Module | None = None,
+    model_config: Any | None = None,
+    comp_config: Any | None = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Any | None = None,
+    lora_rank: int | None = None,
+    **kwargs: Any,
+) -&gt; SVDCompressedAttention | nn.Module | None:
+    r&#34;&#34;&#34;Bridge helper safely injecting SVDCompressedAttention into a transformer layer or model.&#34;&#34;&#34;
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+
+    cfg = model_config
+    if cfg is None and hasattr(target, &#34;config&#34;):
+        cfg = target.config
+
+    # 1. Whole model traversal
+    layer_list = None
+    if hasattr(target, &#34;distilbert&#34;) and hasattr(target.distilbert, &#34;transformer&#34;):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, &#34;roberta&#34;) and hasattr(target.roberta, &#34;encoder&#34;):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, &#34;transformer&#34;) and hasattr(target.transformer, &#34;h&#34;):
+        layer_list = target.transformer.h
+    elif hasattr(target, &#34;model&#34;) and hasattr(target.model, &#34;layers&#34;):
+        layer_list = target.model.layers
+    elif hasattr(target, &#34;encoder&#34;) and hasattr(target.encoder, &#34;layer&#34;):
+        layer_list = target.encoder.layer
+    elif (
+        hasattr(target, &#34;bert&#34;)
+        and hasattr(target.bert, &#34;encoder&#34;)
+        and hasattr(target.bert.encoder, &#34;layer&#34;)
+    ):
+        layer_list = target.bert.encoder.layer
+    elif hasattr(target, &#34;layers&#34;) and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_svd_compressed(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                lora_rank=lora_rank,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected &gt; 0 else None
+
+    # 2. Single layer injection
+    try:
+        src_attn = old_attn
+        if src_attn is None and target is not None:
+            for attr in (&#34;attention&#34;, &#34;self_attn&#34;, &#34;attn&#34;, &#34;self&#34;):
+                if hasattr(target, attr):
+                    src_attn = getattr(target, attr)
+                    break
+
+        if src_attn is None and target is not None and hasattr(target, &#34;forward&#34;):
+            src_attn = target
+
+        if src_attn is None:
+            return None
+
+        # Double-injection guard
+        if src_attn is not None:
+            if isinstance(src_attn, SVDCompressedAttention):
+                return None
+            if &#34;SVDCompressed&#34; in src_attn.__class__.__name__:
+                return None
+            if hasattr(src_attn, &#34;inner&#34;) and isinstance(src_attn.inner, SVDCompressedAttention):
+                return None
+            if hasattr(src_attn, &#34;_wrapped_attention&#34;) and isinstance(
+                src_attn._wrapped_attention, SVDCompressedAttention
+            ):
+                return None
+
+        if target is not None:
+            for attr in (&#34;attention&#34;, &#34;self_attn&#34;, &#34;attn&#34;, &#34;self&#34;):
+                cand = getattr(target, attr, None)
+                if cand is None:
+                    continue
+                if isinstance(cand, SVDCompressedAttention):
+                    return None
+                if &#34;SVDCompressed&#34; in cand.__class__.__name__:
+                    return None
+                if hasattr(cand, &#34;inner&#34;) and isinstance(cand.inner, SVDCompressedAttention):
+                    return None
+                if hasattr(cand, &#34;_wrapped_attention&#34;) and isinstance(
+                    cand._wrapped_attention, SVDCompressedAttention
+                ):
+                    return None
+
+        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
+        if src_attn is not None:
+            c_name = src_attn.__class__.__name__
+            if &#34;DeltaNet&#34; in c_name or &#34;LinearAttention&#34; in c_name:
+                return None
+
+        if cfg is None and hasattr(src_attn, &#34;config&#34;):
+            cfg = src_attn.config
+
+        h_sz = getattr(cfg, &#34;hidden_size&#34;, getattr(cfg, &#34;dim&#34;, 768)) if cfg else 768
+        rank = _cfg_get(
+            comp_config,
+            &#34;rank&#34;,
+            _cfg_get(comp_config, &#34;svd_rank&#34;, kwargs.pop(&#34;rank&#34;, h_sz)),
+        )
+        ranks = kwargs.pop(&#34;ranks&#34;, None)
+        if ranks is None:
+            ranks = {&#34;q&#34;: rank, &#34;k&#34;: rank, &#34;v&#34;: rank, &#34;o&#34;: rank}
+
+        dropout = _cfg_get(comp_config, &#34;dropout&#34;, 0.1)
+        lr = lora_rank if lora_rank is not None else _cfg_get(comp_config, &#34;lora_rank&#34;, 16)
+
+        new_attn = SVDCompressedAttention(
+            config=cfg,
+            old_attn=src_attn,
+            dropout=dropout,
+            layer_idx=layer_idx,
+            ranks=ranks,
+            lora_rank=lr,
+            **kwargs,
+        )
+
+        p = next(src_attn.parameters(), None)
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
+
+        if target is not None:
+            if hasattr(target, &#34;attention&#34;):
+                if hasattr(target.attention, &#34;self&#34;):
+                    target.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
+                else:
+                    target.attention = new_attn
+                    new_attn.is_nested_encoder = False
+                return new_attn
+            for attr in (&#34;self_attn&#34;, &#34;attn&#34;, &#34;self&#34;):
+                if hasattr(target, attr):
+                    setattr(target, attr, new_attn)
+                    return new_attn
+            target.attention = new_attn
+            new_attn.is_nested_encoder = False
+            return new_attn
+        return new_attn
+    except Exception as e:
+        log.warning(&#34;inject_svd_compressed failed: %s&#34;, e)
+        return None</code></pre>
+</details>
+<div class="desc"><p>Bridge helper safely injecting SVDCompressedAttention into a transformer layer or model.</p></div>
+</dd>
+<dt id="neuralops.attentions.svd_compressed.lagrangian_rank_allocation"><code class="name flex">
+<span>def <span class="ident">lagrangian_rank_allocation</span></span>(<span>weight_matrices: list[numpy.ndarray],<br>target_budget: int,<br>layer_proj_names: list[str],<br>max_rank_factor: float = 0.5,<br>lambda_bracket: tuple[float, float] = (1e-05, 10.0),<br>num_lambda_steps: int = 100) ‑> dict[str, int]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def lagrangian_rank_allocation(
+    weight_matrices: list[np.ndarray],
+    target_budget: int,
+    layer_proj_names: list[str],
+    max_rank_factor: float = 0.5,
+    lambda_bracket: tuple[float, float] = (1e-5, 10.0),
+    num_lambda_steps: int = 100,
+) -&gt; dict[str, int]:
+    r&#34;&#34;&#34;Allocate per-projection ranks under global parameter constraint via binary search on Lagrange multiplier.&#34;&#34;&#34;
+    cost_table = []
+    param_table = []
+
+    for W in weight_matrices:
+        d_in, d_out = W.shape[1], W.shape[0]
+        max_r = min(d_in, d_out, int(max_rank_factor * min(d_in, d_out)))
+        max_r = max(1, max_r)
+
+        s = np.linalg.svd(W.astype(np.float64), compute_uv=False)
+        cum_ent = compute_cumulative_entropy(s, max_r)
+        cost = 1.0 - cum_ent
+        cost_table.append(cost)
+
+        params_per_r = np.arange(1, max_r + 1) * (d_in + d_out)
+        param_table.append(params_per_r)
+
+    low, high = lambda_bracket
+    best_allocation = None
+
+    for _ in range(num_lambda_steps):
+        lam = (low + high) / 2.0
+        ranks = []
+        total_params = 0
+        for i in range(len(weight_matrices)):
+            obj = cost_table[i] + lam * param_table[i]
+            best_r_idx = int(np.argmin(obj))
+            r = best_r_idx + 1
+            ranks.append(r)
+            total_params += param_table[i][best_r_idx]
+
+        if total_params &lt;= target_budget:
+            best_allocation = ranks.copy()
+            high = lam
+        else:
+            low = lam
+
+    if best_allocation is None:
+        best_allocation = [1] * len(weight_matrices)
+        log.warning(&#34;Could not meet budget, falling back to rank=1 everywhere.&#34;)
+
+    rank_dict = {name: r for name, r in zip(layer_proj_names, best_allocation)}
+    return rank_dict</code></pre>
+</details>
+<div class="desc"><p>Allocate per-projection ranks under global parameter constraint via binary search on Lagrange multiplier.</p></div>
+</dd>
+<dt id="neuralops.attentions.svd_compressed.load_glue_local"><code class="name flex">
+<span>def <span class="ident">load_glue_local</span></span>(<span>task_name: str) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_glue_local(task_name: str) -&gt; Any:
+    r&#34;&#34;&#34;Load GLUE benchmark dataset from local offline storage.&#34;&#34;&#34;
+    from datasets import Dataset, DatasetDict
+
+    from neuralops.utils.paths import get_glue_dir
+
+    base_path = str(get_glue_dir())
+    task_path = os.path.join(base_path, task_name)
+    if not os.path.exists(task_path):
+        raise FileNotFoundError(f&#34;Dataset not found: {task_path}&#34;)
+    splits = {}
+    for fname in os.listdir(task_path):
+        if fname.endswith(&#34;.parquet&#34;):
+            split = fname.split(&#34;-&#34;)[0]
+            splits[split] = Dataset.from_parquet(os.path.join(task_path, fname))
+    if task_name == &#34;mnli&#34;:
+        for extra in [&#34;validation_matched&#34;, &#34;validation_mismatched&#34;]:
+            fpath = os.path.join(task_path, f&#34;{extra}.parquet&#34;)
+            if os.path.exists(fpath):
+                splits[extra] = Dataset.from_parquet(fpath)
+    return DatasetDict(splits)</code></pre>
+</details>
+<div class="desc"><p>Load GLUE benchmark dataset from local offline storage.</p></div>
+</dd>
+<dt id="neuralops.attentions.svd_compressed.main"><code class="name flex">
+<span>def <span class="ident">main</span></span>(<span>) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def main() -&gt; None:
+    r&#34;&#34;&#34;Run full training workflow for SVDCompressedAttention on GLUE.&#34;&#34;&#34;
+    parser = argparse.ArgumentParser(
+        description=&#34;Train DistilBERT with Importance‑Aware SVD‑Compressed Attention&#34;
+    )
+    parser.add_argument(&#34;--task&#34;, type=str, default=&#34;sst2&#34;)
+    parser.add_argument(&#34;--model&#34;, type=str, default=&#34;distilbert-base-uncased&#34;)
+    parser.add_argument(&#34;--output_dir&#34;, type=str, default=&#34;./svd_compressed_output&#34;)
+    parser.add_argument(&#34;--max_len&#34;, type=int, default=128)
+    parser.add_argument(&#34;--epochs&#34;, type=int, default=5)
+    parser.add_argument(&#34;--lr&#34;, type=float, default=1e-5)
+    parser.add_argument(&#34;--batch_size&#34;, type=int, default=16)
+    parser.add_argument(&#34;--seed&#34;, type=int, default=42)
+    parser.add_argument(
+        &#34;--budget_ratio&#34;,
+        type=float,
+        default=0.2,
+        help=&#34;Target fraction of original attention parameters (e.g. 0.2 = 20%)&#34;,
+    )
+    parser.add_argument(&#34;--dropout&#34;, type=float, default=0.1)
+    parser.add_argument(
+        &#34;--add_sparse&#34;,
+        action=&#34;store_true&#34;,
+        help=&#34;Enable low‑rank + sparse decomposition (experimental)&#34;,
+    )
+    parser.add_argument(
+        &#34;--sparsity&#34;,
+        type=float,
+        default=0.7,
+        help=&#34;Sparsity level for residual (if --add_sparse)&#34;,
+    )
+    args = parser.parse_args()
+
+    set_seed(args.seed)
+    os.makedirs(args.output_dir, exist_ok=True)
+
+    raw_datasets = load_glue_local(args.task)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=True, local_files_only=True)
+    num_labels, is_regression = get_num_labels_and_is_regression(args.task)
+    sent1_key, sent2_key = GLUE_TASK_KEYS[args.task]
+
+    tokenized = raw_datasets.map(
+        lambda ex: preprocess_function(
+            ex, tokenizer, sent1_key, sent2_key, args.max_len, is_regression
+        ),
+        batched=True,
+        remove_columns=raw_datasets[&#34;train&#34;].column_names,
+    )
+    train_dataset = tokenized[&#34;train&#34;]
+    eval_dataset = tokenized.get(&#34;validation&#34;, tokenized.get(&#34;validation_matched&#34;))
+    log.info(f&#34;Train size: {len(train_dataset)}, Eval size: {len(eval_dataset)}&#34;)
+
+    config = AutoConfig.from_pretrained(args.model, local_files_only=True)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        args.model, config=config, local_files_only=True
+    )
+
+    all_weights, all_names = gather_all_attention_weights(model)
+    original_total_params = sum(w.size for w in all_weights)
+    target_budget = int(original_total_params * args.budget_ratio)
+    log.info(
+        f&#34;Original attention parameters: {original_total_params:,}, &#34;
+        f&#34;target budget ({args.budget_ratio * 100:.0f}%): {target_budget:,}&#34;
+    )
+
+    rank_dict = lagrangian_rank_allocation(
+        weight_matrices=all_weights,
+        target_budget=target_budget,
+        layer_proj_names=all_names,
+    )
+    avg_rank = float(np.mean(list(rank_dict.values())))
+    log.info(f&#34;Optimised ranks across layers: average rank = {avg_rank:.1f}&#34;)
+
+    inject_all_layers(
+        model,
+        rank_dict,
+        args.dropout,
+        add_sparse=args.add_sparse,
+        sparsity=args.sparsity,
+        config=config,
+    )
+    log.info(&#34;Injected importance‑aware SVD‑Compressed Attention.&#34;)
+
+    total_steps = (len(train_dataset) // args.batch_size) * args.epochs
+    warmup_steps = int(0.06 * total_steps)
+
+    training_args = TrainingArguments(
+        output_dir=os.path.join(args.output_dir, args.task),
+        num_train_epochs=args.epochs,
+        per_device_train_batch_size=args.batch_size,
+        per_device_eval_batch_size=args.batch_size * 2,
+        learning_rate=args.lr,
+        weight_decay=0.01,
+        lr_scheduler_type=&#34;linear&#34;,
+        warmup_steps=warmup_steps,
+        logging_steps=100,
+        eval_strategy=&#34;steps&#34;,
+        eval_steps=500,
+        save_strategy=&#34;steps&#34;,
+        save_steps=500,
+        load_best_model_at_end=True,
+        metric_for_best_model=&#34;accuracy&#34;,
+        greater_is_better=True,
+        remove_unused_columns=False,
+        fp16=False,
+        report_to=&#34;none&#34;,
+    )
+
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
+        compute_metrics=compute_metrics,
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
+    )
+
+    log.info(&#34;Starting training with importance‑aware SVD‑Compressed Attention...&#34;)
+    trainer.train()
+    trainer.save_model(os.path.join(args.output_dir, args.task))
+    log.info(&#34;Training completed.&#34;)</code></pre>
+</details>
+<div class="desc"><p>Run full training workflow for SVDCompressedAttention on GLUE.</p></div>
+</dd>
+<dt id="neuralops.attentions.svd_compressed.preprocess_function"><code class="name flex">
+<span>def <span class="ident">preprocess_function</span></span>(<span>examples: Any,<br>tokenizer: Any,<br>sent1_key: str,<br>sent2_key: str | None,<br>max_length: int,<br>is_regression: bool) ‑> dict[str, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def preprocess_function(
+    examples: Any,
+    tokenizer: Any,
+    sent1_key: str,
+    sent2_key: str | None,
+    max_length: int,
+    is_regression: bool,
+) -&gt; dict[str, Any]:
+    r&#34;&#34;&#34;Preprocess and tokenize dataset sequence examples.&#34;&#34;&#34;
+    if sent2_key is None:
+        t = tokenizer(
+            examples[sent1_key],
+            truncation=True,
+            padding=&#34;max_length&#34;,
+            max_length=max_length,
+        )
+    else:
+        t = tokenizer(
+            examples[sent1_key],
+            examples[sent2_key],
+            truncation=True,
+            padding=&#34;max_length&#34;,
+            max_length=max_length,
+        )
+    t[&#34;labels&#34;] = [float(l) for l in examples[&#34;label&#34;]] if is_regression else examples[&#34;label&#34;]
+    return t</code></pre>
+</details>
+<div class="desc"><p>Preprocess and tokenize dataset sequence examples.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.attentions.svd_compressed.SVDCompressedAttention"><code class="flex name class">
+<span>class <span class="ident">SVDCompressedAttention</span></span>
+<span>(</span><span>config: Any | None = None,<br>old_attn: Any | None = None,<br>dropout: float = 0.1,<br>layer_idx: int = 0,<br>ranks: dict[str, int] | None = None,<br>lora_rank: int = 16,<br>lora_alpha: float = 32.0,<br>is_decoder: bool | None = None,<br>add_sparse: bool = False,<br>sparsity_level: float = 0.7,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;svd_compressed&#34;, supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(&#34;svd_compressed_attention&#34;, supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(&#34;svd_compressed_module&#34;, supports_causal=True, supports_gqa=True)
+class SVDCompressedAttention(BaseAttention):
+    r&#34;&#34;&#34;Multi-head attention with truncated SVD projections, trainable LoRA adapters,
+    GQA support, RoPE support, and optional sparse residuals.
+    &#34;&#34;&#34;
+
+    supports_gqa: bool = True
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        config: Any | None = None,
+        old_attn: Any | None = None,
+        dropout: float = 0.1,
+        layer_idx: int = 0,
+        ranks: dict[str, int] | None = None,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        is_decoder: bool | None = None,
+        add_sparse: bool = False,
+        sparsity_level: float = 0.7,
+        **kwargs: Any,
+    ) -&gt; None:
+        model_config = config or kwargs.get(&#34;model_config&#34;)
+        super().__init__(model_config)
+        # 1. Dimensions &amp; Architecture
+        self.hidden_size: int = int(
+            _cfg_get(model_config, &#34;hidden_size&#34;, kwargs.get(&#34;hidden_size&#34;, 768))
+        )
+        self.num_heads: int = int(
+            _cfg_get(
+                model_config,
+                &#34;num_attention_heads&#34;,
+                _cfg_get(model_config, &#34;num_heads&#34;, kwargs.get(&#34;num_attention_heads&#34;, 12)),
+            )
+        )
+        self.head_dim: int = int(
+            _cfg_get(
+                model_config,
+                &#34;head_dim&#34;,
+                kwargs.get(
+                    &#34;head_dim&#34;,
+                    self.hidden_size // self.num_heads if self.num_heads &gt; 0 else 64,
+                ),
+            )
+        )
+
+        cfg_kv = _cfg_get(
+            model_config,
+            &#34;num_key_value_heads&#34;,
+            _cfg_get(model_config, &#34;num_kv_heads&#34;, None),
+        )
+        if cfg_kv is not None:
+            self.num_kv_heads = int(cfg_kv)
+        elif kwargs.get(&#34;num_kv_heads&#34;) is not None:
+            self.num_kv_heads = int(kwargs[&#34;num_kv_heads&#34;])
+        else:
+            self.num_kv_heads = self.num_heads
+
+        self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
+        self.kv_repeat: int = max(1, self.num_heads // self.num_kv_heads)
+        self.kv_head_size: int = self.num_kv_heads * self.head_dim
+        self.q_head_size: int = self.num_heads * self.head_dim
+        self.all_head_size: int = self.q_head_size
+
+        # 2. Causal decoder flag detection
+        if is_decoder is not None:
+            self.is_decoder = bool(is_decoder)
+        else:
+            _mt = str(_cfg_get(model_config, &#34;model_type&#34;, &#34;&#34;) or &#34;&#34;).lower()
+            self.is_decoder = (
+                bool(_cfg_get(model_config, &#34;is_decoder&#34;, False))
+                or any(
+                    _mt.startswith(p)
+                    for p in (
+                        &#34;gpt&#34;,
+                        &#34;qwen&#34;,
+                        &#34;llama&#34;,
+                        &#34;mistral&#34;,
+                        &#34;falcon&#34;,
+                        &#34;bloom&#34;,
+                        &#34;opt&#34;,
+                    )
+                )
+                or (old_attn is not None and hasattr(old_attn, &#34;c_attn&#34;))
+            )
+
+        self.is_nested_encoder: bool = False
+        default_r = int(_cfg_get(model_config, &#34;svd_rank&#34;, _cfg_get(model_config, &#34;rank&#34;, 64)))
+        default_r = max(1, min(default_r, self.hidden_size, self.all_head_size))
+        self.ranks: dict[str, int] = {}
+        for k in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;, &#34;o&#34;):
+            val = ranks.get(k, default_r) if ranks else default_r
+            self.ranks[k] = max(1, min(int(val), self.hidden_size, self.all_head_size))
+
+        self.add_sparse: bool = add_sparse
+        self.sparsity_level: float = sparsity_level
+        self.lora_rank = max(
+            1,
+            min(
+                int(lora_rank if lora_rank is not None else 16),
+                self.hidden_size,
+                self.all_head_size,
+            ),
+        )
+        self.lora_alpha = lora_alpha
+        self.scaling = lora_alpha / max(1, self.lora_rank)
+
+        # 3. Factorized projections
+        self.q_down = nn.Linear(self.hidden_size, self.ranks[&#34;q&#34;], bias=False)
+        self.q_up = nn.Linear(self.ranks[&#34;q&#34;], self.q_head_size, bias=True)
+        self.k_down = nn.Linear(self.hidden_size, self.ranks[&#34;k&#34;], bias=False)
+        self.k_up = nn.Linear(self.ranks[&#34;k&#34;], self.kv_head_size, bias=True)
+        self.v_down = nn.Linear(self.hidden_size, self.ranks[&#34;v&#34;], bias=False)
+        self.v_up = nn.Linear(self.ranks[&#34;v&#34;], self.kv_head_size, bias=True)
+        self.o_down = nn.Linear(self.q_head_size, self.ranks[&#34;o&#34;], bias=False)
+        self.o_up = nn.Linear(self.ranks[&#34;o&#34;], self.hidden_size, bias=True)
+
+        for mod in [
+            self.q_down,
+            self.q_up,
+            self.k_down,
+            self.k_up,
+            self.v_down,
+            self.v_up,
+            self.o_down,
+            self.o_up,
+        ]:
+            if isinstance(mod, nn.Linear):
+                nn.init.orthogonal_(mod.weight)
+                if mod.bias is not None:
+                    nn.init.zeros_(mod.bias)
+                mod.weight.requires_grad = False
+                if mod.bias is not None:
+                    mod.bias.requires_grad = False
+
+        # 4. Trainable LoRA parameters
+        if self.lora_rank &gt; 0:
+            self.q_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.hidden_size))
+            self.q_lora_B = nn.Parameter(torch.empty(self.q_head_size, self.lora_rank))
+            self.k_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.hidden_size))
+            self.k_lora_B = nn.Parameter(torch.empty(self.kv_head_size, self.lora_rank))
+            self.v_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.hidden_size))
+            self.v_lora_B = nn.Parameter(torch.empty(self.kv_head_size, self.lora_rank))
+            self.o_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.q_head_size))
+            self.o_lora_B = nn.Parameter(torch.empty(self.hidden_size, self.lora_rank))
+
+            for p_a in (self.q_lora_A, self.k_lora_A, self.v_lora_A, self.o_lora_A):
+                nn.init.kaiming_uniform_(p_a, a=math.sqrt(5))
+            for p_b in (self.q_lora_B, self.k_lora_B, self.v_lora_B, self.o_lora_B):
+                nn.init.zeros_(p_b)
+        else:
+            self.register_parameter(&#34;q_lora_A&#34;, None)
+            self.register_parameter(&#34;q_lora_B&#34;, None)
+            self.register_parameter(&#34;k_lora_A&#34;, None)
+            self.register_parameter(&#34;k_lora_B&#34;, None)
+            self.register_parameter(&#34;v_lora_A&#34;, None)
+            self.register_parameter(&#34;v_lora_B&#34;, None)
+            self.register_parameter(&#34;o_lora_A&#34;, None)
+            self.register_parameter(&#34;o_lora_B&#34;, None)
+
+        if add_sparse:
+            self.q_sparse_weight = nn.Parameter(torch.zeros(self.q_head_size, self.hidden_size))
+            self.k_sparse_weight = nn.Parameter(torch.zeros(self.kv_head_size, self.hidden_size))
+            self.v_sparse_weight = nn.Parameter(torch.zeros(self.kv_head_size, self.hidden_size))
+            self.o_sparse_weight = nn.Parameter(torch.zeros(self.hidden_size, self.q_head_size))
+        else:
+            self.register_parameter(&#34;q_sparse_weight&#34;, None)
+            self.register_parameter(&#34;k_sparse_weight&#34;, None)
+            self.register_parameter(&#34;v_sparse_weight&#34;, None)
+            self.register_parameter(&#34;o_sparse_weight&#34;, None)
+
+        dropout_p = _cfg_get(
+            model_config,
+            &#34;dropout&#34;,
+            _cfg_get(
+                model_config,
+                &#34;hidden_dropout_prob&#34;,
+                _cfg_get(model_config, &#34;attention_probs_dropout_prob&#34;, dropout),
+            ),
+        )
+        self.dropout = nn.Dropout(float(dropout_p) if dropout_p is not None else 0.1)
+
+        src_attn = old_attn or kwargs.get(&#34;pretrained_attn&#34;)
+        src_p = next(src_attn.parameters(), None) if src_attn is not None else None
+        target_dtype = kwargs.get(&#34;dtype&#34;, src_p.dtype if src_p is not None else torch.float32)
+        target_device = kwargs.get(&#34;device&#34;, src_p.device if src_p is not None else None)
+
+        if src_attn is not None:
+            self.copy_weights(src_attn)
+
+        if target_device is not None and target_dtype is not None:
+            self.to(device=target_device, dtype=target_dtype)
+        elif target_device is not None:
+            self.to(device=target_device)
+        elif target_dtype is not None:
+            self.to(target_dtype)
+
+    def _set_factorised_weights(
+        self,
+        W_tensor: torch.Tensor,
+        bias_tensor: torch.Tensor | None,
+        down: nn.Linear,
+        up: nn.Linear,
+        rank: int,
+    ) -&gt; None:
+        with torch.no_grad():
+            W = W_tensor.float()
+            d_out, d_in = W.shape
+            r = min(rank, d_out, d_in, down.out_features, up.in_features)
+            r = max(r, 1)
+
+            U, s, VT = torch.linalg.svd(W, full_matrices=False)
+            sqrt_s = torch.sqrt(torch.clamp(s[:r], min=1e-12))
+            down_weight = (sqrt_s.unsqueeze(1) * VT[:r, :]).to(
+                device=down.weight.device, dtype=down.weight.dtype
+            )
+            up_weight = (U[:, :r] * sqrt_s.unsqueeze(0)).to(
+                device=up.weight.device, dtype=up.weight.dtype
+            )
+
+            down.weight.data.zero_()
+            up.weight.data.zero_()
+            down.weight.data[:r, :].copy_(down_weight)
+            up.weight.data[:, :r].copy_(up_weight)
+            if bias_tensor is not None and up.bias is not None:
+                up.bias.data.copy_(bias_tensor.to(device=up.bias.device, dtype=up.bias.dtype))
+
+    def copy_weights(self, old_attn: Any) -&gt; None:
+        &#34;&#34;&#34;Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA.&#34;&#34;&#34;
+        with torch.no_grad():
+            w_q, b_q = None, None
+            w_k, b_k = None, None
+            w_v, b_v = None, None
+            w_o, b_o = None, None
+
+            # Detect nested encoder container or inner self-attention
+            src_cls_name = getattr(old_attn, &#34;__class__&#34;, type(old_attn)).__name__
+            has_out_proj = any(
+                hasattr(old_attn, attr)
+                for attr in (
+                    &#34;dense&#34;,
+                    &#34;out_proj&#34;,
+                    &#34;c_proj&#34;,
+                    &#34;out_lin&#34;,
+                    &#34;o_proj&#34;,
+                    &#34;wo&#34;,
+                    &#34;o&#34;,
+                    &#34;proj&#34;,
+                )
+            )
+            if src_cls_name in (&#34;BertSelfAttention&#34;, &#34;RobertaSelfAttention&#34;) or (
+                hasattr(old_attn, &#34;query&#34;) and not has_out_proj
+            ):
+                self.is_nested_encoder = True
+
+            if hasattr(old_attn, &#34;self&#34;) and hasattr(old_attn, &#34;output&#34;):
+                self.is_nested_encoder = True
+                src = old_attn.self
+                if hasattr(old_attn.output, &#34;dense&#34;):
+                    w_o, b_o = _unpack_weight_bias(old_attn.output.dense)
+            else:
+                src = old_attn
+
+            # Pattern 1: GPT-2 Fused c_attn
+            if hasattr(src, &#34;c_attn&#34;) and hasattr(src, &#34;c_proj&#34;):
+                c_w, c_b = _unpack_weight_bias(src.c_attn)
+                if c_w is not None:
+                    if c_w.shape[0] == self.hidden_size and c_w.shape[1] != self.hidden_size:
+                        c_w = c_w.t().contiguous()
+
+                    q_dim = self.q_head_size
+                    k_dim = self.kv_head_size
+                    v_dim = self.kv_head_size
+
+                    w_q = c_w[:q_dim, :]
+                    w_k = c_w[q_dim : q_dim + k_dim, :]
+                    w_v = c_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
+
+                    if c_b is not None:
+                        b_q = c_b[:q_dim]
+                        b_k = c_b[q_dim : q_dim + k_dim]
+                        b_v = c_b[q_dim + k_dim : q_dim + k_dim + v_dim]
+
+                out_w, out_b = _unpack_weight_bias(src.c_proj)
+                if out_w is not None:
+                    if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
+                        out_w = out_w.t().contiguous()
+                    w_o = out_w
+                    b_o = out_b
+
+            # Pattern 2: RoBERTa / BERT separate query, key, value
+            elif hasattr(src, &#34;query&#34;) and hasattr(src, &#34;key&#34;) and hasattr(src, &#34;value&#34;):
+                w_q, b_q = _unpack_weight_bias(src.query)
+                w_k, b_k = _unpack_weight_bias(src.key)
+                w_v, b_v = _unpack_weight_bias(src.value)
+
+                if w_o is None:
+                    for attr in (&#34;dense&#34;, &#34;out_proj&#34;, &#34;o_proj&#34;):
+                        if hasattr(src, attr):
+                            w_o, b_o = _unpack_weight_bias(getattr(src, attr))
+                            break
+
+            # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
+            elif hasattr(src, &#34;q_proj&#34;) and hasattr(src, &#34;k_proj&#34;) and hasattr(src, &#34;v_proj&#34;):
+                w_q, b_q = _unpack_weight_bias(src.q_proj)
+                w_k, b_k = _unpack_weight_bias(src.k_proj)
+                w_v, b_v = _unpack_weight_bias(src.v_proj)
+                if hasattr(src, &#34;o_proj&#34;):
+                    w_o, b_o = _unpack_weight_bias(src.o_proj)
+
+            # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
+            elif hasattr(src, &#34;q_lin&#34;) and hasattr(src, &#34;k_lin&#34;) and hasattr(src, &#34;v_lin&#34;):
+                w_q, b_q = _unpack_weight_bias(src.q_lin)
+                w_k, b_k = _unpack_weight_bias(src.k_lin)
+                w_v, b_v = _unpack_weight_bias(src.v_lin)
+                if hasattr(src, &#34;out_lin&#34;):
+                    w_o, b_o = _unpack_weight_bias(src.out_lin)
+
+            # Fallback: UniversalAdapter
+            if w_q is None or w_k is None or w_v is None:
+                try:
+                    adapter = UniversalAdapter(old_attn)
+                    extracted = adapter.extract_qkv_out()
+                    if extracted:
+                        w_q = extracted.get(&#34;q_weight&#34;)
+                        b_q = extracted.get(&#34;q_bias&#34;)
+                        w_k = extracted.get(&#34;k_weight&#34;)
+                        b_k = extracted.get(&#34;k_bias&#34;)
+                        w_v = extracted.get(&#34;v_weight&#34;)
+                        b_v = extracted.get(&#34;v_bias&#34;)
+                        if w_o is None:
+                            w_o = extracted.get(&#34;out_weight&#34;)
+                            b_o = extracted.get(&#34;out_bias&#34;)
+                except Exception as e:
+                    log.debug(&#34;UniversalAdapter fallback failed: %s&#34;, e)
+
+            # Verification of essential projections
+            missing = []
+            if w_q is None:
+                missing.append(&#34;query/q_proj&#34;)
+            if w_k is None:
+                missing.append(&#34;key/k_proj&#34;)
+            if w_v is None:
+                missing.append(&#34;value/v_proj&#34;)
+            if missing:
+                log.warning(&#34;Failed to extract required projections: %s&#34;, missing)
+                return
+
+            # Frobenius norm checks
+            for name, w in [(&#34;w_q&#34;, w_q), (&#34;w_k&#34;, w_k), (&#34;w_v&#34;, w_v)]:
+                if torch.norm(w.float(), p=&#34;fro&#34;).item() &lt; 1e-4:
+                    log.warning(f&#34;Copied weight {name} has near-zero Frobenius norm (&lt; 1e-4)&#34;)
+
+            # Orient weights if needed
+            def _orient(w: torch.Tensor, out_dim: int, in_dim: int) -&gt; torch.Tensor:
+                if w.shape == (out_dim, in_dim):
+                    return w
+                if w.shape == (in_dim, out_dim):
+                    return w.t().contiguous()
+                return w
+
+            w_q = _orient(w_q, self.q_head_size, self.hidden_size)
+            # Factorize and set Q
+            self._set_factorised_weights(w_q, b_q, self.q_down, self.q_up, self.ranks[&#34;q&#34;])
+
+            # Factorize and set K &amp; V with GQA pooling if needed
+            if w_k.shape[0] == self.kv_head_size:
+                w_k = _orient(w_k, self.kv_head_size, self.hidden_size)
+                self._set_factorised_weights(w_k, b_k, self.k_down, self.k_up, self.ranks[&#34;k&#34;])
+            else:
+                rep = max(1, w_k.shape[0] // self.kv_head_size)
+                w_k_pooled = (
+                    w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
+                    .mean(dim=1)
+                    .view(self.kv_head_size, -1)
+                )
+                b_k_pooled = (
+                    b_k.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
+                    if b_k is not None
+                    else None
+                )
+                self._set_factorised_weights(
+                    w_k_pooled, b_k_pooled, self.k_down, self.k_up, self.ranks[&#34;k&#34;]
+                )
+
+            if w_v.shape[0] == self.kv_head_size:
+                w_v = _orient(w_v, self.kv_head_size, self.hidden_size)
+                self._set_factorised_weights(w_v, b_v, self.v_down, self.v_up, self.ranks[&#34;v&#34;])
+            else:
+                rep = max(1, w_v.shape[0] // self.kv_head_size)
+                w_v_pooled = (
+                    w_v.view(self.num_kv_heads, rep, self.head_dim, -1)
+                    .mean(dim=1)
+                    .view(self.kv_head_size, -1)
+                )
+                b_v_pooled = (
+                    b_v.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
+                    if b_v is not None
+                    else None
+                )
+                self._set_factorised_weights(
+                    w_v_pooled, b_v_pooled, self.v_down, self.v_up, self.ranks[&#34;v&#34;]
+                )
+
+            # Set Out projection if not nested encoder
+            if w_o is not None and not self.is_nested_encoder:
+                if torch.norm(w_o.float(), p=&#34;fro&#34;).item() &lt; 1e-4:
+                    log.warning(&#34;Copied out_proj weight has near-zero Frobenius norm (&lt; 1e-4)&#34;)
+                w_o = _orient(w_o, self.hidden_size, self.q_head_size)
+                self._set_factorised_weights(w_o, b_o, self.o_down, self.o_up, self.ranks[&#34;o&#34;])
+
+            # Initialize sparse residuals if enabled
+            if self.add_sparse:
+                low_rank_q = self.q_up.weight @ self.q_down.weight
+                res_q = w_q - low_rank_q
+                self.q_sparse_weight.data.copy_(res_q)
+
+                low_rank_k = self.k_up.weight @ self.k_down.weight
+                res_k = (w_k if w_k.shape[0] == self.kv_head_size else w_k_pooled) - low_rank_k
+                self.k_sparse_weight.data.copy_(res_k)
+
+                low_rank_v = self.v_up.weight @ self.v_down.weight
+                res_v = (w_v if w_v.shape[0] == self.kv_head_size else w_v_pooled) - low_rank_v
+                self.v_sparse_weight.data.copy_(res_v)
+
+                if w_o is not None and not self.is_nested_encoder:
+                    low_rank_o = self.o_up.weight @ self.o_down.weight
+                    res_o = w_o - low_rank_o
+                    self.o_sparse_weight.data.copy_(res_o)
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -&gt; tuple[torch.Tensor, torch.Tensor | None]:
+        B, N, _ = hidden_states.shape
+        # Defensive device alignment
+        if self.q_down.weight.device != hidden_states.device:
+            self.to(device=hidden_states.device)
+
+        is_cross = encoder_hidden_states is not None
+        kv_input = encoder_hidden_states if is_cross else hidden_states
+        kv_len = kv_input.shape[1]
+
+        def proj_q(x: torch.Tensor) -&gt; torch.Tensor:
+            if x.device != self.q_down.weight.device:
+                x = x.to(self.q_down.weight.device)
+            out = self.q_up(self.q_down(x))
+            if self.lora_rank &gt; 0 and self.q_lora_A is not None and self.q_lora_B is not None:
+                out = out + F.linear(F.linear(x, self.q_lora_A), self.q_lora_B) * self.scaling
+            if self.add_sparse and self.q_sparse_weight is not None:
+                out = out + F.linear(x, self.q_sparse_weight)
+            return out
+
+        def proj_k(x: torch.Tensor) -&gt; torch.Tensor:
+            if x.device != self.k_down.weight.device:
+                x = x.to(self.k_down.weight.device)
+            out = self.k_up(self.k_down(x))
+            if self.lora_rank &gt; 0 and self.k_lora_A is not None and self.k_lora_B is not None:
+                out = out + F.linear(F.linear(x, self.k_lora_A), self.k_lora_B) * self.scaling
+            if self.add_sparse and self.k_sparse_weight is not None:
+                out = out + F.linear(x, self.k_sparse_weight)
+            return out
+
+        def proj_v(x: torch.Tensor) -&gt; torch.Tensor:
+            if x.device != self.v_down.weight.device:
+                x = x.to(self.v_down.weight.device)
+            out = self.v_up(self.v_down(x))
+            if self.lora_rank &gt; 0 and self.v_lora_A is not None and self.v_lora_B is not None:
+                out = out + F.linear(F.linear(x, self.v_lora_A), self.v_lora_B) * self.scaling
+            if self.add_sparse and self.v_sparse_weight is not None:
+                out = out + F.linear(x, self.v_sparse_weight)
+            return out
+
+        def proj_o(x: torch.Tensor) -&gt; torch.Tensor:
+            if x.device != self.o_down.weight.device:
+                x = x.to(self.o_down.weight.device)
+            out = self.o_up(self.o_down(x))
+            if self.lora_rank &gt; 0 and self.o_lora_A is not None and self.o_lora_B is not None:
+                out = out + F.linear(F.linear(x, self.o_lora_A), self.o_lora_B) * self.scaling
+            if self.add_sparse and self.o_sparse_weight is not None:
+                out = out + F.linear(x, self.o_sparse_weight)
+            return out
+
+        # 1. Projections
+        Q = (
+            proj_q(hidden_states)
+            .view(B, N, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        K = (
+            proj_k(kv_input)
+            .view(B, kv_len, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        V = (
+            proj_v(kv_input)
+            .view(B, kv_len, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+
+        # 2. RoPE support
+        if position_embeddings is None:
+            position_embeddings = kwargs.get(&#34;position_embeddings&#34;)
+        if position_embeddings is not None and not is_cross:
+            cos, sin = position_embeddings
+            Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
+
+        # 3. GQA expansion
+        if self.num_kv_heads &lt; self.num_heads:
+            K = repeat_kv(K, self.kv_repeat)
+            V = repeat_kv(V, self.kv_repeat)
+
+        # 4. Attention scores in FP32
+        scale = 1.0 / math.sqrt(self.head_dim)
+        scores = torch.matmul(Q.float(), K.float().transpose(-1, -2).contiguous()) * scale
+
+        # 5. Masking
+        if self.is_decoder and not is_cross and N &gt; 1:
+            causal_mask = (
+                torch.triu(
+                    torch.full(
+                        (N, kv_len),
+                        float(&#34;-inf&#34;),
+                        device=scores.device,
+                        dtype=torch.float32,
+                    ),
+                    diagonal=1,
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
+            scores = scores + causal_mask
+
+        eff_mask = encoder_attention_mask if is_cross else attention_mask
+        if eff_mask is not None:
+            scores = apply_attention_mask(scores, eff_mask)
+
+        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+        attn_weights = F.softmax(scores, dim=-1).to(hidden_states.dtype)
+        attn_weights = self.dropout(attn_weights)
+
+        # 6. Safe head_mask application
+        if head_mask is not None:
+            if head_mask.dim() == 1:
+                head_mask = head_mask.view(1, -1, 1, 1)
+            elif head_mask.dim() == 2:
+                head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
+            elif head_mask.dim() == 3:
+                head_mask = head_mask.unsqueeze(-1)
+            attn_weights = attn_weights * head_mask
+
+        # 7. Context computation &amp; Head Merge
+        context = (
+            torch.matmul(attn_weights, V)
+            .transpose(1, 2)
+            .contiguous()
+            .view(B, N, self.all_head_size)
+        )
+        context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        # 8. Output projection (bypassed if nested encoder)
+        if self.is_nested_encoder:
+            output = context
+        else:
+            output = proj_o(context)
+
+        if output.shape[-1] != hidden_states.shape[-1]:
+            if output.shape[-1] &lt; hidden_states.shape[-1]:
+                output = F.pad(output, (0, hidden_states.shape[-1] - output.shape[-1]))
+            else:
+                output = output[..., : hidden_states.shape[-1]]
+
+        return output, (attn_weights if output_attentions else None)</code></pre>
+</details>
+<div class="desc"><p>Multi-head attention with truncated SVD projections, trainable LoRA adapters,
+GQA support, RoPE support, and optional sparse residuals.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.svd_compressed.SVDCompressedAttention.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.svd_compressed.SVDCompressedAttention.supports_gqa"><code class="name">var <span class="ident">supports_gqa</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.svd_compressed.SVDCompressedAttention.copy_weights"><code class="name flex">
+<span>def <span class="ident">copy_weights</span></span>(<span>self, old_attn: Any) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def copy_weights(self, old_attn: Any) -&gt; None:
+    &#34;&#34;&#34;Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA.&#34;&#34;&#34;
+    with torch.no_grad():
+        w_q, b_q = None, None
+        w_k, b_k = None, None
+        w_v, b_v = None, None
+        w_o, b_o = None, None
+
+        # Detect nested encoder container or inner self-attention
+        src_cls_name = getattr(old_attn, &#34;__class__&#34;, type(old_attn)).__name__
+        has_out_proj = any(
+            hasattr(old_attn, attr)
+            for attr in (
+                &#34;dense&#34;,
+                &#34;out_proj&#34;,
+                &#34;c_proj&#34;,
+                &#34;out_lin&#34;,
+                &#34;o_proj&#34;,
+                &#34;wo&#34;,
+                &#34;o&#34;,
+                &#34;proj&#34;,
+            )
+        )
+        if src_cls_name in (&#34;BertSelfAttention&#34;, &#34;RobertaSelfAttention&#34;) or (
+            hasattr(old_attn, &#34;query&#34;) and not has_out_proj
+        ):
+            self.is_nested_encoder = True
+
+        if hasattr(old_attn, &#34;self&#34;) and hasattr(old_attn, &#34;output&#34;):
+            self.is_nested_encoder = True
+            src = old_attn.self
+            if hasattr(old_attn.output, &#34;dense&#34;):
+                w_o, b_o = _unpack_weight_bias(old_attn.output.dense)
+        else:
+            src = old_attn
+
+        # Pattern 1: GPT-2 Fused c_attn
+        if hasattr(src, &#34;c_attn&#34;) and hasattr(src, &#34;c_proj&#34;):
+            c_w, c_b = _unpack_weight_bias(src.c_attn)
+            if c_w is not None:
+                if c_w.shape[0] == self.hidden_size and c_w.shape[1] != self.hidden_size:
+                    c_w = c_w.t().contiguous()
+
+                q_dim = self.q_head_size
+                k_dim = self.kv_head_size
+                v_dim = self.kv_head_size
+
+                w_q = c_w[:q_dim, :]
+                w_k = c_w[q_dim : q_dim + k_dim, :]
+                w_v = c_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
+
+                if c_b is not None:
+                    b_q = c_b[:q_dim]
+                    b_k = c_b[q_dim : q_dim + k_dim]
+                    b_v = c_b[q_dim + k_dim : q_dim + k_dim + v_dim]
+
+            out_w, out_b = _unpack_weight_bias(src.c_proj)
+            if out_w is not None:
+                if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
+                    out_w = out_w.t().contiguous()
+                w_o = out_w
+                b_o = out_b
+
+        # Pattern 2: RoBERTa / BERT separate query, key, value
+        elif hasattr(src, &#34;query&#34;) and hasattr(src, &#34;key&#34;) and hasattr(src, &#34;value&#34;):
+            w_q, b_q = _unpack_weight_bias(src.query)
+            w_k, b_k = _unpack_weight_bias(src.key)
+            w_v, b_v = _unpack_weight_bias(src.value)
+
+            if w_o is None:
+                for attr in (&#34;dense&#34;, &#34;out_proj&#34;, &#34;o_proj&#34;):
+                    if hasattr(src, attr):
+                        w_o, b_o = _unpack_weight_bias(getattr(src, attr))
+                        break
+
+        # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
+        elif hasattr(src, &#34;q_proj&#34;) and hasattr(src, &#34;k_proj&#34;) and hasattr(src, &#34;v_proj&#34;):
+            w_q, b_q = _unpack_weight_bias(src.q_proj)
+            w_k, b_k = _unpack_weight_bias(src.k_proj)
+            w_v, b_v = _unpack_weight_bias(src.v_proj)
+            if hasattr(src, &#34;o_proj&#34;):
+                w_o, b_o = _unpack_weight_bias(src.o_proj)
+
+        # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
+        elif hasattr(src, &#34;q_lin&#34;) and hasattr(src, &#34;k_lin&#34;) and hasattr(src, &#34;v_lin&#34;):
+            w_q, b_q = _unpack_weight_bias(src.q_lin)
+            w_k, b_k = _unpack_weight_bias(src.k_lin)
+            w_v, b_v = _unpack_weight_bias(src.v_lin)
+            if hasattr(src, &#34;out_lin&#34;):
+                w_o, b_o = _unpack_weight_bias(src.out_lin)
+
+        # Fallback: UniversalAdapter
+        if w_q is None or w_k is None or w_v is None:
+            try:
+                adapter = UniversalAdapter(old_attn)
+                extracted = adapter.extract_qkv_out()
+                if extracted:
+                    w_q = extracted.get(&#34;q_weight&#34;)
+                    b_q = extracted.get(&#34;q_bias&#34;)
+                    w_k = extracted.get(&#34;k_weight&#34;)
+                    b_k = extracted.get(&#34;k_bias&#34;)
+                    w_v = extracted.get(&#34;v_weight&#34;)
+                    b_v = extracted.get(&#34;v_bias&#34;)
+                    if w_o is None:
+                        w_o = extracted.get(&#34;out_weight&#34;)
+                        b_o = extracted.get(&#34;out_bias&#34;)
+            except Exception as e:
+                log.debug(&#34;UniversalAdapter fallback failed: %s&#34;, e)
+
+        # Verification of essential projections
+        missing = []
+        if w_q is None:
+            missing.append(&#34;query/q_proj&#34;)
+        if w_k is None:
+            missing.append(&#34;key/k_proj&#34;)
+        if w_v is None:
+            missing.append(&#34;value/v_proj&#34;)
+        if missing:
+            log.warning(&#34;Failed to extract required projections: %s&#34;, missing)
+            return
+
+        # Frobenius norm checks
+        for name, w in [(&#34;w_q&#34;, w_q), (&#34;w_k&#34;, w_k), (&#34;w_v&#34;, w_v)]:
+            if torch.norm(w.float(), p=&#34;fro&#34;).item() &lt; 1e-4:
+                log.warning(f&#34;Copied weight {name} has near-zero Frobenius norm (&lt; 1e-4)&#34;)
+
+        # Orient weights if needed
+        def _orient(w: torch.Tensor, out_dim: int, in_dim: int) -&gt; torch.Tensor:
+            if w.shape == (out_dim, in_dim):
+                return w
+            if w.shape == (in_dim, out_dim):
+                return w.t().contiguous()
+            return w
+
+        w_q = _orient(w_q, self.q_head_size, self.hidden_size)
+        # Factorize and set Q
+        self._set_factorised_weights(w_q, b_q, self.q_down, self.q_up, self.ranks[&#34;q&#34;])
+
+        # Factorize and set K &amp; V with GQA pooling if needed
+        if w_k.shape[0] == self.kv_head_size:
+            w_k = _orient(w_k, self.kv_head_size, self.hidden_size)
+            self._set_factorised_weights(w_k, b_k, self.k_down, self.k_up, self.ranks[&#34;k&#34;])
+        else:
+            rep = max(1, w_k.shape[0] // self.kv_head_size)
+            w_k_pooled = (
+                w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
+                .mean(dim=1)
+                .view(self.kv_head_size, -1)
+            )
+            b_k_pooled = (
+                b_k.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
+                if b_k is not None
+                else None
+            )
+            self._set_factorised_weights(
+                w_k_pooled, b_k_pooled, self.k_down, self.k_up, self.ranks[&#34;k&#34;]
+            )
+
+        if w_v.shape[0] == self.kv_head_size:
+            w_v = _orient(w_v, self.kv_head_size, self.hidden_size)
+            self._set_factorised_weights(w_v, b_v, self.v_down, self.v_up, self.ranks[&#34;v&#34;])
+        else:
+            rep = max(1, w_v.shape[0] // self.kv_head_size)
+            w_v_pooled = (
+                w_v.view(self.num_kv_heads, rep, self.head_dim, -1)
+                .mean(dim=1)
+                .view(self.kv_head_size, -1)
+            )
+            b_v_pooled = (
+                b_v.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
+                if b_v is not None
+                else None
+            )
+            self._set_factorised_weights(
+                w_v_pooled, b_v_pooled, self.v_down, self.v_up, self.ranks[&#34;v&#34;]
+            )
+
+        # Set Out projection if not nested encoder
+        if w_o is not None and not self.is_nested_encoder:
+            if torch.norm(w_o.float(), p=&#34;fro&#34;).item() &lt; 1e-4:
+                log.warning(&#34;Copied out_proj weight has near-zero Frobenius norm (&lt; 1e-4)&#34;)
+            w_o = _orient(w_o, self.hidden_size, self.q_head_size)
+            self._set_factorised_weights(w_o, b_o, self.o_down, self.o_up, self.ranks[&#34;o&#34;])
+
+        # Initialize sparse residuals if enabled
+        if self.add_sparse:
+            low_rank_q = self.q_up.weight @ self.q_down.weight
+            res_q = w_q - low_rank_q
+            self.q_sparse_weight.data.copy_(res_q)
+
+            low_rank_k = self.k_up.weight @ self.k_down.weight
+            res_k = (w_k if w_k.shape[0] == self.kv_head_size else w_k_pooled) - low_rank_k
+            self.k_sparse_weight.data.copy_(res_k)
+
+            low_rank_v = self.v_up.weight @ self.v_down.weight
+            res_v = (w_v if w_v.shape[0] == self.kv_head_size else w_v_pooled) - low_rank_v
+            self.v_sparse_weight.data.copy_(res_v)
+
+            if w_o is not None and not self.is_nested_encoder:
+                low_rank_o = self.o_up.weight @ self.o_down.weight
+                res_o = w_o - low_rank_o
+                self.o_sparse_weight.data.copy_(res_o)</code></pre>
+</details>
+<div class="desc"><p>Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseAttention.extra_repr" href="../core/base.html#neuralops.core.base.BaseAttention.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.forward" href="../core/base.html#neuralops.core.base.BaseAttention.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.attentions" href="index.html">neuralops.attentions</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.attentions.svd_compressed.apply_rotary_pos_emb" href="#neuralops.attentions.svd_compressed.apply_rotary_pos_emb">apply_rotary_pos_emb</a></code></li>
+<li><code><a title="neuralops.attentions.svd_compressed.calculate_spectral_entropy" href="#neuralops.attentions.svd_compressed.calculate_spectral_entropy">calculate_spectral_entropy</a></code></li>
+<li><code><a title="neuralops.attentions.svd_compressed.compute_cumulative_entropy" href="#neuralops.attentions.svd_compressed.compute_cumulative_entropy">compute_cumulative_entropy</a></code></li>
+<li><code><a title="neuralops.attentions.svd_compressed.compute_metrics" href="#neuralops.attentions.svd_compressed.compute_metrics">compute_metrics</a></code></li>
+<li><code><a title="neuralops.attentions.svd_compressed.gather_all_attention_weights" href="#neuralops.attentions.svd_compressed.gather_all_attention_weights">gather_all_attention_weights</a></code></li>
+<li><code><a title="neuralops.attentions.svd_compressed.get_num_labels_and_is_regression" href="#neuralops.attentions.svd_compressed.get_num_labels_and_is_regression">get_num_labels_and_is_regression</a></code></li>
+<li><code><a title="neuralops.attentions.svd_compressed.inject_all_layers" href="#neuralops.attentions.svd_compressed.inject_all_layers">inject_all_layers</a></code></li>
+<li><code><a title="neuralops.attentions.svd_compressed.inject_svd_compressed" href="#neuralops.attentions.svd_compressed.inject_svd_compressed">inject_svd_compressed</a></code></li>
+<li><code><a title="neuralops.attentions.svd_compressed.lagrangian_rank_allocation" href="#neuralops.attentions.svd_compressed.lagrangian_rank_allocation">lagrangian_rank_allocation</a></code></li>
+<li><code><a title="neuralops.attentions.svd_compressed.load_glue_local" href="#neuralops.attentions.svd_compressed.load_glue_local">load_glue_local</a></code></li>
+<li><code><a title="neuralops.attentions.svd_compressed.main" href="#neuralops.attentions.svd_compressed.main">main</a></code></li>
+<li><code><a title="neuralops.attentions.svd_compressed.preprocess_function" href="#neuralops.attentions.svd_compressed.preprocess_function">preprocess_function</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.attentions.svd_compressed.SVDCompressedAttention" href="#neuralops.attentions.svd_compressed.SVDCompressedAttention">SVDCompressedAttention</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.svd_compressed.SVDCompressedAttention.copy_weights" href="#neuralops.attentions.svd_compressed.SVDCompressedAttention.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.attentions.svd_compressed.SVDCompressedAttention.is_custom_attention" href="#neuralops.attentions.svd_compressed.SVDCompressedAttention.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.svd_compressed.SVDCompressedAttention.supports_gqa" href="#neuralops.attentions.svd_compressed.SVDCompressedAttention.supports_gqa">supports_gqa</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

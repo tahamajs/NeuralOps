@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.data.benchmark_datasets API documentation</title>
+<meta name="description" content="Unified Benchmark Dataset Loader &amp; Registry for NLP / LLM Evaluation.
+Supports 12+ standard NLP/LLM benchmarks with streaming, local caching,
+…">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.data.benchmark_datasets</code></h1>
+</header>
+<section id="section-intro">
+<p>Unified Benchmark Dataset Loader &amp; Registry for NLP / LLM Evaluation.
+Supports 12+ standard NLP/LLM benchmarks with streaming, local caching,
+tokenized PyTorch DataLoader creation, and offline synthetic fallbacks.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.data.benchmark_datasets.get_synthetic_benchmark_sample"><code class="name flex">
+<span>def <span class="ident">get_synthetic_benchmark_sample</span></span>(<span>dataset_name: str, num_samples: int = 4, seed: int = 42) ‑> list[str]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_synthetic_benchmark_sample(
+    dataset_name: str, num_samples: int = 4, seed: int = 42
+) -&gt; list[str]:
+    &#34;&#34;&#34;Retrieve raw text strings of synthetic benchmark samples.&#34;&#34;&#34;
+    raw = load_benchmark_dataset(
+        dataset_name,
+        max_samples=num_samples,
+        use_synthetic=True,
+        seed=seed,
+        return_dataloader=False,
+    )
+    results = []
+    for item in raw:
+        if isinstance(item, dict):
+            text = item.get(&#34;text&#34;) or item.get(&#34;prompt&#34;) or item.get(&#34;sentence&#34;) or str(item)
+            results.append(text)
+        else:
+            results.append(str(item))
+    return results</code></pre>
+</details>
+<div class="desc"><p>Retrieve raw text strings of synthetic benchmark samples.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.load_benchmark_dataset"><code class="name flex">
+<span>def <span class="ident">load_benchmark_dataset</span></span>(<span>dataset_name: str,<br>tokenizer: Any = None,<br>seq_len: int = 2048,<br>batch_size: int = 8,<br>split: str | None = None,<br>max_samples: int = 1000,<br>streaming: bool = True,<br>cache_dir: str | None = None,<br>shuffle: bool = False,<br>num_workers: int = 0,<br>use_synthetic: bool = False,<br>seed: int = 42,<br>return_dataloader: bool = True,<br>**kwargs: Any) ‑> torch.utils.data.dataloader.DataLoader | list[dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_benchmark_dataset(
+    dataset_name: str,
+    tokenizer: Any = None,
+    seq_len: int = 2048,
+    batch_size: int = 8,
+    split: str | None = None,
+    max_samples: int = 1000,
+    streaming: bool = True,
+    cache_dir: str | None = None,
+    shuffle: bool = False,
+    num_workers: int = 0,
+    use_synthetic: bool = False,
+    seed: int = 42,
+    return_dataloader: bool = True,
+    **kwargs: Any,
+) -&gt; DataLoader | list[dict[str, Any]]:
+    &#34;&#34;&#34;
+    Unified loader for 12+ NLP / LLM benchmark datasets.
+
+    Supports:
+      - wikitext2 / wikitext103
+      - c4 / c4_en
+      - ptb
+      - pg19
+      - gsm8k
+      - humaneval
+      - mmlu
+      - pile / pile_val
+      - arc (ARC-Easy &amp; ARC-Challenge)
+      - hellaswag
+      - lambada
+      - glue (sst2, mrpc, qqp, mnli, qnli, rte, wnli, cola, stsb)
+
+    Args:
+        dataset_name: Benchmark name or alias (e.g. &#39;wikitext2&#39;, &#39;c4&#39;, &#39;gsm8k&#39;, &#39;arc&#39;, &#39;glue/sst2&#39;).
+        tokenizer: HuggingFace tokenizer instance (optional).
+        seq_len: Maximum sequence length for tokenization.
+        batch_size: DataLoader batch size.
+        split: Dataset split (&#39;train&#39;, &#39;validation&#39;, &#39;test&#39;). Defaults to benchmark standard.
+        max_samples: Maximum number of samples to load/stream.
+        streaming: Whether to stream from HuggingFace Hub to avoid large downloads.
+        cache_dir: Local directory to cache datasets.
+        shuffle: Whether to shuffle samples.
+        num_workers: Number of workers for DataLoader.
+        use_synthetic: Force synthetic data generation for offline testing.
+        seed: Random seed for reproducibility.
+        return_dataloader: If True, returns PyTorch DataLoader; otherwise returns list of dicts.
+        **kwargs: Additional arguments passed to `datasets.load_dataset`.
+
+    Returns:
+        torch.utils.data.DataLoader or List[Dict[str, Any]].
+    &#34;&#34;&#34;
+    clean_name = dataset_name.lower().replace(&#34;-&#34;, &#34;_&#34;)
+    info = BenchmarkDatasetRegistry.get(clean_name)
+
+    # Fallback to general lookup if not matched directly
+    if info is None and &#34;/&#34; in dataset_name:
+        prefix, subtask = dataset_name.split(&#34;/&#34;, 1)
+        if prefix.lower() == &#34;glue&#34;:
+            info = BenchmarkDatasetRegistry.get(f&#34;glue_{subtask}&#34;)
+
+    if info is None:
+        logger.warning(
+            &#34;Dataset &#39;%s&#39; not in official benchmark registry. Creating generic fallback.&#34;,
+            dataset_name,
+        )
+        info = BenchmarkDatasetInfo(
+            name=clean_name,
+            aliases=[],
+            category=&#34;custom&#34;,
+            default_hf_path=dataset_name,
+            default_split=split or &#34;validation&#34;,
+            text_formatter=lambda r: {&#34;text&#34;: r.get(&#34;text&#34;, str(r))},
+            synthetic_generator=lambda n, s: [
+                {
+                    &#34;text&#34;: f&#34;Synthetic custom text sample #{i} for {dataset_name}.&#34;,
+                    &#34;id&#34;: i,
+                }
+                for i in range(n)
+            ],
+        )
+
+    target_split = split or info.default_split
+    raw_samples: list[dict[str, Any]] = []
+
+    # Attempt online loading if not forced synthetic
+    if not use_synthetic:
+        try:
+            from datasets import load_dataset as hf_load_dataset
+
+            hf_kwargs = dict(kwargs)
+            if info.default_subset:
+                args = (info.default_hf_path, info.default_subset)
+            else:
+                args = (info.default_hf_path,)
+
+            if cache_dir:
+                hf_kwargs[&#34;cache_dir&#34;] = cache_dir
+
+            logger.info(&#34;Attempting to load benchmark &#39;%s&#39; from HF (%s)...&#34;, info.name, args)
+
+            try:
+                # First try streaming if requested
+                if streaming:
+                    hf_ds = hf_load_dataset(*args, split=target_split, streaming=True, **hf_kwargs)
+                    count = 0
+                    for row in hf_ds:
+                        formatted = info.text_formatter(row) if info.text_formatter else dict(row)
+                        # Filter out empty text rows (e.g. WikiText empty headers)
+                        if (
+                            formatted.get(&#34;text&#34;, &#34;&#34;).strip()
+                            or &#34;prompt&#34; in formatted
+                            or &#34;question&#34; in formatted
+                        ):
+                            raw_samples.append(formatted)
+                            count += 1
+                            if count &gt;= max_samples:
+                                break
+                else:
+                    hf_ds = hf_load_dataset(*args, split=target_split, **hf_kwargs)
+                    sub_ds = hf_ds.select(range(min(len(hf_ds), max_samples)))
+                    for row in sub_ds:
+                        formatted = info.text_formatter(row) if info.text_formatter else dict(row)
+                        raw_samples.append(formatted)
+
+            except Exception as inner_e:
+                logger.warning(
+                    &#34;Streaming/split load failed for %s (%s). Retrying non-streaming or default split...&#34;,
+                    info.name,
+                    inner_e,
+                )
+                hf_ds = hf_load_dataset(*args, **hf_kwargs)
+                actual_split = target_split if target_split in hf_ds else list(hf_ds.keys())[0]
+                ds_split = hf_ds[actual_split]
+                sub_ds = ds_split.select(range(min(len(ds_split), max_samples)))
+                for row in sub_ds:
+                    formatted = info.text_formatter(row) if info.text_formatter else dict(row)
+                    raw_samples.append(formatted)
+
+        except Exception as e:
+            logger.warning(
+                &#34;Failed to load &#39;%s&#39; from HuggingFace Hub: %s. Falling back to synthetic generator.&#34;,
+                dataset_name,
+                str(e),
+            )
+            raw_samples = []
+
+    # If empty or failed, run synthetic generator
+    if not raw_samples:
+        logger.info(
+            &#34;Generating %d synthetic samples for benchmark &#39;%s&#39; (seed=%d)...&#34;,
+            max_samples,
+            info.name,
+            seed,
+        )
+        if info.synthetic_generator:
+            raw_samples = info.synthetic_generator(max_samples, seed)
+        else:
+            raw_samples = [
+                {&#34;text&#34;: f&#34;Synthetic benchmark text #{i} for {info.name}&#34;, &#34;id&#34;: i}
+                for i in range(max_samples)
+            ]
+
+    if shuffle:
+        rng = random.Random(seed)
+        rng.shuffle(raw_samples)
+
+    if not return_dataloader:
+        return raw_samples
+
+    # Build PyTorch Dataset and DataLoader
+    is_lm = info.category in (&#34;language_modeling&#34;, &#34;code&#34;)
+    torch_ds = BenchmarkTorchDataset(
+        samples=raw_samples,
+        tokenizer=tokenizer,
+        seq_len=seq_len,
+        is_causal_lm=is_lm,
+    )
+
+    loader = DataLoader(
+        torch_ds,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=num_workers,
+    )
+    return loader</code></pre>
+</details>
+<div class="desc"><p>Unified loader for 12+ NLP / LLM benchmark datasets.</p>
+<p>Supports
+-----=
+- wikitext2 / wikitext103
+- c4 / c4_en
+- ptb
+- pg19
+- gsm8k
+- humaneval
+- mmlu
+- pile / pile_val
+- arc (ARC-Easy &amp; ARC-Challenge)
+- hellaswag
+- lambada
+- glue (sst2, mrpc, qqp, mnli, qnli, rte, wnli, cola, stsb)</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>dataset_name</code></strong></dt>
+<dd>Benchmark name or alias (e.g. 'wikitext2', 'c4', 'gsm8k', 'arc', 'glue/sst2').</dd>
+<dt><strong><code>tokenizer</code></strong></dt>
+<dd>HuggingFace tokenizer instance (optional).</dd>
+<dt><strong><code>seq_len</code></strong></dt>
+<dd>Maximum sequence length for tokenization.</dd>
+<dt><strong><code>batch_size</code></strong></dt>
+<dd>DataLoader batch size.</dd>
+<dt><strong><code>split</code></strong></dt>
+<dd>Dataset split ('train', 'validation', 'test'). Defaults to benchmark standard.</dd>
+<dt><strong><code>max_samples</code></strong></dt>
+<dd>Maximum number of samples to load/stream.</dd>
+<dt><strong><code>streaming</code></strong></dt>
+<dd>Whether to stream from HuggingFace Hub to avoid large downloads.</dd>
+<dt><strong><code>cache_dir</code></strong></dt>
+<dd>Local directory to cache datasets.</dd>
+<dt><strong><code>shuffle</code></strong></dt>
+<dd>Whether to shuffle samples.</dd>
+<dt><strong><code>num_workers</code></strong></dt>
+<dd>Number of workers for DataLoader.</dd>
+<dt><strong><code>use_synthetic</code></strong></dt>
+<dd>Force synthetic data generation for offline testing.</dd>
+<dt><strong><code>seed</code></strong></dt>
+<dd>Random seed for reproducibility.</dd>
+<dt><strong><code>return_dataloader</code></strong></dt>
+<dd>If True, returns PyTorch DataLoader; otherwise returns list of dicts.</dd>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>Additional arguments passed to <code>datasets.load_dataset</code>.</dd>
+</dl>
+<p>Returns
+-----=
+torch.utils.data.DataLoader or List[Dict[str, Any]].</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo"><code class="flex name class">
+<span>class <span class="ident">BenchmarkDatasetInfo</span></span>
+<span>(</span><span>name: str,<br>aliases: list[str],<br>category: str,<br>default_hf_path: str,<br>default_subset: str | None = None,<br>default_split: str = 'validation',<br>text_formatter: Callable[[dict[str, Any]], dict[str, Any]] | None = None,<br>synthetic_generator: Callable[[int, int], list[dict[str, Any]]] | None = None,<br>description: str = '')</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class BenchmarkDatasetInfo:
+    &#34;&#34;&#34;Metadata describing a benchmark dataset and its default loading strategy.&#34;&#34;&#34;
+
+    name: str
+    aliases: list[str]
+    category: str  # e.g., &#34;language_modeling&#34;, &#34;reasoning&#34;, &#34;code&#34;, &#34;multi_choice&#34;, &#34;glue&#34;
+    default_hf_path: str
+    default_subset: str | None = None
+    default_split: str = &#34;validation&#34;
+    text_formatter: Callable[[dict[str, Any]], dict[str, Any]] | None = None
+    synthetic_generator: Callable[[int, int], list[dict[str, Any]]] | None = None
+    description: str = &#34;&#34;</code></pre>
+</details>
+<div class="desc"><p>Metadata describing a benchmark dataset and its default loading strategy.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.aliases"><code class="name">var <span class="ident">aliases</span> : list[str]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.category"><code class="name">var <span class="ident">category</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.default_hf_path"><code class="name">var <span class="ident">default_hf_path</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.default_split"><code class="name">var <span class="ident">default_split</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.default_subset"><code class="name">var <span class="ident">default_subset</span> : str | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.description"><code class="name">var <span class="ident">description</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.synthetic_generator"><code class="name">var <span class="ident">synthetic_generator</span> : Callable[[int, int], list[dict[str, typing.Any]]] | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.text_formatter"><code class="name">var <span class="ident">text_formatter</span> : Callable[[dict[str, typing.Any]], dict[str, typing.Any]] | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.BenchmarkDatasetRegistry"><code class="flex name class">
+<span>class <span class="ident">BenchmarkDatasetRegistry</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class BenchmarkDatasetRegistry:
+    &#34;&#34;&#34;Registry maintaining metadata and formatters for NLP/LLM benchmarks.&#34;&#34;&#34;
+
+    _registry: dict[str, BenchmarkDatasetInfo] = {}
+
+    @classmethod
+    def register(cls, info: BenchmarkDatasetInfo) -&gt; None:
+        &#34;&#34;&#34;Register a new benchmark dataset info.&#34;&#34;&#34;
+        key = info.name.lower()
+        cls._registry[key] = info
+        for alias in info.aliases:
+            cls._registry[alias.lower()] = info
+
+    @classmethod
+    def get(cls, name: str) -&gt; BenchmarkDatasetInfo | None:
+        &#34;&#34;&#34;Retrieve benchmark dataset info by name or alias.&#34;&#34;&#34;
+        return cls._registry.get(
+            name.lower().replace(&#34;-&#34;, &#34;&#34;).replace(&#34;_&#34;, &#34;&#34;)
+        ) or cls._registry.get(name.lower())
+
+    @classmethod
+    def is_registered(cls, name: str) -&gt; bool:
+        &#34;&#34;&#34;Check if a benchmark dataset name is registered.&#34;&#34;&#34;
+        return cls.get(name) is not None
+
+    @classmethod
+    def list_benchmarks(cls) -&gt; list[str]:
+        &#34;&#34;&#34;List canonical names of all registered benchmarks.&#34;&#34;&#34;
+        canonical = set()
+        for info in cls._registry.values():
+            canonical.add(info.name)
+        return sorted(list(canonical))
+
+    @classmethod
+    def list_datasets(cls) -&gt; list[str]:
+        &#34;&#34;&#34;Alias for list_benchmarks.&#34;&#34;&#34;
+        return cls.list_benchmarks()</code></pre>
+</details>
+<div class="desc"><p>Registry maintaining metadata and formatters for NLP/LLM benchmarks.</p></div>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.data.benchmark_datasets.BenchmarkDatasetRegistry.get"><code class="name flex">
+<span>def <span class="ident">get</span></span>(<span>name: str) ‑> <a title="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo" href="#neuralops.data.benchmark_datasets.BenchmarkDatasetInfo">BenchmarkDatasetInfo</a> | None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Retrieve benchmark dataset info by name or alias.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.BenchmarkDatasetRegistry.is_registered"><code class="name flex">
+<span>def <span class="ident">is_registered</span></span>(<span>name: str) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Check if a benchmark dataset name is registered.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.BenchmarkDatasetRegistry.list_benchmarks"><code class="name flex">
+<span>def <span class="ident">list_benchmarks</span></span>(<span>) ‑> list[str]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>List canonical names of all registered benchmarks.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.BenchmarkDatasetRegistry.list_datasets"><code class="name flex">
+<span>def <span class="ident">list_datasets</span></span>(<span>) ‑> list[str]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Alias for list_benchmarks.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.BenchmarkDatasetRegistry.register"><code class="name flex">
+<span>def <span class="ident">register</span></span>(<span>info: <a title="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo" href="#neuralops.data.benchmark_datasets.BenchmarkDatasetInfo">BenchmarkDatasetInfo</a>) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Register a new benchmark dataset info.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.BenchmarkTorchDataset"><code class="flex name class">
+<span>class <span class="ident">BenchmarkTorchDataset</span></span>
+<span>(</span><span>samples: list[dict[str, Any]],<br>tokenizer: Any = None,<br>seq_len: int = 2048,<br>is_causal_lm: bool = True)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class BenchmarkTorchDataset(Dataset):
+    &#34;&#34;&#34;PyTorch Dataset wrapper for processed benchmark records.&#34;&#34;&#34;
+
+    def __init__(
+        self,
+        samples: list[dict[str, Any]],
+        tokenizer: Any = None,
+        seq_len: int = 2048,
+        is_causal_lm: bool = True,
+    ):
+        self.samples = samples
+        self.tokenizer = tokenizer
+        self.seq_len = seq_len
+        self.is_causal_lm = is_causal_lm
+
+    def __len__(self) -&gt; int:
+        return len(self.samples)
+
+    def __getitem__(self, idx: int) -&gt; dict[str, Any]:
+        item = self.samples[idx]
+        if self.tokenizer is None:
+            return item
+
+        # Extract primary text string
+        text = item.get(&#34;text&#34;, &#34;&#34;)
+        if not text:
+            for k in [&#34;prompt&#34;, &#34;sentence&#34;, &#34;question&#34;, &#34;sentence1&#34;]:
+                if k in item and item[k]:
+                    text = str(item[k])
+                    break
+
+        enc = self.tokenizer(
+            text,
+            truncation=True,
+            max_length=self.seq_len,
+            padding=&#34;max_length&#34;,
+            return_tensors=&#34;pt&#34;,
+        )
+
+        input_ids = enc[&#34;input_ids&#34;].squeeze(0)
+        attention_mask = enc[&#34;attention_mask&#34;].squeeze(0)
+
+        data = {
+            &#34;input_ids&#34;: input_ids,
+            &#34;attention_mask&#34;: attention_mask,
+        }
+
+        # Handle causal LM labels or classification labels
+        if &#34;label&#34; in item:
+            data[&#34;labels&#34;] = torch.tensor(
+                item[&#34;label&#34;],
+                dtype=torch.long if isinstance(item[&#34;label&#34;], int) else torch.float,
+            )
+        elif self.is_causal_lm:
+            # Shifted causal LM targets (replace padding token ids with -100 in labels)
+            labels = input_ids.clone()
+            if self.tokenizer.pad_token_id is not None:
+                labels[labels == self.tokenizer.pad_token_id] = -100
+            data[&#34;labels&#34;] = labels
+
+        return data</code></pre>
+</details>
+<div class="desc"><p>PyTorch Dataset wrapper for processed benchmark records.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.utils.data.dataset.Dataset</li>
+<li>typing.Generic</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.data" href="index.html">neuralops.data</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.data.benchmark_datasets.get_synthetic_benchmark_sample" href="#neuralops.data.benchmark_datasets.get_synthetic_benchmark_sample">get_synthetic_benchmark_sample</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.load_benchmark_dataset" href="#neuralops.data.benchmark_datasets.load_benchmark_dataset">load_benchmark_dataset</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo" href="#neuralops.data.benchmark_datasets.BenchmarkDatasetInfo">BenchmarkDatasetInfo</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.aliases" href="#neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.aliases">aliases</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.category" href="#neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.category">category</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.default_hf_path" href="#neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.default_hf_path">default_hf_path</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.default_split" href="#neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.default_split">default_split</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.default_subset" href="#neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.default_subset">default_subset</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.description" href="#neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.description">description</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.name" href="#neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.name">name</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.synthetic_generator" href="#neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.synthetic_generator">synthetic_generator</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.text_formatter" href="#neuralops.data.benchmark_datasets.BenchmarkDatasetInfo.text_formatter">text_formatter</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.data.benchmark_datasets.BenchmarkDatasetRegistry" href="#neuralops.data.benchmark_datasets.BenchmarkDatasetRegistry">BenchmarkDatasetRegistry</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.data.benchmark_datasets.BenchmarkDatasetRegistry.get" href="#neuralops.data.benchmark_datasets.BenchmarkDatasetRegistry.get">get</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.BenchmarkDatasetRegistry.is_registered" href="#neuralops.data.benchmark_datasets.BenchmarkDatasetRegistry.is_registered">is_registered</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.BenchmarkDatasetRegistry.list_benchmarks" href="#neuralops.data.benchmark_datasets.BenchmarkDatasetRegistry.list_benchmarks">list_benchmarks</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.BenchmarkDatasetRegistry.list_datasets" href="#neuralops.data.benchmark_datasets.BenchmarkDatasetRegistry.list_datasets">list_datasets</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.BenchmarkDatasetRegistry.register" href="#neuralops.data.benchmark_datasets.BenchmarkDatasetRegistry.register">register</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.data.benchmark_datasets.BenchmarkTorchDataset" href="#neuralops.data.benchmark_datasets.BenchmarkTorchDataset">BenchmarkTorchDataset</a></code></h4>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

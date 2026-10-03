@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.trainer.methods.gelora API documentation</title>
+<meta name="description" content="GeLoRA: Intrinsic dimension estimation for adaptive rank selection.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.trainer.methods.gelora</code></h1>
+</header>
+<section id="section-intro">
+<p>GeLoRA: Intrinsic dimension estimation for adaptive rank selection.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.trainer.methods.gelora.apply_fisher_gelora"><code class="name flex">
+<span>def <span class="ident">apply_fisher_gelora</span></span>(<span>model, config) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@register_method(&#34;fisher_gelora&#34;)
+def apply_fisher_gelora(model, config) -&gt; None:
+    &#34;&#34;&#34;Apply fisher gelora.&#34;&#34;&#34;
+    logger.info(&#34;Fisher‑GeLoRA registered. Use compute_gelora_base_ranks in training script.&#34;)</code></pre>
+</details>
+<div class="desc"><p>Apply fisher gelora.</p></div>
+</dd>
+<dt id="neuralops.trainer.methods.gelora.collect_hidden_states"><code class="name flex">
+<span>def <span class="ident">collect_hidden_states</span></span>(<span>model, dataloader, num_batches=10, max_samples=800) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def collect_hidden_states(model, dataloader, num_batches=10, max_samples=800) -&gt; Any:
+    &#34;&#34;&#34;Collect hidden states.&#34;&#34;&#34;
+    layers = get_encoder_layers(model)
+    num_layers = len(layers)
+    hidden_states_per_layer = {i: [] for i in range(num_layers)}
+    hooks = []
+
+    def hook_fn(layer_idx) -&gt; Any:
+        &#34;&#34;&#34;Hook fn.&#34;&#34;&#34;
+
+        def hook(module, input, output) -&gt; None:
+            &#34;&#34;&#34;Hook.&#34;&#34;&#34;
+            hs = output[0].detach() if isinstance(output, tuple) else output.detach()
+            hidden_states_per_layer[layer_idx].append(hs)
+
+        return hook
+
+    for i, layer in enumerate(layers):
+        hook = layer.register_forward_hook(hook_fn(i))
+        hooks.append(hook)
+
+    model.eval()
+    total = 0
+    with torch.no_grad():
+        for i, batch in enumerate(dataloader):
+            if i &gt;= num_batches or total &gt;= max_samples:
+                break
+            batch = {k: v.to(model.device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
+            model(**batch)
+            total += batch[&#34;input_ids&#34;].size(0)
+
+    for hook in hooks:
+        hook.remove()
+    for i in range(num_layers):
+        if hidden_states_per_layer[i]:
+            hidden_states_per_layer[i] = torch.cat(hidden_states_per_layer[i], dim=0)
+        else:
+            hidden_states_per_layer[i] = torch.empty(0)
+    return hidden_states_per_layer</code></pre>
+</details>
+<div class="desc"><p>Collect hidden states.</p></div>
+</dd>
+<dt id="neuralops.trainer.methods.gelora.compute_gelora_base_ranks"><code class="name flex">
+<span>def <span class="ident">compute_gelora_base_ranks</span></span>(<span>model, dataloader, config) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_gelora_base_ranks(model, dataloader, config) -&gt; Any:
+    &#34;&#34;&#34;Compute and return gelora base ranks.&#34;&#34;&#34;
+    layer_hidden = collect_hidden_states(model, dataloader, num_batches=8, max_samples=800)
+    layer_id = {}
+    for idx, hs in layer_hidden.items():
+        if hs.shape[0] &lt; 10:
+            id_val = 1.0
+        else:
+            id_val = estimate_intrinsic_dimension_pytorch(hs, k=min(5, hs.shape[0] - 1))
+        base_rank = max(
+            config.gelora_min_rank,
+            min(config.gelora_max_rank, int(id_val + config.gelora_margin)),
+        )
+        layer_id[idx] = base_rank
+        logger.info(f&#34;Layer {idx} intrinsic dim ≈ {id_val:.2f} → base rank {base_rank}&#34;)
+
+    target_substrings = [&#34;query&#34;, &#34;key&#34;, &#34;value&#34;, &#34;dense&#34;]
+    rank_dict = {}
+    for name, _ in model.named_modules():
+        if (
+            any(ts in name for ts in target_substrings)
+            and &#34;classifier&#34; not in name
+            and &#34;pooler&#34; not in name
+        ):
+            parts = name.split(&#34;.&#34;)
+            layer_idx = None
+            for i, part in enumerate(parts):
+                if part == &#34;layer&#34; and i + 1 &lt; len(parts):
+                    try:
+                        layer_idx = int(parts[i + 1])
+                        break
+                    except (ValueError, TypeError):
+                        pass
+            rank_dict[name] = layer_id.get(layer_idx, config.lora_r)
+    return rank_dict</code></pre>
+</details>
+<div class="desc"><p>Compute and return gelora base ranks.</p></div>
+</dd>
+<dt id="neuralops.trainer.methods.gelora.estimate_intrinsic_dimension_pytorch"><code class="name flex">
+<span>def <span class="ident">estimate_intrinsic_dimension_pytorch</span></span>(<span>hidden_states, k=5) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def estimate_intrinsic_dimension_pytorch(hidden_states, k=5) -&gt; Any:
+    &#34;&#34;&#34;Estimate intrinsic dimension pytorch.&#34;&#34;&#34;
+    if hidden_states.dim() == 3:
+        hidden_states = hidden_states.mean(dim=1)
+    elif hidden_states.dim() != 2:
+        raise ValueError(f&#34;Expected 2D or 3D tensor, got {hidden_states.dim()}D&#34;)
+    N = hidden_states.shape[0]
+    if k + 1 &gt; N:
+        return 1.0
+    if N &gt; 1000:
+        idx = torch.randperm(N)[:1000]
+        hidden_states = hidden_states[idx]
+    dist = torch.cdist(hidden_states, hidden_states)
+    dist.fill_diagonal_(float(&#34;inf&#34;))
+    topk_dist, _ = torch.topk(dist, k, dim=1, largest=False)
+    d_k = topk_dist[:, -1:]
+    log_ratios = torch.log(topk_dist / (d_k + 1e-8))
+    id_per_point = -1.0 / torch.mean(log_ratios, dim=1)
+    id_global = torch.mean(id_per_point).item()
+    return max(1.0, id_global)</code></pre>
+</details>
+<div class="desc"><p>Estimate intrinsic dimension pytorch.</p></div>
+</dd>
+<dt id="neuralops.trainer.methods.gelora.get_encoder_layers"><code class="name flex">
+<span>def <span class="ident">get_encoder_layers</span></span>(<span>model) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_encoder_layers(model) -&gt; Any:
+    &#34;&#34;&#34;Return the encoder layers.&#34;&#34;&#34;
+    if hasattr(model, &#34;distilbert&#34;) and hasattr(model.distilbert, &#34;transformer&#34;):
+        return model.distilbert.transformer.layer
+    if hasattr(model, &#34;bert&#34;) and hasattr(model.bert, &#34;encoder&#34;):
+        return model.bert.encoder.layer
+    if hasattr(model, &#34;roberta&#34;) and hasattr(model.roberta, &#34;encoder&#34;):
+        return model.roberta.encoder.layer
+    if hasattr(model, &#34;encoder&#34;) and hasattr(model.encoder, &#34;layer&#34;):
+        return model.encoder.layer
+    layers = []
+    for name, module in model.named_modules():
+        if &#34;layer&#34; in name and isinstance(module, (nn.ModuleList, nn.Sequential)):
+            for submod in module:
+                layers.append(submod)
+        elif &#34;layer&#34; in name:
+            layers.append(module)
+    if layers:
+        return layers
+    raise ValueError(&#34;Cannot find encoder layers&#34;)</code></pre>
+</details>
+<div class="desc"><p>Return the encoder layers.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.trainer.methods" href="index.html">neuralops.trainer.methods</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.trainer.methods.gelora.apply_fisher_gelora" href="#neuralops.trainer.methods.gelora.apply_fisher_gelora">apply_fisher_gelora</a></code></li>
+<li><code><a title="neuralops.trainer.methods.gelora.collect_hidden_states" href="#neuralops.trainer.methods.gelora.collect_hidden_states">collect_hidden_states</a></code></li>
+<li><code><a title="neuralops.trainer.methods.gelora.compute_gelora_base_ranks" href="#neuralops.trainer.methods.gelora.compute_gelora_base_ranks">compute_gelora_base_ranks</a></code></li>
+<li><code><a title="neuralops.trainer.methods.gelora.estimate_intrinsic_dimension_pytorch" href="#neuralops.trainer.methods.gelora.estimate_intrinsic_dimension_pytorch">estimate_intrinsic_dimension_pytorch</a></code></li>
+<li><code><a title="neuralops.trainer.methods.gelora.get_encoder_layers" href="#neuralops.trainer.methods.gelora.get_encoder_layers">get_encoder_layers</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

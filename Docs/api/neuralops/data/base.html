@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.data.base API documentation</title>
+<meta name="description" content="Base data utilities: configuration, task‑aware preprocessing, DataLoader creation.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.data.base</code></h1>
+</header>
+<section id="section-intro">
+<p>Base data utilities: configuration, task‑aware preprocessing, DataLoader creation.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.data.base.create_dataloader"><code class="name flex">
+<span>def <span class="ident">create_dataloader</span></span>(<span>dataset,<br>tokenizer,<br>config: <a title="neuralops.data.base.DataConfig" href="#neuralops.data.base.DataConfig">DataConfig</a>,<br>**kwargs) ‑> torch.utils.data.dataloader.DataLoader</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def create_dataloader(dataset, tokenizer, config: DataConfig, **kwargs) -&gt; DataLoader:
+    &#34;&#34;&#34;
+    Create a DataLoader from a HuggingFace Dataset, applying preprocessing if not already tokenized.
+    Uses ProductionDataCollator to guarantee rock-solid batch dimensions and GPU Tensor Core alignment.
+    &#34;&#34;&#34;
+    if &#34;input_ids&#34; in dataset.column_names and &#34;attention_mask&#34; in dataset.column_names:
+        processed = dataset
+    else:
+        processed = dataset.map(
+            lambda examples: preprocess_function(examples, tokenizer, config),
+            batched=True,
+            remove_columns=dataset.column_names,
+        )
+    columns = [
+        col
+        for col in [
+            &#34;input_ids&#34;,
+            &#34;attention_mask&#34;,
+            &#34;labels&#34;,
+            &#34;start_positions&#34;,
+            &#34;end_positions&#34;,
+            &#34;token_type_ids&#34;,
+        ]
+        if col in processed.column_names
+    ]
+    processed.set_format(type=&#34;torch&#34;, columns=columns)
+
+    collate_fn = kwargs.pop(&#34;collate_fn&#34;, None)
+    if collate_fn is None:
+        collate_fn = ProductionDataCollator(
+            pad_token_id=(getattr(tokenizer, &#34;pad_token_id&#34;, 0) if tokenizer is not None else 0),
+            pad_to_multiple_of=8,
+            max_length=config.max_length,
+        )
+
+    return DataLoader(
+        processed,
+        batch_size=config.batch_size,
+        shuffle=config.shuffle,
+        num_workers=config.num_workers,
+        collate_fn=collate_fn,
+        **kwargs,
+    )</code></pre>
+</details>
+<div class="desc"><p>Create a DataLoader from a HuggingFace Dataset, applying preprocessing if not already tokenized.
+Uses ProductionDataCollator to guarantee rock-solid batch dimensions and GPU Tensor Core alignment.</p></div>
+</dd>
+<dt id="neuralops.data.base.preprocess_function"><code class="name flex">
+<span>def <span class="ident">preprocess_function</span></span>(<span>examples,<br>tokenizer,<br>config: <a title="neuralops.data.base.DataConfig" href="#neuralops.data.base.DataConfig">DataConfig</a>) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def preprocess_function(examples, tokenizer, config: DataConfig) -&gt; Any:
+    &#34;&#34;&#34;
+    Generic preprocessing function handling all TaskTypes.
+    Returns a dictionary with &#39;input_ids&#39;, &#39;attention_mask&#39;, and appropriate labels.
+    &#34;&#34;&#34;
+    if config.custom_preprocess is not None:
+        return config.custom_preprocess(examples, tokenizer, config)
+
+    text1 = examples.get(config.text_column_1) if config.text_column_1 else None
+    text2 = examples.get(config.text_column_2) if config.text_column_2 else None
+
+    # Fallback auto-detection for text columns if specified column is missing
+    if text1 is None:
+        for col in [
+            &#34;sentence&#34;,
+            &#34;text&#34;,
+            &#34;sentence1&#34;,
+            &#34;premise&#34;,
+            &#34;question&#34;,
+            &#34;inputs&#34;,
+            &#34;input&#34;,
+        ]:
+            if col in examples:
+                text1 = examples[col]
+                break
+        if text1 is None and hasattr(examples, &#34;keys&#34;):
+            for k in examples.keys():
+                if k not in (&#34;label&#34;, &#34;labels&#34;, &#34;idx&#34;, &#34;id&#34;):
+                    text1 = examples[k]
+                    break
+
+    if text2 is None and config.text_column_2:
+        for col in [&#34;sentence2&#34;, &#34;hypothesis&#34;, &#34;context&#34;]:
+            if col in examples:
+                text2 = examples[col]
+                break
+
+    if text1 is not None:
+        if isinstance(text1, list):
+            text1 = [str(x) if x is not None else &#34;&#34; for x in text1]
+        elif not isinstance(text1, str):
+            text1 = str(text1)
+
+    if text2 is not None:
+        if isinstance(text2, list):
+            text2 = [str(x) if x is not None else &#34;&#34; for x in text2]
+        elif not isinstance(text2, str):
+            text2 = str(text2)
+
+    tokenizer_kwargs = {
+        &#34;truncation&#34;: config.truncation,
+        &#34;padding&#34;: config.padding,
+        &#34;max_length&#34;: config.max_length,
+        &#34;return_tensors&#34;: config.return_tensors,
+    }
+
+    if config.task_type == TaskType.LANGUAGE_MODELING:
+        result = (
+            tokenizer(text1, **tokenizer_kwargs) if text1 else tokenizer(text2, **tokenizer_kwargs)
+        )
+        return result
+
+    if config.task_type == TaskType.TOKEN_CLASSIFICATION:
+        tokenized = tokenizer(
+            examples[config.tokens_column],
+            truncation=config.truncation,
+            padding=config.padding,
+            max_length=config.max_length,
+            is_split_into_words=True,
+            return_tensors=config.return_tensors,
+        )
+        labels = []
+        for i, label_list in enumerate(examples[config.tags_column]):
+            word_ids = tokenized.word_ids(batch_index=i)
+            label_ids = [-100] * len(word_ids)
+            previous_word_idx = None
+            for j, word_idx in enumerate(word_ids):
+                if word_idx is None:
+                    continue
+                if word_idx != previous_word_idx:
+                    label_ids[j] = label_list[word_idx]
+                    previous_word_idx = word_idx
+                else:
+                    label_ids[j] = -100
+            labels.append(label_ids)
+        tokenized[&#34;labels&#34;] = labels
+        return tokenized
+
+    if config.task_type in (
+        TaskType.SINGLE_CLASSIFICATION,
+        TaskType.PAIR_CLASSIFICATION,
+        TaskType.REGRESSION,
+    ):
+        if text1 is not None and text2 is not None:
+            tokenized = tokenizer(text1, text2, **tokenizer_kwargs)
+        else:
+            text_input = text1 if text1 is not None else text2
+            tokenized = tokenizer(text_input, **tokenizer_kwargs)
+        label_col = config.label_column
+        if label_col not in examples:
+            for candidate in [&#34;label&#34;, &#34;labels&#34;, &#34;target&#34;, &#34;gold_label&#34;]:
+                if candidate in examples:
+                    label_col = candidate
+                    break
+        if label_col in examples:
+            if config.task_type == TaskType.REGRESSION:
+                tokenized[&#34;labels&#34;] = [float(l) for l in examples[label_col]]
+            else:
+                tokenized[&#34;labels&#34;] = [int(l) for l in examples[label_col]]
+        return tokenized
+
+    if config.task_type == TaskType.QA:
+        tokenized = tokenizer(
+            examples[config.question_column],
+            examples[config.context_column],
+            truncation=&#34;only_second&#34; if config.truncation else False,
+            padding=config.padding,
+            max_length=config.max_length,
+            return_offsets_mapping=True,
+            return_tensors=config.return_tensors,
+        )
+        start_positions, end_positions = [], []
+        for i, (ans, context) in enumerate(
+            zip(examples[config.answer_column], examples[config.context_column])
+        ):
+            if isinstance(ans, dict):
+                start_char = ans[&#34;answer_start&#34;]
+                end_char = start_char + len(ans[&#34;text&#34;])
+            else:
+                start_char = ans
+                end_char = start_char + len(examples[config.answer_column][i])
+            offsets = tokenized[&#34;offset_mapping&#34;][i]
+            sequence_ids = tokenized.sequence_ids(i)
+            start_token = end_token = None
+            for j, (start, end) in enumerate(offsets):
+                if sequence_ids[j] != 1:
+                    continue
+                if start &lt;= start_char &lt; end:
+                    start_token = j
+                if start &lt; end_char &lt;= end:
+                    end_token = j
+                    break
+            if start_token is None:
+                start_token = 0
+            if end_token is None:
+                end_token = len(offsets) - 1
+            start_positions.append(start_token)
+            end_positions.append(end_token)
+        tokenized[&#34;start_positions&#34;] = start_positions
+        tokenized[&#34;end_positions&#34;] = end_positions
+        tokenized.pop(&#34;offset_mapping&#34;)
+        return tokenized
+
+    raise ValueError(f&#34;Unsupported task type: {config.task_type}&#34;)</code></pre>
+</details>
+<div class="desc"><p>Generic preprocessing function handling all TaskTypes.
+Returns a dictionary with 'input_ids', 'attention_mask', and appropriate labels.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.data.base.DataConfig"><code class="flex name class">
+<span>class <span class="ident">DataConfig</span></span>
+<span>(</span><span>task_type: <a title="neuralops.data.base.TaskType" href="#neuralops.data.base.TaskType">TaskType</a> = TaskType.SINGLE_CLASSIFICATION,<br>task_name: str | None = None,<br>max_length: int = 128,<br>padding: Any = 'max_length',<br>truncation: bool = True,<br>return_tensors: str = 'pt',<br>text_column: str | None = None,<br>text_column_1: str | None = None,<br>text_column_2: str | None = None,<br>label_column: str | None = None,<br>batch_size: int = 16,<br>shuffle: bool = True,<br>num_workers: int = 0,<br>mlm_probability: float = 0.15,<br>question_column: str | None = None,<br>context_column: str | None = None,<br>answer_column: str | None = None,<br>tokens_column: str | None = None,<br>tags_column: str | None = None,<br>custom_preprocess: <class 'collections.abc.Callable'> | None = None,<br>max_samples: int | None = None,<br>split: str | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class DataConfig:
+    task_type: TaskType = TaskType.SINGLE_CLASSIFICATION
+    task_name: str | None = None
+    max_length: int = 128
+    padding: Any = &#34;max_length&#34;
+    truncation: bool = True
+    return_tensors: str = &#34;pt&#34;
+    text_column: str | None = None
+    text_column_1: str | None = None
+    text_column_2: str | None = None
+    label_column: str | None = None
+    batch_size: int = 16
+    shuffle: bool = True
+    num_workers: int = 0
+    mlm_probability: float = 0.15
+    question_column: str | None = None
+    context_column: str | None = None
+    answer_column: str | None = None
+    tokens_column: str | None = None
+    tags_column: str | None = None
+    custom_preprocess: Callable | None = None
+    max_samples: int | None = None
+    split: str | None = None</code></pre>
+</details>
+<div class="desc"><p>DataConfig(task_type: neuralops.data.base.TaskType = <TaskType.SINGLE_CLASSIFICATION: 'single_classification'>, task_name: str | None = None, max_length: int = 128, padding: Any = 'max_length', truncation: bool = True, return_tensors: str = 'pt', text_column: str | None = None, text_column_1: str | None = None, text_column_2: str | None = None, label_column: str | None = None, batch_size: int = 16, shuffle: bool = True, num_workers: int = 0, mlm_probability: float = 0.15, question_column: str | None = None, context_column: str | None = None, answer_column: str | None = None, tokens_column: str | None = None, tags_column: str | None = None, custom_preprocess: collections.abc.Callable | None = None, max_samples: int | None = None, split: str | None = None)</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.data.base.DataConfig.answer_column"><code class="name">var <span class="ident">answer_column</span> : str | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.batch_size"><code class="name">var <span class="ident">batch_size</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.context_column"><code class="name">var <span class="ident">context_column</span> : str | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.custom_preprocess"><code class="name">var <span class="ident">custom_preprocess</span> : <class 'collections.abc.Callable'> | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.label_column"><code class="name">var <span class="ident">label_column</span> : str | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.max_length"><code class="name">var <span class="ident">max_length</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.max_samples"><code class="name">var <span class="ident">max_samples</span> : int | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.mlm_probability"><code class="name">var <span class="ident">mlm_probability</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.num_workers"><code class="name">var <span class="ident">num_workers</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.padding"><code class="name">var <span class="ident">padding</span> : Any</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.question_column"><code class="name">var <span class="ident">question_column</span> : str | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.return_tensors"><code class="name">var <span class="ident">return_tensors</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.shuffle"><code class="name">var <span class="ident">shuffle</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.split"><code class="name">var <span class="ident">split</span> : str | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.tags_column"><code class="name">var <span class="ident">tags_column</span> : str | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.task_name"><code class="name">var <span class="ident">task_name</span> : str | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.task_type"><code class="name">var <span class="ident">task_type</span> : <a title="neuralops.data.base.TaskType" href="#neuralops.data.base.TaskType">TaskType</a></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.text_column"><code class="name">var <span class="ident">text_column</span> : str | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.text_column_1"><code class="name">var <span class="ident">text_column_1</span> : str | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.text_column_2"><code class="name">var <span class="ident">text_column_2</span> : str | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.tokens_column"><code class="name">var <span class="ident">tokens_column</span> : str | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.DataConfig.truncation"><code class="name">var <span class="ident">truncation</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.data.base.ProductionDataCollator"><code class="flex name class">
+<span>class <span class="ident">ProductionDataCollator</span></span>
+<span>(</span><span>pad_token_id: int = 0,<br>label_pad_token_id: int = -100,<br>pad_to_multiple_of: int | None = 8,<br>max_length: int | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ProductionDataCollator:
+    &#34;&#34;&#34;
+    Production-grade data collator for PyTorch DataLoaders.
+    Guarantees standard batch dimensions and types for high-performance GPU servers:
+    - input_ids: [B, L], torch.long (padded to max_len or multiple of 8 for Tensor Cores)
+    - attention_mask: [B, L], torch.long
+    - token_type_ids: [B, L], torch.long (if present)
+    - labels: [B] (for 1D classification/regression) or [B, L] (for language modeling with -100 ignore index)
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        pad_token_id: int = 0,
+        label_pad_token_id: int = -100,
+        pad_to_multiple_of: int | None = 8,
+        max_length: int | None = None,
+    ) -&gt; None:
+        self.pad_token_id = pad_token_id
+        self.label_pad_token_id = label_pad_token_id
+        self.pad_to_multiple_of = pad_to_multiple_of
+        self.max_length = max_length
+
+    def __call__(self, features: list[dict[str, Any]]) -&gt; dict[str, torch.Tensor]:
+        if not features:
+            return {}
+
+        batch: dict[str, Any] = {}
+        first = features[0]
+
+        # Determine sequence length
+        if &#34;input_ids&#34; in first:
+            seq_lens = [
+                (len(f[&#34;input_ids&#34;]) if isinstance(f[&#34;input_ids&#34;], (list, torch.Tensor)) else 1)
+                for f in features
+            ]
+            max_len = max(seq_lens)
+            if self.max_length is not None:
+                max_len = min(max_len, self.max_length)
+            if self.pad_to_multiple_of is not None and self.pad_to_multiple_of &gt; 0:
+                max_len = (
+                    (max_len + self.pad_to_multiple_of - 1) // self.pad_to_multiple_of
+                ) * self.pad_to_multiple_of
+        else:
+            max_len = None
+
+        for key in first.keys():
+            if key in (&#34;input_ids&#34;, &#34;attention_mask&#34;, &#34;token_type_ids&#34;):
+                pad_val = 0 if key == &#34;attention_mask&#34; else self.pad_token_id
+                tensors = []
+                for f in features:
+                    val = f[key]
+                    if not isinstance(val, torch.Tensor):
+                        val = torch.tensor(val, dtype=torch.long)
+                    else:
+                        val = val.long()
+                    if max_len is not None:
+                        if val.size(0) &lt; max_len:
+                            padd = torch.full((max_len - val.size(0),), pad_val, dtype=val.dtype)
+                            val = torch.cat([val, padd], dim=0)
+                        elif val.size(0) &gt; max_len:
+                            val = val[:max_len]
+                    tensors.append(val)
+                batch[key] = torch.stack(tensors, dim=0).contiguous()
+
+            elif key in (&#34;label&#34;, &#34;labels&#34;):
+                # Handle 1D classification vs 2D LM labels
+                val0 = first[key]
+                is_2d = (isinstance(val0, list) and len(val0) &gt; 1) or (
+                    isinstance(val0, torch.Tensor) and val0.dim() &gt; 0 and val0.numel() &gt; 1
+                )
+                if is_2d and max_len is not None:
+                    tensors = []
+                    for f in features:
+                        val = f[key]
+                        if not isinstance(val, torch.Tensor):
+                            val = torch.tensor(val, dtype=torch.long)
+                        else:
+                            val = val.long()
+                        if val.size(0) &lt; max_len:
+                            padd = torch.full(
+                                (max_len - val.size(0),),
+                                self.label_pad_token_id,
+                                dtype=val.dtype,
+                            )
+                            val = torch.cat([val, padd], dim=0)
+                        elif val.size(0) &gt; max_len:
+                            val = val[:max_len]
+                        tensors.append(val)
+                    batch[&#34;labels&#34;] = torch.stack(tensors, dim=0).contiguous()
+                else:
+                    vals = [f[key] for f in features]
+                    if all(
+                        isinstance(v, (int, bool, np.integer))
+                        or (
+                            isinstance(v, torch.Tensor)
+                            and v.numel() == 1
+                            and v.dtype in (torch.int64, torch.int32, torch.bool)
+                        )
+                        for v in vals
+                    ):
+                        batch[&#34;labels&#34;] = torch.tensor([int(v) for v in vals], dtype=torch.long)
+                    else:
+                        batch[&#34;labels&#34;] = torch.tensor(
+                            [float(v) for v in vals], dtype=torch.float32
+                        )
+            else:
+                # Other auxiliary tensors
+                vals = [f[key] for f in features]
+                if isinstance(vals[0], torch.Tensor):
+                    batch[key] = torch.stack(vals, dim=0).contiguous()
+                elif isinstance(vals[0], (int, float)):
+                    batch[key] = torch.tensor(vals).contiguous()
+                else:
+                    batch[key] = vals
+
+        return batch</code></pre>
+</details>
+<div class="desc"><p>Production-grade data collator for PyTorch DataLoaders.
+Guarantees standard batch dimensions and types for high-performance GPU servers:
+- input_ids: [B, L], torch.long (padded to max_len or multiple of 8 for Tensor Cores)
+- attention_mask: [B, L], torch.long
+- token_type_ids: [B, L], torch.long (if present)
+- labels: [B] (for 1D classification/regression) or [B, L] (for language modeling with -100 ignore index)</p></div>
+</dd>
+<dt id="neuralops.data.base.TaskType"><code class="flex name class">
+<span>class <span class="ident">TaskType</span></span>
+<span>(</span><span>*values)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TaskType(Enum):
+    SINGLE_CLASSIFICATION = &#34;single_classification&#34;
+    PAIR_CLASSIFICATION = &#34;pair_classification&#34;
+    REGRESSION = &#34;regression&#34;
+    QA = &#34;qa&#34;
+    TOKEN_CLASSIFICATION = &#34;token_classification&#34;
+    LANGUAGE_MODELING = &#34;language_modeling&#34;
+    SEQ2SEQ = &#34;seq2seq&#34;</code></pre>
+</details>
+<div class="desc"><p>Create a collection of name/value pairs.</p>
+<p>Example enumeration:</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; class Color(Enum):
+...     RED = 1
+...     BLUE = 2
+...     GREEN = 3
+</code></pre>
+<p>Access them by:</p>
+<ul>
+<li>attribute access:</li>
+</ul>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>Color.RED
+<Color.RED: 1></p>
+</blockquote>
+</blockquote>
+</blockquote>
+<ul>
+<li>value lookup:</li>
+</ul>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>Color(1)
+<Color.RED: 1></p>
+</blockquote>
+</blockquote>
+</blockquote>
+<ul>
+<li>name lookup:</li>
+</ul>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>Color['RED']
+<Color.RED: 1></p>
+</blockquote>
+</blockquote>
+</blockquote>
+<p>Enumerations can be iterated over, and know how many members they have:</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; len(Color)
+3
+</code></pre>
+<pre><code class="language-python-repl">&gt;&gt;&gt; list(Color)
+[&lt;Color.RED: 1&gt;, &lt;Color.BLUE: 2&gt;, &lt;Color.GREEN: 3&gt;]
+</code></pre>
+<p>Methods can be added to enumerations, and members can have their own
+attributes &ndash; see the documentation for details.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.data.base.TaskType.LANGUAGE_MODELING"><code class="name">var <span class="ident">LANGUAGE_MODELING</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.TaskType.PAIR_CLASSIFICATION"><code class="name">var <span class="ident">PAIR_CLASSIFICATION</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.TaskType.QA"><code class="name">var <span class="ident">QA</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.TaskType.REGRESSION"><code class="name">var <span class="ident">REGRESSION</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.TaskType.SEQ2SEQ"><code class="name">var <span class="ident">SEQ2SEQ</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.TaskType.SINGLE_CLASSIFICATION"><code class="name">var <span class="ident">SINGLE_CLASSIFICATION</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.data.base.TaskType.TOKEN_CLASSIFICATION"><code class="name">var <span class="ident">TOKEN_CLASSIFICATION</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.data" href="index.html">neuralops.data</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.data.base.create_dataloader" href="#neuralops.data.base.create_dataloader">create_dataloader</a></code></li>
+<li><code><a title="neuralops.data.base.preprocess_function" href="#neuralops.data.base.preprocess_function">preprocess_function</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.data.base.DataConfig" href="#neuralops.data.base.DataConfig">DataConfig</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.data.base.DataConfig.answer_column" href="#neuralops.data.base.DataConfig.answer_column">answer_column</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.batch_size" href="#neuralops.data.base.DataConfig.batch_size">batch_size</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.context_column" href="#neuralops.data.base.DataConfig.context_column">context_column</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.custom_preprocess" href="#neuralops.data.base.DataConfig.custom_preprocess">custom_preprocess</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.label_column" href="#neuralops.data.base.DataConfig.label_column">label_column</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.max_length" href="#neuralops.data.base.DataConfig.max_length">max_length</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.max_samples" href="#neuralops.data.base.DataConfig.max_samples">max_samples</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.mlm_probability" href="#neuralops.data.base.DataConfig.mlm_probability">mlm_probability</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.num_workers" href="#neuralops.data.base.DataConfig.num_workers">num_workers</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.padding" href="#neuralops.data.base.DataConfig.padding">padding</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.question_column" href="#neuralops.data.base.DataConfig.question_column">question_column</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.return_tensors" href="#neuralops.data.base.DataConfig.return_tensors">return_tensors</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.shuffle" href="#neuralops.data.base.DataConfig.shuffle">shuffle</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.split" href="#neuralops.data.base.DataConfig.split">split</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.tags_column" href="#neuralops.data.base.DataConfig.tags_column">tags_column</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.task_name" href="#neuralops.data.base.DataConfig.task_name">task_name</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.task_type" href="#neuralops.data.base.DataConfig.task_type">task_type</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.text_column" href="#neuralops.data.base.DataConfig.text_column">text_column</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.text_column_1" href="#neuralops.data.base.DataConfig.text_column_1">text_column_1</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.text_column_2" href="#neuralops.data.base.DataConfig.text_column_2">text_column_2</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.tokens_column" href="#neuralops.data.base.DataConfig.tokens_column">tokens_column</a></code></li>
+<li><code><a title="neuralops.data.base.DataConfig.truncation" href="#neuralops.data.base.DataConfig.truncation">truncation</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.data.base.ProductionDataCollator" href="#neuralops.data.base.ProductionDataCollator">ProductionDataCollator</a></code></h4>
+</li>
+<li>
+<h4><code><a title="neuralops.data.base.TaskType" href="#neuralops.data.base.TaskType">TaskType</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.data.base.TaskType.LANGUAGE_MODELING" href="#neuralops.data.base.TaskType.LANGUAGE_MODELING">LANGUAGE_MODELING</a></code></li>
+<li><code><a title="neuralops.data.base.TaskType.PAIR_CLASSIFICATION" href="#neuralops.data.base.TaskType.PAIR_CLASSIFICATION">PAIR_CLASSIFICATION</a></code></li>
+<li><code><a title="neuralops.data.base.TaskType.QA" href="#neuralops.data.base.TaskType.QA">QA</a></code></li>
+<li><code><a title="neuralops.data.base.TaskType.REGRESSION" href="#neuralops.data.base.TaskType.REGRESSION">REGRESSION</a></code></li>
+<li><code><a title="neuralops.data.base.TaskType.SEQ2SEQ" href="#neuralops.data.base.TaskType.SEQ2SEQ">SEQ2SEQ</a></code></li>
+<li><code><a title="neuralops.data.base.TaskType.SINGLE_CLASSIFICATION" href="#neuralops.data.base.TaskType.SINGLE_CLASSIFICATION">SINGLE_CLASSIFICATION</a></code></li>
+<li><code><a title="neuralops.data.base.TaskType.TOKEN_CLASSIFICATION" href="#neuralops.data.base.TaskType.TOKEN_CLASSIFICATION">TOKEN_CLASSIFICATION</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

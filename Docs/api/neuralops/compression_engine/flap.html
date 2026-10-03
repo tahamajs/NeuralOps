@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.flap API documentation</title>
+<meta name="description" content="FLAP: Fluctuation-Based Adaptive Structured Pruning (Corrected) …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.flap</code></h1>
+</header>
+<section id="section-intro">
+<p>FLAP: Fluctuation-Based Adaptive Structured Pruning (Corrected).</p>
+<p>Registered in COMPRESSOR_REGISTRY as 'flap' and 'flap_compressor'.
+Production hardened for multi-architecture compatibility
+(DistilBERT, RoBERTa, GPT-2, Qwen3.5) with reconstruction validation,
+Conv1D support, and safe fallback.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.flap.flap_compressor_factory"><code class="name flex">
+<span>def <span class="ident">flap_compressor_factory</span></span>(<span>model: Any, comp_config: Any = None, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;flap_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;flap_compressor_factory&#34;)
+def flap_compressor_factory(model: Any, comp_config: Any = None, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Factory function for FLAP compressor.&#34;&#34;&#34;
+    sparsity = kwargs.pop(
+        &#34;sparsity&#34;,
+        _cfg_get(comp_config, &#34;flap_sparsity&#34;, _cfg_get(comp_config, &#34;sparsity&#34;, 0.2)),
+    )
+    metric_type = kwargs.pop(
+        &#34;metric_type&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;flap_metric_type&#34;,
+            _cfg_get(comp_config, &#34;metric_type&#34;, &#34;WIFV&#34;),
+        ),
+    )
+    structured_24 = kwargs.pop(
+        &#34;structured_24&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;flap_structured_24&#34;,
+            _cfg_get(comp_config, &#34;structured_24&#34;, False),
+        ),
+    )
+    max_error = kwargs.pop(
+        &#34;max_error&#34;,
+        _cfg_get(comp_config, &#34;flap_max_error&#34;, _cfg_get(comp_config, &#34;max_error&#34;, 0.35)),
+    )
+    target_attention_only = kwargs.pop(
+        &#34;target_attention_only&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;flap_target_attention_only&#34;,
+            _cfg_get(comp_config, &#34;target_attention_only&#34;, False),
+        ),
+    )
+    fallback = kwargs.pop(
+        &#34;fallback_to_original&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;flap_fallback_to_original&#34;,
+            _cfg_get(comp_config, &#34;fallback_to_original&#34;, True),
+        ),
+    )
+    tokenizer = kwargs.pop(
+        &#34;tokenizer&#34;,
+        getattr(model, &#34;tokenizer&#34;, None) or _cfg_get(comp_config, &#34;tokenizer&#34;, None),
+    )
+    num_calib = kwargs.pop(
+        &#34;num_calibration_batches&#34;, _cfg_get(comp_config, &#34;num_calibration_batches&#34;, 8)
+    )
+
+    compressor = FLAPCompressor(
+        model,
+        tokenizer=tokenizer,
+        sparsity=sparsity,
+        metric_type=metric_type,
+        structured_24=structured_24,
+        max_error=max_error,
+        target_attention_only=target_attention_only,
+        fallback_to_original=fallback,
+        num_calibration_batches=num_calib,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, _ = compressor.compress()
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>Factory function for FLAP compressor.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.flap.FLAPCompressor"><code class="flex name class">
+<span>class <span class="ident">FLAPCompressor</span></span>
+<span>(</span><span>model: nn.Module,<br>tokenizer: Any | None = None,<br>sparsity: float = 0.2,<br>metric_type: str = 'WIFV',<br>max_error: float = 0.35,<br>target_attention_only: bool = False,<br>fallback_to_original: bool = True,<br>calibration_loader: Any | None = None,<br>calibration_texts: list[str] | None = None,<br>device: str | torch.device | None = None,<br>structured_24: bool = False,<br>target_modules: list[str] | None = None,<br>cfg: Any | None = None,<br>num_calibration_batches: int = 8,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;flap&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;flap_compressor&#34;)
+class FLAPCompressor(BaseCompressor):
+    &#34;&#34;&#34;
+    FLAP Compressor: Fluctuation-based Adaptive Structured Pruning.
+
+    Production hardening features:
+    - Robust LoRALinear and Conv1D support (transpose + adapter preservation).
+    - target_attention_only restricts pruning to attention projections.
+    - Relative Frobenius reconstruction error validation with configurable max_error.
+    - Safe fallback to original module if error exceeds threshold.
+    - Real metrics (effective_parameter_ratio, num_compressed, num_fallback, sparsity).
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module,
+        tokenizer: Any | None = None,
+        sparsity: float = 0.2,
+        metric_type: str = &#34;WIFV&#34;,
+        max_error: float = 0.35,
+        target_attention_only: bool = False,
+        fallback_to_original: bool = True,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
+        structured_24: bool = False,
+        target_modules: list[str] | None = None,
+        cfg: Any | None = None,
+        num_calibration_batches: int = 8,  # FL-FIX-04
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;flap&#34;, **kwargs)
+        cfg = cfg or kwargs.get(&#34;comp_config&#34;)
+        self.cfg = cfg
+
+        self.tokenizer = tokenizer or getattr(model, &#34;tokenizer&#34;, None)
+        raw_sp = _cfg_get(cfg, &#34;flap_sparsity&#34;, _cfg_get(cfg, &#34;sparsity&#34;, sparsity))
+        self.sparsity = max(0.0, min(float(raw_sp), 0.95))
+        self.metric_type = str(
+            _cfg_get(cfg, &#34;flap_metric_type&#34;, _cfg_get(cfg, &#34;metric_type&#34;, metric_type))
+        ).upper()
+        self.structured_24 = bool(
+            _cfg_get(cfg, &#34;flap_structured_24&#34;, _cfg_get(cfg, &#34;structured_24&#34;, structured_24))
+        )
+        c_max_error = _cfg_get(cfg, &#34;flap_max_error&#34;, _cfg_get(cfg, &#34;max_error&#34;, max_error))
+        if c_max_error is None or c_max_error == 0.35:
+            c_max_error = adaptive_max_error(
+                int((1.0 - self.sparsity) * 768), 768, 768, &#34;distilbert&#34;
+            )
+            c_max_error = max(c_max_error, 0.60)
+
+        self.max_error = float(c_max_error)
+        self.target_attention_only = bool(
+            _cfg_get(
+                cfg,
+                &#34;flap_target_attention_only&#34;,
+                _cfg_get(cfg, &#34;target_attention_only&#34;, target_attention_only),
+            )
+        )
+        self.fallback_to_original = bool(
+            _cfg_get(
+                cfg,
+                &#34;flap_fallback_to_original&#34;,
+                _cfg_get(cfg, &#34;fallback_to_original&#34;, fallback_to_original),
+            )
+        )
+        self.calibration_loader = calibration_loader or _cfg_get(cfg, &#34;calibration_loader&#34;, None)
+        self.calibration_texts = calibration_texts
+        self.target_modules = target_modules
+        self.target_device = (
+            torch.device(device)
+            if device is not None
+            else next(model.parameters(), torch.tensor(0.0)).device
+        )
+        self.num_calibration_batches = max(
+            1, int(_cfg_get(cfg, &#34;num_calibration_batches&#34;, num_calibration_batches))
+        )
+
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_sparsities: dict[str, float] = {}
+        self._compressed_params: int = 0
+
+    # ------------------------------------------------------------------
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        name_lower = name.lower()
+        if any(part in name.split(&#34;.&#34;) for part in [&#34;lora_A&#34;, &#34;lora_B&#34;, &#34;base_layer&#34;]):
+            return False
+        if any(
+            skip in name_lower
+            for skip in [
+                &#34;classifier&#34;,
+                &#34;score&#34;,
+                &#34;lm_head&#34;,
+                &#34;pooler&#34;,
+                &#34;embedding&#34;,
+                &#34;router&#34;,
+                &#34;gate&#34;,
+                &#34;head&#34;,
+                &#34;output_layer&#34;,
+            ]
+        ):
+            return False
+
+        target_mod = getattr(module, &#34;base_layer&#34;, module)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_linear = isinstance(target_mod, nn.Linear)
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+        if not (is_linear or is_conv1d):
+            return False
+
+        if not should_compress_linear(self.model, name):
+            return False
+
+        if self.target_modules is not None:
+            return any(t in name for t in self.target_modules)
+
+        if self.target_attention_only:
+            last_part = name.split(&#34;.&#34;)[-1]
+            is_attn = (last_part in _ATTN_NAMES) or any(
+                k in name_lower for k in (&#34;attn&#34;, &#34;attention&#34;)
+            )
+            if not is_attn:
+                return False
+
+        return True
+
+    # ------------------------------------------------------------------
+    # FL-FIX-04/05: multiple calibration batches, mean-of-variance accumulation
+    # ------------------------------------------------------------------
+    def _normalize_calibration_batches(self, calib_inputs: Any) -&gt; list[Any]:
+        if calib_inputs is None:
+            return []
+        if isinstance(calib_inputs, torch.Tensor):
+            return [calib_inputs]
+        if isinstance(calib_inputs, dict):
+            return [calib_inputs]
+        if isinstance(calib_inputs, (list, tuple)):
+            if len(calib_inputs) == 0:
+                return []
+            first = calib_inputs[0]
+            if isinstance(first, (dict, torch.Tensor)):
+                return list(calib_inputs)
+            return [calib_inputs]
+        return [calib_inputs]
+
+    def _collect_layer_activations(self) -&gt; dict[str, torch.Tensor]:
+        &#34;&#34;&#34;
+        Capture per-feature activation variance across calibration batches.
+        Returns: {name: variance_tensor of shape (in_features,)}
+        &#34;&#34;&#34;
+        self.model.eval()
+        variance_sum: dict[str, torch.Tensor] = {}
+        batch_count: dict[str, int] = {}
+        hooks = []
+
+        def make_hook(name: str):
+            def hook(module, inputs, output):
+                if not inputs or not isinstance(inputs[0], torch.Tensor):
+                    return
+                inp = inputs[0].detach().float()
+                target_mod = getattr(module, &#34;base_layer&#34;, module)
+                cls_name = target_mod.__class__.__name__.lower()
+                is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+                in_f = target_mod.weight.shape[0] if is_conv1d else target_mod.weight.shape[1]
+                flat = inp.reshape(-1, in_f).cpu()
+                if flat.size(0) &gt;= 2:
+                    var = flat.var(dim=0)
+                else:
+                    var = torch.zeros(in_f)
+                if name not in variance_sum:
+                    variance_sum[name] = var
+                    batch_count[name] = 1
+                else:
+                    variance_sum[name] += var
+                    batch_count[name] += 1
+
+            return hook
+
+        for name, module in self.model.named_modules():
+            if self._is_target_module(name, module):
+                hooks.append(module.register_forward_hook(make_hook(name)))
+
+        try:
+            calib_inputs = get_calibration_tensors(
+                self.model,
+                tokenizer=self.tokenizer,
+                calibration_loader=self.calibration_loader,
+                calibration_texts=self.calibration_texts,
+                device=self.target_device,
+            )
+            batches = self._normalize_calibration_batches(calib_inputs)
+            n = min(len(batches), self.num_calibration_batches)
+
+            with torch.no_grad():
+                for i in range(n):
+                    b = batches[i]
+                    try:
+                        if isinstance(b, dict):
+                            self.model(**b)
+                        elif isinstance(b, torch.Tensor):
+                            self.model(b)
+                        elif isinstance(b, (list, tuple)):
+                            self.model(*b)
+                    except Exception as e:
+                        logger.debug(&#34;FLAP calibration batch %d failed: %s&#34;, i, e)
+        finally:
+            for h in hooks:
+                h.remove()
+
+        aggregated: dict[str, torch.Tensor] = {}
+        for name, vsum in variance_sum.items():
+            aggregated[name] = (vsum / max(1, batch_count[name])).to(self.target_device)
+        return aggregated
+
+    # ------------------------------------------------------------------
+    def _compute_fluctuation_metric(
+        self,
+        weight: torch.Tensor,
+        activations: torch.Tensor | None,
+    ) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Per-column fluctuation saliency score in fp32.&#34;&#34;&#34;
+        d_out, d_in = weight.shape
+        device = weight.device
+
+        if activations is not None and activations.numel() &gt; 0:
+            inp_var = activations.reshape(-1).float().to(device)
+            if inp_var.shape[0] != d_in:
+                inp_var = torch.ones(d_in, device=device)
+            else:
+                inp_var = inp_var.clamp(min=1e-8)
+        else:
+            inp_var = torch.ones(d_in, device=device)
+
+        W = weight.float()
+        if self.metric_type == &#34;IFV&#34;:
+            scores = inp_var
+        elif self.metric_type == &#34;WIFV&#34;:
+            scores = inp_var * torch.sum(W.pow(2), dim=0)
+        elif self.metric_type == &#34;WIFN&#34;:
+            scores = torch.sum(torch.abs(W), dim=0) * torch.sqrt(inp_var)
+        else:
+            scores = inp_var * torch.sum(W.pow(2), dim=0)
+
+        return scores
+
+    # ------------------------------------------------------------------
+    def compress(self, **kwargs: Any) -&gt; tuple[nn.Module, dict[str, Any]]:
+        activations_map = self._collect_layer_activations()
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.skipped_layers = []
+        self.layer_errors = {}
+        self.layer_sparsities = {}
+
+        total_orig_params = 0
+        total_comp_params = 0
+
+        if self.target_attention_only:
+            for name, module in self.model.named_modules():
+                if any(part in name.split(&#34;.&#34;) for part in [&#34;lora_A&#34;, &#34;lora_B&#34;, &#34;base_layer&#34;]):
+                    continue
+                target_mod = getattr(module, &#34;base_layer&#34;, module)
+                cls_name = target_mod.__class__.__name__.lower()
+                is_linear = isinstance(target_mod, nn.Linear)
+                is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+                if (is_linear or is_conv1d) and not self._is_target_module(name, module):
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    self.skipped_layers.append(name)
+
+        targets = [
+            (name, mod)
+            for name, mod in self.model.named_modules()
+            if self._is_target_module(name, mod)
+        ]
+
+        if not targets:
+            logger.warning(&#34;FLAP: No compressible layers found.&#34;)
+            return self.model, self.get_compression_stats()
+
+        for name, module in targets:
+            target_mod = getattr(module, &#34;base_layer&#34;, module)
+            cls_name = target_mod.__class__.__name__.lower()
+            is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+            raw_w = target_mod.weight.data
+            orig_shape = raw_w.shape
+            device = raw_w.device
+            dtype = raw_w.dtype
+
+            W = raw_w.t().float().contiguous() if is_conv1d else raw_w.float()
+            d_out, d_in = W.shape
+            orig_layer_params = d_out * d_in
+            total_orig_params += orig_layer_params
+            norm_w = torch.norm(W, p=&#34;fro&#34;).item()
+
+            act = activations_map.get(name, None)
+            scores = self._compute_fluctuation_metric(W, act)
+
+            # FL-FIX-01: compute actual sparsity from mask.
+            if self.structured_24:
+                saliency_matrix = scores.unsqueeze(0).expand_as(W)
+                W_pruned, mask = apply_24_structured_mask(W, saliency=saliency_matrix, dim=1)
+                if mask is not None:
+                    mask_f = mask.float()
+                    effective_sparsity = 1.0 - (mask_f.sum().item() / max(1, mask_f.numel()))
+                else:
+                    # Fallback: count zeros.
+                    zeros = (W_pruned.abs() &lt; 1e-12).float().sum().item()
+                    effective_sparsity = zeros / max(1, W_pruned.numel())
+            else:
+                n_keep = max(1, int(d_in * (1.0 - self.sparsity)))
+                _, keep_idx = torch.topk(scores, k=n_keep, largest=True)
+                mask = torch.zeros(d_in, device=device)
+                mask[keep_idx] = 1.0
+                W_pruned = W * mask.unsqueeze(0)
+                effective_sparsity = 1.0 - (n_keep / d_in)
+
+            if norm_w &lt; 1e-12:
+                final_err = 0.0
+            else:
+                final_err = float(torch.norm(W - W_pruned, p=&#34;fro&#34;).item() / norm_w)
+
+            self.layer_errors[name] = final_err
+            self.layer_sparsities[name] = float(effective_sparsity)
+
+            if final_err &gt; self.max_error:
+                logger.warning(
+                    &#34;FLAP reconstruction error %.4f on %s exceeded threshold %.4f.&#34;,
+                    final_err,
+                    name,
+                    self.max_error,
+                )
+                if self.fallback_to_original:
+                    logger.info(&#34;FLAP: fallback to original on %s.&#34;, name)
+                    self.fallback_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    total_comp_params += orig_layer_params
+                    continue
+
+            # FL-FIX-02: no_grad for weight copy.
+            if is_conv1d:
+                res_w = W_pruned.t().to(dtype=dtype, device=device).contiguous()
+            else:
+                res_w = W_pruned.to(dtype=dtype, device=device).contiguous()
+
+            if res_w.shape != orig_shape:
+                raise RuntimeError(
+                    f&#34;FLAP: shape mismatch on {name}: {tuple(res_w.shape)} vs {tuple(orig_shape)}&#34;
+                )
+
+            with torch.no_grad():
+                target_mod.weight.data.copy_(res_w)
+
+            # LoRA trainability.
+            if hasattr(module, &#34;lora_A&#34;) and hasattr(module, &#34;lora_B&#34;):
+                if hasattr(module.lora_A, &#34;weight&#34;) and module.lora_A.weight is not None:
+                    module.lora_A.weight.requires_grad = True
+                if hasattr(module.lora_B, &#34;weight&#34;) and module.lora_B.weight is not None:
+                    module.lora_B.weight.requires_grad = True
+
+            self.compressed_layers.append(name)
+            # FL-FIX-03: effective params based on actual sparsity.
+            comp_layer_params = int((1.0 - effective_sparsity) * orig_layer_params)
+            total_comp_params += max(1, comp_layer_params)
+
+        # FL-FIX-06: forward sanity check with attention_mask.
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                first_p = next(self.model.parameters(), None)
+                dev = first_p.device if first_p is not None else torch.device(&#34;cpu&#34;)
+                dummy = torch.randint(0, 100, (1, 8), device=dev, dtype=torch.long)
+                attn = torch.ones_like(dummy)
+                try:
+                    self.model(input_ids=dummy, attention_mask=attn)
+                except Exception:
+                    try:
+                        self.model(dummy)
+                    except Exception:
+                        first_linear = next(
+                            (m for m in self.model.modules() if isinstance(m, nn.Linear)),
+                            None,
+                        )
+                        in_dim = getattr(first_linear, &#34;in_features&#34;, 8)
+                        self.model(
+                            torch.randn(
+                                1,
+                                8,
+                                in_dim,
+                                device=dev,
+                                dtype=(first_p.dtype if first_p is not None else torch.float32),
+                            )
+                        )
+        except Exception as e:
+            logger.debug(&#34;FLAP forward sanity check failed: %s&#34;, e)
+            forward_check_success = False
+
+        try:
+            self._compressed_params = self._count_params(self.model)
+        except Exception:
+            self._compressed_params = sum(p.numel() for p in self.model.parameters())
+
+        effective_ratio = (total_comp_params / total_orig_params) if total_orig_params &gt; 0 else 1.0
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers)
+            / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
+        try:
+            stats = self.get_compression_stats()
+        except Exception:
+            stats = {}
+        stats.update(
+            {
+                &#34;compressed_layers&#34;: self.compressed_layers,
+                &#34;compressed_layer_count&#34;: len(self.compressed_layers),
+                &#34;fallback_layers&#34;: self.fallback_layers,
+                &#34;fallback_layer_count&#34;: len(self.fallback_layers),
+                &#34;skipped_layers&#34;: self.skipped_layers,
+                &#34;skipped_layer_count&#34;: len(self.skipped_layers),
+                &#34;layer_errors&#34;: self.layer_errors,
+                &#34;layer_sparsities&#34;: self.layer_sparsities,
+                &#34;metric_type&#34;: self.metric_type,
+                &#34;sparsity_target&#34;: self.sparsity,
+                &#34;structured_24&#34;: self.structured_24,
+                &#34;max_error&#34;: self.max_error,
+                &#34;target_attention_only&#34;: self.target_attention_only,
+                &#34;fallback_to_original&#34;: self.fallback_to_original,
+                &#34;avg_reconstruction_error&#34;: avg_err,
+                &#34;num_compressed&#34;: len(self.compressed_layers),
+                &#34;num_fallback&#34;: len(self.fallback_layers),
+                &#34;num_skipped&#34;: len(self.skipped_layers),
+                &#34;effective_parameter_ratio&#34;: round(effective_ratio, 4),
+                &#34;forward_check_success&#34;: forward_check_success,
+                &#34;method&#34;: &#34;flap_fluctuation_pruning&#34;,
+            }
+        )
+        logger.info(
+            &#34;Compressor flap finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f&#34;,
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
+        )
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>FLAP Compressor: Fluctuation-based Adaptive Structured Pruning.</p>
+<p>Production hardening features:
+- Robust LoRALinear and Conv1D support (transpose + adapter preservation).
+- target_attention_only restricts pruning to attention projections.
+- Relative Frobenius reconstruction error validation with configurable max_error.
+- Safe fallback to original module if error exceeds threshold.
+- Real metrics (effective_parameter_ratio, num_compressed, num_fallback, sparsity).</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.compress" href="../core/base.html#neuralops.core.base.BaseCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.flap.flap_compressor_factory" href="#neuralops.compression_engine.flap.flap_compressor_factory">flap_compressor_factory</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.flap.FLAPCompressor" href="#neuralops.compression_engine.flap.FLAPCompressor">FLAPCompressor</a></code></h4>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

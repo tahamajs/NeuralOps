@@ -20,9 +20,21 @@ if str(_codes_dir) not in sys.path:
 if str(_cur_dir) not in sys.path:
     sys.path.insert(0, str(_cur_dir))
 
-from lra_datasets import IMDbByteDataset, ListOpsDataset
+try:
+    from lra_datasets import IMDbByteDataset, ListOpsDataset
+except ImportError:
+    IMDbByteDataset = None
+    ListOpsDataset = None
 
-from neuralops.eval_all_models_datasets import apply_module_to_model
+try:
+    from neuralops.evaluation.eval_all_models_datasets import apply_module_to_model
+except ImportError:
+    try:
+        from neuralops.eval_all_models_datasets import apply_module_to_model
+    except ImportError:
+        from neuralops.utils.replace_attention import (
+            replace_attention_in_model as apply_module_to_model,
+        )
 
 TASK_CONFIG = {
     "listops": {
@@ -110,9 +122,13 @@ def train_task(
 
     try:
         if task == "listops":
+            if ListOpsDataset is None:
+                raise ImportError("ListOpsDataset not installed")
             train_ds = ListOpsDataset(split="train", seq_len=current_seq_len)
             test_ds = ListOpsDataset(split="test", seq_len=current_seq_len)
         else:
+            if IMDbByteDataset is None:
+                raise ImportError("IMDbByteDataset not installed")
             train_ds = IMDbByteDataset(split="train", seq_len=current_seq_len)
             test_ds = IMDbByteDataset(split="test", seq_len=current_seq_len)
     except Exception as e:

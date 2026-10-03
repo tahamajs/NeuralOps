@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests.test_qwen3_5_compressor_awareness API documentation</title>
+<meta name="description" content="Comprehensive test suite verifying architecture-aware compression, dynamic rank selection,
+recovery parameter selection, and LoRA preservation on …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tests.test_qwen3_5_compressor_awareness</code></h1>
+</header>
+<section id="section-intro">
+<p>Comprehensive test suite verifying architecture-aware compression, dynamic rank selection,
+recovery parameter selection, and LoRA preservation on Qwen3.5 and across model families.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.tests.test_qwen3_5_compressor_awareness.test_compressors_skip_qwen3_5_sensitive_layers"><code class="name flex">
+<span>def <span class="ident">test_compressors_skip_qwen3_5_sensitive_layers</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_compressors_skip_qwen3_5_sensitive_layers():
+    &#34;&#34;&#34;Verify that actual compressor instances skip sensitive layers on Qwen3.5.&#34;&#34;&#34;
+    model = DummyQwen35Model(hidden_size=128, ffn_dim=256, num_layers=1)
+
+    # 1. DirectSVD Compressor
+    comp = DirectSVDCompressor(model, rank=32)
+    comp.compress()
+    assert isinstance(model.layers[0].delta_net.in_proj_qkv, nn.Linear)  # Uncompressed
+    assert isinstance(model.layers[0].attn.q_proj, nn.Linear)  # Uncompressed
+    assert isinstance(model.layers[0].expert_router, nn.Linear)  # Uncompressed
+    # FFN layers compressed into factorized layers
+    assert not isinstance(model.layers[0].mlp.down_proj, nn.Linear) or hasattr(model.layers[0].mlp.down_proj, &#34;U&#34;)</code></pre>
+</details>
+<div class="desc"><p>Verify that actual compressor instances skip sensitive layers on Qwen3.5.</p></div>
+</dd>
+<dt id="neuralops.tests.test_qwen3_5_compressor_awareness.test_dynamic_rank_selection"><code class="name flex">
+<span>def <span class="ident">test_dynamic_rank_selection</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_dynamic_rank_selection():
+    &#34;&#34;&#34;Verify dynamic rank computes min(256, max(128, min(in_f, out_f) // 4)) for Qwen3.5.&#34;&#34;&#34;
+    # Qwen3.5 FFN layer: in_f=1024, out_f=3584 -&gt; min=1024 -&gt; 1024 // 4 = 256
+    rank_qwen = get_dynamic_compression_rank(1024, 3584, model_or_family=&#34;qwen3_5&#34;, default_rank=16)
+    assert rank_qwen == 256
+
+    # Qwen3.5 smaller layer: in_f=400, out_f=400 -&gt; min=400 -&gt; 400 // 4 = 100 -&gt; clamped to 128
+    rank_qwen_small = get_dynamic_compression_rank(400, 400, model_or_family=&#34;qwen3_5&#34;, default_rank=16)
+    assert rank_qwen_small == 128
+
+    # Standard model (RoBERTa / BERT): retains default rank
+    rank_bert = get_dynamic_compression_rank(768, 3072, model_or_family=&#34;bert&#34;, default_rank=32)
+    assert rank_bert == 32
+
+    # Config override
+    rank_override = get_dynamic_compression_rank(1024, 3584, model_or_family=&#34;qwen3_5&#34;, comp_config={&#34;qwen3_5_rank&#34;: 64})
+    assert rank_override == 64</code></pre>
+</details>
+<div class="desc"><p>Verify dynamic rank computes min(256, max(128, min(in_f, out_f) // 4)) for Qwen3.5.</p></div>
+</dd>
+<dt id="neuralops.tests.test_qwen3_5_compressor_awareness.test_get_recovery_params"><code class="name flex">
+<span>def <span class="ident">test_get_recovery_params</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_get_recovery_params():
+    &#34;&#34;&#34;Verify get_recovery_params unfreezes only LoRA adapters and classification heads, freezing all else.&#34;&#34;&#34;
+    model = DummyQwen35Model(hidden_size=64, ffn_dim=128, num_layers=1)
+    # Inject LoRA into model
+    model, _ = apply_lora(model, r=8, alpha=16.0, target_modules={&#34;down_proj&#34;})
+
+    # Add dummy compressor factor parameters (.U, .V)
+    model.layers[0].mlp.up_proj.U = nn.Parameter(torch.randn(128, 16))
+    model.layers[0].mlp.up_proj.V = nn.Parameter(torch.randn(16, 64))
+
+    trainable = get_recovery_params(model)
+    trainable_names = [name for name, p in model.named_parameters() if p.requires_grad]
+
+    # Only LoRA parameters and classification head (&#39;score&#39;) must be trainable
+    assert any(&#34;lora_&#34; in n for n in trainable_names)
+    assert any(&#34;score&#34; in n for n in trainable_names)
+    assert not any(n.endswith(&#34;.U&#34;) for n in trainable_names)
+    assert not any(n.endswith(&#34;.V&#34;) for n in trainable_names)
+    assert not any(&#34;mlp.up_proj.weight&#34; in n for n in trainable_names)</code></pre>
+</details>
+<div class="desc"><p>Verify get_recovery_params unfreezes only LoRA adapters and classification heads, freezing all else.</p></div>
+</dd>
+<dt id="neuralops.tests.test_qwen3_5_compressor_awareness.test_lora_preservation_and_gradient_flow"><code class="name flex">
+<span>def <span class="ident">test_lora_preservation_and_gradient_flow</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_lora_preservation_and_gradient_flow():
+    &#34;&#34;&#34;Verify that LoRA adapters on frozen backbones receive non-zero gradients after compressor injection.&#34;&#34;&#34;
+    model = DummyQwen35Model(hidden_size=64, ffn_dim=128, num_layers=1)
+    model, num_lora = apply_lora(model, r=8, alpha=16.0, target_modules={&#34;down_proj&#34;})
+    assert num_lora &gt; 0
+
+    # Ensure LoRA adapters are not merged and trainable
+    get_recovery_params(model)
+
+    x = torch.randn(2, 64)
+    out = model(x)
+    loss = out.sum()
+    loss.backward()
+
+    # LoRA parameters must have non-zero gradients on active adapter matrices
+    lora_grads = [p.grad for name, p in model.named_parameters() if &#34;lora_&#34; in name and p.grad is not None]
+    assert len(lora_grads) &gt; 0
+    assert any(g.abs().sum() &gt; 0 for g in lora_grads)
+    assert all(torch.isfinite(g).all() for g in lora_grads)</code></pre>
+</details>
+<div class="desc"><p>Verify that LoRA adapters on frozen backbones receive non-zero gradients after compressor injection.</p></div>
+</dd>
+<dt id="neuralops.tests.test_qwen3_5_compressor_awareness.test_qwen3_5_architecture_aware_layer_filtering"><code class="name flex">
+<span>def <span class="ident">test_qwen3_5_architecture_aware_layer_filtering</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_qwen3_5_architecture_aware_layer_filtering():
+    &#34;&#34;&#34;Verify should_compress_linear correctly protects sensitive layers on Qwen3.5 while allowing FFN.&#34;&#34;&#34;
+    model = DummyQwen35Model()
+    assert detect_family(model) == &#34;qwen3_5&#34;
+
+    # Protected sensitive layers (including gate_proj per Task 1)
+    assert not should_compress_linear(model, &#34;layers.0.delta_net.in_proj_qkv&#34;)
+    assert not should_compress_linear(model, &#34;layers.0.delta_net.out_proj&#34;)
+    assert not should_compress_linear(model, &#34;layers.0.attn.q_proj&#34;)
+    assert not should_compress_linear(model, &#34;layers.0.attn.k_proj&#34;)
+    assert not should_compress_linear(model, &#34;layers.0.attn.v_proj&#34;)
+    assert not should_compress_linear(model, &#34;layers.0.attn.o_proj&#34;)
+    assert not should_compress_linear(model, &#34;layers.0.expert_router&#34;)
+    assert not should_compress_linear(model, &#34;layers.0.mlp.gate_proj&#34;)
+    assert not should_compress_linear(model, &#34;score&#34;)
+
+    # Compressible FFN dense layers
+    assert should_compress_linear(model, &#34;layers.0.mlp.up_proj&#34;)
+    assert should_compress_linear(model, &#34;layers.0.mlp.down_proj&#34;)</code></pre>
+</details>
+<div class="desc"><p>Verify should_compress_linear correctly protects sensitive layers on Qwen3.5 while allowing FFN.</p></div>
+</dd>
+<dt id="neuralops.tests.test_qwen3_5_compressor_awareness.test_qwen3_5_capabilities_and_compatibility"><code class="name flex">
+<span>def <span class="ident">test_qwen3_5_capabilities_and_compatibility</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_qwen3_5_capabilities_and_compatibility():
+    &#34;&#34;&#34;Verify capability flags for Qwen3.5 hybrid architecture in registry.&#34;&#34;&#34;
+    adapter = ModelAdapter(DummyQwen35Model())
+    assert adapter.causal is True
+    assert adapter.supports_gqa is True
+    assert adapter.supports_delta_net is True
+    assert adapter.supports_moe is True
+
+    # Causal modules are compatible
+    compat, _ = is_module_declared_compatible(&#34;adaptive_svd&#34;, &#34;qwen3_5&#34;)
+    assert compat is True</code></pre>
+</details>
+<div class="desc"><p>Verify capability flags for Qwen3.5 hybrid architecture in registry.</p></div>
+</dd>
+<dt id="neuralops.tests.test_qwen3_5_compressor_awareness.test_standard_family_layer_filtering_preserved"><code class="name flex">
+<span>def <span class="ident">test_standard_family_layer_filtering_preserved</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_standard_family_layer_filtering_preserved():
+    &#34;&#34;&#34;Verify standard models (BERT, RoBERTa, GPT) preserve their original compression filtering.&#34;&#34;&#34;
+    bert = DummyStandardTransformer(&#34;bert&#34;, hidden_size=64)
+    gpt = DummyStandardTransformer(&#34;gpt2&#34;, hidden_size=64)
+
+    # BERT: all safe linear layers compressible, head protected
+    assert should_compress_linear(bert, &#34;attn.q_proj&#34;)
+    assert should_compress_linear(bert, &#34;mlp.fc1&#34;)
+    assert not should_compress_linear(bert, &#34;classifier&#34;)
+
+    # GPT: attention projections and FFN compressible, head protected
+    assert should_compress_linear(gpt, &#34;attn.q_proj&#34;)
+    assert should_compress_linear(gpt, &#34;mlp.fc1&#34;)
+    assert not should_compress_linear(gpt, &#34;classifier&#34;)</code></pre>
+</details>
+<div class="desc"><p>Verify standard models (BERT, RoBERTa, GPT) preserve their original compression filtering.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.tests.test_qwen3_5_compressor_awareness.DummyQwen35Block"><code class="flex name class">
+<span>class <span class="ident">DummyQwen35Block</span></span>
+<span>(</span><span>hidden_size: int = 1024, ffn_dim: int = 3584)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DummyQwen35Block(nn.Module):
+    &#34;&#34;&#34;Synthetic Qwen3.5 hybrid block containing DeltaNet, GQA, MoE/FFN, and Norms.&#34;&#34;&#34;
+
+    def __init__(self, hidden_size: int = 1024, ffn_dim: int = 3584):
+        super().__init__()
+        # 1. Sensitive linear attention / DeltaNet layer
+        self.delta_net = nn.Module()
+        self.delta_net.in_proj_qkv = nn.Linear(hidden_size, hidden_size * 3)
+        self.delta_net.out_proj = nn.Linear(hidden_size, hidden_size)
+
+        # 2. Sensitive GQA attention layer
+        self.attn = nn.Module()
+        self.attn.q_proj = nn.Linear(hidden_size, hidden_size)
+        self.attn.k_proj = nn.Linear(hidden_size, 256)
+        self.attn.v_proj = nn.Linear(hidden_size, 256)
+        self.attn.o_proj = nn.Linear(hidden_size, hidden_size)
+
+        # 3. Sensitive MoE router
+        self.expert_router = nn.Linear(hidden_size, 4)
+
+        # 4. Ordinary Dense FFN (compressible)
+        self.mlp = nn.Module()
+        self.mlp.gate_proj = nn.Linear(hidden_size, ffn_dim)
+        self.mlp.up_proj = nn.Linear(hidden_size, ffn_dim)
+        self.mlp.down_proj = nn.Linear(ffn_dim, hidden_size)</code></pre>
+</details>
+<div class="desc"><p>Synthetic Qwen3.5 hybrid block containing DeltaNet, GQA, MoE/FFN, and Norms.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+</dd>
+<dt id="neuralops.tests.test_qwen3_5_compressor_awareness.DummyQwen35Model"><code class="flex name class">
+<span>class <span class="ident">DummyQwen35Model</span></span>
+<span>(</span><span>hidden_size: int = 1024, ffn_dim: int = 3584, num_layers: int = 2)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DummyQwen35Model(nn.Module):
+    &#34;&#34;&#34;Full dummy Qwen3.5 architecture.&#34;&#34;&#34;
+
+    def __init__(self, hidden_size: int = 1024, ffn_dim: int = 3584, num_layers: int = 2):
+        super().__init__()
+        self.config = SimpleNamespace(
+            model_type=&#34;qwen3_5&#34;,
+            hidden_size=hidden_size,
+            num_attention_heads=8,
+            num_key_value_heads=2,
+            head_dim=256,
+            num_hidden_layers=num_layers,
+            intermediate_size=ffn_dim,
+        )
+        self.layers = nn.ModuleList([DummyQwen35Block(hidden_size, ffn_dim) for _ in range(num_layers)])
+        self.score = nn.Linear(hidden_size, 2)  # Classification head
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        for layer in self.layers:
+            # FFN forward
+            h = layer.mlp.down_proj(torch.relu(layer.mlp.up_proj(x)))
+            x = x + h
+        return self.score(x)</code></pre>
+</details>
+<div class="desc"><p>Full dummy Qwen3.5 architecture.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_qwen3_5_compressor_awareness.DummyQwen35Model.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    for layer in self.layers:
+        # FFN forward
+        h = layer.mlp.down_proj(torch.relu(layer.mlp.up_proj(x)))
+        x = x + h
+    return self.score(x)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_qwen3_5_compressor_awareness.DummyStandardTransformer"><code class="flex name class">
+<span>class <span class="ident">DummyStandardTransformer</span></span>
+<span>(</span><span>family: str = 'bert', hidden_size: int = 64)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DummyStandardTransformer(nn.Module):
+    &#34;&#34;&#34;Standard BERT / RoBERTa / GPT model.&#34;&#34;&#34;
+
+    def __init__(self, family: str = &#34;bert&#34;, hidden_size: int = 64):
+        super().__init__()
+        self.config = SimpleNamespace(
+            model_type=family,
+            hidden_size=hidden_size,
+            num_attention_heads=4,
+            num_hidden_layers=1,
+            intermediate_size=hidden_size * 4,
+        )
+        self.attn = nn.Module()
+        self.attn.q_proj = nn.Linear(hidden_size, hidden_size)
+        self.attn.k_proj = nn.Linear(hidden_size, hidden_size)
+        self.attn.v_proj = nn.Linear(hidden_size, hidden_size)
+        self.attn.out_proj = nn.Linear(hidden_size, hidden_size)
+        self.mlp = nn.Module()
+        self.mlp.fc1 = nn.Linear(hidden_size, hidden_size * 4)
+        self.mlp.fc2 = nn.Linear(hidden_size * 4, hidden_size)
+        self.classifier = nn.Linear(hidden_size, 2)</code></pre>
+</details>
+<div class="desc"><p>Standard BERT / RoBERTa / GPT model.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tests" href="index.html">neuralops.tests</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.tests.test_qwen3_5_compressor_awareness.test_compressors_skip_qwen3_5_sensitive_layers" href="#neuralops.tests.test_qwen3_5_compressor_awareness.test_compressors_skip_qwen3_5_sensitive_layers">test_compressors_skip_qwen3_5_sensitive_layers</a></code></li>
+<li><code><a title="neuralops.tests.test_qwen3_5_compressor_awareness.test_dynamic_rank_selection" href="#neuralops.tests.test_qwen3_5_compressor_awareness.test_dynamic_rank_selection">test_dynamic_rank_selection</a></code></li>
+<li><code><a title="neuralops.tests.test_qwen3_5_compressor_awareness.test_get_recovery_params" href="#neuralops.tests.test_qwen3_5_compressor_awareness.test_get_recovery_params">test_get_recovery_params</a></code></li>
+<li><code><a title="neuralops.tests.test_qwen3_5_compressor_awareness.test_lora_preservation_and_gradient_flow" href="#neuralops.tests.test_qwen3_5_compressor_awareness.test_lora_preservation_and_gradient_flow">test_lora_preservation_and_gradient_flow</a></code></li>
+<li><code><a title="neuralops.tests.test_qwen3_5_compressor_awareness.test_qwen3_5_architecture_aware_layer_filtering" href="#neuralops.tests.test_qwen3_5_compressor_awareness.test_qwen3_5_architecture_aware_layer_filtering">test_qwen3_5_architecture_aware_layer_filtering</a></code></li>
+<li><code><a title="neuralops.tests.test_qwen3_5_compressor_awareness.test_qwen3_5_capabilities_and_compatibility" href="#neuralops.tests.test_qwen3_5_compressor_awareness.test_qwen3_5_capabilities_and_compatibility">test_qwen3_5_capabilities_and_compatibility</a></code></li>
+<li><code><a title="neuralops.tests.test_qwen3_5_compressor_awareness.test_standard_family_layer_filtering_preserved" href="#neuralops.tests.test_qwen3_5_compressor_awareness.test_standard_family_layer_filtering_preserved">test_standard_family_layer_filtering_preserved</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.tests.test_qwen3_5_compressor_awareness.DummyQwen35Block" href="#neuralops.tests.test_qwen3_5_compressor_awareness.DummyQwen35Block">DummyQwen35Block</a></code></h4>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_qwen3_5_compressor_awareness.DummyQwen35Model" href="#neuralops.tests.test_qwen3_5_compressor_awareness.DummyQwen35Model">DummyQwen35Model</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_qwen3_5_compressor_awareness.DummyQwen35Model.forward" href="#neuralops.tests.test_qwen3_5_compressor_awareness.DummyQwen35Model.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_qwen3_5_compressor_awareness.DummyStandardTransformer" href="#neuralops.tests.test_qwen3_5_compressor_awareness.DummyStandardTransformer">DummyStandardTransformer</a></code></h4>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

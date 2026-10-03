@@ -1,0 +1,1595 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.config.config API documentation</title>
+<meta name="description" content="Complete configuration dataclasses for all framework components …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.config.config</code></h1>
+</header>
+<section id="section-intro">
+<p>Complete configuration dataclasses for all framework components.</p>
+<p>Usage
+-----=
+cfg = Config()
+cfg.model.name = "distilbert-base-uncased"
+cfg.compression.rank = 64</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.config.config.CompressionConfig"><code class="flex name class">
+<span>class <span class="ident">CompressionConfig</span></span>
+<span>(</span><span>attn_type: str = 'full',<br>dropout: float = 0.1,<br>rank: int = 32,<br>svd_rank: int = 32,<br>svd_energy: float = 0.95,<br>min_rank: int = 4,<br>max_rank: int = 64,<br>lora_r: int = 8,<br>lora_alpha: int = 16,<br>lora_dropout: float = 0.1,<br>rdrop_alpha: float = 5.0,<br>r3f_epsilon: float = 1e-05,<br>llrd_decay: float = 0.95,<br>mixout_p: float = 0.9,<br>dislora_beta: float = 0.5,<br>dislora_capacity_factor: float = 1.0,<br>fisher_num_batches: int = 20,<br>fisher_sample_size: int = 200,<br>fisher_scale_max: float = 2.0,<br>gelora_margin: float = 1.0,<br>gelora_min_rank: int = 2,<br>gelora_max_rank: int = 32,<br>block_size: int = 64,<br>local_window: int = 64,<br>top_k_inter: int = 4,<br>num_landmarks: int = 16,<br>feature_dim: int = 128,<br>rff_features: int = 128,<br>k_early: int = 32,<br>k_mid: int = 16,<br>k_late: int = 12,<br>use_gate: bool = True,<br>progressive: bool = True,<br>max_seq_len: int = 512,<br>low_rank_cache_size: int = 16,<br>cur_rank: int = 16,<br>lsh_rounds: int = 4,<br>lsh_bucket_size: int = 32,<br>window_size: int = 128,<br>compression_rank: int = 64,<br>use_adaptive_gate: bool = True,<br>gate_bias: float = 2.0,<br>softpick_temperature: float = 1.0,<br>rectify_interval: int = 4,<br>aks_enabled: bool = True,<br>rel_pos_max_distance: int = 128,<br>use_rel_pos_bias: bool = True,<br>adaptive_span: bool = True,<br>max_span: float = 512.0,<br>num_kernel_heads: int = 8,<br>num_full_heads: int = 4,<br>soa_rank: int = 32,<br>svd_rank_qkv: int = 32,<br>svd_rank_out: int = 32,<br>num_local_heads: int = 8,<br>num_global_heads: int = 4,<br>num_experts: int = 8,<br>top_k: int = 2,<br>ratio: int = 9,<br>n_heads: int | None = None,<br>n_layers: int | None = None,<br>use_full_attention: bool = False,<br>use_fp8: bool = False,<br>use_lion: bool = False,<br>gradient_checkpointing: bool = False,<br>early_stopping_patience: int | None = None,<br>max_grad_norm: float = 1.0)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class CompressionConfig:
+    &#34;&#34;&#34;
+    All parameters related to attention injection, low‑rank compression,
+    sparsity, hybrid heads, etc.
+    These fields are read by the injection functions via getattr(comp_config, …).
+    &#34;&#34;&#34;
+
+    # ── General ────────────────────────────────────────
+    attn_type: str = &#34;full&#34;
+    dropout: float = 0.1
+    rank: int = 32  # generic rank (used by many modules)
+    svd_rank: int = 32  # SVD rank
+    svd_energy: float = 0.95  # energy retention for SVD truncation
+    min_rank: int = 4
+    max_rank: int = 64
+
+    # ── LoRA / method‑specific ─────────────────────────
+    lora_r: int = 8
+    lora_alpha: int = 16
+    lora_dropout: float = 0.1
+    rdrop_alpha: float = 5.0
+    r3f_epsilon: float = 1e-5
+    llrd_decay: float = 0.95
+    mixout_p: float = 0.9
+    dislora_beta: float = 0.5
+    dislora_capacity_factor: float = 1.0
+    fisher_num_batches: int = 20
+    fisher_sample_size: int = 200
+    fisher_scale_max: float = 2.0
+    gelora_margin: float = 1.0
+    gelora_min_rank: int = 2
+    gelora_max_rank: int = 32
+
+    # ── Attention common fields ────────────────────────
+    block_size: int = 64
+    local_window: int = 64
+    top_k_inter: int = 4
+    num_landmarks: int = 16
+    feature_dim: int = 128
+    rff_features: int = 128
+    k_early: int = 32
+    k_mid: int = 16
+    k_late: int = 12
+    use_gate: bool = True
+    progressive: bool = True
+    max_seq_len: int = 512
+    low_rank_cache_size: int = 16  # LoLA
+    cur_rank: int = 16  # PHANTOM
+    lsh_rounds: int = 4
+    lsh_bucket_size: int = 32
+    window_size: int = 128
+    compression_rank: int = 64
+    use_adaptive_gate: bool = True
+    gate_bias: float = 2.0
+    softpick_temperature: float = 1.0
+    rectify_interval: int = 4
+    aks_enabled: bool = True
+    rel_pos_max_distance: int = 128
+    use_rel_pos_bias: bool = True
+    adaptive_span: bool = True
+    max_span: float = 512.0
+    num_kernel_heads: int = 8
+    num_full_heads: int = 4
+    soa_rank: int = 32
+    svd_rank_qkv: int = 32
+    svd_rank_out: int = 32
+    num_local_heads: int = 8
+    num_global_heads: int = 4
+    num_experts: int = 8
+    top_k: int = 2
+    ratio: int = 9  # hybrid attention / Mamba ratio
+    n_heads: int | None = None
+    n_layers: int | None = None
+    use_full_attention: bool = False
+    use_fp8: bool = False
+
+    # Additional fields used by some compressors
+    use_lion: bool = False
+    gradient_checkpointing: bool = False
+    early_stopping_patience: int | None = None
+    max_grad_norm: float = 1.0</code></pre>
+</details>
+<div class="desc"><p>All parameters related to attention injection, low‑rank compression,
+sparsity, hybrid heads, etc.
+These fields are read by the injection functions via getattr(comp_config, …).</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.config.config.CompressionConfig.adaptive_span"><code class="name">var <span class="ident">adaptive_span</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.aks_enabled"><code class="name">var <span class="ident">aks_enabled</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.attn_type"><code class="name">var <span class="ident">attn_type</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.block_size"><code class="name">var <span class="ident">block_size</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.compression_rank"><code class="name">var <span class="ident">compression_rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.cur_rank"><code class="name">var <span class="ident">cur_rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.dislora_beta"><code class="name">var <span class="ident">dislora_beta</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.dislora_capacity_factor"><code class="name">var <span class="ident">dislora_capacity_factor</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.dropout"><code class="name">var <span class="ident">dropout</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.early_stopping_patience"><code class="name">var <span class="ident">early_stopping_patience</span> : int | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.feature_dim"><code class="name">var <span class="ident">feature_dim</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.fisher_num_batches"><code class="name">var <span class="ident">fisher_num_batches</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.fisher_sample_size"><code class="name">var <span class="ident">fisher_sample_size</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.fisher_scale_max"><code class="name">var <span class="ident">fisher_scale_max</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.gate_bias"><code class="name">var <span class="ident">gate_bias</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.gelora_margin"><code class="name">var <span class="ident">gelora_margin</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.gelora_max_rank"><code class="name">var <span class="ident">gelora_max_rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.gelora_min_rank"><code class="name">var <span class="ident">gelora_min_rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.gradient_checkpointing"><code class="name">var <span class="ident">gradient_checkpointing</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.k_early"><code class="name">var <span class="ident">k_early</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.k_late"><code class="name">var <span class="ident">k_late</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.k_mid"><code class="name">var <span class="ident">k_mid</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.llrd_decay"><code class="name">var <span class="ident">llrd_decay</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.local_window"><code class="name">var <span class="ident">local_window</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.lora_alpha"><code class="name">var <span class="ident">lora_alpha</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.lora_dropout"><code class="name">var <span class="ident">lora_dropout</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.lora_r"><code class="name">var <span class="ident">lora_r</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.low_rank_cache_size"><code class="name">var <span class="ident">low_rank_cache_size</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.lsh_bucket_size"><code class="name">var <span class="ident">lsh_bucket_size</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.lsh_rounds"><code class="name">var <span class="ident">lsh_rounds</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.max_grad_norm"><code class="name">var <span class="ident">max_grad_norm</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.max_rank"><code class="name">var <span class="ident">max_rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.max_seq_len"><code class="name">var <span class="ident">max_seq_len</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.max_span"><code class="name">var <span class="ident">max_span</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.min_rank"><code class="name">var <span class="ident">min_rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.mixout_p"><code class="name">var <span class="ident">mixout_p</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.n_heads"><code class="name">var <span class="ident">n_heads</span> : int | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.n_layers"><code class="name">var <span class="ident">n_layers</span> : int | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.num_experts"><code class="name">var <span class="ident">num_experts</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.num_full_heads"><code class="name">var <span class="ident">num_full_heads</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.num_global_heads"><code class="name">var <span class="ident">num_global_heads</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.num_kernel_heads"><code class="name">var <span class="ident">num_kernel_heads</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.num_landmarks"><code class="name">var <span class="ident">num_landmarks</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.num_local_heads"><code class="name">var <span class="ident">num_local_heads</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.progressive"><code class="name">var <span class="ident">progressive</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.r3f_epsilon"><code class="name">var <span class="ident">r3f_epsilon</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.rank"><code class="name">var <span class="ident">rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.ratio"><code class="name">var <span class="ident">ratio</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.rdrop_alpha"><code class="name">var <span class="ident">rdrop_alpha</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.rectify_interval"><code class="name">var <span class="ident">rectify_interval</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.rel_pos_max_distance"><code class="name">var <span class="ident">rel_pos_max_distance</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.rff_features"><code class="name">var <span class="ident">rff_features</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.soa_rank"><code class="name">var <span class="ident">soa_rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.softpick_temperature"><code class="name">var <span class="ident">softpick_temperature</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.svd_energy"><code class="name">var <span class="ident">svd_energy</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.svd_rank"><code class="name">var <span class="ident">svd_rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.svd_rank_out"><code class="name">var <span class="ident">svd_rank_out</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.svd_rank_qkv"><code class="name">var <span class="ident">svd_rank_qkv</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.top_k"><code class="name">var <span class="ident">top_k</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.top_k_inter"><code class="name">var <span class="ident">top_k_inter</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.use_adaptive_gate"><code class="name">var <span class="ident">use_adaptive_gate</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.use_fp8"><code class="name">var <span class="ident">use_fp8</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.use_full_attention"><code class="name">var <span class="ident">use_full_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.use_gate"><code class="name">var <span class="ident">use_gate</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.use_lion"><code class="name">var <span class="ident">use_lion</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.use_rel_pos_bias"><code class="name">var <span class="ident">use_rel_pos_bias</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.CompressionConfig.window_size"><code class="name">var <span class="ident">window_size</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.config.config.Config"><code class="flex name class">
+<span>class <span class="ident">Config</span></span>
+<span>(</span><span>model: <a title="neuralops.config.config.ModelConfig" href="#neuralops.config.config.ModelConfig">ModelConfig</a> = &lt;factory&gt;,<br>data: <a title="neuralops.config.config.DataConfig" href="#neuralops.config.config.DataConfig">DataConfig</a> = &lt;factory&gt;,<br>training: <a title="neuralops.config.config.TrainingConfig" href="#neuralops.config.config.TrainingConfig">TrainingConfig</a> = &lt;factory&gt;,<br>compression: <a title="neuralops.config.config.CompressionConfig" href="#neuralops.config.config.CompressionConfig">CompressionConfig</a> = &lt;factory&gt;,<br>method: <a title="neuralops.config.config.MethodConfig" href="#neuralops.config.config.MethodConfig">MethodConfig</a> = &lt;factory&gt;,<br>hardware: <a title="neuralops.config.config.HardwareConfig" href="#neuralops.config.config.HardwareConfig">HardwareConfig</a> = &lt;factory&gt;,<br>sweep: <a title="neuralops.config.config.SweepConfig" href="#neuralops.config.config.SweepConfig">SweepConfig</a> = &lt;factory&gt;,<br>experiment: <a title="neuralops.config.config.ExperimentConfig" href="#neuralops.config.config.ExperimentConfig">ExperimentConfig</a> = &lt;factory&gt;)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class Config:
+    &#34;&#34;&#34;Master configuration that holds all sub‑configs.&#34;&#34;&#34;
+
+    model: ModelConfig = field(default_factory=ModelConfig)
+    data: DataConfig = field(default_factory=DataConfig)
+    training: TrainingConfig = field(default_factory=TrainingConfig)
+    compression: CompressionConfig = field(default_factory=CompressionConfig)
+    method: MethodConfig = field(default_factory=MethodConfig)
+    hardware: HardwareConfig = field(default_factory=HardwareConfig)
+    sweep: SweepConfig = field(default_factory=SweepConfig)
+    experiment: ExperimentConfig = field(default_factory=ExperimentConfig)</code></pre>
+</details>
+<div class="desc"><p>Master configuration that holds all sub‑configs.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.config.config.Config.compression"><code class="name">var <span class="ident">compression</span> : <a title="neuralops.config.config.CompressionConfig" href="#neuralops.config.config.CompressionConfig">CompressionConfig</a></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.Config.data"><code class="name">var <span class="ident">data</span> : <a title="neuralops.config.config.DataConfig" href="#neuralops.config.config.DataConfig">DataConfig</a></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.Config.experiment"><code class="name">var <span class="ident">experiment</span> : <a title="neuralops.config.config.ExperimentConfig" href="#neuralops.config.config.ExperimentConfig">ExperimentConfig</a></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.Config.hardware"><code class="name">var <span class="ident">hardware</span> : <a title="neuralops.config.config.HardwareConfig" href="#neuralops.config.config.HardwareConfig">HardwareConfig</a></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.Config.method"><code class="name">var <span class="ident">method</span> : <a title="neuralops.config.config.MethodConfig" href="#neuralops.config.config.MethodConfig">MethodConfig</a></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.Config.model"><code class="name">var <span class="ident">model</span> : <a title="neuralops.config.config.ModelConfig" href="#neuralops.config.config.ModelConfig">ModelConfig</a></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.Config.sweep"><code class="name">var <span class="ident">sweep</span> : <a title="neuralops.config.config.SweepConfig" href="#neuralops.config.config.SweepConfig">SweepConfig</a></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.Config.training"><code class="name">var <span class="ident">training</span> : <a title="neuralops.config.config.TrainingConfig" href="#neuralops.config.config.TrainingConfig">TrainingConfig</a></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.config.config.DataConfig"><code class="flex name class">
+<span>class <span class="ident">DataConfig</span></span>
+<span>(</span><span>local_glue_path: str = '/Users/tahamajs/Documents/uni/datasets/glue',<br>max_seq_length: int = 128,<br>max_train_samples: int | None = None,<br>max_val_samples: int | None = None,<br>num_proc: int = 4,<br>streaming: bool = False,<br>remove_columns: list[str] = &lt;factory&gt;,<br>split_mapping: dict[str, str] = &lt;factory&gt;)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class DataConfig:
+    &#34;&#34;&#34;Data loading and preprocessing configuration.&#34;&#34;&#34;
+
+    local_glue_path: str = str(get_glue_dir())
+    max_seq_length: int = 128
+    max_train_samples: int | None = None
+    max_val_samples: int | None = None
+    num_proc: int = 4
+    streaming: bool = False
+    remove_columns: list[str] = field(default_factory=lambda: [&#34;label&#34;])
+    split_mapping: dict[str, str] = field(
+        default_factory=lambda: {
+            &#34;train&#34;: &#34;train&#34;,
+            &#34;validation&#34;: &#34;validation&#34;,
+            &#34;validation_matched&#34;: &#34;validation_matched&#34;,
+            &#34;validation_mismatched&#34;: &#34;validation_mismatched&#34;,
+        }
+    )</code></pre>
+</details>
+<div class="desc"><p>Data loading and preprocessing configuration.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.config.config.DataConfig.local_glue_path"><code class="name">var <span class="ident">local_glue_path</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.DataConfig.max_seq_length"><code class="name">var <span class="ident">max_seq_length</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.DataConfig.max_train_samples"><code class="name">var <span class="ident">max_train_samples</span> : int | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.DataConfig.max_val_samples"><code class="name">var <span class="ident">max_val_samples</span> : int | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.DataConfig.num_proc"><code class="name">var <span class="ident">num_proc</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.DataConfig.remove_columns"><code class="name">var <span class="ident">remove_columns</span> : list[str]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.DataConfig.split_mapping"><code class="name">var <span class="ident">split_mapping</span> : dict[str, str]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.DataConfig.streaming"><code class="name">var <span class="ident">streaming</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.config.config.DatasetConfig"><code class="flex name class">
+<span>class <span class="ident">DatasetConfig</span></span>
+<span>(</span><span>name: str,<br>path: str,<br>task_type: str = 'single',<br>num_choices: int = 0,<br>num_labels: int = 2)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class DatasetConfig:
+    &#34;&#34;&#34;Description of a single dataset for an experiment sweep.&#34;&#34;&#34;
+
+    name: str
+    path: str
+    task_type: str = &#34;single&#34;  # single, pair, regression, mc
+    num_choices: int = 0  # for multi‑choice
+    num_labels: int = 2</code></pre>
+</details>
+<div class="desc"><p>Description of a single dataset for an experiment sweep.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.config.config.DatasetConfig.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.DatasetConfig.num_choices"><code class="name">var <span class="ident">num_choices</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.DatasetConfig.num_labels"><code class="name">var <span class="ident">num_labels</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.DatasetConfig.path"><code class="name">var <span class="ident">path</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.DatasetConfig.task_type"><code class="name">var <span class="ident">task_type</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.config.config.DisLoRAConfig"><code class="flex name class">
+<span>class <span class="ident">DisLoRAConfig</span></span>
+<span>(</span><span>beta: float = 0.5, capacity_factor: float = 1.0)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class DisLoRAConfig:
+    beta: float = 0.5
+    capacity_factor: float = 1.0</code></pre>
+</details>
+<div class="desc"><p>DisLoRAConfig(beta: float = 0.5, capacity_factor: float = 1.0)</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.config.config.DisLoRAConfig.beta"><code class="name">var <span class="ident">beta</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.DisLoRAConfig.capacity_factor"><code class="name">var <span class="ident">capacity_factor</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig"><code class="flex name class">
+<span>class <span class="ident">ExperimentConfig</span></span>
+<span>(</span><span>base_models: dict[str, str] = &lt;factory&gt;,<br>svd_ranks: list[int] = &lt;factory&gt;,<br>datasets: list[<a title="neuralops.config.config.DatasetConfig" href="#neuralops.config.config.DatasetConfig">DatasetConfig</a>] = &lt;factory&gt;,<br>min_samples: int = 10,<br>max_samples: int = 200,<br>batch_size: int = 4,<br>epochs: int = 1,<br>learning_rate: float = 2e-05,<br>max_length: int = 128,<br>val_split: float = 0.2,<br>seed: int = 42,<br>gradient_accumulation_steps: int = 1,<br>save_checkpoint_interval: int = 10,<br>output_dir: str = './results',<br>plots_dir: str = './plots/comprehensive',<br>log_dir: str = './logs',<br>selected_models: list[str] = &lt;factory&gt;,<br>selected_datasets: list[str] = &lt;factory&gt;,<br>selected_ranks: list[int] = &lt;factory&gt;)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class ExperimentConfig:
+    &#34;&#34;&#34;Multi‑run experiment grid (SVD ranks, datasets, models).&#34;&#34;&#34;
+
+    base_models: dict[str, str] = field(default_factory=lambda: {&#34;bert&#34;: &#34;bert-base-uncased&#34;})
+    svd_ranks: list[int] = field(default_factory=lambda: [8, 16, 32])
+    datasets: list[DatasetConfig] = field(default_factory=list)
+    min_samples: int = 10
+    max_samples: int = 200
+    batch_size: int = 4
+    epochs: int = 1
+    learning_rate: float = 2e-5
+    max_length: int = 128
+    val_split: float = 0.2
+    seed: int = 42
+    gradient_accumulation_steps: int = 1
+    save_checkpoint_interval: int = 10
+    output_dir: str = &#34;./results&#34;
+    plots_dir: str = &#34;./plots/comprehensive&#34;
+    log_dir: str = &#34;./logs&#34;
+    selected_models: list[str] = field(default_factory=list)
+    selected_datasets: list[str] = field(default_factory=list)
+    selected_ranks: list[int] = field(default_factory=list)</code></pre>
+</details>
+<div class="desc"><p>Multi‑run experiment grid (SVD ranks, datasets, models).</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.config.config.ExperimentConfig.base_models"><code class="name">var <span class="ident">base_models</span> : dict[str, str]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig.batch_size"><code class="name">var <span class="ident">batch_size</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig.datasets"><code class="name">var <span class="ident">datasets</span> : list[<a title="neuralops.config.config.DatasetConfig" href="#neuralops.config.config.DatasetConfig">DatasetConfig</a>]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig.epochs"><code class="name">var <span class="ident">epochs</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig.gradient_accumulation_steps"><code class="name">var <span class="ident">gradient_accumulation_steps</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig.learning_rate"><code class="name">var <span class="ident">learning_rate</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig.log_dir"><code class="name">var <span class="ident">log_dir</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig.max_length"><code class="name">var <span class="ident">max_length</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig.max_samples"><code class="name">var <span class="ident">max_samples</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig.min_samples"><code class="name">var <span class="ident">min_samples</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig.output_dir"><code class="name">var <span class="ident">output_dir</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig.plots_dir"><code class="name">var <span class="ident">plots_dir</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig.save_checkpoint_interval"><code class="name">var <span class="ident">save_checkpoint_interval</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig.seed"><code class="name">var <span class="ident">seed</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig.selected_datasets"><code class="name">var <span class="ident">selected_datasets</span> : list[str]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig.selected_models"><code class="name">var <span class="ident">selected_models</span> : list[str]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig.selected_ranks"><code class="name">var <span class="ident">selected_ranks</span> : list[int]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig.svd_ranks"><code class="name">var <span class="ident">svd_ranks</span> : list[int]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ExperimentConfig.val_split"><code class="name">var <span class="ident">val_split</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.config.config.FisherConfig"><code class="flex name class">
+<span>class <span class="ident">FisherConfig</span></span>
+<span>(</span><span>num_batches: int = 20, sample_size: int = 200, scale_max: float = 2.0)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class FisherConfig:
+    num_batches: int = 20
+    sample_size: int = 200
+    scale_max: float = 2.0</code></pre>
+</details>
+<div class="desc"><p>FisherConfig(num_batches: int = 20, sample_size: int = 200, scale_max: float = 2.0)</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.config.config.FisherConfig.num_batches"><code class="name">var <span class="ident">num_batches</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.FisherConfig.sample_size"><code class="name">var <span class="ident">sample_size</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.FisherConfig.scale_max"><code class="name">var <span class="ident">scale_max</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.config.config.GeLoRAConfig"><code class="flex name class">
+<span>class <span class="ident">GeLoRAConfig</span></span>
+<span>(</span><span>margin: float = 1.0, min_rank: int = 2, max_rank: int = 32)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class GeLoRAConfig:
+    margin: float = 1.0
+    min_rank: int = 2
+    max_rank: int = 32</code></pre>
+</details>
+<div class="desc"><p>GeLoRAConfig(margin: float = 1.0, min_rank: int = 2, max_rank: int = 32)</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.config.config.GeLoRAConfig.margin"><code class="name">var <span class="ident">margin</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.GeLoRAConfig.max_rank"><code class="name">var <span class="ident">max_rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.GeLoRAConfig.min_rank"><code class="name">var <span class="ident">min_rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.config.config.HardwareConfig"><code class="flex name class">
+<span>class <span class="ident">HardwareConfig</span></span>
+<span>(</span><span>device: str = 'auto',<br>force_cpu_for_svd: bool = True,<br>enable_fp16: bool = False,<br>enable_bf16: bool = False,<br>num_workers: int = 4,<br>pin_memory: bool = False,<br>torch_compile: bool = False,<br>empty_cache_every_step: bool = False)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class HardwareConfig:
+    device: str = &#34;auto&#34;  # auto, cuda, mps, cpu
+    force_cpu_for_svd: bool = True
+    enable_fp16: bool = False
+    enable_bf16: bool = False
+    num_workers: int = 4
+    pin_memory: bool = False
+    torch_compile: bool = False
+    empty_cache_every_step: bool = False</code></pre>
+</details>
+<div class="desc"><p>HardwareConfig(device: str = 'auto', force_cpu_for_svd: bool = True, enable_fp16: bool = False, enable_bf16: bool = False, num_workers: int = 4, pin_memory: bool = False, torch_compile: bool = False, empty_cache_every_step: bool = False)</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.config.config.HardwareConfig.device"><code class="name">var <span class="ident">device</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.HardwareConfig.empty_cache_every_step"><code class="name">var <span class="ident">empty_cache_every_step</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.HardwareConfig.enable_bf16"><code class="name">var <span class="ident">enable_bf16</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.HardwareConfig.enable_fp16"><code class="name">var <span class="ident">enable_fp16</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.HardwareConfig.force_cpu_for_svd"><code class="name">var <span class="ident">force_cpu_for_svd</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.HardwareConfig.num_workers"><code class="name">var <span class="ident">num_workers</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.HardwareConfig.pin_memory"><code class="name">var <span class="ident">pin_memory</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.HardwareConfig.torch_compile"><code class="name">var <span class="ident">torch_compile</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.config.config.LLRDConfig"><code class="flex name class">
+<span>class <span class="ident">LLRDConfig</span></span>
+<span>(</span><span>decay: float = 0.95)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class LLRDConfig:
+    decay: float = 0.95</code></pre>
+</details>
+<div class="desc"><p>LLRDConfig(decay: float = 0.95)</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.config.config.LLRDConfig.decay"><code class="name">var <span class="ident">decay</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.config.config.LoRAConfig"><code class="flex name class">
+<span>class <span class="ident">LoRAConfig</span></span>
+<span>(</span><span>r: int = 8, alpha: int = 16, dropout: float = 0.1)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class LoRAConfig:
+    r: int = 8
+    alpha: int = 16
+    dropout: float = 0.1</code></pre>
+</details>
+<div class="desc"><p>LoRAConfig(r: int = 8, alpha: int = 16, dropout: float = 0.1)</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.config.config.LoRAConfig.alpha"><code class="name">var <span class="ident">alpha</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.LoRAConfig.dropout"><code class="name">var <span class="ident">dropout</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.LoRAConfig.r"><code class="name">var <span class="ident">r</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.config.config.MethodConfig"><code class="flex name class">
+<span>class <span class="ident">MethodConfig</span></span>
+<span>(</span><span>method: str = 'baseline',<br>lora: <a title="neuralops.config.config.LoRAConfig" href="#neuralops.config.config.LoRAConfig">LoRAConfig</a> = &lt;factory&gt;,<br>rdrop: <a title="neuralops.config.config.RDropConfig" href="#neuralops.config.config.RDropConfig">RDropConfig</a> = &lt;factory&gt;,<br>r3f: <a title="neuralops.config.config.R3FConfig" href="#neuralops.config.config.R3FConfig">R3FConfig</a> = &lt;factory&gt;,<br>fisher: <a title="neuralops.config.config.FisherConfig" href="#neuralops.config.config.FisherConfig">FisherConfig</a> = &lt;factory&gt;,<br>gelora: <a title="neuralops.config.config.GeLoRAConfig" href="#neuralops.config.config.GeLoRAConfig">GeLoRAConfig</a> = &lt;factory&gt;,<br>llrd: <a title="neuralops.config.config.LLRDConfig" href="#neuralops.config.config.LLRDConfig">LLRDConfig</a> = &lt;factory&gt;,<br>mixout: <a title="neuralops.config.config.MixoutConfig" href="#neuralops.config.config.MixoutConfig">MixoutConfig</a> = &lt;factory&gt;,<br>dislora: <a title="neuralops.config.config.DisLoRAConfig" href="#neuralops.config.config.DisLoRAConfig">DisLoRAConfig</a> = &lt;factory&gt;)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class MethodConfig:
+    &#34;&#34;&#34;Training method selection and its sub‑configs.&#34;&#34;&#34;
+
+    method: str = (
+        &#34;baseline&#34;  # baseline, lora, dora, dislora, rdrop, r3f, fisher, gelora, llrd, mixout
+    )
+    lora: LoRAConfig = field(default_factory=LoRAConfig)
+    rdrop: RDropConfig = field(default_factory=RDropConfig)
+    r3f: R3FConfig = field(default_factory=R3FConfig)
+    fisher: FisherConfig = field(default_factory=FisherConfig)
+    gelora: GeLoRAConfig = field(default_factory=GeLoRAConfig)
+    llrd: LLRDConfig = field(default_factory=LLRDConfig)
+    mixout: MixoutConfig = field(default_factory=MixoutConfig)
+    dislora: DisLoRAConfig = field(default_factory=DisLoRAConfig)</code></pre>
+</details>
+<div class="desc"><p>Training method selection and its sub‑configs.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.config.config.MethodConfig.dislora"><code class="name">var <span class="ident">dislora</span> : <a title="neuralops.config.config.DisLoRAConfig" href="#neuralops.config.config.DisLoRAConfig">DisLoRAConfig</a></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.MethodConfig.fisher"><code class="name">var <span class="ident">fisher</span> : <a title="neuralops.config.config.FisherConfig" href="#neuralops.config.config.FisherConfig">FisherConfig</a></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.MethodConfig.gelora"><code class="name">var <span class="ident">gelora</span> : <a title="neuralops.config.config.GeLoRAConfig" href="#neuralops.config.config.GeLoRAConfig">GeLoRAConfig</a></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.MethodConfig.llrd"><code class="name">var <span class="ident">llrd</span> : <a title="neuralops.config.config.LLRDConfig" href="#neuralops.config.config.LLRDConfig">LLRDConfig</a></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.MethodConfig.lora"><code class="name">var <span class="ident">lora</span> : <a title="neuralops.config.config.LoRAConfig" href="#neuralops.config.config.LoRAConfig">LoRAConfig</a></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.MethodConfig.method"><code class="name">var <span class="ident">method</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.MethodConfig.mixout"><code class="name">var <span class="ident">mixout</span> : <a title="neuralops.config.config.MixoutConfig" href="#neuralops.config.config.MixoutConfig">MixoutConfig</a></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.MethodConfig.r3f"><code class="name">var <span class="ident">r3f</span> : <a title="neuralops.config.config.R3FConfig" href="#neuralops.config.config.R3FConfig">R3FConfig</a></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.MethodConfig.rdrop"><code class="name">var <span class="ident">rdrop</span> : <a title="neuralops.config.config.RDropConfig" href="#neuralops.config.config.RDropConfig">RDropConfig</a></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.config.config.MixoutConfig"><code class="flex name class">
+<span>class <span class="ident">MixoutConfig</span></span>
+<span>(</span><span>p: float = 0.9)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class MixoutConfig:
+    p: float = 0.9</code></pre>
+</details>
+<div class="desc"><p>MixoutConfig(p: float = 0.9)</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.config.config.MixoutConfig.p"><code class="name">var <span class="ident">p</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.config.config.ModelConfig"><code class="flex name class">
+<span>class <span class="ident">ModelConfig</span></span>
+<span>(</span><span>name: str = 'distilbert-base-uncased',<br>num_labels: int = 2,<br>attention_type: str = 'full',<br>use_fast_tokenizer: bool = True,<br>trust_remote_code: bool = False,<br>cache_dir: str = './cache',<br>fix_layernorm_naming: bool = True,<br>variants: list[str] = &lt;factory&gt;)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class ModelConfig:
+    &#34;&#34;&#34;Model loading configuration.&#34;&#34;&#34;
+
+    name: str = &#34;distilbert-base-uncased&#34;
+    num_labels: int = 2
+    attention_type: str = &#34;full&#34;  # registry key
+    use_fast_tokenizer: bool = True
+    trust_remote_code: bool = False
+    cache_dir: str = &#34;./cache&#34;
+    fix_layernorm_naming: bool = True
+    variants: list[str] = field(default_factory=list)  # e.g., [&#34;standard&#34;, &#34;compressed&#34;]</code></pre>
+</details>
+<div class="desc"><p>Model loading configuration.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.config.config.ModelConfig.attention_type"><code class="name">var <span class="ident">attention_type</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ModelConfig.cache_dir"><code class="name">var <span class="ident">cache_dir</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ModelConfig.fix_layernorm_naming"><code class="name">var <span class="ident">fix_layernorm_naming</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ModelConfig.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ModelConfig.num_labels"><code class="name">var <span class="ident">num_labels</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ModelConfig.trust_remote_code"><code class="name">var <span class="ident">trust_remote_code</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ModelConfig.use_fast_tokenizer"><code class="name">var <span class="ident">use_fast_tokenizer</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.ModelConfig.variants"><code class="name">var <span class="ident">variants</span> : list[str]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.config.config.R3FConfig"><code class="flex name class">
+<span>class <span class="ident">R3FConfig</span></span>
+<span>(</span><span>epsilon: float = 1e-05)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class R3FConfig:
+    epsilon: float = 1e-5</code></pre>
+</details>
+<div class="desc"><p>R3FConfig(epsilon: float = 1e-05)</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.config.config.R3FConfig.epsilon"><code class="name">var <span class="ident">epsilon</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.config.config.RDropConfig"><code class="flex name class">
+<span>class <span class="ident">RDropConfig</span></span>
+<span>(</span><span>alpha: float = 5.0)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class RDropConfig:
+    alpha: float = 5.0</code></pre>
+</details>
+<div class="desc"><p>RDropConfig(alpha: float = 5.0)</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.config.config.RDropConfig.alpha"><code class="name">var <span class="ident">alpha</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.config.config.SweepConfig"><code class="flex name class">
+<span>class <span class="ident">SweepConfig</span></span>
+<span>(</span><span>name: str = 'sweep',<br>algorithm: str = 'tpe',<br>direction: str = 'maximize',<br>metric: str = 'eval_accuracy',<br>max_trials: int = 20,<br>parallel_workers: int = 1,<br>pruner: str = 'hyperband',<br>search_space: dict[str, typing.Any] = &lt;factory&gt;,<br>base_config: dict[str, typing.Any] = &lt;factory&gt;)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class SweepConfig:
+    &#34;&#34;&#34;Hyperparameter sweep configuration.&#34;&#34;&#34;
+
+    name: str = &#34;sweep&#34;
+    algorithm: str = &#34;tpe&#34;  # tpe, random, grid, cmaes
+    direction: str = &#34;maximize&#34;
+    metric: str = &#34;eval_accuracy&#34;
+    max_trials: int = 20
+    parallel_workers: int = 1
+    pruner: str = &#34;hyperband&#34;
+    search_space: dict[str, Any] = field(default_factory=dict)
+    base_config: dict[str, Any] = field(default_factory=dict)</code></pre>
+</details>
+<div class="desc"><p>Hyperparameter sweep configuration.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.config.config.SweepConfig.algorithm"><code class="name">var <span class="ident">algorithm</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.SweepConfig.base_config"><code class="name">var <span class="ident">base_config</span> : dict[str, typing.Any]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.SweepConfig.direction"><code class="name">var <span class="ident">direction</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.SweepConfig.max_trials"><code class="name">var <span class="ident">max_trials</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.SweepConfig.metric"><code class="name">var <span class="ident">metric</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.SweepConfig.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.SweepConfig.parallel_workers"><code class="name">var <span class="ident">parallel_workers</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.SweepConfig.pruner"><code class="name">var <span class="ident">pruner</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.SweepConfig.search_space"><code class="name">var <span class="ident">search_space</span> : dict[str, typing.Any]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig"><code class="flex name class">
+<span>class <span class="ident">TrainingConfig</span></span>
+<span>(</span><span>batch_size: int = 16,<br>eval_batch_size: int = 32,<br>epochs: int = 3,<br>learning_rate: float = 2e-05,<br>weight_decay: float = 0.01,<br>warmup_ratio: float = 0.1,<br>warmup_steps: int = 0,<br>gradient_accumulation_steps: int = 1,<br>max_grad_norm: float = 1.0,<br>lr_scheduler_type: str = 'linear',<br>optimizer: str = 'adamw',<br>early_stopping_patience: int | None = None,<br>early_stopping_threshold: float = 0.001,<br>save_strategy: str = 'epoch',<br>save_steps: int = 500,<br>save_total_limit: int = 2,<br>save_only_model: bool = True,<br>eval_strategy: str = 'epoch',<br>eval_steps: int = 500,<br>metric_for_best_model: str = 'eval_loss',<br>greater_is_better: bool = False,<br>fp16: bool = False,<br>bf16: bool = False,<br>report_to: str = 'none')</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class TrainingConfig:
+    &#34;&#34;&#34;Training hyperparameters.&#34;&#34;&#34;
+
+    batch_size: int = 16
+    eval_batch_size: int = 32
+    epochs: int = 3
+    learning_rate: float = 2e-5
+    weight_decay: float = 0.01
+    warmup_ratio: float = 0.1
+    warmup_steps: int = 0
+    gradient_accumulation_steps: int = 1
+    max_grad_norm: float = 1.0
+    lr_scheduler_type: str = &#34;linear&#34;
+    optimizer: str = &#34;adamw&#34;
+    early_stopping_patience: int | None = None
+    early_stopping_threshold: float = 0.001
+    save_strategy: str = &#34;epoch&#34;
+    save_steps: int = 500
+    save_total_limit: int = 2
+    save_only_model: bool = True
+    eval_strategy: str = &#34;epoch&#34;
+    eval_steps: int = 500
+    metric_for_best_model: str = &#34;eval_loss&#34;
+    greater_is_better: bool = False
+    fp16: bool = False
+    bf16: bool = False
+    report_to: str = &#34;none&#34;</code></pre>
+</details>
+<div class="desc"><p>Training hyperparameters.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.config.config.TrainingConfig.batch_size"><code class="name">var <span class="ident">batch_size</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.bf16"><code class="name">var <span class="ident">bf16</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.early_stopping_patience"><code class="name">var <span class="ident">early_stopping_patience</span> : int | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.early_stopping_threshold"><code class="name">var <span class="ident">early_stopping_threshold</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.epochs"><code class="name">var <span class="ident">epochs</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.eval_batch_size"><code class="name">var <span class="ident">eval_batch_size</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.eval_steps"><code class="name">var <span class="ident">eval_steps</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.eval_strategy"><code class="name">var <span class="ident">eval_strategy</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.fp16"><code class="name">var <span class="ident">fp16</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.gradient_accumulation_steps"><code class="name">var <span class="ident">gradient_accumulation_steps</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.greater_is_better"><code class="name">var <span class="ident">greater_is_better</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.learning_rate"><code class="name">var <span class="ident">learning_rate</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.lr_scheduler_type"><code class="name">var <span class="ident">lr_scheduler_type</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.max_grad_norm"><code class="name">var <span class="ident">max_grad_norm</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.metric_for_best_model"><code class="name">var <span class="ident">metric_for_best_model</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.optimizer"><code class="name">var <span class="ident">optimizer</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.report_to"><code class="name">var <span class="ident">report_to</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.save_only_model"><code class="name">var <span class="ident">save_only_model</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.save_steps"><code class="name">var <span class="ident">save_steps</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.save_strategy"><code class="name">var <span class="ident">save_strategy</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.save_total_limit"><code class="name">var <span class="ident">save_total_limit</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.warmup_ratio"><code class="name">var <span class="ident">warmup_ratio</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.warmup_steps"><code class="name">var <span class="ident">warmup_steps</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.config.config.TrainingConfig.weight_decay"><code class="name">var <span class="ident">weight_decay</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.config" href="index.html">neuralops.config</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.config.config.CompressionConfig" href="#neuralops.config.config.CompressionConfig">CompressionConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.config.config.CompressionConfig.adaptive_span" href="#neuralops.config.config.CompressionConfig.adaptive_span">adaptive_span</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.aks_enabled" href="#neuralops.config.config.CompressionConfig.aks_enabled">aks_enabled</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.attn_type" href="#neuralops.config.config.CompressionConfig.attn_type">attn_type</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.block_size" href="#neuralops.config.config.CompressionConfig.block_size">block_size</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.compression_rank" href="#neuralops.config.config.CompressionConfig.compression_rank">compression_rank</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.cur_rank" href="#neuralops.config.config.CompressionConfig.cur_rank">cur_rank</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.dislora_beta" href="#neuralops.config.config.CompressionConfig.dislora_beta">dislora_beta</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.dislora_capacity_factor" href="#neuralops.config.config.CompressionConfig.dislora_capacity_factor">dislora_capacity_factor</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.dropout" href="#neuralops.config.config.CompressionConfig.dropout">dropout</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.early_stopping_patience" href="#neuralops.config.config.CompressionConfig.early_stopping_patience">early_stopping_patience</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.feature_dim" href="#neuralops.config.config.CompressionConfig.feature_dim">feature_dim</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.fisher_num_batches" href="#neuralops.config.config.CompressionConfig.fisher_num_batches">fisher_num_batches</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.fisher_sample_size" href="#neuralops.config.config.CompressionConfig.fisher_sample_size">fisher_sample_size</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.fisher_scale_max" href="#neuralops.config.config.CompressionConfig.fisher_scale_max">fisher_scale_max</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.gate_bias" href="#neuralops.config.config.CompressionConfig.gate_bias">gate_bias</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.gelora_margin" href="#neuralops.config.config.CompressionConfig.gelora_margin">gelora_margin</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.gelora_max_rank" href="#neuralops.config.config.CompressionConfig.gelora_max_rank">gelora_max_rank</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.gelora_min_rank" href="#neuralops.config.config.CompressionConfig.gelora_min_rank">gelora_min_rank</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.gradient_checkpointing" href="#neuralops.config.config.CompressionConfig.gradient_checkpointing">gradient_checkpointing</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.k_early" href="#neuralops.config.config.CompressionConfig.k_early">k_early</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.k_late" href="#neuralops.config.config.CompressionConfig.k_late">k_late</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.k_mid" href="#neuralops.config.config.CompressionConfig.k_mid">k_mid</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.llrd_decay" href="#neuralops.config.config.CompressionConfig.llrd_decay">llrd_decay</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.local_window" href="#neuralops.config.config.CompressionConfig.local_window">local_window</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.lora_alpha" href="#neuralops.config.config.CompressionConfig.lora_alpha">lora_alpha</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.lora_dropout" href="#neuralops.config.config.CompressionConfig.lora_dropout">lora_dropout</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.lora_r" href="#neuralops.config.config.CompressionConfig.lora_r">lora_r</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.low_rank_cache_size" href="#neuralops.config.config.CompressionConfig.low_rank_cache_size">low_rank_cache_size</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.lsh_bucket_size" href="#neuralops.config.config.CompressionConfig.lsh_bucket_size">lsh_bucket_size</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.lsh_rounds" href="#neuralops.config.config.CompressionConfig.lsh_rounds">lsh_rounds</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.max_grad_norm" href="#neuralops.config.config.CompressionConfig.max_grad_norm">max_grad_norm</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.max_rank" href="#neuralops.config.config.CompressionConfig.max_rank">max_rank</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.max_seq_len" href="#neuralops.config.config.CompressionConfig.max_seq_len">max_seq_len</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.max_span" href="#neuralops.config.config.CompressionConfig.max_span">max_span</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.min_rank" href="#neuralops.config.config.CompressionConfig.min_rank">min_rank</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.mixout_p" href="#neuralops.config.config.CompressionConfig.mixout_p">mixout_p</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.n_heads" href="#neuralops.config.config.CompressionConfig.n_heads">n_heads</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.n_layers" href="#neuralops.config.config.CompressionConfig.n_layers">n_layers</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.num_experts" href="#neuralops.config.config.CompressionConfig.num_experts">num_experts</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.num_full_heads" href="#neuralops.config.config.CompressionConfig.num_full_heads">num_full_heads</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.num_global_heads" href="#neuralops.config.config.CompressionConfig.num_global_heads">num_global_heads</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.num_kernel_heads" href="#neuralops.config.config.CompressionConfig.num_kernel_heads">num_kernel_heads</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.num_landmarks" href="#neuralops.config.config.CompressionConfig.num_landmarks">num_landmarks</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.num_local_heads" href="#neuralops.config.config.CompressionConfig.num_local_heads">num_local_heads</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.progressive" href="#neuralops.config.config.CompressionConfig.progressive">progressive</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.r3f_epsilon" href="#neuralops.config.config.CompressionConfig.r3f_epsilon">r3f_epsilon</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.rank" href="#neuralops.config.config.CompressionConfig.rank">rank</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.ratio" href="#neuralops.config.config.CompressionConfig.ratio">ratio</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.rdrop_alpha" href="#neuralops.config.config.CompressionConfig.rdrop_alpha">rdrop_alpha</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.rectify_interval" href="#neuralops.config.config.CompressionConfig.rectify_interval">rectify_interval</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.rel_pos_max_distance" href="#neuralops.config.config.CompressionConfig.rel_pos_max_distance">rel_pos_max_distance</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.rff_features" href="#neuralops.config.config.CompressionConfig.rff_features">rff_features</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.soa_rank" href="#neuralops.config.config.CompressionConfig.soa_rank">soa_rank</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.softpick_temperature" href="#neuralops.config.config.CompressionConfig.softpick_temperature">softpick_temperature</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.svd_energy" href="#neuralops.config.config.CompressionConfig.svd_energy">svd_energy</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.svd_rank" href="#neuralops.config.config.CompressionConfig.svd_rank">svd_rank</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.svd_rank_out" href="#neuralops.config.config.CompressionConfig.svd_rank_out">svd_rank_out</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.svd_rank_qkv" href="#neuralops.config.config.CompressionConfig.svd_rank_qkv">svd_rank_qkv</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.top_k" href="#neuralops.config.config.CompressionConfig.top_k">top_k</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.top_k_inter" href="#neuralops.config.config.CompressionConfig.top_k_inter">top_k_inter</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.use_adaptive_gate" href="#neuralops.config.config.CompressionConfig.use_adaptive_gate">use_adaptive_gate</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.use_fp8" href="#neuralops.config.config.CompressionConfig.use_fp8">use_fp8</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.use_full_attention" href="#neuralops.config.config.CompressionConfig.use_full_attention">use_full_attention</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.use_gate" href="#neuralops.config.config.CompressionConfig.use_gate">use_gate</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.use_lion" href="#neuralops.config.config.CompressionConfig.use_lion">use_lion</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.use_rel_pos_bias" href="#neuralops.config.config.CompressionConfig.use_rel_pos_bias">use_rel_pos_bias</a></code></li>
+<li><code><a title="neuralops.config.config.CompressionConfig.window_size" href="#neuralops.config.config.CompressionConfig.window_size">window_size</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.config.config.Config" href="#neuralops.config.config.Config">Config</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.config.config.Config.compression" href="#neuralops.config.config.Config.compression">compression</a></code></li>
+<li><code><a title="neuralops.config.config.Config.data" href="#neuralops.config.config.Config.data">data</a></code></li>
+<li><code><a title="neuralops.config.config.Config.experiment" href="#neuralops.config.config.Config.experiment">experiment</a></code></li>
+<li><code><a title="neuralops.config.config.Config.hardware" href="#neuralops.config.config.Config.hardware">hardware</a></code></li>
+<li><code><a title="neuralops.config.config.Config.method" href="#neuralops.config.config.Config.method">method</a></code></li>
+<li><code><a title="neuralops.config.config.Config.model" href="#neuralops.config.config.Config.model">model</a></code></li>
+<li><code><a title="neuralops.config.config.Config.sweep" href="#neuralops.config.config.Config.sweep">sweep</a></code></li>
+<li><code><a title="neuralops.config.config.Config.training" href="#neuralops.config.config.Config.training">training</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.config.config.DataConfig" href="#neuralops.config.config.DataConfig">DataConfig</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.config.config.DataConfig.local_glue_path" href="#neuralops.config.config.DataConfig.local_glue_path">local_glue_path</a></code></li>
+<li><code><a title="neuralops.config.config.DataConfig.max_seq_length" href="#neuralops.config.config.DataConfig.max_seq_length">max_seq_length</a></code></li>
+<li><code><a title="neuralops.config.config.DataConfig.max_train_samples" href="#neuralops.config.config.DataConfig.max_train_samples">max_train_samples</a></code></li>
+<li><code><a title="neuralops.config.config.DataConfig.max_val_samples" href="#neuralops.config.config.DataConfig.max_val_samples">max_val_samples</a></code></li>
+<li><code><a title="neuralops.config.config.DataConfig.num_proc" href="#neuralops.config.config.DataConfig.num_proc">num_proc</a></code></li>
+<li><code><a title="neuralops.config.config.DataConfig.remove_columns" href="#neuralops.config.config.DataConfig.remove_columns">remove_columns</a></code></li>
+<li><code><a title="neuralops.config.config.DataConfig.split_mapping" href="#neuralops.config.config.DataConfig.split_mapping">split_mapping</a></code></li>
+<li><code><a title="neuralops.config.config.DataConfig.streaming" href="#neuralops.config.config.DataConfig.streaming">streaming</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.config.config.DatasetConfig" href="#neuralops.config.config.DatasetConfig">DatasetConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.config.config.DatasetConfig.name" href="#neuralops.config.config.DatasetConfig.name">name</a></code></li>
+<li><code><a title="neuralops.config.config.DatasetConfig.num_choices" href="#neuralops.config.config.DatasetConfig.num_choices">num_choices</a></code></li>
+<li><code><a title="neuralops.config.config.DatasetConfig.num_labels" href="#neuralops.config.config.DatasetConfig.num_labels">num_labels</a></code></li>
+<li><code><a title="neuralops.config.config.DatasetConfig.path" href="#neuralops.config.config.DatasetConfig.path">path</a></code></li>
+<li><code><a title="neuralops.config.config.DatasetConfig.task_type" href="#neuralops.config.config.DatasetConfig.task_type">task_type</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.config.config.DisLoRAConfig" href="#neuralops.config.config.DisLoRAConfig">DisLoRAConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.config.config.DisLoRAConfig.beta" href="#neuralops.config.config.DisLoRAConfig.beta">beta</a></code></li>
+<li><code><a title="neuralops.config.config.DisLoRAConfig.capacity_factor" href="#neuralops.config.config.DisLoRAConfig.capacity_factor">capacity_factor</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.config.config.ExperimentConfig" href="#neuralops.config.config.ExperimentConfig">ExperimentConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.config.config.ExperimentConfig.base_models" href="#neuralops.config.config.ExperimentConfig.base_models">base_models</a></code></li>
+<li><code><a title="neuralops.config.config.ExperimentConfig.batch_size" href="#neuralops.config.config.ExperimentConfig.batch_size">batch_size</a></code></li>
+<li><code><a title="neuralops.config.config.ExperimentConfig.datasets" href="#neuralops.config.config.ExperimentConfig.datasets">datasets</a></code></li>
+<li><code><a title="neuralops.config.config.ExperimentConfig.epochs" href="#neuralops.config.config.ExperimentConfig.epochs">epochs</a></code></li>
+<li><code><a title="neuralops.config.config.ExperimentConfig.gradient_accumulation_steps" href="#neuralops.config.config.ExperimentConfig.gradient_accumulation_steps">gradient_accumulation_steps</a></code></li>
+<li><code><a title="neuralops.config.config.ExperimentConfig.learning_rate" href="#neuralops.config.config.ExperimentConfig.learning_rate">learning_rate</a></code></li>
+<li><code><a title="neuralops.config.config.ExperimentConfig.log_dir" href="#neuralops.config.config.ExperimentConfig.log_dir">log_dir</a></code></li>
+<li><code><a title="neuralops.config.config.ExperimentConfig.max_length" href="#neuralops.config.config.ExperimentConfig.max_length">max_length</a></code></li>
+<li><code><a title="neuralops.config.config.ExperimentConfig.max_samples" href="#neuralops.config.config.ExperimentConfig.max_samples">max_samples</a></code></li>
+<li><code><a title="neuralops.config.config.ExperimentConfig.min_samples" href="#neuralops.config.config.ExperimentConfig.min_samples">min_samples</a></code></li>
+<li><code><a title="neuralops.config.config.ExperimentConfig.output_dir" href="#neuralops.config.config.ExperimentConfig.output_dir">output_dir</a></code></li>
+<li><code><a title="neuralops.config.config.ExperimentConfig.plots_dir" href="#neuralops.config.config.ExperimentConfig.plots_dir">plots_dir</a></code></li>
+<li><code><a title="neuralops.config.config.ExperimentConfig.save_checkpoint_interval" href="#neuralops.config.config.ExperimentConfig.save_checkpoint_interval">save_checkpoint_interval</a></code></li>
+<li><code><a title="neuralops.config.config.ExperimentConfig.seed" href="#neuralops.config.config.ExperimentConfig.seed">seed</a></code></li>
+<li><code><a title="neuralops.config.config.ExperimentConfig.selected_datasets" href="#neuralops.config.config.ExperimentConfig.selected_datasets">selected_datasets</a></code></li>
+<li><code><a title="neuralops.config.config.ExperimentConfig.selected_models" href="#neuralops.config.config.ExperimentConfig.selected_models">selected_models</a></code></li>
+<li><code><a title="neuralops.config.config.ExperimentConfig.selected_ranks" href="#neuralops.config.config.ExperimentConfig.selected_ranks">selected_ranks</a></code></li>
+<li><code><a title="neuralops.config.config.ExperimentConfig.svd_ranks" href="#neuralops.config.config.ExperimentConfig.svd_ranks">svd_ranks</a></code></li>
+<li><code><a title="neuralops.config.config.ExperimentConfig.val_split" href="#neuralops.config.config.ExperimentConfig.val_split">val_split</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.config.config.FisherConfig" href="#neuralops.config.config.FisherConfig">FisherConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.config.config.FisherConfig.num_batches" href="#neuralops.config.config.FisherConfig.num_batches">num_batches</a></code></li>
+<li><code><a title="neuralops.config.config.FisherConfig.sample_size" href="#neuralops.config.config.FisherConfig.sample_size">sample_size</a></code></li>
+<li><code><a title="neuralops.config.config.FisherConfig.scale_max" href="#neuralops.config.config.FisherConfig.scale_max">scale_max</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.config.config.GeLoRAConfig" href="#neuralops.config.config.GeLoRAConfig">GeLoRAConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.config.config.GeLoRAConfig.margin" href="#neuralops.config.config.GeLoRAConfig.margin">margin</a></code></li>
+<li><code><a title="neuralops.config.config.GeLoRAConfig.max_rank" href="#neuralops.config.config.GeLoRAConfig.max_rank">max_rank</a></code></li>
+<li><code><a title="neuralops.config.config.GeLoRAConfig.min_rank" href="#neuralops.config.config.GeLoRAConfig.min_rank">min_rank</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.config.config.HardwareConfig" href="#neuralops.config.config.HardwareConfig">HardwareConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.config.config.HardwareConfig.device" href="#neuralops.config.config.HardwareConfig.device">device</a></code></li>
+<li><code><a title="neuralops.config.config.HardwareConfig.empty_cache_every_step" href="#neuralops.config.config.HardwareConfig.empty_cache_every_step">empty_cache_every_step</a></code></li>
+<li><code><a title="neuralops.config.config.HardwareConfig.enable_bf16" href="#neuralops.config.config.HardwareConfig.enable_bf16">enable_bf16</a></code></li>
+<li><code><a title="neuralops.config.config.HardwareConfig.enable_fp16" href="#neuralops.config.config.HardwareConfig.enable_fp16">enable_fp16</a></code></li>
+<li><code><a title="neuralops.config.config.HardwareConfig.force_cpu_for_svd" href="#neuralops.config.config.HardwareConfig.force_cpu_for_svd">force_cpu_for_svd</a></code></li>
+<li><code><a title="neuralops.config.config.HardwareConfig.num_workers" href="#neuralops.config.config.HardwareConfig.num_workers">num_workers</a></code></li>
+<li><code><a title="neuralops.config.config.HardwareConfig.pin_memory" href="#neuralops.config.config.HardwareConfig.pin_memory">pin_memory</a></code></li>
+<li><code><a title="neuralops.config.config.HardwareConfig.torch_compile" href="#neuralops.config.config.HardwareConfig.torch_compile">torch_compile</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.config.config.LLRDConfig" href="#neuralops.config.config.LLRDConfig">LLRDConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.config.config.LLRDConfig.decay" href="#neuralops.config.config.LLRDConfig.decay">decay</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.config.config.LoRAConfig" href="#neuralops.config.config.LoRAConfig">LoRAConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.config.config.LoRAConfig.alpha" href="#neuralops.config.config.LoRAConfig.alpha">alpha</a></code></li>
+<li><code><a title="neuralops.config.config.LoRAConfig.dropout" href="#neuralops.config.config.LoRAConfig.dropout">dropout</a></code></li>
+<li><code><a title="neuralops.config.config.LoRAConfig.r" href="#neuralops.config.config.LoRAConfig.r">r</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.config.config.MethodConfig" href="#neuralops.config.config.MethodConfig">MethodConfig</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.config.config.MethodConfig.dislora" href="#neuralops.config.config.MethodConfig.dislora">dislora</a></code></li>
+<li><code><a title="neuralops.config.config.MethodConfig.fisher" href="#neuralops.config.config.MethodConfig.fisher">fisher</a></code></li>
+<li><code><a title="neuralops.config.config.MethodConfig.gelora" href="#neuralops.config.config.MethodConfig.gelora">gelora</a></code></li>
+<li><code><a title="neuralops.config.config.MethodConfig.llrd" href="#neuralops.config.config.MethodConfig.llrd">llrd</a></code></li>
+<li><code><a title="neuralops.config.config.MethodConfig.lora" href="#neuralops.config.config.MethodConfig.lora">lora</a></code></li>
+<li><code><a title="neuralops.config.config.MethodConfig.method" href="#neuralops.config.config.MethodConfig.method">method</a></code></li>
+<li><code><a title="neuralops.config.config.MethodConfig.mixout" href="#neuralops.config.config.MethodConfig.mixout">mixout</a></code></li>
+<li><code><a title="neuralops.config.config.MethodConfig.r3f" href="#neuralops.config.config.MethodConfig.r3f">r3f</a></code></li>
+<li><code><a title="neuralops.config.config.MethodConfig.rdrop" href="#neuralops.config.config.MethodConfig.rdrop">rdrop</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.config.config.MixoutConfig" href="#neuralops.config.config.MixoutConfig">MixoutConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.config.config.MixoutConfig.p" href="#neuralops.config.config.MixoutConfig.p">p</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.config.config.ModelConfig" href="#neuralops.config.config.ModelConfig">ModelConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.config.config.ModelConfig.attention_type" href="#neuralops.config.config.ModelConfig.attention_type">attention_type</a></code></li>
+<li><code><a title="neuralops.config.config.ModelConfig.cache_dir" href="#neuralops.config.config.ModelConfig.cache_dir">cache_dir</a></code></li>
+<li><code><a title="neuralops.config.config.ModelConfig.fix_layernorm_naming" href="#neuralops.config.config.ModelConfig.fix_layernorm_naming">fix_layernorm_naming</a></code></li>
+<li><code><a title="neuralops.config.config.ModelConfig.name" href="#neuralops.config.config.ModelConfig.name">name</a></code></li>
+<li><code><a title="neuralops.config.config.ModelConfig.num_labels" href="#neuralops.config.config.ModelConfig.num_labels">num_labels</a></code></li>
+<li><code><a title="neuralops.config.config.ModelConfig.trust_remote_code" href="#neuralops.config.config.ModelConfig.trust_remote_code">trust_remote_code</a></code></li>
+<li><code><a title="neuralops.config.config.ModelConfig.use_fast_tokenizer" href="#neuralops.config.config.ModelConfig.use_fast_tokenizer">use_fast_tokenizer</a></code></li>
+<li><code><a title="neuralops.config.config.ModelConfig.variants" href="#neuralops.config.config.ModelConfig.variants">variants</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.config.config.R3FConfig" href="#neuralops.config.config.R3FConfig">R3FConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.config.config.R3FConfig.epsilon" href="#neuralops.config.config.R3FConfig.epsilon">epsilon</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.config.config.RDropConfig" href="#neuralops.config.config.RDropConfig">RDropConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.config.config.RDropConfig.alpha" href="#neuralops.config.config.RDropConfig.alpha">alpha</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.config.config.SweepConfig" href="#neuralops.config.config.SweepConfig">SweepConfig</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.config.config.SweepConfig.algorithm" href="#neuralops.config.config.SweepConfig.algorithm">algorithm</a></code></li>
+<li><code><a title="neuralops.config.config.SweepConfig.base_config" href="#neuralops.config.config.SweepConfig.base_config">base_config</a></code></li>
+<li><code><a title="neuralops.config.config.SweepConfig.direction" href="#neuralops.config.config.SweepConfig.direction">direction</a></code></li>
+<li><code><a title="neuralops.config.config.SweepConfig.max_trials" href="#neuralops.config.config.SweepConfig.max_trials">max_trials</a></code></li>
+<li><code><a title="neuralops.config.config.SweepConfig.metric" href="#neuralops.config.config.SweepConfig.metric">metric</a></code></li>
+<li><code><a title="neuralops.config.config.SweepConfig.name" href="#neuralops.config.config.SweepConfig.name">name</a></code></li>
+<li><code><a title="neuralops.config.config.SweepConfig.parallel_workers" href="#neuralops.config.config.SweepConfig.parallel_workers">parallel_workers</a></code></li>
+<li><code><a title="neuralops.config.config.SweepConfig.pruner" href="#neuralops.config.config.SweepConfig.pruner">pruner</a></code></li>
+<li><code><a title="neuralops.config.config.SweepConfig.search_space" href="#neuralops.config.config.SweepConfig.search_space">search_space</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.config.config.TrainingConfig" href="#neuralops.config.config.TrainingConfig">TrainingConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.config.config.TrainingConfig.batch_size" href="#neuralops.config.config.TrainingConfig.batch_size">batch_size</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.bf16" href="#neuralops.config.config.TrainingConfig.bf16">bf16</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.early_stopping_patience" href="#neuralops.config.config.TrainingConfig.early_stopping_patience">early_stopping_patience</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.early_stopping_threshold" href="#neuralops.config.config.TrainingConfig.early_stopping_threshold">early_stopping_threshold</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.epochs" href="#neuralops.config.config.TrainingConfig.epochs">epochs</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.eval_batch_size" href="#neuralops.config.config.TrainingConfig.eval_batch_size">eval_batch_size</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.eval_steps" href="#neuralops.config.config.TrainingConfig.eval_steps">eval_steps</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.eval_strategy" href="#neuralops.config.config.TrainingConfig.eval_strategy">eval_strategy</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.fp16" href="#neuralops.config.config.TrainingConfig.fp16">fp16</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.gradient_accumulation_steps" href="#neuralops.config.config.TrainingConfig.gradient_accumulation_steps">gradient_accumulation_steps</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.greater_is_better" href="#neuralops.config.config.TrainingConfig.greater_is_better">greater_is_better</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.learning_rate" href="#neuralops.config.config.TrainingConfig.learning_rate">learning_rate</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.lr_scheduler_type" href="#neuralops.config.config.TrainingConfig.lr_scheduler_type">lr_scheduler_type</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.max_grad_norm" href="#neuralops.config.config.TrainingConfig.max_grad_norm">max_grad_norm</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.metric_for_best_model" href="#neuralops.config.config.TrainingConfig.metric_for_best_model">metric_for_best_model</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.optimizer" href="#neuralops.config.config.TrainingConfig.optimizer">optimizer</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.report_to" href="#neuralops.config.config.TrainingConfig.report_to">report_to</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.save_only_model" href="#neuralops.config.config.TrainingConfig.save_only_model">save_only_model</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.save_steps" href="#neuralops.config.config.TrainingConfig.save_steps">save_steps</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.save_strategy" href="#neuralops.config.config.TrainingConfig.save_strategy">save_strategy</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.save_total_limit" href="#neuralops.config.config.TrainingConfig.save_total_limit">save_total_limit</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.warmup_ratio" href="#neuralops.config.config.TrainingConfig.warmup_ratio">warmup_ratio</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.warmup_steps" href="#neuralops.config.config.TrainingConfig.warmup_steps">warmup_steps</a></code></li>
+<li><code><a title="neuralops.config.config.TrainingConfig.weight_decay" href="#neuralops.config.config.TrainingConfig.weight_decay">weight_decay</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

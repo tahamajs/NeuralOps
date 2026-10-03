@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.data.glue_loader API documentation</title>
+<meta name="description" content="Local GLUE Loader — loads pre-cached GLUE datasets from disk first, then HF Hub.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.data.glue_loader</code></h1>
+</header>
+<section id="section-intro">
+<p>Local GLUE Loader — loads pre-cached GLUE datasets from disk first, then HF Hub.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.data.glue_loader.get_calibration_dataloader"><code class="name flex">
+<span>def <span class="ident">get_calibration_dataloader</span></span>(<span>task_name: str = 'sst2',<br>tokenizer: Any = None,<br>batch_size: int = 8,<br>num_samples: int = 128,<br>seq_len: int = 128,<br>split: str = 'train') ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_calibration_dataloader(
+    task_name: str = &#34;sst2&#34;,
+    tokenizer: Any = None,
+    batch_size: int = 8,
+    num_samples: int = 128,
+    seq_len: int = 128,
+    split: str = &#34;train&#34;,
+) -&gt; Any:
+    &#34;&#34;&#34;
+    Builds a calibration DataLoader from local disk-cached GLUE data.
+    Used by data-aware SVD compression algorithms (ASVD, A3, FRanDI, DynamicRank,
+    SwiftSVD, SliceGPT, etc.) to collect activation covariance and Fisher information.
+    &#34;&#34;&#34;
+    from torch.utils.data import DataLoader
+
+    t_name = task_name.lower().replace(&#34;-&#34;, &#34;_&#34;)
+    ds_dict = load_glue_local(t_name)
+    if split not in ds_dict:
+        split = list(ds_dict.keys())[0]
+    ds = ds_dict[split]
+
+    if num_samples and len(ds) &gt; num_samples:
+        ds = ds.select(range(min(num_samples, len(ds))))
+
+    if tokenizer is not None:
+        key1, key2 = GLUE_TASK_KEYS.get(t_name, (&#34;sentence&#34;, None))
+        if key1 not in ds.column_names:
+            cols = [c for c in ds.column_names if c not in (&#34;label&#34;, &#34;labels&#34;, &#34;idx&#34;)]
+            key1 = cols[0] if cols else &#34;text&#34;
+            key2 = None
+
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token or &#34;[PAD]&#34;
+
+        def tokenize_fn(examples):
+            args = (
+                (examples[key1],)
+                if key2 is None or key2 not in examples
+                else (examples[key1], examples[key2])
+            )
+            return tokenizer(*args, padding=&#34;max_length&#34;, truncation=True, max_length=seq_len)
+
+        remove_cols = [c for c in ds.column_names if c not in (&#34;label&#34;, &#34;labels&#34;)]
+        ds = ds.map(tokenize_fn, batched=True, remove_columns=remove_cols)
+        keep = [
+            c for c in [&#34;input_ids&#34;, &#34;attention_mask&#34;, &#34;token_type_ids&#34;] if c in ds.column_names
+        ]
+        ds.set_format(type=&#34;torch&#34;, columns=keep)
+
+    return DataLoader(ds, batch_size=batch_size, shuffle=False)</code></pre>
+</details>
+<div class="desc"><p>Builds a calibration DataLoader from local disk-cached GLUE data.
+Used by data-aware SVD compression algorithms (ASVD, A3, FRanDI, DynamicRank,
+SwiftSVD, SliceGPT, etc.) to collect activation covariance and Fisher information.</p></div>
+</dd>
+<dt id="neuralops.data.glue_loader.get_num_labels_and_is_regression"><code class="name flex">
+<span>def <span class="ident">get_num_labels_and_is_regression</span></span>(<span>task_name: str) ‑> tuple[int, bool]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_num_labels_and_is_regression(task_name: str) -&gt; tuple[int, bool]:
+    &#34;&#34;&#34;Return (num_labels, is_regression) for GLUE tasks.&#34;&#34;&#34;
+    t = task_name.lower()
+    if t == &#34;stsb&#34;:
+        return 1, True
+    mapping = {
+        &#34;cola&#34;: 2,
+        &#34;sst2&#34;: 2,
+        &#34;mrpc&#34;: 2,
+        &#34;qqp&#34;: 2,
+        &#34;mnli&#34;: 3,
+        &#34;qnli&#34;: 2,
+        &#34;rte&#34;: 2,
+        &#34;wnli&#34;: 2,
+    }
+    return mapping.get(t, 2), False</code></pre>
+</details>
+<div class="desc"><p>Return (num_labels, is_regression) for GLUE tasks.</p></div>
+</dd>
+<dt id="neuralops.data.glue_loader.load_glue_local"><code class="name flex">
+<span>def <span class="ident">load_glue_local</span></span>(<span>task_name: str, base_path: str = None) ‑> datasets.dataset_dict.DatasetDict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_glue_local(task_name: str, base_path: str = None) -&gt; DatasetDict:
+    &#34;&#34;&#34;
+    Load a GLUE task from local Parquet files, falling back to HuggingFace Datasets hub.
+    Compatible with local, Kaggle, Colab, and remote GPU/HPC environments.
+    &#34;&#34;&#34;
+    from datasets import load_from_disk
+
+    candidates = [
+        GLUE_LOCAL_DIR / task_name,
+        Path.cwd() / &#34;data&#34; / &#34;glue_data&#34; / task_name,
+    ]
+    for cand in candidates:
+        if cand.exists():
+            return load_from_disk(str(cand))
+
+    from datasets import load_dataset as hf_load_dataset
+
+    try:
+        return hf_load_dataset(&#34;glue&#34;, task_name)
+    except Exception:
+        return hf_load_dataset(&#34;nyu-mll/glue&#34;, task_name)</code></pre>
+</details>
+<div class="desc"><p>Load a GLUE task from local Parquet files, falling back to HuggingFace Datasets hub.
+Compatible with local, Kaggle, Colab, and remote GPU/HPC environments.</p></div>
+</dd>
+<dt id="neuralops.data.glue_loader.load_glue_split"><code class="name flex">
+<span>def <span class="ident">load_glue_split</span></span>(<span>task: str,<br>split: str = 'validation',<br>tokenizer_name: str = 'bert-base-uncased',<br>max_seq_len: int = 128) ‑> datasets.arrow_dataset.Dataset | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_glue_split(
+    task: str,
+    split: str = &#34;validation&#34;,
+    tokenizer_name: str = &#34;bert-base-uncased&#34;,
+    max_seq_len: int = 128,
+) -&gt; Dataset | None:
+    &#34;&#34;&#34;Load GLUE split from disk cache or HF Hub. Returns torch-format Dataset.&#34;&#34;&#34;
+    task = task.lower()
+    if task not in GLUE_TASK_HF_NAME:
+        logger.error(&#34;Unknown GLUE task: %s&#34;, task)
+        return None
+
+    key1, key2 = GLUE_TASK_TEXT_KEYS[task]
+    hf_path, hf_config = GLUE_TASK_HF_NAME[task]
+
+    dataset = None
+    # 1. Try local disk
+    local_path = GLUE_LOCAL_DIR / task
+    if local_path.exists():
+        try:
+            from datasets import load_from_disk
+
+            raw = load_from_disk(str(local_path))
+            if split in raw:
+                dataset = raw[split]
+                logger.info(&#34;Loaded &#39;%s/%s&#39; from local disk.&#34;, task, split)
+        except Exception as e:
+            logger.warning(&#34;Local disk load failed for &#39;%s/%s&#39;: %s&#34;, task, split, e)
+
+    # 2. Try HF Hub
+    if dataset is None:
+        try:
+            from datasets import load_dataset
+
+            raw = load_dataset(hf_path, hf_config)
+            if split in raw:
+                dataset = raw[split]
+                logger.info(&#34;Loaded &#39;%s/%s&#39; from HF Hub.&#34;, task, split)
+        except Exception as e:
+            logger.warning(&#34;HF Hub load failed for &#39;%s/%s&#39;: %s&#34;, task, split, e)
+            return None
+
+    if dataset is None:
+        return None
+
+    # 3. Tokenize
+    try:
+        from transformers import AutoTokenizer
+
+        tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token
+            tokenizer.pad_token_id = tokenizer.eos_token_id
+
+        def tokenize_fn(examples):
+            args = (examples[key1],) if key2 is None else (examples[key1], examples[key2])
+            return tokenizer(*args, padding=&#34;max_length&#34;, truncation=True, max_length=max_seq_len)
+
+        remove_cols = [c for c in dataset.column_names if c not in {&#34;label&#34;, &#34;labels&#34;}]
+        dataset = dataset.map(tokenize_fn, batched=True, remove_columns=remove_cols)
+        if &#34;label&#34; in dataset.column_names and &#34;labels&#34; not in dataset.column_names:
+            dataset = dataset.rename_column(&#34;label&#34;, &#34;labels&#34;)
+        if &#34;t5&#34; in tokenizer_name.lower() and &#34;token_type_ids&#34; in dataset.column_names:
+            dataset = dataset.remove_columns([&#34;token_type_ids&#34;])
+        keep = [
+            c
+            for c in [&#34;input_ids&#34;, &#34;attention_mask&#34;, &#34;token_type_ids&#34;, &#34;labels&#34;]
+            if c in dataset.column_names
+        ]
+        dataset.set_format(type=&#34;torch&#34;, columns=keep)
+        return dataset
+    except Exception as e:
+        logger.error(&#34;Tokenization failed for &#39;%s/%s&#39;: %s&#34;, task, split, e)
+        return None</code></pre>
+</details>
+<div class="desc"><p>Load GLUE split from disk cache or HF Hub. Returns torch-format Dataset.</p></div>
+</dd>
+<dt id="neuralops.data.glue_loader.load_glue_task"><code class="name flex">
+<span>def <span class="ident">load_glue_task</span></span>(<span>task_name: str, base_path: str = None) ‑> datasets.dataset_dict.DatasetDict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_glue_local(task_name: str, base_path: str = None) -&gt; DatasetDict:
+    &#34;&#34;&#34;
+    Load a GLUE task from local Parquet files, falling back to HuggingFace Datasets hub.
+    Compatible with local, Kaggle, Colab, and remote GPU/HPC environments.
+    &#34;&#34;&#34;
+    from datasets import load_from_disk
+
+    candidates = [
+        GLUE_LOCAL_DIR / task_name,
+        Path.cwd() / &#34;data&#34; / &#34;glue_data&#34; / task_name,
+    ]
+    for cand in candidates:
+        if cand.exists():
+            return load_from_disk(str(cand))
+
+    from datasets import load_dataset as hf_load_dataset
+
+    try:
+        return hf_load_dataset(&#34;glue&#34;, task_name)
+    except Exception:
+        return hf_load_dataset(&#34;nyu-mll/glue&#34;, task_name)</code></pre>
+</details>
+<div class="desc"><p>Load a GLUE task from local Parquet files, falling back to HuggingFace Datasets hub.
+Compatible with local, Kaggle, Colab, and remote GPU/HPC environments.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.data" href="index.html">neuralops.data</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.data.glue_loader.get_calibration_dataloader" href="#neuralops.data.glue_loader.get_calibration_dataloader">get_calibration_dataloader</a></code></li>
+<li><code><a title="neuralops.data.glue_loader.get_num_labels_and_is_regression" href="#neuralops.data.glue_loader.get_num_labels_and_is_regression">get_num_labels_and_is_regression</a></code></li>
+<li><code><a title="neuralops.data.glue_loader.load_glue_local" href="#neuralops.data.glue_loader.load_glue_local">load_glue_local</a></code></li>
+<li><code><a title="neuralops.data.glue_loader.load_glue_split" href="#neuralops.data.glue_loader.load_glue_split">load_glue_split</a></code></li>
+<li><code><a title="neuralops.data.glue_loader.load_glue_task" href="#neuralops.data.glue_loader.load_glue_task">load_glue_task</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

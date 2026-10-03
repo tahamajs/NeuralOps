@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tracking.tracker API documentation</title>
+<meta name="description" content="Unified ExperimentTracker – select a backend via string or TrackingBackend enum.
+Provides a single, consistent API: log_metric, log_params, …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tracking.tracker</code></h1>
+</header>
+<section id="section-intro">
+<p>Unified ExperimentTracker – select a backend via string or TrackingBackend enum.
+Provides a single, consistent API: log_metric, log_params, log_artifact, finalize.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.tracking.tracker.ExperimentTracker"><code class="flex name class">
+<span>class <span class="ident">ExperimentTracker</span></span>
+<span>(</span><span>backend: str = 'local',<br>experiment_name: str = 'experiment',<br>log_dir: str = './experiments/logs',<br>project: str | None = None,<br>config_dict: dict[str, typing.Any] | None = None,<br>tracking_uri: str | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ExperimentTracker:
+    &#34;&#34;&#34;
+    A facade that delegates to the chosen tracking backend.
+
+    Usage:
+        tracker = ExperimentTracker(backend=&#34;wandb&#34;, project=&#34;my_project&#34;, experiment_name=&#34;run1&#34;)
+        tracker.log_metric(&#34;loss&#34;, 0.5, step=100)
+        tracker.finalize({&#34;final_accuracy&#34;: 0.93})
+    &#34;&#34;&#34;
+
+    BACKEND_MAP = {
+        LOCAL_BACKEND: LocalTracker,
+        TENSORBOARD_BACKEND: TensorBoardTracker,
+        WANDB_BACKEND: WandBTracker,
+        MLFLOW_BACKEND: MLflowTracker,
+    }
+
+    def __init__(
+        self,
+        backend: str = LOCAL_BACKEND,
+        experiment_name: str = &#34;experiment&#34;,
+        log_dir: str = &#34;./experiments/logs&#34;,
+        project: str | None = None,
+        config_dict: dict[str, Any] | None = None,
+        tracking_uri: str | None = None,
+    ) -&gt; None:
+        &#34;&#34;&#34;
+        Args:
+            backend: &#34;local&#34;, &#34;tensorboard&#34;, &#34;wandb&#34;, or &#34;mlflow&#34;.
+            experiment_name: Name of the experiment / run.
+            log_dir: Directory for local / tensorboard logs.
+            project: Project name (for WandB / MLflow).
+            config_dict: Hyperparameter dictionary (for WandB).
+            tracking_uri: MLflow tracking URI.
+        &#34;&#34;&#34;
+        if hasattr(backend, &#34;value&#34;):
+            backend = str(backend.value)
+        elif not isinstance(backend, str):
+            backend = str(backend)
+        backend = backend.lower()
+        if backend not in self.BACKEND_MAP:
+            raise ValueError(
+                f&#34;Unknown backend &#39;{backend}&#39;. Available: {list(self.BACKEND_MAP.keys())}&#34;
+            )
+
+        self.backend_name = backend
+        self.experiment_name = experiment_name
+        self.log_dir = log_dir
+        self.project = project
+        self.config_dict = config_dict or {}
+        self.tracking_uri = tracking_uri
+
+        # Instantiate the backend
+        if backend == LOCAL_BACKEND:
+            self._tracker = LocalTracker(log_dir=log_dir, experiment_name=experiment_name)
+        elif backend == TENSORBOARD_BACKEND:
+            self._tracker = TensorBoardTracker(log_dir=log_dir, experiment_name=experiment_name)
+        elif backend == WANDB_BACKEND:
+            self._tracker = WandBTracker(
+                project=project or &#34;default&#34;,
+                experiment_name=experiment_name,
+                config_dict=self.config_dict,
+            )
+        elif backend == MLFLOW_BACKEND:
+            self._tracker = MLflowTracker(
+                experiment_name=experiment_name, tracking_uri=tracking_uri
+            )
+        else:
+            raise NotImplementedError(f&#34;Backend &#39;{backend}&#39; not implemented&#34;)
+
+    def log_metric(self, name: str, value: float, step: int | None = None) -&gt; None:
+        &#34;&#34;&#34;Log a single metric (scalar).&#34;&#34;&#34;
+        self._tracker.log_metric(name, value, step)
+
+    def log_metrics(self, metrics: dict[str, float], step: int | None = None) -&gt; None:
+        &#34;&#34;&#34;Log multiple metrics at once.&#34;&#34;&#34;
+        for k, v in metrics.items():
+            self._tracker.log_metric(k, v, step)
+
+    def log_param(self, key: str, value: Any) -&gt; None:
+        &#34;&#34;&#34;Log a single hyperparameter.&#34;&#34;&#34;
+        self._tracker.log_params({key: value})
+
+    def log_params(self, params: dict[str, Any]) -&gt; None:
+        &#34;&#34;&#34;Log multiple hyperparameters.&#34;&#34;&#34;
+        self._tracker.log_params(params)
+
+    def log_artifact(self, local_path: str) -&gt; None:
+        &#34;&#34;&#34;Save or upload a file (model checkpoint, plot, etc.).&#34;&#34;&#34;
+        self._tracker.log_artifact(local_path)
+
+    def finalize(self, result: dict[str, Any] | None = None) -&gt; None:
+        &#34;&#34;&#34;
+        Mark the run as completed and store final results.
+        After calling this, the tracker should not be used again.
+        &#34;&#34;&#34;
+        self._tracker.finalize(result)
+        self._tracker.close()
+
+    def close(self) -&gt; None:
+        &#34;&#34;&#34;Close the backend (useful for cleaning up without final results).&#34;&#34;&#34;
+        self._tracker.close()
+
+    def get_callback(self):
+        &#34;&#34;&#34;Return a transformers-compatible TrainerCallback for experiment tracking.&#34;&#34;&#34;
+        from transformers import TrainerCallback
+
+        class TrackingCallback(TrainerCallback):
+            def __init__(self, tracker_instance):
+                self.tracker = tracker_instance
+
+            def on_log(self, args, state, control, logs=None, **kwargs):
+                if logs:
+                    step = state.global_step if state else None
+                    self.tracker.log_metrics(logs, step=step)
+
+        return TrackingCallback(self)</code></pre>
+</details>
+<div class="desc"><p>A facade that delegates to the chosen tracking backend.</p>
+<p>Usage
+-----=
+tracker = ExperimentTracker(backend="wandb", project="my_project", experiment_name="run1")
+tracker.log_metric("loss", 0.5, step=100)
+tracker.finalize({"final_accuracy": 0.93})</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>backend</code></strong></dt>
+<dd>"local", "tensorboard", "wandb", or "mlflow".</dd>
+<dt><strong><code>experiment_name</code></strong></dt>
+<dd>Name of the experiment / run.</dd>
+<dt><strong><code>log_dir</code></strong></dt>
+<dd>Directory for local / tensorboard logs.</dd>
+<dt><strong><code>project</code></strong></dt>
+<dd>Project name (for WandB / MLflow).</dd>
+<dt><strong><code>config_dict</code></strong></dt>
+<dd>Hyperparameter dictionary (for WandB).</dd>
+<dt><strong><code>tracking_uri</code></strong></dt>
+<dd>MLflow tracking URI.</dd>
+</dl></div>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.tracking.tracker.ExperimentTracker.BACKEND_MAP"><code class="name">var <span class="ident">BACKEND_MAP</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tracking.tracker.ExperimentTracker.close"><code class="name flex">
+<span>def <span class="ident">close</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def close(self) -&gt; None:
+    &#34;&#34;&#34;Close the backend (useful for cleaning up without final results).&#34;&#34;&#34;
+    self._tracker.close()</code></pre>
+</details>
+<div class="desc"><p>Close the backend (useful for cleaning up without final results).</p></div>
+</dd>
+<dt id="neuralops.tracking.tracker.ExperimentTracker.finalize"><code class="name flex">
+<span>def <span class="ident">finalize</span></span>(<span>self, result: dict[str, typing.Any] | None = None) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def finalize(self, result: dict[str, Any] | None = None) -&gt; None:
+    &#34;&#34;&#34;
+    Mark the run as completed and store final results.
+    After calling this, the tracker should not be used again.
+    &#34;&#34;&#34;
+    self._tracker.finalize(result)
+    self._tracker.close()</code></pre>
+</details>
+<div class="desc"><p>Mark the run as completed and store final results.
+After calling this, the tracker should not be used again.</p></div>
+</dd>
+<dt id="neuralops.tracking.tracker.ExperimentTracker.get_callback"><code class="name flex">
+<span>def <span class="ident">get_callback</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_callback(self):
+    &#34;&#34;&#34;Return a transformers-compatible TrainerCallback for experiment tracking.&#34;&#34;&#34;
+    from transformers import TrainerCallback
+
+    class TrackingCallback(TrainerCallback):
+        def __init__(self, tracker_instance):
+            self.tracker = tracker_instance
+
+        def on_log(self, args, state, control, logs=None, **kwargs):
+            if logs:
+                step = state.global_step if state else None
+                self.tracker.log_metrics(logs, step=step)
+
+    return TrackingCallback(self)</code></pre>
+</details>
+<div class="desc"><p>Return a transformers-compatible TrainerCallback for experiment tracking.</p></div>
+</dd>
+<dt id="neuralops.tracking.tracker.ExperimentTracker.log_artifact"><code class="name flex">
+<span>def <span class="ident">log_artifact</span></span>(<span>self, local_path: str) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def log_artifact(self, local_path: str) -&gt; None:
+    &#34;&#34;&#34;Save or upload a file (model checkpoint, plot, etc.).&#34;&#34;&#34;
+    self._tracker.log_artifact(local_path)</code></pre>
+</details>
+<div class="desc"><p>Save or upload a file (model checkpoint, plot, etc.).</p></div>
+</dd>
+<dt id="neuralops.tracking.tracker.ExperimentTracker.log_metric"><code class="name flex">
+<span>def <span class="ident">log_metric</span></span>(<span>self, name: str, value: float, step: int | None = None) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def log_metric(self, name: str, value: float, step: int | None = None) -&gt; None:
+    &#34;&#34;&#34;Log a single metric (scalar).&#34;&#34;&#34;
+    self._tracker.log_metric(name, value, step)</code></pre>
+</details>
+<div class="desc"><p>Log a single metric (scalar).</p></div>
+</dd>
+<dt id="neuralops.tracking.tracker.ExperimentTracker.log_metrics"><code class="name flex">
+<span>def <span class="ident">log_metrics</span></span>(<span>self, metrics: dict[str, float], step: int | None = None) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def log_metrics(self, metrics: dict[str, float], step: int | None = None) -&gt; None:
+    &#34;&#34;&#34;Log multiple metrics at once.&#34;&#34;&#34;
+    for k, v in metrics.items():
+        self._tracker.log_metric(k, v, step)</code></pre>
+</details>
+<div class="desc"><p>Log multiple metrics at once.</p></div>
+</dd>
+<dt id="neuralops.tracking.tracker.ExperimentTracker.log_param"><code class="name flex">
+<span>def <span class="ident">log_param</span></span>(<span>self, key: str, value: Any) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def log_param(self, key: str, value: Any) -&gt; None:
+    &#34;&#34;&#34;Log a single hyperparameter.&#34;&#34;&#34;
+    self._tracker.log_params({key: value})</code></pre>
+</details>
+<div class="desc"><p>Log a single hyperparameter.</p></div>
+</dd>
+<dt id="neuralops.tracking.tracker.ExperimentTracker.log_params"><code class="name flex">
+<span>def <span class="ident">log_params</span></span>(<span>self, params: dict[str, typing.Any]) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def log_params(self, params: dict[str, Any]) -&gt; None:
+    &#34;&#34;&#34;Log multiple hyperparameters.&#34;&#34;&#34;
+    self._tracker.log_params(params)</code></pre>
+</details>
+<div class="desc"><p>Log multiple hyperparameters.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tracking" href="index.html">neuralops.tracking</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.tracking.tracker.ExperimentTracker" href="#neuralops.tracking.tracker.ExperimentTracker">ExperimentTracker</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.tracking.tracker.ExperimentTracker.BACKEND_MAP" href="#neuralops.tracking.tracker.ExperimentTracker.BACKEND_MAP">BACKEND_MAP</a></code></li>
+<li><code><a title="neuralops.tracking.tracker.ExperimentTracker.close" href="#neuralops.tracking.tracker.ExperimentTracker.close">close</a></code></li>
+<li><code><a title="neuralops.tracking.tracker.ExperimentTracker.finalize" href="#neuralops.tracking.tracker.ExperimentTracker.finalize">finalize</a></code></li>
+<li><code><a title="neuralops.tracking.tracker.ExperimentTracker.get_callback" href="#neuralops.tracking.tracker.ExperimentTracker.get_callback">get_callback</a></code></li>
+<li><code><a title="neuralops.tracking.tracker.ExperimentTracker.log_artifact" href="#neuralops.tracking.tracker.ExperimentTracker.log_artifact">log_artifact</a></code></li>
+<li><code><a title="neuralops.tracking.tracker.ExperimentTracker.log_metric" href="#neuralops.tracking.tracker.ExperimentTracker.log_metric">log_metric</a></code></li>
+<li><code><a title="neuralops.tracking.tracker.ExperimentTracker.log_metrics" href="#neuralops.tracking.tracker.ExperimentTracker.log_metrics">log_metrics</a></code></li>
+<li><code><a title="neuralops.tracking.tracker.ExperimentTracker.log_param" href="#neuralops.tracking.tracker.ExperimentTracker.log_param">log_param</a></code></li>
+<li><code><a title="neuralops.tracking.tracker.ExperimentTracker.log_params" href="#neuralops.tracking.tracker.ExperimentTracker.log_params">log_params</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

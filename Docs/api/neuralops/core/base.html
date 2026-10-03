@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.core.base API documentation</title>
+<meta name="description" content="Base classes for attention modules and compressors.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.core.base</code></h1>
+</header>
+<section id="section-intro">
+<p>Base classes for attention modules and compressors.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.core.base.BaseAttention"><code class="flex name class">
+<span>class <span class="ident">BaseAttention</span></span>
+<span>(</span><span>config: Any | None = None, rank: int | None = None, **kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class BaseAttention(nn.Module):
+    &#34;&#34;&#34;Every custom attention module must inherit from this.&#34;&#34;&#34;
+
+    def __init__(self, config: Any | None = None, rank: int | None = None, **kwargs: Any) -&gt; None:
+        super().__init__()
+        self.config = config
+        self.rank = rank
+        self.num_heads = (
+            kwargs.get(&#34;num_heads&#34;)
+            or kwargs.get(&#34;num_attention_heads&#34;)
+            or (
+                getattr(
+                    config,
+                    &#34;num_attention_heads&#34;,
+                    getattr(config, &#34;num_heads&#34;, getattr(config, &#34;n_heads&#34;, 12)),
+                )
+                if config is not None
+                else 12
+            )
+        )
+        self.hidden_size = (
+            kwargs.get(&#34;hidden_size&#34;)
+            or kwargs.get(&#34;dim&#34;)
+            or kwargs.get(&#34;d_model&#34;)
+            or (
+                getattr(
+                    config,
+                    &#34;hidden_size&#34;,
+                    getattr(config, &#34;d_model&#34;, getattr(config, &#34;dim&#34;, 768)),
+                )
+                if config is not None
+                else 768
+            )
+        )
+        self.head_dim = getattr(
+            config,
+            &#34;d_kv&#34;,
+            getattr(
+                config,
+                &#34;head_dim&#34;,
+                self.hidden_size // self.num_heads if self.num_heads &gt; 0 else 64,
+            ),
+        )
+
+    @abstractmethod
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=False,
+        **kwargs,
+    ) -&gt; tuple[Any, Any | None]:
+        &#34;&#34;&#34;Must return (output, attention_weights_or_None).&#34;&#34;&#34;
+        raise NotImplementedError(&#34;Subclasses of BaseAttention must implement forward()&#34;)
+
+    def copy_weights(self, old_attn: Any) -&gt; None:
+        &#34;&#34;&#34;Universal fallback: copy pretrained weights from old attention layer.&#34;&#34;&#34;
+        if old_attn is None:
+            return
+        import torch
+
+        from neuralops.core.adapters import UniversalAdapter
+
+        adapter = UniversalAdapter()
+
+        try:
+            w_q, b_q = adapter.get_weight_bias(old_attn, &#34;q&#34;)
+            w_k, b_k = adapter.get_weight_bias(old_attn, &#34;k&#34;)
+            w_v, b_v = adapter.get_weight_bias(old_attn, &#34;v&#34;)
+            w_o, b_o = adapter.get_weight_bias(old_attn, &#34;o&#34;)
+
+            with torch.no_grad():
+                dim = self.hidden_size
+                for q_name in [&#34;W_q&#34;, &#34;q_proj&#34;, &#34;q_lin&#34;, &#34;Wq&#34;, &#34;query&#34;, &#34;q&#34;]:
+                    if hasattr(self, q_name):
+                        mod = getattr(self, q_name)
+                        if hasattr(mod, &#34;weight&#34;) and mod.weight.shape == w_q.shape:
+                            mod.weight.copy_(w_q)
+                            if b_q is not None and getattr(mod, &#34;bias&#34;, None) is not None:
+                                mod.bias.copy_(b_q)
+
+                for k_name in [&#34;W_k&#34;, &#34;k_proj&#34;, &#34;k_lin&#34;, &#34;Wk&#34;, &#34;key&#34;, &#34;k&#34;]:
+                    if hasattr(self, k_name):
+                        mod = getattr(self, k_name)
+                        if hasattr(mod, &#34;weight&#34;) and mod.weight.shape == w_k.shape:
+                            mod.weight.copy_(w_k)
+                            if b_k is not None and getattr(mod, &#34;bias&#34;, None) is not None:
+                                mod.bias.copy_(b_k)
+
+                for v_name in [&#34;W_v&#34;, &#34;v_proj&#34;, &#34;v_lin&#34;, &#34;Wv&#34;, &#34;value&#34;, &#34;v&#34;]:
+                    if hasattr(self, v_name):
+                        mod = getattr(self, v_name)
+                        if hasattr(mod, &#34;weight&#34;) and mod.weight.shape == w_v.shape:
+                            mod.weight.copy_(w_v)
+                            if b_v is not None and getattr(mod, &#34;bias&#34;, None) is not None:
+                                mod.bias.copy_(b_v)
+
+                for o_name in [&#34;out&#34;, &#34;out_proj&#34;, &#34;o_proj&#34;, &#34;out_lin&#34;, &#34;proj&#34;, &#34;dense&#34;]:
+                    if hasattr(self, o_name):
+                        mod = getattr(self, o_name)
+                        if hasattr(mod, &#34;weight&#34;) and mod.weight.shape == w_o.shape:
+                            mod.weight.copy_(w_o)
+                            if b_o is not None and getattr(mod, &#34;bias&#34;, None) is not None:
+                                mod.bias.copy_(b_o)
+
+                # Handle fused in_proj
+                if hasattr(self, &#34;in_proj&#34;) and hasattr(self.in_proj, &#34;weight&#34;):
+                    if self.in_proj.weight.shape == torch.Size([dim * 2, dim]):
+                        self.in_proj.weight[:dim].copy_(w_v[:dim])
+                        self.in_proj.weight[dim:].copy_(w_q[:dim])
+                    elif self.in_proj.weight.shape == torch.Size([dim * 3, dim]):
+                        self.in_proj.weight[:dim].copy_(w_q[:dim])
+                        self.in_proj.weight[dim : 2 * dim].copy_(w_k[:dim])
+                        self.in_proj.weight[2 * dim :].copy_(w_v[:dim])
+        except (AttributeError, RuntimeError, ValueError) as e:
+            logger.debug(&#34;BaseAttention.copy_weights failed: %s&#34;, e)
+        except Exception as e:
+            logger.warning(&#34;Unexpected error in BaseAttention.copy_weights: %s&#34;, e)
+
+    def extra_repr(self) -&gt; str:
+        &#34;&#34;&#34;Extra repr.&#34;&#34;&#34;
+        return f&#34;num_heads={self.num_heads}, head_dim={self.head_dim}, rank={self.rank}&#34;</code></pre>
+</details>
+<div class="desc"><p>Every custom attention module must inherit from this.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="neuralops.attentions.adaptive_span_attention.AdaptiveSpanAttention" href="../attentions/adaptive_span_attention.html#neuralops.attentions.adaptive_span_attention.AdaptiveSpanAttention">AdaptiveSpanAttention</a></li>
+<li><a title="neuralops.attentions.adaptive_sparse_attention.AdaptiveSparseAttention" href="../attentions/adaptive_sparse_attention.html#neuralops.attentions.adaptive_sparse_attention.AdaptiveSparseAttention">AdaptiveSparseAttention</a></li>
+<li><a title="neuralops.attentions.adaptive_svd_attention.AdaptiveSVDAttention" href="../attentions/adaptive_svd_attention.html#neuralops.attentions.adaptive_svd_attention.AdaptiveSVDAttention">AdaptiveSVDAttention</a></li>
+<li><a title="neuralops.attentions.adasplash_attention.AdaSplashAttention" href="../attentions/adasplash_attention.html#neuralops.attentions.adasplash_attention.AdaSplashAttention">AdaSplashAttention</a></li>
+<li><a title="neuralops.attentions.aegis_hybrid.AegisHybridAttention" href="../attentions/aegis_hybrid.html#neuralops.attentions.aegis_hybrid.AegisHybridAttention">AegisHybridAttention</a></li>
+<li><a title="neuralops.attentions.aegis_spectron_fp8.AegisSpectronFP8Attention" href="../attentions/aegis_spectron_fp8.html#neuralops.attentions.aegis_spectron_fp8.AegisSpectronFP8Attention">AegisSpectronFP8Attention</a></li>
+<li><a title="neuralops.attentions.aegis_v2.AegisAttentionV2" href="../attentions/aegis_v2.html#neuralops.attentions.aegis_v2.AegisAttentionV2">AegisAttentionV2</a></li>
+<li><a title="neuralops.attentions.aegis_v5.AegisAttention" href="../attentions/aegis_v5.html#neuralops.attentions.aegis_v5.AegisAttention">AegisAttention</a></li>
+<li><a title="neuralops.attentions.aegis_v6.AegisAttentionV3" href="../attentions/aegis_v6.html#neuralops.attentions.aegis_v6.AegisAttentionV3">AegisAttentionV3</a></li>
+<li><a title="neuralops.attentions.asvd_attention.ASVDAttention" href="../attentions/asvd_attention.html#neuralops.attentions.asvd_attention.ASVDAttention">ASVDAttention</a></li>
+<li><a title="neuralops.attentions.bam_umoe.BAMUMoEBlock" href="../attentions/bam_umoe.html#neuralops.attentions.bam_umoe.BAMUMoEBlock">BAMUMoEBlock</a></li>
+<li><a title="neuralops.attentions.block_transformer_hiba.BlockTransformerHIBA" href="../attentions/block_transformer_hiba.html#neuralops.attentions.block_transformer_hiba.BlockTransformerHIBA">BlockTransformerHIBA</a></li>
+<li><a title="neuralops.attentions.chela_slay.ChelaSlayAttention" href="../attentions/chela_slay.html#neuralops.attentions.chela_slay.ChelaSlayAttention">ChelaSlayAttention</a></li>
+<li><a title="neuralops.attentions.cluster_attention.ClusterAttention" href="../attentions/cluster_attention.html#neuralops.attentions.cluster_attention.ClusterAttention">ClusterAttention</a></li>
+<li><a title="neuralops.attentions.compressed_attention.CompressedAttentionLayer" href="../attentions/compressed_attention.html#neuralops.attentions.compressed_attention.CompressedAttentionLayer">CompressedAttentionLayer</a></li>
+<li><a title="neuralops.attentions.compressed_mha_attention.CompressedDistilBertAttention" href="../attentions/compressed_mha_attention.html#neuralops.attentions.compressed_mha_attention.CompressedDistilBertAttention">CompressedDistilBertAttention</a></li>
+<li><a title="neuralops.attentions.cosformer.CosformerAttention" href="../attentions/cosformer.html#neuralops.attentions.cosformer.CosformerAttention">CosformerAttention</a></li>
+<li><a title="neuralops.attentions.decay_linear_attention.DecayLinearAttention" href="../attentions/decay_linear_attention.html#neuralops.attentions.decay_linear_attention.DecayLinearAttention">DecayLinearAttention</a></li>
+<li><a title="neuralops.attentions.eat.EATBlock" href="../attentions/eat.html#neuralops.attentions.eat.EATBlock">EATBlock</a></li>
+<li><a title="neuralops.attentions.expert_choice_moe.ExpertChoiceMoEAttention" href="../attentions/expert_choice_moe.html#neuralops.attentions.expert_choice_moe.ExpertChoiceMoEAttention">ExpertChoiceMoEAttention</a></li>
+<li><a title="neuralops.attentions.factorised_matrix_state.FactorisedMatrixState" href="../attentions/factorised_matrix_state.html#neuralops.attentions.factorised_matrix_state.FactorisedMatrixState">FactorisedMatrixState</a></li>
+<li><a title="neuralops.attentions.flash_attention3.FlashAttention3" href="../attentions/flash_attention3.html#neuralops.attentions.flash_attention3.FlashAttention3">FlashAttention3</a></li>
+<li><a title="neuralops.attentions.flash_attention3_fp8.FlashAttention3FP8" href="../attentions/flash_attention3_fp8.html#neuralops.attentions.flash_attention3_fp8.FlashAttention3FP8">FlashAttention3FP8</a></li>
+<li><a title="neuralops.attentions.full_attention.FullAttention" href="../attentions/full_attention.html#neuralops.attentions.full_attention.FullAttention">FullAttention</a></li>
+<li><a title="neuralops.attentions.fused_svd_kernel.FusedSVDKernelAttention" href="../attentions/fused_svd_kernel.html#neuralops.attentions.fused_svd_kernel.FusedSVDKernelAttention">FusedSVDKernelAttention</a></li>
+<li><a title="neuralops.attentions.fusion_attn.FUSIONATTN" href="../attentions/fusion_attn.html#neuralops.attentions.fusion_attn.FUSIONATTN">FUSIONATTN</a></li>
+<li><a title="neuralops.attentions.galerkin_attention.GalerkinAttention" href="../attentions/galerkin_attention.html#neuralops.attentions.galerkin_attention.GalerkinAttention">GalerkinAttention</a></li>
+<li><a title="neuralops.attentions.gated_delta_net.GatedDeltaNet" href="../attentions/gated_delta_net.html#neuralops.attentions.gated_delta_net.GatedDeltaNet">GatedDeltaNet</a></li>
+<li><a title="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock" href="../attentions/gated_deltanet_block.html#neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock">GatedDeltaNetBlock</a></li>
+<li><a title="neuralops.attentions.gated_linear_attention.GatedLinearAttention" href="../attentions/gated_linear_attention.html#neuralops.attentions.gated_linear_attention.GatedLinearAttention">GatedLinearAttention</a></li>
+<li><a title="neuralops.attentions.goldfinch_ahn.GoldFinchAHNBlock" href="../attentions/goldfinch_ahn.html#neuralops.attentions.goldfinch_ahn.GoldFinchAHNBlock">GoldFinchAHNBlock</a></li>
+<li><a title="neuralops.attentions.gqa_attention.GroupedQueryAttention" href="../attentions/gqa_attention.html#neuralops.attentions.gqa_attention.GroupedQueryAttention">GroupedQueryAttention</a></li>
+<li><a title="neuralops.attentions.granite_hybrid.GraniteHybridBlock" href="../attentions/granite_hybrid.html#neuralops.attentions.granite_hybrid.GraniteHybridBlock">GraniteHybridBlock</a></li>
+<li><a title="neuralops.attentions.griffin_ssd.GriffinSSDBlock" href="../attentions/griffin_ssd.html#neuralops.attentions.griffin_ssd.GriffinSSDBlock">GriffinSSDBlock</a></li>
+<li><a title="neuralops.attentions.halo_regla.HALOReGLAAttention" href="../attentions/halo_regla.html#neuralops.attentions.halo_regla.HALOReGLAAttention">HALOReGLAAttention</a></li>
+<li><a title="neuralops.attentions.hamming_attention.HammingAttention" href="../attentions/hamming_attention.html#neuralops.attentions.hamming_attention.HammingAttention">HammingAttention</a></li>
+<li><a title="neuralops.attentions.hgrn2_gated_deltanet.HGRN2GatedDeltaNet" href="../attentions/hgrn2_gated_deltanet.html#neuralops.attentions.hgrn2_gated_deltanet.HGRN2GatedDeltaNet">HGRN2GatedDeltaNet</a></li>
+<li><a title="neuralops.attentions.hgrn2_layer.HGRN2Layer" href="../attentions/hgrn2_layer.html#neuralops.attentions.hgrn2_layer.HGRN2Layer">HGRN2Layer</a></li>
+<li><a title="neuralops.attentions.hgrn2_outer.HGRN2OuterBlock" href="../attentions/hgrn2_outer.html#neuralops.attentions.hgrn2_outer.HGRN2OuterBlock">HGRN2OuterBlock</a></li>
+<li><a title="neuralops.attentions.hla_attention.HLAAttention" href="../attentions/hla_attention.html#neuralops.attentions.hla_attention.HLAAttention">HLAAttention</a></li>
+<li><a title="neuralops.attentions.hybrid_attention.HybridAttention" href="../attentions/hybrid_attention.html#neuralops.attentions.hybrid_attention.HybridAttention">HybridAttention</a></li>
+<li><a title="neuralops.attentions.hymba_transx.HymbaTransXBlock" href="../attentions/hymba_transx.html#neuralops.attentions.hymba_transx.HymbaTransXBlock">HymbaTransXBlock</a></li>
+<li><a title="neuralops.attentions.infini_attention.InfiniAttention" href="../attentions/infini_attention.html#neuralops.attentions.infini_attention.InfiniAttention">InfiniAttention</a></li>
+<li><a title="neuralops.attentions.jamba.Jamba2Block" href="../attentions/jamba.html#neuralops.attentions.jamba.Jamba2Block">Jamba2Block</a></li>
+<li><a title="neuralops.attentions.jamba_info.JambaInfoBlock" href="../attentions/jamba_info.html#neuralops.attentions.jamba_info.JambaInfoBlock">JambaInfoBlock</a></li>
+<li><a title="neuralops.attentions.kda_attention.KDAAttention" href="../attentions/kda_attention.html#neuralops.attentions.kda_attention.KDAAttention">KDAAttention</a></li>
+<li><a title="neuralops.attentions.leka_v1.LEKAV1Attention" href="../attentions/leka_v1.html#neuralops.attentions.leka_v1.LEKAV1Attention">LEKAV1Attention</a></li>
+<li><a title="neuralops.attentions.leka_v2.LEKAv2Attention" href="../attentions/leka_v2.html#neuralops.attentions.leka_v2.LEKAv2Attention">LEKAv2Attention</a></li>
+<li><a title="neuralops.attentions.leka_v3.LEKAV3Attention" href="../attentions/leka_v3.html#neuralops.attentions.leka_v3.LEKAV3Attention">LEKAV3Attention</a></li>
+<li><a title="neuralops.attentions.linformer_attention.LinformerAttention" href="../attentions/linformer_attention.html#neuralops.attentions.linformer_attention.LinformerAttention">LinformerAttention</a></li>
+<li><a title="neuralops.attentions.lola_attention.LoLAAttention" href="../attentions/lola_attention.html#neuralops.attentions.lola_attention.LoLAAttention">LoLAAttention</a></li>
+<li><a title="neuralops.attentions.lora_attention.LoRAAttention" href="../attentions/lora_attention.html#neuralops.attentions.lora_attention.LoRAAttention">LoRAAttention</a></li>
+<li><a title="neuralops.attentions.lsh_attention.LSHAttention" href="../attentions/lsh_attention.html#neuralops.attentions.lsh_attention.LSHAttention">LSHAttention</a></li>
+<li><a title="neuralops.attentions.mamba_svd_flash.MambaSVDFlash" href="../attentions/mamba_svd_flash.html#neuralops.attentions.mamba_svd_flash.MambaSVDFlash">MambaSVDFlash</a></li>
+<li><a title="neuralops.attentions.minimal_nova.MinimalNOVAAttention" href="../attentions/minimal_nova.html#neuralops.attentions.minimal_nova.MinimalNOVAAttention">MinimalNOVAAttention</a></li>
+<li><a title="neuralops.attentions.minimal_svd.MinimalSVDAttention" href="../attentions/minimal_svd.html#neuralops.attentions.minimal_svd.MinimalSVDAttention">MinimalSVDAttention</a></li>
+<li><a title="neuralops.attentions.mixattention_moska.MixAttentionMoSKA" href="../attentions/mixattention_moska.html#neuralops.attentions.mixattention_moska.MixAttentionMoSKA">MixAttentionMoSKA</a></li>
+<li><a title="neuralops.attentions.mla_attention.MLAAttention" href="../attentions/mla_attention.html#neuralops.attentions.mla_attention.MLAAttention">MLAAttention</a></li>
+<li><a title="neuralops.attentions.moba_attention.MoBAAttention" href="../attentions/moba_attention.html#neuralops.attentions.moba_attention.MoBAAttention">MoBAAttention</a></li>
+<li><a title="neuralops.attentions.nasc_attention.NASCAttention" href="../attentions/nasc_attention.html#neuralops.attentions.nasc_attention.NASCAttention">NASCAttention</a></li>
+<li><a title="neuralops.attentions.nexus.NEXUSAttention" href="../attentions/nexus.html#neuralops.attentions.nexus.NEXUSAttention">NEXUSAttention</a></li>
+<li><a title="neuralops.attentions.nha_attention.NativeHybridAttention" href="../attentions/nha_attention.html#neuralops.attentions.nha_attention.NativeHybridAttention">NativeHybridAttention</a></li>
+<li><a title="neuralops.attentions.nsa_attention.NativeSparseAttention" href="../attentions/nsa_attention.html#neuralops.attentions.nsa_attention.NativeSparseAttention">NativeSparseAttention</a></li>
+<li><a title="neuralops.attentions.nystrom_attention.NystromAttention" href="../attentions/nystrom_attention.html#neuralops.attentions.nystrom_attention.NystromAttention">NystromAttention</a></li>
+<li><a title="neuralops.attentions.optimized_hybrid_attention.OptimizedHybridAttention" href="../attentions/optimized_hybrid_attention.html#neuralops.attentions.optimized_hybrid_attention.OptimizedHybridAttention">OptimizedHybridAttention</a></li>
+<li><a title="neuralops.attentions.orion.ORIONAttention" href="../attentions/orion.html#neuralops.attentions.orion.ORIONAttention">ORIONAttention</a></li>
+<li><a title="neuralops.attentions.padre_attention.PADReAttention" href="../attentions/padre_attention.html#neuralops.attentions.padre_attention.PADReAttention">PADReAttention</a></li>
+<li><a title="neuralops.attentions.performer_attention.PerformerAttention" href="../attentions/performer_attention.html#neuralops.attentions.performer_attention.PerformerAttention">PerformerAttention</a></li>
+<li><a title="neuralops.attentions.phantom.PHANTOMAttention" href="../attentions/phantom.html#neuralops.attentions.phantom.PHANTOMAttention">PHANTOMAttention</a></li>
+<li><a title="neuralops.attentions.primal_attention.PrimalAttention" href="../attentions/primal_attention.html#neuralops.attentions.primal_attention.PrimalAttention">PrimalAttention</a></li>
+<li><a title="neuralops.attentions.progressive_token_pruning.ProgressiveTokenPruning" href="../attentions/progressive_token_pruning.html#neuralops.attentions.progressive_token_pruning.ProgressiveTokenPruning">ProgressiveTokenPruning</a></li>
+<li><a title="neuralops.attentions.qcqa_attention.QCQAAttention" href="../attentions/qcqa_attention.html#neuralops.attentions.qcqa_attention.QCQAAttention">QCQAAttention</a></li>
+<li><a title="neuralops.attentions.rala_attention.RALALinearAttention" href="../attentions/rala_attention.html#neuralops.attentions.rala_attention.RALALinearAttention">RALALinearAttention</a></li>
+<li><a title="neuralops.attentions.reap_moe.REAPMoEAttention" href="../attentions/reap_moe.html#neuralops.attentions.reap_moe.REAPMoEAttention">REAPMoEAttention</a></li>
+<li><a title="neuralops.attentions.regla_attention.ReGLAAttention" href="../attentions/regla_attention.html#neuralops.attentions.regla_attention.ReGLAAttention">ReGLAAttention</a></li>
+<li><a title="neuralops.attentions.replace.ReplaceAttention" href="../attentions/replace.html#neuralops.attentions.replace.ReplaceAttention">ReplaceAttention</a></li>
+<li><a title="neuralops.attentions.res_svd.ResSVDAttention" href="../attentions/res_svd.html#neuralops.attentions.res_svd.ResSVDAttention">ResSVDAttention</a></li>
+<li><a title="neuralops.attentions.routing_attention.RoutingAttention" href="../attentions/routing_attention.html#neuralops.attentions.routing_attention.RoutingAttention">RoutingAttention</a></li>
+<li><a title="neuralops.attentions.rpc_attention.RPCAttention" href="../attentions/rpc_attention.html#neuralops.attentions.rpc_attention.RPCAttention">RPCAttention</a></li>
+<li><a title="neuralops.attentions.salt_attention.SALTAttention" href="../attentions/salt_attention.html#neuralops.attentions.salt_attention.SALTAttention">SALTAttention</a></li>
+<li><a title="neuralops.attentions.samba_moe.SambaMoEBlock" href="../attentions/samba_moe.html#neuralops.attentions.samba_moe.SambaMoEBlock">SambaMoEBlock</a></li>
+<li><a title="neuralops.attentions.selective_ssm.SelectiveSSM" href="../attentions/selective_ssm.html#neuralops.attentions.selective_ssm.SelectiveSSM">SelectiveSSM</a></li>
+<li><a title="neuralops.attentions.selective_ssm.SelectiveSSM" href="../attentions/selective_ssm.html#neuralops.attentions.selective_ssm.SelectiveSSM">SelectiveSSM</a></li>
+<li><a title="neuralops.attentions.soa_attn.SOAAttention" href="../attentions/soa_attn.html#neuralops.attentions.soa_attn.SOAAttention">SOAAttention</a></li>
+<li><a title="neuralops.attentions.span_expanded_attention.SpanExpandedAttention" href="../attentions/span_expanded_attention.html#neuralops.attentions.span_expanded_attention.SpanExpandedAttention">SpanExpandedAttention</a></li>
+<li><a title="neuralops.attentions.spectra_v2.SpectraV2Attention" href="../attentions/spectra_v2.html#neuralops.attentions.spectra_v2.SpectraV2Attention">SpectraV2Attention</a></li>
+<li><a title="neuralops.attentions.spectraformer_attention.SpectraformerAttention" href="../attentions/spectraformer_attention.html#neuralops.attentions.spectraformer_attention.SpectraformerAttention">SpectraformerAttention</a></li>
+<li><a title="neuralops.attentions.spectral_mamba.SpectralMambaAttention" href="../attentions/spectral_mamba.html#neuralops.attentions.spectral_mamba.SpectralMambaAttention">SpectralMambaAttention</a></li>
+<li><a title="neuralops.attentions.spectron.SpectronAttention" href="../attentions/spectron.html#neuralops.attentions.spectron.SpectronAttention">SpectronAttention</a></li>
+<li><a title="neuralops.attentions.squeezing_heads_distill.SqueezingHeadsDistiller" href="../attentions/squeezing_heads_distill.html#neuralops.attentions.squeezing_heads_distill.SqueezingHeadsDistiller">SqueezingHeadsDistiller</a></li>
+<li><a title="neuralops.attentions.svd_attention.SVDLinearAttention" href="../attentions/svd_attention.html#neuralops.attentions.svd_attention.SVDLinearAttention">SVDLinearAttention</a></li>
+<li><a title="neuralops.attentions.svd_compressed.SVDCompressedAttention" href="../attentions/svd_compressed.html#neuralops.attentions.svd_compressed.SVDCompressedAttention">SVDCompressedAttention</a></li>
+<li><a title="neuralops.attentions.svd_linear_attention.SVDLinearAttention" href="../attentions/svd_linear_attention.html#neuralops.attentions.svd_linear_attention.SVDLinearAttention">SVDLinearAttention</a></li>
+<li><a title="neuralops.attentions.svd_llm_v2_attention.SVDLLMV2Attention" href="../attentions/svd_llm_v2_attention.html#neuralops.attentions.svd_llm_v2_attention.SVDLLMV2Attention">SVDLLMV2Attention</a></li>
+<li><a title="neuralops.attentions.svd_mamba.SVDMamba" href="../attentions/svd_mamba.html#neuralops.attentions.svd_mamba.SVDMamba">SVDMamba</a></li>
+<li><a title="neuralops.attentions.svd_projection_attention.SVDProjectionAttention" href="../attentions/svd_projection_attention.html#neuralops.attentions.svd_projection_attention.SVDProjectionAttention">SVDProjectionAttention</a></li>
+<li><a title="neuralops.attentions.template_attention.YourCustomAttention" href="../attentions/template_attention.html#neuralops.attentions.template_attention.YourCustomAttention">YourCustomAttention</a></li>
+<li><a title="neuralops.attentions.tlinformer_attention.TLinFormerAttention" href="../attentions/tlinformer_attention.html#neuralops.attentions.tlinformer_attention.TLinFormerAttention">TLinFormerAttention</a></li>
+<li><a title="neuralops.attentions.token_compressed_attention.TokenCompressedAttention" href="../attentions/token_compressed_attention.html#neuralops.attentions.token_compressed_attention.TokenCompressedAttention">TokenCompressedAttention</a></li>
+<li><a title="neuralops.attentions.tpa_attention.TPAttention" href="../attentions/tpa_attention.html#neuralops.attentions.tpa_attention.TPAttention">TPAttention</a></li>
+<li><a title="neuralops.attentions.triton_cosformer.TritonCosformerAttention" href="../attentions/triton_cosformer.html#neuralops.attentions.triton_cosformer.TritonCosformerAttention">TritonCosformerAttention</a></li>
+<li><a title="neuralops.attentions.triton_svd_linear_attention.TritonSVDLinearAttention" href="../attentions/triton_svd_linear_attention.html#neuralops.attentions.triton_svd_linear_attention.TritonSVDLinearAttention">TritonSVDLinearAttention</a></li>
+<li><a title="neuralops.attentions.unified_rope.UnifiedRoPE" href="../attentions/unified_rope.html#neuralops.attentions.unified_rope.UnifiedRoPE">UnifiedRoPE</a></li>
+<li><a title="neuralops.attentions.upi_stuffed_mamba.SelectiveMamba" href="../attentions/upi_stuffed_mamba.html#neuralops.attentions.upi_stuffed_mamba.SelectiveMamba">SelectiveMamba</a></li>
+<li><a title="neuralops.attentions.vig_attention.ViGAttention" href="../attentions/vig_attention.html#neuralops.attentions.vig_attention.ViGAttention">ViGAttention</a></li>
+<li><a title="neuralops.attentions.vspec.VSpecAttention" href="../attentions/vspec.html#neuralops.attentions.vspec.VSpecAttention">VSpecAttention</a></li>
+<li><a title="neuralops.attentions.wgqa_attention.WeightedGroupedQueryAttention" href="../attentions/wgqa_attention.html#neuralops.attentions.wgqa_attention.WeightedGroupedQueryAttention">WeightedGroupedQueryAttention</a></li>
+<li><a title="neuralops.attentions.xattention.XAttention" href="../attentions/xattention.html#neuralops.attentions.xattention.XAttention">XAttention</a></li>
+<li><a title="neuralops.attentions.zeros_attention.ZeroSAttention" href="../attentions/zeros_attention.html#neuralops.attentions.zeros_attention.ZeroSAttention">ZeroSAttention</a></li>
+<li><a title="neuralops.compression_engine.nli_softmax.NLISoftmaxAttention" href="../compression_engine/nli_softmax.html#neuralops.compression_engine.nli_softmax.NLISoftmaxAttention">NLISoftmaxAttention</a></li>
+<li><a title="neuralops.core.replace_attention.ReplaceAttention" href="replace_attention.html#neuralops.core.replace_attention.ReplaceAttention">ReplaceAttention</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.core.base.BaseAttention.copy_weights"><code class="name flex">
+<span>def <span class="ident">copy_weights</span></span>(<span>self, old_attn: Any) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def copy_weights(self, old_attn: Any) -&gt; None:
+    &#34;&#34;&#34;Universal fallback: copy pretrained weights from old attention layer.&#34;&#34;&#34;
+    if old_attn is None:
+        return
+    import torch
+
+    from neuralops.core.adapters import UniversalAdapter
+
+    adapter = UniversalAdapter()
+
+    try:
+        w_q, b_q = adapter.get_weight_bias(old_attn, &#34;q&#34;)
+        w_k, b_k = adapter.get_weight_bias(old_attn, &#34;k&#34;)
+        w_v, b_v = adapter.get_weight_bias(old_attn, &#34;v&#34;)
+        w_o, b_o = adapter.get_weight_bias(old_attn, &#34;o&#34;)
+
+        with torch.no_grad():
+            dim = self.hidden_size
+            for q_name in [&#34;W_q&#34;, &#34;q_proj&#34;, &#34;q_lin&#34;, &#34;Wq&#34;, &#34;query&#34;, &#34;q&#34;]:
+                if hasattr(self, q_name):
+                    mod = getattr(self, q_name)
+                    if hasattr(mod, &#34;weight&#34;) and mod.weight.shape == w_q.shape:
+                        mod.weight.copy_(w_q)
+                        if b_q is not None and getattr(mod, &#34;bias&#34;, None) is not None:
+                            mod.bias.copy_(b_q)
+
+            for k_name in [&#34;W_k&#34;, &#34;k_proj&#34;, &#34;k_lin&#34;, &#34;Wk&#34;, &#34;key&#34;, &#34;k&#34;]:
+                if hasattr(self, k_name):
+                    mod = getattr(self, k_name)
+                    if hasattr(mod, &#34;weight&#34;) and mod.weight.shape == w_k.shape:
+                        mod.weight.copy_(w_k)
+                        if b_k is not None and getattr(mod, &#34;bias&#34;, None) is not None:
+                            mod.bias.copy_(b_k)
+
+            for v_name in [&#34;W_v&#34;, &#34;v_proj&#34;, &#34;v_lin&#34;, &#34;Wv&#34;, &#34;value&#34;, &#34;v&#34;]:
+                if hasattr(self, v_name):
+                    mod = getattr(self, v_name)
+                    if hasattr(mod, &#34;weight&#34;) and mod.weight.shape == w_v.shape:
+                        mod.weight.copy_(w_v)
+                        if b_v is not None and getattr(mod, &#34;bias&#34;, None) is not None:
+                            mod.bias.copy_(b_v)
+
+            for o_name in [&#34;out&#34;, &#34;out_proj&#34;, &#34;o_proj&#34;, &#34;out_lin&#34;, &#34;proj&#34;, &#34;dense&#34;]:
+                if hasattr(self, o_name):
+                    mod = getattr(self, o_name)
+                    if hasattr(mod, &#34;weight&#34;) and mod.weight.shape == w_o.shape:
+                        mod.weight.copy_(w_o)
+                        if b_o is not None and getattr(mod, &#34;bias&#34;, None) is not None:
+                            mod.bias.copy_(b_o)
+
+            # Handle fused in_proj
+            if hasattr(self, &#34;in_proj&#34;) and hasattr(self.in_proj, &#34;weight&#34;):
+                if self.in_proj.weight.shape == torch.Size([dim * 2, dim]):
+                    self.in_proj.weight[:dim].copy_(w_v[:dim])
+                    self.in_proj.weight[dim:].copy_(w_q[:dim])
+                elif self.in_proj.weight.shape == torch.Size([dim * 3, dim]):
+                    self.in_proj.weight[:dim].copy_(w_q[:dim])
+                    self.in_proj.weight[dim : 2 * dim].copy_(w_k[:dim])
+                    self.in_proj.weight[2 * dim :].copy_(w_v[:dim])
+    except (AttributeError, RuntimeError, ValueError) as e:
+        logger.debug(&#34;BaseAttention.copy_weights failed: %s&#34;, e)
+    except Exception as e:
+        logger.warning(&#34;Unexpected error in BaseAttention.copy_weights: %s&#34;, e)</code></pre>
+</details>
+<div class="desc"><p>Universal fallback: copy pretrained weights from old attention layer.</p></div>
+</dd>
+<dt id="neuralops.core.base.BaseAttention.extra_repr"><code class="name flex">
+<span>def <span class="ident">extra_repr</span></span>(<span>self) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def extra_repr(self) -&gt; str:
+    &#34;&#34;&#34;Extra repr.&#34;&#34;&#34;
+    return f&#34;num_heads={self.num_heads}, head_dim={self.head_dim}, rank={self.rank}&#34;</code></pre>
+</details>
+<div class="desc"><p>Extra repr.</p></div>
+</dd>
+<dt id="neuralops.core.base.BaseAttention.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self,<br>hidden_states,<br>attention_mask=None,<br>head_mask=None,<br>output_attentions=False,<br>**kwargs) ‑> tuple[typing.Any, Any | None]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def forward(
+    self,
+    hidden_states,
+    attention_mask=None,
+    head_mask=None,
+    output_attentions=False,
+    **kwargs,
+) -&gt; tuple[Any, Any | None]:
+    &#34;&#34;&#34;Must return (output, attention_weights_or_None).&#34;&#34;&#34;
+    raise NotImplementedError(&#34;Subclasses of BaseAttention must implement forward()&#34;)</code></pre>
+</details>
+<div class="desc"><p>Must return (output, attention_weights_or_None).</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.core.base.BaseCompressor"><code class="flex name class">
+<span>class <span class="ident">BaseCompressor</span></span>
+<span>(</span><span>model: torch.nn.modules.module.Module, name: str = 'base', **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class BaseCompressor:
+    &#34;&#34;&#34;Base class for all compressors. Not a nn.Module to avoid parameter storage.&#34;&#34;&#34;
+
+    def __init__(self, model: nn.Module, name: str = &#34;base&#34;, **kwargs) -&gt; None:
+        self.model = model
+        self.name = name
+        self.kwargs = kwargs
+        self._original_params = self._count_params(model)
+
+    def __call__(self, *args, **kwargs) -&gt; Any:
+        &#34;&#34;&#34;Allow compressor instance to act as a callable model forward wrapper.&#34;&#34;&#34;
+        if not getattr(self, &#34;_compressed_once&#34;, False):
+            self.compress()
+            self._compressed_once = True
+        return self.model(*args, **kwargs)
+
+    @abstractmethod
+    def compress(self) -&gt; tuple[nn.Module, dict[str, Any]]:
+        &#34;&#34;&#34;Return (compressed_model, statistics).&#34;&#34;&#34;
+        raise NotImplementedError(&#34;Subclasses of BaseCompressor must implement compress()&#34;)
+
+    def _count_params(self, model: nn.Module) -&gt; int:
+        &#34;&#34;&#34;count params.&#34;&#34;&#34;
+        return sum(p.numel() for p in model.parameters())
+
+    def get_compression_stats(self) -&gt; dict[str, Any]:
+        &#34;&#34;&#34;Return the compression stats.&#34;&#34;&#34;
+        compressed = self._count_params(self.model)
+        orig = self._original_params
+        return {
+            &#34;compressor_name&#34;: self.name,
+            &#34;original_parameters&#34;: orig,
+            &#34;compressed_parameters&#34;: compressed,
+            &#34;saved_parameters&#34;: orig - compressed,
+            &#34;compression_ratio&#34;: compressed / orig if orig &gt; 0 else 1.0,
+            &#34;reduction_percentage&#34;: ((orig - compressed) / orig * 100 if orig &gt; 0 else 0.0),
+        }
+
+    def summary(self) -&gt; str:
+        &#34;&#34;&#34;Summary.&#34;&#34;&#34;
+        s = self.get_compression_stats()
+        return (
+            f&#34;\n========================================\n&#34;
+            f&#34;Compression Summary: {self.name}\n&#34;
+            f&#34;========================================\n&#34;
+            f&#34;Original parameters:  {s[&#39;original_parameters&#39;]:,}\n&#34;
+            f&#34;Compressed parameters: {s[&#39;compressed_parameters&#39;]:,}\n&#34;
+            f&#34;Parameters saved:     {s[&#39;saved_parameters&#39;]:,}\n&#34;
+            f&#34;Compression ratio:    {s[&#39;compression_ratio&#39;]:.3f}\n&#34;
+            f&#34;Reduction:            {s[&#39;reduction_percentage&#39;]:.2f}%\n&#34;
+            f&#34;========================================\n&#34;
+        )</code></pre>
+</details>
+<div class="desc"><p>Base class for all compressors. Not a nn.Module to avoid parameter storage.</p></div>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="neuralops.compression_engine.a3_compressor.A3Compressor" href="../compression_engine/a3_compressor.html#neuralops.compression_engine.a3_compressor.A3Compressor">A3Compressor</a></li>
+<li><a title="neuralops.compression_engine.aa_svd_compressor.AASVDCompressor" href="../compression_engine/aa_svd_compressor.html#neuralops.compression_engine.aa_svd_compressor.AASVDCompressor">AASVDCompressor</a></li>
+<li><a title="neuralops.compression_engine.aatc_xkv_compressor.AATC_XKVCompressor" href="../compression_engine/aatc_xkv_compressor.html#neuralops.compression_engine.aatc_xkv_compressor.AATC_XKVCompressor">AATC_XKVCompressor</a></li>
+<li><a title="neuralops.compression_engine.adaptive_ranks.AdaptiveRanksCompressor" href="../compression_engine/adaptive_ranks.html#neuralops.compression_engine.adaptive_ranks.AdaptiveRanksCompressor">AdaptiveRanksCompressor</a></li>
+<li><a title="neuralops.compression_engine.adasvd_compressor.AdaSVDCompressor" href="../compression_engine/adasvd_compressor.html#neuralops.compression_engine.adasvd_compressor.AdaSVDCompressor">AdaSVDCompressor</a></li>
+<li><a title="neuralops.compression_engine.admm_compressor.ADMMCompressor" href="../compression_engine/admm_compressor.html#neuralops.compression_engine.admm_compressor.ADMMCompressor">ADMMCompressor</a></li>
+<li><a title="neuralops.compression_engine.admm_pruner.ADMMPruner" href="../compression_engine/admm_pruner.html#neuralops.compression_engine.admm_pruner.ADMMPruner">ADMMPruner</a></li>
+<li><a title="neuralops.compression_engine.armor_pruner.ARMORPruner" href="../compression_engine/armor_pruner.html#neuralops.compression_engine.armor_pruner.ARMORPruner">ARMORPruner</a></li>
+<li><a title="neuralops.compression_engine.ast_pruner.ASTPruner" href="../compression_engine/ast_pruner.html#neuralops.compression_engine.ast_pruner.ASTPruner">ASTPruner</a></li>
+<li><a title="neuralops.compression_engine.astro_quantizer.AstroQuantizer" href="../compression_engine/astro_quantizer.html#neuralops.compression_engine.astro_quantizer.AstroQuantizer">AstroQuantizer</a></li>
+<li><a title="neuralops.compression_engine.bonsai_pruner.BonsaiPruner" href="../compression_engine/bonsai_pruner.html#neuralops.compression_engine.bonsai_pruner.BonsaiPruner">BonsaiPruner</a></li>
+<li><a title="neuralops.compression_engine.cachenotes_compressor.CacheNotesCompressor" href="../compression_engine/cachenotes_compressor.html#neuralops.compression_engine.cachenotes_compressor.CacheNotesCompressor">CacheNotesCompressor</a></li>
+<li><a title="neuralops.compression_engine.come_compressor.CoMeCompressor" href="../compression_engine/come_compressor.html#neuralops.compression_engine.come_compressor.CoMeCompressor">CoMeCompressor</a></li>
+<li><a title="neuralops.compression_engine.compot_compressor.COMPOTCompressor" href="../compression_engine/compot_compressor.html#neuralops.compression_engine.compot_compressor.COMPOTCompressor">COMPOTCompressor</a></li>
+<li><a title="neuralops.compression_engine.coopq_quantizer.CoopQQuantizer" href="../compression_engine/coopq_quantizer.html#neuralops.compression_engine.coopq_quantizer.CoopQQuantizer">CoopQQuantizer</a></li>
+<li><a title="neuralops.compression_engine.cr_compressor.CRCompressor" href="../compression_engine/cr_compressor.html#neuralops.compression_engine.cr_compressor.CRCompressor">CRCompressor</a></li>
+<li><a title="neuralops.compression_engine.cur_compressor.CURCompressor" href="../compression_engine/cur_compressor.html#neuralops.compression_engine.cur_compressor.CURCompressor">CURCompressor</a></li>
+<li><a title="neuralops.compression_engine.cur_moe_compressor.CURMoECompressor" href="../compression_engine/cur_moe_compressor.html#neuralops.compression_engine.cur_moe_compressor.CURMoECompressor">CURMoECompressor</a></li>
+<li><a title="neuralops.compression_engine.delta_kv.DeltaKVCompressor" href="../compression_engine/delta_kv.html#neuralops.compression_engine.delta_kv.DeltaKVCompressor">DeltaKVCompressor</a></li>
+<li><a title="neuralops.compression_engine.direct_svd.DirectSVDCompressor" href="../compression_engine/direct_svd.html#neuralops.compression_engine.direct_svd.DirectSVDCompressor">DirectSVDCompressor</a></li>
+<li><a title="neuralops.compression_engine.dobi_svd.DobiSVDCompressor" href="../compression_engine/dobi_svd.html#neuralops.compression_engine.dobi_svd.DobiSVDCompressor">DobiSVDCompressor</a></li>
+<li><a title="neuralops.compression_engine.drone_compressor.DRONECompressor" href="../compression_engine/drone_compressor.html#neuralops.compression_engine.drone_compressor.DRONECompressor">DRONECompressor</a></li>
+<li><a title="neuralops.compression_engine.dynamic_rank.DynamicEntropySVDCompressor" href="../compression_engine/dynamic_rank.html#neuralops.compression_engine.dynamic_rank.DynamicEntropySVDCompressor">DynamicEntropySVDCompressor</a></li>
+<li><a title="neuralops.compression_engine.enlighten_compressor.ENLightenCompressor" href="../compression_engine/enlighten_compressor.html#neuralops.compression_engine.enlighten_compressor.ENLightenCompressor">ENLightenCompressor</a></li>
+<li><a title="neuralops.compression_engine.entropy_budget_allocation.EntropyBudgetCompressor" href="../compression_engine/entropy_budget_allocation.html#neuralops.compression_engine.entropy_budget_allocation.EntropyBudgetCompressor">EntropyBudgetCompressor</a></li>
+<li><a title="neuralops.compression_engine.erc_svd.ERCCompressor" href="../compression_engine/erc_svd.html#neuralops.compression_engine.erc_svd.ERCCompressor">ERCCompressor</a></li>
+<li><a title="neuralops.compression_engine.faq_quantizer.FAQQuantizer" href="../compression_engine/faq_quantizer.html#neuralops.compression_engine.faq_quantizer.FAQQuantizer">FAQQuantizer</a></li>
+<li><a title="neuralops.compression_engine.flap.FLAPCompressor" href="../compression_engine/flap.html#neuralops.compression_engine.flap.FLAPCompressor">FLAPCompressor</a></li>
+<li><a title="neuralops.compression_engine.flat_llm.FLATLLMCompressor" href="../compression_engine/flat_llm.html#neuralops.compression_engine.flat_llm.FLATLLMCompressor">FLATLLMCompressor</a></li>
+<li><a title="neuralops.compression_engine.frandi_compressor.FRanDICompressor" href="../compression_engine/frandi_compressor.html#neuralops.compression_engine.frandi_compressor.FRanDICompressor">FRanDICompressor</a></li>
+<li><a title="neuralops.compression_engine.fwsvd_compressor.FWSVDCompressor" href="../compression_engine/fwsvd_compressor.html#neuralops.compression_engine.fwsvd_compressor.FWSVDCompressor">FWSVDCompressor</a></li>
+<li><a title="neuralops.compression_engine.gfws_d_compressor.GFWSCompressor" href="../compression_engine/gfws_d_compressor.html#neuralops.compression_engine.gfws_d_compressor.GFWSCompressor">GFWSCompressor</a></li>
+<li><a title="neuralops.compression_engine.grecodec_compressor.GreCoDeCCompressor" href="../compression_engine/grecodec_compressor.html#neuralops.compression_engine.grecodec_compressor.GreCoDeCCompressor">GreCoDeCCompressor</a></li>
+<li><a title="neuralops.compression_engine.hashed_net_compressor.HashedNetCompressor" href="../compression_engine/hashed_net_compressor.html#neuralops.compression_engine.hashed_net_compressor.HashedNetCompressor">HashedNetCompressor</a></li>
+<li><a title="neuralops.compression_engine.huffman_coder.HuffmanCompressor" href="../compression_engine/huffman_coder.html#neuralops.compression_engine.huffman_coder.HuffmanCompressor">HuffmanCompressor</a></li>
+<li><a title="neuralops.compression_engine.hybrid_svd_layer.HybridSVDCompressor" href="../compression_engine/hybrid_svd_layer.html#neuralops.compression_engine.hybrid_svd_layer.HybridSVDCompressor">HybridSVDCompressor</a></li>
+<li><a title="neuralops.compression_engine.hybridkv_compressor.HybridKVCompressor" href="../compression_engine/hybridkv_compressor.html#neuralops.compression_engine.hybridkv_compressor.HybridKVCompressor">HybridKVCompressor</a></li>
+<li><a title="neuralops.compression_engine.kmeans_quantize.KMeansCompressor" href="../compression_engine/kmeans_quantize.html#neuralops.compression_engine.kmeans_quantize.KMeansCompressor">KMeansCompressor</a></li>
+<li><a title="neuralops.compression_engine.kronecker_compressor.KroneckerCompressor" href="../compression_engine/kronecker_compressor.html#neuralops.compression_engine.kronecker_compressor.KroneckerCompressor">KroneckerCompressor</a></li>
+<li><a title="neuralops.compression_engine.kronecker_tt_lora.KroneckerTTLoRACompressor" href="../compression_engine/kronecker_tt_lora.html#neuralops.compression_engine.kronecker_tt_lora.KroneckerTTLoRACompressor">KroneckerTTLoRACompressor</a></li>
+<li><a title="neuralops.compression_engine.kvtc_compressor.KVTCCompressor" href="../compression_engine/kvtc_compressor.html#neuralops.compression_engine.kvtc_compressor.KVTCCompressor">KVTCCompressor</a></li>
+<li><a title="neuralops.compression_engine.liftr.LIFTRCompressor" href="../compression_engine/liftr.html#neuralops.compression_engine.liftr.LIFTRCompressor">LIFTRCompressor</a></li>
+<li><a title="neuralops.compression_engine.lillama_compressor.LiLLaMADistiller" href="../compression_engine/lillama_compressor.html#neuralops.compression_engine.lillama_compressor.LiLLaMADistiller">LiLLaMADistiller</a></li>
+<li><a title="neuralops.compression_engine.lsc_compressor.LSCCompressor" href="../compression_engine/lsc_compressor.html#neuralops.compression_engine.lsc_compressor.LSCCompressor">LSCCompressor</a></li>
+<li><a title="neuralops.compression_engine.mamba_shedder.MambaShedderCompressor" href="../compression_engine/mamba_shedder.html#neuralops.compression_engine.mamba_shedder.MambaShedderCompressor">MambaShedderCompressor</a></li>
+<li><a title="neuralops.compression_engine.mgie_svd.MGIECompressor" href="../compression_engine/mgie_svd.html#neuralops.compression_engine.mgie_svd.MGIECompressor">MGIECompressor</a></li>
+<li><a title="neuralops.compression_engine.mgie_svd_compressor.MGIESVDBudgetCompressor" href="../compression_engine/mgie_svd_compressor.html#neuralops.compression_engine.mgie_svd_compressor.MGIESVDBudgetCompressor">MGIESVDBudgetCompressor</a></li>
+<li><a title="neuralops.compression_engine.mlorq_compressor.MLoRQCompressor" href="../compression_engine/mlorq_compressor.html#neuralops.compression_engine.mlorq_compressor.MLoRQCompressor">MLoRQCompressor</a></li>
+<li><a title="neuralops.compression_engine.modegpt_compressor.MoDeGPTCompressor" href="../compression_engine/modegpt_compressor.html#neuralops.compression_engine.modegpt_compressor.MoDeGPTCompressor">MoDeGPTCompressor</a></li>
+<li><a title="neuralops.compression_engine.nli_softmax.NLISoftmaxCompressor" href="../compression_engine/nli_softmax.html#neuralops.compression_engine.nli_softmax.NLISoftmaxCompressor">NLISoftmaxCompressor</a></li>
+<li><a title="neuralops.compression_engine.nmf_compressor.NMFCompressor" href="../compression_engine/nmf_compressor.html#neuralops.compression_engine.nmf_compressor.NMFCompressor">NMFCompressor</a></li>
+<li><a title="neuralops.compression_engine.oats_compressor.OATSCompressor" href="../compression_engine/oats_compressor.html#neuralops.compression_engine.oats_compressor.OATSCompressor">OATSCompressor</a></li>
+<li><a title="neuralops.compression_engine.optimal_subspace_projection.OptimalSubspaceProjectionCompressor" href="../compression_engine/optimal_subspace_projection.html#neuralops.compression_engine.optimal_subspace_projection.OptimalSubspaceProjectionCompressor">OptimalSubspaceProjectionCompressor</a></li>
+<li><a title="neuralops.compression_engine.proxsparse.ProxSparsePruner" href="../compression_engine/proxsparse.html#neuralops.compression_engine.proxsparse.ProxSparsePruner">ProxSparsePruner</a></li>
+<li><a title="neuralops.compression_engine.replaceme_compressor.ReplaceMeCompressor" href="../compression_engine/replaceme_compressor.html#neuralops.compression_engine.replaceme_compressor.ReplaceMeCompressor">ReplaceMeCompressor</a></li>
+<li><a title="neuralops.compression_engine.res_svd.ResSVDCompressor" href="../compression_engine/res_svd.html#neuralops.compression_engine.res_svd.ResSVDCompressor">ResSVDCompressor</a></li>
+<li><a title="neuralops.compression_engine.roast_hashed_linear.ROASTCompressor" href="../compression_engine/roast_hashed_linear.html#neuralops.compression_engine.roast_hashed_linear.ROASTCompressor">ROASTCompressor</a></li>
+<li><a title="neuralops.compression_engine.rotational_slicegpt_int4.RotationalSliceGPTINT4Compressor" href="../compression_engine/rotational_slicegpt_int4.html#neuralops.compression_engine.rotational_slicegpt_int4.RotationalSliceGPTINT4Compressor">RotationalSliceGPTINT4Compressor</a></li>
+<li><a title="neuralops.compression_engine.rpca_compressor.RPCACompressor" href="../compression_engine/rpca_compressor.html#neuralops.compression_engine.rpca_compressor.RPCACompressor">RPCACompressor</a></li>
+<li><a title="neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2" href="../compression_engine/saes_svd_v2.html#neuralops.compression_engine.saes_svd_v2.SAESSVDCompressorV2">SAESSVDCompressorV2</a></li>
+<li><a title="neuralops.compression_engine.salr.SALRCompressor" href="../compression_engine/salr.html#neuralops.compression_engine.salr.SALRCompressor">SALRCompressor</a></li>
+<li><a title="neuralops.compression_engine.sdrm_compressor.SDRMCompressor" href="../compression_engine/sdrm_compressor.html#neuralops.compression_engine.sdrm_compressor.SDRMCompressor">SDRMCompressor</a></li>
+<li><a title="neuralops.compression_engine.slicegpt.SliceGPTCompressor" href="../compression_engine/slicegpt.html#neuralops.compression_engine.slicegpt.SliceGPTCompressor">SliceGPTCompressor</a></li>
+<li><a title="neuralops.compression_engine.slicegpt_pca.SliceGPTPCACompressor" href="../compression_engine/slicegpt_pca.html#neuralops.compression_engine.slicegpt_pca.SliceGPTPCACompressor">SliceGPTPCACompressor</a></li>
+<li><a title="neuralops.compression_engine.slim_compressor.SLiMCompressor" href="../compression_engine/slim_compressor.html#neuralops.compression_engine.slim_compressor.SLiMCompressor">SLiMCompressor</a></li>
+<li><a title="neuralops.compression_engine.soka_compressor.LowRankCompressor" href="../compression_engine/soka_compressor.html#neuralops.compression_engine.soka_compressor.LowRankCompressor">LowRankCompressor</a></li>
+<li><a title="neuralops.compression_engine.sparsegpt.SparseGPTCompressor" href="../compression_engine/sparsegpt.html#neuralops.compression_engine.sparsegpt.SparseGPTCompressor">SparseGPTCompressor</a></li>
+<li><a title="neuralops.compression_engine.subspace_projection.SubspaceProjectionCompressor" href="../compression_engine/subspace_projection.html#neuralops.compression_engine.subspace_projection.SubspaceProjectionCompressor">SubspaceProjectionCompressor</a></li>
+<li><a title="neuralops.compression_engine.svd_linear.SVDLinearCompressor" href="../compression_engine/svd_linear.html#neuralops.compression_engine.svd_linear.SVDLinearCompressor">SVDLinearCompressor</a></li>
+<li><a title="neuralops.compression_engine.svd_llm_compressor.SVDLLMCompressor" href="../compression_engine/svd_llm_compressor.html#neuralops.compression_engine.svd_llm_compressor.SVDLLMCompressor">SVDLLMCompressor</a></li>
+<li><a title="neuralops.compression_engine.swift_svd.SwiftSVDCompressor" href="../compression_engine/swift_svd.html#neuralops.compression_engine.swift_svd.SwiftSVDCompressor">SwiftSVDCompressor</a></li>
+<li><a title="neuralops.compression_engine.swift_svd_act.SwiftSVDActivationCompressor" href="../compression_engine/swift_svd_act.html#neuralops.compression_engine.swift_svd_act.SwiftSVDActivationCompressor">SwiftSVDActivationCompressor</a></li>
+<li><a title="neuralops.compression_engine.tomoe_compressor.ToMoECompressor" href="../compression_engine/tomoe_compressor.html#neuralops.compression_engine.tomoe_compressor.ToMoECompressor">ToMoECompressor</a></li>
+<li><a title="neuralops.compression_engine.tt_compressor.TTCompressor" href="../compression_engine/tt_compressor.html#neuralops.compression_engine.tt_compressor.TTCompressor">TTCompressor</a></li>
+<li><a title="neuralops.compression_engine.uniql_compressor.UniQLCompressor" href="../compression_engine/uniql_compressor.html#neuralops.compression_engine.uniql_compressor.UniQLCompressor">UniQLCompressor</a></li>
+<li><a title="neuralops.compression_engine.zerokv_neo_compressor.ZeroKVNeoCompressor" href="../compression_engine/zerokv_neo_compressor.html#neuralops.compression_engine.zerokv_neo_compressor.ZeroKVNeoCompressor">ZeroKVNeoCompressor</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.core.base.BaseCompressor.compress"><code class="name flex">
+<span>def <span class="ident">compress</span></span>(<span>self) ‑> tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def compress(self) -&gt; tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;Return (compressed_model, statistics).&#34;&#34;&#34;
+    raise NotImplementedError(&#34;Subclasses of BaseCompressor must implement compress()&#34;)</code></pre>
+</details>
+<div class="desc"><p>Return (compressed_model, statistics).</p></div>
+</dd>
+<dt id="neuralops.core.base.BaseCompressor.get_compression_stats"><code class="name flex">
+<span>def <span class="ident">get_compression_stats</span></span>(<span>self) ‑> dict[str, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_compression_stats(self) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Return the compression stats.&#34;&#34;&#34;
+    compressed = self._count_params(self.model)
+    orig = self._original_params
+    return {
+        &#34;compressor_name&#34;: self.name,
+        &#34;original_parameters&#34;: orig,
+        &#34;compressed_parameters&#34;: compressed,
+        &#34;saved_parameters&#34;: orig - compressed,
+        &#34;compression_ratio&#34;: compressed / orig if orig &gt; 0 else 1.0,
+        &#34;reduction_percentage&#34;: ((orig - compressed) / orig * 100 if orig &gt; 0 else 0.0),
+    }</code></pre>
+</details>
+<div class="desc"><p>Return the compression stats.</p></div>
+</dd>
+<dt id="neuralops.core.base.BaseCompressor.summary"><code class="name flex">
+<span>def <span class="ident">summary</span></span>(<span>self) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def summary(self) -&gt; str:
+    &#34;&#34;&#34;Summary.&#34;&#34;&#34;
+    s = self.get_compression_stats()
+    return (
+        f&#34;\n========================================\n&#34;
+        f&#34;Compression Summary: {self.name}\n&#34;
+        f&#34;========================================\n&#34;
+        f&#34;Original parameters:  {s[&#39;original_parameters&#39;]:,}\n&#34;
+        f&#34;Compressed parameters: {s[&#39;compressed_parameters&#39;]:,}\n&#34;
+        f&#34;Parameters saved:     {s[&#39;saved_parameters&#39;]:,}\n&#34;
+        f&#34;Compression ratio:    {s[&#39;compression_ratio&#39;]:.3f}\n&#34;
+        f&#34;Reduction:            {s[&#39;reduction_percentage&#39;]:.2f}%\n&#34;
+        f&#34;========================================\n&#34;
+    )</code></pre>
+</details>
+<div class="desc"><p>Summary.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.core" href="index.html">neuralops.core</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.core.base.BaseAttention" href="#neuralops.core.base.BaseAttention">BaseAttention</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.core.base.BaseAttention.copy_weights" href="#neuralops.core.base.BaseAttention.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.extra_repr" href="#neuralops.core.base.BaseAttention.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.forward" href="#neuralops.core.base.BaseAttention.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.core.base.BaseCompressor" href="#neuralops.core.base.BaseCompressor">BaseCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.core.base.BaseCompressor.compress" href="#neuralops.core.base.BaseCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

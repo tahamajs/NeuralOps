@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.experiment_utils.runner API documentation</title>
+<meta name="description" content="Efficient Attention Framework – GLUE Fine‑Tuning &amp; Utility Functions">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.experiment_utils.runner</code></h1>
+</header>
+<section id="section-intro">
+<p>Efficient Attention Framework – GLUE Fine‑Tuning &amp; Utility Functions</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.experiment_utils.runner.main"><code class="name flex">
+<span>def <span class="ident">main</span></span>(<span>) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def main() -&gt; None:
+    &#34;&#34;&#34;Main.&#34;&#34;&#34;
+    from neuralops.experiment_logging.logger import LoggingConfig, MetricsTracker, setup_logging
+
+    from neuralops.experiment_utils.config import build_config_from_args
+
+    cfg = build_config_from_args()
+    exp_name = cfg.exp_name or f&#34;{cfg.attn_type}_{cfg.method}_{cfg.task}_{cfg.seed}&#34;
+    if not hasattr(cfg, &#34;log_base_dir&#34;):
+        cfg.log_base_dir = cfg.log_dir
+    if not hasattr(cfg, &#34;use_timestamp&#34;):
+        cfg.use_timestamp = True
+    if not hasattr(cfg, &#34;run_id&#34;):
+        cfg.run_id = None
+
+    log_cfg = LoggingConfig(
+        log_base_dir=cfg.log_base_dir,
+        experiment_name=exp_name,
+        run_id=cfg.run_id,
+        use_timestamp=cfg.use_timestamp,
+    )
+    logger = setup_logging(log_cfg)
+    tracker = MetricsTracker(save_path=os.path.join(cfg.log_dir, f&#34;{exp_name}_metrics.json&#34;))
+
+    logger.info(&#34;══════════════════════════════════════&#34;)
+    logger.info(f&#34;🚀 Experiment: {exp_name}&#34;)
+    logger.info(f&#34;   Attention: {cfg.attn_type}&#34;)
+    logger.info(f&#34;   Method: {cfg.method}&#34;)
+    logger.info(f&#34;   Task: {cfg.task}&#34;)
+    logger.info(f&#34;   Model: {cfg.model_name}&#34;)
+    logger.info(&#34;══════════════════════════════════════&#34;)
+
+    set_seed(cfg.seed)
+    device = get_device()
+    logger.info(f&#34;Using device: {device}&#34;)
+
+    raw_datasets = load_glue_local(cfg.task, cfg.glue_base_path)
+    num_labels, is_regression = get_num_labels_and_is_regression(cfg.task)
+    sent1_key, sent2_key = GLUE_TASK_KEYS[cfg.task]
+    tokenizer = AutoTokenizer.from_pretrained(cfg.model_name, use_fast=True)
+
+    preprocess_fn = build_preprocess(
+        tokenizer, cfg.task, cfg.max_len, sent1_key, sent2_key, is_regression
+    )
+    dataset = raw_datasets.map(preprocess_fn, batched=True)
+    cols = [&#34;input_ids&#34;, &#34;attention_mask&#34;, &#34;labels&#34;]
+    if &#34;token_type_ids&#34; in dataset[&#34;train&#34;].column_names:
+        cols.append(&#34;token_type_ids&#34;)
+    dataset.set_format(type=&#34;torch&#34;, columns=cols)
+
+    logger.info(f&#34;Train: {len(dataset[&#39;train&#39;])}, Val: {len(dataset.get(&#39;validation&#39;, []))}&#34;)
+
+    model = AutoModelForSequenceClassification.from_pretrained(
+        cfg.model_name, num_labels=num_labels
+    )
+    model.to(device)
+
+    # Custom callback for tracker
+    class TrackerCallback(TrainerCallback):
+        def on_log(self, args, state, control, logs=None, **kwargs) -&gt; None:
+            &#34;&#34;&#34;On log.&#34;&#34;&#34;
+            if logs:
+                for k, v in logs.items():
+                    tracker.log(k, v, step=state.global_step)
+
+    trainer_cls = get_trainer(getattr(cfg, &#34;trainer_type&#34;, &#34;hf&#34;))
+    trainer = trainer_cls.create(
+        model=model,
+        dataset=dataset,
+        config=cfg,
+        tokenizer=tokenizer,
+        logger=logger,
+        callbacks=[TrackerCallback(), MemoryCallback(), TimeCallback()],
+    )
+
+    logger.info(&#34;Starting training...&#34;)
+    trainer.train()
+    eval_result = trainer.evaluate()
+
+    logger.info(&#34;=&#34; * 60)
+    logger.info(&#34;FINAL EVALUATION:&#34;)
+    for k, v in eval_result.items():
+        logger.info(f&#34;{k}: {v:.4f}&#34;)
+    logger.info(&#34;=&#34; * 60)
+
+    output_dir = os.path.join(cfg.output_dir, exp_name)
+    trainer.save_model(output_dir)
+    tokenizer.save_pretrained(output_dir)
+    tracker.save(os.path.join(output_dir, &#34;metrics.json&#34;))
+    logger.info(f&#34;Model and logs saved to {output_dir}&#34;)
+    logger.info(&#34;🎉 Experiment completed successfully!&#34;)</code></pre>
+</details>
+<div class="desc"><p>Main.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.runner.run_compression"><code class="name flex">
+<span>def <span class="ident">run_compression</span></span>(<span>config, output_dir) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_compression(config, output_dir) -&gt; Any:
+    &#34;&#34;&#34;Run compression.&#34;&#34;&#34;
+    if isinstance(config, dict):
+        cfg = data_ExperimentConfig()
+        for k, v in config.items():
+            setattr(cfg, k, v)
+    else:
+        cfg = config
+
+    compressor_name = cfg.compressor or &#34;svd&#34;
+    if compressor_name not in COMPRESSOR_REGISTRY:
+        raise ValueError(f&#34;Unknown compressor: {compressor_name}&#34;)
+
+    set_seed(cfg.seed)
+    device = get_device()
+
+    model = AutoModelForSequenceClassification.from_pretrained(cfg.model_name)
+    model.to(device)
+
+    compressor_cls = COMPRESSOR_REGISTRY[compressor_name]
+    compressor = compressor_cls(model, rank=cfg.compression_rank)
+    compressed_model = compressor.compress()
+
+    os.makedirs(output_dir, exist_ok=True)
+    compressed_model.save_pretrained(output_dir)
+    tokenizer = AutoTokenizer.from_pretrained(cfg.model_name)
+    tokenizer.save_pretrained(output_dir)
+
+    original_bytes = sum(p.numel() * p.element_size() for p in model.parameters())
+    compressed_bytes = sum(p.numel() * p.element_size() for p in compressed_model.parameters())
+    reduction_ratio = original_bytes / compressed_bytes if compressed_bytes &gt; 0 else 1
+
+    stats = {
+        &#34;compressor&#34;: compressor_name,
+        &#34;original_size_mb&#34;: round(original_bytes / (1024**2), 2),
+        &#34;compressed_size_mb&#34;: round(compressed_bytes / (1024**2), 2),
+        &#34;reduction_ratio&#34;: round(reduction_ratio, 2),
+        &#34;compression_rank&#34;: cfg.compression_rank,
+    }
+    logger.info(f&#34;Compression complete: {stats}&#34;)
+    return stats</code></pre>
+</details>
+<div class="desc"><p>Run compression.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.runner.run_evaluation"><code class="name flex">
+<span>def <span class="ident">run_evaluation</span></span>(<span>config, model_path) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_evaluation(config, model_path) -&gt; Any:
+    &#34;&#34;&#34;Run evaluation.&#34;&#34;&#34;
+    if isinstance(config, dict):
+        cfg = data_ExperimentConfig()
+        for k, v in config.items():
+            setattr(cfg, k, v)
+    else:
+        cfg = config
+
+    set_seed(cfg.seed)
+    device = get_device()
+
+    # Reload data (simplified)
+    raw_datasets = load_glue_local(cfg.task, cfg.glue_base_path)
+    num_labels, is_regression = get_num_labels_and_is_regression(cfg.task)
+    sent1_key, sent2_key = GLUE_TASK_KEYS[cfg.task]
+    tokenizer = AutoTokenizer.from_pretrained(cfg.model_name, use_fast=True)
+
+    preprocess_fn = build_preprocess(
+        tokenizer, cfg.task, cfg.max_len, sent1_key, sent2_key, is_regression
+    )
+    dataset = raw_datasets.map(preprocess_fn, batched=True)
+    cols = [&#34;input_ids&#34;, &#34;attention_mask&#34;, &#34;labels&#34;]
+    if &#34;token_type_ids&#34; in dataset[&#34;validation&#34;].column_names:
+        cols.append(&#34;token_type_ids&#34;)
+    dataset.set_format(type=&#34;torch&#34;, columns=cols)
+
+    try:
+        model = AutoModelForSequenceClassification.from_pretrained(model_path)
+    except Exception:
+        logger.warning(f&#34;Could not load from {model_path}, using base model&#34;)
+        model = AutoModelForSequenceClassification.from_pretrained(
+            cfg.model_name, num_labels=num_labels
+        )
+    model.to(device)
+
+    training_args = TrainingArguments(
+        output_dir=&#34;./tmp_eval&#34;,
+        per_device_eval_batch_size=cfg.batch_size * 2,
+        remove_unused_columns=False,
+        report_to=&#34;none&#34;,
+    )
+    eval_trainer = Trainer(
+        model=model,
+        args=training_args,
+        eval_dataset=dataset.get(&#34;validation&#34;, dataset.get(&#34;validation_matched&#34;)),
+        data_collator=DataCollatorWithPadding(tokenizer),
+    )
+    eval_result = eval_trainer.evaluate()
+    return {k.replace(&#34;eval_&#34;, &#34;&#34;): v for k, v in eval_result.items()}</code></pre>
+</details>
+<div class="desc"><p>Run evaluation.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.runner.run_training"><code class="name flex">
+<span>def <span class="ident">run_training</span></span>(<span>config,<br>stop_event=None,<br>progress_callback=None,<br>log_callback=None,<br>final_callback=None) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_training(
+    config,
+    stop_event=None,
+    progress_callback=None,
+    log_callback=None,
+    final_callback=None,
+) -&gt; Any:
+    &#34;&#34;&#34;Run training.&#34;&#34;&#34;
+    if isinstance(config, dict):
+        cfg = data_ExperimentConfig()
+        for k, v in config.items():
+            setattr(cfg, k, v)
+    else:
+        cfg = config
+
+    set_seed(cfg.seed)
+    device = get_device()
+    logger.info(f&#34;Using device: {device}&#34;)
+
+    # Data
+    raw_datasets = load_glue_local(cfg.task, cfg.glue_base_path)
+    num_labels, is_regression = get_num_labels_and_is_regression(cfg.task)
+    sent1_key, sent2_key = GLUE_TASK_KEYS[cfg.task]
+    tokenizer = AutoTokenizer.from_pretrained(cfg.model_name, use_fast=True)
+
+    preprocess_fn = build_preprocess(
+        tokenizer, cfg.task, cfg.max_len, sent1_key, sent2_key, is_regression
+    )
+    dataset = raw_datasets.map(
+        preprocess_fn, batched=True, remove_columns=raw_datasets[&#34;train&#34;].column_names
+    )
+    cols = [&#34;input_ids&#34;, &#34;attention_mask&#34;, &#34;labels&#34;]
+    if &#34;token_type_ids&#34; in dataset[&#34;train&#34;].column_names:
+        cols.append(&#34;token_type_ids&#34;)
+    dataset.set_format(type=&#34;torch&#34;, columns=cols)
+
+    # Model
+    model = AutoModelForSequenceClassification.from_pretrained(
+        cfg.model_name, num_labels=num_labels
+    )
+    fix_layernorm_naming(model)
+    model.to(device)
+
+    # Trainer
+    trainer_type = getattr(cfg, &#34;trainer_type&#34;, &#34;hf&#34;)
+    trainer_cls = get_trainer(trainer_type)
+
+    callbacks = [
+        DjangoCallback(progress_callback, log_callback, final_callback, stop_event),
+        TrainerLoggingCallback(None, logger),
+        MemoryCallback(),
+        TimeCallback(),
+    ]
+    if getattr(cfg, &#34;compressor&#34;, None):
+        callbacks.append(SVDAttentionCallback())
+
+    trainer = trainer_cls.create(
+        model=model,
+        dataset=dataset,
+        config=cfg,
+        tokenizer=tokenizer,
+        logger=logger,
+        callbacks=callbacks,
+    )
+
+    logger.info(&#34;Starting training...&#34;)
+    trainer.train()
+    eval_results = trainer.evaluate()
+    logger.info(&#34;Training completed.&#34;)
+
+    # Save
+    output_dir = Path(cfg.output_dir) / (cfg.exp_name or &#34;training&#34;)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    trainer.save_model(str(output_dir))
+    tokenizer.save_pretrained(str(output_dir))
+
+    try:
+        create_comprehensive_plots(
+            metrics=trainer.state.log_history,
+            output_dir=str(output_dir / &#34;plots&#34;),
+            prefix=cfg.exp_name or &#34;training&#34;,
+        )
+    except Exception as e:
+        logger.warning(f&#34;Plot generation failed: {e}&#34;)
+
+    if final_callback:
+        final_callback(eval_results, trainer.state.log_history)
+
+    return eval_results</code></pre>
+</details>
+<div class="desc"><p>Run training.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.experiment_utils.runner.DjangoCallback"><code class="flex name class">
+<span>class <span class="ident">DjangoCallback</span></span>
+<span>(</span><span>progress_cb, log_cb, final_cb, stop_event=None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DjangoCallback(TrainerCallback):
+    def __init__(self, progress_cb, log_cb, final_cb, stop_event=None) -&gt; None:
+        self.progress_cb = progress_cb
+        self.log_cb = log_cb
+        self.final_cb = final_cb
+        self.stop_event = stop_event
+        self._total_steps = None
+
+    def on_train_begin(self, args, state, control, **kwargs) -&gt; None:
+        &#34;&#34;&#34;On train begin.&#34;&#34;&#34;
+        self._total_steps = state.max_steps
+
+    def on_log(self, args, state, control, logs=None, **kwargs) -&gt; None:
+        &#34;&#34;&#34;On log.&#34;&#34;&#34;
+        if self.log_cb:
+            self.log_cb(state.global_step, logs or {})
+
+    def on_step_end(self, args, state, control, **kwargs) -&gt; None:
+        &#34;&#34;&#34;On step end.&#34;&#34;&#34;
+        if self.stop_event and self.stop_event.is_set():
+            control.should_training_stop = True
+        if self.progress_cb and self._total_steps:
+            pct = (state.global_step / self._total_steps) * 100
+            self.progress_cb(state.global_step, self._total_steps, pct)
+
+    def on_evaluate(self, args, state, control, metrics=None, **kwargs) -&gt; None:
+        &#34;&#34;&#34;On evaluate.&#34;&#34;&#34;
+        if self.log_cb and metrics:
+            self.log_cb(state.global_step, metrics)</code></pre>
+</details>
+<div class="desc"><p>A class for objects that will inspect the state of the training loop at some events and take some decisions. At
+each of those events the following arguments are available:</p>
+<p>Args
+-----=
+args ([<code>TrainingArguments</code>]):
+The training arguments used to instantiate the [<code>Trainer</code>].
+state ([<code>TrainerState</code>]):
+The current state of the [<code>Trainer</code>].
+control ([<code>TrainerControl</code>]):
+The object that is returned to the [<code>Trainer</code>] and can be used to make some decisions.
+model ([<code>PreTrainedModel</code>] or <code>torch.nn.Module</code>):
+The model being trained.
+processing_class ([<code>PreTrainedTokenizer</code> or <code>BaseImageProcessor</code> or <code>ProcessorMixin</code> or <code>FeatureExtractionMixin</code>]):
+The processing class used for encoding the data. Can be a tokenizer, a processor, an image processor or a feature extractor.
+optimizer (<code>torch.optim.Optimizer</code>):
+The optimizer used for the training steps.
+lr_scheduler (<code>torch.optim.lr_scheduler.LambdaLR</code>):
+The scheduler used for setting the learning rate.
+train_dataloader (<code>torch.utils.data.DataLoader</code>, <em>optional</em>):
+The current dataloader used for training.
+eval_dataloader (<code>torch.utils.data.DataLoader</code>, <em>optional</em>):
+The current dataloader used for evaluation.
+metrics (<code>dict[str, float]</code>):
+The metrics computed by the last evaluation phase.</p>
+<pre><code>Those are only accessible in the event &lt;code&gt;on\_evaluate&lt;/code&gt;.
+</code></pre>
+<p>logs
+(<code>dict[str, float]</code>):
+The values to log.</p>
+<pre><code>Those are only accessible in the event &lt;code&gt;on\_log&lt;/code&gt;.
+</code></pre>
+<p>The <code>control</code> object is the only one that can be changed by the callback, in which case the event that changes it
+should return the modified version.</p>
+<p>The argument <code>args</code>, <code>state</code> and <code>control</code> are positionals for all events, all the others are grouped in <code>kwargs</code>.
+You can unpack the ones you need in the signature of the event using them. As an example, see the code of the
+simple [<code>~transformers.PrinterCallback</code>].</p>
+<p>Example:</p>
+<pre><code class="language-python">class PrinterCallback(TrainerCallback):
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        _ = logs.pop(&quot;total_flos&quot;, None)
+        if state.is_local_process_zero:
+            print(logs)
+</code></pre></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>transformers.trainer_callback.TrainerCallback</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.experiment_utils.runner.DjangoCallback.on_evaluate"><code class="name flex">
+<span>def <span class="ident">on_evaluate</span></span>(<span>self, args, state, control, metrics=None, **kwargs) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def on_evaluate(self, args, state, control, metrics=None, **kwargs) -&gt; None:
+    &#34;&#34;&#34;On evaluate.&#34;&#34;&#34;
+    if self.log_cb and metrics:
+        self.log_cb(state.global_step, metrics)</code></pre>
+</details>
+<div class="desc"><p>On evaluate.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.runner.DjangoCallback.on_log"><code class="name flex">
+<span>def <span class="ident">on_log</span></span>(<span>self, args, state, control, logs=None, **kwargs) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def on_log(self, args, state, control, logs=None, **kwargs) -&gt; None:
+    &#34;&#34;&#34;On log.&#34;&#34;&#34;
+    if self.log_cb:
+        self.log_cb(state.global_step, logs or {})</code></pre>
+</details>
+<div class="desc"><p>On log.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.runner.DjangoCallback.on_step_end"><code class="name flex">
+<span>def <span class="ident">on_step_end</span></span>(<span>self, args, state, control, **kwargs) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def on_step_end(self, args, state, control, **kwargs) -&gt; None:
+    &#34;&#34;&#34;On step end.&#34;&#34;&#34;
+    if self.stop_event and self.stop_event.is_set():
+        control.should_training_stop = True
+    if self.progress_cb and self._total_steps:
+        pct = (state.global_step / self._total_steps) * 100
+        self.progress_cb(state.global_step, self._total_steps, pct)</code></pre>
+</details>
+<div class="desc"><p>On step end.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.runner.DjangoCallback.on_train_begin"><code class="name flex">
+<span>def <span class="ident">on_train_begin</span></span>(<span>self, args, state, control, **kwargs) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def on_train_begin(self, args, state, control, **kwargs) -&gt; None:
+    &#34;&#34;&#34;On train begin.&#34;&#34;&#34;
+    self._total_steps = state.max_steps</code></pre>
+</details>
+<div class="desc"><p>On train begin.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.experiment_utils.runner.TrainerLoggingCallback"><code class="flex name class">
+<span>class <span class="ident">TrainerLoggingCallback</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TrainerLoggingCallback:
+    def __init__(self, *args, **kwargs) -&gt; None:
+        pass
+
+    def on_log(self, args, state, control, logs=None, **kwargs) -&gt; None:
+        &#34;&#34;&#34;On log.&#34;&#34;&#34;
+        if logs:
+            logging.getLogger(__name__).info(f&#34;Step {state.global_step}: {logs}&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.experiment_utils.runner.TrainerLoggingCallback.on_log"><code class="name flex">
+<span>def <span class="ident">on_log</span></span>(<span>self, args, state, control, logs=None, **kwargs) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def on_log(self, args, state, control, logs=None, **kwargs) -&gt; None:
+    &#34;&#34;&#34;On log.&#34;&#34;&#34;
+    if logs:
+        logging.getLogger(__name__).info(f&#34;Step {state.global_step}: {logs}&#34;)</code></pre>
+</details>
+<div class="desc"><p>On log.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.experiment_utils" href="index.html">neuralops.experiment_utils</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.experiment_utils.runner.main" href="#neuralops.experiment_utils.runner.main">main</a></code></li>
+<li><code><a title="neuralops.experiment_utils.runner.run_compression" href="#neuralops.experiment_utils.runner.run_compression">run_compression</a></code></li>
+<li><code><a title="neuralops.experiment_utils.runner.run_evaluation" href="#neuralops.experiment_utils.runner.run_evaluation">run_evaluation</a></code></li>
+<li><code><a title="neuralops.experiment_utils.runner.run_training" href="#neuralops.experiment_utils.runner.run_training">run_training</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.experiment_utils.runner.DjangoCallback" href="#neuralops.experiment_utils.runner.DjangoCallback">DjangoCallback</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.experiment_utils.runner.DjangoCallback.on_evaluate" href="#neuralops.experiment_utils.runner.DjangoCallback.on_evaluate">on_evaluate</a></code></li>
+<li><code><a title="neuralops.experiment_utils.runner.DjangoCallback.on_log" href="#neuralops.experiment_utils.runner.DjangoCallback.on_log">on_log</a></code></li>
+<li><code><a title="neuralops.experiment_utils.runner.DjangoCallback.on_step_end" href="#neuralops.experiment_utils.runner.DjangoCallback.on_step_end">on_step_end</a></code></li>
+<li><code><a title="neuralops.experiment_utils.runner.DjangoCallback.on_train_begin" href="#neuralops.experiment_utils.runner.DjangoCallback.on_train_begin">on_train_begin</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.experiment_utils.runner.TrainerLoggingCallback" href="#neuralops.experiment_utils.runner.TrainerLoggingCallback">TrainerLoggingCallback</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.experiment_utils.runner.TrainerLoggingCallback.on_log" href="#neuralops.experiment_utils.runner.TrainerLoggingCallback.on_log">on_log</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

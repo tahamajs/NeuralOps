@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.evaluation.label_quality API documentation</title>
+<meta name="description" content="Label quality detection – inspired by Cleanlab, the industry standard for
+data‑centric AI.
+Finds label errors, outliers, and near‑duplicates …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.evaluation.label_quality</code></h1>
+</header>
+<section id="section-intro">
+<p>Label quality detection – inspired by Cleanlab, the industry standard for
+data‑centric AI.
+Finds label errors, outliers, and near‑duplicates.</p>
+<p>Reference: <a href="https://github.com/cleanlab/cleanlab">https://github.com/cleanlab/cleanlab</a></p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.evaluation.label_quality.LabelQualityDetector"><code class="flex name class">
+<span>class <span class="ident">LabelQualityDetector</span></span>
+<span>(</span><span>threshold: float = 0.1, seed: int = 42)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class LabelQualityDetector:
+    &#34;&#34;&#34;
+    Detects label errors, outliers, and near‑duplicates using confident learning.
+
+    Usage:
+        detector = LabelQualityDetector()
+        report = detector.analyze(labels=y_true, pred_probs=model_output_probs)
+
+    No ground‑truth validation set is required – the method works entirely from
+    model predictions and given labels.
+    &#34;&#34;&#34;
+
+    def __init__(self, threshold: float = 0.1, seed: int = 42) -&gt; None:
+        self.threshold = threshold
+        self.seed = seed
+
+    # ── Main API ────────────────────────────────────────────────────
+    def analyze(
+        self,
+        labels: np.ndarray,
+        pred_probs: np.ndarray,
+        class_names: list[str] | None = None,
+    ) -&gt; LabelQualityReport:
+        &#34;&#34;&#34;
+        Run full label quality analysis.
+
+        Args:
+            labels: integer labels, shape (N,)
+            pred_probs: model predicted probabilities, shape (N, K)
+            class_names: optional list of class name strings
+        &#34;&#34;&#34;
+        n_samples, n_classes = pred_probs.shape
+        np.random.seed(self.seed)
+
+        # 1. Compute confident joint (estimate of noise matrix)
+        cj = self._compute_confident_joint(labels, pred_probs)
+
+        # 2. Find label issues
+        label_issues_mask, quality_scores, suggested = self._find_label_issues(
+            labels, pred_probs, cj
+        )
+
+        # 3. Per‑class breakdown
+        per_class = {}
+        for k in range(n_classes):
+            mask_k = labels == k
+            per_class[k] = int(np.sum(label_issues_mask[mask_k]))
+
+        # 4. Outlier detection (using prediction entropy)
+        entropy = -np.sum(pred_probs * np.log(pred_probs + 1e-10), axis=1)
+        outlier_thresh = np.percentile(entropy, 95)
+        outlier_indices = np.where(entropy &gt; outlier_thresh)[0]
+
+        # 5. Near‑duplicate detection (using prediction cosine similarity)
+        near_dupes = self._find_near_duplicates(pred_probs)
+
+        # 6. Overall quality score
+        overall = 1.0 - np.mean(label_issues_mask)
+
+        return LabelQualityReport(
+            n_samples=n_samples,
+            n_label_issues=int(np.sum(label_issues_mask)),
+            issue_rate=round(np.mean(label_issues_mask), 4),
+            label_issue_indices=np.where(label_issues_mask)[0],
+            label_quality_scores=quality_scores,
+            suggested_labels=suggested,
+            per_class_issues=per_class,
+            outlier_indices=outlier_indices,
+            near_duplicate_pairs=near_dupes,
+            overall_quality_score=round(overall, 4),
+        )
+
+    # ── Confident Joint (core algorithm) ────────────────────────────
+    def _compute_confident_joint(self, labels: np.ndarray, pred_probs: np.ndarray) -&gt; np.ndarray:
+        &#34;&#34;&#34;
+        Estimate the joint distribution of noisy labels and true labels.
+        This is the key insight from Cleanlab / confident learning.
+        &#34;&#34;&#34;
+        n_samples, n_classes = pred_probs.shape
+        pred_classes = np.argmax(pred_probs, axis=1)
+
+        # Average threshold for each class: t_k = mean prob of class k when k is predicted
+        thresholds = np.zeros(n_classes)
+        for k in range(n_classes):
+            mask = pred_classes == k
+            if mask.sum() &gt; 0:
+                thresholds[k] = np.mean(pred_probs[mask, k])
+            else:
+                thresholds[k] = 0.5
+
+        # Confident joint: count how many times (given_label = i, true_label = j)
+        cj = np.zeros((n_classes, n_classes), dtype=np.float64)
+        for i in range(n_samples):
+            true_label_guess = np.argmax(pred_probs[i])
+            given_label = labels[i]
+            if pred_probs[i, true_label_guess] &gt;= thresholds[true_label_guess]:
+                cj[given_label, true_label_guess] += 1
+
+        # Normalise to probabilities
+        cj = cj / max(cj.sum(), 1.0)
+        return cj
+
+    # ── Label Issue Detection ───────────────────────────────────────
+    def _find_label_issues(
+        self, labels: np.ndarray, pred_probs: np.ndarray, cj: np.ndarray
+    ) -&gt; tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+        &#34;&#34;&#34;
+        Return: (issue_mask, quality_scores, suggested_labels)
+        &#34;&#34;&#34;
+        n_samples, n_classes = pred_probs.shape
+
+        # For each sample, the label quality score = 1 - P(mislabeled)
+        self_confidence = pred_probs[np.arange(n_samples), labels]
+        quality_scores = self_confidence
+
+        # A sample is a label issue if self‑confidence is below the class threshold
+        thresholds = np.zeros(n_classes)
+        for k in range(n_classes):
+            mask = labels == k
+            if mask.sum() &gt; 0:
+                thresholds[k] = np.mean(pred_probs[mask, k])
+            else:
+                thresholds[k] = 0.5
+
+        issue_mask = np.zeros(n_samples, dtype=bool)
+        for k in range(n_classes):
+            mask_k = labels == k
+            issue_mask[mask_k] = self_confidence[mask_k] &lt; (thresholds[k] * (1 - self.threshold))
+
+        # Suggested labels: what the model predicts instead
+        suggested = np.argmax(pred_probs, axis=1)
+        suggested[~issue_mask] = labels[~issue_mask]  # keep original if not an issue
+
+        return issue_mask, quality_scores, suggested
+
+    # ── Near‑Duplicate Detection ────────────────────────────────────
+    def _find_near_duplicates(
+        self, pred_probs: np.ndarray, threshold: float = 0.95
+    ) -&gt; list[tuple[int, int]]:
+        &#34;&#34;&#34;Find pairs of samples whose prediction vectors are nearly identical.&#34;&#34;&#34;
+        from sklearn.metrics.pairwise import cosine_similarity
+
+        n = pred_probs.shape[0]
+        if n &gt; 5000:
+            # Subsample for performance
+            indices = np.random.choice(n, min(5000, n), replace=False)
+            subset = pred_probs[indices]
+            sim = cosine_similarity(subset)
+        else:
+            sim = cosine_similarity(pred_probs)
+        np.fill_diagonal(sim, 0)
+        pairs = np.argwhere(sim &gt; threshold)
+        # De‑duplicate symmetric pairs
+        seen = set()
+        result = []
+        for i, j in pairs:
+            if i &lt; j and (i, j) not in seen:
+                result.append((int(i), int(j)))
+                seen.add((i, j))
+        return result
+
+    # ── Summary helpers ─────────────────────────────────────────────
+    def summary(self, report: LabelQualityReport) -&gt; dict[str, Any]:
+        &#34;&#34;&#34;Summary.&#34;&#34;&#34;
+        return {
+            &#34;total_samples&#34;: report.n_samples,
+            &#34;label_issues_found&#34;: report.n_label_issues,
+            &#34;issue_rate&#34;: report.issue_rate,
+            &#34;overall_quality&#34;: report.overall_quality_score,
+            &#34;n_outliers&#34;: len(report.outlier_indices),
+            &#34;n_near_duplicates&#34;: len(report.near_duplicate_pairs),
+            &#34;worst_classes&#34;: sorted(
+                report.per_class_issues.items(), key=lambda x: x[1], reverse=True
+            )[:5],
+        }</code></pre>
+</details>
+<div class="desc"><p>Detects label errors, outliers, and near‑duplicates using confident learning.</p>
+<p>Usage
+-----=
+detector = LabelQualityDetector()
+report = detector.analyze(labels=y_true, pred_probs=model_output_probs)</p>
+<p>No ground‑truth validation set is required – the method works entirely from
+model predictions and given labels.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.evaluation.label_quality.LabelQualityDetector.analyze"><code class="name flex">
+<span>def <span class="ident">analyze</span></span>(<span>self,<br>labels: numpy.ndarray,<br>pred_probs: numpy.ndarray,<br>class_names: list[str] | None = None) ‑> <a title="neuralops.evaluation.label_quality.LabelQualityReport" href="#neuralops.evaluation.label_quality.LabelQualityReport">LabelQualityReport</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def analyze(
+    self,
+    labels: np.ndarray,
+    pred_probs: np.ndarray,
+    class_names: list[str] | None = None,
+) -&gt; LabelQualityReport:
+    &#34;&#34;&#34;
+    Run full label quality analysis.
+
+    Args:
+        labels: integer labels, shape (N,)
+        pred_probs: model predicted probabilities, shape (N, K)
+        class_names: optional list of class name strings
+    &#34;&#34;&#34;
+    n_samples, n_classes = pred_probs.shape
+    np.random.seed(self.seed)
+
+    # 1. Compute confident joint (estimate of noise matrix)
+    cj = self._compute_confident_joint(labels, pred_probs)
+
+    # 2. Find label issues
+    label_issues_mask, quality_scores, suggested = self._find_label_issues(
+        labels, pred_probs, cj
+    )
+
+    # 3. Per‑class breakdown
+    per_class = {}
+    for k in range(n_classes):
+        mask_k = labels == k
+        per_class[k] = int(np.sum(label_issues_mask[mask_k]))
+
+    # 4. Outlier detection (using prediction entropy)
+    entropy = -np.sum(pred_probs * np.log(pred_probs + 1e-10), axis=1)
+    outlier_thresh = np.percentile(entropy, 95)
+    outlier_indices = np.where(entropy &gt; outlier_thresh)[0]
+
+    # 5. Near‑duplicate detection (using prediction cosine similarity)
+    near_dupes = self._find_near_duplicates(pred_probs)
+
+    # 6. Overall quality score
+    overall = 1.0 - np.mean(label_issues_mask)
+
+    return LabelQualityReport(
+        n_samples=n_samples,
+        n_label_issues=int(np.sum(label_issues_mask)),
+        issue_rate=round(np.mean(label_issues_mask), 4),
+        label_issue_indices=np.where(label_issues_mask)[0],
+        label_quality_scores=quality_scores,
+        suggested_labels=suggested,
+        per_class_issues=per_class,
+        outlier_indices=outlier_indices,
+        near_duplicate_pairs=near_dupes,
+        overall_quality_score=round(overall, 4),
+    )</code></pre>
+</details>
+<div class="desc"><p>Run full label quality analysis.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>labels</code></strong></dt>
+<dd>integer labels, shape (N,)</dd>
+<dt><strong><code>pred_probs</code></strong></dt>
+<dd>model predicted probabilities, shape (N, K)</dd>
+<dt><strong><code>class_names</code></strong></dt>
+<dd>optional list of class name strings</dd>
+</dl></div>
+</dd>
+<dt id="neuralops.evaluation.label_quality.LabelQualityDetector.summary"><code class="name flex">
+<span>def <span class="ident">summary</span></span>(<span>self,<br>report: <a title="neuralops.evaluation.label_quality.LabelQualityReport" href="#neuralops.evaluation.label_quality.LabelQualityReport">LabelQualityReport</a>) ‑> dict[str, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def summary(self, report: LabelQualityReport) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Summary.&#34;&#34;&#34;
+    return {
+        &#34;total_samples&#34;: report.n_samples,
+        &#34;label_issues_found&#34;: report.n_label_issues,
+        &#34;issue_rate&#34;: report.issue_rate,
+        &#34;overall_quality&#34;: report.overall_quality_score,
+        &#34;n_outliers&#34;: len(report.outlier_indices),
+        &#34;n_near_duplicates&#34;: len(report.near_duplicate_pairs),
+        &#34;worst_classes&#34;: sorted(
+            report.per_class_issues.items(), key=lambda x: x[1], reverse=True
+        )[:5],
+    }</code></pre>
+</details>
+<div class="desc"><p>Summary.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.evaluation.label_quality.LabelQualityReport"><code class="flex name class">
+<span>class <span class="ident">LabelQualityReport</span></span>
+<span>(</span><span>n_samples: int,<br>n_label_issues: int,<br>issue_rate: float,<br>label_issue_indices: numpy.ndarray,<br>label_quality_scores: numpy.ndarray,<br>suggested_labels: numpy.ndarray | None = None,<br>per_class_issues: dict[int, int] = &lt;factory&gt;,<br>outlier_indices: numpy.ndarray = &lt;factory&gt;,<br>near_duplicate_pairs: list[tuple[int, int]] = &lt;factory&gt;,<br>overall_quality_score: float = 0.0)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class LabelQualityReport:
+    &#34;&#34;&#34;Complete label quality analysis for a dataset.&#34;&#34;&#34;
+
+    n_samples: int
+    n_label_issues: int
+    issue_rate: float
+    label_issue_indices: np.ndarray
+    label_quality_scores: np.ndarray  # per‑sample confidence (0 = bad, 1 = perfect)
+    suggested_labels: np.ndarray | None = None  # what cleanlab thinks the label should be
+    per_class_issues: dict[int, int] = field(default_factory=dict)
+    outlier_indices: np.ndarray = field(default_factory=lambda: np.array([]))
+    near_duplicate_pairs: list[tuple[int, int]] = field(default_factory=list)
+    overall_quality_score: float = 0.0</code></pre>
+</details>
+<div class="desc"><p>Complete label quality analysis for a dataset.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.evaluation.label_quality.LabelQualityReport.issue_rate"><code class="name">var <span class="ident">issue_rate</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.evaluation.label_quality.LabelQualityReport.label_issue_indices"><code class="name">var <span class="ident">label_issue_indices</span> : numpy.ndarray</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.evaluation.label_quality.LabelQualityReport.label_quality_scores"><code class="name">var <span class="ident">label_quality_scores</span> : numpy.ndarray</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.evaluation.label_quality.LabelQualityReport.n_label_issues"><code class="name">var <span class="ident">n_label_issues</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.evaluation.label_quality.LabelQualityReport.n_samples"><code class="name">var <span class="ident">n_samples</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.evaluation.label_quality.LabelQualityReport.near_duplicate_pairs"><code class="name">var <span class="ident">near_duplicate_pairs</span> : list[tuple[int, int]]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.evaluation.label_quality.LabelQualityReport.outlier_indices"><code class="name">var <span class="ident">outlier_indices</span> : numpy.ndarray</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.evaluation.label_quality.LabelQualityReport.overall_quality_score"><code class="name">var <span class="ident">overall_quality_score</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.evaluation.label_quality.LabelQualityReport.per_class_issues"><code class="name">var <span class="ident">per_class_issues</span> : dict[int, int]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.evaluation.label_quality.LabelQualityReport.suggested_labels"><code class="name">var <span class="ident">suggested_labels</span> : numpy.ndarray | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.evaluation" href="index.html">neuralops.evaluation</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.evaluation.label_quality.LabelQualityDetector" href="#neuralops.evaluation.label_quality.LabelQualityDetector">LabelQualityDetector</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.evaluation.label_quality.LabelQualityDetector.analyze" href="#neuralops.evaluation.label_quality.LabelQualityDetector.analyze">analyze</a></code></li>
+<li><code><a title="neuralops.evaluation.label_quality.LabelQualityDetector.summary" href="#neuralops.evaluation.label_quality.LabelQualityDetector.summary">summary</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.evaluation.label_quality.LabelQualityReport" href="#neuralops.evaluation.label_quality.LabelQualityReport">LabelQualityReport</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.evaluation.label_quality.LabelQualityReport.issue_rate" href="#neuralops.evaluation.label_quality.LabelQualityReport.issue_rate">issue_rate</a></code></li>
+<li><code><a title="neuralops.evaluation.label_quality.LabelQualityReport.label_issue_indices" href="#neuralops.evaluation.label_quality.LabelQualityReport.label_issue_indices">label_issue_indices</a></code></li>
+<li><code><a title="neuralops.evaluation.label_quality.LabelQualityReport.label_quality_scores" href="#neuralops.evaluation.label_quality.LabelQualityReport.label_quality_scores">label_quality_scores</a></code></li>
+<li><code><a title="neuralops.evaluation.label_quality.LabelQualityReport.n_label_issues" href="#neuralops.evaluation.label_quality.LabelQualityReport.n_label_issues">n_label_issues</a></code></li>
+<li><code><a title="neuralops.evaluation.label_quality.LabelQualityReport.n_samples" href="#neuralops.evaluation.label_quality.LabelQualityReport.n_samples">n_samples</a></code></li>
+<li><code><a title="neuralops.evaluation.label_quality.LabelQualityReport.near_duplicate_pairs" href="#neuralops.evaluation.label_quality.LabelQualityReport.near_duplicate_pairs">near_duplicate_pairs</a></code></li>
+<li><code><a title="neuralops.evaluation.label_quality.LabelQualityReport.outlier_indices" href="#neuralops.evaluation.label_quality.LabelQualityReport.outlier_indices">outlier_indices</a></code></li>
+<li><code><a title="neuralops.evaluation.label_quality.LabelQualityReport.overall_quality_score" href="#neuralops.evaluation.label_quality.LabelQualityReport.overall_quality_score">overall_quality_score</a></code></li>
+<li><code><a title="neuralops.evaluation.label_quality.LabelQualityReport.per_class_issues" href="#neuralops.evaluation.label_quality.LabelQualityReport.per_class_issues">per_class_issues</a></code></li>
+<li><code><a title="neuralops.evaluation.label_quality.LabelQualityReport.suggested_labels" href="#neuralops.evaluation.label_quality.LabelQualityReport.suggested_labels">suggested_labels</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

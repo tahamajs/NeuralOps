@@ -1,0 +1,1127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.experiment_utils API documentation</title>
+<meta name="description" content="Django integration layer – background experiment runner,
+WebSocket broadcaster, AI assistant, and multi‑run comparison.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.experiment_utils</code></h1>
+</header>
+<section id="section-intro">
+<p>Django integration layer – background experiment runner,
+WebSocket broadcaster, AI assistant, and multi‑run comparison.</p>
+</section>
+<section>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+<dl>
+<dt><code class="name"><a title="neuralops.experiment_utils.comparison" href="comparison.html">neuralops.experiment_utils.comparison</a></code></dt>
+<dd>
+<div class="desc"><p>Experiment Comparison Engine – side-by-side diff, parallel coordinates,
+metric delta tables, and run diff for training runs.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.experiment_utils.config" href="config.html">neuralops.experiment_utils.config</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.experiment_utils.data" href="data.html">neuralops.experiment_utils.data</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.experiment_utils.main" href="main.html">neuralops.experiment_utils.main</a></code></dt>
+<dd>
+<div class="desc"><p>Efficient Attention Framework – GLUE Fine‑Tuning &amp; Utility Functions</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.experiment_utils.model" href="model.html">neuralops.experiment_utils.model</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.experiment_utils.orchestrator" href="orchestrator.html">neuralops.experiment_utils.orchestrator</a></code></dt>
+<dd>
+<div class="desc"><p>MegaOrchestrator – single entry point that executes the full experiment pipeline.
+Uses the core framework for all ML logic.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.experiment_utils.runner" href="runner.html">neuralops.experiment_utils.runner</a></code></dt>
+<dd>
+<div class="desc"><p>Efficient Attention Framework – GLUE Fine‑Tuning &amp; Utility Functions</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.experiment_utils.tasks" href="tasks.html">neuralops.experiment_utils.tasks</a></code></dt>
+<dd>
+<div class="desc"><p>Background training task (Django integration) with WebSocket broadcasting
+and AI assistant.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.experiment_utils.train" href="train.html">neuralops.experiment_utils.train</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.experiment_utils.broadcast_terminal"><code class="name flex">
+<span>def <span class="ident">broadcast_terminal</span></span>(<span>msg: str) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def broadcast_terminal(msg: str) -&gt; None:
+    &#34;&#34;&#34;Send a log message to the terminal WebSocket group.&#34;&#34;&#34;
+    if not HAS_CHANNELS:
+        return
+    try:
+        channel_layer = get_channel_layer()
+        if channel_layer and async_to_sync:
+            async_to_sync(channel_layer.group_send)(
+                &#34;terminal&#34;, {&#34;type&#34;: &#34;terminal_message&#34;, &#34;data&#34;: msg}
+            )
+    except Exception as e:
+        print(f&#34;WS broadcast error: {e}&#34;)</code></pre>
+</details>
+<div class="desc"><p>Send a log message to the terminal WebSocket group.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.compare_runs_api"><code class="name flex">
+<span>def <span class="ident">compare_runs_api</span></span>(<span>run_ids: list[str], baseline_id: str | None = None) ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compare_runs_api(run_ids: list[str], baseline_id: str | None = None) -&gt; dict:
+    &#34;&#34;&#34;API-friendly wrapper.&#34;&#34;&#34;
+    comparator = ExperimentComparator(run_ids, baseline_id)
+    result = comparator.compare()
+    return {
+        &#34;run_ids&#34;: result.run_ids,
+        &#34;metrics_table&#34;: result.metrics_table,
+        &#34;config_diff&#34;: result.config_diff,
+        &#34;hyperparameter_table&#34;: result.hyperparameter_table,
+        &#34;metric_deltas&#34;: result.metric_deltas,
+        &#34;timeline_data&#34;: result.timeline_data,
+        &#34;parallel_coords&#34;: result.parallel_coords,
+        &#34;best_run_id&#34;: result.best_run_id,
+        &#34;summary&#34;: result.summary,
+    }</code></pre>
+</details>
+<div class="desc"><p>API-friendly wrapper.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.run_compression"><code class="name flex">
+<span>def <span class="ident">run_compression</span></span>(<span>config, output_dir) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_compression(config, output_dir) -&gt; Any:
+    &#34;&#34;&#34;Run compression.&#34;&#34;&#34;
+    if isinstance(config, dict):
+        cfg = data_ExperimentConfig()
+        for k, v in config.items():
+            setattr(cfg, k, v)
+    else:
+        cfg = config
+
+    compressor_name = cfg.compressor or &#34;svd&#34;
+    if compressor_name not in COMPRESSOR_REGISTRY:
+        raise ValueError(f&#34;Unknown compressor: {compressor_name}&#34;)
+
+    set_seed(cfg.seed)
+    device = get_device()
+
+    model = AutoModelForSequenceClassification.from_pretrained(cfg.model_name)
+    model.to(device)
+
+    compressor_cls = COMPRESSOR_REGISTRY[compressor_name]
+    compressor = compressor_cls(model, rank=cfg.compression_rank)
+    compressed_model = compressor.compress()
+
+    os.makedirs(output_dir, exist_ok=True)
+    compressed_model.save_pretrained(output_dir)
+    tokenizer = AutoTokenizer.from_pretrained(cfg.model_name)
+    tokenizer.save_pretrained(output_dir)
+
+    original_bytes = sum(p.numel() * p.element_size() for p in model.parameters())
+    compressed_bytes = sum(p.numel() * p.element_size() for p in compressed_model.parameters())
+    reduction_ratio = original_bytes / compressed_bytes if compressed_bytes &gt; 0 else 1
+
+    stats = {
+        &#34;compressor&#34;: compressor_name,
+        &#34;original_size_mb&#34;: round(original_bytes / (1024**2), 2),
+        &#34;compressed_size_mb&#34;: round(compressed_bytes / (1024**2), 2),
+        &#34;reduction_ratio&#34;: round(reduction_ratio, 2),
+        &#34;compression_rank&#34;: cfg.compression_rank,
+    }
+    logger.info(f&#34;Compression complete: {stats}&#34;)
+    return stats</code></pre>
+</details>
+<div class="desc"><p>Run compression.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.run_evaluation"><code class="name flex">
+<span>def <span class="ident">run_evaluation</span></span>(<span>config, model_path) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_evaluation(config, model_path) -&gt; Any:
+    &#34;&#34;&#34;Run evaluation.&#34;&#34;&#34;
+    if isinstance(config, dict):
+        cfg = data_ExperimentConfig()
+        for k, v in config.items():
+            setattr(cfg, k, v)
+    else:
+        cfg = config
+
+    set_seed(cfg.seed)
+    device = get_device()
+
+    # Reload data (simplified)
+    raw_datasets = load_glue_local(cfg.task, cfg.glue_base_path)
+    num_labels, is_regression = get_num_labels_and_is_regression(cfg.task)
+    sent1_key, sent2_key = GLUE_TASK_KEYS[cfg.task]
+    tokenizer = AutoTokenizer.from_pretrained(cfg.model_name, use_fast=True)
+
+    preprocess_fn = build_preprocess(
+        tokenizer, cfg.task, cfg.max_len, sent1_key, sent2_key, is_regression
+    )
+    dataset = raw_datasets.map(preprocess_fn, batched=True)
+    cols = [&#34;input_ids&#34;, &#34;attention_mask&#34;, &#34;labels&#34;]
+    if &#34;token_type_ids&#34; in dataset[&#34;validation&#34;].column_names:
+        cols.append(&#34;token_type_ids&#34;)
+    dataset.set_format(type=&#34;torch&#34;, columns=cols)
+
+    try:
+        model = AutoModelForSequenceClassification.from_pretrained(model_path)
+    except Exception:
+        logger.warning(f&#34;Could not load from {model_path}, using base model&#34;)
+        model = AutoModelForSequenceClassification.from_pretrained(
+            cfg.model_name, num_labels=num_labels
+        )
+    model.to(device)
+
+    training_args = TrainingArguments(
+        output_dir=&#34;./tmp_eval&#34;,
+        per_device_eval_batch_size=cfg.batch_size * 2,
+        remove_unused_columns=False,
+        report_to=&#34;none&#34;,
+    )
+    eval_trainer = Trainer(
+        model=model,
+        args=training_args,
+        eval_dataset=dataset.get(&#34;validation&#34;, dataset.get(&#34;validation_matched&#34;)),
+        data_collator=DataCollatorWithPadding(tokenizer),
+    )
+    eval_result = eval_trainer.evaluate()
+    return {k.replace(&#34;eval_&#34;, &#34;&#34;): v for k, v in eval_result.items()}</code></pre>
+</details>
+<div class="desc"><p>Run evaluation.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.run_training"><code class="name flex">
+<span>def <span class="ident">run_training</span></span>(<span>config,<br>stop_event=None,<br>progress_callback=None,<br>log_callback=None,<br>final_callback=None) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_training(
+    config,
+    stop_event=None,
+    progress_callback=None,
+    log_callback=None,
+    final_callback=None,
+) -&gt; Any:
+    &#34;&#34;&#34;Run training.&#34;&#34;&#34;
+    if isinstance(config, dict):
+        cfg = data_ExperimentConfig()
+        for k, v in config.items():
+            setattr(cfg, k, v)
+    else:
+        cfg = config
+
+    set_seed(cfg.seed)
+    device = get_device()
+    logger.info(f&#34;Using device: {device}&#34;)
+
+    # Data
+    raw_datasets = load_glue_local(cfg.task, cfg.glue_base_path)
+    num_labels, is_regression = get_num_labels_and_is_regression(cfg.task)
+    sent1_key, sent2_key = GLUE_TASK_KEYS[cfg.task]
+    tokenizer = AutoTokenizer.from_pretrained(cfg.model_name, use_fast=True)
+
+    preprocess_fn = build_preprocess(
+        tokenizer, cfg.task, cfg.max_len, sent1_key, sent2_key, is_regression
+    )
+    dataset = raw_datasets.map(
+        preprocess_fn, batched=True, remove_columns=raw_datasets[&#34;train&#34;].column_names
+    )
+    cols = [&#34;input_ids&#34;, &#34;attention_mask&#34;, &#34;labels&#34;]
+    if &#34;token_type_ids&#34; in dataset[&#34;train&#34;].column_names:
+        cols.append(&#34;token_type_ids&#34;)
+    dataset.set_format(type=&#34;torch&#34;, columns=cols)
+
+    # Model
+    model = AutoModelForSequenceClassification.from_pretrained(
+        cfg.model_name, num_labels=num_labels
+    )
+    fix_layernorm_naming(model)
+    model.to(device)
+
+    # Trainer
+    trainer_type = getattr(cfg, &#34;trainer_type&#34;, &#34;hf&#34;)
+    trainer_cls = get_trainer(trainer_type)
+
+    callbacks = [
+        DjangoCallback(progress_callback, log_callback, final_callback, stop_event),
+        TrainerLoggingCallback(None, logger),
+        MemoryCallback(),
+        TimeCallback(),
+    ]
+    if getattr(cfg, &#34;compressor&#34;, None):
+        callbacks.append(SVDAttentionCallback())
+
+    trainer = trainer_cls.create(
+        model=model,
+        dataset=dataset,
+        config=cfg,
+        tokenizer=tokenizer,
+        logger=logger,
+        callbacks=callbacks,
+    )
+
+    logger.info(&#34;Starting training...&#34;)
+    trainer.train()
+    eval_results = trainer.evaluate()
+    logger.info(&#34;Training completed.&#34;)
+
+    # Save
+    output_dir = Path(cfg.output_dir) / (cfg.exp_name or &#34;training&#34;)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    trainer.save_model(str(output_dir))
+    tokenizer.save_pretrained(str(output_dir))
+
+    try:
+        create_comprehensive_plots(
+            metrics=trainer.state.log_history,
+            output_dir=str(output_dir / &#34;plots&#34;),
+            prefix=cfg.exp_name or &#34;training&#34;,
+        )
+    except Exception as e:
+        logger.warning(f&#34;Plot generation failed: {e}&#34;)
+
+    if final_callback:
+        final_callback(eval_results, trainer.state.log_history)
+
+    return eval_results</code></pre>
+</details>
+<div class="desc"><p>Run training.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.run_training_async"><code class="name flex">
+<span>def <span class="ident">run_training_async</span></span>(<span>experiment, stop_event: threading.Event) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_training_async(experiment, stop_event: threading.Event) -&gt; None:
+    &#34;&#34;&#34;
+    Main entry point called by Django in a background thread.
+
+    Args:
+        experiment: Django model instance with fields:
+            id, config (JSON), status, logs, current_step, total_steps, etc.
+        stop_event: threading.Event to signal cancellation.
+    &#34;&#34;&#34;
+    config = experiment.config
+    run_id = str(experiment.id)
+    base_dir = _get_media_root() / &#34;experiments&#34;
+
+    def log(msg: str) -&gt; None:
+        &#34;&#34;&#34;Log.&#34;&#34;&#34;
+        experiment.logs = (experiment.logs or &#34;&#34;) + msg + &#34;\n&#34;
+        experiment.save(update_fields=[&#34;logs&#34;])
+        WSMessageQueue.send(run_id, {&#34;type&#34;: &#34;log&#34;, &#34;data&#34;: msg})
+        broadcast_terminal(msg)
+
+    def update_status(status: str) -&gt; None:
+        &#34;&#34;&#34;Update status.&#34;&#34;&#34;
+        experiment.status = status
+        experiment.save(update_fields=[&#34;status&#34;])
+        WSMessageQueue.send(run_id, {&#34;type&#34;: &#34;status&#34;, &#34;status&#34;: status})
+
+    def progress_callback(current: int, total: int, pct: float) -&gt; None:
+        &#34;&#34;&#34;Progress callback.&#34;&#34;&#34;
+        experiment.current_step = current
+        experiment.total_steps = total
+        experiment.estimated_remaining_seconds = (total - current) * 0.1  # crude
+        experiment.cpu_usage = psutil.cpu_percent()
+        experiment.ram_usage_mb = psutil.virtual_memory().used / 1024**2
+        experiment.save(
+            update_fields=[
+                &#34;current_step&#34;,
+                &#34;total_steps&#34;,
+                &#34;estimated_remaining_seconds&#34;,
+                &#34;cpu_usage&#34;,
+                &#34;ram_usage_mb&#34;,
+            ]
+        )
+        WSMessageQueue.send(
+            run_id,
+            {
+                &#34;type&#34;: &#34;progress&#34;,
+                &#34;progress&#34;: pct,
+                &#34;current_step&#34;: current,
+                &#34;total_steps&#34;: total,
+            },
+        )
+
+    def log_callback(msg: str):
+        # Called by the orchestrator for log messages
+        &#34;&#34;&#34;Log callback.&#34;&#34;&#34;
+        log(msg)
+
+    def final_callback(metrics: dict) -&gt; None:
+        &#34;&#34;&#34;Final callback.&#34;&#34;&#34;
+        experiment.config[&#34;final_metrics&#34;] = metrics
+        experiment.save(update_fields=[&#34;config&#34;])
+        WSMessageQueue.send(run_id, {&#34;type&#34;: &#34;final&#34;, &#34;data&#34;: metrics})
+        log(f&#34;Training finished. Final metrics: {json.dumps(metrics)}&#34;)
+        save_artifacts(experiment, metrics)
+
+    try:
+        update_status(&#34;running&#34;)
+        orchestrator = MegaOrchestrator(
+            config=config,
+            run_id=run_id,
+            base_dir=base_dir,
+            progress_callback=progress_callback,
+            log_callback=log_callback,
+            final_callback=final_callback,
+            stop_event=stop_event,
+        )
+        orchestrator.run()
+
+        if stop_event.is_set():
+            update_status(&#34;stopped&#34;)
+            log(&#34;Training cancelled by user.&#34;)
+        else:
+            update_status(&#34;completed&#34;)
+
+    except Exception as e:
+        error_msg = traceback.format_exc()
+        log(f&#34;ERROR: {str(e)}\n{error_msg}&#34;)
+        update_status(&#34;failed&#34;)</code></pre>
+</details>
+<div class="desc"><p>Main entry point called by Django in a background thread.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>experiment</code></strong></dt>
+<dd>Django model instance with fields:
+id, config (JSON), status, logs, current_step, total_steps, etc.</dd>
+<dt><strong><code>stop_event</code></strong></dt>
+<dd>threading.Event to signal cancellation.</dd>
+</dl></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.experiment_utils.AIAssistant"><code class="flex name class">
+<span>class <span class="ident">AIAssistant</span></span>
+<span>(</span><span>llm_function)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class AIAssistant:
+    &#34;&#34;&#34;
+    Monitors training metrics and suggests actions (e.g., early stop).
+    Uses a callable LLM function for decision making.
+    &#34;&#34;&#34;
+
+    def __init__(self, llm_function) -&gt; None:
+        self.llm = llm_function
+
+    def monitor(self, exp_id: str, metrics_history: list) -&gt; None:
+        &#34;&#34;&#34;Monitor.&#34;&#34;&#34;
+        last_losses = [m.get(&#34;loss&#34;) for m in metrics_history[-5:] if &#34;loss&#34; in m]
+        if len(last_losses) &gt;= 5 and all(
+            abs(last_losses[i] - last_losses[i - 1]) &lt; 0.01 for i in range(1, 5)
+        ):
+            suggestion = &#34;early_stop&#34;
+            reason = &#34;Loss plateau detected&#34;
+            WSMessageQueue.send(
+                exp_id,
+                {&#34;type&#34;: &#34;ai_suggestion&#34;, &#34;suggestion&#34;: suggestion, &#34;reason&#34;: reason},
+            )
+            # Optionally trigger early stop
+            # stop_event.set()</code></pre>
+</details>
+<div class="desc"><p>Monitors training metrics and suggests actions (e.g., early stop).
+Uses a callable LLM function for decision making.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.experiment_utils.AIAssistant.monitor"><code class="name flex">
+<span>def <span class="ident">monitor</span></span>(<span>self, exp_id: str, metrics_history: list) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def monitor(self, exp_id: str, metrics_history: list) -&gt; None:
+    &#34;&#34;&#34;Monitor.&#34;&#34;&#34;
+    last_losses = [m.get(&#34;loss&#34;) for m in metrics_history[-5:] if &#34;loss&#34; in m]
+    if len(last_losses) &gt;= 5 and all(
+        abs(last_losses[i] - last_losses[i - 1]) &lt; 0.01 for i in range(1, 5)
+    ):
+        suggestion = &#34;early_stop&#34;
+        reason = &#34;Loss plateau detected&#34;
+        WSMessageQueue.send(
+            exp_id,
+            {&#34;type&#34;: &#34;ai_suggestion&#34;, &#34;suggestion&#34;: suggestion, &#34;reason&#34;: reason},
+        )
+        # Optionally trigger early stop
+        # stop_event.set()</code></pre>
+</details>
+<div class="desc"><p>Monitor.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.experiment_utils.ExperimentComparator"><code class="flex name class">
+<span>class <span class="ident">ExperimentComparator</span></span>
+<span>(</span><span>run_ids: list[str], baseline_id: str | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ExperimentComparator:
+    &#34;&#34;&#34;
+    Compare multiple TrainingRuns with rich diff output.
+    Inspired by ZenML&#39;s comparison tool, MLflow compare, and RagaAI diff.
+    &#34;&#34;&#34;
+
+    def __init__(self, run_ids: list[str], baseline_id: str | None = None) -&gt; None:
+        self.run_ids = run_ids
+        self.baseline_id = baseline_id or (run_ids[0] if run_ids else None)
+        self.runs: list[TrainingRun] = []
+
+    def load_runs(self) -&gt; None:
+        &#34;&#34;&#34;Load runs from disk or config.&#34;&#34;&#34;
+        self.runs = list(TrainingRun.objects.filter(id__in=self.run_ids).order_by(&#34;created_at&#34;))
+
+    def compare(self) -&gt; ComparisonResult:
+        &#34;&#34;&#34;Compare.&#34;&#34;&#34;
+        self.load_runs()
+        if len(self.runs) &lt; 2:
+            raise ValueError(&#34;Need at least 2 runs to compare&#34;)
+
+        baseline = next((r for r in self.runs if str(r.id) == self.baseline_id), self.runs[0])
+        result = ComparisonResult(
+            run_ids=[str(r.id) for r in self.runs],
+            metrics_table=self._build_metrics_table(),
+            config_diff=self._build_config_diff(),
+            hyperparameter_table=self._build_hyperparameter_table(),
+            metric_deltas=self._build_metric_deltas(baseline),
+            timeline_data=self._build_timeline_overlay(),
+            parallel_coords=self._build_parallel_coords(),
+            best_run_id=self._find_best_run(),
+            summary=&#34;&#34;,
+        )
+        result.summary = self._generate_summary(result)
+        return result
+
+    def _build_metrics_table(self) -&gt; list[dict[str, Any]]:
+        &#34;&#34;&#34;build metrics table.&#34;&#34;&#34;
+        rows = []
+        for run in self.runs:
+            metrics = run.final_metrics or {}
+            config = run.config or {}
+            rows.append(
+                {
+                    &#34;run_id&#34;: str(run.id),
+                    &#34;name&#34;: run.name or str(run.id)[:8],
+                    &#34;status&#34;: run.status,
+                    &#34;created_at&#34;: run.created_at.isoformat(),
+                    &#34;epochs&#34;: config.get(&#34;epochs&#34;, &#34;N/A&#34;),
+                    &#34;batch_size&#34;: config.get(&#34;batch_size&#34;, &#34;N/A&#34;),
+                    &#34;learning_rate&#34;: config.get(&#34;learning_rate&#34;, &#34;N/A&#34;),
+                    &#34;model_name&#34;: config.get(&#34;model_name&#34;, &#34;N/A&#34;),
+                    &#34;eval_accuracy&#34;: metrics.get(&#34;eval_accuracy&#34;),
+                    &#34;eval_loss&#34;: metrics.get(&#34;eval_loss&#34;),
+                    &#34;eval_f1&#34;: metrics.get(&#34;eval_f1&#34;),
+                    &#34;duration_seconds&#34;: run.actual_duration,
+                }
+            )
+        return rows
+
+    def _build_config_diff(self) -&gt; dict[str, Any]:
+        &#34;&#34;&#34;build config diff.&#34;&#34;&#34;
+        configs = {str(r.id): r.config for r in self.runs}
+        first_id = str(self.runs[0].id)
+        diffs = {}
+        for rid, cfg in configs.items():
+            if rid != first_id:
+                diff = DeepDiff(configs[first_id], cfg, ignore_order=True, verbose_level=2)
+                diffs[rid] = diff
+        return {
+            &#34;baseline_id&#34;: first_id,
+            &#34;diffs&#34;: diffs,
+            &#34;all_config_keys&#34;: list(set().union(*[set(c.keys()) for c in configs.values()])),
+        }
+
+    def _build_hyperparameter_table(self) -&gt; list[dict[str, Any]]:
+        &#34;&#34;&#34;build hyperparameter table.&#34;&#34;&#34;
+        hp_keys = [
+            &#34;learning_rate&#34;,
+            &#34;batch_size&#34;,
+            &#34;epochs&#34;,
+            &#34;max_seq_length&#34;,
+            &#34;compression_rank&#34;,
+            &#34;lora_r&#34;,
+            &#34;lora_alpha&#34;,
+            &#34;weight_decay&#34;,
+            &#34;warmup_steps&#34;,
+            &#34;grad_accum&#34;,
+            &#34;max_grad_norm&#34;,
+        ]
+        rows = []
+        for run in self.runs:
+            config = run.config or {}
+            row = {&#34;run_id&#34;: str(run.id), &#34;name&#34;: run.name or str(run.id)[:8]}
+            for k in hp_keys:
+                row[k] = config.get(k)
+            rows.append(row)
+        return rows
+
+    def _build_metric_deltas(self, baseline: TrainingRun) -&gt; list[dict[str, Any]]:
+        &#34;&#34;&#34;build metric deltas.&#34;&#34;&#34;
+        base_metrics = baseline.final_metrics or {}
+        deltas = []
+        metric_keys = [
+            &#34;eval_accuracy&#34;,
+            &#34;eval_loss&#34;,
+            &#34;eval_f1&#34;,
+            &#34;eval_precision&#34;,
+            &#34;eval_recall&#34;,
+        ]
+        for run in self.runs:
+            if str(run.id) == str(baseline.id):
+                continue
+            run_metrics = run.final_metrics or {}
+            delta_row = {&#34;run_id&#34;: str(run.id), &#34;name&#34;: run.name or str(run.id)[:8]}
+            for k in metric_keys:
+                base_v = base_metrics.get(k)
+                run_v = run_metrics.get(k)
+                if base_v is not None and run_v is not None:
+                    delta_row[k] = round(run_v - base_v, 6)
+                    delta_row[f&#34;{k}_pct&#34;] = (
+                        round(((run_v - base_v) / abs(base_v)) * 100, 2) if base_v != 0 else None
+                    )
+                else:
+                    delta_row[k] = None
+            deltas.append(delta_row)
+        return deltas
+
+    def _build_timeline_overlay(self) -&gt; dict[str, list[float]]:
+        &#34;&#34;&#34;Extract training history for overlaid loss curves.&#34;&#34;&#34;
+        timeline = {&#34;steps&#34;: [], &#34;series&#34;: {}}
+        for run in self.runs:
+            history = run.training_history or {}
+            steps = history.get(&#34;steps&#34;, [])
+            losses = history.get(&#34;losses&#34;, [])
+            if steps and losses:
+                if len(steps) &gt; len(timeline[&#34;steps&#34;]):
+                    timeline[&#34;steps&#34;] = steps
+                timeline[&#34;series&#34;][str(run.id)] = losses
+        return timeline
+
+    def _build_parallel_coords(self) -&gt; dict[str, Any]:
+        &#34;&#34;&#34;Build data for a parallel coordinates plot (hyperparams + metrics).&#34;&#34;&#34;
+        dimensions = [
+            &#34;learning_rate&#34;,
+            &#34;batch_size&#34;,
+            &#34;epochs&#34;,
+            &#34;max_seq_length&#34;,
+            &#34;compression_rank&#34;,
+            &#34;eval_accuracy&#34;,
+            &#34;eval_loss&#34;,
+            &#34;eval_f1&#34;,
+        ]
+        data = []
+        for run in self.runs:
+            config = run.config or {}
+            metrics = run.final_metrics or {}
+            point = {&#34;run_id&#34;: str(run.id), &#34;name&#34;: run.name or str(run.id)[:8]}
+            for d in dimensions:
+                point[d] = config.get(d) or metrics.get(d)
+            data.append(point)
+        return {&#34;dimensions&#34;: dimensions, &#34;data&#34;: data}
+
+    def _find_best_run(self) -&gt; str | None:
+        &#34;&#34;&#34;find best run.&#34;&#34;&#34;
+        best = None
+        best_acc = -1
+        for run in self.runs:
+            acc = (run.final_metrics or {}).get(&#34;eval_accuracy&#34;, -1)
+            if acc is not None and acc &gt; best_acc:
+                best_acc = acc
+                best = str(run.id)
+        return best
+
+    def _generate_summary(self, result: ComparisonResult) -&gt; str:
+        &#34;&#34;&#34;generate summary.&#34;&#34;&#34;
+        lines = [f&#34;Comparison of {len(self.runs)} runs.&#34;]
+        if result.best_run_id:
+            best_run = next((r for r in self.runs if str(r.id) == result.best_run_id), None)
+            if best_run:
+                lines.append(f&#34;Best run: {best_run.name or result.best_run_id[:8]}&#34;)
+        # Count improvements
+        improved = sum(
+            1
+            for d in result.metric_deltas
+            if d.get(&#34;eval_accuracy&#34;) is not None and d[&#34;eval_accuracy&#34;] &gt; 0
+        )
+        lines.append(f&#34;{improved} run(s) improved over baseline in accuracy.&#34;)
+        return &#34; &#34;.join(lines)</code></pre>
+</details>
+<div class="desc"><p>Compare multiple TrainingRuns with rich diff output.
+Inspired by ZenML's comparison tool, MLflow compare, and RagaAI diff.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.experiment_utils.ExperimentComparator.compare"><code class="name flex">
+<span>def <span class="ident">compare</span></span>(<span>self) ‑> <a title="neuralops.experiment_utils.comparison.ComparisonResult" href="comparison.html#neuralops.experiment_utils.comparison.ComparisonResult">ComparisonResult</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compare(self) -&gt; ComparisonResult:
+    &#34;&#34;&#34;Compare.&#34;&#34;&#34;
+    self.load_runs()
+    if len(self.runs) &lt; 2:
+        raise ValueError(&#34;Need at least 2 runs to compare&#34;)
+
+    baseline = next((r for r in self.runs if str(r.id) == self.baseline_id), self.runs[0])
+    result = ComparisonResult(
+        run_ids=[str(r.id) for r in self.runs],
+        metrics_table=self._build_metrics_table(),
+        config_diff=self._build_config_diff(),
+        hyperparameter_table=self._build_hyperparameter_table(),
+        metric_deltas=self._build_metric_deltas(baseline),
+        timeline_data=self._build_timeline_overlay(),
+        parallel_coords=self._build_parallel_coords(),
+        best_run_id=self._find_best_run(),
+        summary=&#34;&#34;,
+    )
+    result.summary = self._generate_summary(result)
+    return result</code></pre>
+</details>
+<div class="desc"><p>Compare.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.ExperimentComparator.load_runs"><code class="name flex">
+<span>def <span class="ident">load_runs</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_runs(self) -&gt; None:
+    &#34;&#34;&#34;Load runs from disk or config.&#34;&#34;&#34;
+    self.runs = list(TrainingRun.objects.filter(id__in=self.run_ids).order_by(&#34;created_at&#34;))</code></pre>
+</details>
+<div class="desc"><p>Load runs from disk or config.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.experiment_utils.MegaOrchestrator"><code class="flex name class">
+<span>class <span class="ident">MegaOrchestrator</span></span>
+<span>(</span><span>config: dict[str, typing.Any],<br>run_id: str,<br>base_dir: pathlib.Path,<br>progress_callback: <class 'collections.abc.Callable'> | None = None,<br>log_callback: <class 'collections.abc.Callable'> | None = None,<br>final_callback: <class 'collections.abc.Callable'> | None = None,<br>stop_event: threading.Event | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class MegaOrchestrator:
+    &#34;&#34;&#34;
+    Central orchestrator that connects all framework modules.
+
+    Usage (from Django runner):
+        orchestrator = MegaOrchestrator(
+            config=request.data,
+            run_id=str(uuid.uuid4()),
+            base_dir=Path(settings.MEDIA_ROOT),
+            progress_callback=progress_cb,
+            log_callback=log_cb,
+            final_callback=final_cb,
+            stop_event=stop_event,
+        )
+        orchestrator.run()
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        config: dict[str, Any],
+        run_id: str,
+        base_dir: Path,
+        progress_callback: Callable | None = None,
+        log_callback: Callable | None = None,
+        final_callback: Callable | None = None,
+        stop_event: threading.Event | None = None,
+    ) -&gt; None:
+        self.raw_config = config
+        self.run_id = run_id
+        self.base_dir = Path(base_dir)
+        self.run_dir = self.base_dir / run_id
+        self.run_dir.mkdir(parents=True, exist_ok=True)
+
+        self.progress_cb = progress_callback
+        self.log_cb = log_callback
+        self.final_cb = final_callback
+        self.stop_event = stop_event or threading.Event()
+
+        # Convert dict to unified Config
+        self.cfg = load_config(None)  # start with defaults
+        if config:
+            self.cfg = Config(
+                **{k: v for k, v in config.items() if k in Config.__dataclass_fields__}
+            )
+
+        self.model = None
+        self.tokenizer = None
+        self.trainer_state = None
+        self.final_metrics: dict[str, float] = {}
+
+        logger.info(&#34;MegaOrchestrator created: run_id=%s&#34;, run_id)
+
+    def run(self) -&gt; dict[str, Any]:
+        &#34;&#34;&#34;Execute the full experiment pipeline.&#34;&#34;&#34;
+        try:
+            self._log(&#34;Starting experiment…&#34;)
+
+            # 1. Load model &amp; tokenizer
+            self._log(&#34;Loading model…&#34;)
+            self.model, self.tokenizer = load_model(
+                self.cfg.model.name,
+                num_labels=self.cfg.model.num_labels,
+                attention_type=self.cfg.compression.attn_type,
+                attention_rank=self.cfg.compression.rank,
+            )
+
+            # 2. Apply training method (if any)
+            if self.cfg.method.method != &#34;baseline&#34;:
+                from neuralops.trainer.methods import get_method
+
+                method_fn = get_method(self.cfg.method.method)
+                if method_fn:
+                    method_fn(self.model, self.cfg.compression)
+
+            # 3. Load data
+            self._log(&#34;Loading data…&#34;)
+            exp_cfg = self._build_experiment_config()
+            dataset = load_dataset(exp_cfg)
+            tokenized = self._preprocess_dataset(dataset)
+
+            # 4. Build trainer
+            self._log(&#34;Building trainer…&#34;)
+            results = ResultsManager(self.run_id, self.base_dir, config=self.raw_config)
+            trainer = HuggingFaceTrainer(
+                model=self.model,
+                train_dataset=tokenized[&#34;train&#34;],
+                eval_dataset=tokenized.get(&#34;validation&#34;),
+                config=self.cfg.training.__dict__,
+                results_manager=results,
+                compute_metrics=get_task_metrics(self.cfg.training.task),
+            )
+            # Add basic callbacks
+            from neuralops.trainer.callbacks import MemoryCallback, TimeCallback
+
+            trainer.add_callback(MemoryCallback())
+            trainer.add_callback(TimeCallback())
+
+            # 5. Train
+            self._log(&#34;Training started…&#34;)
+            trainer.train()
+            eval_metrics = trainer.evaluate()
+            self.final_metrics = eval_metrics
+            self.trainer_state = trainer.state.log_history if hasattr(trainer, &#34;state&#34;) else []
+
+            # 6. Save everything
+            self._log(&#34;Saving results…&#34;)
+            saver = ResultsSaver(
+                run_id=self.run_id,
+                base_dir=self.base_dir,
+                config=SaveConfig(save_model=True, save_plots=True),
+            )
+            saver.save_all(
+                self.model,
+                self.cfg.__dict__,
+                self.trainer_state,
+                eval_metrics,
+                self.tokenizer,
+            )
+            saver.push_all()
+
+            self._log(&#34;Experiment completed.&#34;)
+            return eval_metrics
+
+        except Exception as e:
+            logger.exception(&#34;Orchestrator failed: %s&#34;, e)
+            self._log(f&#34;Experiment failed: {traceback.format_exc()}&#34;)
+            raise
+
+    def _build_experiment_config(self) -&gt; Any:
+        &#34;&#34;&#34;build experiment config.&#34;&#34;&#34;
+        from neuralops.data.dataset_loader import ExperimentConfig
+
+        return ExperimentConfig(dataset_name=self.cfg.training.task)
+
+    def _preprocess_dataset(self, dataset) -&gt; Any:
+        &#34;&#34;&#34;preprocess dataset.&#34;&#34;&#34;
+        task = self.cfg.training.task
+        s1, s2 = None, None
+        from neuralops.data.glue_loader import GLUE_TASK_KEYS
+
+        if task in GLUE_TASK_KEYS:
+            s1, s2 = GLUE_TASK_KEYS[task]
+        data_cfg = DataConfig(
+            task_type=(
+                TaskType.SINGLE_CLASSIFICATION if s2 is None else TaskType.PAIR_CLASSIFICATION
+            ),
+            max_length=self.cfg.data.max_seq_length,
+            batch_size=self.cfg.training.batch_size,
+            text_column_1=s1,
+            text_column_2=s2,
+            label_column=&#34;label&#34;,
+        )
+
+        def preprocess(examples) -&gt; Any:
+            &#34;&#34;&#34;Preprocess.&#34;&#34;&#34;
+            return preprocess_function(examples, self.tokenizer, data_cfg)
+
+        tokenized = dataset.map(
+            preprocess, batched=True, remove_columns=dataset[&#34;train&#34;].column_names
+        )
+        tokenized.set_format(type=&#34;torch&#34;, columns=[&#34;input_ids&#34;, &#34;attention_mask&#34;, &#34;labels&#34;])
+        return tokenized
+
+    def _log(self, msg: str) -&gt; None:
+        &#34;&#34;&#34;log.&#34;&#34;&#34;
+        logger.info(&#34;[%s] %s&#34;, self.run_id[:8], msg)
+        if self.log_cb:
+            self.log_cb(msg)</code></pre>
+</details>
+<div class="desc"><p>Central orchestrator that connects all framework modules.</p>
+<p>Usage (from Django runner):
+orchestrator = MegaOrchestrator(
+config=request.data,
+run_id=str(uuid.uuid4()),
+base_dir=Path(settings.MEDIA_ROOT),
+progress_callback=progress_cb,
+log_callback=log_cb,
+final_callback=final_cb,
+stop_event=stop_event,
+)
+orchestrator.run()</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.experiment_utils.MegaOrchestrator.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self) ‑> dict[str, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run(self) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Execute the full experiment pipeline.&#34;&#34;&#34;
+    try:
+        self._log(&#34;Starting experiment…&#34;)
+
+        # 1. Load model &amp; tokenizer
+        self._log(&#34;Loading model…&#34;)
+        self.model, self.tokenizer = load_model(
+            self.cfg.model.name,
+            num_labels=self.cfg.model.num_labels,
+            attention_type=self.cfg.compression.attn_type,
+            attention_rank=self.cfg.compression.rank,
+        )
+
+        # 2. Apply training method (if any)
+        if self.cfg.method.method != &#34;baseline&#34;:
+            from neuralops.trainer.methods import get_method
+
+            method_fn = get_method(self.cfg.method.method)
+            if method_fn:
+                method_fn(self.model, self.cfg.compression)
+
+        # 3. Load data
+        self._log(&#34;Loading data…&#34;)
+        exp_cfg = self._build_experiment_config()
+        dataset = load_dataset(exp_cfg)
+        tokenized = self._preprocess_dataset(dataset)
+
+        # 4. Build trainer
+        self._log(&#34;Building trainer…&#34;)
+        results = ResultsManager(self.run_id, self.base_dir, config=self.raw_config)
+        trainer = HuggingFaceTrainer(
+            model=self.model,
+            train_dataset=tokenized[&#34;train&#34;],
+            eval_dataset=tokenized.get(&#34;validation&#34;),
+            config=self.cfg.training.__dict__,
+            results_manager=results,
+            compute_metrics=get_task_metrics(self.cfg.training.task),
+        )
+        # Add basic callbacks
+        from neuralops.trainer.callbacks import MemoryCallback, TimeCallback
+
+        trainer.add_callback(MemoryCallback())
+        trainer.add_callback(TimeCallback())
+
+        # 5. Train
+        self._log(&#34;Training started…&#34;)
+        trainer.train()
+        eval_metrics = trainer.evaluate()
+        self.final_metrics = eval_metrics
+        self.trainer_state = trainer.state.log_history if hasattr(trainer, &#34;state&#34;) else []
+
+        # 6. Save everything
+        self._log(&#34;Saving results…&#34;)
+        saver = ResultsSaver(
+            run_id=self.run_id,
+            base_dir=self.base_dir,
+            config=SaveConfig(save_model=True, save_plots=True),
+        )
+        saver.save_all(
+            self.model,
+            self.cfg.__dict__,
+            self.trainer_state,
+            eval_metrics,
+            self.tokenizer,
+        )
+        saver.push_all()
+
+        self._log(&#34;Experiment completed.&#34;)
+        return eval_metrics
+
+    except Exception as e:
+        logger.exception(&#34;Orchestrator failed: %s&#34;, e)
+        self._log(f&#34;Experiment failed: {traceback.format_exc()}&#34;)
+        raise</code></pre>
+</details>
+<div class="desc"><p>Execute the full experiment pipeline.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops" href="../index.html">neuralops</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="neuralops.experiment_utils.comparison" href="comparison.html">neuralops.experiment_utils.comparison</a></code></li>
+<li><code><a title="neuralops.experiment_utils.config" href="config.html">neuralops.experiment_utils.config</a></code></li>
+<li><code><a title="neuralops.experiment_utils.data" href="data.html">neuralops.experiment_utils.data</a></code></li>
+<li><code><a title="neuralops.experiment_utils.main" href="main.html">neuralops.experiment_utils.main</a></code></li>
+<li><code><a title="neuralops.experiment_utils.model" href="model.html">neuralops.experiment_utils.model</a></code></li>
+<li><code><a title="neuralops.experiment_utils.orchestrator" href="orchestrator.html">neuralops.experiment_utils.orchestrator</a></code></li>
+<li><code><a title="neuralops.experiment_utils.runner" href="runner.html">neuralops.experiment_utils.runner</a></code></li>
+<li><code><a title="neuralops.experiment_utils.tasks" href="tasks.html">neuralops.experiment_utils.tasks</a></code></li>
+<li><code><a title="neuralops.experiment_utils.train" href="train.html">neuralops.experiment_utils.train</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="two-column">
+<li><code><a title="neuralops.experiment_utils.broadcast_terminal" href="#neuralops.experiment_utils.broadcast_terminal">broadcast_terminal</a></code></li>
+<li><code><a title="neuralops.experiment_utils.compare_runs_api" href="#neuralops.experiment_utils.compare_runs_api">compare_runs_api</a></code></li>
+<li><code><a title="neuralops.experiment_utils.run_compression" href="#neuralops.experiment_utils.run_compression">run_compression</a></code></li>
+<li><code><a title="neuralops.experiment_utils.run_evaluation" href="#neuralops.experiment_utils.run_evaluation">run_evaluation</a></code></li>
+<li><code><a title="neuralops.experiment_utils.run_training" href="#neuralops.experiment_utils.run_training">run_training</a></code></li>
+<li><code><a title="neuralops.experiment_utils.run_training_async" href="#neuralops.experiment_utils.run_training_async">run_training_async</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.experiment_utils.AIAssistant" href="#neuralops.experiment_utils.AIAssistant">AIAssistant</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.experiment_utils.AIAssistant.monitor" href="#neuralops.experiment_utils.AIAssistant.monitor">monitor</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.experiment_utils.ExperimentComparator" href="#neuralops.experiment_utils.ExperimentComparator">ExperimentComparator</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.experiment_utils.ExperimentComparator.compare" href="#neuralops.experiment_utils.ExperimentComparator.compare">compare</a></code></li>
+<li><code><a title="neuralops.experiment_utils.ExperimentComparator.load_runs" href="#neuralops.experiment_utils.ExperimentComparator.load_runs">load_runs</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.experiment_utils.MegaOrchestrator" href="#neuralops.experiment_utils.MegaOrchestrator">MegaOrchestrator</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.experiment_utils.MegaOrchestrator.run" href="#neuralops.experiment_utils.MegaOrchestrator.run">run</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

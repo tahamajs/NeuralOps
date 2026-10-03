@@ -1,0 +1,1595 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.attentions.bam_umoe API documentation</title>
+<meta name="description" content="BAM-UMoE: Unified Mixture of Experts Attention Block (Activation-Aware v2) …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.attentions.bam_umoe</code></h1>
+</header>
+<section id="section-intro">
+<p>BAM-UMoE: Unified Mixture of Experts Attention Block (Activation-Aware v2).</p>
+<p>Combines
+-----=
+1. Optional SVD factorization of Q/K/V/O for actual parameter reduction.
+2. Optional Mixture-of-Experts (MoE) branch for residual refinement.
+3. Cross-architecture weight transfer (DistilBERT, RoBERTa/BERT, GPT-2, Qwen/LLaMA).
+4. LoRA adapters for recovery fine-tuning.</p>
+<p>Fixes (v2):
+BAM-FIX-01
+<code>UnifiedMoE.is_custom_attention = False</code>.
+BAM-FIX-02
+MoE is OPTIONAL (<code>moe_enabled=False</code> by default). When enabled,
+it uses a compact output_dim (<code>moe_output_dim=head_dim</code>) so it
+does NOT cause expansion.
+BAM-FIX-03
+<strong>Real parameter reduction</strong>: SVD factorization applied to
+Q/K/V/O via <code>svd_rank</code> parameter.
+BAM-FIX-04
+<code>aux_loss</code> stored as attribute (None initially), never a CPU
+tensor on GPU. <code>get_aux_loss()</code> returns the correct device.
+BAM-FIX-05
+Idempotency guard in injector.
+BAM-FIX-06
+<code><a title="neuralops.attentions.bam_umoe.apply_rotary_pos_emb" href="#neuralops.attentions.bam_umoe.apply_rotary_pos_emb">apply_rotary_pos_emb()</a></code> slices cos/sin for seq length.
+BAM-FIX-07
+Config None-safe <code>__init__</code>.
+BAM-FIX-08
+<code>copy_weights</code> device/dtype-safe.
+BAM-FIX-09
+Storage accounting in stats.
+BAM-FIX-10
+<code>head_mask</code> shape handling unified.
+BAM-FIX-11
+<code>moe_gate_init</code> configurable; default -3.0 (sigmoid ≈ 0.047).
+BAM-FIX-12
+MoE expert hidden dim is <code>dim // experts // 4</code> (compact).
+BAM-FIX-13
+Route only to self-attention (documented); MoE disabled for
+cross-attention.
+BAM-FIX-14
+SDPA path validates mask before use.
+BAM-FIX-15
+No silent <code>except: pass</code>; errors logged.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.attentions.bam_umoe.apply_rotary_pos_emb"><code class="name flex">
+<span>def <span class="ident">apply_rotary_pos_emb</span></span>(<span>q, k, cos, sin, position_ids=None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
+    if cos is None or sin is None:
+        return q, k
+
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    # BAM-FIX-06: slice cos/sin if seq length mismatched
+    if cos.shape[-2] != q.shape[-2]:
+        if cos.shape[-2] &gt;= q.shape[-2]:
+            cos = cos[..., : q.shape[-2], :]
+            sin = sin[..., : q.shape[-2], :]
+        else:
+            raise ValueError(f&#34;RoPE seq mismatch: cos {cos.shape[-2]} &lt; q {q.shape[-2]}&#34;)
+
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+
+    if rotary_dim &lt; head_dim:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+        q_rot_e = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_e = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_e, q_pass], dim=-1)
+        k = torch.cat([k_rot_e, k_pass], dim=-1)
+    else:
+        q = (q * cos.to(q.dtype)) + (_rotate_half(q) * sin.to(q.dtype))
+        k = (k * cos.to(k.dtype)) + (_rotate_half(k) * sin.to(k.dtype))
+    return q, k</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.bam_umoe.inject_bam_umoe"><code class="name flex">
+<span>def <span class="ident">inject_bam_umoe</span></span>(<span>layer: Any = None,<br>model: Any = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: torch.nn.modules.module.Module | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;bam_umoe_fn&#34;)
+@ATTENTION_REGISTRY.register(&#34;bam_umoe_inject&#34;)
+@ATTENTION_REGISTRY.register(&#34;inject_bam_umoe&#34;)
+def inject_bam_umoe(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    _depth: int = 0,
+    **kwargs: Any,
+):
+    if _depth &gt; 8:
+        logger.warning(&#34;inject_bam_umoe: max recursion depth exceeded.&#34;)
+        return None
+
+    target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get(&#34;model&#34;, kwargs.get(&#34;layer&#34;))
+    if target is None:
+        return None
+
+    cfg = model_config if model_config is not None else getattr(target, &#34;config&#34;, None)
+
+    # ---- Whole-model traversal ----
+    layer_list = None
+    for path in (
+        (&#34;distilbert&#34;, &#34;transformer&#34;, &#34;layer&#34;),
+        (&#34;roberta&#34;, &#34;encoder&#34;, &#34;layer&#34;),
+        (&#34;bert&#34;, &#34;encoder&#34;, &#34;layer&#34;),
+        (&#34;transformer&#34;, &#34;h&#34;),
+        (&#34;model&#34;, &#34;layers&#34;),
+        (&#34;encoder&#34;, &#34;layer&#34;),
+        (&#34;layers&#34;,),
+        (&#34;h&#34;,),
+    ):
+        obj = target
+        ok = True
+        for p in path:
+            if hasattr(obj, p):
+                obj = getattr(obj, p)
+            else:
+                ok = False
+                break
+        if ok and isinstance(obj, (nn.ModuleList, list)):
+            layer_list = obj
+            break
+
+    if layer_list is not None:
+        n_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_bam_umoe(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
+            )
+            if res is not None:
+                n_injected += 1
+        return target if n_injected &gt; 0 else None
+
+    # ---- Single-layer injection ----
+    layer = target
+
+    src_attn = old_attn
+    if src_attn is None:
+        for attr in (&#34;attention&#34;, &#34;self&#34;, &#34;attn&#34;, &#34;self_attn&#34;):
+            if hasattr(layer, attr):
+                cand = getattr(layer, attr)
+                if isinstance(cand, nn.Module) and cand is not layer:
+                    src_attn = getattr(cand, &#34;self&#34;, cand)
+                    break
+
+    # BAM-FIX-05: idempotency guard
+    if src_attn is not None and (
+        isinstance(src_attn, BAMUMoEBlock) or &#34;BAMUMoE&#34; in src_attn.__class__.__name__
+    ):
+        return None
+
+    if cfg is None and src_attn is not None:
+        cfg = getattr(src_attn, &#34;config&#34;, None)
+
+    # Hidden size / heads detection
+    hidden_size = kwargs.get(&#34;hidden_size&#34;)
+    if hidden_size is None and src_attn is not None:
+        hidden_size = getattr(src_attn, &#34;hidden_size&#34;, None)
+        if hidden_size is None and hasattr(src_attn, &#34;q_proj&#34;):
+            q = getattr(src_attn, &#34;q_proj&#34;, None)
+            if q is not None and hasattr(q, &#34;in_features&#34;):
+                hidden_size = q.in_features
+    if hidden_size is None:
+        hidden_size = getattr(cfg, &#34;hidden_size&#34;, 768) if cfg else 768
+
+    num_heads = kwargs.get(&#34;num_heads&#34;, kwargs.get(&#34;num_attention_heads&#34;))
+    if num_heads is None and src_attn is not None:
+        num_heads = getattr(src_attn, &#34;num_heads&#34;, getattr(src_attn, &#34;num_attention_heads&#34;, None))
+    if num_heads is None:
+        num_heads = getattr(cfg, &#34;num_attention_heads&#34;, 12) if cfg else 12
+
+    moe_enabled = bool(kwargs.pop(&#34;moe_enabled&#34;, False))
+    svd_rank = kwargs.pop(&#34;svd_rank&#34;, None)
+
+    try:
+        kwargs.pop(&#34;num_heads&#34;, None)
+        kwargs.pop(&#34;hidden_size&#34;, None)
+        kwargs.pop(&#34;d_model&#34;, None)
+        new_attn = BAMUMoEBlock(
+            config=cfg,
+            old_attn=src_attn if src_attn is not layer else None,
+            comp_config=comp_config,
+            hidden_size=hidden_size,
+            num_heads=num_heads,
+            layer_id=layer_idx,
+            moe_enabled=moe_enabled,
+            svd_rank=svd_rank,
+            **kwargs,
+        )
+        if src_attn is not None and src_attn is not layer:
+            p = next(src_attn.parameters(), None)
+            if p is not None:
+                new_attn.to(device=p.device, dtype=p.dtype)
+
+        # Splice
+        spliced = False
+        if hasattr(layer, &#34;attention&#34;):
+            if hasattr(layer.attention, &#34;self&#34;):
+                new_attn.is_nested_encoder = True
+                layer.attention.self = new_attn
+            else:
+                new_attn.is_nested_encoder = False
+                layer.attention = new_attn
+            spliced = True
+        elif hasattr(layer, &#34;self&#34;):
+            new_attn.is_nested_encoder = True
+            layer.self = new_attn
+            spliced = True
+        elif hasattr(layer, &#34;attn&#34;):
+            new_attn.is_nested_encoder = False
+            layer.attn = new_attn
+            spliced = True
+        elif hasattr(layer, &#34;self_attn&#34;):
+            new_attn.is_nested_encoder = False
+            layer.self_attn = new_attn
+            spliced = True
+
+        if not spliced:
+            logger.error(
+                &#34;inject_bam_umoe: no writable attention attribute on %s&#34;,
+                layer.__class__.__name__,
+            )
+            return None
+        return new_attn
+
+    except Exception as e:
+        logger.exception(&#34;inject_bam_umoe failed at layer %d: %s&#34;, layer_idx, e)
+        return None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.attentions.bam_umoe.BAMUMoEBlock"><code class="flex name class">
+<span>class <span class="ident">BAMUMoEBlock</span></span>
+<span>(</span><span>config: Any | None = None,<br>rank: int = 64,<br>num_experts: int = 2,<br>top_k: int = 1,<br>layer_id: int | None = None,<br>num_layers: int | None = None,<br>old_attn: torch.nn.modules.module.Module | None = None,<br>comp_config: Any | None = None,<br>moe_enabled: bool = False,<br>svd_rank: int | None = None,<br>lora_rank: int = 16,<br>lora_alpha: float = 32.0,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(
+    &#34;bam_umoe&#34;, supports_causal=True, supports_bidirectional=True, supports_gqa=True
+)
+class BAMUMoEBlock(BaseAttention):
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        config: Any | None = None,
+        rank: int = 64,
+        num_experts: int = 2,
+        top_k: int = 1,
+        layer_id: int | None = None,
+        num_layers: int | None = None,
+        old_attn: nn.Module | None = None,
+        comp_config: Any | None = None,
+        moe_enabled: bool = False,  # BAM-FIX-02
+        svd_rank: int | None = None,  # BAM-FIX-03
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        **kwargs: Any,
+    ) -&gt; None:
+        # BAM-FIX-07: config None-safe
+        if config is None:
+
+            class _Cfg:
+                pass
+
+            config = _Cfg()
+            config.hidden_size = kwargs.get(&#34;hidden_size&#34;, 768)
+            config.num_attention_heads = kwargs.get(
+                &#34;num_heads&#34;, kwargs.get(&#34;num_attention_heads&#34;, 12)
+            )
+            config.head_dim = kwargs.get(&#34;head_dim&#34;, 64)
+            config.model_type = kwargs.get(&#34;model_type&#34;, &#34;&#34;)
+
+        try:
+            super().__init__(config, rank)
+        except TypeError:
+            super().__init__(config)
+
+        self.dim = int(
+            kwargs.get(&#34;hidden_size&#34;)
+            or getattr(
+                config,
+                &#34;hidden_size&#34;,
+                getattr(config, &#34;d_model&#34;, getattr(config, &#34;dim&#34;, 768)),
+            )
+        )
+        self.hidden_size = self.dim
+        self.num_heads = int(
+            kwargs.get(&#34;num_heads&#34;)
+            or kwargs.get(&#34;num_attention_heads&#34;)
+            or getattr(
+                config,
+                &#34;num_attention_heads&#34;,
+                getattr(config, &#34;num_heads&#34;, getattr(config, &#34;n_heads&#34;, 12)),
+            )
+        )
+        self.num_kv_heads = int(
+            getattr(
+                config,
+                &#34;num_key_value_heads&#34;,
+                getattr(config, &#34;num_kv_heads&#34;, self.num_heads),
+            )
+        )
+        self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
+        self.kv_repeat = self.num_heads // self.num_kv_heads
+
+        cfg_hd = getattr(config, &#34;head_dim&#34;, None)
+        self.head_dim = int(
+            cfg_hd or kwargs.get(&#34;head_dim&#34;) or (self.dim // max(1, self.num_heads))
+        )
+        self.all_head_size = self.num_heads * self.head_dim
+        self.all_kv_head_size = self.num_kv_heads * self.head_dim
+
+        self.lora_rank = int(
+            getattr(
+                config,
+                &#34;lora_rank&#34;,
+                (
+                    getattr(comp_config, &#34;lora_rank&#34;, lora_rank)
+                    if comp_config is not None
+                    else lora_rank
+                ),
+            )
+        )
+        self.lora_alpha = float(
+            getattr(
+                config,
+                &#34;lora_alpha&#34;,
+                (
+                    getattr(comp_config, &#34;lora_alpha&#34;, lora_alpha)
+                    if comp_config is not None
+                    else lora_alpha
+                ),
+            )
+        )
+        self.freeze_base = self.lora_rank &gt; 0
+
+        # BAM-FIX-03: SVD rank for real compression
+        default_svd = min(128, self.dim)
+        self.svd_rank = int(
+            getattr(
+                config,
+                &#34;svd_rank&#34;,
+                (
+                    getattr(comp_config, &#34;svd_rank&#34;, svd_rank)
+                    if comp_config is not None
+                    else (svd_rank or default_svd)
+                ),
+            )
+        )
+
+        # Decoder detection
+        mt = str(getattr(config, &#34;model_type&#34;, &#34;&#34;) or &#34;&#34;).lower()
+        is_dec = bool(getattr(config, &#34;is_decoder&#34;, False) or getattr(config, &#34;causal&#34;, False))
+        if any(
+            mt.startswith(p)
+            for p in (
+                &#34;gpt&#34;,
+                &#34;qwen&#34;,
+                &#34;llama&#34;,
+                &#34;mistral&#34;,
+                &#34;gemma&#34;,
+                &#34;phi&#34;,
+                &#34;opt&#34;,
+                &#34;bloom&#34;,
+                &#34;falcon&#34;,
+                &#34;olmo&#34;,
+                &#34;mpt&#34;,
+                &#34;stablelm&#34;,
+            )
+        ):
+            is_dec = True
+        if kwargs.get(&#34;is_decoder&#34;, False) or kwargs.get(&#34;is_causal&#34;, False):
+            is_dec = True
+        if old_attn is not None and hasattr(old_attn, &#34;c_attn&#34;):
+            is_dec = True
+        self.is_decoder = bool(is_dec)
+        self.is_causal = self.is_decoder
+        self.is_nested_encoder = False
+
+        self.num_experts = max(1, int(num_experts))
+        self.top_k = min(max(1, int(top_k)), self.num_experts)
+        self.moe_enabled = bool(moe_enabled)
+
+        # ---- Q/K/V/O projections ----
+        # BAM-FIX-03: use FactorisedLoRALinear with svd_rank
+        # If svd_rank &gt;= min(dim, all_head_size), degenerates to dense (no compression)
+        Q_rank = min(self.svd_rank, self.dim, self.all_head_size)
+        KV_rank = min(self.svd_rank, self.dim, self.all_kv_head_size)
+        O_rank = min(self.svd_rank, self.all_head_size, self.dim)
+
+        self.q_lin = FactorisedLoRALinear(
+            self.dim,
+            self.all_head_size,
+            Q_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
+        )
+        self.k_lin = FactorisedLoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            KV_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
+        )
+        self.v_lin = FactorisedLoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            KV_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
+        )
+        self.out_lin = FactorisedLoRALinear(
+            self.all_head_size,
+            self.dim,
+            O_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
+        )
+
+        # ---- Optional MoE ----
+        if self.moe_enabled:
+            self.qkv_moe: UnifiedMoE | None = UnifiedMoE(
+                self.dim,
+                num_experts=self.num_experts,
+                top_k=self.top_k,
+                output_dim=self.all_kv_head_size,  # MoE refines V (matches V dim)
+                gate_init=kwargs.get(&#34;moe_gate_init&#34;, -3.0),
+            )
+        else:
+            self.qkv_moe = None
+
+        dropout_p = float(
+            getattr(config, &#34;dropout&#34;, getattr(config, &#34;attention_probs_dropout_prob&#34;, 0.1))
+        )
+        self.dropout = nn.Dropout(dropout_p)
+
+        self.layer_id = layer_id
+        self.num_layers = num_layers
+        self.comp_config = comp_config
+        self.rotary_emb = None
+
+        # BAM-FIX-09: storage accounting
+        self._orig_storage_bytes = 0
+        self._comp_storage_bytes = 0
+
+        if old_attn is not None:
+            self.copy_weights(old_attn)
+
+    # ---- aliases ----
+    @property
+    def q_proj(self):
+        return self.q_lin
+
+    @property
+    def k_proj(self):
+        return self.k_lin
+
+    @property
+    def v_proj(self):
+        return self.v_lin
+
+    @property
+    def o_proj(self):
+        return self.out_lin
+
+    @property
+    def query(self):
+        return self.q_lin
+
+    @property
+    def key(self):
+        return self.k_lin
+
+    @property
+    def value(self):
+        return self.v_lin
+
+    @property
+    def dense(self):
+        return self.out_lin
+
+    @property
+    def c_proj(self):
+        return self.out_lin
+
+    @property
+    def out_proj(self):
+        return self.out_lin
+
+    # ------------------------------------------------------------------
+    def copy_weights(self, pretrained_attn: nn.Module) -&gt; None:
+        if pretrained_attn is None:
+            return
+
+        try:
+            for p in pretrained_attn.parameters():
+                self._orig_storage_bytes += p.numel() * p.element_size()
+        except Exception:
+            pass
+
+        cls_name = pretrained_attn.__class__.__name__
+        has_out_lin = any(
+            hasattr(pretrained_attn, a)
+            for a in (&#34;out_lin&#34;, &#34;c_proj&#34;, &#34;o_proj&#34;, &#34;out_proj&#34;, &#34;dense&#34;)
+        )
+        is_nested = False
+        if (
+            (
+                hasattr(pretrained_attn, &#34;self&#34;)
+                and hasattr(pretrained_attn.self, &#34;query&#34;)
+                and hasattr(pretrained_attn, &#34;output&#34;)
+                and hasattr(pretrained_attn.output, &#34;dense&#34;)
+            )
+            or (
+                cls_name
+                in (
+                    &#34;BertSelfAttention&#34;,
+                    &#34;RobertaSelfAttention&#34;,
+                    &#34;XLMRobertaSelfAttention&#34;,
+                    &#34;ElectraSelfAttention&#34;,
+                    &#34;DebertaSelfAttention&#34;,
+                )
+                or (cls_name.endswith(&#34;SelfAttention&#34;) and &#34;distil&#34; not in cls_name.lower())
+            )
+            and not has_out_lin
+        ):
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
+
+        if hasattr(pretrained_attn, &#34;rotary_emb&#34;) and pretrained_attn.rotary_emb is not None:
+            self.rotary_emb = pretrained_attn.rotary_emb
+
+        extracted = {
+            &#34;q&#34;: (None, None),
+            &#34;k&#34;: (None, None),
+            &#34;v&#34;: (None, None),
+            &#34;o&#34;: (None, None),
+        }
+
+        # GPT-2 fused
+        if hasattr(pretrained_attn, &#34;c_attn&#34;) and pretrained_attn.c_attn is not None:
+            c = pretrained_attn.c_attn
+            base_c = getattr(c, &#34;base_layer&#34;, c)
+            cw = getattr(base_c, &#34;weight&#34;, getattr(c, &#34;weight&#34;, None))
+            if cw is not None:
+                cw = cw.data.clone()
+                is_conv = (
+                    c.__class__.__name__ == &#34;Conv1D&#34;
+                    or base_c.__class__.__name__ == &#34;Conv1D&#34;
+                    or (cw.ndim == 2 and cw.shape[0] &lt; cw.shape[1])
+                )
+                if is_conv:
+                    cw = cw.t().contiguous()
+                split = cw.size(0) // 3
+                bmod = getattr(base_c, &#34;bias&#34;, getattr(c, &#34;bias&#34;, None))
+                cb = bmod.data.clone() if bmod is not None else None
+                extracted[&#34;q&#34;] = (cw[:split], cb[:split] if cb is not None else None)
+                extracted[&#34;k&#34;] = (
+                    cw[split : 2 * split],
+                    cb[split : 2 * split] if cb is not None else None,
+                )
+                extracted[&#34;v&#34;] = (
+                    cw[2 * split :],
+                    cb[2 * split :] if cb is not None else None,
+                )
+
+            if hasattr(pretrained_attn, &#34;c_proj&#34;) and pretrained_attn.c_proj is not None:
+                o = pretrained_attn.c_proj
+                base_o = getattr(o, &#34;base_layer&#34;, o)
+                ow = getattr(base_o, &#34;weight&#34;, getattr(o, &#34;weight&#34;, None))
+                if ow is not None:
+                    ow = ow.data.clone()
+                    is_conv_o = (
+                        o.__class__.__name__ == &#34;Conv1D&#34;
+                        or base_o.__class__.__name__ == &#34;Conv1D&#34;
+                        or (ow.ndim == 2 and ow.shape[0] &lt; ow.shape[1])
+                    )
+                    if is_conv_o:
+                        ow = ow.t().contiguous()
+                    bo = getattr(base_o, &#34;bias&#34;, getattr(o, &#34;bias&#34;, None))
+                    extracted[&#34;o&#34;] = (ow, bo.data.clone() if bo is not None else None)
+
+        # Nested BERT / RoBERTa
+        elif hasattr(pretrained_attn, &#34;self&#34;) and hasattr(pretrained_attn.self, &#34;query&#34;):
+            s = pretrained_attn.self
+            for key, sub in ((&#34;q&#34;, &#34;query&#34;), (&#34;k&#34;, &#34;key&#34;), (&#34;v&#34;, &#34;value&#34;)):
+                m = getattr(s, sub, None)
+                if m is not None and hasattr(m, &#34;weight&#34;):
+                    b = getattr(m, &#34;bias&#34;, None)
+                    extracted[key] = (
+                        m.weight.data.clone(),
+                        b.data.clone() if b is not None else None,
+                    )
+            if hasattr(pretrained_attn, &#34;output&#34;) and hasattr(pretrained_attn.output, &#34;dense&#34;):
+                d = pretrained_attn.output.dense
+                b = getattr(d, &#34;bias&#34;, None)
+                extracted[&#34;o&#34;] = (
+                    d.weight.data.clone(),
+                    b.data.clone() if b is not None else None,
+                )
+
+        # Flat modules
+        else:
+            candidates = {
+                &#34;q&#34;: (&#34;q_lin&#34;, &#34;q_proj&#34;, &#34;query&#34;),
+                &#34;k&#34;: (&#34;k_lin&#34;, &#34;k_proj&#34;, &#34;key&#34;),
+                &#34;v&#34;: (&#34;v_lin&#34;, &#34;v_proj&#34;, &#34;value&#34;),
+                &#34;o&#34;: (&#34;out_lin&#34;, &#34;out_proj&#34;, &#34;dense&#34;, &#34;o_proj&#34;),
+            }
+            for key, names in candidates.items():
+                for n in names:
+                    if hasattr(pretrained_attn, n):
+                        m = getattr(pretrained_attn, n)
+                        if m is not None and hasattr(m, &#34;weight&#34;):
+                            b = getattr(m, &#34;bias&#34;, None)
+                            extracted[key] = (
+                                m.weight.data.clone(),
+                                b.data.clone() if b is not None else None,
+                            )
+                            break
+
+        # UniversalAdapter fallback
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != &#34;o&#34; or not self.is_nested_encoder)
+        ]
+        if missing:
+            try:
+                from neuralops.core.adapters import UniversalAdapter
+
+                adapter = UniversalAdapter()
+                for k in missing:
+                    w, b = adapter.get_weight_bias(pretrained_attn, k)
+                    if w is not None:
+                        extracted[k] = (w.clone(), b.clone() if b is not None else None)
+            except Exception as e:
+                logger.debug(&#34;UniversalAdapter fallback failed: %s&#34;, e)
+
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != &#34;o&#34; or not self.is_nested_encoder)
+        ]
+        if missing_after:
+            raise RuntimeError(
+                f&#34;BAMUMoE.copy_weights: missing {missing_after} from &#34;
+                f&#34;{pretrained_attn.__class__.__name__}&#34;
+            )
+
+        def _orient(w, in_dim):
+            if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
+                return w.t().contiguous()
+            return w
+
+        target_map = {
+            &#34;q&#34;: self.q_lin,
+            &#34;k&#34;: self.k_lin,
+            &#34;v&#34;: self.v_lin,
+            &#34;o&#34;: self.out_lin,
+        }
+
+        with torch.no_grad():
+            for proj_key, target in target_map.items():
+                w, b = extracted[proj_key]
+                if w is None:
+                    if proj_key == &#34;o&#34; and self.is_nested_encoder:
+                        # Identity for nested encoder bypass
+                        eye = torch.eye(
+                            target.out_features,
+                            target.in_features,
+                            device=target.U.device,
+                            dtype=target.U.dtype,
+                        )
+                        target.set_svd_factors(eye, None)
+                    continue
+
+                if w.ndim != 2:
+                    w = w.reshape(w.size(0), -1)
+
+                # Orient to (out, in)
+                in_dim = self.all_head_size if proj_key == &#34;o&#34; else self.dim
+                w = _orient(w, in_dim)
+
+                # BAM-FIX-08: shape tolerance
+                out_d = min(target.out_features, w.size(0))
+                in_d = min(target.in_features, w.size(1))
+                if (out_d, in_d) != (target.out_features, target.in_features):
+                    padded = torch.zeros(
+                        target.out_features,
+                        target.in_features,
+                        device=w.device,
+                        dtype=w.dtype,
+                    )
+                    padded[:out_d, :in_d] = w[:out_d, :in_d]
+                    w = padded
+
+                # Handle GQA pooling for K/V
+                if proj_key in (&#34;k&#34;, &#34;v&#34;):
+                    src_out = w.shape[0]
+                    tgt_out = target.out_features
+                    if src_out &gt; tgt_out and src_out % tgt_out == 0:
+                        rep = src_out // tgt_out
+                        w = w.view(tgt_out, rep, -1).mean(dim=1)
+                    elif src_out &lt; tgt_out and tgt_out % src_out == 0:
+                        rep = tgt_out // src_out
+                        w = w.repeat_interleave(rep, dim=0)
+
+                target.set_svd_factors(w, b)
+                target.freeze_base_weights()
+
+        # Track compressed bytes
+        try:
+            for m in (self.q_lin, self.k_lin, self.v_lin, self.out_lin):
+                for p in m.parameters():
+                    self._comp_storage_bytes += p.numel() * p.element_size()
+        except Exception:
+            pass
+
+    # ------------------------------------------------------------------
+    def get_aux_loss(self, device: torch.device) -&gt; torch.Tensor:
+        &#34;&#34;&#34;BAM-FIX-04: MoE aux loss for training loop.&#34;&#34;&#34;
+        if self.qkv_moe is None:
+            return torch.zeros((), device=device, dtype=torch.float32)
+        return self.qkv_moe.get_aux_loss(device)
+
+    # ------------------------------------------------------------------
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        B, L, D = hidden_states.shape
+        dtype_in = hidden_states.dtype
+
+        is_cross = encoder_hidden_states is not None
+        kv_input = encoder_hidden_states if is_cross else hidden_states
+        S = kv_input.shape[1]
+
+        q = (
+            self.q_lin(hidden_states)
+            .view(B, L, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        k = (
+            self.k_lin(kv_input)
+            .view(B, S, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_lin(kv_input)
+            .view(B, S, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+
+        # ---- RoPE ----
+        cos = kwargs.get(&#34;cos&#34;)
+        sin = kwargs.get(&#34;sin&#34;)
+        pos_emb = kwargs.get(&#34;position_embeddings&#34;)
+        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2:
+            cos, sin = pos_emb[0], pos_emb[1]
+
+        if cos is not None and sin is not None and not is_cross:
+            q, k = apply_rotary_pos_emb(q, k, cos, sin, kwargs.get(&#34;position_ids&#34;))
+
+        # ---- GQA ----
+        if self.kv_repeat &gt; 1:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        # ---- MoE refinement (only self-attn, only if enabled) ----
+        if self.qkv_moe is not None and not is_cross:
+            moe_delta_v = self.qkv_moe(hidden_states)
+            moe_delta_v = moe_delta_v.view(B, L, self.num_kv_heads, self.head_dim)
+            moe_delta_v = moe_delta_v.transpose(1, 2).contiguous()
+            if self.kv_repeat &gt; 1:
+                moe_delta_v = repeat_kv(moe_delta_v, self.kv_repeat)
+            v = (v + 0.1 * moe_delta_v.to(v.dtype)).to(v.dtype)
+
+        # ---- Dense attention (no SDPA shortcut when MoE enabled, to keep mask logic uniform) ----
+        scale = 1.0 / math.sqrt(self.head_dim)
+        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+
+        if self.is_decoder and not is_cross:
+            causal = torch.triu(
+                torch.full((L, S), float(&#34;-inf&#34;), device=scores.device, dtype=torch.float32),
+                diagonal=1 + (S - L),
+            )
+            scores = scores + causal.unsqueeze(0).unsqueeze(1)
+
+        eff_mask = encoder_attention_mask if is_cross else attention_mask
+        if eff_mask is not None:
+            if eff_mask.dim() == 2:
+                scores = scores.masked_fill((eff_mask == 0).unsqueeze(1).unsqueeze(2), -1e4)
+            elif eff_mask.dim() == 3:
+                scores = scores + eff_mask.unsqueeze(1).float()
+            elif eff_mask.dim() == 4:
+                scores = scores + eff_mask.float()
+
+        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+        probs = F.softmax(scores, dim=-1).to(dtype_in)
+        probs = torch.nan_to_num(probs, nan=0.0)
+        probs = self.dropout(probs)
+
+        # ---- head_mask (BAM-FIX-10) ----
+        if head_mask is not None:
+            hm = head_mask.to(probs.dtype)
+            if hm.dim() == 1:
+                hm = hm.view(1, -1, 1, 1)
+            elif hm.dim() == 2:
+                hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
+            elif hm.dim() == 3:
+                hm = hm.unsqueeze(1)
+            probs = probs * hm
+
+        context = torch.matmul(probs.to(v.dtype), v)
+        context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+        context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        # ---- Output projection ----
+        if self.is_nested_encoder:
+            out = context
+        else:
+            out = self.out_lin(context)
+
+        if out.shape[-1] != D:
+            raise RuntimeError(f&#34;BAMUMoE: output dim {out.shape[-1]} != hidden_size {D}&#34;)
+
+        return out, (probs if output_attentions else None)</code></pre>
+</details>
+<div class="desc"><p>Every custom attention module must inherit from this.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.bam_umoe.BAMUMoEBlock.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.bam_umoe.BAMUMoEBlock.c_proj"><code class="name">prop <span class="ident">c_proj</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def c_proj(self):
+    return self.out_lin</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.bam_umoe.BAMUMoEBlock.dense"><code class="name">prop <span class="ident">dense</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def dense(self):
+    return self.out_lin</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.bam_umoe.BAMUMoEBlock.k_proj"><code class="name">prop <span class="ident">k_proj</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def k_proj(self):
+    return self.k_lin</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.bam_umoe.BAMUMoEBlock.key"><code class="name">prop <span class="ident">key</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def key(self):
+    return self.k_lin</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.bam_umoe.BAMUMoEBlock.o_proj"><code class="name">prop <span class="ident">o_proj</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def o_proj(self):
+    return self.out_lin</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.bam_umoe.BAMUMoEBlock.out_proj"><code class="name">prop <span class="ident">out_proj</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def out_proj(self):
+    return self.out_lin</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.bam_umoe.BAMUMoEBlock.q_proj"><code class="name">prop <span class="ident">q_proj</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def q_proj(self):
+    return self.q_lin</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.bam_umoe.BAMUMoEBlock.query"><code class="name">prop <span class="ident">query</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def query(self):
+    return self.q_lin</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.bam_umoe.BAMUMoEBlock.v_proj"><code class="name">prop <span class="ident">v_proj</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def v_proj(self):
+    return self.v_lin</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.bam_umoe.BAMUMoEBlock.value"><code class="name">prop <span class="ident">value</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def value(self):
+    return self.v_lin</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.bam_umoe.BAMUMoEBlock.get_aux_loss"><code class="name flex">
+<span>def <span class="ident">get_aux_loss</span></span>(<span>self, device: torch.device) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_aux_loss(self, device: torch.device) -&gt; torch.Tensor:
+    &#34;&#34;&#34;BAM-FIX-04: MoE aux loss for training loop.&#34;&#34;&#34;
+    if self.qkv_moe is None:
+        return torch.zeros((), device=device, dtype=torch.float32)
+    return self.qkv_moe.get_aux_loss(device)</code></pre>
+</details>
+<div class="desc"><p>BAM-FIX-04: MoE aux loss for training loop.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseAttention.copy_weights" href="../core/base.html#neuralops.core.base.BaseAttention.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.extra_repr" href="../core/base.html#neuralops.core.base.BaseAttention.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.forward" href="../core/base.html#neuralops.core.base.BaseAttention.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.attentions.bam_umoe.FactorisedLoRALinear"><code class="flex name class">
+<span>class <span class="ident">FactorisedLoRALinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>svd_rank: int,<br>lora_rank: int = 0,<br>lora_alpha: float = 32.0,<br>bias: bool = True,<br>dtype: torch.dtype | None = None,<br>device: torch.device | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FactorisedLoRALinear(nn.Module):
+    &#34;&#34;&#34;
+    Low-rank factorized linear with optional LoRA:
+
+        y = (x V S U^T) + (x lora_A^T lora_B^T) * scaling + b
+
+    Base factors (U, S, V) are frozen parameters (visible in .parameters()).
+    &#34;&#34;&#34;
+
+    is_custom_attention: bool = False
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        svd_rank: int,
+        lora_rank: int = 0,
+        lora_alpha: float = 32.0,
+        bias: bool = True,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
+    ):
+        super().__init__()
+        self.in_features = int(in_features)
+        self.out_features = int(out_features)
+        self.svd_rank = max(1, min(svd_rank, self.in_features, self.out_features))
+        self.lora_rank = max(0, int(lora_rank))
+        self.lora_scaling = (lora_alpha / self.lora_rank) if self.lora_rank &gt; 0 else 1.0
+
+        fk = {&#34;dtype&#34;: dtype, &#34;device&#34;: device}
+        self.U = nn.Parameter(
+            torch.zeros(out_features, self.svd_rank, **fk),
+            requires_grad=False,
+        )
+        self.S = nn.Parameter(
+            torch.ones(self.svd_rank, **fk),
+            requires_grad=False,
+        )
+        self.V = nn.Parameter(
+            torch.zeros(in_features, self.svd_rank, **fk),
+            requires_grad=False,
+        )
+
+        if bias:
+            self.bias = nn.Parameter(torch.zeros(out_features, **fk), requires_grad=False)
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+        if self.lora_rank &gt; 0:
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, in_features, **fk))
+            self.lora_B = nn.Parameter(torch.zeros(out_features, self.lora_rank, **fk))
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+    def set_svd_factors(self, W: torch.Tensor, bias: torch.Tensor | None = None) -&gt; None:
+        with torch.no_grad():
+            W_f = W.float()
+            if W_f.shape != (self.out_features, self.in_features):
+                raise ValueError(
+                    f&#34;FactorisedLoRALinear: shape mismatch &#34;
+                    f&#34;{tuple(W_f.shape)} vs ({self.out_features}, {self.in_features})&#34;
+                )
+            U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
+            r = min(self.svd_rank, S.shape[0])
+            self.U.data.zero_()
+            self.S.data.zero_()
+            self.V.data.zero_()
+            self.U.data[:, :r].copy_(U[:, :r].to(device=self.U.device, dtype=self.U.dtype))
+            self.S.data[:r].copy_(S[:r].to(device=self.S.device, dtype=self.S.dtype))
+            self.V.data[:, :r].copy_(
+                Vt[:r, :].t().contiguous().to(device=self.V.device, dtype=self.V.dtype)
+            )
+            if bias is not None and self.bias is not None:
+                n = min(self.bias.numel(), bias.numel())
+                self.bias.data[:n].copy_(
+                    bias[:n].to(device=self.bias.device, dtype=self.bias.dtype)
+                )
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        orig_dtype = x.dtype
+        x_f = x.float()
+        xV = torch.matmul(x_f, self.V.float())
+        xV_S = xV * self.S.float().unsqueeze(0).unsqueeze(0)
+        out = torch.matmul(xV_S, self.U.float().t().contiguous())
+        if self.bias is not None:
+            out = out + self.bias.float()
+        if self.lora_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            xa = torch.matmul(x_f, self.lora_A.float().t().contiguous())
+            out = out + torch.matmul(xa, self.lora_B.float().t().contiguous()) * self.lora_scaling
+        return out.to(orig_dtype)
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        W = (self.U.float() * self.S.float().unsqueeze(0)) @ self.V.float().t().contiguous()
+        return W
+
+    def freeze_base_weights(self) -&gt; None:
+        self.U.requires_grad = False
+        self.S.requires_grad = False
+        self.V.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+        if self.lora_A is not None:
+            self.lora_A.requires_grad = True
+        if self.lora_B is not None:
+            self.lora_B.requires_grad = True</code></pre>
+</details>
+<div class="desc"><p>Low-rank factorized linear with optional LoRA:</p>
+<pre><code>y = (x V S U^T) + (x lora_A^T lora_B^T) * scaling + b
+</code></pre>
+<p>Base factors (U, S, V) are frozen parameters (visible in .parameters()).</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.bam_umoe.FactorisedLoRALinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.bam_umoe.FactorisedLoRALinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    W = (self.U.float() * self.S.float().unsqueeze(0)) @ self.V.float().t().contiguous()
+    return W</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.bam_umoe.FactorisedLoRALinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    orig_dtype = x.dtype
+    x_f = x.float()
+    xV = torch.matmul(x_f, self.V.float())
+    xV_S = xV * self.S.float().unsqueeze(0).unsqueeze(0)
+    out = torch.matmul(xV_S, self.U.float().t().contiguous())
+    if self.bias is not None:
+        out = out + self.bias.float()
+    if self.lora_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        xa = torch.matmul(x_f, self.lora_A.float().t().contiguous())
+        out = out + torch.matmul(xa, self.lora_B.float().t().contiguous()) * self.lora_scaling
+    return out.to(orig_dtype)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+<dt id="neuralops.attentions.bam_umoe.FactorisedLoRALinear.freeze_base_weights"><code class="name flex">
+<span>def <span class="ident">freeze_base_weights</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def freeze_base_weights(self) -&gt; None:
+    self.U.requires_grad = False
+    self.S.requires_grad = False
+    self.V.requires_grad = False
+    if self.bias is not None:
+        self.bias.requires_grad = False
+    if self.lora_A is not None:
+        self.lora_A.requires_grad = True
+    if self.lora_B is not None:
+        self.lora_B.requires_grad = True</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.bam_umoe.FactorisedLoRALinear.set_svd_factors"><code class="name flex">
+<span>def <span class="ident">set_svd_factors</span></span>(<span>self, W: torch.Tensor, bias: torch.Tensor | None = None) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_svd_factors(self, W: torch.Tensor, bias: torch.Tensor | None = None) -&gt; None:
+    with torch.no_grad():
+        W_f = W.float()
+        if W_f.shape != (self.out_features, self.in_features):
+            raise ValueError(
+                f&#34;FactorisedLoRALinear: shape mismatch &#34;
+                f&#34;{tuple(W_f.shape)} vs ({self.out_features}, {self.in_features})&#34;
+            )
+        U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
+        r = min(self.svd_rank, S.shape[0])
+        self.U.data.zero_()
+        self.S.data.zero_()
+        self.V.data.zero_()
+        self.U.data[:, :r].copy_(U[:, :r].to(device=self.U.device, dtype=self.U.dtype))
+        self.S.data[:r].copy_(S[:r].to(device=self.S.device, dtype=self.S.dtype))
+        self.V.data[:, :r].copy_(
+            Vt[:r, :].t().contiguous().to(device=self.V.device, dtype=self.V.dtype)
+        )
+        if bias is not None and self.bias is not None:
+            n = min(self.bias.numel(), bias.numel())
+            self.bias.data[:n].copy_(
+                bias[:n].to(device=self.bias.device, dtype=self.bias.dtype)
+            )</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.attentions.bam_umoe.UnifiedMoE"><code class="flex name class">
+<span>class <span class="ident">UnifiedMoE</span></span>
+<span>(</span><span>dim: int,<br>num_experts: int = 2,<br>top_k: int = 1,<br>output_dim: int | None = None,<br>noise_std: float = 0.1,<br>expert_hidden_mult: float = 0.25,<br>gate_init: float = -3.0)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class UnifiedMoE(nn.Module):
+    &#34;&#34;&#34;
+    Compact MoE with top-k gating.
+
+    BAM-FIX-02 / FIX-12: expert hidden dim is `dim // (num_experts * 4)`,
+    output dim is configurable (default `head_dim`, small).
+    &#34;&#34;&#34;
+
+    is_custom_attention: bool = False
+
+    def __init__(
+        self,
+        dim: int,
+        num_experts: int = 2,
+        top_k: int = 1,
+        output_dim: int | None = None,
+        noise_std: float = 0.1,
+        expert_hidden_mult: float = 0.25,
+        gate_init: float = -3.0,  # BAM-FIX-11
+    ) -&gt; None:
+        super().__init__()
+        self.dim = int(dim)
+        self.num_experts = max(1, int(num_experts))
+        self.top_k = min(max(1, int(top_k)), self.num_experts)
+        # BAM-FIX-02: default to dim // 4 for compact output
+        self.out_dim = int(output_dim) if output_dim is not None else max(16, self.dim // 4)
+        self.noise_std = float(noise_std)
+
+        self.router_ln = nn.LayerNorm(self.dim)
+        self.router = nn.Linear(self.dim, self.num_experts, bias=False)
+        nn.init.uniform_(self.router.weight, -0.01, 0.01)
+
+        hidden_dim = max(16, int(self.out_dim * expert_hidden_mult))
+        self.experts = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Linear(self.dim, hidden_dim),
+                    nn.GELU(),
+                    nn.Linear(hidden_dim, self.out_dim),
+                )
+                for _ in range(self.num_experts)
+            ]
+        )
+
+        for exp in self.experts:
+            nn.init.normal_(exp[2].weight, std=0.02)
+            if exp[2].bias is not None:
+                nn.init.zeros_(exp[2].bias)
+
+        # BAM-FIX-11: configurable gate init
+        self.gate_bias = nn.Parameter(torch.tensor([float(gate_init)]))
+
+        # BAM-FIX-04: aux loss is an attribute, not a tensor
+        self._aux_loss: torch.Tensor | None = None
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        B, L, D = x.shape
+        x_norm = self.router_ln(x)
+        logits = self.router(x_norm)
+
+        if self.training and self.noise_std &gt; 0:
+            logits = logits + torch.randn_like(logits) * self.noise_std
+
+        all_probs = F.softmax(logits, dim=-1)
+        topk_scores, topk_idx = torch.topk(all_probs, self.top_k, dim=-1)
+        scores = topk_scores / topk_scores.sum(dim=-1, keepdim=True).clamp(min=1e-6)
+        scores = torch.nan_to_num(scores, nan=0.0)
+
+        # Load balancing aux loss
+        if self.training and self.num_experts &gt; 1:
+            router_probs = all_probs.view(-1, self.num_experts)
+            expert_mask = F.one_hot(topk_idx, num_classes=self.num_experts).float()
+            density = expert_mask.sum(dim=2).view(-1, self.num_experts).mean(dim=0)
+            prob_mean = router_probs.mean(dim=0)
+            self._aux_loss = self.num_experts * torch.sum(density * prob_mean)
+        else:
+            self._aux_loss = None
+
+        experts_out = torch.stack([exp(x) for exp in self.experts], dim=2)
+        topk_out = torch.gather(
+            experts_out,
+            2,
+            topk_idx.unsqueeze(-1).expand(B, L, self.top_k, self.out_dim),
+        )
+        out = torch.sum(topk_out * scores.unsqueeze(-1), dim=2)
+        out = torch.clamp(torch.nan_to_num(out, nan=0.0), -65000.0, 65000.0)
+        gate = torch.sigmoid(self.gate_bias).to(x.dtype)
+        return (out * gate).to(x.dtype)
+
+    def get_aux_loss(self, device: torch.device) -&gt; torch.Tensor:
+        &#34;&#34;&#34;BAM-FIX-04: return aux loss on the correct device.&#34;&#34;&#34;
+        if self._aux_loss is None:
+            return torch.zeros((), device=device, dtype=torch.float32)
+        return self._aux_loss.to(device)</code></pre>
+</details>
+<div class="desc"><p>Compact MoE with top-k gating.</p>
+<p>BAM-FIX-02 / FIX-12: expert hidden dim is <code>dim // (num_experts * 4)</code>,
+output dim is configurable (default <code>head_dim</code>, small).</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.bam_umoe.UnifiedMoE.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.bam_umoe.UnifiedMoE.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    B, L, D = x.shape
+    x_norm = self.router_ln(x)
+    logits = self.router(x_norm)
+
+    if self.training and self.noise_std &gt; 0:
+        logits = logits + torch.randn_like(logits) * self.noise_std
+
+    all_probs = F.softmax(logits, dim=-1)
+    topk_scores, topk_idx = torch.topk(all_probs, self.top_k, dim=-1)
+    scores = topk_scores / topk_scores.sum(dim=-1, keepdim=True).clamp(min=1e-6)
+    scores = torch.nan_to_num(scores, nan=0.0)
+
+    # Load balancing aux loss
+    if self.training and self.num_experts &gt; 1:
+        router_probs = all_probs.view(-1, self.num_experts)
+        expert_mask = F.one_hot(topk_idx, num_classes=self.num_experts).float()
+        density = expert_mask.sum(dim=2).view(-1, self.num_experts).mean(dim=0)
+        prob_mean = router_probs.mean(dim=0)
+        self._aux_loss = self.num_experts * torch.sum(density * prob_mean)
+    else:
+        self._aux_loss = None
+
+    experts_out = torch.stack([exp(x) for exp in self.experts], dim=2)
+    topk_out = torch.gather(
+        experts_out,
+        2,
+        topk_idx.unsqueeze(-1).expand(B, L, self.top_k, self.out_dim),
+    )
+    out = torch.sum(topk_out * scores.unsqueeze(-1), dim=2)
+    out = torch.clamp(torch.nan_to_num(out, nan=0.0), -65000.0, 65000.0)
+    gate = torch.sigmoid(self.gate_bias).to(x.dtype)
+    return (out * gate).to(x.dtype)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+<dt id="neuralops.attentions.bam_umoe.UnifiedMoE.get_aux_loss"><code class="name flex">
+<span>def <span class="ident">get_aux_loss</span></span>(<span>self, device: torch.device) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_aux_loss(self, device: torch.device) -&gt; torch.Tensor:
+    &#34;&#34;&#34;BAM-FIX-04: return aux loss on the correct device.&#34;&#34;&#34;
+    if self._aux_loss is None:
+        return torch.zeros((), device=device, dtype=torch.float32)
+    return self._aux_loss.to(device)</code></pre>
+</details>
+<div class="desc"><p>BAM-FIX-04: return aux loss on the correct device.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.attentions" href="index.html">neuralops.attentions</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.attentions.bam_umoe.apply_rotary_pos_emb" href="#neuralops.attentions.bam_umoe.apply_rotary_pos_emb">apply_rotary_pos_emb</a></code></li>
+<li><code><a title="neuralops.attentions.bam_umoe.inject_bam_umoe" href="#neuralops.attentions.bam_umoe.inject_bam_umoe">inject_bam_umoe</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.attentions.bam_umoe.BAMUMoEBlock" href="#neuralops.attentions.bam_umoe.BAMUMoEBlock">BAMUMoEBlock</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.attentions.bam_umoe.BAMUMoEBlock.c_proj" href="#neuralops.attentions.bam_umoe.BAMUMoEBlock.c_proj">c_proj</a></code></li>
+<li><code><a title="neuralops.attentions.bam_umoe.BAMUMoEBlock.dense" href="#neuralops.attentions.bam_umoe.BAMUMoEBlock.dense">dense</a></code></li>
+<li><code><a title="neuralops.attentions.bam_umoe.BAMUMoEBlock.get_aux_loss" href="#neuralops.attentions.bam_umoe.BAMUMoEBlock.get_aux_loss">get_aux_loss</a></code></li>
+<li><code><a title="neuralops.attentions.bam_umoe.BAMUMoEBlock.is_custom_attention" href="#neuralops.attentions.bam_umoe.BAMUMoEBlock.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.bam_umoe.BAMUMoEBlock.k_proj" href="#neuralops.attentions.bam_umoe.BAMUMoEBlock.k_proj">k_proj</a></code></li>
+<li><code><a title="neuralops.attentions.bam_umoe.BAMUMoEBlock.key" href="#neuralops.attentions.bam_umoe.BAMUMoEBlock.key">key</a></code></li>
+<li><code><a title="neuralops.attentions.bam_umoe.BAMUMoEBlock.o_proj" href="#neuralops.attentions.bam_umoe.BAMUMoEBlock.o_proj">o_proj</a></code></li>
+<li><code><a title="neuralops.attentions.bam_umoe.BAMUMoEBlock.out_proj" href="#neuralops.attentions.bam_umoe.BAMUMoEBlock.out_proj">out_proj</a></code></li>
+<li><code><a title="neuralops.attentions.bam_umoe.BAMUMoEBlock.q_proj" href="#neuralops.attentions.bam_umoe.BAMUMoEBlock.q_proj">q_proj</a></code></li>
+<li><code><a title="neuralops.attentions.bam_umoe.BAMUMoEBlock.query" href="#neuralops.attentions.bam_umoe.BAMUMoEBlock.query">query</a></code></li>
+<li><code><a title="neuralops.attentions.bam_umoe.BAMUMoEBlock.v_proj" href="#neuralops.attentions.bam_umoe.BAMUMoEBlock.v_proj">v_proj</a></code></li>
+<li><code><a title="neuralops.attentions.bam_umoe.BAMUMoEBlock.value" href="#neuralops.attentions.bam_umoe.BAMUMoEBlock.value">value</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.bam_umoe.FactorisedLoRALinear" href="#neuralops.attentions.bam_umoe.FactorisedLoRALinear">FactorisedLoRALinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.bam_umoe.FactorisedLoRALinear.forward" href="#neuralops.attentions.bam_umoe.FactorisedLoRALinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.attentions.bam_umoe.FactorisedLoRALinear.freeze_base_weights" href="#neuralops.attentions.bam_umoe.FactorisedLoRALinear.freeze_base_weights">freeze_base_weights</a></code></li>
+<li><code><a title="neuralops.attentions.bam_umoe.FactorisedLoRALinear.is_custom_attention" href="#neuralops.attentions.bam_umoe.FactorisedLoRALinear.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.bam_umoe.FactorisedLoRALinear.set_svd_factors" href="#neuralops.attentions.bam_umoe.FactorisedLoRALinear.set_svd_factors">set_svd_factors</a></code></li>
+<li><code><a title="neuralops.attentions.bam_umoe.FactorisedLoRALinear.weight" href="#neuralops.attentions.bam_umoe.FactorisedLoRALinear.weight">weight</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.bam_umoe.UnifiedMoE" href="#neuralops.attentions.bam_umoe.UnifiedMoE">UnifiedMoE</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.bam_umoe.UnifiedMoE.forward" href="#neuralops.attentions.bam_umoe.UnifiedMoE.forward">forward</a></code></li>
+<li><code><a title="neuralops.attentions.bam_umoe.UnifiedMoE.get_aux_loss" href="#neuralops.attentions.bam_umoe.UnifiedMoE.get_aux_loss">get_aux_loss</a></code></li>
+<li><code><a title="neuralops.attentions.bam_umoe.UnifiedMoE.is_custom_attention" href="#neuralops.attentions.bam_umoe.UnifiedMoE.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

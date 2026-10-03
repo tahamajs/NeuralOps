@@ -1,0 +1,1012 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.bonsai_pruner API documentation</title>
+<meta name="description" content="Bonsai: Iterative Magnitude and Taylor Pruning (IMP) with Gradient Descent Recovery
+&amp; [CLS] Routing Protection. Registered in COMPRESSOR_REGISTRY as …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.bonsai_pruner</code></h1>
+</header>
+<section id="section-intro">
+<p>Bonsai: Iterative Magnitude and Taylor Pruning (IMP) with Gradient Descent Recovery
+&amp; [CLS] Routing Protection. Registered in COMPRESSOR_REGISTRY as 'bonsai' and 'bonsai_pruner'.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.bonsai_pruner.bonsai_factory"><code class="name flex">
+<span>def <span class="ident">bonsai_factory</span></span>(<span>model: Any,<br>comp_config: Any = None,<br>return_stats: bool = False,<br>return_tuple: bool = False,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module | tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;bonsai&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;bonsai_pruner&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;bonsai_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;bonsai_pruner_factory&#34;)
+def bonsai_factory(
+    model: Any,
+    comp_config: Any = None,
+    return_stats: bool = False,
+    return_tuple: bool = False,
+    **kwargs: Any,
+) -&gt; nn.Module | tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;Factory for Bonsai pruner.&#34;&#34;&#34;
+    return_both = kwargs.pop(&#34;return_both&#34;, False)
+
+    def _get(key: str, default: Any) -&gt; Any:
+        if comp_config is None:
+            return kwargs.pop(key, default)
+        return kwargs.pop(
+            key,
+            getattr(comp_config, key, getattr(comp_config, f&#34;bonsai_{key}&#34;, default)),
+        )
+
+    sparsity = _get(&#34;sparsity&#34;, 0.5)
+    steps = _get(&#34;steps&#34;, 8)
+    recovery_steps = _get(&#34;recovery_steps&#34;, 3)
+    recovery_lr = _get(&#34;recovery_lr&#34;, 1e-3)
+    structured_24 = _get(&#34;structured_24&#34;, False)
+    protect_cls = _get(&#34;protect_cls&#34;, True)
+    recalibrate_ln = _get(&#34;recalibrate_ln&#34;, True)
+    skip_attention_qkv = _get(&#34;skip_attention_qkv&#34;, False)
+    use_lora = _get(&#34;use_lora&#34;, False)
+    lora_r = _get(&#34;lora_r&#34;, 0)
+    lora_alpha = _get(&#34;lora_alpha&#34;, 1.0)
+    adaptive_sparsity = _get(&#34;adaptive_sparsity&#34;, False)
+    max_error = _get(&#34;max_error&#34;, None)
+    fallback = _get(&#34;fallback_to_original&#34;, True)
+
+    compressor = BonsaiPruner(
+        model,
+        sparsity=sparsity,
+        steps=steps,
+        recovery_steps=recovery_steps,
+        recovery_lr=recovery_lr,
+        structured_24=structured_24,
+        protect_cls=protect_cls,
+        skip_attention_qkv=skip_attention_qkv,
+        use_lora=use_lora,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        adaptive_sparsity=adaptive_sparsity,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        recalibrate_ln=recalibrate_ln,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    try:
+        compressed_model.compression_stats = stats
+    except Exception:
+        pass
+    if return_stats or return_tuple or return_both:
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>Factory for Bonsai pruner.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.bonsai_pruner.bonsai_prune_model"><code class="name flex">
+<span>def <span class="ident">bonsai_prune_model</span></span>(<span>model: Any,<br>comp_config: Any = None,<br>return_stats: bool = False,<br>return_tuple: bool = False,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module | tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;bonsai&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;bonsai_pruner&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;bonsai_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;bonsai_pruner_factory&#34;)
+def bonsai_factory(
+    model: Any,
+    comp_config: Any = None,
+    return_stats: bool = False,
+    return_tuple: bool = False,
+    **kwargs: Any,
+) -&gt; nn.Module | tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;Factory for Bonsai pruner.&#34;&#34;&#34;
+    return_both = kwargs.pop(&#34;return_both&#34;, False)
+
+    def _get(key: str, default: Any) -&gt; Any:
+        if comp_config is None:
+            return kwargs.pop(key, default)
+        return kwargs.pop(
+            key,
+            getattr(comp_config, key, getattr(comp_config, f&#34;bonsai_{key}&#34;, default)),
+        )
+
+    sparsity = _get(&#34;sparsity&#34;, 0.5)
+    steps = _get(&#34;steps&#34;, 8)
+    recovery_steps = _get(&#34;recovery_steps&#34;, 3)
+    recovery_lr = _get(&#34;recovery_lr&#34;, 1e-3)
+    structured_24 = _get(&#34;structured_24&#34;, False)
+    protect_cls = _get(&#34;protect_cls&#34;, True)
+    recalibrate_ln = _get(&#34;recalibrate_ln&#34;, True)
+    skip_attention_qkv = _get(&#34;skip_attention_qkv&#34;, False)
+    use_lora = _get(&#34;use_lora&#34;, False)
+    lora_r = _get(&#34;lora_r&#34;, 0)
+    lora_alpha = _get(&#34;lora_alpha&#34;, 1.0)
+    adaptive_sparsity = _get(&#34;adaptive_sparsity&#34;, False)
+    max_error = _get(&#34;max_error&#34;, None)
+    fallback = _get(&#34;fallback_to_original&#34;, True)
+
+    compressor = BonsaiPruner(
+        model,
+        sparsity=sparsity,
+        steps=steps,
+        recovery_steps=recovery_steps,
+        recovery_lr=recovery_lr,
+        structured_24=structured_24,
+        protect_cls=protect_cls,
+        skip_attention_qkv=skip_attention_qkv,
+        use_lora=use_lora,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        adaptive_sparsity=adaptive_sparsity,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        recalibrate_ln=recalibrate_ln,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    try:
+        compressed_model.compression_stats = stats
+    except Exception:
+        pass
+    if return_stats or return_tuple or return_both:
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>Factory for Bonsai pruner.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.bonsai_pruner.BonsaiPrunedLoRALinear"><code class="flex name class">
+<span>class <span class="ident">BonsaiPrunedLoRALinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>bias: bool = True,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>freeze_base: bool = True,<br>dtype: torch.dtype | None = None,<br>device: torch.device | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class BonsaiPrunedLoRALinear(nn.Module):
+    &#34;&#34;&#34;
+    Linear with sparse pruned base weight (frozen) + optional trainable LoRA adapter.
+    &#34;&#34;&#34;
+
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        freeze_base: bool = True,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.nf = out_features  # Conv1D compatibility
+        self.lora_r = max(0, int(lora_r))
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (self.lora_alpha / max(1, self.lora_r)) if self.lora_r &gt; 0 else 1.0
+
+        weight_dtype = dtype if dtype is not None else torch.float32
+        self.weight = nn.Parameter(
+            torch.empty(out_features, in_features, dtype=weight_dtype, device=device)
+        )
+        # BN-FIX-02/03: non-persistent mask in the same dtype as weight.
+        self.register_buffer(
+            &#34;mask&#34;,
+            torch.ones(out_features, in_features, dtype=weight_dtype, device=device),
+            persistent=False,
+        )
+
+        if bias:
+            self.bias = nn.Parameter(torch.zeros(out_features, dtype=weight_dtype, device=device))
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+        if self.lora_r &gt; 0:
+            self.lora_A = nn.Parameter(
+                torch.empty(self.lora_r, in_features, dtype=weight_dtype, device=device)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty(out_features, self.lora_r, dtype=weight_dtype, device=device)
+            )
+            with torch.no_grad():
+                tmp_A = self.lora_A.data.float()
+                nn.init.kaiming_uniform_(tmp_A, a=math.sqrt(5))
+                self.lora_A.data.copy_(tmp_A.to(weight_dtype))
+                self.lora_B.data.zero_()
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+        if freeze_base:
+            self.weight.requires_grad = False
+            if self.bias is not None:
+                self.bias.requires_grad = False
+
+    @property
+    def effective_weight(self) -&gt; torch.Tensor:
+        W_eff = self.weight * self.mask
+        if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            W_eff = W_eff + (torch.matmul(self.lora_B, self.lora_A) * self.scaling)
+        return W_eff
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        orig_shape = x.shape
+        x_flat = x.reshape(-1, self.in_features)
+
+        W_sparse = self.weight * self.mask
+        out = F.linear(x_flat, W_sparse, self.bias)
+
+        if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x_flat, self.lora_A), self.lora_B) * self.scaling
+            out = out + lora_out
+
+        return out.view(*orig_shape[:-1], self.out_features)
+
+    @classmethod
+    def from_linear(
+        cls,
+        linear: nn.Linear | Any,
+        pruned_weight: torch.Tensor,
+        mask: torch.Tensor,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        freeze_base: bool = True,
+    ) -&gt; BonsaiPrunedLoRALinear:
+        out_features, in_features = pruned_weight.shape
+        has_bias = getattr(linear, &#34;bias&#34;, None) is not None and linear.bias is not None
+
+        layer = cls(
+            in_features=in_features,
+            out_features=out_features,
+            bias=has_bias,
+            lora_r=lora_r,
+            lora_alpha=lora_alpha,
+            freeze_base=freeze_base,
+            dtype=pruned_weight.dtype,
+            device=pruned_weight.device,
+        )
+        with torch.no_grad():
+            layer.weight.data.copy_(pruned_weight)
+            layer.mask.copy_(mask.to(pruned_weight.dtype))
+            if has_bias:
+                layer.bias.data.copy_(linear.bias.data)
+        return layer</code></pre>
+</details>
+<div class="desc"><p>Linear with sparse pruned base weight (frozen) + optional trainable LoRA adapter.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.bonsai_pruner.BonsaiPrunedLoRALinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.bonsai_pruner.BonsaiPrunedLoRALinear.from_linear"><code class="name flex">
+<span>def <span class="ident">from_linear</span></span>(<span>linear: nn.Linear | Any,<br>pruned_weight: torch.Tensor,<br>mask: torch.Tensor,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>freeze_base: bool = True) ‑> <a title="neuralops.compression_engine.bonsai_pruner.BonsaiPrunedLoRALinear" href="#neuralops.compression_engine.bonsai_pruner.BonsaiPrunedLoRALinear">BonsaiPrunedLoRALinear</a></span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.bonsai_pruner.BonsaiPrunedLoRALinear.effective_weight"><code class="name">prop <span class="ident">effective_weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def effective_weight(self) -&gt; torch.Tensor:
+    W_eff = self.weight * self.mask
+    if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        W_eff = W_eff + (torch.matmul(self.lora_B, self.lora_A) * self.scaling)
+    return W_eff</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.bonsai_pruner.BonsaiPrunedLoRALinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    orig_shape = x.shape
+    x_flat = x.reshape(-1, self.in_features)
+
+    W_sparse = self.weight * self.mask
+    out = F.linear(x_flat, W_sparse, self.bias)
+
+    if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        lora_out = F.linear(F.linear(x_flat, self.lora_A), self.lora_B) * self.scaling
+        out = out + lora_out
+
+    return out.view(*orig_shape[:-1], self.out_features)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.compression_engine.bonsai_pruner.BonsaiPruner"><code class="flex name class">
+<span>class <span class="ident">BonsaiPruner</span></span>
+<span>(</span><span>model: nn.Module,<br>sparsity: float = 0.5,<br>steps: int = 8,<br>recovery_steps: int = 3,<br>recovery_lr: float = 0.001,<br>structured_24: bool = False,<br>block_size: tuple[int, int] = (4, 4),<br>protect_cls: bool = True,<br>skip_attention_qkv: bool = True,<br>target_attention_only: bool = False,<br>use_lora: bool = False,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>adaptive_sparsity: bool = False,<br>min_numel: int = 16,<br>max_error: float | None = None,<br>fallback_to_original: bool = True,<br>recalibrate_ln: bool = True,<br>tokenizer: Any | None = None,<br>calibration_loader: Any | None = None,<br>calibration_texts: list[str] | None = None,<br>device: str | torch.device | None = None,<br>cfg: Any | None = None,<br>max_recovery_steps: int = 32,<br>max_step_size: float = 0.01,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;bonsai&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;bonsai_pruner&#34;)
+class BonsaiPruner(BaseCompressor):
+    &#34;&#34;&#34;
+    Bonsai Pruner: progressive multi-step iterative pruning with cubic schedule,
+    inter-step gradient descent recovery, and [CLS]/GQA protection.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module,
+        sparsity: float = 0.5,
+        steps: int = 8,
+        recovery_steps: int = 3,
+        recovery_lr: float = 1e-3,
+        structured_24: bool = False,
+        block_size: tuple[int, int] = (4, 4),
+        protect_cls: bool = True,
+        skip_attention_qkv: bool = True,
+        target_attention_only: bool = False,
+        use_lora: bool = False,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        adaptive_sparsity: bool = False,
+        min_numel: int = 16,
+        max_error: float | None = None,
+        fallback_to_original: bool = True,
+        recalibrate_ln: bool = True,
+        tokenizer: Any | None = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
+        cfg: Any | None = None,
+        max_recovery_steps: int = 32,  # BN-FIX-05
+        max_step_size: float = 0.01,  # BN-FIX-06
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;bonsai&#34;, **kwargs)
+        cfg_obj = cfg or kwargs.get(&#34;comp_config&#34;)
+
+        self.sparsity = max(0.0, min(float(sparsity or getattr(cfg_obj, &#34;sparsity&#34;, 0.5)), 0.95))
+        self.steps = max(1, int(steps or getattr(cfg_obj, &#34;steps&#34;, 8)))
+        raw_recovery = int(
+            recovery_steps if recovery_steps is not None else getattr(cfg_obj, &#34;recovery_steps&#34;, 3)
+        )
+        self.recovery_steps = max(0, min(raw_recovery, max_recovery_steps))
+        self.recovery_lr = float(recovery_lr or getattr(cfg_obj, &#34;recovery_lr&#34;, 1e-3))
+        self.structured_24 = bool(
+            structured_24 if structured_24 is not None else getattr(cfg_obj, &#34;structured_24&#34;, False)
+        )
+        self.block_size = block_size or getattr(cfg_obj, &#34;block_size&#34;, (4, 4))
+        self.protect_cls = bool(
+            protect_cls if protect_cls is not None else getattr(cfg_obj, &#34;protect_cls&#34;, True)
+        )
+        self.target_attention_only = bool(target_attention_only)
+        self.skip_attention_qkv = bool(
+            skip_attention_qkv
+            if skip_attention_qkv is not None
+            else getattr(cfg_obj, &#34;skip_attention_qkv&#34;, False)
+        )
+        self.use_lora = bool(use_lora or getattr(cfg_obj, &#34;use_lora&#34;, False) or (lora_r &gt; 0))
+        self.lora_r = int(lora_r or getattr(cfg_obj, &#34;lora_r&#34;, 0))
+        self.lora_alpha = float(lora_alpha or getattr(cfg_obj, &#34;lora_alpha&#34;, 1.0))
+        self.adaptive_sparsity = bool(
+            adaptive_sparsity or getattr(cfg_obj, &#34;adaptive_sparsity&#34;, False)
+        )
+        self.min_numel = max(1, int(min_numel or getattr(cfg_obj, &#34;min_numel&#34;, 16)))
+        self.max_recovery_steps = max(1, int(max_recovery_steps))
+        self.max_step_size = float(max_step_size)
+
+        if max_error is not None:
+            self.max_error: float | None = float(max_error)
+        elif hasattr(cfg_obj, &#34;max_error&#34;) and cfg_obj.max_error is not None:
+            self.max_error = float(cfg_obj.max_error)
+        else:
+            self.max_error = adaptive_max_error(
+                int((1.0 - self.sparsity) * 768), 768, 768, &#34;distilbert&#34;
+            )
+
+        self.fallback_to_original = bool(
+            fallback_to_original
+            if fallback_to_original is not None
+            else getattr(cfg_obj, &#34;fallback_to_original&#34;, True)
+        )
+        self.recalibrate_ln = bool(
+            recalibrate_ln
+            if recalibrate_ln is not None
+            else getattr(cfg_obj, &#34;recalibrate_ln&#34;, True)
+        )
+
+        self.tokenizer = tokenizer or getattr(model, &#34;tokenizer&#34;, None)
+        self.calibration_loader = calibration_loader
+        self.calibration_texts = calibration_texts
+
+        try:
+            default_dev = next(model.parameters()).device
+        except (StopIteration, AttributeError):
+            default_dev = torch.device(&#34;cpu&#34;)
+        if device is not None:
+            try:
+                self.target_device = torch.device(device)
+            except Exception:
+                self.target_device = default_dev
+        else:
+            self.target_device = default_dev
+
+        self.pruned_layers: list[str] = []
+        self.protected_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_sparsities: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
+        self._compressed_params: int = 0
+
+    # ------------------------------------------------------------------
+    # BN-FIX-01: independent filters.
+    # ------------------------------------------------------------------
+    _ATTN_TOKENS = (
+        &#34;attn&#34;,
+        &#34;attention&#34;,
+        &#34;q_proj&#34;,
+        &#34;k_proj&#34;,
+        &#34;v_proj&#34;,
+        &#34;o_proj&#34;,
+        &#34;out_proj&#34;,
+        &#34;q_lin&#34;,
+        &#34;k_lin&#34;,
+        &#34;v_lin&#34;,
+        &#34;out_lin&#34;,
+        &#34;query&#34;,
+        &#34;key&#34;,
+        &#34;value&#34;,
+        &#34;c_attn&#34;,
+        &#34;c_proj&#34;,
+    )
+
+    _PROTECT_TOKENS = (
+        &#34;router&#34;,
+        &#34;gate&#34;,
+        &#34;cls&#34;,
+        &#34;classifier&#34;,
+        &#34;head&#34;,
+        &#34;embed&#34;,
+        &#34;score&#34;,
+        &#34;lm_head&#34;,
+        &#34;pooler&#34;,
+    )
+
+    _QKV_TOKENS = (
+        &#34;query&#34;,
+        &#34;key&#34;,
+        &#34;value&#34;,
+        &#34;q_lin&#34;,
+        &#34;k_lin&#34;,
+        &#34;v_lin&#34;,
+        &#34;q_proj&#34;,
+        &#34;k_proj&#34;,
+        &#34;v_proj&#34;,
+        &#34;c_attn&#34;,
+    )
+
+    def _is_protected_layer(self, name: str, module: nn.Module | None = None) -&gt; bool:
+        &#34;&#34;&#34;
+        A layer is protected if ANY of the following is true:
+          (a) protect_cls=True AND name matches protect tokens.
+          (b) target_attention_only=True AND name is NOT an attention projection.
+          (c) skip_attention_qkv=True AND name is a QKV projection.
+          (d) should_compress_linear returns False.
+        The filters are independent (BN-FIX-01).
+        &#34;&#34;&#34;
+        name_lower = name.lower()
+
+        # (a) explicit protect tokens.
+        if self.protect_cls and any(kw in name_lower for kw in self._PROTECT_TOKENS):
+            return True
+
+        # (b) attention-only mode.
+        if self.target_attention_only and not any(k in name_lower for k in self._ATTN_TOKENS):
+            return True
+
+        # (c) QKV protection.
+        if self.skip_attention_qkv:
+            last_part = name_lower.split(&#34;.&#34;)[-1]
+            if any(k in last_part for k in self._QKV_TOKENS):
+                return True
+            if module is not None and hasattr(module, &#34;weight&#34;) and module.weight.ndim == 2:
+                if &#34;attn&#34; in name_lower or &#34;attention&#34; in name_lower:
+                    w_shape = module.weight.shape
+                    if w_shape[0] != w_shape[1]:  # GQA asymmetry
+                        return True
+
+        # (d) framework guard.
+        try:
+            if not should_compress_linear(self.model, name):
+                return True
+        except Exception:
+            pass
+
+        return False
+
+    # ------------------------------------------------------------------
+    def _collect_activations(self) -&gt; dict[str, torch.Tensor]:
+        self.model.eval()
+        activations: dict[str, list[torch.Tensor]] = {}
+        hooks = []
+
+        def make_hook(name: str):
+            def hook(module, inp, outp):
+                if inp and isinstance(inp[0], torch.Tensor):
+                    if name not in activations:
+                        activations[name] = []
+                    activations[name].append(inp[0].detach().cpu())
+
+            return hook
+
+        for name, module in self.model.named_modules():
+            cls_name = module.__class__.__name__
+            is_linear_like = (
+                isinstance(module, nn.Linear)
+                or &#34;conv1d&#34; in cls_name.lower()
+                or hasattr(module, &#34;nf&#34;)
+            )
+            if is_linear_like:
+                hooks.append(module.register_forward_hook(make_hook(name)))
+
+        try:
+            calib_inputs = get_calibration_tensors(
+                self.model,
+                tokenizer=self.tokenizer,
+                calibration_loader=self.calibration_loader,
+                calibration_texts=self.calibration_texts,
+                device=self.target_device,
+            )
+            with torch.no_grad():
+                forward_success = False
+                try:
+                    if isinstance(calib_inputs, dict):
+                        self.model(**calib_inputs)
+                    elif isinstance(calib_inputs, torch.Tensor):
+                        self.model(calib_inputs)
+                    elif isinstance(calib_inputs, (list, tuple)):
+                        self.model(*calib_inputs)
+                    forward_success = True
+                except Exception as e1:
+                    logger.debug(&#34;Bonsai calibration strategy 1 failed: %s&#34;, e1)
+
+                if not forward_success and isinstance(calib_inputs, dict):
+                    try:
+                        subset = {
+                            k: calib_inputs[k]
+                            for k in (&#34;input_ids&#34;, &#34;attention_mask&#34;)
+                            if k in calib_inputs
+                        }
+                        if subset:
+                            self.model(**subset)
+                            forward_success = True
+                    except Exception as e2:
+                        logger.debug(&#34;Bonsai calibration strategy 2 failed: %s&#34;, e2)
+
+                if (
+                    not forward_success
+                    and isinstance(calib_inputs, dict)
+                    and &#34;input_ids&#34; in calib_inputs
+                ):
+                    try:
+                        self.model(calib_inputs[&#34;input_ids&#34;])
+                        forward_success = True
+                    except Exception as e3:
+                        logger.debug(&#34;Bonsai calibration strategy 3 failed: %s&#34;, e3)
+
+                if not forward_success:
+                    try:
+                        dummy = torch.randint(0, 100, (1, 16), device=self.target_device)
+                        self.model(dummy)
+                    except Exception as e4:
+                        logger.debug(&#34;Bonsai synthetic calibration failed: %s&#34;, e4)
+        except Exception as e:
+            logger.warning(&#34;Bonsai calibration exception: %s&#34;, e)
+        finally:
+            for h in hooks:
+                h.remove()
+
+        aggregated: dict[str, torch.Tensor] = {}
+        for name, act_list in activations.items():
+            if act_list:
+                aggregated[name] = torch.cat([a.reshape(-1, a.shape[-1]) for a in act_list], dim=0)
+        return aggregated
+
+    # ------------------------------------------------------------------
+    def compress(self, **kwargs: Any) -&gt; tuple[nn.Module, dict[str, Any]]:
+        try:
+            activations_map = self._collect_activations()
+        except Exception as e:
+            logger.warning(
+                &#34;BonsaiPruner: activation collection failed (%s); proceeding with unweighted pruning.&#34;,
+                e,
+            )
+            activations_map = {}
+
+        self.pruned_layers = []
+        self.protected_layers = []
+        self.skipped_layers = []
+        self.fallback_layers = []
+        self.layer_errors = {}
+        self.layer_sparsities = {}
+
+        for name, module in list(self.model.named_modules()):
+            cls_name = module.__class__.__name__
+            is_linear_like = (
+                isinstance(module, nn.Linear)
+                or &#34;conv1d&#34; in cls_name.lower()
+                or hasattr(module, &#34;nf&#34;)
+            )
+            if not is_linear_like or isinstance(module, BonsaiPrunedLoRALinear):
+                continue
+
+            if self._is_protected_layer(name, module):
+                for p in module.parameters():
+                    p.requires_grad = False
+                self.protected_layers.append(name)
+                continue
+
+            target_mod = getattr(module, &#34;base_layer&#34;, module)
+            raw_w = target_mod.weight.data
+            dtype = raw_w.dtype
+            device = raw_w.device
+            is_conv1d = &#34;conv1d&#34; in cls_name.lower() or hasattr(module, &#34;nf&#34;)
+
+            W0 = raw_w.t().float().contiguous() if is_conv1d else raw_w.float().contiguous()
+            out_f, in_f = W0.shape
+
+            if (out_f * in_f) &lt; self.min_numel:
+                for p in module.parameters():
+                    p.requires_grad = False
+                self.skipped_layers.append(name)
+                continue
+
+            W = W0.clone()
+            act = activations_map.get(name)
+            X = None
+            if act is not None and act.numel() &gt; 0:
+                X = act.to(device).float()
+                if X.shape[-1] != in_f:
+                    X = None
+
+            # BN-FIX-10: bounded adaptive sparsity.
+            if self.adaptive_sparsity and X is not None:
+                act_norm = torch.norm(X, p=&#34;fro&#34;).item() / max(1, X.shape[0])
+                scale_factor = 1.0 / (1.0 + math.log1p(max(0.0, act_norm)))
+                target_sp = max(0.05, min(0.95, self.sparsity * (0.7 + 0.6 * scale_factor)))
+            else:
+                target_sp = self.sparsity
+
+            final_mask = torch.ones_like(W)
+
+            # Iterative pruning loop.
+            for s in range(self.steps):
+                t_ratio = (s + 1.0) / self.steps
+                current_sp = target_sp * (1.0 - (1.0 - t_ratio) ** 3)
+                saliency = compute_taylor_first_order_saliency(W, activations=X)
+
+                if self.structured_24:
+                    W_pruned, final_mask = apply_24_structured_mask(W, saliency=saliency, dim=1)
+                elif self.block_size != (1, 1):
+                    W_pruned, final_mask = apply_block_mask(
+                        W,
+                        block_size=self.block_size,
+                        sparsity=current_sp,
+                        saliency=saliency,
+                    )
+                else:
+                    flat = saliency.reshape(-1)
+                    k = max(1, int(flat.numel() * (1.0 - current_sp)))
+                    thr = torch.topk(flat, k, largest=True).values[-1]
+                    final_mask = (saliency &gt;= thr).float()
+                    W_pruned = W * final_mask
+
+                # BN-FIX-04: explicit clone.
+                W = W_pruned.clone()
+
+                # Gradient descent recovery between steps.
+                if self.recovery_steps &gt; 0 and X is not None:
+                    cov_X = torch.matmul(X.t(), X) / max(X.shape[0], 1)
+                    W0_cov = torch.matmul(W0, cov_X)
+
+                    # BN-FIX-06: clamp step size.
+                    raw_ss = self.recovery_lr / (torch.norm(cov_X).item() + 1e-6)
+                    step_size = min(raw_ss, self.max_step_size)
+                    for _ in range(self.recovery_steps):
+                        curr_cov = torch.matmul(W, cov_X)
+                        grad = (curr_cov - W0_cov) * final_mask
+                        W = W - step_size * grad
+                        W = W * final_mask
+
+            norm_orig = torch.norm(W0, p=&#34;fro&#34;).clamp_min(1e-8)
+            rel_err = (torch.norm(W0 - W, p=&#34;fro&#34;) / norm_orig).item()
+            self.layer_errors[name] = float(rel_err)
+            self.layer_sparsities[name] = float(target_sp)
+
+            is_invalid = (not torch.isfinite(W).all()) or (
+                rel_err &gt; (self.max_error or float(&#34;inf&#34;))
+            )
+            if is_invalid:
+                logger.warning(
+                    &#34;BonsaiPruner: %s error %.4f (threshold %.4f).&#34;,
+                    name,
+                    rel_err,
+                    self.max_error if self.max_error is not None else float(&#34;inf&#34;),
+                )
+                if self.fallback_to_original:
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    self.fallback_layers.append(name)
+                    continue
+
+            # Commit layer.
+            if self.use_lora and self.lora_r &gt; 0:
+                pruned_lora_layer = BonsaiPrunedLoRALinear.from_linear(
+                    linear=target_mod,
+                    pruned_weight=W.to(dtype=dtype, device=device),
+                    mask=final_mask.to(device=device),
+                    lora_r=self.lora_r,
+                    lora_alpha=self.lora_alpha,
+                    freeze_base=True,
+                )
+                # BN-FIX-07: copy LoRA data (no shared reference).
+                if (
+                    hasattr(module, &#34;lora_A&#34;)
+                    and module.lora_A is not None
+                    and pruned_lora_layer.lora_A is not None
+                ):
+                    try:
+                        src_A = getattr(module.lora_A, &#34;weight&#34;, module.lora_A)
+                        pruned_lora_layer.lora_A.data.copy_(src_A.data)
+                    except Exception as e:
+                        logger.debug(&#34;Bonsai LoRA A transfer failed: %s&#34;, e)
+                if (
+                    hasattr(module, &#34;lora_B&#34;)
+                    and module.lora_B is not None
+                    and pruned_lora_layer.lora_B is not None
+                ):
+                    try:
+                        src_B = getattr(module.lora_B, &#34;weight&#34;, module.lora_B)
+                        pruned_lora_layer.lora_B.data.copy_(src_B.data)
+                    except Exception as e:
+                        logger.debug(&#34;Bonsai LoRA B transfer failed: %s&#34;, e)
+
+                if hasattr(module, &#34;base_layer&#34;):
+                    module.base_layer = pruned_lora_layer
+                    pruned_lora_layer = module
+                replace_module(self.model, name, pruned_lora_layer)
+            else:
+                # BN-FIX-08: no_grad for weight mutation.
+                with torch.no_grad():
+                    if is_conv1d:
+                        target_mod.weight.data.copy_(
+                            W.t().contiguous().to(dtype=dtype, device=device)
+                        )
+                    else:
+                        target_mod.weight.data.copy_(W.contiguous().to(dtype=dtype, device=device))
+
+            self.pruned_layers.append(name)
+
+        # LayerNorm recalibration.
+        if self.recalibrate_ln:
+            try:
+                recalibrate_layernorms(
+                    self.model,
+                    tokenizer=self.tokenizer,
+                    calibration_loader=self.calibration_loader,
+                    calibration_texts=self.calibration_texts,
+                    device=self.target_device,
+                )
+            except Exception as e:
+                logger.warning(&#34;BonsaiPruner: LayerNorm recalibration skipped: %s&#34;, e)
+
+        # BN-FIX-09: forward sanity check with attention_mask.
+        sanity_check_passed = True
+        try:
+            with torch.no_grad():
+                dummy = torch.randint(0, 100, (1, 8), device=self.target_device, dtype=torch.long)
+                attn = torch.ones_like(dummy)
+                try:
+                    self.model(input_ids=dummy, attention_mask=attn)
+                except Exception:
+                    self.model(dummy)
+        except Exception as ex:
+            logger.debug(&#34;BonsaiPruner post-compression forward sanity check warning: %s&#34;, ex)
+            sanity_check_passed = False
+
+        try:
+            self._compressed_params = self._count_params(self.model)
+        except Exception:
+            self._compressed_params = sum(p.numel() for p in self.model.parameters())
+
+        try:
+            stats = self.get_compression_stats()
+        except Exception:
+            stats = {}
+
+        avg_err = (
+            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
+        )
+        stats.update(
+            {
+                &#34;pruned_layers&#34;: self.pruned_layers,
+                &#34;pruned_layer_count&#34;: len(self.pruned_layers),
+                &#34;protected_layers&#34;: self.protected_layers,
+                &#34;protected_layer_count&#34;: len(self.protected_layers),
+                &#34;skipped_layers&#34;: self.skipped_layers,
+                &#34;skipped_layer_count&#34;: len(self.skipped_layers),
+                &#34;fallback_layers&#34;: self.fallback_layers,
+                &#34;fallback_layer_count&#34;: len(self.fallback_layers),
+                &#34;layer_errors&#34;: self.layer_errors,
+                &#34;layer_sparsities&#34;: self.layer_sparsities,
+                &#34;avg_reconstruction_error&#34;: avg_err,
+                &#34;sanity_check_passed&#34;: sanity_check_passed,
+                &#34;steps&#34;: self.steps,
+                &#34;recovery_steps&#34;: self.recovery_steps,
+                &#34;sparsity_target&#34;: self.sparsity,
+                &#34;structured_24&#34;: self.structured_24,
+                &#34;protect_cls&#34;: self.protect_cls,
+                &#34;skip_attention_qkv&#34;: self.skip_attention_qkv,
+                &#34;use_lora&#34;: self.use_lora,
+                &#34;lora_r&#34;: self.lora_r,
+                &#34;adaptive_sparsity&#34;: self.adaptive_sparsity,
+                &#34;max_error&#34;: self.max_error,
+                &#34;fallback_to_original&#34;: self.fallback_to_original,
+                &#34;method&#34;: &#34;bonsai_iterative_pruning_with_gd_recovery&#34;,
+            }
+        )
+        self.stats = stats
+        logger.info(
+            &#34;Compressor bonsai finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f&#34;,
+            len(self.pruned_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error if self.max_error is not None else 1.0,
+        )
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Bonsai Pruner: progressive multi-step iterative pruning with cubic schedule,
+inter-step gradient descent recovery, and [CLS]/GQA protection.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.compress" href="../core/base.html#neuralops.core.base.BaseCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.bonsai_pruner.bonsai_factory" href="#neuralops.compression_engine.bonsai_pruner.bonsai_factory">bonsai_factory</a></code></li>
+<li><code><a title="neuralops.compression_engine.bonsai_pruner.bonsai_prune_model" href="#neuralops.compression_engine.bonsai_pruner.bonsai_prune_model">bonsai_prune_model</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.bonsai_pruner.BonsaiPrunedLoRALinear" href="#neuralops.compression_engine.bonsai_pruner.BonsaiPrunedLoRALinear">BonsaiPrunedLoRALinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.bonsai_pruner.BonsaiPrunedLoRALinear.effective_weight" href="#neuralops.compression_engine.bonsai_pruner.BonsaiPrunedLoRALinear.effective_weight">effective_weight</a></code></li>
+<li><code><a title="neuralops.compression_engine.bonsai_pruner.BonsaiPrunedLoRALinear.forward" href="#neuralops.compression_engine.bonsai_pruner.BonsaiPrunedLoRALinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.compression_engine.bonsai_pruner.BonsaiPrunedLoRALinear.from_linear" href="#neuralops.compression_engine.bonsai_pruner.BonsaiPrunedLoRALinear.from_linear">from_linear</a></code></li>
+<li><code><a title="neuralops.compression_engine.bonsai_pruner.BonsaiPrunedLoRALinear.is_custom_attention" href="#neuralops.compression_engine.bonsai_pruner.BonsaiPrunedLoRALinear.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.bonsai_pruner.BonsaiPruner" href="#neuralops.compression_engine.bonsai_pruner.BonsaiPruner">BonsaiPruner</a></code></h4>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

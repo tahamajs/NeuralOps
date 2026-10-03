@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests.test_performer_comprehensive API documentation</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tests.test_performer_comprehensive</code></h1>
+</header>
+<section id="section-intro">
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.tests.test_performer_comprehensive.test_performer_bidirectional_and_causal_shapes"><code class="name flex">
+<span>def <span class="ident">test_performer_bidirectional_and_causal_shapes</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_performer_bidirectional_and_causal_shapes():
+    x = torch.randn(2, 10, 64)
+    mask = torch.ones(2, 10)
+    mask[:, 7:] = 0  # 3 padding tokens
+
+    # Bidirectional
+    p_bidi = PerformerAttention(dim=64, num_heads=4, is_decoder=False, lora_rank=8)
+    out_bidi, _ = p_bidi(x, attention_mask=mask)
+    assert out_bidi.shape == (2, 10, 64)
+    assert torch.isfinite(out_bidi).all()
+
+    # Causal
+    p_causal = PerformerAttention(dim=64, num_heads=4, is_decoder=True, lora_rank=8)
+    out_causal, _ = p_causal(x, attention_mask=mask)
+    assert out_causal.shape == (2, 10, 64)
+    assert torch.isfinite(out_causal).all()</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_performer_comprehensive.test_performer_fallback_on_copy_weights_failure"><code class="name flex">
+<span>def <span class="ident">test_performer_fallback_on_copy_weights_failure</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_performer_fallback_on_copy_weights_failure():
+    class BrokenLayer(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.attention = nn.Linear(64, 64)
+            self.attention.weight.data.zero_()  # Causes copy_weights to raise
+    
+    layer = BrokenLayer()
+    res = inject_performer(layer=layer)
+    assert res is None  # Graceful fallback, no crash</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_performer_comprehensive.test_performer_frobenius_norm_verification"><code class="name flex">
+<span>def <span class="ident">test_performer_frobenius_norm_verification</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_performer_frobenius_norm_verification():
+    class ZeroAttn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.q_proj = nn.Linear(64, 64)
+            self.k_proj = nn.Linear(64, 64)
+            self.v_proj = nn.Linear(64, 64)
+            self.out_proj = nn.Linear(64, 64)
+            self.q_proj.weight.data.zero_()  # Zero norm
+
+    old = ZeroAttn()
+    # Does not crash with RuntimeError, logs warning instead
+    p = PerformerAttention(dim=64, num_heads=4, pretrained_attn=old)
+    assert p is not None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_performer_comprehensive.test_performer_injection_all_4_architectures"><code class="name flex">
+<span>def <span class="ident">test_performer_injection_all_4_architectures</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_performer_injection_all_4_architectures():
+    class MockAttn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.q_proj = nn.Linear(64, 64)
+            self.k_proj = nn.Linear(64, 64)
+            self.v_proj = nn.Linear(64, 64)
+            self.out_proj = nn.Linear(64, 64)
+            self.hidden_size = 64
+            self.num_heads = 4
+
+    # 1. DistilBERT clone
+    class DistilBertClone(nn.Module):
+        def __init__(self):
+            super().__init__()
+            layer = nn.Module()
+            layer.attention = MockAttn()
+            self.distilbert = nn.Module()
+            self.distilbert.transformer = nn.Module()
+            self.distilbert.transformer.layer = nn.ModuleList([layer])
+    d_model = DistilBertClone()
+    res_d = inject_performer(model=d_model, lora_rank=8)
+    assert res_d is not None
+    assert isinstance(d_model.distilbert.transformer.layer[0].attention, PerformerAttention)
+
+    # 2. RoBERTa clone
+    class RobertaClone(nn.Module):
+        def __init__(self):
+            super().__init__()
+            layer = nn.Module()
+            layer.attention = nn.Module()
+            layer.attention.self = MockAttn()
+            self.roberta = nn.Module()
+            self.roberta.encoder = nn.Module()
+            self.roberta.encoder.layer = nn.ModuleList([layer])
+    r_model = RobertaClone()
+    res_r = inject_performer(model=r_model, lora_rank=8)
+    assert res_r is not None
+    assert isinstance(r_model.roberta.encoder.layer[0].attention.self, PerformerAttention)
+
+    # 3. GPT-2 clone
+    class GPT2Clone(nn.Module):
+        def __init__(self):
+            super().__init__()
+            layer = nn.Module()
+            layer.attn = MockAttn()
+            self.transformer = nn.Module()
+            self.transformer.h = nn.ModuleList([layer])
+    g_model = GPT2Clone()
+    res_g = inject_performer(model=g_model, lora_rank=8)
+    assert res_g is not None
+    assert isinstance(g_model.transformer.h[0].attn, PerformerAttention)
+
+    # 4. Qwen3.5 clone
+    class QwenClone(nn.Module):
+        def __init__(self):
+            super().__init__()
+            layer = nn.Module()
+            layer.self_attn = MockAttn()
+            self.model = nn.Module()
+            self.model.layers = nn.ModuleList([layer])
+    q_model = QwenClone()
+    res_q = inject_performer(model=q_model, lora_rank=8)
+    assert res_q is not None
+    assert isinstance(q_model.model.layers[0].self_attn, PerformerAttention)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_performer_comprehensive.test_performer_lora_adapters_freezing"><code class="name flex">
+<span>def <span class="ident">test_performer_lora_adapters_freezing</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_performer_lora_adapters_freezing():
+    class DummyAttn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.q_proj = nn.Linear(64, 64)
+            self.k_proj = nn.Linear(64, 64)
+            self.v_proj = nn.Linear(64, 64)
+            self.out_proj = nn.Linear(64, 64)
+    old = DummyAttn()
+    p = PerformerAttention(dim=64, num_heads=4, pretrained_attn=old, lora_rank=8)
+    assert not p.query.weight.requires_grad
+    assert p.query.lora_A.requires_grad
+    assert p.query.lora_B.requires_grad
+    assert not p.out_proj.weight.requires_grad
+    assert p.out_proj.lora_A.requires_grad
+    assert p.out_proj.lora_B.requires_grad</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_performer_comprehensive.test_performer_lora_config_independence"><code class="name flex">
+<span>def <span class="ident">test_performer_lora_config_independence</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_performer_lora_config_independence():
+    # 1. config=None, comp_config present
+    comp_cfg = SimpleNamespace(lora_rank=8, lora_alpha=16.0, performer_rank=32)
+    p1 = PerformerAttention(config=None, comp_config=comp_cfg, dim=64, num_heads=4)
+    assert p1.lora_rank == 8
+    assert p1.lora_alpha == 16.0
+    assert p1.num_features == 32
+
+    # 2. config=None, comp_config=None, kwargs override
+    p2 = PerformerAttention(config=None, comp_config=None, dim=64, num_heads=4, lora_rank=4, lora_alpha=8.0, rank=16)
+    assert p2.lora_rank == 4
+    assert p2.lora_alpha == 8.0
+    assert p2.num_features == 16</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_performer_comprehensive.test_performer_rotary_fallback"><code class="name flex">
+<span>def <span class="ident">test_performer_rotary_fallback</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_performer_rotary_fallback():
+    class MockRotaryEmb(nn.Module):
+        def forward(self, x, pos_ids):
+            B, H, N, d = x.shape
+            cos = torch.ones(B, 1, N, d)
+            sin = torch.zeros(B, 1, N, d)
+            return cos, sin
+
+    class MockAttn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.q_proj = nn.Linear(64, 64)
+            self.k_proj = nn.Linear(64, 64)
+            self.v_proj = nn.Linear(64, 64)
+            self.out_proj = nn.Linear(64, 64)
+            self.rotary_emb = MockRotaryEmb()
+
+    old = MockAttn()
+    p = PerformerAttention(dim=64, num_heads=4, pretrained_attn=old)
+    x = torch.randn(2, 8, 64)
+    out, _ = p(x, position_embeddings=None)
+    assert out.shape == (2, 8, 64)
+    assert torch.isfinite(out).all()</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tests" href="index.html">neuralops.tests</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.tests.test_performer_comprehensive.test_performer_bidirectional_and_causal_shapes" href="#neuralops.tests.test_performer_comprehensive.test_performer_bidirectional_and_causal_shapes">test_performer_bidirectional_and_causal_shapes</a></code></li>
+<li><code><a title="neuralops.tests.test_performer_comprehensive.test_performer_fallback_on_copy_weights_failure" href="#neuralops.tests.test_performer_comprehensive.test_performer_fallback_on_copy_weights_failure">test_performer_fallback_on_copy_weights_failure</a></code></li>
+<li><code><a title="neuralops.tests.test_performer_comprehensive.test_performer_frobenius_norm_verification" href="#neuralops.tests.test_performer_comprehensive.test_performer_frobenius_norm_verification">test_performer_frobenius_norm_verification</a></code></li>
+<li><code><a title="neuralops.tests.test_performer_comprehensive.test_performer_injection_all_4_architectures" href="#neuralops.tests.test_performer_comprehensive.test_performer_injection_all_4_architectures">test_performer_injection_all_4_architectures</a></code></li>
+<li><code><a title="neuralops.tests.test_performer_comprehensive.test_performer_lora_adapters_freezing" href="#neuralops.tests.test_performer_comprehensive.test_performer_lora_adapters_freezing">test_performer_lora_adapters_freezing</a></code></li>
+<li><code><a title="neuralops.tests.test_performer_comprehensive.test_performer_lora_config_independence" href="#neuralops.tests.test_performer_comprehensive.test_performer_lora_config_independence">test_performer_lora_config_independence</a></code></li>
+<li><code><a title="neuralops.tests.test_performer_comprehensive.test_performer_rotary_fallback" href="#neuralops.tests.test_performer_comprehensive.test_performer_rotary_fallback">test_performer_rotary_fallback</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

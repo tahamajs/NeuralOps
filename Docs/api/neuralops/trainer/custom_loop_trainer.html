@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.trainer.custom_loop_trainer API documentation</title>
+<meta name="description" content="High-performance custom training loop trainer with DDP gradient accumulation synchronization safety.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.trainer.custom_loop_trainer</code></h1>
+</header>
+<section id="section-intro">
+<p>High-performance custom training loop trainer with DDP gradient accumulation synchronization safety.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.trainer.custom_loop_trainer.CustomLoopTrainer"><code class="flex name class">
+<span>class <span class="ident">CustomLoopTrainer</span></span>
+<span>(</span><span>model: nn.Module,<br>train_dataset: Any,<br>eval_dataset: Any,<br>config: dict[str, Any],<br>results_manager: Any | None = None,<br>device: torch.device | None = None,<br>num_labels: int = 2,<br>is_multichoice: bool = False,<br>compute_metrics_fn: Callable | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@TrainerRegistry.register(&#34;custom_loop&#34;)
+class CustomLoopTrainer(BaseTrainer):
+    &#34;&#34;&#34;
+    Custom loop trainer optimized for maximum GPU compute throughput, mixed-precision training,
+    and distributed data parallel (DDP) gradient accumulation without redundant all-reduce overhead.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module,
+        train_dataset: Any,
+        eval_dataset: Any,
+        config: dict[str, Any],
+        results_manager: Any | None = None,
+        device: torch.device | None = None,
+        num_labels: int = 2,
+        is_multichoice: bool = False,
+        compute_metrics_fn: Callable | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        self.model = model
+        self.train_dataset = train_dataset
+        self.eval_dataset = eval_dataset
+        self.config = config or {}
+        self.results_manager = results_manager
+        self.device = device or (
+            torch.device(
+                &#34;cuda&#34;
+                if torch.cuda.is_available()
+                else (
+                    &#34;mps&#34;
+                    if hasattr(torch.backends, &#34;mps&#34;) and torch.backends.mps.is_available()
+                    else &#34;cpu&#34;
+                )
+            )
+        )
+        self.num_labels = num_labels
+        self.is_multichoice = is_multichoice
+        self.compute_metrics_fn = compute_metrics_fn or get_task_metrics(
+            self.config.get(&#34;task_name&#34;, &#34;mrpc&#34;)
+        )
+        self.kwargs = kwargs
+
+    def _make_loader(self, dataset: Any, shuffle: bool = False) -&gt; DataLoader:
+        &#34;&#34;&#34;Make DataLoader optimized for high-throughput GPU training.&#34;&#34;&#34;
+        pin = self.device.type in [&#34;cuda&#34;, &#34;mps&#34;]
+        num_workers = int(self.config.get(&#34;num_workers&#34;, 4 if self.device.type == &#34;cuda&#34; else 0))
+        batch_size = int(self.config.get(&#34;batch_size&#34;, 128))
+        loader_kwargs = {
+            &#34;batch_size&#34;: batch_size,
+            &#34;shuffle&#34;: shuffle,
+            &#34;pin_memory&#34;: pin,
+            &#34;num_workers&#34;: num_workers,
+            &#34;collate_fn&#34;: (dataset.collate_fn if hasattr(dataset, &#34;collate_fn&#34;) else None),
+        }
+        if num_workers &gt; 0:
+            loader_kwargs[&#34;prefetch_factor&#34;] = 2
+        if torch.cuda.is_available():
+            torch.backends.cudnn.benchmark = True
+        return DataLoader(dataset, **loader_kwargs)
+
+    def train_epoch(
+        self,
+        train_loader: DataLoader,
+        optimizer: torch.optim.Optimizer,
+        scaler: torch.cuda.amp.GradScaler | None,
+        gradient_accumulation_steps: int = 1,
+        max_grad_norm: float = 1.0,
+        amp_dtype: torch.dtype = torch.float32,
+        use_amp: bool = False,
+        pbar: Any | None = None,
+    ) -&gt; float:
+        &#34;&#34;&#34;
+        Execute a single training epoch with DDP gradient accumulation synchronization optimization.
+
+        # FIX: Non-final micro-batches are wrapped in model.no_sync() or contextlib.nullcontext()
+        # to eliminate redundant all-reduce synchronization across distributed workers during gradient accumulation.
+        &#34;&#34;&#34;
+        self.model.train()
+        total_epoch_loss = 0.0
+        num_batches = len(train_loader)
+        accum_steps = max(1, gradient_accumulation_steps)
+
+        for step, batch in enumerate(train_loader):
+            # FIX: Determine whether this micro-batch is the final step of the accumulation window or epoch
+            is_sync_step = ((step + 1) % accum_steps == 0) or (step + 1 == num_batches)
+
+            # FIX: Wrap non-final micro-batches in model.no_sync() for DDP to eliminate redundant all-reduce synchronization
+            sync_context = (
+                contextlib.nullcontext()
+                if (
+                    is_sync_step
+                    or not hasattr(self.model, &#34;no_sync&#34;)
+                    or not callable(self.model.no_sync)
+                )
+                else self.model.no_sync()
+            )
+
+            with sync_context:
+                with torch.autocast(
+                    device_type=self.device.type,
+                    dtype=amp_dtype,
+                    enabled=(use_amp and self.device.type in [&#34;cuda&#34;, &#34;mps&#34;]),
+                ):
+                    if self.is_multichoice:
+                        input_ids = batch[&#34;input_ids&#34;].to(self.device, non_blocking=True)
+                        attention_mask = batch[&#34;attention_mask&#34;].to(self.device, non_blocking=True)
+                        true_labels = batch[&#34;labels&#34;].to(self.device, non_blocking=True)
+                        bs, nc, sl = input_ids.shape
+                        flat_ids = input_ids.view(-1, sl)
+                        flat_mask = attention_mask.view(-1, sl)
+                        outputs = self.model(input_ids=flat_ids, attention_mask=flat_mask)
+                        logits = (
+                            outputs[&#34;logits&#34;]
+                            if isinstance(outputs, dict)
+                            else (outputs.logits if hasattr(outputs, &#34;logits&#34;) else outputs)
+                        )
+                        combined_labels = true_labels.repeat_interleave(nc)
+                        loss = nn.functional.cross_entropy(logits, combined_labels)
+                    else:
+                        input_ids = batch[&#34;input_ids&#34;].to(self.device, non_blocking=True)
+                        attention_mask = batch[&#34;attention_mask&#34;].to(self.device, non_blocking=True)
+                        labels = batch[&#34;labels&#34;].to(self.device, non_blocking=True)
+                        outputs = self.model(input_ids=input_ids, attention_mask=attention_mask)
+                        logits = (
+                            outputs[&#34;logits&#34;]
+                            if isinstance(outputs, dict)
+                            else (outputs.logits if hasattr(outputs, &#34;logits&#34;) else outputs)
+                        )
+                        loss = nn.functional.cross_entropy(logits, labels)
+
+                    # FIX: Scale loss by accumulation factor so gradient magnitudes match the full effective batch size
+                    if accum_steps &gt; 1:
+                        loss = loss / accum_steps
+
+                if torch.isfinite(loss):
+                    if scaler is not None and scaler.is_enabled():
+                        scaler.scale(loss).backward()
+                    else:
+                        loss.backward()
+
+                    curr_loss = loss.detach().item() * accum_steps
+                    total_epoch_loss += curr_loss
+                else:
+                    curr_loss = 0.0
+
+                # FIX: Only unscale, clip gradients, and step optimizer when synchronized on accumulation boundary
+                if scaler is not None and scaler.is_enabled():
+                    try:
+                        scaler.unscale_(optimizer)
+                    except RuntimeError:
+                        pass
+                    clip_grad_norm_factorized(self.model, max_norm=max_grad_norm)
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
+                    clip_grad_norm_factorized(self.model, max_norm=max_grad_norm)
+                    optimizer.step()
+                optimizer.zero_grad(set_to_none=True)
+
+            if pbar is not None and (
+                (step + 1) % max(1, int(self.config.get(&#34;logging_steps&#34;, 10))) == 0
+                or step == num_batches - 1
+            ):
+                pbar.set_postfix({&#34;loss&#34;: f&#34;{curr_loss:.4f}&#34;})
+
+        return total_epoch_loss / max(1, num_batches)
+
+    def train(self) -&gt; dict[str, Any]:
+        &#34;&#34;&#34;Fit the model on the provided dataset with full DDP and accumulation safety.&#34;&#34;&#34;
+        train_loader = self._make_loader(self.train_dataset, shuffle=True)
+        val_loader = self._make_loader(self.eval_dataset, shuffle=False)
+
+        class AttrDict:
+            pass
+
+        cfg = AttrDict()
+        cfg.learning_rate = float(self.config.get(&#34;learning_rate&#34;, 2e-5))
+        cfg.epochs = int(self.config.get(&#34;epochs&#34;, 3))
+        cfg.max_grad_norm = float(self.config.get(&#34;max_grad_norm&#34;, 1.0))
+        cfg.gradient_accumulation_steps = int(self.config.get(&#34;gradient_accumulation_steps&#34;, 1))
+        cfg.fp16 = bool(self.config.get(&#34;fp16&#34;, False))
+        cfg.amp = bool(self.config.get(&#34;amp&#34;, True))
+        cfg.logging_steps = int(self.config.get(&#34;logging_steps&#34;, 10))
+
+        result = train_model(
+            self.model,
+            train_loader,
+            val_loader,
+            self.device,
+            cfg,
+            self.num_labels,
+            self.is_multichoice,
+        )
+
+        if self.results_manager is not None:
+            if hasattr(self.results_manager, &#34;save_final_model&#34;):
+                self.results_manager.save_final_model(self.model)
+            if hasattr(self.results_manager, &#34;save_plots&#34;):
+                self.results_manager.save_plots()
+
+        return result
+
+    def evaluate(self) -&gt; dict[str, Any]:
+        &#34;&#34;&#34;Run evaluate and return results.&#34;&#34;&#34;
+        val_loader = self._make_loader(self.eval_dataset, shuffle=False)
+        return evaluate_model(
+            self.model,
+            val_loader,
+            self.device,
+            self.num_labels,
+            self.is_multichoice,
+            compute_all_metrics=True,
+        )</code></pre>
+</details>
+<div class="desc"><p>Custom loop trainer optimized for maximum GPU compute throughput, mixed-precision training,
+and distributed data parallel (DDP) gradient accumulation without redundant all-reduce overhead.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.trainer.base_trainer.BaseTrainer" href="base_trainer.html#neuralops.trainer.base_trainer.BaseTrainer">BaseTrainer</a></li>
+<li>abc.ABC</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.trainer.custom_loop_trainer.CustomLoopTrainer.train"><code class="name flex">
+<span>def <span class="ident">train</span></span>(<span>self) ‑> dict[str, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def train(self) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Fit the model on the provided dataset with full DDP and accumulation safety.&#34;&#34;&#34;
+    train_loader = self._make_loader(self.train_dataset, shuffle=True)
+    val_loader = self._make_loader(self.eval_dataset, shuffle=False)
+
+    class AttrDict:
+        pass
+
+    cfg = AttrDict()
+    cfg.learning_rate = float(self.config.get(&#34;learning_rate&#34;, 2e-5))
+    cfg.epochs = int(self.config.get(&#34;epochs&#34;, 3))
+    cfg.max_grad_norm = float(self.config.get(&#34;max_grad_norm&#34;, 1.0))
+    cfg.gradient_accumulation_steps = int(self.config.get(&#34;gradient_accumulation_steps&#34;, 1))
+    cfg.fp16 = bool(self.config.get(&#34;fp16&#34;, False))
+    cfg.amp = bool(self.config.get(&#34;amp&#34;, True))
+    cfg.logging_steps = int(self.config.get(&#34;logging_steps&#34;, 10))
+
+    result = train_model(
+        self.model,
+        train_loader,
+        val_loader,
+        self.device,
+        cfg,
+        self.num_labels,
+        self.is_multichoice,
+    )
+
+    if self.results_manager is not None:
+        if hasattr(self.results_manager, &#34;save_final_model&#34;):
+            self.results_manager.save_final_model(self.model)
+        if hasattr(self.results_manager, &#34;save_plots&#34;):
+            self.results_manager.save_plots()
+
+    return result</code></pre>
+</details>
+<div class="desc"><p>Fit the model on the provided dataset with full DDP and accumulation safety.</p></div>
+</dd>
+<dt id="neuralops.trainer.custom_loop_trainer.CustomLoopTrainer.train_epoch"><code class="name flex">
+<span>def <span class="ident">train_epoch</span></span>(<span>self,<br>train_loader: DataLoader,<br>optimizer: torch.optim.Optimizer,<br>scaler: torch.cuda.amp.GradScaler | None,<br>gradient_accumulation_steps: int = 1,<br>max_grad_norm: float = 1.0,<br>amp_dtype: torch.dtype = torch.float32,<br>use_amp: bool = False,<br>pbar: Any | None = None) ‑> float</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def train_epoch(
+    self,
+    train_loader: DataLoader,
+    optimizer: torch.optim.Optimizer,
+    scaler: torch.cuda.amp.GradScaler | None,
+    gradient_accumulation_steps: int = 1,
+    max_grad_norm: float = 1.0,
+    amp_dtype: torch.dtype = torch.float32,
+    use_amp: bool = False,
+    pbar: Any | None = None,
+) -&gt; float:
+    &#34;&#34;&#34;
+    Execute a single training epoch with DDP gradient accumulation synchronization optimization.
+
+    # FIX: Non-final micro-batches are wrapped in model.no_sync() or contextlib.nullcontext()
+    # to eliminate redundant all-reduce synchronization across distributed workers during gradient accumulation.
+    &#34;&#34;&#34;
+    self.model.train()
+    total_epoch_loss = 0.0
+    num_batches = len(train_loader)
+    accum_steps = max(1, gradient_accumulation_steps)
+
+    for step, batch in enumerate(train_loader):
+        # FIX: Determine whether this micro-batch is the final step of the accumulation window or epoch
+        is_sync_step = ((step + 1) % accum_steps == 0) or (step + 1 == num_batches)
+
+        # FIX: Wrap non-final micro-batches in model.no_sync() for DDP to eliminate redundant all-reduce synchronization
+        sync_context = (
+            contextlib.nullcontext()
+            if (
+                is_sync_step
+                or not hasattr(self.model, &#34;no_sync&#34;)
+                or not callable(self.model.no_sync)
+            )
+            else self.model.no_sync()
+        )
+
+        with sync_context:
+            with torch.autocast(
+                device_type=self.device.type,
+                dtype=amp_dtype,
+                enabled=(use_amp and self.device.type in [&#34;cuda&#34;, &#34;mps&#34;]),
+            ):
+                if self.is_multichoice:
+                    input_ids = batch[&#34;input_ids&#34;].to(self.device, non_blocking=True)
+                    attention_mask = batch[&#34;attention_mask&#34;].to(self.device, non_blocking=True)
+                    true_labels = batch[&#34;labels&#34;].to(self.device, non_blocking=True)
+                    bs, nc, sl = input_ids.shape
+                    flat_ids = input_ids.view(-1, sl)
+                    flat_mask = attention_mask.view(-1, sl)
+                    outputs = self.model(input_ids=flat_ids, attention_mask=flat_mask)
+                    logits = (
+                        outputs[&#34;logits&#34;]
+                        if isinstance(outputs, dict)
+                        else (outputs.logits if hasattr(outputs, &#34;logits&#34;) else outputs)
+                    )
+                    combined_labels = true_labels.repeat_interleave(nc)
+                    loss = nn.functional.cross_entropy(logits, combined_labels)
+                else:
+                    input_ids = batch[&#34;input_ids&#34;].to(self.device, non_blocking=True)
+                    attention_mask = batch[&#34;attention_mask&#34;].to(self.device, non_blocking=True)
+                    labels = batch[&#34;labels&#34;].to(self.device, non_blocking=True)
+                    outputs = self.model(input_ids=input_ids, attention_mask=attention_mask)
+                    logits = (
+                        outputs[&#34;logits&#34;]
+                        if isinstance(outputs, dict)
+                        else (outputs.logits if hasattr(outputs, &#34;logits&#34;) else outputs)
+                    )
+                    loss = nn.functional.cross_entropy(logits, labels)
+
+                # FIX: Scale loss by accumulation factor so gradient magnitudes match the full effective batch size
+                if accum_steps &gt; 1:
+                    loss = loss / accum_steps
+
+            if torch.isfinite(loss):
+                if scaler is not None and scaler.is_enabled():
+                    scaler.scale(loss).backward()
+                else:
+                    loss.backward()
+
+                curr_loss = loss.detach().item() * accum_steps
+                total_epoch_loss += curr_loss
+            else:
+                curr_loss = 0.0
+
+            # FIX: Only unscale, clip gradients, and step optimizer when synchronized on accumulation boundary
+            if scaler is not None and scaler.is_enabled():
+                try:
+                    scaler.unscale_(optimizer)
+                except RuntimeError:
+                    pass
+                clip_grad_norm_factorized(self.model, max_norm=max_grad_norm)
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                clip_grad_norm_factorized(self.model, max_norm=max_grad_norm)
+                optimizer.step()
+            optimizer.zero_grad(set_to_none=True)
+
+        if pbar is not None and (
+            (step + 1) % max(1, int(self.config.get(&#34;logging_steps&#34;, 10))) == 0
+            or step == num_batches - 1
+        ):
+            pbar.set_postfix({&#34;loss&#34;: f&#34;{curr_loss:.4f}&#34;})
+
+    return total_epoch_loss / max(1, num_batches)</code></pre>
+</details>
+<div class="desc"><p>Execute a single training epoch with DDP gradient accumulation synchronization optimization.</p>
+<h1 id="fix-non-final-micro-batches-are-wrapped-in-modelno_sync-or-contextlibnullcontext">FIX: Non-final micro-batches are wrapped in model.no_sync() or contextlib.nullcontext()</h1>
+<h1 id="to-eliminate-redundant-all-reduce-synchronization-across-distributed-workers-during-gradient-accumulation">to eliminate redundant all-reduce synchronization across distributed workers during gradient accumulation.</h1></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.trainer.base_trainer.BaseTrainer" href="base_trainer.html#neuralops.trainer.base_trainer.BaseTrainer">BaseTrainer</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.trainer.base_trainer.BaseTrainer.evaluate" href="base_trainer.html#neuralops.trainer.base_trainer.BaseTrainer.evaluate">evaluate</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.trainer" href="index.html">neuralops.trainer</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.trainer.custom_loop_trainer.CustomLoopTrainer" href="#neuralops.trainer.custom_loop_trainer.CustomLoopTrainer">CustomLoopTrainer</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.trainer.custom_loop_trainer.CustomLoopTrainer.train" href="#neuralops.trainer.custom_loop_trainer.CustomLoopTrainer.train">train</a></code></li>
+<li><code><a title="neuralops.trainer.custom_loop_trainer.CustomLoopTrainer.train_epoch" href="#neuralops.trainer.custom_loop_trainer.CustomLoopTrainer.train_epoch">train_epoch</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests.test_model_family_compat API documentation</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tests.test_model_family_compat</code></h1>
+</header>
+<section id="section-intro">
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.tests.test_model_family_compat.cfg"><code class="name flex">
+<span>def <span class="ident">cfg</span></span>(<span>model_type, hidden_size=896, heads=14, head_dim=64, layers=24)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cfg(model_type, hidden_size=896, heads=14, head_dim=64, layers=24):
+    return types.SimpleNamespace(model_type=model_type, hidden_size=hidden_size,
+                                 num_attention_heads=heads, head_dim=head_dim,
+                                 num_hidden_layers=layers)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_model_family_compat.test_adapter_metadata"><code class="name flex">
+<span>def <span class="ident">test_adapter_metadata</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_adapter_metadata():
+    q = ModelAdapter(cfg(&#34;qwen2&#34;, 768, 12, 64, 6), &#34;qwen&#34;)
+    assert (q.hidden_size, q.num_heads, q.head_dim, q.num_hidden_layers) == (768, 12, 64, 6)
+    assert q.causal is True and q.position_embedding == &#34;rotary&#34;
+    b = ModelAdapter(cfg(&#34;bert&#34;, 768, 12, 64, 6), &#34;bert&#34;)
+    assert b.causal is False and b.position_embedding == &#34;absolute&#34;</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_model_family_compat.test_family_detection"><code class="name flex">
+<span>def <span class="ident">test_family_detection</span></span>(<span>model_type, expected)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@pytest.mark.parametrize(&#34;model_type,expected&#34;, [
+    (&#34;distilbert&#34;, &#34;bert&#34;), (&#34;bert&#34;, &#34;bert&#34;), (&#34;roberta&#34;, &#34;roberta&#34;),
+    (&#34;gpt2&#34;, &#34;gpt&#34;), (&#34;qwen2&#34;, &#34;qwen&#34;), (&#34;t5&#34;, &#34;t5&#34;),
+    (&#34;mamba&#34;, &#34;ssm&#34;), (&#34;madeup&#34;, &#34;unknown&#34;),
+])
+def test_family_detection(model_type, expected):
+    assert detect_family(cfg(model_type)) == expected</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_model_family_compat.test_fp32_linalg"><code class="name flex">
+<span>def <span class="ident">test_fp32_linalg</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_fp32_linalg():
+    u, s, vt = fp32_linalg(torch.linalg.svd, torch.tensor([[1.0, 2.0], [3.0, 4.0]], dtype=torch.float16))
+    assert u.dtype == s.dtype == vt.dtype == torch.float16
+    assert u.shape == (2, 2) and s.shape == (2,) and vt.shape == (2, 2)
+    assert torch.allclose((u.float() @ torch.diag(s.float()) @ vt.float()), torch.tensor([[1., 2.], [3., 4.]]), atol=2e-2)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_model_family_compat.test_mask_conversion"><code class="name flex">
+<span>def <span class="ident">test_mask_conversion</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_mask_conversion():
+    adapter = ModelAdapter(cfg(&#34;qwen2&#34;), &#34;qwen&#34;)
+    mask = torch.tensor([[[[0.0, float(&#34;-inf&#34;)], [0.0, 0.0]]]])
+    converted = convert_mask(mask, adapter, expects_bidirectional=True)
+    assert converted.dtype == torch.bool and converted.shape == mask.shape
+    assert torch.equal(converted, mask &gt;= 0)
+    assert convert_mask(mask, adapter, expects_bidirectional=False) is mask</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_model_family_compat.test_projection_aliases"><code class="name flex">
+<span>def <span class="ident">test_projection_aliases</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_projection_aliases():
+    class Projections(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.q_proj = nn.Linear(4, 4)
+            self.k_proj = nn.Linear(4, 4)
+            self.v_proj = nn.Linear(4, 4)
+            self.o_proj = nn.Linear(4, 4)
+    m = Projections()
+    install_projection_aliases(m)
+    assert m.q_lin is m.q_proj and m.k_lin is m.k_proj
+    assert m.v_lin is m.v_proj and m.out_lin is m.o_proj
+    plain = nn.Linear(4, 4)
+    install_projection_aliases(plain)
+    assert not hasattr(plain, &#34;q_lin&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_model_family_compat.test_support_registry"><code class="name flex">
+<span>def <span class="ident">test_support_registry</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_support_registry():
+    assert module_family_support(&#34;mamba&#34;)[&#34;qwen&#34;] == &#34;incompatible&#34;
+    assert module_family_support(&#34;mamba&#34;)[&#34;bert&#34;] == &#34;encoder_compatible&#34;
+    assert module_family_support(&#34;faq&#34;)[&#34;qwen&#34;] == &#34;adapted&#34;</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_model_family_compat.test_wrap_for_family"><code class="name flex">
+<span>def <span class="ident">test_wrap_for_family</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_wrap_for_family():
+    class DummyAttention(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.q_proj = nn.Linear(4, 4)
+            self.k_proj = nn.Linear(4, 4)
+            self.v_proj = nn.Linear(4, 4)
+            self.o_proj = nn.Linear(4, 4)
+        def forward(self, x, **kwargs):
+            return self.o_proj(self.v_proj(x))
+    bert = DummyAttention()
+    assert wrap_for_family(bert, &#34;bert&#34;) is bert
+    qwen = DummyAttention()
+    wrapped = wrap_for_family(qwen, &#34;qwen&#34;)
+    assert isinstance(wrapped, FamilyModuleWrapper)
+    assert wrapped(torch.randn(2, 3, 4)).shape == (2, 3, 4)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tests" href="index.html">neuralops.tests</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.tests.test_model_family_compat.cfg" href="#neuralops.tests.test_model_family_compat.cfg">cfg</a></code></li>
+<li><code><a title="neuralops.tests.test_model_family_compat.test_adapter_metadata" href="#neuralops.tests.test_model_family_compat.test_adapter_metadata">test_adapter_metadata</a></code></li>
+<li><code><a title="neuralops.tests.test_model_family_compat.test_family_detection" href="#neuralops.tests.test_model_family_compat.test_family_detection">test_family_detection</a></code></li>
+<li><code><a title="neuralops.tests.test_model_family_compat.test_fp32_linalg" href="#neuralops.tests.test_model_family_compat.test_fp32_linalg">test_fp32_linalg</a></code></li>
+<li><code><a title="neuralops.tests.test_model_family_compat.test_mask_conversion" href="#neuralops.tests.test_model_family_compat.test_mask_conversion">test_mask_conversion</a></code></li>
+<li><code><a title="neuralops.tests.test_model_family_compat.test_projection_aliases" href="#neuralops.tests.test_model_family_compat.test_projection_aliases">test_projection_aliases</a></code></li>
+<li><code><a title="neuralops.tests.test_model_family_compat.test_support_registry" href="#neuralops.tests.test_model_family_compat.test_support_registry">test_support_registry</a></code></li>
+<li><code><a title="neuralops.tests.test_model_family_compat.test_wrap_for_family" href="#neuralops.tests.test_model_family_compat.test_wrap_for_family">test_wrap_for_family</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

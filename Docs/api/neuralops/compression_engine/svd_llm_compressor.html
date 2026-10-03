@@ -1,0 +1,1153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.svd_llm_compressor API documentation</title>
+<meta name="description" content="SVD-LLM Compressor: Truncation-Aware Singular Value Decomposition for LLM Compression (ICLR 2025).
+Paper Reference: Wang et al., &#34;SVD-LLM: …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.svd_llm_compressor</code></h1>
+</header>
+<section id="section-intro">
+<p>SVD-LLM Compressor: Truncation-Aware Singular Value Decomposition for LLM Compression (ICLR 2025).
+Paper Reference: Wang et al., "SVD-LLM: Truncation-Aware Singular Value Decomposition for Large Language Model Compression", ICLR 2025 (arXiv:2403.07378).</p>
+<p>Features implemented faithfully according to the paper:
+1. Data-Driven Cholesky Activation Whitening:
+- Accumulate input activation covariance C = (1/N) X^T X using calibration data
+- Cholesky factorization S = cholesky(C + eps * I)
+- Whiten weight: W_white = W @ S
+- Truncated SVD: W_white ≈ U_r @ diag(Sigma_r) @ Vt_r
+- Unwhiten right factor: Vt_unw = Vt_r @ S^{-1}
+- Explicit factor matrices: W_u = U_r * sqrt(Sigma_r), W_v = sqrt(Sigma_r) * Vt_unw
+- Forward mapping: y = (x @ W_v.T) @ W_u.T + bias
+2. Sequential LoRA Fine-Tuning (Section 3.2, Eq. 7):
+- Stage 1: Update W_u via LoRA (freeze W_v)
+- Stage 2: Update W_v via LoRA (freeze W_u)
+3. Fixed Parameter Rank Ratio:
+- Given parameter ratio R ∈ (0, 1]: r = (R * m * n) / (m + n)
+4. Compatibility across DistilBERT, RoBERTa/BERT, GPT-2 (Conv1D), and LLaMA/Qwen.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.svd_llm_compressor.SVDLLMCompressor"><code class="flex name class">
+<span>class <span class="ident">SVDLLMCompressor</span></span>
+<span>(</span><span>model: nn.Module,<br>rank_ratio: float = 0.2,<br>rank: int | None = None,<br>lora_rank: int = 16,<br>lora_alpha: float = 32.0,<br>max_error: float = 0.5,<br>fallback_to_original: bool = False,<br>calibration_texts: list[str] | None = None,<br>tokenizer: Any | None = None,<br>device: str | torch.device | None = None,<br>target_attention_only: bool = True,<br>recovery_steps: int = 50,<br>learning_rate: float = 0.0002,<br>weight_decay: float = 0.01,<br>batch_size: int = 8,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;svd_llm&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;svd_llm_compressor&#34;)
+class SVDLLMCompressor(BaseCompressor):
+    &#34;&#34;&#34;
+    SVD-LLM (ICLR 2025) Compressor with Cholesky activation whitening,
+    sequential LoRA recovery fine-tuning, and fixed rank parameter ratios.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module,
+        rank_ratio: float = 0.20,
+        rank: int | None = None,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        max_error: float = 0.50,
+        fallback_to_original: bool = False,
+        calibration_texts: list[str] | None = None,
+        tokenizer: Any | None = None,
+        device: str | torch.device | None = None,
+        target_attention_only: bool = True,
+        recovery_steps: int = 50,
+        learning_rate: float = 2e-4,
+        weight_decay: float = 0.01,
+        batch_size: int = 8,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model=model, name=&#34;svd_llm&#34;, **kwargs)
+        self.rank_ratio = rank_ratio
+        self.explicit_rank = rank
+        self.lora_rank = lora_rank
+        self.lora_alpha = lora_alpha
+        self.max_error = max_error
+        self.fallback_to_original = fallback_to_original
+        self.target_attention_only = target_attention_only
+        self.recovery_steps = recovery_steps
+        self.learning_rate = learning_rate
+        self.weight_decay = weight_decay
+        self.batch_size = batch_size
+
+        if device is not None:
+            self.device = torch.device(device)
+        else:
+            p = next(model.parameters(), None)
+            self.device = p.device if p is not None else torch.device(&#34;cpu&#34;)
+
+        self.tokenizer = tokenizer
+        if calibration_texts is not None:
+            self.calibration_texts = calibration_texts
+        else:
+            self.calibration_texts = self._load_calibration_data(n_samples=256)
+
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+
+    def _load_calibration_data(self, n_samples: int = 256) -&gt; list[str]:
+        &#34;&#34;&#34;
+        Load calibration samples from WikiText-2 (or Salesforce/wikitext fallback),
+        following SVD-LLM (ICLR 2025) paper protocol. Falls back to default corpus if offline.
+        &#34;&#34;&#34;
+        try:
+            from datasets import load_dataset
+
+            try:
+                ds = load_dataset(&#34;wikitext&#34;, &#34;wikitext-2-raw-v1&#34;, split=&#34;train&#34;)
+            except Exception:
+                ds = load_dataset(&#34;Salesforce/wikitext&#34;, &#34;wikitext-2-raw-v1&#34;, split=&#34;train&#34;)
+            texts = [t.strip() for t in ds[&#34;text&#34;] if t and len(t.strip()) &gt; 50]
+            if len(texts) &gt;= n_samples:
+                logger.info(
+                    &#34;Loaded %d calibration samples from WikiText-2 for SVD-LLM.&#34;,
+                    n_samples,
+                )
+                return texts[:n_samples]
+            elif texts:
+                return texts
+        except Exception as e:
+            logger.warning(
+                &#34;Could not download WikiText-2 calibration dataset (%s); using default corpus.&#34;,
+                e,
+            )
+        return DEFAULT_CALIBRATION_CORPUS
+
+    def compute_rank_from_ratio(self, m: int, n: int, ratio: float) -&gt; int:
+        &#34;&#34;&#34;
+        Compute low rank r from parameter retention ratio R:
+        Original params = m * n
+        Target params = R * m * n
+        Factorized params = r * (m + n)
+        r = (R * m * n) / (m + n)
+        &#34;&#34;&#34;
+        if self.explicit_rank is not None and self.explicit_rank &gt; 0:
+            return min(self.explicit_rank, min(m, n))
+        r_calc = (ratio * m * n) / (m + n)
+        r = int(round(r_calc))
+        return max(1, min(r, min(m, n)))
+
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        if isinstance(module, SVDLLMLinear):
+            return False
+        if any(
+            name.endswith(sfx) for sfx in [&#34;.base_layer&#34;, &#34;.lora_A&#34;, &#34;.lora_B&#34;, &#34;.lora_dropout&#34;]
+        ):
+            return False
+
+        target_mod = getattr(module, &#34;base_layer&#34;, module)
+        cls_name = module.__class__.__name__.lower()
+        target_cls = target_mod.__class__.__name__.lower()
+
+        is_linear_like = (
+            isinstance(module, nn.Linear)
+            or isinstance(target_mod, nn.Linear)
+            or &#34;conv1d&#34; in cls_name
+            or &#34;conv1d&#34; in target_cls
+            or hasattr(module, &#34;nf&#34;)
+            or hasattr(target_mod, &#34;nf&#34;)
+        )
+        if not is_linear_like:
+            return False
+
+        name_lower = name.lower()
+        if any(
+            skip in name_lower
+            for skip in [
+                &#34;lm_head&#34;,
+                &#34;classifier&#34;,
+                &#34;head&#34;,
+                &#34;output_layer&#34;,
+                &#34;score&#34;,
+                &#34;pooler&#34;,
+            ]
+        ):
+            return False
+
+        if self.target_attention_only:
+            ffn_patterns = [
+                &#34;ffn&#34;,
+                &#34;mlp&#34;,
+                &#34;lin1&#34;,
+                &#34;lin2&#34;,
+                &#34;intermediate&#34;,
+                &#34;gate_proj&#34;,
+                &#34;up_proj&#34;,
+                &#34;down_proj&#34;,
+                &#34;c_fc&#34;,
+            ]
+            if any(p in name_lower for p in ffn_patterns):
+                return False
+            if &#34;output.dense&#34; in name_lower and &#34;attention&#34; not in name_lower:
+                return False
+            attn_patterns = [
+                &#34;attn&#34;,
+                &#34;attention&#34;,
+                &#34;q_proj&#34;,
+                &#34;k_proj&#34;,
+                &#34;v_proj&#34;,
+                &#34;o_proj&#34;,
+                &#34;out_lin&#34;,
+                &#34;q_lin&#34;,
+                &#34;k_lin&#34;,
+                &#34;v_lin&#34;,
+                &#34;c_attn&#34;,
+                &#34;c_proj&#34;,
+                &#34;query&#34;,
+                &#34;key&#34;,
+                &#34;value&#34;,
+            ]
+            if not any(p in name_lower for p in attn_patterns):
+                return False
+        else:
+            if not should_compress_linear(self.model, name):
+                return False
+
+        return True
+
+    def _collect_covariances(self) -&gt; dict[str, torch.Tensor]:
+        &#34;&#34;&#34;
+        Collect empirical input activation covariances C = (1/N) X^T X via forward hooks.
+        Uses streaming accumulation to avoid storing large activation buffers in memory.
+        &#34;&#34;&#34;
+        covariances: dict[str, torch.Tensor] = {}
+        counts: dict[str, int] = {}
+        hooks = []
+
+        def make_hook(name: str):
+            def hook(module: nn.Module, inp: tuple[torch.Tensor, ...], outp: Any):
+                if not inp or inp[0] is None:
+                    return
+                x = inp[0].detach()
+                dev_type = x.device.type
+                autocast_ctx = (
+                    torch.autocast(device_type=dev_type, enabled=False)
+                    if hasattr(torch, &#34;autocast&#34;) and dev_type in (&#34;cuda&#34;, &#34;cpu&#34;)
+                    else contextlib.nullcontext()
+                )
+                with autocast_ctx:
+                    target_mod = getattr(module, &#34;base_layer&#34;, module)
+                    cls_name = module.__class__.__name__.lower()
+                    target_cls = target_mod.__class__.__name__.lower()
+                    is_conv1d = (
+                        &#34;conv1d&#34; in cls_name
+                        or &#34;conv1d&#34; in target_cls
+                        or hasattr(module, &#34;nf&#34;)
+                        or hasattr(target_mod, &#34;nf&#34;)
+                    )
+                    weight_tensor = getattr(target_mod, &#34;weight&#34;, getattr(module, &#34;weight&#34;, None))
+                    if weight_tensor is None:
+                        return
+                    in_f = weight_tensor.shape[0] if is_conv1d else weight_tensor.shape[1]
+                    x_fp32 = x.float()
+                    x_flat = x_fp32.reshape(-1, in_f)
+                    mask = x_flat.abs().sum(dim=-1) &gt; 1e-5
+                    if mask.sum() == 0:
+                        return
+                    x_active = x_flat[mask]
+                    batch_cov = torch.matmul(x_active.T, x_active).cpu()
+                    n_samples = x_active.size(0)
+
+                if name not in covariances:
+                    covariances[name] = batch_cov
+                    counts[name] = n_samples
+                else:
+                    covariances[name] += batch_cov
+                    counts[name] += n_samples
+
+            return hook
+
+        for name, module in self.model.named_modules():
+            if self._is_target_module(name, module):
+                hooks.append(module.register_forward_hook(make_hook(name)))
+
+        if self.tokenizer is not None and self.calibration_texts:
+            try:
+                inputs = self.tokenizer(
+                    self.calibration_texts,
+                    return_tensors=&#34;pt&#34;,
+                    padding=True,
+                    truncation=True,
+                    max_length=512,
+                )
+                inputs = {k: v.to(self.device) for k, v in inputs.items()}
+                with torch.no_grad():
+                    self.model(**inputs)
+            except Exception as e:
+                logger.warning(&#34;SVD-LLM calibration forward pass exception: %s&#34;, e)
+
+        for h in hooks:
+            h.remove()
+
+        final_cov: dict[str, torch.Tensor] = {}
+        for name, cov in covariances.items():
+            n = max(1, counts.get(name, 1))
+            final_cov[name] = cov / float(n)
+
+        return final_cov
+
+    def _robust_cholesky(self, C: torch.Tensor, n: int) -&gt; torch.Tensor:
+        &#34;&#34;&#34;
+        Compute Cholesky factor S where S = cholesky(C + eps * I).
+        Paper specification: eps = 1e-6 * mean(diag(C))
+        Uses adaptive regularisation if C is singular or ill-conditioned.
+        &#34;&#34;&#34;
+        mean_diag = torch.mean(torch.diag(C)).item()
+        for exp in [-6, -5, -4, -3, -2, -1, 0]:
+            eps = max(10**exp * mean_diag, 10**exp)
+            try:
+                S = torch.linalg.cholesky(C + eps * torch.eye(n, device=C.device, dtype=C.dtype))
+                return S
+            except Exception:
+                continue
+
+        # Eigen-fallback for extreme singularity
+        eigvals, eigvecs = torch.linalg.eigh(C)
+        eigvals = torch.clamp(eigvals, min=1e-6)
+        return eigvecs @ torch.diag(torch.sqrt(eigvals))
+
+    def _cholesky_whiten_and_decompose(
+        self,
+        W: torch.Tensor,
+        C: torch.Tensor | None,
+        target_rank: int,
+    ) -&gt; tuple[torch.Tensor, torch.Tensor, float]:
+        &#34;&#34;&#34;
+        Full SVD-LLM core algorithm (Section 3.1):
+        1. S = cholesky(C + eps * I)
+        2. W_white = W @ S
+        3. U, Sigma, Vt = svd(W_white)
+        4. Truncate to rank r
+        5. Vt_unw = Vt_r @ inv(S)
+        6. W_u = U_r * sqrt(Sigma_r), W_v = sqrt(Sigma_r) * Vt_unw
+        7. Relative Frobenius error: ||W - W_u @ W_v||_F / ||W||_F
+        &#34;&#34;&#34;
+        m, n = W.shape
+        W_fp32 = W.float()
+
+        if C is not None and C.shape == (n, n):
+            C_fp32 = C.float().to(device=W.device)
+            C_sym = 0.5 * (C_fp32 + C_fp32.T)
+            S = self._robust_cholesky(C_sym, n)
+            try:
+                S_inv = torch.linalg.pinv(S)
+            except Exception:
+                S_inv = torch.inverse(S + 1e-5 * torch.eye(n, device=S.device, dtype=S.dtype))
+            W_white = W_fp32 @ S
+        else:
+            # Identity whitening (standard SVD fallback if covariance unavailable)
+            S = torch.eye(n, device=W.device, dtype=W_fp32.dtype)
+            S_inv = torch.eye(n, device=W.device, dtype=W_fp32.dtype)
+            W_white = W_fp32
+
+        U, Sigma, Vt = torch.linalg.svd(W_white, full_matrices=False)
+        r = min(target_rank, min(m, n), U.size(1), Vt.size(0))
+
+        U_r = U[:, :r]
+        Sigma_r = Sigma[:r]
+        Vt_r = Vt[:r, :]
+
+        Vt_unw = Vt_r @ S_inv
+        sqrt_sigma = torch.sqrt(torch.clamp(Sigma_r, min=1e-12))
+        W_u = U_r * sqrt_sigma.unsqueeze(0)
+        W_v = sqrt_sigma.unsqueeze(1) * Vt_unw
+
+        W_rec = W_u @ W_v
+        orig_norm = torch.norm(W_fp32, p=&#34;fro&#34;).clamp(min=1e-12)
+        error = (torch.norm(W_fp32 - W_rec, p=&#34;fro&#34;) / orig_norm).item()
+
+        return W_u, W_v, error
+
+    def _compute_recovery_loss(
+        self, batch_ids: torch.Tensor, batch_mask: torch.Tensor
+    ) -&gt; torch.Tensor | None:
+        &#34;&#34;&#34;
+        Compute recovery training loss across both CausalLM and Sequence Classification architectures.
+        - CausalLM (GPT-2, LLaMA): cross-entropy autoregressive loss with labels=batch_ids.
+        - Sequence Classification (DistilBERT, RoBERTa): unsupervised entropy minimization over predicted logits.
+        &#34;&#34;&#34;
+        try:
+            # 1. CausalLM path
+            if (
+                hasattr(self.model, &#34;lm_head&#34;)
+                or &#34;causallm&#34; in self.model.__class__.__name__.lower()
+            ):
+                outputs = self.model(
+                    input_ids=batch_ids, attention_mask=batch_mask, labels=batch_ids
+                )
+                loss = outputs.loss if hasattr(outputs, &#34;loss&#34;) else None
+                if loss is None and isinstance(outputs, tuple):
+                    loss = outputs[0]
+                return loss
+
+            # 2. Sequence Classification / generic encoder path: entropy minimization
+            outputs = self.model(input_ids=batch_ids, attention_mask=batch_mask)
+            logits = getattr(outputs, &#34;logits&#34;, None)
+            if logits is None and isinstance(outputs, tuple):
+                logits = outputs[0]
+            if logits is not None and isinstance(logits, torch.Tensor) and logits.ndim &gt;= 2:
+                probs = torch.softmax(logits.float(), dim=-1)
+                entropy = -(probs * torch.log(probs + 1e-10)).sum(dim=-1).mean()
+                return entropy
+            return None
+        except Exception as e:
+            logger.debug(&#34;Error computing recovery loss: %s&#34;, e)
+            return None
+
+    def _sequential_lora_recovery(self) -&gt; None:
+        &#34;&#34;&#34;
+        Execute 2-Stage Sequential LoRA fine-tuning (Section 3.2, Eq. 7):
+        Stage 1: Update W_u with LoRA (W_v frozen)
+        Stage 2: Update W_v with LoRA (W_u frozen)
+        &#34;&#34;&#34;
+        if self.recovery_steps &lt;= 0 or self.lora_rank &lt;= 0:
+            return
+        if self.tokenizer is None or not self.calibration_texts:
+            return
+
+        logger.info(
+            &#34;[SVD-LLM] Starting 2-Stage Sequential LoRA Recovery (%d steps/stage)...&#34;,
+            self.recovery_steps,
+        )
+        device = self.device
+
+        # Step 0: Freeze ALL model parameters (embeddings, layernorms, heads, and base weights)
+        for p in self.model.parameters():
+            p.requires_grad = False
+
+        # Prepare calibration DataLoader
+        encodings = self.tokenizer(
+            self.calibration_texts,
+            padding=True,
+            truncation=True,
+            max_length=512,
+            return_tensors=&#34;pt&#34;,
+        )
+        dataset = torch.utils.data.TensorDataset(
+            encodings[&#34;input_ids&#34;], encodings[&#34;attention_mask&#34;]
+        )
+        loader = torch.utils.data.DataLoader(
+            dataset, batch_size=min(self.batch_size, len(dataset)), shuffle=True
+        )
+
+        for stage, stage_name in [
+            (&#34;stage1&#34;, &#34;Stage 1 (Update W_u)&#34;),
+            (&#34;stage2&#34;, &#34;Stage 2 (Update W_v)&#34;),
+        ]:
+            logger.info(f&#34;[SVD-LLM Sequential LoRA] {stage_name}...&#34;)
+            # Set active LoRA adapters
+            for m in self.model.modules():
+                if isinstance(m, SVDLLMLinear):
+                    m.set_active_lora_stage(stage)
+
+            trainable_params = [p for p in self.model.parameters() if p.requires_grad]
+            if not trainable_params:
+                continue
+
+            optimizer = torch.optim.AdamW(
+                trainable_params, lr=self.learning_rate, weight_decay=self.weight_decay
+            )
+            step = 0
+            self.model.train()
+
+            while step &lt; self.recovery_steps:
+                for batch_ids, batch_mask in loader:
+                    if step &gt;= self.recovery_steps:
+                        break
+                    batch_ids = batch_ids.to(device)
+                    batch_mask = batch_mask.to(device)
+
+                    optimizer.zero_grad()
+                    loss = self._compute_recovery_loss(batch_ids, batch_mask)
+
+                    if loss is not None and not torch.isnan(loss):
+                        loss.backward()
+                        torch.nn.utils.clip_grad_norm_(trainable_params, 1.0)
+                        optimizer.step()
+                    step += 1
+
+        # Freeze all adapters after recovery
+        for p in self.model.parameters():
+            p.requires_grad = False
+        for m in self.model.modules():
+            if isinstance(m, SVDLLMLinear):
+                m.set_active_lora_stage(None)
+        self.model.eval()
+        logger.info(&#34;[SVD-LLM] Sequential LoRA Recovery Complete.&#34;)
+
+    def compress(self) -&gt; tuple[nn.Module, dict[str, Any]]:
+        &#34;&#34;&#34;
+        Compress the target model using full SVD-LLM Cholesky whitening and structural replacement.
+        &#34;&#34;&#34;
+        covariances = self._collect_covariances()
+        target_layers: list[tuple[str, nn.Module]] = []
+        for name, module in self.model.named_modules():
+            if self._is_target_module(name, module):
+                target_layers.append((name, module))
+
+        logger.info(
+            &#34;Found %d linear layers targeted for SVD-LLM compression.&#34;,
+            len(target_layers),
+        )
+
+        for name, layer in target_layers:
+            target_mod = getattr(layer, &#34;base_layer&#34;, layer)
+            cls_name = layer.__class__.__name__.lower()
+            target_cls = target_mod.__class__.__name__.lower()
+            is_conv1d = (
+                &#34;conv1d&#34; in cls_name
+                or &#34;conv1d&#34; in target_cls
+                or hasattr(layer, &#34;nf&#34;)
+                or hasattr(target_mod, &#34;nf&#34;)
+            )
+
+            weight_tensor = getattr(target_mod, &#34;weight&#34;, getattr(layer, &#34;weight&#34;, None))
+            if weight_tensor is None:
+                continue
+
+            bias_tensor = getattr(target_mod, &#34;bias&#34;, getattr(layer, &#34;bias&#34;, None))
+            W = weight_tensor.data.clone()
+            if is_conv1d:
+                W = W.t().contiguous()
+
+            m, n = W.shape
+            r = self.compute_rank_from_ratio(m, n, self.rank_ratio)
+
+            # Check parameter reduction condition
+            if r * (m + n) &gt;= m * n:
+                self.fallback_layers.append(name)
+                continue
+
+            C = covariances.get(name, None)
+            try:
+                W_u, W_v, error = self._cholesky_whiten_and_decompose(W, C, target_rank=r)
+            except Exception as decomp_err:
+                logger.warning(&#34;SVD-LLM decomposition failed for layer %s: %s&#34;, name, decomp_err)
+                self.fallback_layers.append(name)
+                continue
+
+            self.layer_errors[name] = error
+            self.layer_ranks[name] = r
+
+            # In faithful SVD-LLM (ICLR 2025), fallback is not used; all target layers are compressed.
+            if self.fallback_to_original and error &gt; self.max_error:
+                logger.info(
+                    &#34;SVD-LLM layer %s error %.4f &gt; max_error %.4f; skipping (fallback).&#34;,
+                    name,
+                    error,
+                    self.max_error,
+                )
+                self.fallback_layers.append(name)
+                continue
+
+            svd_layer = SVDLLMLinear(
+                in_features=n,
+                out_features=m,
+                rank=r,
+                bias=bias_tensor is not None,
+                dtype=weight_tensor.dtype,
+                device=weight_tensor.device,
+                lora_rank=self.lora_rank,
+                lora_alpha=self.lora_alpha,
+            )
+            svd_layer.set_factors(W_u, W_v, bias_tensor)
+
+            replace_module(self.model, name, svd_layer)
+            self.compressed_layers.append(name)
+
+        # Run sequential LoRA fine-tuning
+        self._sequential_lora_recovery()
+
+        stats = {
+            &#34;num_compressed_layers&#34;: len(self.compressed_layers),
+            &#34;num_fallback_layers&#34;: len(self.fallback_layers),
+            &#34;compressed_layers&#34;: self.compressed_layers,
+            &#34;fallback_layers&#34;: self.fallback_layers,
+            &#34;layer_errors&#34;: self.layer_errors,
+            &#34;layer_ranks&#34;: self.layer_ranks,
+            &#34;mean_error&#34;: float(sum(self.layer_errors.values()) / max(1, len(self.layer_errors))),
+        }
+        self.model.compression_stats = stats
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>SVD-LLM (ICLR 2025) Compressor with Cholesky activation whitening,
+sequential LoRA recovery fine-tuning, and fixed rank parameter ratios.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.svd_llm_compressor.SVDLLMCompressor.compress"><code class="name flex">
+<span>def <span class="ident">compress</span></span>(<span>self) ‑> tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress(self) -&gt; tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;
+    Compress the target model using full SVD-LLM Cholesky whitening and structural replacement.
+    &#34;&#34;&#34;
+    covariances = self._collect_covariances()
+    target_layers: list[tuple[str, nn.Module]] = []
+    for name, module in self.model.named_modules():
+        if self._is_target_module(name, module):
+            target_layers.append((name, module))
+
+    logger.info(
+        &#34;Found %d linear layers targeted for SVD-LLM compression.&#34;,
+        len(target_layers),
+    )
+
+    for name, layer in target_layers:
+        target_mod = getattr(layer, &#34;base_layer&#34;, layer)
+        cls_name = layer.__class__.__name__.lower()
+        target_cls = target_mod.__class__.__name__.lower()
+        is_conv1d = (
+            &#34;conv1d&#34; in cls_name
+            or &#34;conv1d&#34; in target_cls
+            or hasattr(layer, &#34;nf&#34;)
+            or hasattr(target_mod, &#34;nf&#34;)
+        )
+
+        weight_tensor = getattr(target_mod, &#34;weight&#34;, getattr(layer, &#34;weight&#34;, None))
+        if weight_tensor is None:
+            continue
+
+        bias_tensor = getattr(target_mod, &#34;bias&#34;, getattr(layer, &#34;bias&#34;, None))
+        W = weight_tensor.data.clone()
+        if is_conv1d:
+            W = W.t().contiguous()
+
+        m, n = W.shape
+        r = self.compute_rank_from_ratio(m, n, self.rank_ratio)
+
+        # Check parameter reduction condition
+        if r * (m + n) &gt;= m * n:
+            self.fallback_layers.append(name)
+            continue
+
+        C = covariances.get(name, None)
+        try:
+            W_u, W_v, error = self._cholesky_whiten_and_decompose(W, C, target_rank=r)
+        except Exception as decomp_err:
+            logger.warning(&#34;SVD-LLM decomposition failed for layer %s: %s&#34;, name, decomp_err)
+            self.fallback_layers.append(name)
+            continue
+
+        self.layer_errors[name] = error
+        self.layer_ranks[name] = r
+
+        # In faithful SVD-LLM (ICLR 2025), fallback is not used; all target layers are compressed.
+        if self.fallback_to_original and error &gt; self.max_error:
+            logger.info(
+                &#34;SVD-LLM layer %s error %.4f &gt; max_error %.4f; skipping (fallback).&#34;,
+                name,
+                error,
+                self.max_error,
+            )
+            self.fallback_layers.append(name)
+            continue
+
+        svd_layer = SVDLLMLinear(
+            in_features=n,
+            out_features=m,
+            rank=r,
+            bias=bias_tensor is not None,
+            dtype=weight_tensor.dtype,
+            device=weight_tensor.device,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+        )
+        svd_layer.set_factors(W_u, W_v, bias_tensor)
+
+        replace_module(self.model, name, svd_layer)
+        self.compressed_layers.append(name)
+
+    # Run sequential LoRA fine-tuning
+    self._sequential_lora_recovery()
+
+    stats = {
+        &#34;num_compressed_layers&#34;: len(self.compressed_layers),
+        &#34;num_fallback_layers&#34;: len(self.fallback_layers),
+        &#34;compressed_layers&#34;: self.compressed_layers,
+        &#34;fallback_layers&#34;: self.fallback_layers,
+        &#34;layer_errors&#34;: self.layer_errors,
+        &#34;layer_ranks&#34;: self.layer_ranks,
+        &#34;mean_error&#34;: float(sum(self.layer_errors.values()) / max(1, len(self.layer_errors))),
+    }
+    self.model.compression_stats = stats
+    return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Compress the target model using full SVD-LLM Cholesky whitening and structural replacement.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.svd_llm_compressor.SVDLLMCompressor.compute_rank_from_ratio"><code class="name flex">
+<span>def <span class="ident">compute_rank_from_ratio</span></span>(<span>self, m: int, n: int, ratio: float) ‑> int</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_rank_from_ratio(self, m: int, n: int, ratio: float) -&gt; int:
+    &#34;&#34;&#34;
+    Compute low rank r from parameter retention ratio R:
+    Original params = m * n
+    Target params = R * m * n
+    Factorized params = r * (m + n)
+    r = (R * m * n) / (m + n)
+    &#34;&#34;&#34;
+    if self.explicit_rank is not None and self.explicit_rank &gt; 0:
+        return min(self.explicit_rank, min(m, n))
+    r_calc = (ratio * m * n) / (m + n)
+    r = int(round(r_calc))
+    return max(1, min(r, min(m, n)))</code></pre>
+</details>
+<div class="desc"><p>Compute low rank r from parameter retention ratio R:
+Original params = m * n
+Target params = R * m * n
+Factorized params = r * (m + n)
+r = (R * m * n) / (m + n)</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear"><code class="flex name class">
+<span>class <span class="ident">SVDLLMLinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>rank: int,<br>bias: bool = True,<br>dtype: torch.dtype = torch.float32,<br>device: torch.device | None = None,<br>lora_rank: int = 16,<br>lora_alpha: float = 32.0)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class SVDLLMLinear(nn.Module):
+    &#34;&#34;&#34;
+    SVD-LLM Factorized Linear Layer executing as:
+    y = (x @ W_v.T + lora_v(x)) @ (W_u.T) + lora_u(x @ W_v.T) + bias
+
+    Specifically, with sequential LoRA support:
+    - W_u ∈ R^(d_out × r), W_v ∈ R^(r × d_in)
+    - LoRA for W_u: A_u ∈ R^(r_L × r), B_u ∈ R^(d_out × r_L)
+    - LoRA for W_v: A_v ∈ R^(r_L × d_in), B_v ∈ R^(r × r_L)
+    &#34;&#34;&#34;
+
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int,
+        bias: bool = True,
+        dtype: torch.dtype = torch.float32,
+        device: torch.device | None = None,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.rank = max(1, min(rank, in_features, out_features))
+        self.lora_rank = lora_rank
+        self.lora_alpha = lora_alpha
+        self.scaling = lora_alpha / max(1, lora_rank)
+
+        # Explicit factor buffers: W_u and W_v
+        self.W_u = nn.Parameter(torch.empty(out_features, self.rank, device=device, dtype=dtype))
+        self.W_v = nn.Parameter(torch.empty(self.rank, in_features, device=device, dtype=dtype))
+        if bias:
+            self.bias = nn.Parameter(torch.zeros(out_features, device=device, dtype=dtype))
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+        # LoRA adapters for W_u and W_v
+        if self.lora_rank &gt; 0:
+            # LoRA for W_u: input dim = r, output dim = out_features
+            self.lora_A_u = nn.Parameter(
+                torch.empty(lora_rank, self.rank, device=device, dtype=dtype)
+            )
+            self.lora_B_u = nn.Parameter(
+                torch.empty(out_features, lora_rank, device=device, dtype=dtype)
+            )
+
+            # LoRA for W_v: input dim = in_features, output dim = r
+            self.lora_A_v = nn.Parameter(
+                torch.empty(lora_rank, in_features, device=device, dtype=dtype)
+            )
+            self.lora_B_v = nn.Parameter(
+                torch.empty(self.rank, lora_rank, device=device, dtype=dtype)
+            )
+
+            self.reset_lora_parameters()
+        else:
+            self.register_parameter(&#34;lora_A_u&#34;, None)
+            self.register_parameter(&#34;lora_B_u&#34;, None)
+            self.register_parameter(&#34;lora_A_v&#34;, None)
+            self.register_parameter(&#34;lora_B_v&#34;, None)
+
+        self.reset_base_parameters()
+
+    def reset_base_parameters(self) -&gt; None:
+        with torch.no_grad():
+            nn.init.orthogonal_(self.W_u)
+            nn.init.orthogonal_(self.W_v)
+            if self.bias is not None:
+                nn.init.zeros_(self.bias)
+
+    def reset_lora_parameters(self) -&gt; None:
+        with torch.no_grad():
+            if self.lora_rank &gt; 0:
+                nn.init.kaiming_uniform_(self.lora_A_u, a=math.sqrt(5))
+                nn.init.zeros_(self.lora_B_u)
+                nn.init.kaiming_uniform_(self.lora_A_v, a=math.sqrt(5))
+                nn.init.zeros_(self.lora_B_v)
+
+    def set_factors(
+        self, W_u: torch.Tensor, W_v: torch.Tensor, bias: torch.Tensor | None = None
+    ) -&gt; None:
+        with torch.no_grad():
+            r = min(self.rank, W_u.size(1), W_v.size(0))
+            self.W_u.data.zero_()
+            self.W_v.data.zero_()
+            self.W_u.data[:, :r].copy_(W_u[:, :r].to(device=self.W_u.device, dtype=self.W_u.dtype))
+            self.W_v.data[:r, :].copy_(W_v[:r, :].to(device=self.W_v.device, dtype=self.W_v.dtype))
+            if bias is not None and self.bias is not None:
+                self.bias.data.copy_(bias.to(device=self.bias.device, dtype=self.bias.dtype))
+
+    def set_active_lora_stage(self, stage: str | None) -&gt; None:
+        &#34;&#34;&#34;
+        stage == &#39;stage1&#39;: train A_u, B_u only (W_v frozen)
+        stage == &#39;stage2&#39;: train A_v, B_v only (W_u frozen)
+        stage == &#39;both&#39;: train all LoRA adapters
+        stage is None: freeze all LoRA adapters
+        &#34;&#34;&#34;
+        self.W_u.requires_grad = False
+        self.W_v.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+
+        if self.lora_rank == 0:
+            return
+
+        if stage == &#34;stage1&#34;:
+            self.lora_A_u.requires_grad = True
+            self.lora_B_u.requires_grad = True
+            self.lora_A_v.requires_grad = False
+            self.lora_B_v.requires_grad = False
+        elif stage == &#34;stage2&#34;:
+            self.lora_A_u.requires_grad = False
+            self.lora_B_u.requires_grad = False
+            self.lora_A_v.requires_grad = True
+            self.lora_B_v.requires_grad = True
+        elif stage == &#34;both&#34;:
+            self.lora_A_u.requires_grad = True
+            self.lora_B_u.requires_grad = True
+            self.lora_A_v.requires_grad = True
+            self.lora_B_v.requires_grad = True
+        else:
+            self.lora_A_u.requires_grad = False
+            self.lora_B_u.requires_grad = False
+            self.lora_A_v.requires_grad = False
+            self.lora_B_v.requires_grad = False
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        # 1. Compute latent representation through W_v
+        # latent = x @ W_v.T + (optional LoRA_v)
+        latent = F.linear(x, self.W_v)
+        if self.lora_rank &gt; 0 and self.lora_A_v is not None and self.lora_B_v is not None:
+            lora_v = (
+                F.linear(F.linear(x.to(self.lora_A_v.dtype), self.lora_A_v), self.lora_B_v)
+                * self.scaling
+            )
+            latent = latent + lora_v.to(latent.dtype)
+
+        # 2. Compute output through W_u
+        # out = latent @ W_u.T + (optional LoRA_u)
+        out = F.linear(latent, self.W_u)
+        if self.lora_rank &gt; 0 and self.lora_A_u is not None and self.lora_B_u is not None:
+            lora_u = (
+                F.linear(
+                    F.linear(latent.to(self.lora_A_u.dtype), self.lora_A_u),
+                    self.lora_B_u,
+                )
+                * self.scaling
+            )
+            out = out + lora_u.to(out.dtype)
+
+        if self.bias is not None:
+            out = out + self.bias
+        return out</code></pre>
+</details>
+<div class="desc"><p>SVD-LLM Factorized Linear Layer executing as:
+y = (x @ W_v.T + lora_v(x)) @ (W_u.T) + lora_u(x @ W_v.T) + bias</p>
+<p>Specifically, with sequential LoRA support:
+- W_u ∈ R^(d_out × r), W_v ∈ R^(r × d_in)
+- LoRA for W_u: A_u ∈ R^(r_L × r), B_u ∈ R^(d_out × r_L)
+- LoRA for W_v: A_v ∈ R^(r_L × d_in), B_v ∈ R^(r × r_L)</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    # 1. Compute latent representation through W_v
+    # latent = x @ W_v.T + (optional LoRA_v)
+    latent = F.linear(x, self.W_v)
+    if self.lora_rank &gt; 0 and self.lora_A_v is not None and self.lora_B_v is not None:
+        lora_v = (
+            F.linear(F.linear(x.to(self.lora_A_v.dtype), self.lora_A_v), self.lora_B_v)
+            * self.scaling
+        )
+        latent = latent + lora_v.to(latent.dtype)
+
+    # 2. Compute output through W_u
+    # out = latent @ W_u.T + (optional LoRA_u)
+    out = F.linear(latent, self.W_u)
+    if self.lora_rank &gt; 0 and self.lora_A_u is not None and self.lora_B_u is not None:
+        lora_u = (
+            F.linear(
+                F.linear(latent.to(self.lora_A_u.dtype), self.lora_A_u),
+                self.lora_B_u,
+            )
+            * self.scaling
+        )
+        out = out + lora_u.to(out.dtype)
+
+    if self.bias is not None:
+        out = out + self.bias
+    return out</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+<dt id="neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear.reset_base_parameters"><code class="name flex">
+<span>def <span class="ident">reset_base_parameters</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_base_parameters(self) -&gt; None:
+    with torch.no_grad():
+        nn.init.orthogonal_(self.W_u)
+        nn.init.orthogonal_(self.W_v)
+        if self.bias is not None:
+            nn.init.zeros_(self.bias)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear.reset_lora_parameters"><code class="name flex">
+<span>def <span class="ident">reset_lora_parameters</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_lora_parameters(self) -&gt; None:
+    with torch.no_grad():
+        if self.lora_rank &gt; 0:
+            nn.init.kaiming_uniform_(self.lora_A_u, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B_u)
+            nn.init.kaiming_uniform_(self.lora_A_v, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B_v)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear.set_active_lora_stage"><code class="name flex">
+<span>def <span class="ident">set_active_lora_stage</span></span>(<span>self, stage: str | None) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_active_lora_stage(self, stage: str | None) -&gt; None:
+    &#34;&#34;&#34;
+    stage == &#39;stage1&#39;: train A_u, B_u only (W_v frozen)
+    stage == &#39;stage2&#39;: train A_v, B_v only (W_u frozen)
+    stage == &#39;both&#39;: train all LoRA adapters
+    stage is None: freeze all LoRA adapters
+    &#34;&#34;&#34;
+    self.W_u.requires_grad = False
+    self.W_v.requires_grad = False
+    if self.bias is not None:
+        self.bias.requires_grad = False
+
+    if self.lora_rank == 0:
+        return
+
+    if stage == &#34;stage1&#34;:
+        self.lora_A_u.requires_grad = True
+        self.lora_B_u.requires_grad = True
+        self.lora_A_v.requires_grad = False
+        self.lora_B_v.requires_grad = False
+    elif stage == &#34;stage2&#34;:
+        self.lora_A_u.requires_grad = False
+        self.lora_B_u.requires_grad = False
+        self.lora_A_v.requires_grad = True
+        self.lora_B_v.requires_grad = True
+    elif stage == &#34;both&#34;:
+        self.lora_A_u.requires_grad = True
+        self.lora_B_u.requires_grad = True
+        self.lora_A_v.requires_grad = True
+        self.lora_B_v.requires_grad = True
+    else:
+        self.lora_A_u.requires_grad = False
+        self.lora_B_u.requires_grad = False
+        self.lora_A_v.requires_grad = False
+        self.lora_B_v.requires_grad = False</code></pre>
+</details>
+<div class="desc"><p>stage == 'stage1': train A_u, B_u only (W_v frozen)
+stage == 'stage2': train A_v, B_v only (W_u frozen)
+stage == 'both': train all LoRA adapters
+stage is None: freeze all LoRA adapters</p></div>
+</dd>
+<dt id="neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear.set_factors"><code class="name flex">
+<span>def <span class="ident">set_factors</span></span>(<span>self, W_u: torch.Tensor, W_v: torch.Tensor, bias: torch.Tensor | None = None) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_factors(
+    self, W_u: torch.Tensor, W_v: torch.Tensor, bias: torch.Tensor | None = None
+) -&gt; None:
+    with torch.no_grad():
+        r = min(self.rank, W_u.size(1), W_v.size(0))
+        self.W_u.data.zero_()
+        self.W_v.data.zero_()
+        self.W_u.data[:, :r].copy_(W_u[:, :r].to(device=self.W_u.device, dtype=self.W_u.dtype))
+        self.W_v.data[:r, :].copy_(W_v[:r, :].to(device=self.W_v.device, dtype=self.W_v.dtype))
+        if bias is not None and self.bias is not None:
+            self.bias.data.copy_(bias.to(device=self.bias.device, dtype=self.bias.dtype))</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.svd_llm_compressor.SVDLLMCompressor" href="#neuralops.compression_engine.svd_llm_compressor.SVDLLMCompressor">SVDLLMCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.svd_llm_compressor.SVDLLMCompressor.compress" href="#neuralops.compression_engine.svd_llm_compressor.SVDLLMCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.compression_engine.svd_llm_compressor.SVDLLMCompressor.compute_rank_from_ratio" href="#neuralops.compression_engine.svd_llm_compressor.SVDLLMCompressor.compute_rank_from_ratio">compute_rank_from_ratio</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear" href="#neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear">SVDLLMLinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear.forward" href="#neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear.is_custom_attention" href="#neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear.reset_base_parameters" href="#neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear.reset_base_parameters">reset_base_parameters</a></code></li>
+<li><code><a title="neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear.reset_lora_parameters" href="#neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear.reset_lora_parameters">reset_lora_parameters</a></code></li>
+<li><code><a title="neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear.set_active_lora_stage" href="#neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear.set_active_lora_stage">set_active_lora_stage</a></code></li>
+<li><code><a title="neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear.set_factors" href="#neuralops.compression_engine.svd_llm_compressor.SVDLLMLinear.set_factors">set_factors</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>
