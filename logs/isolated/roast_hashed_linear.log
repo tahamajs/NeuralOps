@@ -1,0 +1,159 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 11:15:23,692 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'roast_hashed_linear', '--output_json', 'logs\\isolated_results\\roast_hashed_linear_1790322297111_15144.json']
+2026-09-25 11:15:23,784 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 75.0% (leaving 2.00 GB headroom)
+2026-09-25 11:15:23,784 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 11:15:23,784 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=64 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-25 11:15:23,784 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 75.0%
+2026-09-25 11:15:24,207 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights: 100%|##########| 201/201 [00:00<00:00, 3121.79it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models/roberta_sst2
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-09-25 11:15:25,106 [INFO] QwenQualitySweep: model=models/roberta_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-25 11:15:25,106 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-25 11:15:25,106 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 11:15:25,106 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-25 11:15:25,106 [INFO] QwenQualitySweep:   model:             models/roberta_sst2
+2026-09-25 11:15:25,107 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-25 11:15:25,107 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-25 11:15:25,107 [INFO] QwenQualitySweep:   batch_size:        64
+2026-09-25 11:15:25,107 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-25 11:15:25,107 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-25 11:15:25,107 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-25 11:15:25,107 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 11:15:25,109 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-25 11:15:30,246 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.1548
+2026-09-25 11:15:34,752 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0796
+2026-09-25 11:15:38,169 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1766
+2026-09-25 11:15:41,004 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0516
+2026-09-25 11:15:44,510 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.1776
+2026-09-25 11:15:48,676 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.1528
+2026-09-25 11:15:52,651 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.1325
+2026-09-25 11:15:54,867 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.2733
+2026-09-25 11:15:54,882 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: D:\SVD_Project\results\batch3_roberta\roast_hashed_linear\finetuned_model.pt
+2026-09-25 11:15:56,242 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to D:\SVD_Project\results\batch3_roberta\roast_hashed_linear\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-25 11:15:56,242 [INFO] QwenQualitySweep: Prepared 14 eval batches and 50 train batches directly on GPU.
+2026-09-25 11:15:57,216 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 93.46%
+2026-09-25 11:15:57,383 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 11:15:57,383 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-25 11:15:57,383 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-25 11:15:57,383 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-25 11:15:57,384 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-25 11:15:57,384 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-25 11:15:57,384 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-25 11:15:57,384 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-25 11:15:57,384 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 11:15:57,385 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-25 11:15:57,495 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: roast_hashed_linear (recovery_steps=50, batch_size=64, optimizer=adamw)
+2026-09-25 11:15:58,041 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.0.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:15:58,052 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9997 on roberta.encoder.layer.0.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:15:58,060 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.0.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:15:58,070 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.0.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,076 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9869 on roberta.encoder.layer.0.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,080 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 1.0001 on roberta.encoder.layer.0.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,085 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9993 on roberta.encoder.layer.1.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:15:58,089 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.1.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:15:58,094 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9996 on roberta.encoder.layer.1.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:15:58,098 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.1.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,103 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9807 on roberta.encoder.layer.1.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,108 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 1.0001 on roberta.encoder.layer.1.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,114 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9986 on roberta.encoder.layer.2.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:15:58,119 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.2.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:15:58,123 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9997 on roberta.encoder.layer.2.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:15:58,128 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.2.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,133 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9872 on roberta.encoder.layer.2.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,138 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 1.0001 on roberta.encoder.layer.2.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,143 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9995 on roberta.encoder.layer.3.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:15:58,148 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9997 on roberta.encoder.layer.3.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:15:58,152 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9996 on roberta.encoder.layer.3.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:15:58,156 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.3.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,161 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9909 on roberta.encoder.layer.3.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,166 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 1.0001 on roberta.encoder.layer.3.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,171 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9994 on roberta.encoder.layer.4.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:15:58,175 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.4.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:15:58,180 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9997 on roberta.encoder.layer.4.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:15:58,185 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.4.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,190 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9912 on roberta.encoder.layer.4.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,195 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 1.0001 on roberta.encoder.layer.4.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,200 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9995 on roberta.encoder.layer.5.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:15:58,205 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.5.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:15:58,209 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9997 on roberta.encoder.layer.5.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:15:58,214 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.5.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,219 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9940 on roberta.encoder.layer.5.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,224 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 1.0001 on roberta.encoder.layer.5.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,229 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9997 on roberta.encoder.layer.6.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:15:58,234 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.6.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:15:58,239 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.6.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:15:58,244 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.6.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,249 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9912 on roberta.encoder.layer.6.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,254 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 1.0001 on roberta.encoder.layer.6.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,258 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9997 on roberta.encoder.layer.7.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:15:58,263 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.7.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:15:58,268 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9997 on roberta.encoder.layer.7.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:15:58,273 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.7.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,280 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9942 on roberta.encoder.layer.7.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,285 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 1.0001 on roberta.encoder.layer.7.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,291 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9997 on roberta.encoder.layer.8.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:15:58,295 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9997 on roberta.encoder.layer.8.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:15:58,300 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9997 on roberta.encoder.layer.8.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:15:58,305 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.8.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,309 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9897 on roberta.encoder.layer.8.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,314 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 1.0001 on roberta.encoder.layer.8.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,319 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9996 on roberta.encoder.layer.9.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:15:58,325 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9997 on roberta.encoder.layer.9.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:15:58,330 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9996 on roberta.encoder.layer.9.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:15:58,334 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.9.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,339 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9873 on roberta.encoder.layer.9.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,343 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 1.0001 on roberta.encoder.layer.9.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,348 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9996 on roberta.encoder.layer.10.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:15:58,354 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.10.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:15:58,359 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9996 on roberta.encoder.layer.10.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:15:58,364 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.10.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,368 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9911 on roberta.encoder.layer.10.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,372 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 1.0001 on roberta.encoder.layer.10.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,376 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9996 on roberta.encoder.layer.11.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:15:58,380 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9997 on roberta.encoder.layer.11.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:15:58,384 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9997 on roberta.encoder.layer.11.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:15:58,389 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9998 on roberta.encoder.layer.11.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,393 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 0.9842 on roberta.encoder.layer.11.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,398 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST: reconstruction error 1.0003 on roberta.encoder.layer.11.output.dense exceeded threshold 0.4000.
+2026-09-25 11:15:58,438 [WARNING] framework.compression_engine.roast_hashed_linear: ROAST post-compression forward sanity check warning: mat1 and mat2 must have the same dtype, but got Half and Float
+2026-09-25 11:15:58,455 [INFO] QwenQualitySweep: module=roast_hashed_linear path=adapted_roberta
+2026-09-25 11:15:58,457 [INFO] QwenQualitySweep: module=roast_hashed_linear injection summary: 0 SVDLinear layers active
+2026-09-25 11:15:58,457 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for roast_hashed_linear (lr=2.0e-04)
+2026-09-25 11:15:58,665 [INFO] framework.utils.compat: Recovery fine-tuning selected 592130 trainable parameters across 4 tensors.
+2026-09-25 11:15:58,666 [INFO] framework.utils.compat: Discovered 4 trainable tensors (592130 params)
+2026-09-25 11:15:58,669 [INFO] QwenQualitySweep: LoRA fine-tuning: 592130 trainable parameters across 4 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-25 11:15:58,890 [INFO] QwenQualitySweep: Step 1/50 took 0.22s (loss=0.0902, bs=64, micro=16)
+2026-09-25 11:15:59,687 [INFO] QwenQualitySweep: Step 5/50 took 0.21s (loss=0.2030, bs=64, micro=16)
+2026-09-25 11:16:00,751 [INFO] QwenQualitySweep: Step 10/50 took 0.20s (loss=0.1007, bs=64, micro=16)
+2026-09-25 11:16:01,755 [INFO] QwenQualitySweep: Step 15/50 took 0.19s (loss=0.1170, bs=64, micro=16)
+2026-09-25 11:16:02,812 [INFO] QwenQualitySweep: Step 20/50 took 0.22s (loss=0.1988, bs=64, micro=16)
+2026-09-25 11:16:03,843 [INFO] QwenQualitySweep: Step 25/50 took 0.21s (loss=0.1772, bs=64, micro=16)
+2026-09-25 11:16:04,885 [INFO] QwenQualitySweep: Step 30/50 took 0.21s (loss=0.1688, bs=64, micro=16)
+2026-09-25 11:16:05,961 [INFO] QwenQualitySweep: Step 35/50 took 0.21s (loss=0.1316, bs=64, micro=16)
+2026-09-25 11:16:07,093 [INFO] QwenQualitySweep: Step 40/50 took 0.20s (loss=0.1657, bs=64, micro=16)
+2026-09-25 11:16:08,133 [INFO] QwenQualitySweep: Step 45/50 took 0.21s (loss=0.0688, bs=64, micro=16)
+2026-09-25 11:16:09,204 [INFO] QwenQualitySweep: Step 50/50 took 0.21s (loss=0.1021, bs=64, micro=16)
+2026-09-25 11:16:10,651 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to D:\SVD_Project\results\batch3_roberta\roast_hashed_linear\roberta_sst2_roast_hashed_linear_full_metrics.json
+2026-09-25 11:16:10,857 [INFO] QwenQualitySweep: [1/1] roast_hashed_linear -> PASS_NO_COMPRESSION 94.15% (F1: 0.9431, Peak VRAM: 457.08 MB)
+2026-09-25 11:16:10,857 [WARNING] QwenQualitySweep: Module 'roast_hashed_linear' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-25 11:16:10,858 [INFO] QwenQualitySweep: [Quality Guard] Module 'roast_hashed_linear' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=94.15%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-25 11:16:10,862 [INFO] QwenQualitySweep: [1/1] roast_hashed_linear Timing: eval_time=13.37s
+2026-09-25 11:16:10,862 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-25 11:16:11,206 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 11:16:11,206 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-25 11:16:11,216 [INFO] QwenQualitySweep: 
+                              Module              Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+roast_hashed_linear (efficient-attn) PASS_NO_COMPRESSION   94.15%    +0.69% 0.9431                  0            1.00x  457.1 MB               0.93              1.06
+2026-09-25 11:16:11,216 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:169: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

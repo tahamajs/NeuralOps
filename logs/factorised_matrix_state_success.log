@@ -1,0 +1,9 @@
+[main bb9dba474] feat(benchmark): record successful factorised_matrix_state on distilbert-sst2 (Acc: 77.06%, F1: 0.7579)
+ 7 files changed, 361 insertions(+), 246 deletions(-)
+ create mode 100644 results/all_modules/factorised_matrix_state/distilbert_sst2_factorised_matrix_state_full_metrics.json
+ create mode 100644 results/all_modules/factorised_matrix_state/finetune_metadata.json
+ create mode 100644 results/all_modules/factorised_matrix_state/summary.csv
+ create mode 100644 results/all_modules/fasa_attention/distilbert_sst2_fasa_attention_full_metrics.json
+ create mode 100644 results/all_modules/fasa_attention/finetune_metadata.json
+ create mode 100644 results/all_modules/fasa_attention/summary.csv
+branch 'main' set up to track 'origin/main'.

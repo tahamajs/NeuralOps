@@ -1,0 +1,89 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-19 00:55:11,984 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+[ISOLATED] Launching mla_attention (timeout=3600s) -> logs\isolated\mla_attention.log
+[ISOLATED] mla_attention exited with code 1 in 15.4s
+[ISOLATED] Launching moe_deltakv_paged (timeout=3600s) -> logs\isolated\moe_deltakv_paged.log
+[ISOLATED] moe_deltakv_paged exited with code 1 in 16.7s
+[ISOLATED] Launching nasc_attention (timeout=3600s) -> logs\isolated\nasc_attention.log
+[ISOLATED] nasc_attention exited with code 1 in 16.8s
+[ISOLATED] Launching nexus (timeout=3600s) -> logs\isolated\nexus.log
+[ISOLATED] nexus exited with code 1 in 17.2s
+[ISOLATED] Launching nha_attention (timeout=3600s) -> logs\isolated\nha_attention.log
+[ISOLATED] nha_attention exited with code 1 in 18.3s
+[ISOLATED] Launching nli_softmax (timeout=3600s) -> logs\isolated\nli_softmax.log
+[ISOLATED] nli_softmax exited with code 1 in 16.5s
+[ISOLATED] Launching nsa_attention (timeout=3600s) -> logs\isolated\nsa_attention.log
+[ISOLATED] nsa_attention exited with code 1 in 16.9s
+[ISOLATED] Launching nystrom_attention (timeout=3600s) -> logs\isolated\nystrom_attention.log
+[ISOLATED] nystrom_attention exited with code 1 in 18.7s
+[ISOLATED] Launching optimized_hybrid_attention (timeout=3600s) -> logs\isolated\optimized_hybrid_attention.log
+[ISOLATED] optimized_hybrid_attention exited with code 1 in 18.4s
+[ISOLATED] Launching orion_attention (timeout=3600s) -> logs\isolated\orion_attention.log
+[ISOLATED] orion_attention exited with code 1 in 18.2s
+[ISOLATED] Launching padre_attention (timeout=3600s) -> logs\isolated\padre_attention.log
+[ISOLATED] padre_attention exited with code 1 in 18.3s
+[ISOLATED] Launching performer_attention (timeout=3600s) -> logs\isolated\performer_attention.log
+[ISOLATED] performer_attention exited with code 1 in 16.0s
+[ISOLATED] Launching primal_attention (timeout=3600s) -> logs\isolated\primal_attention.log
+[ISOLATED] primal_attention exited with code 1 in 18.2s
+[ISOLATED] Launching projection_factorized_attn (timeout=3600s) -> logs\isolated\projection_factorized_attn.log
+[ISOLATED] projection_factorized_attn exited with code 1 in 18.0s
+[ISOLATED] Launching qcqa_attention (timeout=3600s) -> logs\isolated\qcqa_attention.log
+[ISOLATED] qcqa_attention exited with code 1 in 18.1s
+[ISOLATED] Launching rala_linear_attention (timeout=3600s) -> logs\isolated\rala_linear_attention.log
+[ISOLATED] rala_linear_attention exited with code 1 in 17.5s
+[ISOLATED] Launching reap_moe (timeout=3600s) -> logs\isolated\reap_moe.log
+[ISOLATED] reap_moe exited with code 1 in 17.3s
+[ISOLATED] Launching replace_attention (timeout=3600s) -> logs\isolated\replace_attention.log
+[ISOLATED] replace_attention exited with code 1 in 17.7s
+[ISOLATED] Launching res_svd_attention (timeout=3600s) -> logs\isolated\res_svd_attention.log
+[ISOLATED] res_svd_attention exited with code 1 in 18.1s
+[ISOLATED] Launching routing_attention (timeout=3600s) -> logs\isolated\routing_attention.log
+[ISOLATED] routing_attention exited with code 1 in 18.5s
+[ISOLATED] Launching rpc_attention (timeout=3600s) -> logs\isolated\rpc_attention.log
+[ISOLATED] rpc_attention exited with code 1 in 18.0s
+[ISOLATED] Launching salt (timeout=3600s) -> logs\isolated\salt.log
+[ISOLATED] salt exited with code 1 in 19.1s
+[ISOLATED] Launching samba_m3 (timeout=3600s) -> logs\isolated\samba_m3.log
+[ISOLATED] samba_m3 exited with code 1 in 18.8s
+[ISOLATED] Launching samba_moe (timeout=3600s) -> logs\isolated\samba_moe.log
+[ISOLATED] samba_moe exited with code 1 in 19.0s
+[ISOLATED] Launching simple_ssm (timeout=3600s) -> logs\isolated\simple_ssm.log
+[ISOLATED] simple_ssm exited with code 1 in 18.8s
+[ISOLATED] Launching smart_weighted_ensemble (timeout=3600s) -> logs\isolated\smart_weighted_ensemble.log
+[ISOLATED] smart_weighted_ensemble exited with code 1 in 17.8s
+[ISOLATED] Launching soa_fused_attention (timeout=3600s) -> logs\isolated\soa_fused_attention.log
+[ISOLATED] soa_fused_attention exited with code 1 in 18.0s
+[ISOLATED] Launching span_expanded_attention (timeout=3600s) -> logs\isolated\span_expanded_attention.log
+[ISOLATED] span_expanded_attention exited with code 1 in 17.4s
+[ISOLATED] Launching spectraformer_attention (timeout=3600s) -> logs\isolated\spectraformer_attention.log
+[ISOLATED] spectraformer_attention exited with code 1 in 17.2s
+[ISOLATED] Launching spectron_attn (timeout=3600s) -> logs\isolated\spectron_attn.log
+[ISOLATED] spectron_attn exited with code 1 in 17.4s
+[ISOLATED] Launching squeezing_heads_module (timeout=3600s) -> logs\isolated\squeezing_heads_module.log
+[ISOLATED] squeezing_heads_module exited with code 1 in 17.2s
+[ISOLATED] Launching svd_compressed_module (timeout=3600s) -> logs\isolated\svd_compressed_module.log
+[ISOLATED] svd_compressed_module exited with code 1 in 17.2s
+[ISOLATED] Launching svd_linear (timeout=3600s) -> logs\isolated\svd_linear.log
+[ISOLATED] svd_linear exited with code 1 in 17.4s
+[ISOLATED] Launching svd_llm_v2_attention (timeout=3600s) -> logs\isolated\svd_llm_v2_attention.log
+[ISOLATED] svd_llm_v2_attention exited with code 1 in 18.6s
+[ISOLATED] Launching svd_mamba (timeout=3600s) -> logs\isolated\svd_mamba.log
+[ISOLATED] svd_mamba exited with code 1 in 18.3s
+[ISOLATED] Launching svd_sequence_attention (timeout=3600s) -> logs\isolated\svd_sequence_attention.log
+[ISOLATED] svd_sequence_attention exited with code 1 in 18.5s
+[ISOLATED] Launching tlinformer_attention (timeout=3600s) -> logs\isolated\tlinformer_attention.log
+[ISOLATED] tlinformer_attention exited with code 1 in 18.1s
+[ISOLATED] Launching token_compressed_module (timeout=3600s) -> logs\isolated\token_compressed_module.log
+[ISOLATED] token_compressed_module exited with code 1 in 17.4s
+[ISOLATED] Launching tp_attention (timeout=3600s) -> logs\isolated\tp_attention.log
+[ISOLATED] tp_attention exited with code 1 in 17.9s
+[ISOLATED] Launching upi_mamba (timeout=3600s) -> logs\isolated\upi_mamba.log
+[ISOLATED] upi_mamba exited with code 1 in 18.2s
+[ISOLATED] Launching vig_attention (timeout=3600s) -> logs\isolated\vig_attention.log
+[ISOLATED] vig_attention exited with code 1 in 17.3s
+[ISOLATED] Launching wgqa_attention (timeout=3600s) -> logs\isolated\wgqa_attention.log
+[ISOLATED] wgqa_attention exited with code 1 in 17.8s
+[ISOLATED] Launching zeros_attention (timeout=3600s) -> logs\isolated\zeros_attention.log
+[ISOLATED] zeros_attention exited with code 1 in 17.1s

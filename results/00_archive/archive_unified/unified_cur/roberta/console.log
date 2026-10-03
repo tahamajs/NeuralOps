@@ -1,0 +1,140 @@
+2026-09-15 11:40:20,418 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+
+Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 197/197 [00:00<00:00, 3479.56it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta-base
+Key                             | Status     | 
+--------------------------------+------------+-
+lm_head.layer_norm.bias         | UNEXPECTED | 
+lm_head.layer_norm.weight       | UNEXPECTED | 
+lm_head.dense.weight            | UNEXPECTED | 
+roberta.embeddings.position_ids | UNEXPECTED | 
+lm_head.bias                    | UNEXPECTED | 
+lm_head.dense.bias              | UNEXPECTED | 
+classifier.out_proj.weight      | MISSING    | 
+classifier.dense.bias           | MISSING    | 
+classifier.out_proj.bias        | MISSING    | 
+classifier.dense.weight         | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-15 11:40:21,788 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-15 11:40:21,788 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 11:40:21,788 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 11:40:21,788 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 11:40:21,788 [INFO] QwenQualitySweep:   model:             models\roberta-base
+2026-09-15 11:40:21,789 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-15 11:40:21,789 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 11:40:21,789 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 11:40:21,789 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-15 11:40:21,789 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 11:40:21,789 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 11:40:21,789 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 11:40:22,134 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\roberta_sst2_lora_baseline\finetuned_model.pt
+2026-09-15 11:40:22,807 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 11:40:23,532 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-15 11:40:28,405 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 78.56%
+2026-09-15 11:40:28,456 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 11:40:28,456 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 11:40:28,456 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 11:40:28,456 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 11:40:28,456 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 11:40:28,457 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 11:40:28,457 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 11:40:28,457 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 11:40:28,468 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 11:40:33,802 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_cur\roberta\roberta-base_full_full_metrics.json
+2026-09-15 11:40:33,822 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_cur\roberta\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-15 11:40:34,500 [INFO] QwenQualitySweep: [1/2] full -> PASS 78.56% (F1: 0.8124, Peak VRAM: 712.34 MB)
+2026-09-15 11:40:34,501 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_cur\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 11:40:34,726 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: cur (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 11:40:36,615 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.0.attention.self.query error 0.7820 exceeded max_error 0.2000
+2026-09-15 11:40:36,803 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.0.attention.self.key error 0.7452 exceeded max_error 0.2000
+2026-09-15 11:40:36,970 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.0.attention.self.value error 0.7731 exceeded max_error 0.2000
+2026-09-15 11:40:37,153 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.0.attention.output.dense error 0.7041 exceeded max_error 0.2000
+2026-09-15 11:40:37,433 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.0.intermediate.dense error 0.7404 exceeded max_error 0.2000
+2026-09-15 11:40:37,702 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.0.output.dense error 0.7823 exceeded max_error 0.2000
+2026-09-15 11:40:37,878 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.1.attention.self.query error 0.7644 exceeded max_error 0.2000
+2026-09-15 11:40:38,047 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.1.attention.self.key error 0.7414 exceeded max_error 0.2000
+2026-09-15 11:40:38,199 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.1.attention.self.value error 0.7371 exceeded max_error 0.2000
+2026-09-15 11:40:38,366 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.1.attention.output.dense error 0.6872 exceeded max_error 0.2000
+2026-09-15 11:40:38,627 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.1.intermediate.dense error 0.7440 exceeded max_error 0.2000
+2026-09-15 11:40:38,886 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.1.output.dense error 0.7418 exceeded max_error 0.2000
+2026-09-15 11:40:39,062 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.2.attention.self.query error 0.7777 exceeded max_error 0.2000
+2026-09-15 11:40:39,233 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.2.attention.self.key error 0.7792 exceeded max_error 0.2000
+2026-09-15 11:40:39,390 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.2.attention.self.value error 0.7520 exceeded max_error 0.2000
+2026-09-15 11:40:39,551 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.2.attention.output.dense error 0.7237 exceeded max_error 0.2000
+2026-09-15 11:40:39,814 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.2.intermediate.dense error 0.7658 exceeded max_error 0.2000
+2026-09-15 11:40:40,081 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.2.output.dense error 0.7475 exceeded max_error 0.2000
+2026-09-15 11:40:40,253 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.3.attention.self.query error 0.7841 exceeded max_error 0.2000
+2026-09-15 11:40:40,423 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.3.attention.self.key error 0.8079 exceeded max_error 0.2000
+2026-09-15 11:40:40,583 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.3.attention.self.value error 0.7662 exceeded max_error 0.2000
+2026-09-15 11:40:40,742 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.3.attention.output.dense error 0.7332 exceeded max_error 0.2000
+2026-09-15 11:40:41,099 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.3.intermediate.dense error 0.7628 exceeded max_error 0.2000
+2026-09-15 11:40:41,375 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.3.output.dense error 0.7499 exceeded max_error 0.2000
+2026-09-15 11:40:41,523 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.4.attention.self.query error 0.7751 exceeded max_error 0.2000
+2026-09-15 11:40:41,684 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.4.attention.self.key error 0.7891 exceeded max_error 0.2000
+2026-09-15 11:40:41,837 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.4.attention.self.value error 0.7267 exceeded max_error 0.2000
+2026-09-15 11:40:41,977 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.4.attention.output.dense error 0.7269 exceeded max_error 0.2000
+2026-09-15 11:40:42,216 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.4.intermediate.dense error 0.7699 exceeded max_error 0.2000
+2026-09-15 11:40:42,432 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.4.output.dense error 0.7501 exceeded max_error 0.2000
+2026-09-15 11:40:42,578 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.5.attention.self.query error 0.7825 exceeded max_error 0.2000
+2026-09-15 11:40:42,725 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.5.attention.self.key error 0.8005 exceeded max_error 0.2000
+2026-09-15 11:40:42,867 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.5.attention.self.value error 0.7622 exceeded max_error 0.2000
+2026-09-15 11:40:43,011 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.5.attention.output.dense error 0.7228 exceeded max_error 0.2000
+2026-09-15 11:40:43,242 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.5.intermediate.dense error 0.7830 exceeded max_error 0.2000
+2026-09-15 11:40:43,480 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.5.output.dense error 0.7532 exceeded max_error 0.2000
+2026-09-15 11:40:43,627 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.6.attention.self.query error 0.7682 exceeded max_error 0.2000
+2026-09-15 11:40:43,786 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.6.attention.self.key error 0.7683 exceeded max_error 0.2000
+2026-09-15 11:40:43,937 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.6.attention.self.value error 0.7913 exceeded max_error 0.2000
+2026-09-15 11:40:44,074 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.6.attention.output.dense error 0.7731 exceeded max_error 0.2000
+2026-09-15 11:40:44,306 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.6.intermediate.dense error 0.7833 exceeded max_error 0.2000
+2026-09-15 11:40:44,537 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.6.output.dense error 0.7433 exceeded max_error 0.2000
+2026-09-15 11:40:44,696 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.7.attention.self.query error 0.7958 exceeded max_error 0.2000
+2026-09-15 11:40:44,855 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.7.attention.self.key error 0.7947 exceeded max_error 0.2000
+2026-09-15 11:40:45,004 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.7.attention.self.value error 0.7474 exceeded max_error 0.2000
+2026-09-15 11:40:45,144 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.7.attention.output.dense error 0.7700 exceeded max_error 0.2000
+2026-09-15 11:40:45,374 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.7.intermediate.dense error 0.7862 exceeded max_error 0.2000
+2026-09-15 11:40:45,604 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.7.output.dense error 0.7362 exceeded max_error 0.2000
+2026-09-15 11:40:45,754 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.8.attention.self.query error 0.7899 exceeded max_error 0.2000
+2026-09-15 11:40:45,916 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.8.attention.self.key error 0.7871 exceeded max_error 0.2000
+2026-09-15 11:40:46,070 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.8.attention.self.value error 0.7881 exceeded max_error 0.2000
+2026-09-15 11:40:46,216 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.8.attention.output.dense error 0.8174 exceeded max_error 0.2000
+2026-09-15 11:40:46,450 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.8.intermediate.dense error 0.7852 exceeded max_error 0.2000
+2026-09-15 11:40:46,678 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.8.output.dense error 0.7436 exceeded max_error 0.2000
+2026-09-15 11:40:46,840 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.9.attention.self.query error 0.7689 exceeded max_error 0.2000
+2026-09-15 11:40:46,988 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.9.attention.self.key error 0.7789 exceeded max_error 0.2000
+2026-09-15 11:40:47,133 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.9.attention.self.value error 0.8010 exceeded max_error 0.2000
+2026-09-15 11:40:47,289 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.9.attention.output.dense error 0.8260 exceeded max_error 0.2000
+2026-09-15 11:40:47,528 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.9.intermediate.dense error 0.7945 exceeded max_error 0.2000
+2026-09-15 11:40:47,795 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.9.output.dense error 0.7794 exceeded max_error 0.2000
+2026-09-15 11:40:47,953 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.10.attention.self.query error 0.7749 exceeded max_error 0.2000
+2026-09-15 11:40:48,135 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.10.attention.self.key error 0.7755 exceeded max_error 0.2000
+2026-09-15 11:40:48,283 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.10.attention.self.value error 0.8265 exceeded max_error 0.2000
+2026-09-15 11:40:48,453 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.10.attention.output.dense error 0.8484 exceeded max_error 0.2000
+2026-09-15 11:40:48,705 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.10.intermediate.dense error 0.8103 exceeded max_error 0.2000
+2026-09-15 11:40:48,953 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.10.output.dense error 0.7891 exceeded max_error 0.2000
+2026-09-15 11:40:49,118 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.11.attention.self.query error 0.7732 exceeded max_error 0.2000
+2026-09-15 11:40:49,283 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.11.attention.self.key error 0.7977 exceeded max_error 0.2000
+2026-09-15 11:40:49,442 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.11.attention.self.value error 0.8233 exceeded max_error 0.2000
+2026-09-15 11:40:49,600 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.11.attention.output.dense error 0.8351 exceeded max_error 0.2000
+2026-09-15 11:40:49,856 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.11.intermediate.dense error 0.8082 exceeded max_error 0.2000
+2026-09-15 11:40:50,122 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer roberta.encoder.layer.11.output.dense error 0.7680 exceeded max_error 0.2000
+2026-09-15 11:40:50,139 [INFO] QwenQualitySweep: module=cur path=adapted_roberta
+2026-09-15 11:40:50,142 [INFO] QwenQualitySweep: module=cur injection summary: 0 SVDLinear layers active
+2026-09-15 11:40:50,145 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for cur (lr=2.0e-04)
+2026-09-15 11:40:50,387 [INFO] framework.utils.compat: Recovery fine-tuning selected 0 trainable parameters across 0 tensors.
+2026-09-15 11:40:50,387 [INFO] framework.utils.compat: Discovered 0 trainable tensors (0 params)
+2026-09-15 11:40:54,734 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_cur\roberta\roberta-base_cur_full_metrics.json
+2026-09-15 11:40:54,748 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_cur\roberta\checkpoints\cur\weights.pt (module_params=0, lora_params=4)
+2026-09-15 11:40:55,648 [INFO] QwenQualitySweep: [2/2] cur -> PASS_NO_COMPRESSION 78.56% (F1: 0.8124, Peak VRAM: 519.68 MB)
+2026-09-15 11:40:55,648 [WARNING] QwenQualitySweep: Module 'cur' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-15 11:40:55,648 [INFO] QwenQualitySweep: [Quality Guard] Module 'cur' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=78.56%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 11:40:55,977 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 11:40:55,977 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
+2026-09-15 11:40:55,985 [INFO] QwenQualitySweep: 
+              Module              Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                full                PASS   78.56% 0.00% (base) 0.8124                  0            1.00x  712.3 MB               4.11              4.72
+cur (efficient-attn) PASS_NO_COMPRESSION   78.56%       +0.00% 0.8124                  0            1.00x  519.7 MB               4.14              4.75
+2026-09-15 11:40:55,985 [INFO] QwenQualitySweep: ================================================================================

@@ -1,0 +1,135 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+2026-09-27 08:54:31,216 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0% (leaving 5.20 GB headroom)
+2026-09-27 08:54:31,216 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-27 08:54:31,216 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-27 08:54:31,217 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0%
+2026-09-27 08:54:31,217 [INFO] QwenQualitySweep: Auto-resolving base model 'roberta-base' to fine-tuned SST-2 model: models\roberta_sst2
+2026-09-27 08:54:31,652 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights: 100%|##########| 201/201 [00:00<00:00, 2590.26it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta_sst2
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-09-27 08:54:32,631 [INFO] QwenQualitySweep: model=models\roberta_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-27 08:54:32,631 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'raw_family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-27 08:54:32,631 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:54:32,631 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-27 08:54:32,631 [INFO] QwenQualitySweep:   model:             models\roberta_sst2
+2026-09-27 08:54:32,632 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-27 08:54:32,632 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-27 08:54:32,632 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-27 08:54:32,632 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-27 08:54:32,632 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-27 08:54:32,632 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-27 08:54:32,632 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:54:32,634 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-27 08:54:34,773 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0015
+2026-09-27 08:54:36,386 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0143
+2026-09-27 08:54:38,017 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1419
+2026-09-27 08:54:39,680 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0326
+2026-09-27 08:54:41,292 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0266
+2026-09-27 08:54:42,873 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0969
+2026-09-27 08:54:44,407 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0999
+2026-09-27 08:54:46,103 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.1602
+2026-09-27 08:54:46,122 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\04_rank_sweeps\roberta\deep_rank_roberta\salr\rank_32\finetuned_model.pt
+2026-09-27 08:54:47,584 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\04_rank_sweeps\roberta\deep_rank_roberta\salr\rank_32\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-27 08:54:47,584 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-27 08:54:52,343 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 94.38%
+2026-09-27 08:54:52,483 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:54:52,483 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-27 08:54:52,483 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-27 08:54:52,483 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-27 08:54:52,483 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-27 08:54:52,483 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-27 08:54:52,484 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-27 08:54:52,484 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-27 08:54:52,484 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:54:52,484 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-27 08:54:52,574 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: salr (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-27 08:54:53,135 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.0.attention.self.query: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:53,211 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.0.attention.self.key: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:53,312 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.0.attention.self.value: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:53,416 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.0.attention.output.dense: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:53,519 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.1.attention.self.query: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:53,624 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.1.attention.self.key: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:53,728 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.1.attention.self.value: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:53,830 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.1.attention.output.dense: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:53,937 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.2.attention.self.query: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:54,047 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.2.attention.self.key: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:54,153 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.2.attention.self.value: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:54,256 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.2.attention.output.dense: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:54,367 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.3.attention.self.query: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:54,477 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.3.attention.self.key: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:54,594 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.3.attention.self.value: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:54,698 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.3.attention.output.dense: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:54,806 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.4.attention.self.query: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:54,916 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.4.attention.self.key: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:55,022 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.4.attention.self.value: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:55,129 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.4.attention.output.dense: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:55,236 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.5.attention.self.query: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:55,345 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.5.attention.self.key: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:55,452 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.5.attention.self.value: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:55,556 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.5.attention.output.dense: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:55,663 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.6.attention.self.query: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:55,768 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.6.attention.self.key: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:55,875 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.6.attention.self.value: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:55,977 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.6.attention.output.dense: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:56,080 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.7.attention.self.query: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:56,188 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.7.attention.self.key: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:56,293 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.7.attention.self.value: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:56,395 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.7.attention.output.dense: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:56,502 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.8.attention.self.query: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:56,621 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.8.attention.self.key: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:56,725 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.8.attention.self.value: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:56,825 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.8.attention.output.dense: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:56,931 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.9.attention.self.query: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:57,044 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.9.attention.self.key: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:57,150 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.9.attention.self.value: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:57,251 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.9.attention.output.dense: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:57,354 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.10.attention.self.query: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:57,458 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.10.attention.self.key: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:57,561 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.10.attention.self.value: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:57,663 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.10.attention.output.dense: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:57,768 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.11.attention.self.query: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:57,875 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.11.attention.self.key: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:57,982 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.11.attention.self.value: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:58,086 [WARNING] framework.compression_engine.salr: Failed to compress roberta.encoder.layer.11.attention.output.dense: "geqrf_cuda" not implemented for 'Half'
+2026-09-27 08:54:58,126 [WARNING] framework.compression_engine.salr: SALR post-compression forward sanity check warning: mat1 and mat2 must have the same dtype, but got Half and Float
+2026-09-27 08:54:58,140 [INFO] QwenQualitySweep: module=salr path=adapted_roberta
+2026-09-27 08:54:58,143 [INFO] QwenQualitySweep: module=salr injection summary: 0 SVDLinear layers active
+2026-09-27 08:54:58,143 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for salr (lr=2.0e-04)
+2026-09-27 08:54:58,340 [INFO] framework.utils.compat: Recovery fine-tuning selected 592130 trainable parameters across 4 tensors.
+2026-09-27 08:54:58,340 [INFO] framework.utils.compat: Discovered 4 trainable tensors (592130 params)
+2026-09-27 08:54:58,343 [INFO] QwenQualitySweep: LoRA fine-tuning: 592130 trainable parameters across 4 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-27 08:54:58,452 [INFO] QwenQualitySweep: Step 1/50 took 0.11s (loss=0.0314, bs=8, micro=8)
+2026-09-27 08:54:58,635 [INFO] QwenQualitySweep: Step 5/50 took 0.04s (loss=0.0705, bs=8, micro=8)
+2026-09-27 08:54:58,898 [INFO] QwenQualitySweep: Step 10/50 took 0.04s (loss=0.0200, bs=8, micro=8)
+2026-09-27 08:54:59,111 [INFO] QwenQualitySweep: Step 15/50 took 0.04s (loss=0.0121, bs=8, micro=8)
+2026-09-27 08:54:59,355 [INFO] QwenQualitySweep: Step 20/50 took 0.05s (loss=0.0316, bs=8, micro=8)
+2026-09-27 08:54:59,596 [INFO] QwenQualitySweep: Step 25/50 took 0.05s (loss=0.0009, bs=8, micro=8)
+2026-09-27 08:54:59,856 [INFO] QwenQualitySweep: Step 30/50 took 0.05s (loss=0.0079, bs=8, micro=8)
+2026-09-27 08:55:00,156 [INFO] QwenQualitySweep: Step 35/50 took 0.06s (loss=0.1131, bs=8, micro=8)
+2026-09-27 08:55:00,448 [INFO] QwenQualitySweep: Step 40/50 took 0.07s (loss=0.3707, bs=8, micro=8)
+2026-09-27 08:55:00,734 [INFO] QwenQualitySweep: Step 45/50 took 0.05s (loss=0.0030, bs=8, micro=8)
+2026-09-27 08:55:01,025 [INFO] QwenQualitySweep: Step 50/50 took 0.06s (loss=0.0226, bs=8, micro=8)
+2026-09-27 08:55:07,049 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\roberta\deep_rank_roberta\salr\rank_32\roberta_sst2_salr_full_metrics.json
+2026-09-27 08:55:07,285 [INFO] QwenQualitySweep: [1/1] salr -> PASS 93.58% (F1: 0.9382, Peak VRAM: 292.72 MB)
+2026-09-27 08:55:07,286 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\04_rank_sweeps\roberta\deep_rank_roberta\salr\rank_32\checkpoints\salr. Automated export will be handled post-sweep by orchestrator.
+2026-09-27 08:55:07,286 [INFO] QwenQualitySweep: [1/1] salr Timing: eval_time=14.71s
+2026-09-27 08:55:07,286 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-27 08:55:07,707 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:55:07,708 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-27 08:55:07,716 [INFO] QwenQualitySweep: 
+               Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+salr (efficient-attn)   PASS   93.58%    -0.80% 0.9382                  0            1.00x  292.7 MB               5.16              5.92
+2026-09-27 08:55:07,716 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:171: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

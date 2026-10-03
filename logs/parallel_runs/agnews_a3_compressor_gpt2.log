@@ -1,0 +1,77 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from 'framework.eval_all_models_datasets' (consider renaming 'D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py' if it has the same name as a library you intended to import)
+2026-09-18 08:44:02,067 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 08:44:02,575 [INFO] QwenQualitySweep: Configured dataset 'ag_news' with num_labels=4
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3608.72it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models/gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-18 08:44:03,265 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-18 08:44:03,265 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 08:44:03,265 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:44:03,265 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 08:44:03,266 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-18 08:44:03,266 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-18 08:44:03,266 [INFO] QwenQualitySweep:   dataset:           ag_news
+2026-09-18 08:44:03,266 [INFO] QwenQualitySweep:   batch_size:        32
+2026-09-18 08:44:03,266 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 08:44:03,267 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 08:44:03,267 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 08:44:03,267 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:44:03,268 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-18 08:44:06,398 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=2.8972
+2026-09-18 08:44:08,696 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=1.3333
+2026-09-18 08:44:11,007 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.7966
+2026-09-18 08:44:13,311 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.9014
+2026-09-18 08:44:15,621 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.6814
+2026-09-18 08:44:17,935 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.7233
+2026-09-18 08:44:20,244 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.3555
+2026-09-18 08:44:22,550 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.4773
+2026-09-18 08:44:22,558 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\agnews_unified_a3_compressor\gpt2\finetuned_model.pt
+2026-09-18 08:44:22,672 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 08:44:23,493 [INFO] QwenQualitySweep: Prepared 32 eval batches and 50 train batches directly on GPU.
+2026-09-18 08:44:26,096 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 79.70%
+2026-09-18 08:44:26,154 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:44:26,155 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-18 08:44:26,155 [INFO] QwenQualitySweep:   Validation Majority Count: 274 / 1000
+2026-09-18 08:44:26,155 [INFO] QwenQualitySweep:   True Majority Baseline:    27.40%
+2026-09-18 08:44:26,155 [INFO] QwenQualitySweep:   Standard Error (SE):       1.410%
+2026-09-18 08:44:26,155 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.23%
+2026-09-18 08:44:26,155 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  31.63%
+2026-09-18 08:44:26,155 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:44:26,156 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: a3_compressor (recovery_steps=50, batch_size=32, optimizer=adamw)
+2026-09-18 08:44:43,134 [INFO] QwenQualitySweep: module=a3_compressor path=adapted_gpt
+2026-09-18 08:44:43,136 [INFO] QwenQualitySweep: module=a3_compressor injection summary: 0 SVDLinear layers active
+2026-09-18 08:44:43,136 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for a3_compressor (lr=2.0e-04)
+2026-09-18 08:44:43,285 [INFO] framework.utils.compat: Recovery fine-tuning selected 108556800 trainable parameters across 97 tensors.
+2026-09-18 08:44:43,287 [WARNING] framework.utils.compat: Total trainable parameters (108556800) exceeds 2000000 threshold for recovery. Pruning heavy base weights to prevent OOM.
+2026-09-18 08:44:43,289 [INFO] framework.utils.compat: Reduced recovery parameters to 3072 trainable parameters across 1 tensors.
+2026-09-18 08:44:43,289 [INFO] framework.utils.compat: Discovered 1 trainable tensors (3072 params)
+2026-09-18 08:44:43,292 [INFO] QwenQualitySweep: LoRA fine-tuning: 3072 trainable parameters across 1 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 08:44:43,429 [INFO] QwenQualitySweep: Step 1/50 took 0.13s (loss=1.3586, bs=32, micro=32)
+2026-09-18 08:44:43,819 [INFO] QwenQualitySweep: Step 5/50 took 0.09s (loss=0.9083, bs=32, micro=32)
+2026-09-18 08:44:44,288 [INFO] QwenQualitySweep: Step 10/50 took 0.09s (loss=0.4564, bs=32, micro=32)
+2026-09-18 08:44:44,756 [INFO] QwenQualitySweep: Step 15/50 took 0.09s (loss=1.6634, bs=32, micro=32)
+2026-09-18 08:44:45,227 [INFO] QwenQualitySweep: Step 20/50 took 0.09s (loss=1.6220, bs=32, micro=32)
+2026-09-18 08:44:45,698 [INFO] QwenQualitySweep: Step 25/50 took 0.09s (loss=1.3886, bs=32, micro=32)
+2026-09-18 08:44:46,169 [INFO] QwenQualitySweep: Step 30/50 took 0.10s (loss=1.0659, bs=32, micro=32)
+2026-09-18 08:44:46,638 [INFO] QwenQualitySweep: Step 35/50 took 0.09s (loss=0.9148, bs=32, micro=32)
+2026-09-18 08:44:47,105 [INFO] QwenQualitySweep: Step 40/50 took 0.09s (loss=1.1113, bs=32, micro=32)
+2026-09-18 08:44:47,579 [INFO] QwenQualitySweep: Step 45/50 took 0.10s (loss=0.9664, bs=32, micro=32)
+2026-09-18 08:44:48,049 [INFO] QwenQualitySweep: Step 50/50 took 0.09s (loss=1.0826, bs=32, micro=32)
+2026-09-18 08:44:51,079 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\agnews_unified_a3_compressor\gpt2\gpt2_a3_compressor_full_metrics.json
+2026-09-18 08:44:51,482 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\agnews_unified_a3_compressor\gpt2\checkpoints\a3_compressor\weights.pt (module_params=144, lora_params=1)
+2026-09-18 08:44:52,502 [INFO] QwenQualitySweep: [1/1] a3_compressor -> PASS_NO_COMPRESSION 57.60% (F1: 0.5683, Peak VRAM: 865.53 MB)
+2026-09-18 08:44:52,502 [WARNING] QwenQualitySweep: Module 'a3_compressor' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-18 08:44:52,502 [INFO] QwenQualitySweep: [Quality Guard] Module 'a3_compressor' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=57.60%, pass_thresh=31.63%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-18 08:44:52,845 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:44:52,845 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on ag_news)
+2026-09-18 08:44:52,849 [INFO] QwenQualitySweep: 
+                        Module              Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+a3_compressor (efficient-attn) PASS_NO_COMPRESSION   57.60%   -22.10% 0.5683                  0            0.84x  865.5 MB               2.88              2.88
+2026-09-18 08:44:52,849 [INFO] QwenQualitySweep: ================================================================================

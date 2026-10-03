@@ -1,0 +1,88 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Loading models/gpt2 on cuda...
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3656.37it/s]
+
+=== Evaluating piqa ===
+2026-09-26 03:53:35,934 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 03:53:36,426 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 03:53:36,683 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/tree/refs%2Fconvert%2Fparquet/plain_text%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+  piqa: batch 10/63 (16%, elapsed 1.5s, ETA 7.7s)
+  piqa: batch 20/63 (32%, elapsed 2.3s, ETA 4.9s)
+  piqa: batch 30/63 (48%, elapsed 3.1s, ETA 3.5s)
+  piqa: batch 40/63 (63%, elapsed 4.0s, ETA 2.3s)
+  piqa: batch 50/63 (79%, elapsed 5.0s, ETA 1.3s)
+  piqa: batch 60/63 (95%, elapsed 6.2s, ETA 0.3s)
+  piqa: batch 63/63 (100%, elapsed 6.8s, ETA 0.0s)
+  piqa: 53.20%
+
+=== Evaluating arc_easy ===
+2026-09-26 03:53:45,177 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 03:53:45,719 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 03:53:46,050 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Easy%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
+  arc_easy: batch 10/125 (8%, elapsed 0.9s, ETA 10.9s)
+  arc_easy: batch 20/125 (16%, elapsed 1.8s, ETA 9.3s)
+  arc_easy: batch 30/125 (24%, elapsed 2.6s, ETA 8.3s)
+  arc_easy: batch 40/125 (32%, elapsed 3.4s, ETA 7.3s)
+  arc_easy: batch 50/125 (40%, elapsed 4.3s, ETA 6.5s)
+  arc_easy: batch 60/125 (48%, elapsed 5.2s, ETA 5.6s)
+  arc_easy: batch 70/125 (56%, elapsed 6.0s, ETA 4.7s)
+  arc_easy: batch 80/125 (64%, elapsed 6.9s, ETA 3.9s)
+  arc_easy: batch 90/125 (72%, elapsed 7.8s, ETA 3.0s)
+  arc_easy: batch 100/125 (80%, elapsed 8.7s, ETA 2.2s)
+  arc_easy: batch 110/125 (88%, elapsed 9.6s, ETA 1.3s)
+  arc_easy: batch 120/125 (96%, elapsed 10.5s, ETA 0.4s)
+  arc_easy: batch 125/125 (100%, elapsed 11.4s, ETA 0.0s)
+  arc_easy: 29.80%
+
+=== Evaluating arc_challenge ===
+2026-09-26 03:53:59,216 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 03:53:59,721 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Challenge%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
+  arc_challenge: batch 10/125 (8%, elapsed 0.8s, ETA 9.8s)
+  arc_challenge: batch 20/125 (16%, elapsed 1.7s, ETA 9.0s)
+  arc_challenge: batch 30/125 (24%, elapsed 2.5s, ETA 8.1s)
+  arc_challenge: batch 40/125 (32%, elapsed 3.4s, ETA 7.3s)
+  arc_challenge: batch 50/125 (40%, elapsed 4.3s, ETA 6.5s)
+  arc_challenge: batch 60/125 (48%, elapsed 5.2s, ETA 5.6s)
+  arc_challenge: batch 70/125 (56%, elapsed 6.1s, ETA 4.8s)
+  arc_challenge: batch 80/125 (64%, elapsed 6.9s, ETA 3.9s)
+  arc_challenge: batch 90/125 (72%, elapsed 7.8s, ETA 3.0s)
+  arc_challenge: batch 100/125 (80%, elapsed 8.7s, ETA 2.2s)
+  arc_challenge: batch 110/125 (88%, elapsed 9.6s, ETA 1.3s)
+  arc_challenge: batch 120/125 (96%, elapsed 10.8s, ETA 0.4s)
+  arc_challenge: batch 125/125 (100%, elapsed 11.7s, ETA 0.0s)
+  arc_challenge: 19.60%
+
+=== Evaluating hellaswag ===
+2026-09-26 03:54:13,238 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 03:54:13,758 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Rowan/hellaswag/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 03:54:14,020 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Rowan/hellaswag/tree/refs%2Fconvert%2Fparquet/default%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+  hellaswag: batch 10/125 (8%, elapsed 0.9s, ETA 10.9s)
+  hellaswag: batch 20/125 (16%, elapsed 1.8s, ETA 9.3s)
+  hellaswag: batch 30/125 (24%, elapsed 2.6s, ETA 8.2s)
+  hellaswag: batch 40/125 (32%, elapsed 3.4s, ETA 7.3s)
+  hellaswag: batch 50/125 (40%, elapsed 4.3s, ETA 6.5s)
+  hellaswag: batch 60/125 (48%, elapsed 5.2s, ETA 5.6s)
+  hellaswag: batch 70/125 (56%, elapsed 6.0s, ETA 4.7s)
+  hellaswag: batch 80/125 (64%, elapsed 6.9s, ETA 3.9s)
+  hellaswag: batch 90/125 (72%, elapsed 7.8s, ETA 3.0s)
+  hellaswag: batch 100/125 (80%, elapsed 8.7s, ETA 2.2s)
+  hellaswag: batch 110/125 (88%, elapsed 9.5s, ETA 1.3s)
+  hellaswag: batch 120/125 (96%, elapsed 10.4s, ETA 0.4s)
+  hellaswag: batch 125/125 (100%, elapsed 11.3s, ETA 0.0s)
+  hellaswag: 27.80%
+
+=== Evaluating winogrande ===
+2026-09-26 03:54:27,156 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 03:54:27,661 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/winogrande/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 03:54:27,925 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/winogrande/tree/refs%2Fconvert%2Fparquet/winogrande_xl%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+  winogrande: batch 10/63 (16%, elapsed 0.9s, ETA 5.0s)
+  winogrande: batch 20/63 (32%, elapsed 1.8s, ETA 3.9s)
+  winogrande: batch 30/63 (48%, elapsed 2.7s, ETA 2.9s)
+  winogrande: batch 40/63 (63%, elapsed 3.6s, ETA 2.0s)
+  winogrande: batch 50/63 (79%, elapsed 4.5s, ETA 1.2s)
+  winogrande: batch 60/63 (95%, elapsed 5.4s, ETA 0.3s)
+  winogrande: batch 63/63 (100%, elapsed 5.7s, ETA 0.0s)
+  winogrande: 50.60%
+
+Results saved to results\zeroshot_parallel\aegis_v5

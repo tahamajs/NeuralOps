@@ -1,0 +1,139 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 10:56:53,597 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'ast_pruner', '--output_json', 'logs\\isolated_results\\ast_pruner_1790321187576_6076.json']
+2026-09-25 10:56:53,689 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 75.0% (leaving 2.00 GB headroom)
+2026-09-25 10:56:53,689 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 10:56:53,689 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=64 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-25 10:56:53,689 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 75.0%
+2026-09-25 10:56:54,112 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights: 100%|##########| 201/201 [00:00<00:00, 2632.84it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models/roberta_sst2
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-09-25 10:56:55,449 [INFO] QwenQualitySweep: model=models/roberta_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-25 10:56:55,449 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-25 10:56:55,450 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 10:56:55,450 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-25 10:56:55,450 [INFO] QwenQualitySweep:   model:             models/roberta_sst2
+2026-09-25 10:56:55,450 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-25 10:56:55,450 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-25 10:56:55,451 [INFO] QwenQualitySweep:   batch_size:        64
+2026-09-25 10:56:55,451 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-25 10:56:55,451 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-25 10:56:55,451 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-25 10:56:55,451 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 10:56:55,453 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-25 10:57:00,832 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.1548
+2026-09-25 10:57:03,160 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0796
+2026-09-25 10:57:05,322 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1766
+2026-09-25 10:57:07,504 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0516
+2026-09-25 10:57:09,630 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.1776
+2026-09-25 10:57:11,820 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.1528
+2026-09-25 10:57:14,102 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.1325
+2026-09-25 10:57:16,327 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.2733
+2026-09-25 10:57:16,341 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: D:\SVD_Project\results\batch3_roberta\ast_pruner\finetuned_model.pt
+2026-09-25 10:57:17,623 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to D:\SVD_Project\results\batch3_roberta\ast_pruner\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-25 10:57:17,623 [INFO] QwenQualitySweep: Prepared 14 eval batches and 50 train batches directly on GPU.
+2026-09-25 10:57:18,617 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 93.46%
+2026-09-25 10:57:18,773 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 10:57:18,773 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-25 10:57:18,773 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-25 10:57:18,774 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-25 10:57:18,774 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-25 10:57:18,774 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-25 10:57:18,774 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-25 10:57:18,774 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-25 10:57:18,774 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 10:57:18,775 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-25 10:57:18,876 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: ast_pruner (recovery_steps=50, batch_size=64, optimizer=adamw)
+2026-09-25 10:57:19,309 [WARNING] framework.compression_engine.ast_pruner: AST Jacobian calibration failed: mat1 and mat2 must have the same dtype, but got Half and Float
+2026-09-25 10:57:19,309 [WARNING] framework.compression_engine.ast_pruner: AST: no successful backward passes; saliency will fall back to |W| only.
+2026-09-25 10:57:20,323 [WARNING] framework.compression_engine.ast_pruner: AST: post-compression forward check failed: mat1 and mat2 must have the same dtype, but got Half and Float
+2026-09-25 10:57:20,339 [INFO] QwenQualitySweep: module=ast_pruner path=adapted_roberta
+2026-09-25 10:57:20,342 [INFO] QwenQualitySweep: module=ast_pruner injection summary: 0 SVDLinear layers active
+2026-09-25 10:57:20,342 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for ast_pruner (lr=2.0e-04)
+2026-09-25 10:57:20,560 [INFO] framework.utils.compat: Recovery fine-tuning selected 592130 trainable parameters across 4 tensors.
+2026-09-25 10:57:20,560 [INFO] framework.utils.compat: Discovered 4 trainable tensors (592130 params)
+2026-09-25 10:57:20,564 [INFO] QwenQualitySweep: LoRA fine-tuning: 592130 trainable parameters across 4 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-25 10:57:20,798 [INFO] QwenQualitySweep: Step 1/50 took 0.23s (loss=0.3361, bs=64, micro=16)
+2026-09-25 10:57:21,610 [INFO] QwenQualitySweep: Step 5/50 took 0.20s (loss=0.3306, bs=64, micro=16)
+2026-09-25 10:57:22,890 [INFO] QwenQualitySweep: Step 10/50 took 0.21s (loss=0.2276, bs=64, micro=16)
+2026-09-25 10:57:23,941 [INFO] QwenQualitySweep: Step 15/50 took 0.22s (loss=0.2867, bs=64, micro=16)
+2026-09-25 10:57:25,015 [INFO] QwenQualitySweep: Step 20/50 took 0.20s (loss=0.3140, bs=64, micro=16)
+2026-09-25 10:57:26,074 [INFO] QwenQualitySweep: Step 25/50 took 0.21s (loss=0.2772, bs=64, micro=16)
+2026-09-25 10:57:27,306 [INFO] QwenQualitySweep: Step 30/50 took 0.25s (loss=0.3290, bs=64, micro=16)
+2026-09-25 10:57:28,408 [INFO] QwenQualitySweep: Step 35/50 took 0.22s (loss=0.2247, bs=64, micro=16)
+2026-09-25 10:57:29,551 [INFO] QwenQualitySweep: Step 40/50 took 0.25s (loss=0.2520, bs=64, micro=16)
+2026-09-25 10:57:30,658 [INFO] QwenQualitySweep: Step 45/50 took 0.19s (loss=0.2736, bs=64, micro=16)
+2026-09-25 10:57:31,570 [INFO] QwenQualitySweep: Step 50/50 took 0.20s (loss=0.2291, bs=64, micro=16)
+2026-09-25 10:57:32,974 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to D:\SVD_Project\results\batch3_roberta\ast_pruner\roberta_sst2_ast_pruner_full_metrics.json
+2026-09-25 10:57:33,207 [INFO] QwenQualitySweep: [1/1] ast_pruner -> PASS 90.02% (F1: 0.8999, Peak VRAM: 457.08 MB)
+2026-09-25 10:57:33,208 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in D:\SVD_Project\results\batch3_roberta\ast_pruner\checkpoints\ast_pruner. Automated export will be handled post-sweep by orchestrator.
+2026-09-25 10:57:33,208 [INFO] QwenQualitySweep: [1/1] ast_pruner Timing: eval_time=14.33s
+2026-09-25 10:57:33,208 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-25 10:57:33,467 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 10:57:33,467 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-25 10:57:33,474 [INFO] QwenQualitySweep: 
+    Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+ast_pruner   PASS   90.02%    -3.44% 0.8999                 48            1.00x  457.1 MB               0.87              1.00
+2026-09-25 10:57:33,474 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:169: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()
+r: AST: reconstruction error 0.5843 on distilbert.transformer.layer.3.attention.v_lin exceeds 0.4000.
+2026-09-25 10:56:50,589 [INFO] framework.compression_engine.ast_pruner: AST: falling back to original for distilbert.transformer.layer.3.attention.v_lin.
+2026-09-25 10:56:50,614 [WARNING] framework.compression_engine.ast_pruner: AST: reconstruction error 0.5889 on distilbert.transformer.layer.3.attention.out_lin exceeds 0.4000.
+2026-09-25 10:56:50,614 [INFO] framework.compression_engine.ast_pruner: AST: falling back to original for distilbert.transformer.layer.3.attention.out_lin.
+2026-09-25 10:56:50,639 [WARNING] framework.compression_engine.ast_pruner: AST: reconstruction error 0.5858 on distilbert.transformer.layer.4.attention.q_lin exceeds 0.4000.
+2026-09-25 10:56:50,639 [INFO] framework.compression_engine.ast_pruner: AST: falling back to original for distilbert.transformer.layer.4.attention.q_lin.
+2026-09-25 10:56:50,662 [WARNING] framework.compression_engine.ast_pruner: AST: reconstruction error 0.5919 on distilbert.transformer.layer.4.attention.k_lin exceeds 0.4000.
+2026-09-25 10:56:50,662 [INFO] framework.compression_engine.ast_pruner: AST: falling back to original for distilbert.transformer.layer.4.attention.k_lin.
+2026-09-25 10:56:50,682 [WARNING] framework.compression_engine.ast_pruner: AST: reconstruction error 0.5835 on distilbert.transformer.layer.4.attention.v_lin exceeds 0.4000.
+2026-09-25 10:56:50,682 [INFO] framework.compression_engine.ast_pruner: AST: falling back to original for distilbert.transformer.layer.4.attention.v_lin.
+2026-09-25 10:56:50,705 [WARNING] framework.compression_engine.ast_pruner: AST: reconstruction error 0.5917 on distilbert.transformer.layer.4.attention.out_lin exceeds 0.4000.
+2026-09-25 10:56:50,705 [INFO] framework.compression_engine.ast_pruner: AST: falling back to original for distilbert.transformer.layer.4.attention.out_lin.
+2026-09-25 10:56:50,730 [WARNING] framework.compression_engine.ast_pruner: AST: reconstruction error 0.5911 on distilbert.transformer.layer.5.attention.q_lin exceeds 0.4000.
+2026-09-25 10:56:50,730 [INFO] framework.compression_engine.ast_pruner: AST: falling back to original for distilbert.transformer.layer.5.attention.q_lin.
+2026-09-25 10:56:50,753 [WARNING] framework.compression_engine.ast_pruner: AST: reconstruction error 0.5749 on distilbert.transformer.layer.5.attention.k_lin exceeds 0.4000.
+2026-09-25 10:56:50,753 [INFO] framework.compression_engine.ast_pruner: AST: falling back to original for distilbert.transformer.layer.5.attention.k_lin.
+2026-09-25 10:56:50,778 [WARNING] framework.compression_engine.ast_pruner: AST: reconstruction error 0.5864 on distilbert.transformer.layer.5.attention.v_lin exceeds 0.4000.
+2026-09-25 10:56:50,779 [INFO] framework.compression_engine.ast_pruner: AST: falling back to original for distilbert.transformer.layer.5.attention.v_lin.
+2026-09-25 10:56:50,806 [WARNING] framework.compression_engine.ast_pruner: AST: reconstruction error 0.5750 on distilbert.transformer.layer.5.attention.out_lin exceeds 0.4000.
+2026-09-25 10:56:50,807 [INFO] framework.compression_engine.ast_pruner: AST: falling back to original for distilbert.transformer.layer.5.attention.out_lin.
+2026-09-25 10:56:50,873 [INFO] QwenQualitySweep: module=ast_pruner path=legacy_bert
+2026-09-25 10:56:50,874 [INFO] QwenQualitySweep: module=ast_pruner injection summary: 0 SVDLinear layers active
+2026-09-25 10:56:50,874 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for ast_pruner (lr=2.0e-04)
+2026-09-25 10:56:50,931 [INFO] framework.utils.compat: Recovery fine-tuning selected 592130 trainable parameters across 4 tensors.
+2026-09-25 10:56:50,932 [INFO] framework.utils.compat: Discovered 4 trainable tensors (592130 params)
+2026-09-25 10:56:50,934 [INFO] QwenQualitySweep: LoRA fine-tuning: 592130 trainable parameters across 4 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-25 10:56:51,155 [INFO] QwenQualitySweep: Step 1/50 took 0.22s (loss=0.0285, bs=64, micro=16)
+2026-09-25 10:56:51,608 [INFO] QwenQualitySweep: Step 5/50 took 0.11s (loss=0.0644, bs=64, micro=16)
+2026-09-25 10:56:52,188 [INFO] QwenQualitySweep: Step 10/50 took 0.12s (loss=0.0119, bs=64, micro=16)
+2026-09-25 10:56:52,753 [INFO] QwenQualitySweep: Step 15/50 took 0.11s (loss=0.0613, bs=64, micro=16)
+2026-09-25 10:56:53,321 [INFO] QwenQualitySweep: Step 20/50 took 0.11s (loss=0.1030, bs=64, micro=16)
+2026-09-25 10:56:53,886 [INFO] QwenQualitySweep: Step 25/50 took 0.10s (loss=0.0351, bs=64, micro=16)
+2026-09-25 10:56:54,492 [INFO] QwenQualitySweep: Step 30/50 took 0.13s (loss=0.1139, bs=64, micro=16)
+2026-09-25 10:56:55,083 [INFO] QwenQualitySweep: Step 35/50 took 0.12s (loss=0.0111, bs=64, micro=16)
+2026-09-25 10:56:55,650 [INFO] QwenQualitySweep: Step 40/50 took 0.11s (loss=0.0332, bs=64, micro=16)
+2026-09-25 10:56:56,282 [INFO] QwenQualitySweep: Step 45/50 took 0.17s (loss=0.0099, bs=64, micro=16)
+2026-09-25 10:56:57,054 [INFO] QwenQualitySweep: Step 50/50 took 0.16s (loss=0.0106, bs=64, micro=16)
+2026-09-25 10:56:59,319 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to D:\SVD_Project\results\batch3_distilbert\ast_pruner\distilbert_sst2_ast_pruner_full_metrics.json
+2026-09-25 10:56:59,460 [INFO] QwenQualitySweep: [1/1] ast_pruner -> PASS_NO_COMPRESSION 90.71% (F1: 0.9091, Peak VRAM: 456.34 MB)
+2026-09-25 10:56:59,461 [WARNING] QwenQualitySweep: Module 'ast_pruner' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-25 10:56:59,461 [INFO] QwenQualitySweep: [Quality Guard] Module 'ast_pruner' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=90.71%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-25 10:56:59,467 [INFO] QwenQualitySweep: [1/1] ast_pruner Timing: eval_time=10.45s
+2026-09-25 10:56:59,467 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-25 10:56:59,754 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 10:56:59,754 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-25 10:56:59,761 [INFO] QwenQualitySweep: 
+                     Module              Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+ast_pruner (efficient-attn) PASS_NO_COMPRESSION   90.71%    +0.11% 0.9091                  0            1.00x  456.3 MB               1.83              2.10
+2026-09-25 10:56:59,762 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:169: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

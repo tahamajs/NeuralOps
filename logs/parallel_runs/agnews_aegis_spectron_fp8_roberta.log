@@ -1,0 +1,171 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from 'framework.eval_all_models_datasets' (consider renaming 'D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py' if it has the same name as a library you intended to import)
+2026-09-18 19:44:05,567 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 19:44:06,659 [INFO] QwenQualitySweep: Configured dataset 'ag_news' with num_labels=4
+Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]Loading weights: 100%|##########| 197/197 [00:00<00:00, 2095.50it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models/roberta-base
+Key                             | Status     | 
+--------------------------------+------------+-
+lm_head.bias                    | UNEXPECTED | 
+lm_head.layer_norm.weight       | UNEXPECTED | 
+lm_head.dense.weight            | UNEXPECTED | 
+roberta.embeddings.position_ids | UNEXPECTED | 
+lm_head.layer_norm.bias         | UNEXPECTED | 
+lm_head.dense.bias              | UNEXPECTED | 
+classifier.out_proj.bias        | MISSING    | 
+classifier.dense.weight         | MISSING    | 
+classifier.dense.bias           | MISSING    | 
+classifier.out_proj.weight      | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-18 19:44:08,843 [INFO] QwenQualitySweep: model=models/roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-18 19:44:08,844 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 19:44:08,844 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 19:44:08,844 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 19:44:08,844 [INFO] QwenQualitySweep:   model:             models/roberta-base
+2026-09-18 19:44:08,845 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-18 19:44:08,845 [INFO] QwenQualitySweep:   dataset:           ag_news
+2026-09-18 19:44:08,845 [INFO] QwenQualitySweep:   batch_size:        32
+2026-09-18 19:44:08,845 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 19:44:08,845 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 19:44:08,845 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 19:44:08,846 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 19:44:08,847 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-18 19:44:15,683 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=1.8012
+2026-09-18 19:44:20,425 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=1.2795
+2026-09-18 19:44:24,562 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=1.0905
+2026-09-18 19:44:29,223 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=1.0636
+2026-09-18 19:44:33,604 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.8146
+2026-09-18 19:44:37,269 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.7128
+2026-09-18 19:44:43,111 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.5348
+2026-09-18 19:44:46,920 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.6845
+2026-09-18 19:44:46,953 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\agnews_unified_aegis_spectron_fp8\roberta\finetuned_model.pt
+2026-09-18 19:44:47,207 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 19:44:49,670 [INFO] QwenQualitySweep: Prepared 32 eval batches and 50 train batches directly on GPU.
+2026-09-18 19:44:53,076 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 74.50%
+2026-09-18 19:44:53,241 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 19:44:53,241 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-18 19:44:53,241 [INFO] QwenQualitySweep:   Validation Majority Count: 274 / 1000
+2026-09-18 19:44:53,241 [INFO] QwenQualitySweep:   True Majority Baseline:    27.40%
+2026-09-18 19:44:53,241 [INFO] QwenQualitySweep:   Standard Error (SE):       1.410%
+2026-09-18 19:44:53,242 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.23%
+2026-09-18 19:44:53,242 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  31.63%
+2026-09-18 19:44:53,242 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 19:44:53,242 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: aegis_spectron_fp8 (recovery_steps=50, batch_size=32, optimizer=adamw)
+2026-09-18 19:44:56,895 [INFO] QwenQualitySweep: module=aegis_spectron_fp8 path=adapted_roberta
+2026-09-18 19:44:56,898 [INFO] QwenQualitySweep: module=aegis_spectron_fp8 injection summary: 0 SVDLinear layers active
+2026-09-18 19:44:56,898 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for aegis_spectron_fp8 (lr=2.0e-04)
+2026-09-18 19:44:58,250 [INFO] framework.utils.compat: Recovery fine-tuning selected 2368512 trainable parameters across 108 tensors.
+2026-09-18 19:44:58,252 [INFO] framework.utils.compat: Discovered 108 trainable tensors (2368512 params)
+2026-09-18 19:44:58,269 [INFO] QwenQualitySweep: LoRA fine-tuning: 2368512 trainable parameters across 108 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 19:44:58,579 [ERROR] QwenQualitySweep: Module aegis_spectron_fp8 execution failure:
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 2539, in main
+    pipe_res = future.result(timeout=effective_timeout)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 2438, in _run_candidate_pipeline
+    had_nan = finetune_lora(
+        model, tokenizer, train, args.dataset, rec_steps, args.seq_len, effective_batch_size, device,
+    ...<2 lines>...
+        weight_decay=args.weight_decay, timeout=effective_timeout,
+    )
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 718, in finetune_lora
+    out = model(**cx, labels=cy)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\generic.py", line 876, in wrapper
+    output = func(self, *args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\roberta\modeling_roberta.py", line 949, in forward
+    outputs = self.roberta(
+        input_ids,
+    ...<5 lines>...
+        **kwargs,
+    )
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\generic.py", line 952, in wrapper
+    output = func(self, *args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\output_capturing.py", line 248, in wrapper
+    outputs = func(self, *args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\roberta\modeling_roberta.py", line 631, in forward
+    encoder_outputs = self.encoder(
+        embedding_output,
+    ...<6 lines>...
+        **kwargs,
+    )
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\roberta\modeling_roberta.py", line 514, in forward
+    hidden_states = layer_module(
+        hidden_states,
+    ...<4 lines>...
+        **kwargs,
+    )
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\modeling_layers.py", line 93, in __call__
+    return super().__call__(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\roberta\modeling_roberta.py", line 435, in forward
+    self_attention_output, _ = self.attention(
+                               ~~~~~~~~~~~~~~^
+        hidden_states,
+        ^^^^^^^^^^^^^^
+    ...<2 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\roberta\modeling_roberta.py", line 366, in forward
+    attention_output, attn_weights = self.self(
+                                     ~~~~~~~~~^
+        hidden_states,
+        ^^^^^^^^^^^^^^
+    ...<3 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "D:\SVD_Project\Codes\framework\attentions\aegis_spectron_fp8.py", line 894, in forward
+    out_lin = self._linear_branch(X_fp8)
+                                  ^^^^^
+NameError: name 'X_fp8' is not defined
+2026-09-18 19:44:58,660 [INFO] QwenQualitySweep: [1/1] aegis_spectron_fp8 -> FAIL 0.00% (F1: 0.0, Peak VRAM: 0.0 MB)
+2026-09-18 19:44:58,661 [INFO] QwenQualitySweep: [Quality Guard] Module 'aegis_spectron_fp8' did not pass quality criteria (status=FAIL, acc=0.00%, pass_thresh=31.63%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-18 19:44:59,106 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 19:44:59,106 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on ag_news)
+2026-09-18 19:44:59,124 [INFO] QwenQualitySweep: 
+                             Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+aegis_spectron_fp8 (efficient-attn)   FAIL    0.00%   -74.50% 0.0000                  0            1.00x    0.0 MB               5.42               N/A
+2026-09-18 19:44:59,124 [INFO] QwenQualitySweep: ================================================================================

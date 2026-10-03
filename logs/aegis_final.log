@@ -1,0 +1,38 @@
+=== Aegis Final Run ===
+Running aegis_v2 on sst2 [models/distilbert_sst2]
+out-file : The process cannot access the file 'D:\svd_project\logs\aegis_final.log' because it is being used by 
+another process.
+At D:\SVD_Project\run_aegis_final.ps1:33 char:56
++ ...        --output_dir "results/fixed_aegis/$($m.name)_$($m.dataset)/" `
++                                                           ~~~~~~~~~~
+    + CategoryInfo          : OpenError: (:) [out-file], IOException
+    + FullyQualifiedErrorId : FileOpenFailure,Microsoft.PowerShell.Commands.OutFileCommand
+ 
+Running aegis_v2 on mnli [models/roberta-base]
+out-file : The process cannot access the file 'D:\svd_project\logs\aegis_final.log' because it is being used by 
+another process.
+At D:\SVD_Project\run_aegis_final.ps1:33 char:56
++ ...        --output_dir "results/fixed_aegis/$($m.name)_$($m.dataset)/" `
++                                                           ~~~~~~~~~~
+    + CategoryInfo          : OpenError: (:) [out-file], IOException
+    + FullyQualifiedErrorId : FileOpenFailure,Microsoft.PowerShell.Commands.OutFileCommand
+ 
+Running aegis_v4 on ag_news [models/gpt2]
+out-file : The process cannot access the file 'D:\svd_project\logs\aegis_final.log' because it is being used by 
+another process.
+At D:\SVD_Project\run_aegis_final.ps1:33 char:56
++ ...        --output_dir "results/fixed_aegis/$($m.name)_$($m.dataset)/" `
++                                                           ~~~~~~~~~~
+    + CategoryInfo          : OpenError: (:) [out-file], IOException
+    + FullyQualifiedErrorId : FileOpenFailure,Microsoft.PowerShell.Commands.OutFileCommand
+ 
+Running aegis_v5 on sst2 [models/distilbert_sst2]
+out-file : The process cannot access the file 'D:\svd_project\logs\aegis_final.log' because it is being used by 
+another process.
+At D:\SVD_Project\run_aegis_final.ps1:33 char:56
++ ...        --output_dir "results/fixed_aegis/$($m.name)_$($m.dataset)/" `
++                                                           ~~~~~~~~~~
+    + CategoryInfo          : OpenError: (:) [out-file], IOException
+    + FullyQualifiedErrorId : FileOpenFailure,Microsoft.PowerShell.Commands.OutFileCommand
+ 
+=== All Aegis Runs Complete ===

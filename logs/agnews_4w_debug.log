@@ -1,0 +1,51 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260918191658
+Username: WORKGROUP\SYSTEM
+RunAs User: WORKGROUP\SYSTEM
+Configuration Name: 
+Machine: LAPTOP-S150SQLL (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.EXE -ExecutionPolicy Bypass -Command cd D:\SVD_Project; .\scripts\start_agnews_4w.ps1
+Process ID: 21660
+PSVersion: 5.1.26100.9444
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9444
+BuildVersion: 10.0.26100.9444
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+Transcript started, output file is logs\agnews_4w_debug.log
+Starting python script...
+Caught error: The term 'python' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+Done python script. Last exit code:
+**********************
+Windows PowerShell transcript end
+End time: 20260918191658
+**********************
+**********************
+Windows PowerShell transcript start
+Start time: 20260918191720
+Username: WORKGROUP\SYSTEM
+RunAs User: WORKGROUP\SYSTEM
+Configuration Name: 
+Machine: LAPTOP-S150SQLL (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.EXE -ExecutionPolicy Bypass -Command cd D:\SVD_Project; .\scripts\start_agnews_4w.ps1
+Process ID: 18076
+PSVersion: 5.1.26100.9444
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9444
+BuildVersion: 10.0.26100.9444
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+Transcript started, output file is logs\agnews_4w_debug.log
+Starting python script with absolute path...
+Done python script. Last exit code: -1
+**********************
+Windows PowerShell transcript end
+End time: 20260918192706
+**********************

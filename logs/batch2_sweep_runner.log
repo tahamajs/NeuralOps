@@ -1,0 +1,403 @@
+[2026-09-25T06:40:10Z] Starting High-Performance GPU Sweep Runner (69 tasks queued across 23 modules)...
+[2026-09-25T06:40:10Z] Progress: [1/69] (Done: 0, Skipped: 0, Failed: 0)
+[2026-09-25T06:40:12Z] ============================================================
+[2026-09-25T06:40:12Z] [START] DISTILBERT | aasvd | rank=128
+[2026-09-25T06:40:12Z] ============================================================
+[2026-09-25T06:41:06Z] [PASS] DISTILBERT | aasvd | rank=128 completed in 53.4s
+[2026-09-25T06:41:06Z] Progress: [2/69] (Done: 1, Skipped: 0, Failed: 0)
+[2026-09-25T06:41:08Z] ============================================================
+[2026-09-25T06:41:08Z] [START] DISTILBERT | aasvd | rank=256
+[2026-09-25T06:41:08Z] ============================================================
+[2026-09-25T06:42:00Z] [PASS] DISTILBERT | aasvd | rank=256 completed in 51.8s
+[2026-09-25T06:42:00Z] Progress: [3/69] (Done: 2, Skipped: 0, Failed: 0)
+[2026-09-25T06:42:02Z] ============================================================
+[2026-09-25T06:42:02Z] [START] ROBERTA | aasvd | rank=256
+[2026-09-25T06:42:02Z] ============================================================
+[2026-09-25T06:43:16Z] [PASS] ROBERTA | aasvd | rank=256 completed in 74.5s
+[2026-09-25T06:43:16Z] Progress: [4/69] (Done: 3, Skipped: 0, Failed: 0)
+[2026-09-25T06:43:18Z] ============================================================
+[2026-09-25T06:43:18Z] [START] DISTILBERT | uniql_compressor | rank=128
+[2026-09-25T06:43:18Z] ============================================================
+[2026-09-25T06:44:25Z] Starting High-Performance GPU Sweep Runner (69 tasks queued across 23 modules, parallel workers = 2)...
+[2026-09-25T06:44:25Z] [SKIP] DISTILBERT | aasvd | rank=128 - already completed (D:\SVD_Project\results\batch2_distilbert\aasvd\rank_128\summary.csv)
+[2026-09-25T06:44:25Z] Batch 2 Status: [Completed: 1 | Failed: 0 | Total: 69]
+[2026-09-25T06:44:25Z] [SKIP] ROBERTA | aasvd | rank=256 - already completed (D:\SVD_Project\results\batch2_roberta\aasvd\rank_256\summary.csv)
+[2026-09-25T06:44:25Z] Batch 2 Status: [Completed: 2 | Failed: 0 | Total: 69]
+[2026-09-25T06:44:25Z] [SKIP] DISTILBERT | aasvd | rank=256 - already completed (D:\SVD_Project\results\batch2_distilbert\aasvd\rank_256\summary.csv)
+[2026-09-25T06:44:25Z] Batch 2 Status: [Completed: 3 | Failed: 0 | Total: 69]
+[2026-09-25T06:44:25Z] [SKIP] DISTILBERT | uniql_compressor | rank=128 - already completed (D:\SVD_Project\results\batch2_distilbert\uniql_compressor\rank_128\summary.csv)
+[2026-09-25T06:44:25Z] Batch 2 Status: [Completed: 4 | Failed: 0 | Total: 69]
+[2026-09-25T06:44:25Z] ============================================================
+[2026-09-25T06:44:25Z] [START] DISTILBERT | uniql_compressor | rank=256
+[2026-09-25T06:44:25Z] ============================================================
+[2026-09-25T06:44:25Z] ============================================================
+[2026-09-25T06:44:25Z] [START] ROBERTA | uniql_compressor | rank=256
+[2026-09-25T06:44:25Z] ============================================================
+[2026-09-25T06:45:25Z] [PASS] DISTILBERT | uniql_compressor | rank=256 completed in 59.2s
+[2026-09-25T06:45:25Z] Batch 2 Status: [Completed: 5 | Failed: 0 | Total: 69]
+[2026-09-25T06:45:25Z] ============================================================
+[2026-09-25T06:45:25Z] [START] DISTILBERT | compot_compressor | rank=128
+[2026-09-25T06:45:25Z] ============================================================
+[2026-09-25T06:45:40Z] [PASS] ROBERTA | uniql_compressor | rank=256 completed in 74.9s
+[2026-09-25T06:45:40Z] Batch 2 Status: [Completed: 6 | Failed: 0 | Total: 69]
+[2026-09-25T06:45:40Z] ============================================================
+[2026-09-25T06:45:40Z] [START] DISTILBERT | compot_compressor | rank=256
+[2026-09-25T06:45:40Z] ============================================================
+[2026-09-25T06:46:25Z] [PASS] DISTILBERT | compot_compressor | rank=128 completed in 60.8s
+[2026-09-25T06:46:25Z] Batch 2 Status: [Completed: 7 | Failed: 0 | Total: 69]
+[2026-09-25T06:46:25Z] ============================================================
+[2026-09-25T06:46:25Z] [START] ROBERTA | compot_compressor | rank=256
+[2026-09-25T06:46:25Z] ============================================================
+[2026-09-25T06:46:32Z] [PASS] DISTILBERT | compot_compressor | rank=256 completed in 52.1s
+[2026-09-25T06:46:32Z] Batch 2 Status: [Completed: 8 | Failed: 0 | Total: 69]
+[2026-09-25T06:46:32Z] ============================================================
+[2026-09-25T06:46:32Z] [START] DISTILBERT | grecodec_compressor | rank=128
+[2026-09-25T06:46:32Z] ============================================================
+[2026-09-25T06:47:29Z] [PASS] ROBERTA | compot_compressor | rank=256 completed in 63.2s
+[2026-09-25T06:47:29Z] Batch 2 Status: [Completed: 9 | Failed: 0 | Total: 69]
+[2026-09-25T06:47:29Z] ============================================================
+[2026-09-25T06:47:29Z] [START] DISTILBERT | grecodec_compressor | rank=256
+[2026-09-25T06:47:29Z] ============================================================
+[2026-09-25T06:47:29Z] [PASS] DISTILBERT | grecodec_compressor | rank=128 completed in 56.6s
+[2026-09-25T06:47:29Z] Batch 2 Status: [Completed: 10 | Failed: 0 | Total: 69]
+[2026-09-25T06:47:29Z] ============================================================
+[2026-09-25T06:47:29Z] [START] ROBERTA | grecodec_compressor | rank=256
+[2026-09-25T06:47:29Z] ============================================================
+[2026-09-25T06:48:21Z] [PASS] DISTILBERT | grecodec_compressor | rank=256 completed in 52.7s
+[2026-09-25T06:48:21Z] Batch 2 Status: [Completed: 11 | Failed: 0 | Total: 69]
+[2026-09-25T06:48:21Z] ============================================================
+[2026-09-25T06:48:21Z] [START] DISTILBERT | kronecker_compressor | rank=128
+[2026-09-25T06:48:21Z] ============================================================
+[2026-09-25T06:49:18Z] [PASS] ROBERTA | grecodec_compressor | rank=256 completed in 109.3s
+[2026-09-25T06:49:18Z] Batch 2 Status: [Completed: 12 | Failed: 0 | Total: 69]
+[2026-09-25T06:49:18Z] ============================================================
+[2026-09-25T06:49:18Z] [START] DISTILBERT | kronecker_compressor | rank=256
+[2026-09-25T06:49:18Z] ============================================================
+[2026-09-25T06:49:40Z] [PASS] DISTILBERT | kronecker_compressor | rank=128 completed in 78.3s
+[2026-09-25T06:49:40Z] Batch 2 Status: [Completed: 13 | Failed: 0 | Total: 69]
+[2026-09-25T06:49:40Z] ============================================================
+[2026-09-25T06:49:40Z] [START] ROBERTA | kronecker_compressor | rank=256
+[2026-09-25T06:49:40Z] ============================================================
+[2026-09-25T06:50:23Z] [PASS] DISTILBERT | kronecker_compressor | rank=256 completed in 64.9s
+[2026-09-25T06:50:23Z] Batch 2 Status: [Completed: 14 | Failed: 0 | Total: 69]
+[2026-09-25T06:50:23Z] ============================================================
+[2026-09-25T06:50:23Z] [START] DISTILBERT | saes_svd_v2 | rank=128
+[2026-09-25T06:50:23Z] ============================================================
+[2026-09-25T06:51:09Z] [PASS] ROBERTA | kronecker_compressor | rank=256 completed in 89.6s
+[2026-09-25T06:51:09Z] Batch 2 Status: [Completed: 15 | Failed: 0 | Total: 69]
+[2026-09-25T06:51:09Z] ============================================================
+[2026-09-25T06:51:09Z] [START] DISTILBERT | saes_svd_v2 | rank=256
+[2026-09-25T06:51:09Z] ============================================================
+[2026-09-25T06:51:29Z] [PASS] DISTILBERT | saes_svd_v2 | rank=128 completed in 66.0s
+[2026-09-25T06:51:29Z] Batch 2 Status: [Completed: 16 | Failed: 0 | Total: 69]
+[2026-09-25T06:51:29Z] ============================================================
+[2026-09-25T06:51:29Z] [START] ROBERTA | saes_svd_v2 | rank=256
+[2026-09-25T06:51:29Z] ============================================================
+[2026-09-25T06:52:11Z] [PASS] DISTILBERT | saes_svd_v2 | rank=256 completed in 62.0s
+[2026-09-25T06:52:11Z] Batch 2 Status: [Completed: 17 | Failed: 0 | Total: 69]
+[2026-09-25T06:52:11Z] ============================================================
+[2026-09-25T06:52:11Z] [START] DISTILBERT | rpca_compressor | rank=128
+[2026-09-25T06:52:11Z] ============================================================
+[2026-09-25T06:52:52Z] [PASS] ROBERTA | saes_svd_v2 | rank=256 completed in 82.8s
+[2026-09-25T06:52:52Z] Batch 2 Status: [Completed: 18 | Failed: 0 | Total: 69]
+[2026-09-25T06:52:52Z] ============================================================
+[2026-09-25T06:52:52Z] [START] DISTILBERT | rpca_compressor | rank=256
+[2026-09-25T06:52:52Z] ============================================================
+[2026-09-25T06:53:23Z] [PASS] DISTILBERT | rpca_compressor | rank=128 completed in 71.2s
+[2026-09-25T06:53:23Z] Batch 2 Status: [Completed: 19 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:23Z] ============================================================
+[2026-09-25T06:53:23Z] [START] ROBERTA | rpca_compressor | rank=256
+[2026-09-25T06:53:23Z] ============================================================
+[2026-09-25T06:53:54Z] Starting High-Performance GPU Sweep Runner (69 tasks queued across 23 modules, parallel workers = 4)...
+[2026-09-25T06:53:54Z] [SKIP] DISTILBERT | aasvd | rank=128 - already completed (D:\SVD_Project\results\batch2_distilbert\aasvd\rank_128\summary.csv)
+[2026-09-25T06:53:54Z] [SKIP] DISTILBERT | aasvd | rank=256 - already completed (D:\SVD_Project\results\batch2_distilbert\aasvd\rank_256\summary.csv)
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 1 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 2 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] [SKIP] DISTILBERT | uniql_compressor | rank=128 - already completed (D:\SVD_Project\results\batch2_distilbert\uniql_compressor\rank_128\summary.csv)
+[2026-09-25T06:53:54Z] [SKIP] ROBERTA | aasvd | rank=256 - already completed (D:\SVD_Project\results\batch2_roberta\aasvd\rank_256\summary.csv)
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 3 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] [SKIP] ROBERTA | uniql_compressor | rank=256 - already completed (D:\SVD_Project\results\batch2_roberta\uniql_compressor\rank_256\summary.csv)
+[2026-09-25T06:53:54Z] [SKIP] DISTILBERT | uniql_compressor | rank=256 - already completed (D:\SVD_Project\results\batch2_distilbert\uniql_compressor\rank_256\summary.csv)
+[2026-09-25T06:53:54Z] [SKIP] DISTILBERT | compot_compressor | rank=128 - already completed (D:\SVD_Project\results\batch2_distilbert\compot_compressor\rank_128\summary.csv)
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 4 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] [SKIP] DISTILBERT | compot_compressor | rank=256 - already completed (D:\SVD_Project\results\batch2_distilbert\compot_compressor\rank_256\summary.csv)
+[2026-09-25T06:53:54Z] [SKIP] ROBERTA | compot_compressor | rank=256 - already completed (D:\SVD_Project\results\batch2_roberta\compot_compressor\rank_256\summary.csv)
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 5 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] [SKIP] DISTILBERT | grecodec_compressor | rank=128 - already completed (D:\SVD_Project\results\batch2_distilbert\grecodec_compressor\rank_128\summary.csv)
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 6 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] [SKIP] DISTILBERT | grecodec_compressor | rank=256 - already completed (D:\SVD_Project\results\batch2_distilbert\grecodec_compressor\rank_256\summary.csv)
+[2026-09-25T06:53:54Z] [SKIP] ROBERTA | grecodec_compressor | rank=256 - already completed (D:\SVD_Project\results\batch2_roberta\grecodec_compressor\rank_256\summary.csv)
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 7 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] [SKIP] DISTILBERT | kronecker_compressor | rank=128 - already completed (D:\SVD_Project\results\batch2_distilbert\kronecker_compressor\rank_128\summary.csv)
+[2026-09-25T06:53:54Z] [SKIP] DISTILBERT | kronecker_compressor | rank=256 - already completed (D:\SVD_Project\results\batch2_distilbert\kronecker_compressor\rank_256\summary.csv)
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 8 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 9 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] [SKIP] DISTILBERT | saes_svd_v2 | rank=128 - already completed (D:\SVD_Project\results\batch2_distilbert\saes_svd_v2\rank_128\summary.csv)
+[2026-09-25T06:53:54Z] [SKIP] ROBERTA | kronecker_compressor | rank=256 - already completed (D:\SVD_Project\results\batch2_roberta\kronecker_compressor\rank_256\summary.csv)
+[2026-09-25T06:53:54Z] [SKIP] DISTILBERT | saes_svd_v2 | rank=256 - already completed (D:\SVD_Project\results\batch2_distilbert\saes_svd_v2\rank_256\summary.csv)
+[2026-09-25T06:53:54Z] [SKIP] ROBERTA | saes_svd_v2 | rank=256 - already completed (D:\SVD_Project\results\batch2_roberta\saes_svd_v2\rank_256\summary.csv)
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 10 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 11 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 12 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 13 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 14 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 15 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 16 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 17 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 18 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] [SKIP] DISTILBERT | rpca_compressor | rank=128 - already completed (D:\SVD_Project\results\batch2_distilbert\rpca_compressor\rank_128\summary.csv)
+[2026-09-25T06:53:54Z] Batch 2 Status: [Completed: 19 | Failed: 0 | Total: 69]
+[2026-09-25T06:53:54Z] ============================================================
+[2026-09-25T06:53:54Z] [START] DISTILBERT | direct_svd | rank=128
+[2026-09-25T06:53:54Z] ============================================================
+[2026-09-25T06:53:54Z] ============================================================
+[2026-09-25T06:53:54Z] ============================================================
+[2026-09-25T06:53:54Z] [START] DISTILBERT | rpca_compressor | rank=256
+[2026-09-25T06:53:54Z] [START] ROBERTA | rpca_compressor | rank=256
+[2026-09-25T06:53:54Z] ============================================================
+[2026-09-25T06:53:54Z] ============================================================
+[2026-09-25T06:53:54Z] ============================================================
+[2026-09-25T06:53:54Z] [START] DISTILBERT | direct_svd | rank=256
+[2026-09-25T06:53:54Z] ============================================================
+[2026-09-25T06:55:25Z] [PASS] DISTILBERT | direct_svd | rank=128 completed in 90.8s
+[2026-09-25T06:55:25Z] Batch 2 Status: [Completed: 20 | Failed: 0 | Total: 69]
+[2026-09-25T06:55:25Z] ============================================================
+[2026-09-25T06:55:25Z] [START] ROBERTA | direct_svd | rank=256
+[2026-09-25T06:55:25Z] ============================================================
+[2026-09-25T06:55:28Z] [PASS] DISTILBERT | direct_svd | rank=256 completed in 93.4s
+[2026-09-25T06:55:28Z] Batch 2 Status: [Completed: 21 | Failed: 0 | Total: 69]
+[2026-09-25T06:55:28Z] ============================================================
+[2026-09-25T06:55:28Z] [START] DISTILBERT | cur_compressor | rank=128
+[2026-09-25T06:55:28Z] ============================================================
+[2026-09-25T06:55:38Z] [PASS] DISTILBERT | rpca_compressor | rank=256 completed in 103.7s
+[2026-09-25T06:55:38Z] Batch 2 Status: [Completed: 22 | Failed: 0 | Total: 69]
+[2026-09-25T06:55:38Z] ============================================================
+[2026-09-25T06:55:38Z] [START] DISTILBERT | cur_compressor | rank=256
+[2026-09-25T06:55:38Z] ============================================================
+[2026-09-25T06:56:29Z] [PASS] ROBERTA | rpca_compressor | rank=256 completed in 154.8s
+[2026-09-25T06:56:29Z] Batch 2 Status: [Completed: 23 | Failed: 0 | Total: 69]
+[2026-09-25T06:56:29Z] ============================================================
+[2026-09-25T06:56:29Z] [START] ROBERTA | cur_compressor | rank=256
+[2026-09-25T06:56:29Z] ============================================================
+[2026-09-25T06:56:46Z] [PASS] DISTILBERT | cur_compressor | rank=256 completed in 68.0s
+[2026-09-25T06:56:46Z] Batch 2 Status: [Completed: 24 | Failed: 0 | Total: 69]
+[2026-09-25T06:56:46Z] ============================================================
+[2026-09-25T06:56:46Z] [START] DISTILBERT | erc_svd | rank=128
+[2026-09-25T06:56:46Z] ============================================================
+[2026-09-25T06:56:50Z] [PASS] DISTILBERT | cur_compressor | rank=128 completed in 82.0s
+[2026-09-25T06:56:50Z] Batch 2 Status: [Completed: 25 | Failed: 0 | Total: 69]
+[2026-09-25T06:56:50Z] ============================================================
+[2026-09-25T06:56:50Z] [START] DISTILBERT | erc_svd | rank=256
+[2026-09-25T06:56:50Z] ============================================================
+[2026-09-25T06:57:41Z] [PASS] ROBERTA | direct_svd | rank=256 completed in 135.8s
+[2026-09-25T06:57:41Z] Batch 2 Status: [Completed: 26 | Failed: 0 | Total: 69]
+[2026-09-25T06:57:41Z] ============================================================
+[2026-09-25T06:57:41Z] [START] ROBERTA | erc_svd | rank=256
+[2026-09-25T06:57:41Z] ============================================================
+[2026-09-25T06:58:12Z] [PASS] DISTILBERT | erc_svd | rank=128 completed in 86.2s
+[2026-09-25T06:58:12Z] Batch 2 Status: [Completed: 27 | Failed: 0 | Total: 69]
+[2026-09-25T06:58:12Z] ============================================================
+[2026-09-25T06:58:12Z] [START] DISTILBERT | frandi_compressor | rank=128
+[2026-09-25T06:58:12Z] ============================================================
+[2026-09-25T06:58:14Z] [PASS] DISTILBERT | erc_svd | rank=256 completed in 83.7s
+[2026-09-25T06:58:14Z] Batch 2 Status: [Completed: 28 | Failed: 0 | Total: 69]
+[2026-09-25T06:58:14Z] ============================================================
+[2026-09-25T06:58:14Z] [START] DISTILBERT | frandi_compressor | rank=256
+[2026-09-25T06:58:14Z] ============================================================
+[2026-09-25T06:58:16Z] [PASS] ROBERTA | cur_compressor | rank=256 completed in 107.3s
+[2026-09-25T06:58:16Z] Batch 2 Status: [Completed: 29 | Failed: 0 | Total: 69]
+[2026-09-25T06:58:17Z] ============================================================
+[2026-09-25T06:58:17Z] [START] ROBERTA | frandi_compressor | rank=256
+[2026-09-25T06:58:17Z] ============================================================
+[2026-09-25T06:59:36Z] [PASS] DISTILBERT | frandi_compressor | rank=128 completed in 84.1s
+[2026-09-25T06:59:36Z] Batch 2 Status: [Completed: 30 | Failed: 0 | Total: 69]
+[2026-09-25T06:59:36Z] ============================================================
+[2026-09-25T06:59:36Z] [START] DISTILBERT | salr | rank=128
+[2026-09-25T06:59:36Z] ============================================================
+[2026-09-25T06:59:37Z] [PASS] DISTILBERT | frandi_compressor | rank=256 completed in 83.1s
+[2026-09-25T06:59:37Z] Batch 2 Status: [Completed: 31 | Failed: 0 | Total: 69]
+[2026-09-25T06:59:37Z] ============================================================
+[2026-09-25T06:59:37Z] [START] DISTILBERT | salr | rank=256
+[2026-09-25T06:59:37Z] ============================================================
+[2026-09-25T07:00:08Z] [PASS] ROBERTA | erc_svd | rank=256 completed in 147.3s
+[2026-09-25T07:00:08Z] Batch 2 Status: [Completed: 32 | Failed: 0 | Total: 69]
+[2026-09-25T07:00:08Z] ============================================================
+[2026-09-25T07:00:08Z] [START] ROBERTA | salr | rank=256
+[2026-09-25T07:00:08Z] ============================================================
+[2026-09-25T07:00:24Z] [PASS] ROBERTA | frandi_compressor | rank=256 completed in 127.6s
+[2026-09-25T07:00:24Z] Batch 2 Status: [Completed: 33 | Failed: 0 | Total: 69]
+[2026-09-25T07:00:24Z] ============================================================
+[2026-09-25T07:00:24Z] [START] DISTILBERT | oats_compressor | rank=128
+[2026-09-25T07:00:24Z] ============================================================
+[2026-09-25T07:00:55Z] [PASS] DISTILBERT | salr | rank=256 completed in 78.3s
+[2026-09-25T07:00:55Z] Batch 2 Status: [Completed: 34 | Failed: 0 | Total: 69]
+[2026-09-25T07:00:55Z] ============================================================
+[2026-09-25T07:00:55Z] [START] DISTILBERT | oats_compressor | rank=256
+[2026-09-25T07:00:55Z] ============================================================
+[2026-09-25T07:00:55Z] [PASS] DISTILBERT | salr | rank=128 completed in 78.7s
+[2026-09-25T07:00:55Z] Batch 2 Status: [Completed: 35 | Failed: 0 | Total: 69]
+[2026-09-25T07:00:55Z] ============================================================
+[2026-09-25T07:00:55Z] [START] ROBERTA | oats_compressor | rank=256
+[2026-09-25T07:00:55Z] ============================================================
+[2026-09-25T07:01:45Z] [PASS] ROBERTA | salr | rank=256 completed in 96.5s
+[2026-09-25T07:01:45Z] Batch 2 Status: [Completed: 36 | Failed: 0 | Total: 69]
+[2026-09-25T07:01:45Z] ============================================================
+[2026-09-25T07:01:45Z] [START] DISTILBERT | mlorq_compressor | rank=128
+[2026-09-25T07:01:45Z] ============================================================
+[2026-09-25T07:01:49Z] [PASS] DISTILBERT | oats_compressor | rank=128 completed in 84.8s
+[2026-09-25T07:01:49Z] Batch 2 Status: [Completed: 37 | Failed: 0 | Total: 69]
+[2026-09-25T07:01:49Z] ============================================================
+[2026-09-25T07:01:49Z] [START] DISTILBERT | mlorq_compressor | rank=256
+[2026-09-25T07:01:49Z] ============================================================
+[2026-09-25T07:02:23Z] [PASS] DISTILBERT | oats_compressor | rank=256 completed in 88.2s
+[2026-09-25T07:02:23Z] Batch 2 Status: [Completed: 38 | Failed: 0 | Total: 69]
+[2026-09-25T07:02:23Z] ============================================================
+[2026-09-25T07:02:23Z] [START] ROBERTA | mlorq_compressor | rank=256
+[2026-09-25T07:02:23Z] ============================================================
+[2026-09-25T07:02:59Z] [PASS] ROBERTA | oats_compressor | rank=256 completed in 124.2s
+[2026-09-25T07:02:59Z] Batch 2 Status: [Completed: 39 | Failed: 0 | Total: 69]
+[2026-09-25T07:02:59Z] ============================================================
+[2026-09-25T07:02:59Z] [START] DISTILBERT | modegpt_compressor | rank=128
+[2026-09-25T07:02:59Z] ============================================================
+[2026-09-25T07:03:00Z] [PASS] DISTILBERT | mlorq_compressor | rank=128 completed in 74.9s
+[2026-09-25T07:03:00Z] Batch 2 Status: [Completed: 40 | Failed: 0 | Total: 69]
+[2026-09-25T07:03:00Z] ============================================================
+[2026-09-25T07:03:00Z] [START] DISTILBERT | modegpt_compressor | rank=256
+[2026-09-25T07:03:00Z] ============================================================
+[2026-09-25T07:03:00Z] [PASS] DISTILBERT | mlorq_compressor | rank=256 completed in 71.0s
+[2026-09-25T07:03:00Z] Batch 2 Status: [Completed: 41 | Failed: 0 | Total: 69]
+[2026-09-25T07:03:00Z] ============================================================
+[2026-09-25T07:03:00Z] [START] ROBERTA | modegpt_compressor | rank=256
+[2026-09-25T07:03:00Z] ============================================================
+[2026-09-25T07:04:01Z] [PASS] ROBERTA | mlorq_compressor | rank=256 completed in 97.9s
+[2026-09-25T07:04:01Z] Batch 2 Status: [Completed: 42 | Failed: 0 | Total: 69]
+[2026-09-25T07:04:01Z] ============================================================
+[2026-09-25T07:04:01Z] [START] DISTILBERT | hybrid_svd_layer | rank=128
+[2026-09-25T07:04:01Z] ============================================================
+[2026-09-25T07:04:14Z] [PASS] DISTILBERT | modegpt_compressor | rank=128 completed in 74.7s
+[2026-09-25T07:04:14Z] Batch 2 Status: [Completed: 43 | Failed: 0 | Total: 69]
+[2026-09-25T07:04:14Z] ============================================================
+[2026-09-25T07:04:14Z] [START] DISTILBERT | hybrid_svd_layer | rank=256
+[2026-09-25T07:04:14Z] ============================================================
+[2026-09-25T07:04:14Z] [PASS] DISTILBERT | modegpt_compressor | rank=256 completed in 74.7s
+[2026-09-25T07:04:14Z] Batch 2 Status: [Completed: 44 | Failed: 0 | Total: 69]
+[2026-09-25T07:04:15Z] ============================================================
+[2026-09-25T07:04:15Z] [START] ROBERTA | hybrid_svd_layer | rank=256
+[2026-09-25T07:04:15Z] ============================================================
+[2026-09-25T07:04:44Z] [PASS] ROBERTA | modegpt_compressor | rank=256 completed in 103.5s
+[2026-09-25T07:04:44Z] Batch 2 Status: [Completed: 45 | Failed: 0 | Total: 69]
+[2026-09-25T07:04:44Z] ============================================================
+[2026-09-25T07:04:44Z] [START] DISTILBERT | adaptive_ranks | rank=128
+[2026-09-25T07:04:44Z] ============================================================
+[2026-09-25T07:05:30Z] [PASS] DISTILBERT | hybrid_svd_layer | rank=128 completed in 88.3s
+[2026-09-25T07:05:30Z] Batch 2 Status: [Completed: 46 | Failed: 0 | Total: 69]
+[2026-09-25T07:05:30Z] ============================================================
+[2026-09-25T07:05:30Z] [START] DISTILBERT | adaptive_ranks | rank=256
+[2026-09-25T07:05:30Z] ============================================================
+[2026-09-25T07:05:40Z] [PASS] DISTILBERT | hybrid_svd_layer | rank=256 completed in 86.0s
+[2026-09-25T07:05:40Z] Batch 2 Status: [Completed: 47 | Failed: 0 | Total: 69]
+[2026-09-25T07:05:40Z] ============================================================
+[2026-09-25T07:05:40Z] [START] ROBERTA | adaptive_ranks | rank=256
+[2026-09-25T07:05:40Z] ============================================================
+[2026-09-25T07:06:08Z] [PASS] DISTILBERT | adaptive_ranks | rank=128 completed in 84.1s
+[2026-09-25T07:06:08Z] Batch 2 Status: [Completed: 48 | Failed: 0 | Total: 69]
+[2026-09-25T07:06:08Z] ============================================================
+[2026-09-25T07:06:08Z] [START] DISTILBERT | admm_compressor | rank=128
+[2026-09-25T07:06:08Z] ============================================================
+[2026-09-25T07:06:27Z] [PASS] ROBERTA | hybrid_svd_layer | rank=256 completed in 132.4s
+[2026-09-25T07:06:27Z] Batch 2 Status: [Completed: 49 | Failed: 0 | Total: 69]
+[2026-09-25T07:06:27Z] ============================================================
+[2026-09-25T07:06:27Z] [START] DISTILBERT | admm_compressor | rank=256
+[2026-09-25T07:06:27Z] ============================================================
+[2026-09-25T07:06:51Z] [PASS] DISTILBERT | adaptive_ranks | rank=256 completed in 81.4s
+[2026-09-25T07:06:51Z] Batch 2 Status: [Completed: 50 | Failed: 0 | Total: 69]
+[2026-09-25T07:06:51Z] ============================================================
+[2026-09-25T07:06:51Z] [START] ROBERTA | admm_compressor | rank=256
+[2026-09-25T07:06:51Z] ============================================================
+[2026-09-25T07:07:21Z] [PASS] DISTILBERT | admm_compressor | rank=128 completed in 73.5s
+[2026-09-25T07:07:21Z] Batch 2 Status: [Completed: 51 | Failed: 0 | Total: 69]
+[2026-09-25T07:07:21Z] ============================================================
+[2026-09-25T07:07:21Z] [START] DISTILBERT | come | rank=128
+[2026-09-25T07:07:21Z] ============================================================
+[2026-09-25T07:07:36Z] [PASS] DISTILBERT | admm_compressor | rank=256 completed in 69.2s
+[2026-09-25T07:07:36Z] Batch 2 Status: [Completed: 52 | Failed: 0 | Total: 69]
+[2026-09-25T07:07:36Z] ============================================================
+[2026-09-25T07:07:36Z] [START] DISTILBERT | come | rank=256
+[2026-09-25T07:07:36Z] ============================================================
+[2026-09-25T07:07:41Z] [PASS] ROBERTA | adaptive_ranks | rank=256 completed in 120.4s
+[2026-09-25T07:07:41Z] Batch 2 Status: [Completed: 53 | Failed: 0 | Total: 69]
+[2026-09-25T07:07:41Z] ============================================================
+[2026-09-25T07:07:41Z] [START] ROBERTA | come | rank=256
+[2026-09-25T07:07:41Z] ============================================================
+[2026-09-25T07:08:27Z] [PASS] ROBERTA | admm_compressor | rank=256 completed in 95.8s
+[2026-09-25T07:08:27Z] Batch 2 Status: [Completed: 54 | Failed: 0 | Total: 69]
+[2026-09-25T07:08:27Z] ============================================================
+[2026-09-25T07:08:27Z] [START] DISTILBERT | cr_compressor | rank=128
+[2026-09-25T07:08:27Z] ============================================================
+[2026-09-25T07:08:45Z] [PASS] DISTILBERT | come | rank=128 completed in 84.1s
+[2026-09-25T07:08:45Z] Batch 2 Status: [Completed: 55 | Failed: 0 | Total: 69]
+[2026-09-25T07:08:45Z] ============================================================
+[2026-09-25T07:08:45Z] [START] DISTILBERT | cr_compressor | rank=256
+[2026-09-25T07:08:45Z] ============================================================
+[2026-09-25T07:08:58Z] [PASS] DISTILBERT | come | rank=256 completed in 82.1s
+[2026-09-25T07:08:58Z] Batch 2 Status: [Completed: 56 | Failed: 0 | Total: 69]
+[2026-09-25T07:08:58Z] ============================================================
+[2026-09-25T07:08:58Z] [START] ROBERTA | cr_compressor | rank=256
+[2026-09-25T07:08:58Z] ============================================================
+[2026-09-25T07:09:40Z] [PASS] ROBERTA | come | rank=256 completed in 119.7s
+[2026-09-25T07:09:40Z] Batch 2 Status: [Completed: 57 | Failed: 0 | Total: 69]
+[2026-09-25T07:09:40Z] ============================================================
+[2026-09-25T07:09:40Z] [START] DISTILBERT | cure | rank=128
+[2026-09-25T07:09:40Z] ============================================================
+[2026-09-25T07:09:43Z] [PASS] DISTILBERT | cr_compressor | rank=128 completed in 76.2s
+[2026-09-25T07:09:43Z] Batch 2 Status: [Completed: 58 | Failed: 0 | Total: 69]
+[2026-09-25T07:09:43Z] ============================================================
+[2026-09-25T07:09:43Z] [START] DISTILBERT | cure | rank=256
+[2026-09-25T07:09:43Z] ============================================================
+[2026-09-25T07:09:57Z] [PASS] DISTILBERT | cr_compressor | rank=256 completed in 71.1s
+[2026-09-25T07:09:57Z] Batch 2 Status: [Completed: 59 | Failed: 0 | Total: 69]
+[2026-09-25T07:09:57Z] ============================================================
+[2026-09-25T07:09:57Z] [START] ROBERTA | cure | rank=256
+[2026-09-25T07:09:57Z] ============================================================
+[2026-09-25T07:10:32Z] [PASS] ROBERTA | cr_compressor | rank=256 completed in 93.6s
+[2026-09-25T07:10:32Z] Batch 2 Status: [Completed: 60 | Failed: 0 | Total: 69]
+[2026-09-25T07:10:32Z] ============================================================
+[2026-09-25T07:10:32Z] [START] DISTILBERT | rotational_slicegpt_int4 | rank=128
+[2026-09-25T07:10:32Z] ============================================================
+[2026-09-25T07:10:51Z] [PASS] DISTILBERT | cure | rank=256 completed in 68.0s
+[2026-09-25T07:10:51Z] Batch 2 Status: [Completed: 61 | Failed: 0 | Total: 69]
+[2026-09-25T07:10:51Z] ============================================================
+[2026-09-25T07:10:51Z] [START] DISTILBERT | rotational_slicegpt_int4 | rank=256
+[2026-09-25T07:10:51Z] ============================================================
+[2026-09-25T07:10:53Z] [PASS] DISTILBERT | cure | rank=128 completed in 72.6s
+[2026-09-25T07:10:53Z] Batch 2 Status: [Completed: 62 | Failed: 0 | Total: 69]
+[2026-09-25T07:10:53Z] ============================================================
+[2026-09-25T07:10:53Z] [START] ROBERTA | rotational_slicegpt_int4 | rank=256
+[2026-09-25T07:10:53Z] ============================================================
+[2026-09-25T07:11:26Z] [PASS] ROBERTA | cure | rank=256 completed in 89.0s
+[2026-09-25T07:11:26Z] Batch 2 Status: [Completed: 63 | Failed: 0 | Total: 69]
+[2026-09-25T07:11:26Z] ============================================================
+[2026-09-25T07:11:26Z] [START] DISTILBERT | subspace_projection | rank=128
+[2026-09-25T07:11:26Z] ============================================================
+[2026-09-25T07:12:16Z] [PASS] DISTILBERT | rotational_slicegpt_int4 | rank=128 completed in 103.9s
+[2026-09-25T07:12:16Z] Batch 2 Status: [Completed: 64 | Failed: 0 | Total: 69]
+[2026-09-25T07:12:16Z] ============================================================
+[2026-09-25T07:12:16Z] [START] DISTILBERT | subspace_projection | rank=256
+[2026-09-25T07:12:16Z] ============================================================
+[2026-09-25T07:12:40Z] [PASS] DISTILBERT | subspace_projection | rank=128 completed in 74.7s
+[2026-09-25T07:12:40Z] Batch 2 Status: [Completed: 65 | Failed: 0 | Total: 69]
+[2026-09-25T07:12:40Z] ============================================================
+[2026-09-25T07:12:40Z] [START] ROBERTA | subspace_projection | rank=256
+[2026-09-25T07:12:40Z] ============================================================
+[2026-09-25T07:12:42Z] [PASS] DISTILBERT | rotational_slicegpt_int4 | rank=256 completed in 111.1s
+[2026-09-25T07:12:42Z] Batch 2 Status: [Completed: 66 | Failed: 0 | Total: 69]
+[2026-09-25T07:13:42Z] [PASS] DISTILBERT | subspace_projection | rank=256 completed in 86.2s
+[2026-09-25T07:13:42Z] Batch 2 Status: [Completed: 67 | Failed: 0 | Total: 69]
+[2026-09-25T07:14:24Z] [PASS] ROBERTA | subspace_projection | rank=256 completed in 103.9s
+[2026-09-25T07:14:24Z] Batch 2 Status: [Completed: 68 | Failed: 0 | Total: 69]
+[2026-09-25T07:14:54Z] [PASS] ROBERTA | rotational_slicegpt_int4 | rank=256 completed in 241.1s
+[2026-09-25T07:14:54Z] Batch 2 Status: [Completed: 69 | Failed: 0 | Total: 69]
+[2026-09-25T07:14:54Z] ============================================================
+[2026-09-25T07:14:54Z] High-Performance Parallel GPU Sweep Runner Finished!
+[2026-09-25T07:14:54Z] Total: 69 | Completed: 69 | Failed: 0
+[2026-09-25T07:14:54Z] ============================================================

@@ -1,0 +1,345 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-19 22:25:55,957 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'gated_linear_attn', '--output_json', 'logs\\isolated_results\\gated_linear_attn_1789844095.json']
+2026-09-19 22:25:56,062 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:33: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-19 22:25:56,329 [INFO] QwenQualitySweep: Configured dataset 'mnli' with num_labels=3
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 2051.55it/s]
+2026-09-19 22:25:57,368 [INFO] QwenQualitySweep: model=models\distilbert_mnli_full qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-19 22:25:57,368 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-19 22:25:57,368 [INFO] QwenQualitySweep: ================================================================================
+2026-09-19 22:25:57,368 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-19 22:25:57,368 [INFO] QwenQualitySweep:   model:             models\distilbert_mnli_full
+2026-09-19 22:25:57,369 [INFO] QwenQualitySweep:   family:            bert
+2026-09-19 22:25:57,369 [INFO] QwenQualitySweep:   dataset:           mnli
+2026-09-19 22:25:57,369 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-19 22:25:57,369 [INFO] QwenQualitySweep:   recovery_steps:    100
+2026-09-19 22:25:57,372 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-19 22:25:57,372 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-19 22:25:57,372 [INFO] QwenQualitySweep: ================================================================================
+2026-09-19 22:25:57,387 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\unified_sweep\distilbert_mnli_full\finetuned_model.pt
+2026-09-19 22:25:57,409 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
+2026-09-19 22:25:57,725 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-19 22:25:57,729 [INFO] QwenQualitySweep: Loading pre-cached batches from results\unified_sweep\distilbert_mnli_full\batch_cache (skipping tokenization)
+2026-09-19 22:25:58,463 [INFO] QwenQualitySweep: Prepared 125 eval batches and 100 train batches directly on GPU.
+2026-09-19 22:26:05,664 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 81.80%
+2026-09-19 22:26:05,798 [INFO] QwenQualitySweep: ================================================================================
+2026-09-19 22:26:05,798 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-19 22:26:05,799 [INFO] QwenQualitySweep:   Validation Majority Count: 341 / 1000
+2026-09-19 22:26:05,799 [INFO] QwenQualitySweep:   True Majority Baseline:    34.10%
+2026-09-19 22:26:05,799 [INFO] QwenQualitySweep:   Standard Error (SE):       1.499%
+2026-09-19 22:26:05,799 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 1.45%
+2026-09-19 22:26:05,799 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  36.90%
+2026-09-19 22:26:05,803 [INFO] QwenQualitySweep: ================================================================================
+2026-09-19 22:26:05,833 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: gated_linear_attn (recovery_steps=100, batch_size=8, optimizer=adamw)
+2026-09-19 22:26:07,587 [INFO] framework.core.attention_utils: Successfully injected 'gated_linear_attn' into 6 transformer blocks.
+2026-09-19 22:26:07,598 [INFO] QwenQualitySweep: module=gated_linear_attn path=legacy_bert
+2026-09-19 22:26:07,599 [INFO] QwenQualitySweep: module=gated_linear_attn injection summary: 0 SVDLinear layers active
+2026-09-19 22:26:07,599 [INFO] QwenQualitySweep: Running 100 recovery fine-tuning steps for gated_linear_attn (lr=2.0e-04)
+2026-09-19 22:26:07,695 [INFO] framework.utils.compat: Recovery fine-tuning selected 792726 trainable parameters across 84 tensors.
+2026-09-19 22:26:07,695 [INFO] framework.utils.compat: Discovered 84 trainable tensors (792726 params)
+2026-09-19 22:26:07,698 [INFO] QwenQualitySweep: LoRA fine-tuning: 792726 trainable parameters across 84 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-19 22:26:09,292 [INFO] QwenQualitySweep: Step 1/100 took 1.59s (loss=1.0901, bs=8, micro=8)
+2026-09-19 22:26:11,239 [INFO] QwenQualitySweep: Step 5/100 took 0.57s (loss=1.3270, bs=8, micro=8)
+2026-09-19 22:26:13,292 [INFO] QwenQualitySweep: Step 10/100 took 0.44s (loss=0.7605, bs=8, micro=8)
+2026-09-19 22:26:15,087 [INFO] QwenQualitySweep: Step 15/100 took 0.36s (loss=1.3325, bs=8, micro=8)
+2026-09-19 22:26:16,975 [INFO] QwenQualitySweep: Step 20/100 took 0.36s (loss=1.2216, bs=8, micro=8)
+2026-09-19 22:26:18,847 [INFO] QwenQualitySweep: Step 25/100 took 0.40s (loss=1.4075, bs=8, micro=8)
+2026-09-19 22:26:21,051 [INFO] QwenQualitySweep: Step 30/100 took 0.42s (loss=0.9532, bs=8, micro=8)
+2026-09-19 22:26:23,492 [INFO] QwenQualitySweep: Step 35/100 took 0.49s (loss=1.3666, bs=8, micro=8)
+2026-09-19 22:26:25,749 [INFO] QwenQualitySweep: Step 40/100 took 0.51s (loss=1.0447, bs=8, micro=8)
+2026-09-19 22:26:28,084 [INFO] QwenQualitySweep: Step 45/100 took 0.44s (loss=1.1583, bs=8, micro=8)
+2026-09-19 22:26:29,833 [INFO] QwenQualitySweep: Step 50/100 took 0.32s (loss=1.1984, bs=8, micro=8)
+2026-09-19 22:26:31,587 [INFO] QwenQualitySweep: Step 55/100 took 0.46s (loss=1.0637, bs=8, micro=8)
+2026-09-19 22:26:33,333 [INFO] QwenQualitySweep: Step 60/100 took 0.32s (loss=1.3975, bs=8, micro=8)
+2026-09-19 22:26:35,493 [INFO] QwenQualitySweep: Step 65/100 took 0.39s (loss=1.2618, bs=8, micro=8)
+2026-09-19 22:26:37,415 [INFO] QwenQualitySweep: Step 70/100 took 0.33s (loss=1.2487, bs=8, micro=8)
+2026-09-19 22:26:39,337 [INFO] QwenQualitySweep: Step 75/100 took 0.38s (loss=1.2505, bs=8, micro=8)
+2026-09-19 22:26:41,346 [INFO] QwenQualitySweep: Step 80/100 took 0.39s (loss=1.0449, bs=8, micro=8)
+2026-09-19 22:26:43,310 [INFO] QwenQualitySweep: Step 85/100 took 0.45s (loss=1.1436, bs=8, micro=8)
+2026-09-19 22:26:45,197 [INFO] QwenQualitySweep: Step 90/100 took 0.37s (loss=1.0135, bs=8, micro=8)
+2026-09-19 22:26:47,399 [INFO] QwenQualitySweep: Step 95/100 took 0.42s (loss=1.0886, bs=8, micro=8)
+2026-09-19 22:26:49,471 [INFO] QwenQualitySweep: Step 100/100 took 0.39s (loss=1.1296, bs=8, micro=8)
+2026-09-19 22:27:06,887 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_sweep\distilbert_mnli_full\distilbert_mnli_full_gated_linear_attn_full_metrics.json
+2026-09-19 22:27:06,941 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_sweep\distilbert_mnli_full\checkpoints\gated_linear_attn\weights.pt (module_params=0, lora_params=64)
+2026-09-19 22:27:07,846 [INFO] QwenQualitySweep: [1/1] gated_linear_attn -> MODERATE_EXPANSION 34.00% (F1: 0.2148, Peak VRAM: 348.14 MB)
+2026-09-19 22:27:07,846 [INFO] QwenQualitySweep: [Quality Guard] Module 'gated_linear_attn' did not pass quality criteria (status=MODERATE_EXPANSION, acc=34.00%, pass_thresh=36.90%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-19 22:27:09,470 [INFO] QwenQualitySweep: ================================================================================
+2026-09-19 22:27:09,471 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_mnli_full on mnli)
+2026-09-19 22:27:09,593 [INFO] QwenQualitySweep: 
+                                             Module                  Status Accuracy    Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                                               full                    PASS   94.30% 0.00% (base) 0.9390                 0            1.00x  199.8 MB               2.64               N/A
+                                                 a3                    PASS   89.30%       +7.50% 0.8857                21            1.05x  287.0 MB              35.74               N/A
+                                              aasvd                    PASS   92.10%      +10.30% 0.9181                16            1.13x  214.4 MB              28.79               N/A
+                          adaptive (efficient-attn)                    PASS   92.80%      +11.00% 0.9242                 0            1.04x  280.1 MB              31.48               N/A
+                                      adaptive_span      MODERATE_EXPANSION   81.70%       -0.10% 0.8167                 6            1.00x  314.0 MB              37.35               N/A
+                                       adaptive_svd                    PASS   92.30%      +10.50% 0.9192                 6            1.15x  311.8 MB              62.39               N/A
+                         adasplash (efficient-attn)                    PASS   79.20%       -2.60% 0.7913                 0            1.00x  344.0 MB             123.44               N/A
+                                             adasvd                    PASS   87.40%       +5.60% 0.8655                24            1.16x  373.1 MB              35.29               N/A
+                                               admm                    PASS   94.30%      +12.50% 0.9387                11            1.00x  326.5 MB              14.54               N/A
+                                        admm_pruner                    PASS   91.60%       +9.80% 0.9117                36            1.00x  548.3 MB              19.52               N/A
+                                       aegis_hybrid                    PASS   89.50%       +7.70% 0.8909                 6            1.18x  350.6 MB             102.86               N/A
+                                 aegis_spectron_fp8      REJECTED_EXPANSION   27.70%      -54.10% 0.1397                 6            1.00x  398.6 MB             177.80               N/A
+                          aegis_v1 (efficient-attn)      MODERATE_EXPANSION   71.30%      -10.50% 0.7117                 0            1.00x  324.0 MB              71.84               N/A
+                          aegis_v2 (efficient-attn)      MODERATE_EXPANSION   36.20%      -45.60% 0.2480                 0            1.00x  338.2 MB              67.85               N/A
+                                           aegis_v3                    PASS   90.10%       +8.30% 0.8976                 6            1.20x  313.1 MB             112.12               N/A
+                                           aegis_v4                    PASS   89.80%       +8.00% 0.8954                 6            1.20x  295.8 MB             105.90               N/A
+                                           aegis_v5                    PASS   89.80%       +8.00% 0.8954                 6            1.20x  295.8 MB              98.75               N/A
+                                           aegis_v6                    PASS   93.30%      +11.50% 0.9290                 6            1.25x  391.0 MB             127.50               N/A
+                             armor (efficient-attn)                    PASS   93.70%      +11.90% 0.9338                 0            1.00x  327.2 MB              17.72               N/A
+                               ast (efficient-attn)                    PASS   94.40%      +12.60% 0.9403                 0            1.00x  326.5 MB              15.85               N/A
+                                              astro                    PASS   94.50%      +12.70% 0.9414                33            1.00x  326.5 MB              13.42               N/A
+                                               asvd      MODERATE_EXPANSION   82.10%       +0.30% 0.8207                 6            1.00x  334.7 MB              91.61               N/A
+            block_transformer_hiba (efficient-attn)                    PASS   81.80%       +0.00% 0.8177                 0            1.00x  315.6 MB              31.52               N/A
+                            bonsai (efficient-attn)                    PASS   52.20%      -29.60% 0.4694                 0            1.00x  315.4 MB               4.37               N/A
+                                         cachenotes                    PASS   94.40%      +12.60% 0.9398                24            1.00x  327.0 MB              18.81               N/A
+                        chela_slay (efficient-attn)      MODERATE_EXPANSION   59.50%      -22.30% 0.5917                 0            1.00x  360.5 MB              52.88               N/A
+                           cluster (efficient-attn)      MODERATE_EXPANSION   73.70%       -8.10% 0.7365                 0            1.00x  326.0 MB              80.63               N/A
+                                               come                    PASS   91.50%       +9.70% 0.9104                 1            1.24x  277.0 MB              16.28               N/A
+                            compot (efficient-attn)                    PASS   94.50%      +12.70% 0.9408                 0            1.00x  326.5 MB              15.10               N/A
+           compot_compressor_class (efficient-attn)                    PASS   94.80%      +13.00% 0.9443                 0            1.00x  326.5 MB              15.89               N/A
+                               compressed_attention      REJECTED_EXPANSION   94.40%      +12.60% 0.9404                 6            1.00x  418.7 MB              52.94               N/A
+                  compressed_attention_layer_energy                PASS_LOW   26.80%      -55.00% 0.1057                 6            1.22x  339.4 MB              45.40               N/A
+                                     compressed_mha      REJECTED_EXPANSION   94.50%      +12.70% 0.9415                 6            1.00x  408.8 MB              53.15               N/A
+                             coopq (efficient-attn)                    PASS   94.20%      +12.40% 0.9383                 0            1.00x  395.6 MB              47.50               N/A
+                         cosformer (efficient-attn)      MODERATE_EXPANSION   37.10%      -44.70% 0.3702                 0            1.00x  325.3 MB              47.87               N/A
+                                cr (efficient-attn)                    PASS   94.70%      +12.90% 0.9433                 0            1.00x  327.2 MB              40.45               N/A
+                               cur (efficient-attn)                    PASS   94.70%      +12.90% 0.9433                 0            1.00x  327.2 MB              22.42               N/A
+                           cur_moe (efficient-attn)                    PASS   94.30%      +12.50% 0.9392                 0            1.06x  313.8 MB              20.81               N/A
+                     cur_moe_class (efficient-attn)                    PASS   94.20%      +12.40% 0.9380                 0            1.06x  313.8 MB              20.79               N/A
+                       custom_attn (efficient-attn)      REJECTED_EXPANSION   94.30%      +12.50% 0.9390                 0            1.00x  342.3 MB               0.73               N/A
+                                  decay_linear_attn      MODERATE_EXPANSION   35.20%      -46.60% 0.3457                 6            1.00x  331.4 MB             185.89               N/A
+                          delta_kv (efficient-attn)                    PASS   95.00%      +13.20% 0.9464                 0            1.00x  326.5 MB              15.18               N/A
+                        direct_svd (efficient-attn)                    PASS   94.40%      +12.60% 0.9401                 0            1.00x  327.2 MB              15.37               N/A
+                              dobi (efficient-attn)                    PASS   94.30%      +12.50% 0.9390                 0            1.00x  315.4 MB               4.67               N/A
+                        dobi_class (efficient-attn)                    PASS   94.30%      +12.50% 0.9390                 0            1.00x  315.4 MB               4.65               N/A
+                      dynamic_rank (efficient-attn)                    PASS   94.40%      +12.60% 0.9404                 0            1.00x  327.2 MB              15.90               N/A
+                dynamic_rank_class (efficient-attn)                    PASS   94.80%      +13.00% 0.9443                 0            1.00x  327.2 MB              15.98               N/A
+                               eat (efficient-attn)                    PASS   58.20%      -23.60% 0.5788                 0            1.00x  318.8 MB              36.93               N/A
+                                          enlighten                    PASS   93.80%      +12.00% 0.9354                36            1.00x  327.2 MB              17.10               N/A
+                    entropy_budget (efficient-attn)                    PASS   94.70%      +12.90% 0.9432                 0            1.00x  327.2 MB              18.50               N/A
+      entropy_rank_allocator_class (efficient-attn)                    PASS   94.80%      +13.00% 0.9443                 0            1.00x  327.2 MB              16.21               N/A
+                               erc (efficient-attn)                    PASS   94.40%      +12.60% 0.9401                 0            1.00x  327.2 MB              15.87               N/A
+                               faq (efficient-attn)      REJECTED_EXPANSION   94.20%      +12.40% 0.9380                 0            0.98x  444.5 MB              79.83               N/A
+                              fasa (efficient-attn)                    PASS   79.60%       -2.20% 0.7954                 0            1.00x  311.3 MB              52.35               N/A
+                              flap (efficient-attn)                    PASS   94.70%      +12.90% 0.9432                 0            1.00x  326.5 MB              13.57               N/A
+                            flash3 (efficient-attn)                    PASS   58.70%      -23.10% 0.5827                 0            1.00x  307.3 MB              28.31               N/A
+                        flash3_fp8 (efficient-attn)                    PASS   58.70%      -23.10% 0.5827                 0            1.00x  307.3 MB              30.98               N/A
+                          flat_llm (efficient-attn)                    PASS   94.70%      +12.90% 0.9432                 0            1.00x  326.5 MB              18.12               N/A
+                               fms (efficient-attn)      MODERATE_EXPANSION   33.50%      -48.30% 0.3283                 0            1.00x  325.1 MB              50.05               N/A
+                            frandi (efficient-attn)                    PASS   94.80%      +13.00% 0.9444                 0            1.00x  327.2 MB              16.61               N/A
+           frandi_compressor_class (efficient-attn)                    PASS   94.80%      +13.00% 0.9443                 0            1.00x  327.2 MB              18.76               N/A
+                    full_attention (efficient-attn)                PASS_LOW   34.00%      -47.80% 0.1758                 0            1.00x  313.6 MB              27.04               N/A
+                                   fused_svd_kernel                    PASS   90.30%       +8.50% 0.8990                 6            1.21x  328.2 MB             188.77               N/A
+                       fusion_attn (efficient-attn)      MODERATE_EXPANSION   39.50%      -42.30% 0.3162                 0            1.00x  307.5 MB              27.09               N/A
+                          galerkin (efficient-attn)                PASS_LOW   34.50%      -47.30% 0.3427                 0            1.00x  320.5 MB              52.33               N/A
+                   gated_delta_net (efficient-attn)         SKIP_DEPRECATED    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.00               N/A
+              gated_deltanet_block (efficient-attn)         SKIP_DEPRECATED    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.00               N/A
+                                  gated_linear_attn      MODERATE_EXPANSION   34.00%      -47.80% 0.2148                 6            1.00x  348.1 MB              16.94             16.94
+                              gfws (efficient-attn)                    PASS   94.70%      +12.90% 0.9432                 0            1.00x  326.5 MB              18.52               N/A
+                                          goldfinch      REJECTED_EXPANSION   93.50%      +11.70% 0.9313                 6            1.00x  373.4 MB              57.20               N/A
+                                                gqa                    PASS   44.10%      -37.70% 0.3486                 6            1.08x  317.6 MB              43.07               N/A
+                          grecodec (efficient-attn)                    PASS   94.80%      +13.00% 0.9444                 0            1.00x  327.2 MB              16.47               N/A
+         grecodec_compressor_class (efficient-attn)                    PASS   94.80%      +13.00% 0.9443                 0            1.00x  327.2 MB              16.22               N/A
+                       griffin_ssd (efficient-attn)      REJECTED_EXPANSION   92.60%      +10.80% 0.9226                 0            1.00x  387.9 MB              65.20               N/A
+                                         halo_regla      REJECTED_EXPANSION   94.40%      +12.60% 0.9400                 6            1.00x  359.8 MB              62.21               N/A
+                                            hamming      REJECTED_EXPANSION   89.70%       +7.90% 0.8919                 6            1.00x  351.1 MB              49.12               N/A
+                        hashed_net (efficient-attn)                    PASS   94.60%      +12.80% 0.9422                 0            1.00x  326.5 MB               9.05               N/A
+                  hashed_net_class (efficient-attn)                    PASS   94.80%      +13.00% 0.9443                 0            1.00x  326.5 MB              13.93               N/A
+              hgrn2_gated_deltanet (efficient-attn)         SKIP_DEPRECATED    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.00               N/A
+                       hgrn2_outer (efficient-attn)                    FAIL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB            3600.20               N/A
+                                                hla      REJECTED_EXPANSION   84.80%       +3.00% 0.8408                 6            1.00x  361.0 MB              86.01               N/A
+                                            huffman                    PASS   94.60%      +12.80% 0.9425                35            1.00x  327.2 MB             162.83               N/A
+                                         hybrid_svd                    PASS   37.50%      -44.30% 0.3298                36            1.91x  253.2 MB              38.06               N/A
+                          hybridkv (efficient-attn)                    PASS   94.30%      +12.50% 0.9390                 0            1.00x  315.5 MB               3.41               N/A
+                hybridkv_quantizer (efficient-attn)                    PASS   94.30%      +12.50% 0.9390                 0            1.00x  315.5 MB               3.20               N/A
+                                       hymba_transx      REJECTED_EXPANSION   89.10%       +7.30% 0.8864                 6            1.00x  590.2 MB             496.99               N/A
+                                             infini      REJECTED_EXPANSION   94.30%      +12.50% 0.9390                 6            1.00x  370.5 MB              56.45               N/A
+            inject_adaptive_sparse (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.84               N/A
+                  inject_adasplash (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.70               N/A
+                                inject_aegis_hybrid                    PASS   49.20%      -32.60% 0.4646                 6            1.18x  300.1 MB             109.34               N/A
+                          inject_aegis_spectron_fp8      REJECTED_EXPANSION   32.40%      -49.40% 0.2123                 6            1.00x  361.3 MB             190.03               N/A
+                                    inject_aegis_v1      REJECTED_EXPANSION   69.30%      -12.50% 0.6925                 6            1.00x  322.8 MB             115.60               N/A
+                                    inject_aegis_v2      REJECTED_EXPANSION   35.20%      -46.60% 0.2878                 6            1.00x  337.0 MB              96.02               N/A
+                                    inject_aegis_v6                    PASS   79.20%       -2.60% 0.7904                 6            1.25x  334.3 MB             103.76               N/A
+                  inject_cosformer (efficient-attn)      REJECTED_EXPANSION   36.60%      -45.20% 0.3525                 0            1.00x  223.9 MB               0.96               N/A
+                      inject_decay_linear_attention      REJECTED_EXPANSION   35.30%      -46.50% 0.2172                 6            1.00x  331.7 MB             260.30               N/A
+                       inject_dobi (efficient-attn)                    PASS   81.80%       +0.00% 0.8177                 0            1.00x  293.5 MB               2.78               N/A
+            inject_dynamic_entropy (efficient-attn)                    PASS   81.90%       +0.10% 0.8181                 0            1.00x  305.3 MB              17.39               N/A
+               inject_dynamic_rank (efficient-attn)                    PASS   81.90%       +0.10% 0.8181                 0            1.00x  305.3 MB              17.01               N/A
+                       inject_fasa (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               1.35               N/A
+           inject_fused_svd_kernel (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               4.33               N/A
+                                    inject_galerkin      REJECTED_EXPANSION   32.60%      -49.20% 0.3203                 6            1.00x  320.5 MB              84.31               N/A
+            inject_gated_delta_net (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.74               N/A
+       inject_gated_deltanet_block (efficient-attn)       SKIP_BERT_TIMEOUT    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB            3636.91               N/A
+               inject_gated_linear (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.90               N/A
+              inject_goldfinch_ahn (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.77               N/A
+                    inject_hamming (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.72               N/A
+                inject_hgrn2_layer (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.91               N/A
+                inject_hgrn2_outer (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.71               N/A
+               inject_hymba_transx (efficient-attn)      REJECTED_EXPANSION   47.10%      -34.70% 0.4349                 0            1.00x  492.2 MB               4.52               N/A
+                     inject_infini (efficient-attn)      REJECTED_EXPANSION   42.60%      -39.20% 0.3537                 0            1.00x  330.6 MB               0.96               N/A
+                      inject_jamba (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               1.49               N/A
+                        inject_kda (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.66               N/A
+                    inject_leka_v2 (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.71               N/A
+                    inject_leka_v3 (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.72               N/A
+                  inject_linformer (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.74               N/A
+                       inject_lola (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               2.18               N/A
+                        inject_lsh (efficient-attn)      REJECTED_EXPANSION   39.40%      -42.40% 0.3311                 0            1.00x  323.8 MB               0.77               N/A
+                      inject_mamba (efficient-attn)                PASS_LOW   34.10%      -47.70% 0.1695                 0            1.05x  493.6 MB              35.14               N/A
+            inject_mamba_svd_flash (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               5.51               N/A
+             inject_minimal_aurora (efficient-attn)                    PASS   47.70%      -34.10% 0.4263                 0            1.15x  269.1 MB               2.70               N/A
+               inject_minimal_nova (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               1.92               N/A
+              inject_minimal_prism (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               2.64               N/A
+                inject_minimal_svd (efficient-attn)                    PASS   47.70%      -34.10% 0.4263                 0            1.15x  269.1 MB               2.49               N/A
+             inject_minimal_svd_v2 (efficient-attn)                    PASS   47.70%      -34.10% 0.4263                 0            1.15x  269.1 MB               4.73               N/A
+                       inject_nasc (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.41               N/A
+                      inject_nexus (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.41               N/A
+                        inject_nha (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.57               N/A
+                inject_nli_softmax (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.44               N/A
+                        inject_nsa (efficient-attn)      REJECTED_EXPANSION   81.70%       -0.10% 0.8167                 0            1.00x  324.8 MB               1.78               N/A
+                    inject_nystrom (efficient-attn)      REJECTED_EXPANSION   81.90%       +0.10% 0.8187                 0            1.00x  312.3 MB               1.80               N/A
+inject_optimal_subspace_projection (efficient-attn)                    PASS   81.40%       -0.40% 0.8138                 0            1.00x  305.3 MB              19.30               N/A
+                  inject_performer (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.77               N/A
+                       inject_rala (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.89               N/A
+                   inject_reap_moe (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               1.73               N/A
+                      inject_regla (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               1.47               N/A
+                    inject_replace (efficient-attn)                    PASS   76.10%       -5.70% 0.7621                 0            1.00x  329.6 MB               1.93               N/A
+                    inject_res_svd (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB              16.97               N/A
+                        inject_rpc (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.83               N/A
+             inject_salt_attention (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB              20.82               N/A
+                   inject_samba_m3 (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               1.46               N/A
+                  inject_samba_moe (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               2.83               N/A
+                       inject_sdrm (efficient-attn)                    PASS   81.30%       -0.50% 0.8125                 0            1.00x  304.5 MB              23.85               N/A
+                                  inject_simple_ssm      REJECTED_EXPANSION   35.10%      -46.70% 0.2785                 6            1.00x  342.9 MB             124.63               N/A
+                        inject_soa (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               2.94               N/A
+                 inject_spectra_v2 (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.90               N/A
+             inject_spectral_mamba (efficient-attn)                    FAIL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.95               N/A
+                   inject_spectron (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.89               N/A
+            inject_squeezing_heads (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.87               N/A
+             inject_svd_compressed (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               4.20               N/A
+                 inject_svd_llm_v2 (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               5.15               N/A
+                  inject_svd_mamba (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               3.52               N/A
+                               inject_svd_proj_attn                    PASS   51.60%      -30.20% 0.5029                 6            1.20x  272.1 MB              88.12               N/A
+               inject_svd_sequence (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               4.52               N/A
+                  inject_swift_svd (efficient-attn)                    PASS   51.10%      -30.70% 0.4810                 0            1.44x  297.1 MB              53.64               N/A
+                 inject_tlinformer (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.86               N/A
+      inject_token_compressed_attn (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.54               N/A
+                             jamba (efficient-attn)      REJECTED_EXPANSION   91.30%       +9.50% 0.9078                 0            1.00x  755.8 MB             173.49               N/A
+                        jamba_info (efficient-attn)      REJECTED_EXPANSION   62.10%      -19.70% 0.6004                 0            1.00x  484.8 MB             203.16               N/A
+                               kda (efficient-attn)      REJECTED_EXPANSION   85.70%       +3.90% 0.8495                 0            1.00x  381.4 MB              71.07               N/A
+                                             kmeans                    PASS   81.40%       -0.40% 0.8129                36            2.73x  539.9 MB              34.12               N/A
+                         kronecker (efficient-attn)                    PASS   39.00%      -42.80% 0.3851                 0            1.93x  259.3 MB              55.65               N/A
+                             kronecker_linear_class                PASS_LOW   34.00%      -47.80% 0.1692                36            2.01x  286.0 MB              44.14               N/A
+                 kronecker_tt_lora (efficient-attn)      REJECTED_EXPANSION   81.60%       -0.20% 0.8157                 0            0.98x  333.9 MB              76.37               N/A
+                                               kvtc                    PASS   79.10%       -2.70% 0.7904                20            1.00x  346.0 MB              16.75               N/A
+                           leka_v1 (efficient-attn)      REJECTED_EXPANSION   34.90%      -46.90% 0.3272                 0            1.00x  382.5 MB              63.91               N/A
+                           leka_v2 (efficient-attn)      REJECTED_EXPANSION   79.90%       -1.90% 0.7986                 0            1.00x  364.2 MB              86.15               N/A
+                           leka_v3 (efficient-attn)      REJECTED_EXPANSION   36.50%      -45.30% 0.3633                 0            1.00x  344.0 MB              79.98               N/A
+                             liftr (efficient-attn)                    PASS   82.30%       +0.50% 0.8225                 0            1.00x  304.5 MB               5.96               N/A
+                           lillama (efficient-attn)                    PASS   81.70%       -0.10% 0.8164                 0            1.00x  304.5 MB               6.83               N/A
+                         linformer (efficient-attn)      REJECTED_EXPANSION   75.60%       -6.20% 0.7572                 0            1.00x  315.5 MB              17.71               N/A
+                              lola (efficient-attn)                    PASS   48.20%      -33.60% 0.4735                 0            1.20x  427.4 MB              23.25               N/A
+                                          lora_attn      REJECTED_EXPANSION   58.90%      -22.90% 0.5863                 6            1.00x  329.4 MB              15.00               N/A
+                               lsc (efficient-attn)                    PASS   81.50%       -0.30% 0.8145                 0            1.00x  305.3 MB               6.35               N/A
+                               lsh (efficient-attn)      REJECTED_EXPANSION   41.90%      -39.90% 0.3491                 0            1.00x  324.9 MB              32.71               N/A
+                             mamba (efficient-attn)                PASS_LOW   34.10%      -47.70% 0.1695                 0            1.05x  493.6 MB              14.94               N/A
+                     mamba_shedder (efficient-attn)                    PASS   81.70%       -0.10% 0.8164                 0            1.00x  304.5 MB               6.41               N/A
+                   mamba_svd_flash (efficient-attn)                    FAIL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB             789.57               N/A
+                              mgie (efficient-attn)                    PASS   81.50%       -0.30% 0.8145                 0            1.00x  305.3 MB               8.40               N/A
+                       mgie_budget (efficient-attn)                    PASS   81.50%       -0.30% 0.8145                 0            1.00x  305.3 MB               9.12               N/A
+                    minimal_aurora (efficient-attn)                    PASS   55.10%      -26.70% 0.5441                 0            1.15x  270.3 MB              17.70               N/A
+                      minimal_nova (efficient-attn)                    PASS   55.20%      -26.60% 0.5450                 0            1.15x  270.3 MB               7.79               N/A
+                     minimal_prism (efficient-attn)                    PASS   55.20%      -26.60% 0.5450                 0            1.15x  270.3 MB              18.82               N/A
+                       minimal_svd (efficient-attn)                    PASS   55.10%      -26.70% 0.5441                 0            1.15x  270.3 MB               8.48               N/A
+                    minimal_svd_v2 (efficient-attn)                    PASS   55.10%      -26.70% 0.5441                 0            1.15x  270.3 MB              17.89               N/A
+                               mla (efficient-attn)                PASS_LOW   35.40%      -46.40% 0.2839                 0            1.08x  292.8 MB              12.86               N/A
+                                              mlorq                    PASS   80.60%       -1.20% 0.8054                36            1.00x  362.4 MB               9.77               N/A
+                              moba (efficient-attn)      REJECTED_EXPANSION   35.70%      -46.10% 0.2902                 0            1.00x  315.7 MB              22.66               N/A
+                           modegpt (efficient-attn)                    PASS   81.50%       -0.30% 0.8145                 0            1.00x  305.3 MB               8.59               N/A
+                 moe_deltakv_paged (efficient-attn)      REJECTED_EXPANSION   35.40%      -46.40% 0.2427                 0            1.00x  317.4 MB              32.65               N/A
+                              nasc (efficient-attn)      REJECTED_EXPANSION   68.10%      -13.70% 0.6739                 0            1.00x  320.5 MB              59.48               N/A
+                             nexus (efficient-attn)      REJECTED_EXPANSION   80.20%       -1.60% 0.8013                 0            1.00x  345.8 MB              68.41               N/A
+                               nha (efficient-attn)      REJECTED_EXPANSION   80.40%       -1.40% 0.8037                 0            1.00x  343.8 MB              38.53               N/A
+                       nli_softmax (efficient-attn)      REJECTED_EXPANSION   35.60%      -46.20% 0.2020                 0            1.00x  313.6 MB              16.06               N/A
+                               nmf (efficient-attn)                    PASS   82.30%       +0.50% 0.8222                 0            1.00x  304.5 MB              13.28               N/A
+                               nsa (efficient-attn)      REJECTED_EXPANSION   81.60%       -0.20% 0.8157                 0            1.00x  326.0 MB              18.56               N/A
+                           nystrom (efficient-attn)      REJECTED_EXPANSION   81.80%       +0.00% 0.8177                 0            1.00x  313.5 MB              16.86               N/A
+                                               oats                    PASS   81.60%       -0.20% 0.8154                36            1.00x  358.8 MB              17.80               N/A
+                               oha (efficient-attn)      REJECTED_EXPANSION   79.90%       -1.90% 0.7985                 0            1.00x  328.8 MB              25.02               N/A
+                        optimal_subspace_projection                    PASS   80.20%       -1.60% 0.8015                 1            1.00x  305.3 MB               8.12               N/A
+                             orion (efficient-attn)                    PASS   37.40%      -44.40% 0.2569                 0            1.20x  294.0 MB              30.21               N/A
+                             padre (efficient-attn)      REJECTED_EXPANSION   77.00%       -4.80% 0.7693                 0            1.00x  323.0 MB              18.48               N/A
+                         performer (efficient-attn)      REJECTED_EXPANSION   33.50%      -48.30% 0.2420                 0            1.00x  314.5 MB              22.65               N/A
+                           phantom (efficient-attn)                PASS_LOW   32.10%      -49.70% 0.1892                 0            1.20x  312.2 MB              48.02               N/A
+                            primal (efficient-attn)                   CRASH   90.83%       +9.03% 0.9113                 0            1.00x  678.0 MB               0.00               N/A
+                         projection_factorized_attn                    PASS   53.90%      -27.90% 0.5017                 6            1.20x  264.2 MB              19.81               N/A
+                        proxsparse (efficient-attn)                    PASS   40.80%      -41.00% 0.3418                 0            1.00x  304.5 MB               6.71               N/A
+                                                ptp      REJECTED_EXPANSION   81.80%       +0.00% 0.8177                 6            1.00x  315.5 MB              19.20               N/A
+                                               qcqa      REJECTED_EXPANSION   37.00%      -44.80% 0.2918                 6            1.00x  317.7 MB              17.97               N/A
+                              rala (efficient-attn)      REJECTED_EXPANSION   36.40%      -45.40% 0.3631                 0            1.00x  317.4 MB              19.62               N/A
+                          reap_moe (efficient-attn)      REJECTED_EXPANSION   77.30%       -4.50% 0.7710                 0            1.00x  535.6 MB              48.66               N/A
+                             regla (efficient-attn)      REJECTED_EXPANSION   43.20%      -38.60% 0.3713                 0            1.00x  366.6 MB              23.27               N/A
+                           replace (efficient-attn)                    PASS   79.80%       -2.00% 0.7976                 0            1.00x  330.8 MB               8.69               N/A
+                         replaceme (efficient-attn)                    PASS   63.50%      -18.30% 0.6311                 0            1.24x  255.7 MB               5.25               N/A
+                           res_svd (efficient-attn)                    PASS   51.40%      -30.40% 0.4961                 0            1.20x  272.2 MB              24.50               N/A
+                                             ressvd                    PASS   50.70%      -31.10% 0.4345                 6            1.20x  285.2 MB              28.67               N/A
+                             roast (efficient-attn)                    PASS   82.20%       +0.40% 0.8212                 0            1.00x  304.5 MB               7.28               N/A
+               rotational_slicegpt (efficient-attn)                    PASS   81.60%       -0.20% 0.8154                 0            1.00x  304.5 MB              68.20               N/A
+                                            routing      REJECTED_EXPANSION   33.80%      -48.00% 0.3180                 6            1.00x  327.1 MB              94.50               N/A
+                               rpc (efficient-attn)      REJECTED_EXPANSION   75.90%       -5.90% 0.7567                 0            1.00x  318.5 MB              17.54               N/A
+                              rpca (efficient-attn)                    PASS   82.00%       +0.20% 0.8193                 0            1.00x  305.8 MB              18.63               N/A
+                              saes (efficient-attn)                    PASS   81.70%       -0.10% 0.8164                 0            1.00x  305.8 MB              11.66               N/A
+                              salr (efficient-attn)                    PASS   82.00%       +0.20% 0.8193                 0            1.00x  305.3 MB               9.65               N/A
+                              salt (efficient-attn)                    PASS   52.00%      -29.80% 0.4652                 0            1.21x  353.3 MB              30.95               N/A
+                          samba_m3 (efficient-attn)      REJECTED_EXPANSION   70.20%      -11.60% 0.6942                 0            1.00x  410.0 MB              47.17               N/A
+                         samba_moe (efficient-attn)      REJECTED_EXPANSION   33.80%      -48.00% 0.3250                 0            1.00x  581.9 MB              80.49               N/A
+                              sdrm (efficient-attn)                    PASS   62.90%      -18.90% 0.0000                 0            1.00x    0.0 MB               0.50               N/A
+                        sdrm_class (efficient-attn)                    FAIL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.51               N/A
+                        simple_ssm (efficient-attn)      REJECTED_EXPANSION   35.10%      -46.70% 0.2656                 0            1.00x  344.1 MB              28.04               N/A
+                          slicegpt (efficient-attn)                    PASS   48.30%      -33.50% 0.4224                 0            1.00x  306.0 MB               7.79               N/A
+                      slicegpt_pca (efficient-attn)                    PASS   81.50%       -0.30% 0.8145                 0            1.00x  304.5 MB              28.83               N/A
+                              slim (efficient-attn)                    PASS   78.80%       -3.00% 0.7853                 0            1.00x  306.0 MB               9.61               N/A
+                          soa_attn (efficient-attn)                    PASS   73.00%       -8.80% 0.7286                 0            1.11x  285.0 MB              21.52               N/A
+                                soa_fused_attention                    PASS   54.60%      -27.20% 0.5412                 6            1.14x  277.3 MB              21.35               N/A
+                              soka (efficient-attn)                    PASS   82.10%       +0.30% 0.8202                 0            1.00x  305.3 MB               8.69               N/A
+                                      span_expanded      REJECTED_EXPANSION   81.80%       +0.00% 0.8177                 6            1.00x  315.0 MB              16.29               N/A
+                         sparsegpt (efficient-attn)                    PASS   73.30%       -8.50% 0.7287                 0            1.00x  305.3 MB              32.23               N/A
+                        spectra_v2 (efficient-attn)      REJECTED_EXPANSION   39.80%      -42.00% 0.3186                 0            1.00x  307.3 MB               5.56               N/A
+                     spectraformer (efficient-attn)                    FAIL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.48               N/A
+                    spectral_mamba (efficient-attn)                    FAIL    0.00%      -81.80% 0.0000                 0            1.00x    0.0 MB               0.52               N/A
+            spectral_residual_lora (efficient-attn)                PASS_LOW   35.80%      -46.00% 0.2585                 0            2.20x  236.9 MB              20.81               N/A
+                                           spectron                    PASS   60.50%      -21.30% 0.6002                 6            1.15x  282.5 MB              21.25               N/A
+                   squeezing_heads (efficient-attn)      REJECTED_EXPANSION   80.40%       -1.40% 0.8034                 0            1.00x  318.8 MB              16.42               N/A
+               subspace_projection (efficient-attn)                    PASS   82.10%       +0.30% 0.8202                 0            1.00x  305.3 MB               8.17               N/A
+                                                svd      REJECTED_EXPANSION   33.10%      -48.70% 0.2652                 6            1.00x  314.7 MB              22.69               N/A
+                         svd-mamba (efficient-attn)      REJECTED_EXPANSION   57.90%      -23.90% 0.5725                 0            1.00x  811.6 MB              58.73               N/A
+                    svd_compressed (efficient-attn)                    PASS   52.30%      -29.50% 0.4860                 0            1.20x  267.5 MB              21.11               N/A
+                        svd_linear (efficient-attn)                    PASS   53.90%      -27.90% 0.5017                 0            1.20x  264.2 MB              20.09               N/A
+                                   svd_linear_decay                    PASS   53.90%      -27.90% 0.5017                 6            1.20x  264.2 MB              20.18               N/A
+                        svd_llm_v2 (efficient-attn)                    PASS   45.80%      -36.00% 0.4315                 0            1.20x  290.1 MB              23.65               N/A
+                                           svd_proj                    PASS   46.00%      -35.80% 0.4239                 6            1.20x  272.1 MB              21.55               N/A
+                         swift_svd (efficient-attn)                    PASS   51.90%      -29.90% 0.4855                 0            1.44x  297.8 MB              14.61               N/A
+                     swift_svd_act (efficient-attn)                    PASS   81.50%       -0.30% 0.8145                 0            1.00x  305.3 MB              13.62               N/A
+                   swift_svd_class (efficient-attn)                    PASS   51.50%      -30.30% 0.4794                 0            1.44x  297.8 MB              13.64               N/A
+                template_attention (efficient-attn)      REJECTED_EXPANSION   58.10%      -23.70% 0.5778                 0            1.00x  314.7 MB              17.47               N/A
+                                         tlinformer      REJECTED_EXPANSION   77.80%       -4.00% 0.7777                 6            1.00x  318.5 MB              18.53               N/A
+                  token_compressed (efficient-attn)      REJECTED_EXPANSION   50.10%      -31.70% 0.4989                 0            1.00x  308.2 MB              21.00               N/A
+                             tomoe (efficient-attn)                    PASS   81.90%       +0.10% 0.8185                 0            1.00x  304.5 MB              11.47               N/A
+                       tomoe_class (efficient-attn)                    PASS   81.80%       +0.00% 0.8174                 0            1.00x  304.5 MB              11.49               N/A
+                               tpa (efficient-attn)      REJECTED_EXPANSION   36.80%      -45.00% 0.3675                 0            1.00x  798.0 MB              61.25               N/A
+                                tt (efficient-attn)                    PASS   81.10%       -0.70% 0.8106                 0            1.00x  304.5 MB              14.28               N/A
+                      unified_rope (efficient-attn)      REJECTED_EXPANSION   64.70%      -17.10% 0.6474                 0            1.00x  323.7 MB              18.29               N/A
+                             uniql (efficient-attn)                    PASS   82.30%       +0.50% 0.8225                 0            1.00x  304.5 MB               8.30               N/A
+                         upi_mamba (efficient-attn)      REJECTED_EXPANSION   31.90%      -49.90% 0.1612                 0            1.00x  568.9 MB              48.32               N/A
+                                                vig      REJECTED_EXPANSION   64.80%      -17.00% 0.6451                 6            1.00x  333.1 MB              24.55               N/A
+                             vspec (efficient-attn)                    PASS   46.90%      -34.90% 0.4587                 0            1.17x  276.1 MB              35.58               N/A
+                 weighted_ensemble (efficient-attn)      REJECTED_EXPANSION   53.80%      -28.00% 0.5121                 0            1.00x  335.7 MB              16.48               N/A
+                                               wgqa      REJECTED_EXPANSION   78.80%       -3.00% 0.7868                 6            1.00x  314.8 MB              17.55               N/A
+                                         xattention      REJECTED_EXPANSION   52.50%      -29.30% 0.4636                 6            1.00x  316.0 MB              19.65               N/A
+                            zerokv (efficient-attn)                    PASS   39.20%      -42.60% 0.3176                 0            1.00x  304.5 MB               6.19               N/A
+                                              zeros      REJECTED_EXPANSION   35.70%      -46.10% 0.2339                 6            1.00x  314.8 MB              17.44               N/A
+2026-09-19 22:27:09,596 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:135: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

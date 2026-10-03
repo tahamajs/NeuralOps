@@ -1,0 +1,105 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from 'framework.eval_all_models_datasets' (consider renaming 'D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py' if it has the same name as a library you intended to import)
+2026-09-18 08:56:49,904 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 08:56:50,403 [INFO] QwenQualitySweep: Configured dataset 'ag_news' with num_labels=4
+Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]Loading weights: 100%|##########| 197/197 [00:00<00:00, 3359.82it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models/roberta-base
+Key                             | Status     | 
+--------------------------------+------------+-
+lm_head.dense.weight            | UNEXPECTED | 
+lm_head.layer_norm.weight       | UNEXPECTED | 
+roberta.embeddings.position_ids | UNEXPECTED | 
+lm_head.bias                    | UNEXPECTED | 
+lm_head.layer_norm.bias         | UNEXPECTED | 
+lm_head.dense.bias              | UNEXPECTED | 
+classifier.out_proj.weight      | MISSING    | 
+classifier.dense.bias           | MISSING    | 
+classifier.dense.weight         | MISSING    | 
+classifier.out_proj.bias        | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-18 08:56:51,275 [INFO] QwenQualitySweep: model=models/roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-18 08:56:51,275 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 08:56:51,275 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:56:51,275 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 08:56:51,276 [INFO] QwenQualitySweep:   model:             models/roberta-base
+2026-09-18 08:56:51,276 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-18 08:56:51,276 [INFO] QwenQualitySweep:   dataset:           ag_news
+2026-09-18 08:56:51,276 [INFO] QwenQualitySweep:   batch_size:        32
+2026-09-18 08:56:51,276 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 08:56:51,277 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 08:56:51,277 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 08:56:51,277 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:56:51,278 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-18 08:56:53,330 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=1.8012
+2026-09-18 08:56:54,726 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=1.2795
+2026-09-18 08:56:56,195 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=1.0905
+2026-09-18 08:56:57,680 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=1.0636
+2026-09-18 08:56:59,176 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.8146
+2026-09-18 08:57:00,666 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.7128
+2026-09-18 08:57:02,171 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.5348
+2026-09-18 08:57:03,679 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.6845
+2026-09-18 08:57:03,693 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\agnews_unified_adaptive_span_attention\roberta\finetuned_model.pt
+2026-09-18 08:57:03,826 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 08:57:04,704 [INFO] QwenQualitySweep: Prepared 32 eval batches and 50 train batches directly on GPU.
+2026-09-18 08:57:06,096 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 74.50%
+2026-09-18 08:57:06,158 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:57:06,158 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-18 08:57:06,158 [INFO] QwenQualitySweep:   Validation Majority Count: 274 / 1000
+2026-09-18 08:57:06,158 [INFO] QwenQualitySweep:   True Majority Baseline:    27.40%
+2026-09-18 08:57:06,159 [INFO] QwenQualitySweep:   Standard Error (SE):       1.410%
+2026-09-18 08:57:06,159 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.23%
+2026-09-18 08:57:06,159 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  31.63%
+2026-09-18 08:57:06,159 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:57:06,159 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: adaptive_span_attention (recovery_steps=50, batch_size=32, optimizer=adamw)
+2026-09-18 08:57:07,574 [INFO] framework.core.attention_utils: Successfully injected 'adaptive_span_attention' into 12 transformer blocks.
+2026-09-18 08:57:07,591 [INFO] QwenQualitySweep: module=adaptive_span_attention path=adapted_roberta
+2026-09-18 08:57:07,593 [INFO] QwenQualitySweep: module=adaptive_span_attention injection summary: 0 SVDLinear layers active
+2026-09-18 08:57:07,594 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for adaptive_span_attention (lr=2.0e-04)
+2026-09-18 08:57:07,845 [INFO] framework.utils.compat: Recovery fine-tuning selected 884880 trainable parameters across 84 tensors.
+2026-09-18 08:57:07,845 [INFO] framework.utils.compat: Discovered 84 trainable tensors (884880 params)
+2026-09-18 08:57:07,853 [INFO] QwenQualitySweep: LoRA fine-tuning: 884880 trainable parameters across 84 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 08:57:08,163 [INFO] QwenQualitySweep: Step 1/50 took 0.31s (loss=0.6010, bs=32, micro=32)
+2026-09-18 08:57:08,938 [INFO] QwenQualitySweep: Step 5/50 took 0.20s (loss=1.6404, bs=32, micro=32)
+2026-09-18 08:57:09,943 [INFO] QwenQualitySweep: Step 10/50 took 0.21s (loss=1.5637, bs=32, micro=32)
+2026-09-18 08:57:10,925 [INFO] QwenQualitySweep: Step 15/50 took 0.21s (loss=0.2771, bs=32, micro=32)
+2026-09-18 08:57:11,880 [INFO] QwenQualitySweep: Step 20/50 took 0.19s (loss=0.5642, bs=32, micro=32)
+2026-09-18 08:57:12,852 [INFO] QwenQualitySweep: Step 25/50 took 0.18s (loss=0.6386, bs=32, micro=32)
+2026-09-18 08:57:13,859 [INFO] QwenQualitySweep: Step 30/50 took 0.20s (loss=0.7365, bs=32, micro=32)
+2026-09-18 08:57:14,865 [INFO] QwenQualitySweep: Step 35/50 took 0.21s (loss=0.7864, bs=32, micro=32)
+2026-09-18 08:57:15,876 [INFO] QwenQualitySweep: Step 40/50 took 0.20s (loss=0.6105, bs=32, micro=32)
+2026-09-18 08:57:16,900 [INFO] QwenQualitySweep: Step 45/50 took 0.20s (loss=0.9384, bs=32, micro=32)
+2026-09-18 08:57:17,873 [INFO] QwenQualitySweep: Step 50/50 took 0.20s (loss=0.7367, bs=32, micro=32)
+2026-09-18 08:57:22,437 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\agnews_unified_adaptive_span_attention\roberta\roberta-base_adaptive_span_attention_full_metrics.json
+2026-09-18 08:57:22,521 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\agnews_unified_adaptive_span_attention\roberta\checkpoints\adaptive_span_attention\weights.pt (module_params=0, lora_params=76)
+2026-09-18 08:57:23,340 [INFO] QwenQualitySweep: [1/1] adaptive_span_attention -> PASS 80.40% (F1: 0.7884, Peak VRAM: 445.14 MB)
+2026-09-18 08:57:23,362 [INFO] HFGitExporter: [Automation] Run roberta-base / adaptive-span-attention is SUCCESSFUL (acc=80.40% >= 31.63%). Starting automated HF export to tahamajs/svd-linear-attention-roberta-base-adaptive-span-attention and Git recording.
+2026-09-18 08:57:24,641 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 403 Forbidden"
+2026-09-18 08:57:24,868 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/tahamajs/svd-linear-attention-roberta-base-adaptive-span-attention "HTTP/1.1 404 Not Found"
+2026-09-18 08:57:24,868 [WARNING] HFGitExporter: Hugging Face upload failed for tahamajs/svd-linear-attention-roberta-base-adaptive-span-attention: (Request ID: Root=1-6aaccbc5-1e71b10a75ecfc5c5adab23a;131ecebc-19b7-4fe8-8445-8b737f454867)
+
+403 Forbidden: You don't have the rights to create a model under the namespace "tahamajs".
+Cannot access content at: https://huggingface.co/api/repos/create.
+Make sure your token has the correct permissions.
+2026-09-18 08:57:24,889 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\adaptive_span_attention.md
+[main bf50747ff] feat(benchmark): record successful adaptive_span_attention on roberta-base (Acc: 80.40%, F1: 0.7884)
+ 4 files changed, 232 insertions(+), 1 deletion(-)
+ create mode 100644 results/agnews_unified_adaptive_span_attention/roberta/finetune_metadata.json
+ create mode 100644 results/agnews_unified_adaptive_span_attention/roberta/roberta-base_adaptive_span_attention_full_metrics.json
+ create mode 100644 results/agnews_unified_adaptive_span_attention/roberta/summary.csv
+From https://github.com/tahamajs/SVD_linear_Attention
+ * branch                main       -> FETCH_HEAD
+Current branch main is up to date.
+To https://github.com/tahamajs/SVD_linear_Attention.git
+   e431450bd..bf50747ff  main -> main
+branch 'main' set up to track 'origin/main'.
+2026-09-18 08:57:29,679 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: bf50747f
+2026-09-18 08:57:29,991 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:57:29,991 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on ag_news)
+2026-09-18 08:57:30,001 [INFO] QwenQualitySweep: 
+                 Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+adaptive_span_attention   PASS   80.40%    +5.90% 0.7884                 12            1.00x  445.1 MB               4.14              4.14
+2026-09-18 08:57:30,001 [INFO] QwenQualitySweep: ================================================================================

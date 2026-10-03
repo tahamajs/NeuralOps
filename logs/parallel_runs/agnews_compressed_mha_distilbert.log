@@ -1,0 +1,85 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from 'framework.eval_all_models_datasets' (consider renaming 'D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py' if it has the same name as a library you intended to import)
+2026-09-18 22:58:30,433 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 22:58:30,716 [INFO] QwenQualitySweep: Configured dataset 'ag_news' with num_labels=4
+You passed `num_labels=4` which is incompatible to the `id2label` map of length `2`.
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3600.17it/s]
+[1mDistilBertForSequenceClassification LOAD REPORT[0m from: models/distilbert_sst2
+Key               | Status   |                                                                                       
+------------------+----------+---------------------------------------------------------------------------------------
+classifier.bias   | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([2]) vs model:torch.Size([4])          
+classifier.weight | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([2, 768]) vs model:torch.Size([4, 768])
+
+Notes:
+- MISMATCH:	ckpt weights were loaded, but they did not match the original empty weight shapes.
+2026-09-18 22:58:31,412 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-18 22:58:31,412 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 22:58:31,412 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:58:31,412 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 22:58:31,413 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-18 22:58:31,413 [INFO] QwenQualitySweep:   family:            bert
+2026-09-18 22:58:31,413 [INFO] QwenQualitySweep:   dataset:           ag_news
+2026-09-18 22:58:31,413 [INFO] QwenQualitySweep:   batch_size:        32
+2026-09-18 22:58:31,414 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 22:58:31,414 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 22:58:31,414 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 22:58:31,414 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:58:31,416 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-18 22:58:35,335 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=1.9543
+2026-09-18 22:58:37,575 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=1.3232
+2026-09-18 22:58:40,123 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=1.1958
+2026-09-18 22:58:42,687 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=1.0847
+2026-09-18 22:58:45,051 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=1.0580
+2026-09-18 22:58:47,526 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=1.3266
+2026-09-18 22:58:50,176 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.9905
+2026-09-18 22:58:52,726 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=1.1220
+2026-09-18 22:58:52,761 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\agnews_unified_compressed_mha\distilbert\finetuned_model.pt
+2026-09-18 22:58:52,881 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 22:58:54,963 [INFO] QwenQualitySweep: Prepared 32 eval batches and 50 train batches directly on GPU.
+2026-09-18 22:58:56,823 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 51.00%
+2026-09-18 22:58:56,950 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:58:56,952 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-18 22:58:56,952 [INFO] QwenQualitySweep:   Validation Majority Count: 274 / 1000
+2026-09-18 22:58:56,952 [INFO] QwenQualitySweep:   True Majority Baseline:    27.40%
+2026-09-18 22:58:56,953 [INFO] QwenQualitySweep:   Standard Error (SE):       1.410%
+2026-09-18 22:58:56,953 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.23%
+2026-09-18 22:58:56,953 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  31.63%
+2026-09-18 22:58:56,953 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:58:56,955 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: compressed_mha (recovery_steps=50, batch_size=32, optimizer=adamw)
+2026-09-18 22:59:01,106 [INFO] QwenQualitySweep: module=compressed_mha path=legacy_bert
+2026-09-18 22:59:01,107 [INFO] QwenQualitySweep: module=compressed_mha injection summary: 0 SVDLinear layers active
+2026-09-18 22:59:01,107 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for compressed_mha (lr=2.0e-04)
+2026-09-18 22:59:01,186 [INFO] framework.utils.compat: Recovery fine-tuning selected 442368 trainable parameters across 24 tensors.
+2026-09-18 22:59:01,186 [INFO] framework.utils.compat: Discovered 24 trainable tensors (442368 params)
+2026-09-18 22:59:01,189 [INFO] QwenQualitySweep: LoRA fine-tuning: 442368 trainable parameters across 24 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 22:59:01,583 [INFO] QwenQualitySweep: Step 1/50 took 0.39s (loss=1.2652, bs=32, micro=32)
+2026-09-18 22:59:02,531 [INFO] QwenQualitySweep: Step 5/50 took 0.22s (loss=1.8297, bs=32, micro=32)
+2026-09-18 22:59:03,686 [INFO] QwenQualitySweep: Step 10/50 took 0.22s (loss=1.5874, bs=32, micro=32)
+2026-09-18 22:59:05,269 [INFO] QwenQualitySweep: Step 15/50 took 0.32s (loss=1.0730, bs=32, micro=32)
+2026-09-18 22:59:06,943 [INFO] QwenQualitySweep: Step 20/50 took 0.29s (loss=1.2235, bs=32, micro=32)
+2026-09-18 22:59:09,278 [INFO] QwenQualitySweep: Step 25/50 took 0.51s (loss=1.2379, bs=32, micro=32)
+2026-09-18 22:59:11,687 [INFO] QwenQualitySweep: Step 30/50 took 0.46s (loss=1.1943, bs=32, micro=32)
+2026-09-18 22:59:13,984 [INFO] QwenQualitySweep: Step 35/50 took 0.45s (loss=1.0923, bs=32, micro=32)
+2026-09-18 22:59:16,340 [INFO] QwenQualitySweep: Step 40/50 took 0.45s (loss=0.8945, bs=32, micro=32)
+2026-09-18 22:59:18,621 [INFO] QwenQualitySweep: Step 45/50 took 0.45s (loss=1.0304, bs=32, micro=32)
+2026-09-18 22:59:20,950 [INFO] QwenQualitySweep: Step 50/50 took 0.47s (loss=0.9517, bs=32, micro=32)
+2026-09-18 22:59:27,718 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\agnews_unified_compressed_mha\distilbert\distilbert_sst2_compressed_mha_full_metrics.json
+2026-09-18 22:59:27,757 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\agnews_unified_compressed_mha\distilbert\checkpoints\compressed_mha\weights.pt (module_params=0, lora_params=28)
+2026-09-18 22:59:28,130 [INFO] QwenQualitySweep: [1/1] compressed_mha -> PASS 76.20% (F1: 0.7581, Peak VRAM: 413.68 MB)
+2026-09-18 22:59:28,198 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / compressed-mha is SUCCESSFUL (acc=76.20% >= 31.63%). Starting automated HF export to tahamajs/svd-linear-attention-distilbert-sst2-compressed-mha and Git recording.
+2026-09-18 22:59:30,210 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 403 Forbidden"
+2026-09-18 22:59:30,902 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/tahamajs/svd-linear-attention-distilbert-sst2-compressed-mha "HTTP/1.1 404 Not Found"
+2026-09-18 22:59:30,902 [WARNING] HFGitExporter: Hugging Face upload failed for tahamajs/svd-linear-attention-distilbert-sst2-compressed-mha: (Request ID: Root=1-6aad9125-48202e6013b8b82f50432e38;642eb9c1-0a74-45b4-b409-ba88c208efed)
+
+403 Forbidden: You don't have the rights to create a model under the namespace "tahamajs".
+Cannot access content at: https://huggingface.co/api/repos/create.
+Make sure your token has the correct permissions.
+2026-09-18 22:59:30,958 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\compressed_mha_attention.md
+[main e362864bc] feat(benchmark): record successful compressed_mha on distilbert-sst2 (Acc: 76.20%, F1: 0.7581)
+ 6 files changed, 57 insertions(+), 1 deletion(-)
+ create mode 100644 results/agnews_unified_compressed_mha/distilbert/distilbert_sst2_compressed_mha_full_metrics.json
+ create mode 100644 results/agnews_unified_compressed_mha/distilbert/finetune_metadata.json
+ create mode 100644 results/agnews_unified_compressed_mha/distilbert/summary.csv
+ create mode 100644 results/all_modules/leka_v1/finetune_metadata.json
+ create mode 100644 results/all_modules/leka_v2_attention/finetune_metadata.json

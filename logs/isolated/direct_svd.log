@@ -1,0 +1,124 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 17:46:36,361 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'direct_svd', '--output_json', 'logs\\isolated_results\\direct_svd_1790345754533_29204.json']
+2026-09-25 17:46:36,612 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 45.0% (leaving 4.40 GB headroom)
+2026-09-25 17:46:36,612 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 17:46:36,613 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=64 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-25 17:46:36,613 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 45.0%
+2026-09-25 17:46:36,853 [INFO] QwenQualitySweep: Configured dataset 'agnews' with num_labels=2
+You passed `num_labels=2` which is incompatible to the `id2label` map of length `4`.
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 5316.17it/s]
+[1mDistilBertForSequenceClassification LOAD REPORT[0m from: models/distilbert_agnews_full
+Key               | Status   |                                                                                       
+------------------+----------+---------------------------------------------------------------------------------------
+classifier.bias   | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([4]) vs model:torch.Size([2])          
+classifier.weight | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([4, 768]) vs model:torch.Size([2, 768])
+
+Notes:
+- MISMATCH:	ckpt weights were loaded, but they did not match the original empty weight shapes.
+2026-09-25 17:46:37,438 [INFO] QwenQualitySweep: model=models/distilbert_agnews_full qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-25 17:46:37,438 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-25 17:46:37,438 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 17:46:37,438 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-25 17:46:37,438 [INFO] QwenQualitySweep:   model:             models/distilbert_agnews_full
+2026-09-25 17:46:37,439 [INFO] QwenQualitySweep:   family:            bert
+2026-09-25 17:46:37,439 [INFO] QwenQualitySweep:   dataset:           agnews
+2026-09-25 17:46:37,439 [INFO] QwenQualitySweep:   batch_size:        64
+2026-09-25 17:46:37,439 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-25 17:46:37,439 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-25 17:46:37,439 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-25 17:46:37,439 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 17:46:37,441 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-25 17:46:43,206 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.6515
+2026-09-25 17:46:50,086 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.6396
+2026-09-25 17:46:55,416 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.6355
+2026-09-25 17:47:00,446 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.6522
+2026-09-25 17:47:05,520 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.6332
+2026-09-25 17:47:10,317 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.7008
+2026-09-25 17:47:15,114 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.6378
+2026-09-25 17:47:19,805 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.6123
+2026-09-25 17:47:19,830 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: D:\SVD_Project\results\agnews_deep_sweep\direct_svd\finetuned_model.pt
+2026-09-25 17:47:22,668 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to D:\SVD_Project\results\agnews_deep_sweep\direct_svd\batch_cache_agnews (will be reused by subsequent module runs)
+2026-09-25 17:47:22,668 [INFO] QwenQualitySweep: Prepared 14 eval batches and 50 train batches directly on GPU.
+2026-09-25 17:47:23,824 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 69.84%
+2026-09-25 17:47:24,002 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 17:47:24,004 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-25 17:47:24,004 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-25 17:47:24,005 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-25 17:47:24,005 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-25 17:47:24,005 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-25 17:47:24,005 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-25 17:47:24,005 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-25 17:47:24,005 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 17:47:24,009 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-25 17:47:24,119 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: direct_svd (recovery_steps=50, batch_size=64, optimizer=adamw)
+2026-09-25 17:47:25,184 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.5556 on distilbert.transformer.layer.0.attention.q_lin exceeded threshold 0.3500.
+2026-09-25 17:47:25,185 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.0.attention.q_lin (fallback to original and frozen).
+2026-09-25 17:47:25,416 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.5471 on distilbert.transformer.layer.0.attention.k_lin exceeded threshold 0.3500.
+2026-09-25 17:47:25,416 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.0.attention.k_lin (fallback to original and frozen).
+2026-09-25 17:47:25,646 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.5871 on distilbert.transformer.layer.0.attention.v_lin exceeded threshold 0.3500.
+2026-09-25 17:47:25,646 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.0.attention.v_lin (fallback to original and frozen).
+2026-09-25 17:47:25,798 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.5540 on distilbert.transformer.layer.0.attention.out_lin exceeded threshold 0.3500.
+2026-09-25 17:47:25,798 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.0.attention.out_lin (fallback to original and frozen).
+2026-09-25 17:47:25,933 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.5159 on distilbert.transformer.layer.1.attention.q_lin exceeded threshold 0.3500.
+2026-09-25 17:47:25,933 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.1.attention.q_lin (fallback to original and frozen).
+2026-09-25 17:47:26,077 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.4914 on distilbert.transformer.layer.1.attention.k_lin exceeded threshold 0.3500.
+2026-09-25 17:47:26,078 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.1.attention.k_lin (fallback to original and frozen).
+2026-09-25 17:47:26,245 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.5724 on distilbert.transformer.layer.1.attention.v_lin exceeded threshold 0.3500.
+2026-09-25 17:47:26,245 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.1.attention.v_lin (fallback to original and frozen).
+2026-09-25 17:47:26,392 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.5822 on distilbert.transformer.layer.1.attention.out_lin exceeded threshold 0.3500.
+2026-09-25 17:47:26,392 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.1.attention.out_lin (fallback to original and frozen).
+2026-09-25 17:47:26,538 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.5785 on distilbert.transformer.layer.2.attention.q_lin exceeded threshold 0.3500.
+2026-09-25 17:47:26,539 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.2.attention.q_lin (fallback to original and frozen).
+2026-09-25 17:47:26,688 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.5837 on distilbert.transformer.layer.2.attention.k_lin exceeded threshold 0.3500.
+2026-09-25 17:47:26,690 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.2.attention.k_lin (fallback to original and frozen).
+2026-09-25 17:47:26,855 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.5795 on distilbert.transformer.layer.2.attention.v_lin exceeded threshold 0.3500.
+2026-09-25 17:47:26,856 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.2.attention.v_lin (fallback to original and frozen).
+2026-09-25 17:47:27,050 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.6109 on distilbert.transformer.layer.2.attention.out_lin exceeded threshold 0.3500.
+2026-09-25 17:47:27,050 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.2.attention.out_lin (fallback to original and frozen).
+2026-09-25 17:47:27,224 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.5344 on distilbert.transformer.layer.3.attention.q_lin exceeded threshold 0.3500.
+2026-09-25 17:47:27,224 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.3.attention.q_lin (fallback to original and frozen).
+2026-09-25 17:47:27,418 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.5312 on distilbert.transformer.layer.3.attention.k_lin exceeded threshold 0.3500.
+2026-09-25 17:47:27,418 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.3.attention.k_lin (fallback to original and frozen).
+2026-09-25 17:47:27,676 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.6516 on distilbert.transformer.layer.3.attention.v_lin exceeded threshold 0.3500.
+2026-09-25 17:47:27,676 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.3.attention.v_lin (fallback to original and frozen).
+2026-09-25 17:47:27,929 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.6653 on distilbert.transformer.layer.3.attention.out_lin exceeded threshold 0.3500.
+2026-09-25 17:47:27,929 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.3.attention.out_lin (fallback to original and frozen).
+2026-09-25 17:47:28,168 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.5812 on distilbert.transformer.layer.4.attention.q_lin exceeded threshold 0.3500.
+2026-09-25 17:47:28,168 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.4.attention.q_lin (fallback to original and frozen).
+2026-09-25 17:47:28,395 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.5777 on distilbert.transformer.layer.4.attention.k_lin exceeded threshold 0.3500.
+2026-09-25 17:47:28,395 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.4.attention.k_lin (fallback to original and frozen).
+2026-09-25 17:47:28,598 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.6543 on distilbert.transformer.layer.4.attention.v_lin exceeded threshold 0.3500.
+2026-09-25 17:47:28,598 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.4.attention.v_lin (fallback to original and frozen).
+2026-09-25 17:47:28,813 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.6684 on distilbert.transformer.layer.4.attention.out_lin exceeded threshold 0.3500.
+2026-09-25 17:47:28,813 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.4.attention.out_lin (fallback to original and frozen).
+2026-09-25 17:47:29,038 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.5821 on distilbert.transformer.layer.5.attention.q_lin exceeded threshold 0.3500.
+2026-09-25 17:47:29,038 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.5.attention.q_lin (fallback to original and frozen).
+2026-09-25 17:47:29,238 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.5983 on distilbert.transformer.layer.5.attention.k_lin exceeded threshold 0.3500.
+2026-09-25 17:47:29,238 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.5.attention.k_lin (fallback to original and frozen).
+2026-09-25 17:47:29,445 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.6408 on distilbert.transformer.layer.5.attention.v_lin exceeded threshold 0.3500.
+2026-09-25 17:47:29,445 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.5.attention.v_lin (fallback to original and frozen).
+2026-09-25 17:47:29,690 [WARNING] framework.compression_engine.direct_svd: DirectSVD reconstruction error 0.6698 on distilbert.transformer.layer.5.attention.out_lin exceeded threshold 0.3500.
+2026-09-25 17:47:29,690 [INFO] framework.compression_engine.direct_svd: Skipping DirectSVD compression for distilbert.transformer.layer.5.attention.out_lin (fallback to original and frozen).
+2026-09-25 17:47:29,799 [INFO] framework.compression_engine.direct_svd: DirectSVD compression complete: 0 compressed, 24 fallback, 14 skipped. Avg error: 0.0000.
+2026-09-25 17:47:29,812 [INFO] QwenQualitySweep: module=direct_svd path=legacy_bert
+2026-09-25 17:47:29,813 [INFO] QwenQualitySweep: module=direct_svd injection summary: 0 SVDLinear layers active
+2026-09-25 17:47:29,815 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for direct_svd (lr=2.0e-04)
+2026-09-25 17:47:29,899 [INFO] framework.utils.compat: Recovery fine-tuning selected 0 trainable parameters across 0 tensors.
+2026-09-25 17:47:29,899 [INFO] framework.utils.compat: Discovered 0 trainable tensors (0 params)
+2026-09-25 17:47:32,743 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to D:\SVD_Project\results\agnews_deep_sweep\direct_svd\distilbert_agnews_full_direct_svd_full_metrics.json
+2026-09-25 17:47:33,026 [INFO] QwenQualitySweep: [1/1] direct_svd -> PASS_NO_COMPRESSION 69.84% (F1: 0.7107, Peak VRAM: 331.86 MB)
+2026-09-25 17:47:33,027 [WARNING] QwenQualitySweep: Module 'direct_svd' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-25 17:47:33,027 [INFO] QwenQualitySweep: [Quality Guard] Module 'direct_svd' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=69.84%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-25 17:47:33,038 [INFO] QwenQualitySweep: [1/1] direct_svd Timing: eval_time=8.92s
+2026-09-25 17:47:33,038 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-25 17:47:33,546 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 17:47:33,546 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_agnews_full on agnews)
+2026-09-25 17:47:33,566 [INFO] QwenQualitySweep: 
+                     Module              Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+direct_svd (efficient-attn) PASS_NO_COMPRESSION   69.84%    +0.00% 0.7107                  0            1.00x  331.9 MB               1.60              1.84
+2026-09-25 17:47:33,566 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:169: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

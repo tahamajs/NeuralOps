@@ -1,0 +1,21 @@
+Starting diagnosis for lora_attention...
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3528.03it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+=== DIAGNOSTIC REPORT: lora_attention ===
+init_diff (max):  1.245520
+init_diff (mean): 0.708351
+First attention layer class: LoRAAttention
+  q_proj.weight.norm() = 183.3129, shape = (768, 768)
+  q_proj.lora_B max_abs = 0.00000000 (zero=True)
+  k_proj.weight.norm() = 186.8495, shape = (768, 768)
+  k_proj.lora_B max_abs = 0.00000000 (zero=True)
+  v_proj.weight.norm() = 44.6344, shape = (768, 768)
+  v_proj.lora_B max_abs = 0.00000000 (zero=True)
+  out_proj.weight.norm() = 113.2474, shape = (768, 768)
+  out_proj.lora_B max_abs = 0.00000000 (zero=True)

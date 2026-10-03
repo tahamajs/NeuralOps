@@ -1,0 +1,514 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-19 05:47:56,911 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-19 05:47:56,917 [INFO] QwenQualitySweep: Running 286 modules with 4 parallel workers on GPU
+[ISOLATED] Launching full (timeout=1200s) -> logs\isolated\full.log
+[ISOLATED] Launching a3 (timeout=1200s) -> logs\isolated\a3.log
+[ISOLATED] Launching aasvd (timeout=1200s) -> logs\isolated\aasvd.log
+[ISOLATED] Launching adaptive (timeout=1200s) -> logs\isolated\adaptive.log
+[ISOLATED] full exited with code 0 in 41.9s
+[ISOLATED] Launching adaptive_span (timeout=1200s) -> logs\isolated\adaptive_span.log
+[ISOLATED] aasvd exited with code 0 in 60.2s
+[ISOLATED] Launching adaptive_sparse (timeout=1200s) -> logs\isolated\adaptive_sparse.log
+[ISOLATED] adaptive_span exited with code 0 in 42.2s
+[ISOLATED] Launching adaptive_svd (timeout=1200s) -> logs\isolated\adaptive_svd.log
+[ISOLATED] adaptive_sparse exited with code 0 in 51.8s
+[ISOLATED] Launching adasplash (timeout=1200s) -> logs\isolated\adasplash.log
+[ISOLATED] adaptive_svd exited with code 0 in 50.9s
+[ISOLATED] Launching adasvd (timeout=1200s) -> logs\isolated\adasvd.log
+[ISOLATED] adasvd exited with code 0 in 47.2s
+[ISOLATED] Launching admm (timeout=1200s) -> logs\isolated\admm.log
+[ISOLATED] adasplash exited with code 0 in 75.1s
+[ISOLATED] Launching admm_pruner (timeout=1200s) -> logs\isolated\admm_pruner.log
+[ISOLATED] adaptive exited with code 0 in 195.2s
+[ISOLATED] a3 exited with code 0 in 196.2s
+[ISOLATED] Launching aegis_hybrid (timeout=1200s) -> logs\isolated\aegis_hybrid.log
+[ISOLATED] Launching aegis_spectron_fp8 (timeout=1200s) -> logs\isolated\aegis_spectron_fp8.log
+[ISOLATED] admm exited with code 0 in 36.1s
+[ISOLATED] Launching aegis_v1 (timeout=1200s) -> logs\isolated\aegis_v1.log
+[ISOLATED] admm_pruner exited with code 0 in 48.8s
+[ISOLATED] Launching aegis_v2 (timeout=1200s) -> logs\isolated\aegis_v2.log
+[ISOLATED] aegis_hybrid exited with code 0 in 70.9s
+[ISOLATED] Launching aegis_v3 (timeout=1200s) -> logs\isolated\aegis_v3.log
+[ISOLATED] aegis_spectron_fp8 exited with code 0 in 86.2s
+[ISOLATED] Launching aegis_v4 (timeout=1200s) -> logs\isolated\aegis_v4.log
+[ISOLATED] aegis_v1 exited with code 0 in 79.4s
+[ISOLATED] Launching aegis_v5 (timeout=1200s) -> logs\isolated\aegis_v5.log
+[ISOLATED] aegis_v2 exited with code 0 in 69.3s
+[ISOLATED] Launching aegis_v6 (timeout=1200s) -> logs\isolated\aegis_v6.log
+[ISOLATED] aegis_v3 exited with code 0 in 73.8s
+[ISOLATED] Launching armor (timeout=1200s) -> logs\isolated\armor.log
+[ISOLATED] aegis_v4 exited with code 0 in 68.3s
+[ISOLATED] Launching ast (timeout=1200s) -> logs\isolated\ast.log
+[ISOLATED] aegis_v6 exited with code 0 in 69.3s
+[ISOLATED] aegis_v5 exited with code 0 in 74.9s
+[ISOLATED] armor exited with code 0 in 40.2s
+[ISOLATED] Launching astro (timeout=1200s) -> logs\isolated\astro.log
+[ISOLATED] Launching asvd (timeout=1200s) -> logs\isolated\asvd.log
+[ISOLATED] Launching bam_umoe (timeout=1200s) -> logs\isolated\bam_umoe.log
+[ISOLATED] ast exited with code 0 in 39.8s
+[ISOLATED] Launching block_transformer_hiba (timeout=1200s) -> logs\isolated\block_transformer_hiba.log
+[ISOLATED] astro exited with code 0 in 35.6s
+[ISOLATED] Launching bonsai (timeout=1200s) -> logs\isolated\bonsai.log
+[ISOLATED] asvd exited with code 0 in 50.7s
+[ISOLATED] Launching cachenotes (timeout=1200s) -> logs\isolated\cachenotes.log
+[ISOLATED] block_transformer_hiba exited with code 0 in 42.4s
+[ISOLATED] Launching chela_slay (timeout=1200s) -> logs\isolated\chela_slay.log
+[ISOLATED] bam_umoe exited with code 0 in 55.8s
+[ISOLATED] Launching cluster (timeout=1200s) -> logs\isolated\cluster.log
+[ISOLATED] bonsai exited with code 0 in 37.1s
+[ISOLATED] Launching come (timeout=1200s) -> logs\isolated\come.log
+[ISOLATED] cachenotes exited with code 0 in 43.9s
+[ISOLATED] Launching compot (timeout=1200s) -> logs\isolated\compot.log
+[ISOLATED] chela_slay exited with code 0 in 47.6s
+[ISOLATED] Launching compot_compressor_class (timeout=1200s) -> logs\isolated\compot_compressor_class.log
+[ISOLATED] come exited with code 0 in 36.8s
+[ISOLATED] Launching compressed_attention (timeout=1200s) -> logs\isolated\compressed_attention.log
+[ISOLATED] cluster exited with code 0 in 58.8s
+[ISOLATED] Launching compressed_attention_layer_energy (timeout=1200s) -> logs\isolated\compressed_attention_layer_energy.log
+[ISOLATED] compot exited with code 0 in 38.4s
+[ISOLATED] Launching compressed_mha (timeout=1200s) -> logs\isolated\compressed_mha.log
+[ISOLATED] compot_compressor_class exited with code 0 in 37.6s
+[ISOLATED] Launching coopq (timeout=1200s) -> logs\isolated\coopq.log
+[ISOLATED] compressed_attention exited with code 0 in 42.9s
+[ISOLATED] Launching cosformer (timeout=1200s) -> logs\isolated\cosformer.log
+[ISOLATED] compressed_attention_layer_energy exited with code 0 in 44.7s
+[ISOLATED] Launching cr (timeout=1200s) -> logs\isolated\cr.log
+[ISOLATED] compressed_mha exited with code 0 in 44.1s
+[ISOLATED] Launching cur (timeout=1200s) -> logs\isolated\cur.log
+[ISOLATED] coopq exited with code 0 in 49.4s
+[ISOLATED] Launching cur_moe (timeout=1200s) -> logs\isolated\cur_moe.log
+[ISOLATED] cosformer exited with code 0 in 49.9s
+[ISOLATED] Launching cur_moe_class (timeout=1200s) -> logs\isolated\cur_moe_class.log
+[ISOLATED] cr exited with code 0 in 66.1s
+[ISOLATED] cur exited with code 0 in 47.6s
+[ISOLATED] Launching custom_attn (timeout=1200s) -> logs\isolated\custom_attn.log
+[ISOLATED] Launching decay_linear_attn (timeout=1200s) -> logs\isolated\decay_linear_attn.log
+[ISOLATED] cur_moe exited with code 0 in 43.5s
+[ISOLATED] Launching delta_kv (timeout=1200s) -> logs\isolated\delta_kv.log
+[ISOLATED] cur_moe_class exited with code 0 in 42.8s
+[ISOLATED] Launching direct_svd (timeout=1200s) -> logs\isolated\direct_svd.log
+[ISOLATED] custom_attn exited with code 0 in 30.8s
+[ISOLATED] Launching dobi (timeout=1200s) -> logs\isolated\dobi.log
+[ISOLATED] delta_kv exited with code 0 in 37.2s
+[ISOLATED] Launching dobi_class (timeout=1200s) -> logs\isolated\dobi_class.log
+[ISOLATED] direct_svd exited with code 0 in 39.3s
+[ISOLATED] Launching dynamic_rank (timeout=1200s) -> logs\isolated\dynamic_rank.log
+[ISOLATED] dobi exited with code 0 in 36.3s
+[ISOLATED] Launching dynamic_rank_class (timeout=1200s) -> logs\isolated\dynamic_rank_class.log
+[ISOLATED] dobi_class exited with code 0 in 37.0s
+[ISOLATED] Launching eat (timeout=1200s) -> logs\isolated\eat.log
+[ISOLATED] decay_linear_attn exited with code 0 in 87.7s
+[ISOLATED] Launching enlighten (timeout=1200s) -> logs\isolated\enlighten.log
+[ISOLATED] dynamic_rank exited with code 0 in 39.6s
+[ISOLATED] Launching entropy_budget (timeout=1200s) -> logs\isolated\entropy_budget.log
+[ISOLATED] dynamic_rank_class exited with code 0 in 39.5s
+[ISOLATED] Launching entropy_rank_allocator_class (timeout=1200s) -> logs\isolated\entropy_rank_allocator_class.log
+[ISOLATED] enlighten exited with code 0 in 38.6s
+[ISOLATED] eat exited with code 0 in 43.7s
+[ISOLATED] Launching erc (timeout=1200s) -> logs\isolated\erc.log
+[ISOLATED] Launching expert_choice_moe (timeout=1200s) -> logs\isolated\expert_choice_moe.log
+[ISOLATED] entropy_budget exited with code 0 in 39.8s
+[ISOLATED] Launching faq (timeout=1200s) -> logs\isolated\faq.log
+[ISOLATED] entropy_rank_allocator_class exited with code 0 in 40.0s
+[ISOLATED] Launching fasa (timeout=1200s) -> logs\isolated\fasa.log
+[ISOLATED] erc exited with code 0 in 38.2s
+[ISOLATED] Launching flap (timeout=1200s) -> logs\isolated\flap.log
+[ISOLATED] expert_choice_moe exited with code 0 in 61.7s
+[ISOLATED] Launching flash3 (timeout=1200s) -> logs\isolated\flash3.log
+[ISOLATED] fasa exited with code 0 in 42.4s
+[ISOLATED] Launching flash3_fp8 (timeout=1200s) -> logs\isolated\flash3_fp8.log
+[ISOLATED] faq exited with code 0 in 52.1s
+[ISOLATED] Launching flat_llm (timeout=1200s) -> logs\isolated\flat_llm.log
+[ISOLATED] flap exited with code 0 in 37.5s
+[ISOLATED] Launching fms (timeout=1200s) -> logs\isolated\fms.log
+[ISOLATED] flash3 exited with code 0 in 40.4s
+[ISOLATED] Launching frandi (timeout=1200s) -> logs\isolated\frandi.log
+[ISOLATED] flash3_fp8 exited with code 0 in 39.7s
+[ISOLATED] flat_llm exited with code 0 in 38.1s
+[ISOLATED] Launching frandi_compressor_class (timeout=1200s) -> logs\isolated\frandi_compressor_class.log
+[ISOLATED] Launching full_attention (timeout=1200s) -> logs\isolated\full_attention.log
+[ISOLATED] fms exited with code 0 in 52.4s
+[ISOLATED] Launching fused_svd_kernel (timeout=1200s) -> logs\isolated\fused_svd_kernel.log
+[ISOLATED] frandi exited with code 0 in 39.2s
+[ISOLATED] Launching fusion_attn (timeout=1200s) -> logs\isolated\fusion_attn.log
+[ISOLATED] frandi_compressor_class exited with code 0 in 39.0s
+[ISOLATED] Launching galerkin (timeout=1200s) -> logs\isolated\galerkin.log
+[ISOLATED] full_attention exited with code 0 in 42.3s
+[ISOLATED] Launching gated_delta_net (timeout=1200s) -> logs\isolated\gated_delta_net.log
+[ISOLATED] gated_delta_net exited with code 0 in 30.4s
+[ISOLATED] fusion_attn exited with code 0 in 39.8s
+[ISOLATED] Launching gated_deltanet_block (timeout=1200s) -> logs\isolated\gated_deltanet_block.log
+[ISOLATED] Launching gated_linear_attn (timeout=1200s) -> logs\isolated\gated_linear_attn.log
+[ISOLATED] galerkin exited with code 0 in 49.4s
+[ISOLATED] Launching gfws (timeout=1200s) -> logs\isolated\gfws.log
+[ISOLATED] gated_deltanet_block exited with code 0 in 30.5s
+[ISOLATED] Launching goldfinch (timeout=1200s) -> logs\isolated\goldfinch.log
+[ISOLATED] fused_svd_kernel exited with code 0 in 107.6s
+[ISOLATED] gated_linear_attn exited with code 0 in 53.4s
+[ISOLATED] Launching gqa (timeout=1200s) -> logs\isolated\gqa.log
+[ISOLATED] Launching granite_hybrid (timeout=1200s) -> logs\isolated\granite_hybrid.log
+[ISOLATED] gfws exited with code 0 in 45.0s
+[ISOLATED] Launching grecodec (timeout=1200s) -> logs\isolated\grecodec.log
+[ISOLATED] goldfinch exited with code 0 in 47.6s
+[ISOLATED] Launching grecodec_compressor_class (timeout=1200s) -> logs\isolated\grecodec_compressor_class.log
+[ISOLATED] gqa exited with code 0 in 42.2s
+[ISOLATED] Launching griffin_ssd (timeout=1200s) -> logs\isolated\griffin_ssd.log
+[ISOLATED] grecodec exited with code 0 in 43.1s
+[ISOLATED] Launching halo_regla (timeout=1200s) -> logs\isolated\halo_regla.log
+[ISOLATED] grecodec_compressor_class exited with code 0 in 44.4s
+[ISOLATED] Launching hamming (timeout=1200s) -> logs\isolated\hamming.log
+[ISOLATED] griffin_ssd exited with code 0 in 45.0s
+[ISOLATED] Launching hashed_net (timeout=1200s) -> logs\isolated\hashed_net.log
+[ISOLATED] halo_regla exited with code 0 in 47.9s
+[ISOLATED] Launching hashed_net_class (timeout=1200s) -> logs\isolated\hashed_net_class.log
+[ISOLATED] hamming exited with code 0 in 45.4s
+[ISOLATED] Launching hgrn2 (timeout=1200s) -> logs\isolated\hgrn2.log
+[ISOLATED] hashed_net_class exited with code 0 in 39.6s
+[ISOLATED] Launching hgrn2_gated_deltanet (timeout=1200s) -> logs\isolated\hgrn2_gated_deltanet.log
+[ISOLATED] hashed_net exited with code 0 in 54.1s
+[ISOLATED] Launching hgrn2_outer (timeout=1200s) -> logs\isolated\hgrn2_outer.log
+[ISOLATED] hgrn2_gated_deltanet exited with code 1 in 13.1s
+[ISOLATED] Launching hla (timeout=1200s) -> logs\isolated\hla.log
+[ISOLATED] hgrn2 exited with code 0 in 41.9s
+[ISOLATED] Launching huffman (timeout=1200s) -> logs\isolated\huffman.log
+[ISOLATED] hgrn2_outer exited with code 0 in 36.1s
+[ISOLATED] Launching hybrid_svd (timeout=1200s) -> logs\isolated\hybrid_svd.log
+[ISOLATED] hla exited with code 3221225477 in 52.3s
+[ISOLATED] Launching hybridkv (timeout=1200s) -> logs\isolated\hybridkv.log
+[ISOLATED] hybrid_svd exited with code 0 in 47.4s
+[ISOLATED] Launching hybridkv_quantizer (timeout=1200s) -> logs\isolated\hybridkv_quantizer.log
+[ISOLATED] hybridkv exited with code 0 in 34.4s
+[ISOLATED] granite_hybrid exited with code 0 in 248.0s
+[ISOLATED] Launching hymba_transx (timeout=1200s) -> logs\isolated\hymba_transx.log
+[ISOLATED] Launching infini (timeout=1200s) -> logs\isolated\infini.log
+[ISOLATED] hybridkv_quantizer exited with code 0 in 33.6s
+[ISOLATED] Launching inject_adaptive_sparse (timeout=1200s) -> logs\isolated\inject_adaptive_sparse.log
+[ISOLATED] infini exited with code 0 in 43.9s
+[ISOLATED] Launching inject_adasplash (timeout=1200s) -> logs\isolated\inject_adasplash.log
+[ISOLATED] inject_adaptive_sparse exited with code 0 in 31.1s
+[ISOLATED] Launching inject_aegis_hybrid (timeout=1200s) -> logs\isolated\inject_aegis_hybrid.log
+[ISOLATED] inject_adasplash exited with code 0 in 30.9s
+[ISOLATED] Launching inject_aegis_spectron_fp8 (timeout=1200s) -> logs\isolated\inject_aegis_spectron_fp8.log
+[ISOLATED] huffman exited with code 0 in 197.9s
+[ISOLATED] inject_aegis_hybrid exited with code 0 in 59.3s
+[ISOLATED] Launching inject_aegis_v1 (timeout=1200s) -> logs\isolated\inject_aegis_v1.log
+[ISOLATED] Launching inject_aegis_v2 (timeout=1200s) -> logs\isolated\inject_aegis_v2.log
+[ISOLATED] hymba_transx exited with code 0 in 150.1s
+[ISOLATED] Launching inject_aegis_v6 (timeout=1200s) -> logs\isolated\inject_aegis_v6.log
+[ISOLATED] inject_aegis_spectron_fp8 exited with code 0 in 78.6s
+[ISOLATED] Launching inject_cosformer (timeout=1200s) -> logs\isolated\inject_cosformer.log
+[ISOLATED] inject_aegis_v2 exited with code 0 in 66.3s
+[ISOLATED] inject_aegis_v1 exited with code 0 in 69.5s
+[ISOLATED] Launching inject_decay_linear_attention (timeout=1200s) -> logs\isolated\inject_decay_linear_attention.log
+[ISOLATED] Launching inject_dobi (timeout=1200s) -> logs\isolated\inject_dobi.log
+[ISOLATED] inject_cosformer exited with code 0 in 32.3s
+[ISOLATED] Launching inject_dynamic_entropy (timeout=1200s) -> logs\isolated\inject_dynamic_entropy.log
+[ISOLATED] inject_aegis_v6 exited with code 0 in 62.8s
+[ISOLATED] Launching inject_dynamic_rank (timeout=1200s) -> logs\isolated\inject_dynamic_rank.log
+[ISOLATED] inject_dobi exited with code 0 in 35.4s
+[ISOLATED] Launching inject_fasa (timeout=1200s) -> logs\isolated\inject_fasa.log
+[ISOLATED] inject_dynamic_entropy exited with code 0 in 40.8s
+[ISOLATED] Launching inject_fused_svd_kernel (timeout=1200s) -> logs\isolated\inject_fused_svd_kernel.log
+[ISOLATED] inject_fasa exited with code 0 in 32.2s
+[ISOLATED] inject_dynamic_rank exited with code 0 in 39.5s
+[ISOLATED] Launching inject_galerkin (timeout=1200s) -> logs\isolated\inject_galerkin.log
+[ISOLATED] Launching inject_gated_delta_net (timeout=1200s) -> logs\isolated\inject_gated_delta_net.log
+[ISOLATED] inject_decay_linear_attention exited with code 0 in 89.4s
+[ISOLATED] Launching inject_gated_deltanet_block (timeout=1200s) -> logs\isolated\inject_gated_deltanet_block.log
+[ISOLATED] inject_fused_svd_kernel exited with code 0 in 37.8s
+[ISOLATED] Launching inject_gated_linear (timeout=1200s) -> logs\isolated\inject_gated_linear.log
+[ISOLATED] inject_gated_delta_net exited with code 0 in 30.6s
+[ISOLATED] Launching inject_goldfinch_ahn (timeout=1200s) -> logs\isolated\inject_goldfinch_ahn.log
+[ISOLATED] inject_galerkin exited with code 0 in 51.3s
+[ISOLATED] inject_gated_linear exited with code 0 in 30.9s
+[ISOLATED] Launching inject_granite_hybrid (timeout=1200s) -> logs\isolated\inject_granite_hybrid.log
+[ISOLATED] Launching inject_hamming (timeout=1200s) -> logs\isolated\inject_hamming.log
+[ISOLATED] inject_goldfinch_ahn exited with code 0 in 32.4s
+[ISOLATED] Launching inject_hgrn2_layer (timeout=1200s) -> logs\isolated\inject_hgrn2_layer.log
+[ISOLATED] inject_granite_hybrid exited with code 3221225477 in 33.9s
+[ISOLATED] Launching inject_hgrn2_outer (timeout=1200s) -> logs\isolated\inject_hgrn2_outer.log
+[ISOLATED] inject_hamming exited with code 0 in 36.7s
+[ISOLATED] Launching inject_hymba_transx (timeout=1200s) -> logs\isolated\inject_hymba_transx.log
+[ISOLATED] inject_hgrn2_layer exited with code 0 in 34.4s
+[ISOLATED] Launching inject_infini (timeout=1200s) -> logs\isolated\inject_infini.log
+[ISOLATED] inject_hgrn2_outer exited with code 3221225477 in 50.9s
+[ISOLATED] Launching inject_jamba (timeout=1200s) -> logs\isolated\inject_jamba.log
+[ISOLATED] inject_infini exited with code 3221225477 in 39.0s
+[ISOLATED] Launching inject_kda (timeout=1200s) -> logs\isolated\inject_kda.log
+[ISOLATED] inject_hymba_transx exited with code 3221225477 in 55.5s
+[ISOLATED] Launching inject_leka_v2 (timeout=1200s) -> logs\isolated\inject_leka_v2.log
+[ISOLATED] inject_kda exited with code 1 in 37.1s
+[ISOLATED] inject_leka_v2 exited with code 1 in 33.1s
+[ISOLATED] Launching inject_leka_v3 (timeout=1200s) -> logs\isolated\inject_leka_v3.log
+[ISOLATED] Launching inject_linformer (timeout=1200s) -> logs\isolated\inject_linformer.log
+[ISOLATED] inject_jamba exited with code 3221225477 in 54.3s
+[ISOLATED] Launching inject_lola (timeout=1200s) -> logs\isolated\inject_lola.log
+[ISOLATED] inject_leka_v3 exited with code 1 in 31.2s
+[ISOLATED] inject_linformer exited with code 1 in 30.4s
+[ISOLATED] Launching inject_lsh (timeout=1200s) -> logs\isolated\inject_lsh.log
+[ISOLATED] Launching inject_mamba (timeout=1200s) -> logs\isolated\inject_mamba.log
+[ISOLATED] inject_mamba exited with code 1 in 30.2s
+[ISOLATED] inject_lsh exited with code 1 in 30.7s
+[ISOLATED] Launching inject_mamba_svd_flash (timeout=1200s) -> logs\isolated\inject_mamba_svd_flash.log
+[ISOLATED] Launching inject_minimal_aurora (timeout=1200s) -> logs\isolated\inject_minimal_aurora.log
+[ISOLATED] inject_lola exited with code 0 in 72.8s
+[ISOLATED] Launching inject_minimal_nova (timeout=1200s) -> logs\isolated\inject_minimal_nova.log
+[ISOLATED] inject_mamba_svd_flash exited with code 1 in 27.6s
+[ISOLATED] inject_minimal_aurora exited with code 1 in 27.4s
+[ISOLATED] Launching inject_minimal_prism (timeout=1200s) -> logs\isolated\inject_minimal_prism.log
+[ISOLATED] Launching inject_minimal_svd (timeout=1200s) -> logs\isolated\inject_minimal_svd.log
+[ISOLATED] inject_minimal_nova exited with code 3221225477 in 28.9s
+[ISOLATED] inject_minimal_svd exited with code 1 in 23.2s
+[ISOLATED] Launching inject_minimal_svd_v2 (timeout=1200s) -> logs\isolated\inject_minimal_svd_v2.log
+[ISOLATED] Launching inject_nasc (timeout=1200s) -> logs\isolated\inject_nasc.log
+[ISOLATED] inject_nasc exited with code 1 in 25.4s
+[ISOLATED] inject_minimal_prism exited with code 0 in 52.5s
+[ISOLATED] inject_minimal_svd_v2 exited with code 1 in 28.0s
+[ISOLATED] Launching inject_nexus (timeout=1200s) -> logs\isolated\inject_nexus.log
+[ISOLATED] Launching inject_nha (timeout=1200s) -> logs\isolated\inject_nha.log
+[ISOLATED] Launching inject_nli_softmax (timeout=1200s) -> logs\isolated\inject_nli_softmax.log
+[ISOLATED] inject_nexus exited with code 1 in 27.9s
+[ISOLATED] inject_nli_softmax exited with code 1 in 26.5s
+[ISOLATED] inject_nha exited with code 1 in 27.0s
+[ISOLATED] Launching inject_nsa (timeout=1200s) -> logs\isolated\inject_nsa.log
+[ISOLATED] Launching inject_nystrom (timeout=1200s) -> logs\isolated\inject_nystrom.log
+[ISOLATED] Launching inject_optimal_subspace_projection (timeout=1200s) -> logs\isolated\inject_optimal_subspace_projection.log
+[ISOLATED] inject_nsa exited with code 1 in 27.6s
+[ISOLATED] inject_nystrom exited with code 1 in 27.6s
+[ISOLATED] inject_optimal_subspace_projection exited with code 1 in 27.7s
+[ISOLATED] Launching inject_performer (timeout=1200s) -> logs\isolated\inject_performer.log
+[ISOLATED] Launching inject_rala (timeout=1200s) -> logs\isolated\inject_rala.log
+[ISOLATED] Launching inject_reap_moe (timeout=1200s) -> logs\isolated\inject_reap_moe.log
+[ISOLATED] inject_performer exited with code 1 in 27.1s
+[ISOLATED] inject_rala exited with code 1 in 26.9s
+[ISOLATED] inject_reap_moe exited with code 1 in 27.1s
+[ISOLATED] Launching inject_regla (timeout=1200s) -> logs\isolated\inject_regla.log
+[ISOLATED] Launching inject_replace (timeout=1200s) -> logs\isolated\inject_replace.log
+[ISOLATED] Launching inject_res_svd (timeout=1200s) -> logs\isolated\inject_res_svd.log
+[ISOLATED] inject_replace exited with code 1 in 27.8s
+[ISOLATED] inject_res_svd exited with code 1 in 27.9s
+[ISOLATED] inject_regla exited with code 1 in 28.5s
+[ISOLATED] Launching inject_rpc (timeout=1200s) -> logs\isolated\inject_rpc.log
+[ISOLATED] Launching inject_salt_attention (timeout=1200s) -> logs\isolated\inject_salt_attention.log
+[ISOLATED] Launching inject_samba_m3 (timeout=1200s) -> logs\isolated\inject_samba_m3.log
+[ISOLATED] inject_salt_attention exited with code 1 in 27.2s
+[ISOLATED] inject_rpc exited with code 1 in 27.7s
+[ISOLATED] inject_samba_m3 exited with code 1 in 27.9s
+[ISOLATED] Launching inject_samba_moe (timeout=1200s) -> logs\isolated\inject_samba_moe.log
+[ISOLATED] Launching inject_sdrm (timeout=1200s) -> logs\isolated\inject_sdrm.log
+[ISOLATED] Launching inject_simple_ssm (timeout=1200s) -> logs\isolated\inject_simple_ssm.log
+[ISOLATED] inject_sdrm exited with code 1 in 27.3s
+[ISOLATED] inject_samba_moe exited with code 1 in 27.8s
+[ISOLATED] inject_simple_ssm exited with code 1 in 27.5s
+[ISOLATED] Launching inject_soa (timeout=1200s) -> logs\isolated\inject_soa.log
+[ISOLATED] Launching inject_spectra_v2 (timeout=1200s) -> logs\isolated\inject_spectra_v2.log
+[ISOLATED] Launching inject_spectral_mamba (timeout=1200s) -> logs\isolated\inject_spectral_mamba.log
+[ISOLATED] inject_spectra_v2 exited with code 1 in 26.4s
+[ISOLATED] inject_soa exited with code 1 in 26.9s
+[ISOLATED] inject_spectral_mamba exited with code 1 in 26.3s
+[ISOLATED] Launching inject_spectron (timeout=1200s) -> logs\isolated\inject_spectron.log
+[ISOLATED] Launching inject_squeezing_heads (timeout=1200s) -> logs\isolated\inject_squeezing_heads.log
+[ISOLATED] Launching inject_svd_compressed (timeout=1200s) -> logs\isolated\inject_svd_compressed.log
+[ISOLATED] inject_squeezing_heads exited with code 1 in 27.0s
+[ISOLATED] inject_spectron exited with code 1 in 27.4s
+[ISOLATED] inject_svd_compressed exited with code 1 in 27.3s
+[ISOLATED] Launching inject_svd_llm_v2 (timeout=1200s) -> logs\isolated\inject_svd_llm_v2.log
+[ISOLATED] Launching inject_svd_mamba (timeout=1200s) -> logs\isolated\inject_svd_mamba.log
+[ISOLATED] Launching inject_svd_proj_attn (timeout=1200s) -> logs\isolated\inject_svd_proj_attn.log
+[ISOLATED] inject_svd_llm_v2 exited with code 1 in 27.0s
+[ISOLATED] inject_svd_proj_attn exited with code 1 in 26.6s
+[ISOLATED] inject_svd_mamba exited with code 1 in 27.2s
+[ISOLATED] Launching inject_svd_sequence (timeout=1200s) -> logs\isolated\inject_svd_sequence.log
+[ISOLATED] Launching inject_swift_svd (timeout=1200s) -> logs\isolated\inject_swift_svd.log
+[ISOLATED] Launching inject_tlinformer (timeout=1200s) -> logs\isolated\inject_tlinformer.log
+[ISOLATED] inject_swift_svd exited with code 1 in 27.3s
+[ISOLATED] inject_svd_sequence exited with code 1 in 27.8s
+[ISOLATED] inject_tlinformer exited with code 1 in 27.8s
+[ISOLATED] Launching inject_token_compressed_attn (timeout=1200s) -> logs\isolated\inject_token_compressed_attn.log
+[ISOLATED] Launching inject_tomoe (timeout=1200s) -> logs\isolated\inject_tomoe.log
+[ISOLATED] Launching inject_tpa (timeout=1200s) -> logs\isolated\inject_tpa.log
+[ISOLATED] inject_tpa exited with code 1 in 26.1s
+[ISOLATED] inject_token_compressed_attn exited with code 1 in 26.7s
+[ISOLATED] inject_tomoe exited with code 1 in 26.7s
+[ISOLATED] Launching inject_unified_rope (timeout=1200s) -> logs\isolated\inject_unified_rope.log
+[ISOLATED] Launching inject_upi_mamba (timeout=1200s) -> logs\isolated\inject_upi_mamba.log
+[ISOLATED] Launching inject_vig (timeout=1200s) -> logs\isolated\inject_vig.log
+[ISOLATED] inject_upi_mamba exited with code 1 in 27.5s
+[ISOLATED] inject_unified_rope exited with code 1 in 27.8s
+[ISOLATED] inject_vig exited with code 1 in 27.8s
+[ISOLATED] Launching inject_vspec (timeout=1200s) -> logs\isolated\inject_vspec.log
+[ISOLATED] Launching inject_weighted_ensemble (timeout=1200s) -> logs\isolated\inject_weighted_ensemble.log
+[ISOLATED] Launching inject_wgqa (timeout=1200s) -> logs\isolated\inject_wgqa.log
+[ISOLATED] inject_vspec exited with code 1 in 27.1s
+[ISOLATED] inject_weighted_ensemble exited with code 1 in 26.9s
+[ISOLATED] inject_wgqa exited with code 1 in 27.9s
+[ISOLATED] Launching inject_xattention (timeout=1200s) -> logs\isolated\inject_xattention.log
+[ISOLATED] Launching jamba (timeout=1200s) -> logs\isolated\jamba.log
+[ISOLATED] Launching jamba_info (timeout=1200s) -> logs\isolated\jamba_info.log
+[ISOLATED] jamba exited with code 1 in 26.4s
+[ISOLATED] inject_xattention exited with code 1 in 26.9s
+[ISOLATED] Launching kda (timeout=1200s) -> logs\isolated\kda.log
+[ISOLATED] Launching kmeans (timeout=1200s) -> logs\isolated\kmeans.log
+[ISOLATED] kda exited with code 1 in 25.8s
+[ISOLATED] kmeans exited with code 1 in 25.9s
+[ISOLATED] Launching kronecker (timeout=1200s) -> logs\isolated\kronecker.log
+[ISOLATED] Launching kronecker_linear_class (timeout=1200s) -> logs\isolated\kronecker_linear_class.log
+[ISOLATED] jamba_info exited with code 3221225725 in 71.9s
+[ISOLATED] Launching kronecker_tt_lora (timeout=1200s) -> logs\isolated\kronecker_tt_lora.log
+[ISOLATED] kronecker exited with code 1 in 27.9s
+[ISOLATED] Launching kvtc (timeout=1200s) -> logs\isolated\kvtc.log
+[ISOLATED] kvtc exited with code 1 in 19.8s
+[ISOLATED] kronecker_tt_lora exited with code 1 in 32.0s
+[ISOLATED] Launching leka_v1 (timeout=1200s) -> logs\isolated\leka_v1.log
+[ISOLATED] Launching leka_v2 (timeout=1200s) -> logs\isolated\leka_v2.log
+[ISOLATED] leka_v1 exited with code 3221225477 in 38.6s
+[ISOLATED] leka_v2 exited with code 3221225477 in 38.6s
+[ISOLATED] Launching leka_v3 (timeout=1200s) -> logs\isolated\leka_v3.log
+[ISOLATED] Launching liftr (timeout=1200s) -> logs\isolated\liftr.log
+[ISOLATED] leka_v3 exited with code 1 in 28.9s
+[ISOLATED] liftr exited with code 1 in 28.9s
+[ISOLATED] Launching lillama (timeout=1200s) -> logs\isolated\lillama.log
+[ISOLATED] Launching linformer (timeout=1200s) -> logs\isolated\linformer.log
+[ISOLATED] lillama exited with code 1 in 25.9s
+[ISOLATED] kronecker_linear_class exited with code 0 in 150.4s
+[ISOLATED] Launching lola (timeout=1200s) -> logs\isolated\lola.log
+[ISOLATED] Launching lora_attn (timeout=1200s) -> logs\isolated\lora_attn.log
+[ISOLATED] linformer exited with code 3221225477 in 38.1s
+[ISOLATED] Launching lsc (timeout=1200s) -> logs\isolated\lsc.log
+[ISOLATED] lora_attn exited with code 1 in 27.1s
+[ISOLATED] Launching lsh (timeout=1200s) -> logs\isolated\lsh.log
+[ISOLATED] lsc exited with code 1 in 28.7s
+[ISOLATED] Launching mamba (timeout=1200s) -> logs\isolated\mamba.log
+[ISOLATED] lsh exited with code 1 in 30.1s
+[ISOLATED] Launching mamba_shedder (timeout=1200s) -> logs\isolated\mamba_shedder.log
+[ISOLATED] mamba exited with code 1 in 29.9s
+[ISOLATED] Launching mamba_svd_flash (timeout=1200s) -> logs\isolated\mamba_svd_flash.log
+[ISOLATED] mamba_svd_flash exited with code 3221225477 in 13.8s
+[ISOLATED] mamba_shedder exited with code 1 in 27.6s
+[ISOLATED] Launching mgie (timeout=1200s) -> logs\isolated\mgie.log
+[ISOLATED] Launching mgie_budget (timeout=1200s) -> logs\isolated\mgie_budget.log
+[ISOLATED] mgie_budget exited with code 1 in 24.3s
+[ISOLATED] Launching minimal_aurora (timeout=1200s) -> logs\isolated\minimal_aurora.log
+[ISOLATED] minimal_aurora exited with code 1 in 0.2s
+[ISOLATED] mgie exited with code 1 in 28.9s
+[ISOLATED] Launching minimal_nova (timeout=1200s) -> logs\isolated\minimal_nova.log
+[ISOLATED] Launching minimal_prism (timeout=1200s) -> logs\isolated\minimal_prism.log
+[ISOLATED] minimal_nova exited with code 1 in 25.9s
+[ISOLATED] Launching minimal_svd (timeout=1200s) -> logs\isolated\minimal_svd.log
+[ISOLATED] minimal_svd exited with code 1 in 0.2s
+[ISOLATED] Launching minimal_svd_v2 (timeout=1200s) -> logs\isolated\minimal_svd_v2.log
+[ISOLATED] minimal_prism exited with code 1 in 28.9s
+[ISOLATED] Launching mla (timeout=1200s) -> logs\isolated\mla.log
+[ISOLATED] lola exited with code 0 in 154.6s
+[ISOLATED] Launching mlorq (timeout=1200s) -> logs\isolated\mlorq.log
+[ISOLATED] mlorq exited with code 3221226505 in 22.9s
+[ISOLATED] mla exited with code 1 in 27.1s
+[ISOLATED] Launching moba (timeout=1200s) -> logs\isolated\moba.log
+[ISOLATED] Launching modegpt (timeout=1200s) -> logs\isolated\modegpt.log
+[ISOLATED] modegpt exited with code 1 in 26.6s
+[ISOLATED] moba exited with code 1 in 28.5s
+[ISOLATED] Launching moe_deltakv_paged (timeout=1200s) -> logs\isolated\moe_deltakv_paged.log
+[ISOLATED] Launching nasc (timeout=1200s) -> logs\isolated\nasc.log
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 3288
+    continue
+    ^^^^^^^^
+SyntaxError: 'continue' not properly in loop
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-19 06:44:31,788 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+>>> Skipping a3 (already PASS)
+>>> Skipping adaptive (already PASS)
+>>> Skipping BLOCKED adaptive_sparse
+>>> Skipping BLOCKED bam_umoe
+>>> Skipping BLOCKED expert_choice_moe
+>>> Skipping gated_delta_net (already PASS)
+>>> Skipping gated_deltanet_block (already PASS)
+>>> Skipping BLOCKED granite_hybrid
+>>> Skipping BLOCKED hgrn2
+>>> Skipping BLOCKED inject_granite_hybrid
+2026-09-19 06:44:31,791 [INFO] QwenQualitySweep: Running 276 modules with 2 parallel workers on GPU
+[ISOLATED] Launching full (timeout=1200s) -> logs\isolated\full.log
+[ISOLATED] Launching aasvd (timeout=1200s) -> logs\isolated\aasvd.log
+[ISOLATED] aasvd exited with code 1 in 25.2s
+[ISOLATED] full exited with code 1 in 25.4s
+[ISOLATED] Launching adaptive_span (timeout=1200s) -> logs\isolated\adaptive_span.log
+[ISOLATED] Launching adaptive_svd (timeout=1200s) -> logs\isolated\adaptive_svd.log
+[ISOLATED] adaptive_span exited with code 1 in 25.7s
+[ISOLATED] adaptive_svd exited with code 1 in 25.5s
+[ISOLATED] Launching adasplash (timeout=1200s) -> logs\isolated\adasplash.log
+[ISOLATED] Launching adasvd (timeout=1200s) -> logs\isolated\adasvd.log
+[ISOLATED] adasplash exited with code 1 in 25.3s
+[ISOLATED] adasvd exited with code 1 in 25.1s
+[ISOLATED] Launching admm (timeout=1200s) -> logs\isolated\admm.log
+[ISOLATED] Launching admm_pruner (timeout=1200s) -> logs\isolated\admm_pruner.log
+[ISOLATED] admm exited with code 1 in 26.2s
+[ISOLATED] admm_pruner exited with code 1 in 26.2s
+[ISOLATED] Launching aegis_hybrid (timeout=1200s) -> logs\isolated\aegis_hybrid.log
+[ISOLATED] Launching aegis_spectron_fp8 (timeout=1200s) -> logs\isolated\aegis_spectron_fp8.log
+[ISOLATED] aegis_hybrid exited with code 1 in 25.9s
+[ISOLATED] aegis_spectron_fp8 exited with code 1 in 25.9s
+[ISOLATED] Launching aegis_v1 (timeout=1200s) -> logs\isolated\aegis_v1.log
+[ISOLATED] Launching aegis_v2 (timeout=1200s) -> logs\isolated\aegis_v2.log
+[ISOLATED] aegis_v1 exited with code 1 in 26.5s
+[ISOLATED] aegis_v2 exited with code 1 in 26.5s
+[ISOLATED] Launching aegis_v3 (timeout=1200s) -> logs\isolated\aegis_v3.log
+[ISOLATED] Launching aegis_v4 (timeout=1200s) -> logs\isolated\aegis_v4.log
+[ISOLATED] aegis_v3 exited with code 1 in 26.5s
+[ISOLATED] aegis_v4 exited with code 1 in 26.5s
+[ISOLATED] Launching aegis_v5 (timeout=1200s) -> logs\isolated\aegis_v5.log
+[ISOLATED] Launching aegis_v6 (timeout=1200s) -> logs\isolated\aegis_v6.log
+[ISOLATED] aegis_v5 exited with code 1 in 26.1s
+[ISOLATED] aegis_v6 exited with code 1 in 26.1s
+[ISOLATED] Launching armor (timeout=1200s) -> logs\isolated\armor.log
+[ISOLATED] Launching ast (timeout=1200s) -> logs\isolated\ast.log
+[ISOLATED] ast exited with code 1 in 25.5s
+[ISOLATED] armor exited with code 1 in 25.8s
+[ISOLATED] Launching astro (timeout=1200s) -> logs\isolated\astro.log
+[ISOLATED] Launching asvd (timeout=1200s) -> logs\isolated\asvd.log
+[ISOLATED] asvd exited with code 1 in 24.9s
+[ISOLATED] astro exited with code 1 in 25.3s
+[ISOLATED] Launching block_transformer_hiba (timeout=1200s) -> logs\isolated\block_transformer_hiba.log
+[ISOLATED] Launching bonsai (timeout=1200s) -> logs\isolated\bonsai.log
+[ISOLATED] bonsai exited with code 1 in 27.5s
+[ISOLATED] block_transformer_hiba exited with code 1 in 27.9s
+[ISOLATED] Launching cachenotes (timeout=1200s) -> logs\isolated\cachenotes.log
+[ISOLATED] Launching chela_slay (timeout=1200s) -> logs\isolated\chela_slay.log
+[ISOLATED] cachenotes exited with code 1 in 28.0s
+[ISOLATED] chela_slay exited with code 1 in 28.1s
+[ISOLATED] Launching cluster (timeout=1200s) -> logs\isolated\cluster.log
+[ISOLATED] Launching come (timeout=1200s) -> logs\isolated\come.log
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-19 06:52:03,098 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+>>> Skipping BLOCKED adaptive_sparse
+>>> Skipping BLOCKED bam_umoe
+>>> Skipping BLOCKED expert_choice_moe
+>>> Skipping BLOCKED granite_hybrid
+>>> Skipping BLOCKED hgrn2
+>>> Skipping BLOCKED inject_granite_hybrid
+[ISOLATED] Launching full (timeout=1200s) -> logs\isolated\full.log
+[ISOLATED] full exited with code 0 in 25.4s
+[ISOLATED] Launching a3 (timeout=1200s) -> logs\isolated\a3.log
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-19 06:58:07,267 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+>>> Skipping BLOCKED adaptive_sparse
+>>> Skipping BLOCKED bam_umoe
+>>> Skipping BLOCKED expert_choice_moe
+>>> Skipping BLOCKED granite_hybrid
+>>> Skipping BLOCKED hgrn2
+>>> Skipping BLOCKED inject_granite_hybrid
+[ISOLATED] Launching full (timeout=3600s) -> logs\isolated\full.log
+[ISOLATED] full exited with code 0 in 98.0s
+[ISOLATED] Launching a3 (timeout=3600s) -> logs\isolated\a3.log
+[ISOLATED] a3 exited with code 0 in 162.1s
+[ISOLATED] Launching aasvd (timeout=3600s) -> logs\isolated\aasvd.log

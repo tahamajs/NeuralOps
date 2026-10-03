@@ -1,0 +1,325 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'nha_compressor' due to: No module named 'framework.attentions.nha_attention'
+2026-09-23 06:07:41,116 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'tpa', '--output_json', 'logs\\isolated_results\\tpa_1790131029.json']
+2026-09-23 06:07:41,259 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-23 06:07:41,259 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-23 06:07:41,813 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights:  71%|#######1  | 143/201 [00:00<00:00, 1406.28it/s]Loading weights: 100%|##########| 201/201 [00:00<00:00, 1771.41it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models/roberta_sst2
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-09-23 06:07:43,568 [INFO] QwenQualitySweep: model=models/roberta_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-23 06:07:43,568 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-23 06:07:43,569 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 06:07:43,569 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-23 06:07:43,569 [INFO] QwenQualitySweep:   model:             models/roberta_sst2
+2026-09-23 06:07:43,569 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-23 06:07:43,569 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-23 06:07:43,570 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-23 06:07:43,570 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-23 06:07:43,570 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-23 06:07:43,570 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-23 06:07:43,570 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 06:07:43,572 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-23 06:07:45,761 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0015
+2026-09-23 06:07:47,236 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0143
+2026-09-23 06:07:48,697 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1419
+2026-09-23 06:07:50,194 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0326
+2026-09-23 06:07:51,591 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0266
+2026-09-23 06:07:52,998 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0969
+2026-09-23 06:07:54,505 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0999
+2026-09-23 06:07:56,070 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.1602
+2026-09-23 06:07:56,085 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\tpa_roberta_r8\finetuned_model.pt
+2026-09-23 06:07:57,463 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\tpa_roberta_r8\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-23 06:07:57,463 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-23 06:08:01,702 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 94.38%
+2026-09-23 06:08:01,751 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 06:08:01,752 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-23 06:08:01,752 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-23 06:08:01,752 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-23 06:08:01,752 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-23 06:08:01,752 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-23 06:08:01,752 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-23 06:08:01,752 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-23 06:08:01,753 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 06:08:01,753 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: tpa (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-23 06:08:03,447 [ERROR] framework.attentions.tpa_attention: inject_tpa failed at layer 0: "geqrf_cpu" not implemented for 'Half'
+Traceback (most recent call last):
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 876, in inject_tpa
+    new_attn = TPAttention(
+        config=cfg, rank=rank, lora_rank=lora_rank,
+        pretrained_attn=src, **kwargs,
+    )
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 422, in __init__
+    self.copy_weights(pretrained_attn)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 576, in copy_weights
+    _apply_cp(w_q, self.q_proj1, self.q_proj2, self.num_heads)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 552, in _apply_cp
+    nn.init.orthogonal_(proj1.weight)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\init.py", line 610, in orthogonal_
+    q, r = torch.linalg.qr(flattened)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^
+RuntimeError: "geqrf_cpu" not implemented for 'Half'
+2026-09-23 06:08:03,752 [ERROR] framework.attentions.tpa_attention: inject_tpa failed at layer 1: "geqrf_cpu" not implemented for 'Half'
+Traceback (most recent call last):
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 876, in inject_tpa
+    new_attn = TPAttention(
+        config=cfg, rank=rank, lora_rank=lora_rank,
+        pretrained_attn=src, **kwargs,
+    )
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 422, in __init__
+    self.copy_weights(pretrained_attn)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 576, in copy_weights
+    _apply_cp(w_q, self.q_proj1, self.q_proj2, self.num_heads)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 552, in _apply_cp
+    nn.init.orthogonal_(proj1.weight)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\init.py", line 610, in orthogonal_
+    q, r = torch.linalg.qr(flattened)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^
+RuntimeError: "geqrf_cpu" not implemented for 'Half'
+2026-09-23 06:08:03,967 [ERROR] framework.attentions.tpa_attention: inject_tpa failed at layer 2: "geqrf_cpu" not implemented for 'Half'
+Traceback (most recent call last):
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 876, in inject_tpa
+    new_attn = TPAttention(
+        config=cfg, rank=rank, lora_rank=lora_rank,
+        pretrained_attn=src, **kwargs,
+    )
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 422, in __init__
+    self.copy_weights(pretrained_attn)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 576, in copy_weights
+    _apply_cp(w_q, self.q_proj1, self.q_proj2, self.num_heads)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 552, in _apply_cp
+    nn.init.orthogonal_(proj1.weight)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\init.py", line 610, in orthogonal_
+    q, r = torch.linalg.qr(flattened)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^
+RuntimeError: "geqrf_cpu" not implemented for 'Half'
+2026-09-23 06:08:04,182 [ERROR] framework.attentions.tpa_attention: inject_tpa failed at layer 3: "geqrf_cpu" not implemented for 'Half'
+Traceback (most recent call last):
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 876, in inject_tpa
+    new_attn = TPAttention(
+        config=cfg, rank=rank, lora_rank=lora_rank,
+        pretrained_attn=src, **kwargs,
+    )
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 422, in __init__
+    self.copy_weights(pretrained_attn)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 576, in copy_weights
+    _apply_cp(w_q, self.q_proj1, self.q_proj2, self.num_heads)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 552, in _apply_cp
+    nn.init.orthogonal_(proj1.weight)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\init.py", line 610, in orthogonal_
+    q, r = torch.linalg.qr(flattened)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^
+RuntimeError: "geqrf_cpu" not implemented for 'Half'
+2026-09-23 06:08:04,395 [ERROR] framework.attentions.tpa_attention: inject_tpa failed at layer 4: "geqrf_cpu" not implemented for 'Half'
+Traceback (most recent call last):
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 876, in inject_tpa
+    new_attn = TPAttention(
+        config=cfg, rank=rank, lora_rank=lora_rank,
+        pretrained_attn=src, **kwargs,
+    )
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 422, in __init__
+    self.copy_weights(pretrained_attn)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 576, in copy_weights
+    _apply_cp(w_q, self.q_proj1, self.q_proj2, self.num_heads)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 552, in _apply_cp
+    nn.init.orthogonal_(proj1.weight)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\init.py", line 610, in orthogonal_
+    q, r = torch.linalg.qr(flattened)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^
+RuntimeError: "geqrf_cpu" not implemented for 'Half'
+2026-09-23 06:08:04,611 [ERROR] framework.attentions.tpa_attention: inject_tpa failed at layer 5: "geqrf_cpu" not implemented for 'Half'
+Traceback (most recent call last):
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 876, in inject_tpa
+    new_attn = TPAttention(
+        config=cfg, rank=rank, lora_rank=lora_rank,
+        pretrained_attn=src, **kwargs,
+    )
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 422, in __init__
+    self.copy_weights(pretrained_attn)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 576, in copy_weights
+    _apply_cp(w_q, self.q_proj1, self.q_proj2, self.num_heads)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 552, in _apply_cp
+    nn.init.orthogonal_(proj1.weight)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\init.py", line 610, in orthogonal_
+    q, r = torch.linalg.qr(flattened)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^
+RuntimeError: "geqrf_cpu" not implemented for 'Half'
+2026-09-23 06:08:04,839 [ERROR] framework.attentions.tpa_attention: inject_tpa failed at layer 6: "geqrf_cpu" not implemented for 'Half'
+Traceback (most recent call last):
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 876, in inject_tpa
+    new_attn = TPAttention(
+        config=cfg, rank=rank, lora_rank=lora_rank,
+        pretrained_attn=src, **kwargs,
+    )
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 422, in __init__
+    self.copy_weights(pretrained_attn)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 576, in copy_weights
+    _apply_cp(w_q, self.q_proj1, self.q_proj2, self.num_heads)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 552, in _apply_cp
+    nn.init.orthogonal_(proj1.weight)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\init.py", line 610, in orthogonal_
+    q, r = torch.linalg.qr(flattened)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^
+RuntimeError: "geqrf_cpu" not implemented for 'Half'
+2026-09-23 06:08:05,051 [ERROR] framework.attentions.tpa_attention: inject_tpa failed at layer 7: "geqrf_cpu" not implemented for 'Half'
+Traceback (most recent call last):
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 876, in inject_tpa
+    new_attn = TPAttention(
+        config=cfg, rank=rank, lora_rank=lora_rank,
+        pretrained_attn=src, **kwargs,
+    )
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 422, in __init__
+    self.copy_weights(pretrained_attn)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 576, in copy_weights
+    _apply_cp(w_q, self.q_proj1, self.q_proj2, self.num_heads)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 552, in _apply_cp
+    nn.init.orthogonal_(proj1.weight)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\init.py", line 610, in orthogonal_
+    q, r = torch.linalg.qr(flattened)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^
+RuntimeError: "geqrf_cpu" not implemented for 'Half'
+2026-09-23 06:08:05,270 [ERROR] framework.attentions.tpa_attention: inject_tpa failed at layer 8: "geqrf_cpu" not implemented for 'Half'
+Traceback (most recent call last):
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 876, in inject_tpa
+    new_attn = TPAttention(
+        config=cfg, rank=rank, lora_rank=lora_rank,
+        pretrained_attn=src, **kwargs,
+    )
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 422, in __init__
+    self.copy_weights(pretrained_attn)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 576, in copy_weights
+    _apply_cp(w_q, self.q_proj1, self.q_proj2, self.num_heads)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 552, in _apply_cp
+    nn.init.orthogonal_(proj1.weight)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\init.py", line 610, in orthogonal_
+    q, r = torch.linalg.qr(flattened)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^
+RuntimeError: "geqrf_cpu" not implemented for 'Half'
+2026-09-23 06:08:05,489 [ERROR] framework.attentions.tpa_attention: inject_tpa failed at layer 9: "geqrf_cpu" not implemented for 'Half'
+Traceback (most recent call last):
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 876, in inject_tpa
+    new_attn = TPAttention(
+        config=cfg, rank=rank, lora_rank=lora_rank,
+        pretrained_attn=src, **kwargs,
+    )
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 422, in __init__
+    self.copy_weights(pretrained_attn)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 576, in copy_weights
+    _apply_cp(w_q, self.q_proj1, self.q_proj2, self.num_heads)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 552, in _apply_cp
+    nn.init.orthogonal_(proj1.weight)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\init.py", line 610, in orthogonal_
+    q, r = torch.linalg.qr(flattened)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^
+RuntimeError: "geqrf_cpu" not implemented for 'Half'
+2026-09-23 06:08:05,700 [ERROR] framework.attentions.tpa_attention: inject_tpa failed at layer 10: "geqrf_cpu" not implemented for 'Half'
+Traceback (most recent call last):
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 876, in inject_tpa
+    new_attn = TPAttention(
+        config=cfg, rank=rank, lora_rank=lora_rank,
+        pretrained_attn=src, **kwargs,
+    )
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 422, in __init__
+    self.copy_weights(pretrained_attn)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 576, in copy_weights
+    _apply_cp(w_q, self.q_proj1, self.q_proj2, self.num_heads)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 552, in _apply_cp
+    nn.init.orthogonal_(proj1.weight)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\init.py", line 610, in orthogonal_
+    q, r = torch.linalg.qr(flattened)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^
+RuntimeError: "geqrf_cpu" not implemented for 'Half'
+2026-09-23 06:08:05,909 [ERROR] framework.attentions.tpa_attention: inject_tpa failed at layer 11: "geqrf_cpu" not implemented for 'Half'
+Traceback (most recent call last):
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 876, in inject_tpa
+    new_attn = TPAttention(
+        config=cfg, rank=rank, lora_rank=lora_rank,
+        pretrained_attn=src, **kwargs,
+    )
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 422, in __init__
+    self.copy_weights(pretrained_attn)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 576, in copy_weights
+    _apply_cp(w_q, self.q_proj1, self.q_proj2, self.num_heads)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\attentions\tpa_attention.py", line 552, in _apply_cp
+    nn.init.orthogonal_(proj1.weight)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\init.py", line 610, in orthogonal_
+    q, r = torch.linalg.qr(flattened)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^
+RuntimeError: "geqrf_cpu" not implemented for 'Half'
+2026-09-23 06:08:16,089 [INFO] framework.core.attention_utils: Successfully injected 'tpa' into 12 transformer blocks.
+2026-09-23 06:08:16,111 [INFO] QwenQualitySweep: module=tpa path=adapted_roberta
+2026-09-23 06:08:16,113 [INFO] QwenQualitySweep: module=tpa injection summary: 0 SVDLinear layers active
+2026-09-23 06:08:16,113 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for tpa (lr=2.0e-04)
+2026-09-23 06:08:16,455 [INFO] framework.utils.compat: Recovery fine-tuning selected 14942208 trainable parameters across 156 tensors.
+2026-09-23 06:08:16,458 [WARNING] framework.utils.compat: Total trainable parameters (14942208) exceeds 10000000 threshold for recovery. Pruning heavy base weights to prevent OOM.
+2026-09-23 06:08:16,461 [INFO] framework.utils.compat: Reduced recovery parameters to 2359296 trainable parameters across 144 tensors.
+2026-09-23 06:08:16,461 [INFO] framework.utils.compat: Discovered 144 trainable tensors (2359296 params)
+2026-09-23 06:08:16,476 [INFO] QwenQualitySweep: LoRA fine-tuning: 2359296 trainable parameters across 144 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-23 06:08:17,292 [INFO] QwenQualitySweep: Step 1/50 took 0.81s (loss=0.7645, bs=8, micro=4)
+2026-09-23 06:08:20,403 [INFO] QwenQualitySweep: Step 5/50 took 0.75s (loss=1.1391, bs=8, micro=4)
+2026-09-23 06:08:24,185 [INFO] QwenQualitySweep: Step 10/50 took 0.77s (loss=1.0129, bs=8, micro=4)
+2026-09-23 06:08:28,051 [INFO] QwenQualitySweep: Step 15/50 took 0.72s (loss=0.7125, bs=8, micro=4)
+2026-09-23 06:08:31,482 [INFO] QwenQualitySweep: Step 20/50 took 0.68s (loss=0.7301, bs=8, micro=4)
+2026-09-23 06:08:34,839 [INFO] QwenQualitySweep: Step 25/50 took 0.73s (loss=1.0697, bs=8, micro=4)
+2026-09-23 06:08:38,643 [INFO] QwenQualitySweep: Step 30/50 took 0.81s (loss=0.3552, bs=8, micro=4)
+2026-09-23 06:08:42,417 [INFO] QwenQualitySweep: Step 35/50 took 0.74s (loss=0.6967, bs=8, micro=4)
+2026-09-23 06:08:46,218 [INFO] QwenQualitySweep: Step 40/50 took 0.75s (loss=0.2536, bs=8, micro=4)
+2026-09-23 06:08:50,030 [INFO] QwenQualitySweep: Step 45/50 took 0.66s (loss=0.2785, bs=8, micro=4)
+2026-09-23 06:08:53,373 [INFO] QwenQualitySweep: Step 50/50 took 0.64s (loss=1.0735, bs=8, micro=4)
+2026-09-23 06:09:10,115 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\tpa_roberta_r8\roberta_sst2_tpa_full_metrics.json
+2026-09-23 06:09:10,246 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\tpa_roberta_r8\checkpoints\tpa\weights.pt (module_params=12, lora_params=148)
+2026-09-23 06:09:10,579 [INFO] QwenQualitySweep: [1/1] tpa -> EXTREME_EXPANSION 70.64% (F1: 0.7162, Peak VRAM: 850.13 MB)
+2026-09-23 06:09:10,579 [INFO] QwenQualitySweep: [Quality Guard] Module 'tpa' did not pass quality criteria (status=EXTREME_EXPANSION, acc=70.64%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-23 06:09:10,841 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 06:09:10,841 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-23 06:09:10,846 [INFO] QwenQualitySweep: 
+Module            Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+   tpa EXTREME_EXPANSION   70.64%   -23.74% 0.7162                 12            1.00x  850.1 MB              16.47             18.89
+2026-09-23 06:09:10,846 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:153: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

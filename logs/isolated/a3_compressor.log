@@ -1,0 +1,91 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 17:46:38,953 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'a3_compressor', '--output_json', 'logs\\isolated_results\\a3_compressor_1790345756688_27656.json']
+2026-09-25 17:46:39,238 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 45.0% (leaving 4.40 GB headroom)
+2026-09-25 17:46:39,238 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 17:46:39,238 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=64 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-25 17:46:39,238 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 45.0%
+2026-09-25 17:46:39,703 [INFO] QwenQualitySweep: Configured dataset 'agnews' with num_labels=2
+You passed `num_labels=2` which is incompatible to the `id2label` map of length `4`.
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 2284.59it/s]
+[1mDistilBertForSequenceClassification LOAD REPORT[0m from: models/distilbert_agnews_full
+Key               | Status   |                                                                                       
+------------------+----------+---------------------------------------------------------------------------------------
+classifier.weight | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([4, 768]) vs model:torch.Size([2, 768])
+classifier.bias   | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([4]) vs model:torch.Size([2])          
+
+Notes:
+- MISMATCH:	ckpt weights were loaded, but they did not match the original empty weight shapes.
+2026-09-25 17:46:40,827 [INFO] QwenQualitySweep: model=models/distilbert_agnews_full qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-25 17:46:40,827 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-25 17:46:40,829 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 17:46:40,829 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-25 17:46:40,829 [INFO] QwenQualitySweep:   model:             models/distilbert_agnews_full
+2026-09-25 17:46:40,830 [INFO] QwenQualitySweep:   family:            bert
+2026-09-25 17:46:40,830 [INFO] QwenQualitySweep:   dataset:           agnews
+2026-09-25 17:46:40,830 [INFO] QwenQualitySweep:   batch_size:        64
+2026-09-25 17:46:40,830 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-25 17:46:40,830 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-25 17:46:40,830 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-25 17:46:40,831 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 17:46:40,835 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-25 17:46:48,761 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.6515
+2026-09-25 17:46:54,504 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.6396
+2026-09-25 17:46:59,492 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.6355
+2026-09-25 17:47:04,747 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.6522
+2026-09-25 17:47:09,462 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.6332
+2026-09-25 17:47:14,263 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.7008
+2026-09-25 17:47:19,009 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.6378
+2026-09-25 17:47:21,695 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.6123
+2026-09-25 17:47:21,726 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: D:\SVD_Project\results\agnews_deep_sweep\a3_compressor\finetuned_model.pt
+2026-09-25 17:47:24,486 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to D:\SVD_Project\results\agnews_deep_sweep\a3_compressor\batch_cache_agnews (will be reused by subsequent module runs)
+2026-09-25 17:47:24,486 [INFO] QwenQualitySweep: Prepared 14 eval batches and 50 train batches directly on GPU.
+2026-09-25 17:47:25,662 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 69.84%
+2026-09-25 17:47:25,842 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 17:47:25,842 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-25 17:47:25,842 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-25 17:47:25,842 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-25 17:47:25,842 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-25 17:47:25,843 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-25 17:47:25,843 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-25 17:47:25,844 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-25 17:47:25,844 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 17:47:25,849 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-25 17:47:25,966 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: a3_compressor (recovery_steps=50, batch_size=64, optimizer=adamw)
+2026-09-25 17:47:26,589 [INFO] QwenQualitySweep: Calling apply_module_to_model with rank=64 for module=a3_compressor (lora_rank=32)
+2026-09-25 17:47:31,231 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.3.attention.out_lin failed at r_ceiling=320 (err=0.405 > 0.400). Falling back to original layer.
+2026-09-25 17:47:32,082 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.4.attention.out_lin failed at r_ceiling=320 (err=0.464 > 0.400). Falling back to original layer.
+2026-09-25 17:47:32,912 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.5.attention.out_lin failed at r_ceiling=320 (err=0.460 > 0.400). Falling back to original layer.
+2026-09-25 17:47:33,063 [INFO] framework.compression_engine.a3_compressor: LayerNorm recalibration succeeded.
+2026-09-25 17:47:33,094 [INFO] QwenQualitySweep: module=a3_compressor path=legacy_bert
+2026-09-25 17:47:33,095 [INFO] QwenQualitySweep: module=a3_compressor injection summary: 21 SVDLinear layers active
+2026-09-25 17:47:33,099 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for a3_compressor (lr=2.0e-04)
+2026-09-25 17:47:33,222 [INFO] framework.utils.compat: Recovery fine-tuning selected 516096 trainable parameters across 42 tensors.
+2026-09-25 17:47:33,222 [INFO] framework.utils.compat: Discovered 42 trainable tensors (516096 params)
+2026-09-25 17:47:33,235 [INFO] QwenQualitySweep: LoRA fine-tuning: 516096 trainable parameters across 42 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-25 17:47:34,071 [INFO] QwenQualitySweep: Step 1/50 took 0.83s (loss=0.6058, bs=64, micro=16)
+2026-09-25 17:47:36,617 [INFO] QwenQualitySweep: Step 5/50 took 0.64s (loss=0.6426, bs=64, micro=16)
+2026-09-25 17:47:39,418 [INFO] QwenQualitySweep: Step 10/50 took 0.62s (loss=0.6031, bs=64, micro=16)
+2026-09-25 17:47:42,685 [INFO] QwenQualitySweep: Step 15/50 took 0.55s (loss=0.6070, bs=64, micro=16)
+2026-09-25 17:47:45,478 [INFO] QwenQualitySweep: Step 20/50 took 0.65s (loss=0.5771, bs=64, micro=16)
+2026-09-25 17:47:48,299 [INFO] QwenQualitySweep: Step 25/50 took 0.59s (loss=0.6323, bs=64, micro=16)
+2026-09-25 17:47:51,241 [INFO] QwenQualitySweep: Step 30/50 took 0.60s (loss=0.6072, bs=64, micro=16)
+2026-09-25 17:47:53,945 [INFO] QwenQualitySweep: Step 35/50 took 0.48s (loss=0.6113, bs=64, micro=16)
+2026-09-25 17:47:56,477 [INFO] QwenQualitySweep: Step 40/50 took 0.49s (loss=0.5651, bs=64, micro=16)
+2026-09-25 17:47:59,728 [INFO] QwenQualitySweep: Step 45/50 took 0.66s (loss=0.5409, bs=64, micro=16)
+2026-09-25 17:48:03,017 [INFO] QwenQualitySweep: Step 50/50 took 0.59s (loss=0.5608, bs=64, micro=16)
+2026-09-25 17:48:05,766 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to D:\SVD_Project\results\agnews_deep_sweep\a3_compressor\distilbert_agnews_full_a3_compressor_full_metrics.json
+2026-09-25 17:48:06,042 [INFO] QwenQualitySweep: [1/1] a3_compressor -> PASS 72.13% (F1: 0.7528, Peak VRAM: 355.37 MB)
+2026-09-25 17:48:06,043 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in D:\SVD_Project\results\agnews_deep_sweep\a3_compressor\checkpoints\a3_compressor. Automated export will be handled post-sweep by orchestrator.
+2026-09-25 17:48:06,045 [INFO] QwenQualitySweep: [1/1] a3_compressor Timing: eval_time=40.08s
+2026-09-25 17:48:06,045 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-25 17:48:06,515 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 17:48:06,517 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_agnews_full on agnews)
+2026-09-25 17:48:06,549 [INFO] QwenQualitySweep: 
+       Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+a3_compressor   PASS   72.13%    +2.29% 0.7528                 21            1.03x  355.4 MB               1.94              2.22
+2026-09-25 17:48:06,550 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:169: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

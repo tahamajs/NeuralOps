@@ -1,0 +1,44 @@
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+2026-09-27 06:56:58,491 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+/Users/tahamajs/Documents/uni/Project/Codes/framework/run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-27 06:56:59,426 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-09-27 06:56:59,426 [WARNING] huggingface_hub.utils._http: Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-09-27 06:56:59,640 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-09-27 06:56:59,852 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert-base-uncased-finetuned-sst-2-english/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-09-27 06:57:00,072 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert/distilbert-base-uncased-finetuned-sst-2-english/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-09-27 06:57:00,298 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert-base-uncased-finetuned-sst-2-english/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-09-27 06:57:00,509 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert/distilbert-base-uncased-finetuned-sst-2-english/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-27 06:57:01,031 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+2026-09-27 06:57:01,246 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
+2026-09-27 06:57:01,461 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
+2026-09-27 06:57:01,691 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|██████████| 104/104 [00:00<00:00, 3653.57it/s]
+2026-09-27 06:57:06,134 [INFO] QwenQualitySweep: model=distilbert-base-uncased-finetuned-sst-2-english qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-27 06:57:06,189 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'raw_family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-27 06:57:06,189 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 06:57:06,189 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-27 06:57:06,189 [INFO] QwenQualitySweep:   model:             distilbert-base-uncased-finetuned-sst-2-english
+2026-09-27 06:57:06,442 [INFO] QwenQualitySweep:   family:            bert
+2026-09-27 06:57:06,442 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-27 06:57:06,443 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-27 06:57:06,445 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-27 06:57:06,446 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-27 06:57:06,448 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-27 06:57:06,448 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 06:57:06,462 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-27 06:57:19,918 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0001
+2026-09-27 06:57:25,139 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0004
+2026-09-27 06:57:30,636 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.4606
+2026-09-27 06:57:36,291 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0132
+2026-09-27 06:57:41,610 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0017
+2026-09-27 06:57:47,125 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0101
+2026-09-27 06:57:52,454 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0119
+2026-09-27 06:58:00,187 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.0019
+2026-09-27 06:58:00,382 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results/04_rank_sweeps/distilbert/deep_rank_distilbert/a3_compressor/rank_16/finetuned_model.pt
+2026-09-27 06:58:04,043 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results/04_rank_sweeps/distilbert/deep_rank_distilbert/a3_compressor/rank_16/batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-27 06:58:04,047 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+/AppleInternal/Library/BuildRoots/4~CXj-ugAeVSJQ3U0KY8UQ-uTCfsW1s0AIzmKRU3I/Library/Caches/com.apple.xbs/TemporaryDirectory.efI3E4/Sources/MetalPerformanceShaders/MPSNDArray/Kernels/MPSNDArrayMatrixMultiplication.mm:6941: failed assertion `Destination NDArray and Accumulator NDArray cannot have different datatype in MPSNDArrayMatrixMultiplication'
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/multiprocessing/resource_tracker.py:396: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown: {'/loky-622-9hgielzp'}
+  warnings.warn(

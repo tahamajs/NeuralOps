@@ -1,0 +1,115 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+2026-09-27 03:24:36,582 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-09-27 03:24:36,582 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-27 03:24:36,582 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=16 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-27 03:24:36,582 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0%
+2026-09-27 03:24:36,753 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3787.08it/s]
+2026-09-27 03:24:37,260 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-27 03:24:37,261 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'raw_family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-27 03:24:37,261 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 03:24:37,261 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-27 03:24:37,261 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-27 03:24:37,261 [INFO] QwenQualitySweep:   family:            bert
+2026-09-27 03:24:37,261 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-27 03:24:37,262 [INFO] QwenQualitySweep:   batch_size:        16
+2026-09-27 03:24:37,262 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-27 03:24:37,262 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-27 03:24:37,262 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-27 03:24:37,262 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 03:24:37,267 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\bert_sst2_baseline\finetuned_model.pt
+2026-09-27 03:24:37,275 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
+2026-09-27 03:24:37,384 [INFO] QwenQualitySweep: Loading pre-cached batches from results\02_glue_sweeps\distilbert\sst2_4parallel\batch_cache_sst2 (skipping tokenization)
+2026-09-27 03:24:37,478 [INFO] QwenQualitySweep: Prepared 55 eval batches and 50 train batches directly on GPU.
+2026-09-27 03:24:39,557 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.60%
+2026-09-27 03:24:39,676 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 03:24:39,676 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-27 03:24:39,676 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-27 03:24:39,677 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-27 03:24:39,677 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-27 03:24:39,677 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-27 03:24:39,677 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-27 03:24:39,677 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-27 03:24:39,677 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 03:24:39,679 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-27 03:24:39,793 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: entropy_budget (recovery_steps=50, batch_size=16, optimizer=adamw)
+2026-09-27 03:24:43,703 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.7272 on distilbert.transformer.layer.0.attention.q_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,706 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.7181 on distilbert.transformer.layer.0.attention.k_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,707 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.7666 on distilbert.transformer.layer.0.attention.v_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,708 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.7341 on distilbert.transformer.layer.0.attention.out_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,710 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.6643 on distilbert.transformer.layer.1.attention.q_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,711 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.6481 on distilbert.transformer.layer.1.attention.k_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,712 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.7490 on distilbert.transformer.layer.1.attention.v_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,714 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.7603 on distilbert.transformer.layer.1.attention.out_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,716 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.7582 on distilbert.transformer.layer.2.attention.q_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,717 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.7569 on distilbert.transformer.layer.2.attention.k_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,719 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.7624 on distilbert.transformer.layer.2.attention.v_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,721 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.7899 on distilbert.transformer.layer.2.attention.out_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,722 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.7272 on distilbert.transformer.layer.3.attention.q_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,724 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.7144 on distilbert.transformer.layer.3.attention.k_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,726 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.8180 on distilbert.transformer.layer.3.attention.v_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,728 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.8281 on distilbert.transformer.layer.3.attention.out_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,729 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.7615 on distilbert.transformer.layer.4.attention.q_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,730 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.7567 on distilbert.transformer.layer.4.attention.k_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,732 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.8183 on distilbert.transformer.layer.4.attention.v_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,733 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.8243 on distilbert.transformer.layer.4.attention.out_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,734 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.7513 on distilbert.transformer.layer.5.attention.q_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,736 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.7714 on distilbert.transformer.layer.5.attention.k_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,737 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.8227 on distilbert.transformer.layer.5.attention.v_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,739 [WARNING] framework.compression_engine.entropy_budget_allocation: EntropyBudget error 0.8366 on distilbert.transformer.layer.5.attention.out_lin > max_error 0.3500; falling back.
+2026-09-27 03:24:43,793 [INFO] QwenQualitySweep: module=entropy_budget path=legacy_bert
+2026-09-27 03:24:43,794 [INFO] QwenQualitySweep: module=entropy_budget injection summary: 0 SVDLinear layers active
+2026-09-27 03:24:43,796 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for entropy_budget (lr=2.0e-04)
+2026-09-27 03:24:43,851 [INFO] framework.utils.compat: Recovery fine-tuning selected 0 trainable parameters across 0 tensors.
+2026-09-27 03:24:43,851 [INFO] framework.utils.compat: Discovered 0 trainable tensors (0 params)
+2026-09-27 03:24:46,088 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\02_glue_sweeps\distilbert\sst2_4parallel\distilbert_sst2_entropy_budget_full_metrics.json
+2026-09-27 03:24:46,230 [INFO] QwenQualitySweep: [1/1] entropy_budget -> PASS_NO_COMPRESSION 90.60% (F1: 0.9099, Peak VRAM: 312.7 MB)
+2026-09-27 03:24:46,230 [WARNING] QwenQualitySweep: Module 'entropy_budget' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-27 03:24:46,230 [INFO] QwenQualitySweep: [Quality Guard] Module 'entropy_budget' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=90.60%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-27 03:24:46,251 [INFO] QwenQualitySweep: [1/1] entropy_budget Timing: eval_time=6.46s
+2026-09-27 03:24:46,251 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-27 03:24:46,590 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 03:24:46,591 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-27 03:24:46,608 [INFO] QwenQualitySweep: 
+                                 Module                  Status Accuracy Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                    aatc_xkv_compressor                    PASS   90.25%    -0.35% 0.9077                 6            1.00x  324.5 MB               7.00               N/A
+                          adaptive_span                    PASS   90.60%    +0.00% 0.9099                 6            1.00x  414.4 MB              12.91               N/A
+              adaptive (efficient-attn)                    PASS   87.16%    -3.44% 0.8788                 0            1.06x  416.9 MB              13.76               N/A
+                                     a3                    PASS   90.14%    -0.46% 0.9057                24            1.07x  364.1 MB              13.44               N/A
+       adaptive_sparse (efficient-attn)                    PASS   89.91%    -0.69% 0.8984                 0            1.00x  405.6 MB              15.70               N/A
+             adasplash (efficient-attn)                    PASS   89.45%    -1.15% 0.8980                 0            1.00x  453.7 MB              25.00               N/A
+                                 adasvd                    PASS   78.21%   -12.39% 0.8190                24            1.21x  346.4 MB              11.86               N/A
+                                   admm                    PASS   90.02%    -0.58% 0.9049                24            1.00x  323.7 MB               5.69               N/A
+    aegis_spectron_fp8 (efficient-attn)                    PASS   88.19%    -2.41% 0.8841                 0            1.12x  396.7 MB              74.17               N/A
+                                   asvd                    PASS   90.71%    +0.11% 0.9111                 6            1.00x  421.3 MB              16.06               N/A
+              bam_umoe (efficient-attn)      MODERATE_EXPANSION   90.60%    +0.00% 0.9091                 0            1.00x  418.1 MB              14.09               N/A
+                bonsai (efficient-attn)     PASS_NO_COMPRESSION   90.48%    -0.12% 0.9095                 0            1.00x  312.7 MB               3.51               N/A
+            chela_slay (efficient-attn) SKIP_BERT_ARCHITECTURAL    0.00%   -90.60% 0.0000                 0            1.00x    0.0 MB               0.76               N/A
+               cluster (efficient-attn)                    PASS   90.14%    -0.46% 0.9057                 0            1.00x  411.9 MB              21.65               N/A
+                                   come                    PASS   87.84%    -2.76% 0.8825                 1            1.10x  385.5 MB               9.37               N/A
+                             cachenotes                    PASS   90.60%    +0.00% 0.9105                24            1.00x  324.2 MB              11.17               N/A
+block_transformer_hiba (efficient-attn)     PASS_NO_COMPRESSION   90.02%    -0.58% 0.9034                 0            1.00x  380.5 MB               8.64               N/A
+  compressed_attention (efficient-attn)                    PASS   89.33%    -1.27% 0.8984                 0            1.11x  408.0 MB               9.47               N/A
+      compressed_attention_layer_energy                    PASS   81.65%    -8.95% 0.8157                 6            1.22x  390.7 MB              11.65               N/A
+             cosformer (efficient-attn)                    PASS   78.78%   -11.82% 0.7846                 0            1.00x  411.6 MB              14.33               N/A
+                 coopq (efficient-attn)     PASS_NO_COMPRESSION   90.48%    -0.12% 0.9089                 0            1.00x  366.8 MB               6.30               N/A
+                   cur (efficient-attn)     PASS_NO_COMPRESSION   90.60%    +0.00% 0.9099                 0            1.00x  312.7 MB               8.55               N/A
+               cur_moe (efficient-attn)     PASS_NO_COMPRESSION   90.25%    -0.35% 0.9085                 0            1.00x  324.5 MB               7.30               N/A
+           custom_attn (efficient-attn)      MODERATE_EXPANSION   90.60%    +0.00% 0.9099                 0            1.00x  390.7 MB              10.88               N/A
+                               delta_kv                    PASS   90.94%    +0.34% 0.9131                 8            1.00x  312.7 MB               4.48               N/A
+            direct_svd (efficient-attn)     PASS_NO_COMPRESSION   90.60%    +0.00% 0.9099                 0            1.00x  312.7 MB               5.47               N/A
+                         delta_kv_class                    PASS   90.37%    -0.23% 0.9079                24            1.00x  312.7 MB               5.26               N/A
+                  dobi (efficient-attn)     PASS_NO_COMPRESSION   90.60%    +0.00% 0.9099                 0            1.00x  312.7 MB               4.63               N/A
+            dobi_class (efficient-attn)     PASS_NO_COMPRESSION   90.60%    +0.00% 0.9099                 0            1.00x  312.7 MB               4.25               N/A
+                 drone (efficient-attn)     PASS_NO_COMPRESSION   90.60%    +0.00% 0.9103                 0            1.00x  324.5 MB               6.75               N/A
+          dynamic_rank (efficient-attn)     PASS_NO_COMPRESSION   90.60%    +0.00% 0.9099                 0            1.00x  312.7 MB               5.40               N/A
+                   eat (efficient-attn)       EXTREME_EXPANSION   51.72%   -38.88% 0.6744                 0            1.00x  469.7 MB              13.04               N/A
+    dynamic_rank_class (efficient-attn)     PASS_NO_COMPRESSION   90.60%    +0.00% 0.9099                 0            1.00x  312.7 MB               4.77               N/A
+        entropy_budget (efficient-attn)     PASS_NO_COMPRESSION   90.60%    +0.00% 0.9099                 0            1.00x  312.7 MB               1.38              1.58
+2026-09-27 03:24:46,608 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:171: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

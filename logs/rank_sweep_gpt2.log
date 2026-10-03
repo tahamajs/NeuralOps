@@ -1,0 +1,222 @@
+[2026-09-24T23:21:59Z] Starting Job 5: GPT-2 Wikitext-2 Rank Sweep...
+[2026-09-24T23:21:59Z] Running GPT-2: module=a3_compressor, rank=16...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 02:52:20,627 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 02:52:20,627 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 02:52:20,649 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=4)
+[ISOLATED] Launching a3_compressor (timeout=3600s) -> logs\isolated\a3_compressor.log
+[ISOLATED] a3_compressor exited with code 0 in 471.5s
+[2026-09-24T23:30:15Z] Running GPT-2: module=a3_compressor, rank=32...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 03:00:38,727 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 03:00:38,727 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 03:00:38,753 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=4)
+[ISOLATED] Launching a3_compressor (timeout=3600s) -> logs\isolated\a3_compressor.log
+[ISOLATED] a3_compressor exited with code 0 in 2105.6s
+[2026-09-25T00:30:44Z] Running GPT-2: module=a3_compressor, rank=64...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 04:01:07,058 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 04:01:07,058 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 04:01:07,083 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=4)
+[ISOLATED] Launching a3_compressor (timeout=3600s) -> logs\isolated\a3_compressor.log
+[ISOLATED] a3_compressor exited with code 0 in 478.7s
+[2026-09-25T00:43:29Z] Running GPT-2: module=a3_compressor, rank=128...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 04:13:51,738 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 04:13:51,738 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 04:13:51,762 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=4)
+[ISOLATED] Launching a3_compressor (timeout=3600s) -> logs\isolated\a3_compressor.log
+[ISOLATED] a3_compressor exited with code 0 in 481.4s
+[2026-09-25T00:51:56Z] Skipping a3_compressor rank=256 (already done)
+[2026-09-25T00:51:56Z] Skipping svd_llm_compressor rank=16 (already done)
+[2026-09-25T00:51:56Z] Skipping svd_llm_compressor rank=32 (already done)
+[2026-09-25T00:51:56Z] Skipping svd_llm_compressor rank=64 (already done)
+[2026-09-25T00:51:56Z] Running GPT-2: module=svd_llm_compressor, rank=128...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 04:22:21,600 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 04:22:21,601 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 04:22:21,629 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=4)
+[ISOLATED] Launching svd_llm_compressor (timeout=3600s) -> logs\isolated\svd_llm_compressor.log
+[ISOLATED] svd_llm_compressor exited with code 15 in 2305.7s
+[2026-09-25T02:31:27Z] Running GPT-2: module=svd_llm_compressor, rank=256...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 06:01:53,274 [INFO] QwenQualitySweep: GPU VRAM: 6.72 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 06:01:53,274 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 06:01:53,301 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=4)
+[ISOLATED] Launching svd_llm_compressor (timeout=3600s) -> logs\isolated\svd_llm_compressor.log
+[ISOLATED] svd_llm_compressor exited with code 1 in 1630.5s
+[2026-09-25T03:01:03Z] Running GPT-2: module=saes_svd_compressor, rank=16...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 06:31:33,814 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 06:31:33,814 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 06:31:33,838 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=4)
+[ISOLATED] Launching saes_svd_compressor (timeout=3600s) -> logs\isolated\saes_svd_compressor.log
+[ISOLATED] saes_svd_compressor exited with code 0 in 367.2s
+[2026-09-25T03:07:44Z] Running GPT-2: module=saes_svd_compressor, rank=32...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 06:38:10,769 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 06:38:10,769 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 06:38:10,793 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=4)
+[ISOLATED] Launching saes_svd_compressor (timeout=3600s) -> logs\isolated\saes_svd_compressor.log
+[ISOLATED] saes_svd_compressor exited with code 0 in 368.8s
+[2026-09-25T03:14:23Z] Running GPT-2: module=saes_svd_compressor, rank=64...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 06:44:50,573 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 06:44:50,573 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 06:44:50,596 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=4)
+[ISOLATED] Launching saes_svd_compressor (timeout=3600s) -> logs\isolated\saes_svd_compressor.log
+[ISOLATED] saes_svd_compressor exited with code 0 in 359.5s
+[2026-09-25T03:20:53Z] Running GPT-2: module=saes_svd_compressor, rank=128...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 06:51:18,784 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 06:51:18,784 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 06:51:18,808 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=4)
+[ISOLATED] Launching saes_svd_compressor (timeout=3600s) -> logs\isolated\saes_svd_compressor.log
+[ISOLATED] saes_svd_compressor exited with code 0 in 364.2s
+[2026-09-25T03:27:26Z] Running GPT-2: module=saes_svd_compressor, rank=256...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 06:57:53,963 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 06:57:53,963 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 06:57:53,985 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=4)
+[ISOLATED] Launching saes_svd_compressor (timeout=3600s) -> logs\isolated\saes_svd_compressor.log
+[ISOLATED] saes_svd_compressor exited with code 0 in 456.5s
+[2026-09-25T03:35:34Z] Running GPT-2: module=slicegpt, rank=16...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 07:05:56,185 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 07:05:56,185 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 07:05:56,208 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=4)
+[ISOLATED] Launching slicegpt (timeout=3600s) -> logs\isolated\slicegpt.log
+[ISOLATED] slicegpt exited with code 0 in 360.5s
+[2026-09-25T03:42:01Z] Running GPT-2: module=slicegpt, rank=32...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 07:12:34,940 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 07:12:34,940 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 07:12:34,964 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=4)
+[ISOLATED] Launching slicegpt (timeout=3600s) -> logs\isolated\slicegpt.log
+[ISOLATED] slicegpt exited with code 0 in 351.0s
+[2026-09-25T03:48:29Z] Running GPT-2: module=slicegpt, rank=64...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 07:18:59,342 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 07:18:59,342 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 07:18:59,365 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=4)
+[ISOLATED] Launching slicegpt (timeout=3600s) -> logs\isolated\slicegpt.log
+[ISOLATED] slicegpt exited with code 0 in 749.7s
+[2026-09-25T04:01:32Z] Running GPT-2: module=slicegpt, rank=128...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 07:31:51,268 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 07:31:51,268 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 07:31:51,292 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=4)
+[ISOLATED] Launching slicegpt (timeout=3600s) -> logs\isolated\slicegpt.log
+[ISOLATED] slicegpt exited with code 0 in 337.9s
+[2026-09-25T04:07:32Z] Running GPT-2: module=slicegpt, rank=256...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 07:37:48,139 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 07:37:48,140 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 07:37:48,164 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=4)
+[ISOLATED] Launching slicegpt (timeout=3600s) -> logs\isolated\slicegpt.log
+[ISOLATED] slicegpt exited with code 0 in 336.9s
+[2026-09-25T04:13:28Z] Running GPT-2: module=swift_svd_act, rank=16...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 07:43:44,953 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 07:43:44,953 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 07:43:44,975 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=4)
+[ISOLATED] Launching swift_svd_act (timeout=3600s) -> logs\isolated\swift_svd_act.log
+[ISOLATED] swift_svd_act exited with code 0 in 332.2s
+[2026-09-25T04:19:20Z] Running GPT-2: module=swift_svd_act, rank=32...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 07:49:36,411 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 07:49:36,411 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 07:49:36,433 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=4)
+[ISOLATED] Launching swift_svd_act (timeout=3600s) -> logs\isolated\swift_svd_act.log
+[ISOLATED] swift_svd_act exited with code 0 in 2961.3s
+[2026-09-25T05:09:02Z] Running GPT-2: module=swift_svd_act, rank=64...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 08:39:18,584 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-09-25 08:39:18,584 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 08:39:18,584 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 08:39:18,607 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=2)
+[ISOLATED] Launching swift_svd_act (timeout=3600s) -> logs\isolated\swift_svd_act.log
+[ISOLATED] swift_svd_act exited with code 0 in 80.9s
+[2026-09-25T05:10:43Z] Running GPT-2: module=swift_svd_act, rank=128...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 08:40:58,552 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-09-25 08:40:58,552 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 08:40:58,552 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 08:40:58,574 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=2)
+[ISOLATED] Launching swift_svd_act (timeout=3600s) -> logs\isolated\swift_svd_act.log
+[ISOLATED] swift_svd_act exited with code 0 in 91.2s
+[2026-09-25T05:12:33Z] Running GPT-2: module=swift_svd_act, rank=256...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 08:42:49,193 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-09-25 08:42:49,193 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 08:42:49,193 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 08:42:49,216 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=2)
+[ISOLATED] Launching swift_svd_act (timeout=3600s) -> logs\isolated\swift_svd_act.log
+[ISOLATED] swift_svd_act exited with code 0 in 151.7s
+[2026-09-25T05:15:24Z] Running GPT-2: module=tt_compressor, rank=16...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 08:45:40,254 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-09-25 08:45:40,254 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 08:45:40,254 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 08:45:40,277 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=2)
+[ISOLATED] Launching tt_compressor (timeout=3600s) -> logs\isolated\tt_compressor.log
+[ISOLATED] tt_compressor exited with code 0 in 93.7s
+[2026-09-25T05:17:17Z] Running GPT-2: module=tt_compressor, rank=32...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 08:47:34,324 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-09-25 08:47:34,324 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 08:47:34,324 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 08:47:34,347 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=2)
+[ISOLATED] Launching tt_compressor (timeout=3600s) -> logs\isolated\tt_compressor.log
+[ISOLATED] tt_compressor exited with code 0 in 89.6s
+[2026-09-25T05:19:07Z] Running GPT-2: module=tt_compressor, rank=64...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 08:49:23,699 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-09-25 08:49:23,699 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 08:49:23,699 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 08:49:23,722 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=2)
+[ISOLATED] Launching tt_compressor (timeout=3600s) -> logs\isolated\tt_compressor.log
+[ISOLATED] tt_compressor exited with code 0 in 89.0s
+[2026-09-25T05:20:56Z] Running GPT-2: module=tt_compressor, rank=128...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 08:51:12,429 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-09-25 08:51:12,429 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 08:51:12,429 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 08:51:12,451 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=2)
+[ISOLATED] Launching tt_compressor (timeout=3600s) -> logs\isolated\tt_compressor.log
+[ISOLATED] tt_compressor exited with code 0 in 73.9s
+[2026-09-25T05:22:29Z] Running GPT-2: module=tt_compressor, rank=256...
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 08:52:45,935 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-09-25 08:52:45,935 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 08:52:45,935 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=32 (explicit_parallel=False, explicit_batch=False)
+2026-09-25 08:52:45,957 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=2)
+[ISOLATED] Launching tt_compressor (timeout=3600s) -> logs\isolated\tt_compressor.log
+[ISOLATED] tt_compressor exited with code 0 in 74.0s
+[2026-09-25T05:24:03Z] Finished Job 5: GPT-2 Wikitext-2 Rank Sweep.

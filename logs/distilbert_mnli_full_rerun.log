@@ -1,0 +1,96 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-19 22:10:21,089 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+>>> Skipping BLOCKED reap_moe
+2026-09-19 22:10:21,092 [INFO] QwenQualitySweep: Running 71 modules with 3 parallel workers on GPU
+[ISOLATED] Launching adaptive_span (timeout=3600s) -> logs\isolated\adaptive_span.log
+[ISOLATED] Launching adasplash (timeout=3600s) -> logs\isolated\adasplash.log
+[ISOLATED] Launching aegis_v1 (timeout=3600s) -> logs\isolated\aegis_v1.log
+[ISOLATED] adaptive_span exited with code 0 in 102.4s
+[ISOLATED] Launching aegis_v2 (timeout=3600s) -> logs\isolated\aegis_v2.log
+[ISOLATED] aegis_v1 exited with code 0 in 137.2s
+[ISOLATED] Launching asvd (timeout=3600s) -> logs\isolated\asvd.log
+[ISOLATED] aegis_v2 exited with code 0 in 123.0s
+[ISOLATED] Launching block_transformer_hiba (timeout=3600s) -> logs\isolated\block_transformer_hiba.log
+[ISOLATED] asvd exited with code 0 in 164.6s
+[ISOLATED] Launching chela_slay (timeout=3600s) -> logs\isolated\chela_slay.log
+[ISOLATED] adasplash exited with code 0 in 319.0s
+[ISOLATED] Launching cluster (timeout=3600s) -> logs\isolated\cluster.log
+[ISOLATED] block_transformer_hiba exited with code 0 in 130.4s
+[ISOLATED] Launching cosformer (timeout=3600s) -> logs\isolated\cosformer.log
+[ISOLATED] chela_slay exited with code 0 in 109.6s
+[ISOLATED] Launching decay_linear_attn (timeout=3600s) -> logs\isolated\decay_linear_attn.log
+[ISOLATED] cluster exited with code 0 in 137.8s
+[ISOLATED] Launching eat (timeout=3600s) -> logs\isolated\eat.log
+[ISOLATED] cosformer exited with code 0 in 123.6s
+[ISOLATED] Launching fasa (timeout=3600s) -> logs\isolated\fasa.log
+[ISOLATED] eat exited with code 0 in 129.4s
+[ISOLATED] Launching flash3 (timeout=3600s) -> logs\isolated\flash3.log
+[ISOLATED] fasa exited with code 0 in 188.0s
+[ISOLATED] Launching flash3_fp8 (timeout=3600s) -> logs\isolated\flash3_fp8.log
+[ISOLATED] decay_linear_attn exited with code 0 in 264.2s
+[ISOLATED] Launching fms (timeout=3600s) -> logs\isolated\fms.log
+[ISOLATED] flash3 exited with code 0 in 95.8s
+[ISOLATED] Launching full_attention (timeout=3600s) -> logs\isolated\full_attention.log
+[ISOLATED] full_attention exited with code 0 in 91.5s
+[ISOLATED] Launching fusion_attn (timeout=3600s) -> logs\isolated\fusion_attn.log
+[ISOLATED] fms exited with code 0 in 104.9s
+[ISOLATED] Launching galerkin (timeout=3600s) -> logs\isolated\galerkin.log
+[ISOLATED] flash3_fp8 exited with code 0 in 143.4s
+[ISOLATED] Launching goldfinch (timeout=3600s) -> logs\isolated\goldfinch.log
+[ISOLATED] fusion_attn exited with code 0 in 83.4s
+[ISOLATED] Launching gated_linear_attn (timeout=3600s) -> logs\isolated\gated_linear_attn.log
+[ISOLATED] galerkin exited with code 0 in 115.4s
+[ISOLATED] Launching griffin_ssd (timeout=3600s) -> logs\isolated\griffin_ssd.log
+[ISOLATED] goldfinch exited with code 0 in 124.7s
+[ISOLATED] Launching halo_regla (timeout=3600s) -> logs\isolated\halo_regla.log
+[ISOLATED] gated_linear_attn exited with code 0 in 139.1s
+[ISOLATED] Launching hamming (timeout=3600s) -> logs\isolated\hamming.log
+[ISOLATED] griffin_ssd exited with code 0 in 119.7s
+[ISOLATED] Launching hla (timeout=3600s) -> logs\isolated\hla.log
+[ISOLATED] halo_regla exited with code 0 in 131.5s
+[ISOLATED] Launching infini (timeout=3600s) -> logs\isolated\infini.log
+[ISOLATED] hamming exited with code 0 in 333.9s
+[ISOLATED] Launching inject_simple_ssm (timeout=3600s) -> logs\isolated\inject_simple_ssm.log
+[ISOLATED] infini exited with code 0 in 1052.2s
+[ISOLATED] hla exited with code 0 in 1108.5s
+[ISOLATED] Launching kda (timeout=3600s) -> logs\isolated\kda.log
+[ISOLATED] Launching kronecker_tt_lora (timeout=3600s) -> logs\isolated\kronecker_tt_lora.log
+[ISOLATED] inject_simple_ssm exited with code 0 in 797.4s
+[ISOLATED] Launching leka_v1 (timeout=3600s) -> logs\isolated\leka_v1.log
+[ISOLATED] kda exited with code 0 in 76.2s
+[ISOLATED] kronecker_tt_lora exited with code 0 in 77.7s
+[ISOLATED] Launching leka_v2 (timeout=3600s) -> logs\isolated\leka_v2.log
+[ISOLATED] Launching leka_v3 (timeout=3600s) -> logs\isolated\leka_v3.log
+[ISOLATED] leka_v1 exited with code 0 in 75.9s
+[ISOLATED] Launching linformer (timeout=3600s) -> logs\isolated\linformer.log
+[ISOLATED] linformer exited with code 0 in 65.7s
+[ISOLATED] Launching moba (timeout=3600s) -> logs\isolated\moba.log
+[ISOLATED] leka_v3 exited with code 0 in 79.4s
+[ISOLATED] leka_v2 exited with code 0 in 82.9s
+[ISOLATED] Launching moe_deltakv_paged (timeout=3600s) -> logs\isolated\moe_deltakv_paged.log
+[ISOLATED] Launching nasc (timeout=3600s) -> logs\isolated\nasc.log
+[ISOLATED] moba exited with code 0 in 60.0s
+[ISOLATED] Launching nexus (timeout=3600s) -> logs\isolated\nexus.log
+[ISOLATED] moe_deltakv_paged exited with code 0 in 59.1s
+[ISOLATED] Launching nha (timeout=3600s) -> logs\isolated\nha.log
+[ISOLATED] nasc exited with code 0 in 98.4s
+[ISOLATED] Launching nli_softmax (timeout=3600s) -> logs\isolated\nli_softmax.log
+[ISOLATED] nha exited with code 0 in 73.5s
+[ISOLATED] Launching nsa (timeout=3600s) -> logs\isolated\nsa.log
+[ISOLATED] nli_softmax exited with code 0 in 59.8s
+[ISOLATED] Launching nystrom (timeout=3600s) -> logs\isolated\nystrom.log
+[ISOLATED] nexus exited with code 0 in 129.2s
+[ISOLATED] Launching oha (timeout=3600s) -> logs\isolated\oha.log
+[ISOLATED] nsa exited with code 0 in 66.6s
+[ISOLATED] Launching padre (timeout=3600s) -> logs\isolated\padre.log
+[ISOLATED] oha exited with code 0 in 65.9s
+[ISOLATED] Launching performer (timeout=3600s) -> logs\isolated\performer.log
+[ISOLATED] nystrom exited with code 0 in 130.1s
+[ISOLATED] Launching ptp (timeout=3600s) -> logs\isolated\ptp.log
+[ISOLATED] padre exited with code 0 in 130.8s
+[ISOLATED] Launching qcqa (timeout=3600s) -> logs\isolated\qcqa.log
+[ISOLATED] performer exited with code 0 in 107.0s
+[ISOLATED] Launching rala (timeout=3600s) -> logs\isolated\rala.log
+[ISOLATED] ptp exited with code 0 in 85.3s
+[ISOLATED] Launching regla (timeout=3600s) -> logs\isolated\regla.log

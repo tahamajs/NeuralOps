@@ -1,0 +1,69 @@
+2026-09-24 18:53:50,253 [INFO] QwenQualitySweep: GPU VRAM: 5.09 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 18:53:50,253 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+2026-09-24 18:53:50,275 [INFO] QwenQualitySweep: Running 2 attention modules in-memory sequentially
+2026-09-24 18:53:50,955 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+
+Loading weights:   0%|          | 0/149 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 149/149 [00:00<00:00, 2692.36it/s]
+2026-09-24 18:53:52,621 [INFO] QwenQualitySweep: model=models\gpt2_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 18:53:52,622 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 18:53:52,622 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:53:52,622 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 18:53:52,622 [INFO] QwenQualitySweep:   model:             models\gpt2_sst2
+2026-09-24 18:53:52,622 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-24 18:53:52,622 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-24 18:53:52,622 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-24 18:53:52,623 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 18:53:52,623 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 18:53:52,623 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 18:53:52,623 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:53:52,623 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\gpt2_sst2_lora_baseline\finetuned_model.pt' does not exist; attempting automatic fallback search.
+2026-09-24 18:53:52,625 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-24 18:54:30,016 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.1143
+2026-09-24 18:54:39,069 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.3716
+2026-09-24 18:54:45,688 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.4990
+2026-09-24 18:54:51,112 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.4857
+2026-09-24 18:54:54,735 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0739
+2026-09-24 18:54:59,986 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.6662
+2026-09-24 18:55:03,624 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.1685
+2026-09-24 18:55:09,689 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.2618
+2026-09-24 18:55:09,704 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_halo_regla\gpt2\finetuned_model.pt
+2026-09-24 18:55:12,878 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\unified_halo_regla\gpt2\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-24 18:55:12,880 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-24 18:55:28,622 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 89.33%
+2026-09-24 18:55:30,605 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:55:30,608 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-24 18:55:30,608 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-24 18:55:30,608 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-24 18:55:30,608 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-24 18:55:30,609 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-24 18:55:30,609 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-24 18:55:30,609 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-24 18:55:30,609 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:55:30,613 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 18:55:31,443 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-24 18:55:39,434 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_halo_regla\gpt2\gpt2_sst2_full_full_metrics.json
+2026-09-24 18:55:39,747 [INFO] QwenQualitySweep: [1/2] full -> PASS 89.33% (F1: 0.8942, Peak VRAM: 382.13 MB)
+2026-09-24 18:55:39,747 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_halo_regla\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-24 18:55:39,747 [INFO] QwenQualitySweep: [1/2] full Timing: eval_time=8.30s
+2026-09-24 18:55:39,747 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 18:55:40,118 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: halo_regla (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-24 18:55:41,221 [INFO] QwenQualitySweep: module=halo_regla path=adapted_gpt
+2026-09-24 18:55:41,223 [INFO] QwenQualitySweep: module=halo_regla injection summary: 0 SVDLinear layers active
+2026-09-24 18:55:41,223 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for halo_regla (lr=2.0e-04)
+2026-09-24 18:55:41,551 [INFO] framework.utils.compat: Recovery fine-tuning selected 1290384 trainable parameters across 120 tensors.
+2026-09-24 18:55:41,553 [INFO] framework.utils.compat: Discovered 120 trainable tensors (1290384 params)
+2026-09-24 18:55:41,559 [INFO] QwenQualitySweep: LoRA fine-tuning: 1290384 trainable parameters across 120 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-24 18:56:04,871 [INFO] QwenQualitySweep: Step 1/50 took 23.31s (loss=0.5414, bs=8, micro=8)
+2026-09-24 18:59:08,410 [WARNING] QwenQualitySweep: Training step 2/50 exceeded timeout 180s; aborting
+2026-09-24 18:59:08,451 [INFO] QwenQualitySweep: [2/2] halo_regla -> SKIP_GPT_TIMEOUT 0.00% (F1: 0.8942, Peak VRAM: 382.13 MB)
+2026-09-24 18:59:08,451 [INFO] QwenQualitySweep: [Quality Guard] Module 'halo_regla' did not pass quality criteria (status=SKIP_GPT_TIMEOUT, acc=0.00%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-24 18:59:08,463 [INFO] QwenQualitySweep: [2/2] halo_regla Timing: eval_time=208.34s
+2026-09-24 18:59:08,463 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 18:59:09,595 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:59:09,596 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2_sst2 on sst2)
+2026-09-24 18:59:09,620 [INFO] QwenQualitySweep: 
+                     Module           Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                       full             PASS   89.33% 0.00% (base) 0.8942                  0            1.00x  382.1 MB               5.44              6.24
+halo_regla (efficient-attn) SKIP_GPT_TIMEOUT    0.00%      -89.33% 0.8942                  0            1.00x  382.1 MB               5.44              6.24
+2026-09-24 18:59:09,621 [INFO] QwenQualitySweep: ================================================================================

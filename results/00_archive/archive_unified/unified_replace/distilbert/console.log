@@ -1,0 +1,64 @@
+`torch_dtype` is deprecated! Use `dtype` instead!
+2026-09-11 07:35:52,413 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-11 07:35:52,413 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-11 07:35:52,413 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 07:35:52,413 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-11 07:35:52,413 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
+2026-09-11 07:35:52,413 [INFO] QwenQualitySweep:   family:            bert
+2026-09-11 07:35:52,413 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-11 07:35:52,413 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-11 07:35:52,413 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-11 07:35:52,413 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-11 07:35:52,413 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-11 07:35:52,413 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 07:35:52,415 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\unified_asvd\distilbert\finetuned_model.pt
+2026-09-11 07:35:52,484 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-11 07:35:53,060 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-11 07:35:54,138 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.48%
+2026-09-11 07:35:54,148 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 07:35:54,148 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-11 07:35:54,148 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-11 07:35:54,148 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-11 07:35:54,148 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-11 07:35:54,148 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-11 07:35:54,148 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-11 07:35:54,148 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 07:35:54,148 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-11 07:35:55,249 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_replace\distilbert\distilbert_sst2_full_full_metrics.json
+2026-09-11 07:35:55,256 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_replace\distilbert\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-11 07:35:55,364 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.48% (F1: 0.9077, Peak VRAM: 389.51 MB)
+2026-09-11 07:35:55,364 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_replace\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-11 07:35:55,503 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: replace (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-11 07:35:55,766 [ERROR] QwenQualitySweep: Module replace execution failure:
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\eval_all_models_datasets.py", line 494, in apply_module_to_model
+    raise ValueError(f"No valid attention class found in module '{module_name}'")
+ValueError: No valid attention class found in module 'replace'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2224, in main
+    pipe_res = future.result(timeout=effective_timeout)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2059, in _run_candidate_pipeline
+    model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
+               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_Project\Codes\framework\eval_all_models_datasets.py", line 496, in apply_module_to_model
+    raise RuntimeError(f"Could not inject attention '{module_name}': {e}")
+RuntimeError: Could not inject attention 'replace': No valid attention class found in module 'replace'
+2026-09-11 07:35:55,776 [INFO] QwenQualitySweep: [2/2] replace -> FAIL 0.00% (F1: 0.9077, Peak VRAM: 389.51 MB)
+2026-09-11 07:35:55,776 [INFO] QwenQualitySweep: [Quality Guard] Module 'replace' did not pass quality criteria (status=FAIL, acc=0.00%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-11 07:35:55,897 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 07:35:55,897 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-11 07:35:55,901 [INFO] QwenQualitySweep: 
+ Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+   full   PASS   90.48% 0.00% (base) 0.9077                  0            1.00x  389.5 MB               0.77              0.88
+replace   FAIL    0.00%      -90.48% 0.9077                  0            1.00x  389.5 MB               0.77              0.88
+2026-09-11 07:35:55,901 [INFO] QwenQualitySweep: ================================================================================

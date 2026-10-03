@@ -1,0 +1,137 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+[START] RAM: 0.70/16.79 GB, VRAM: 0.00/8.59 GB
+Loading models/gpt2 on cuda...
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 2655.42it/s]
+2026-09-26 05:03:18,747 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 05:03:19,240 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 05:03:19,501 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/ybisk/piqa/tree/refs%2Fconvert%2Fparquet/plain_text%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 05:04:08,224 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 05:04:08,720 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 05:04:08,977 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Easy%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 05:05:49,238 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 05:05:49,680 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/ai2_arc/tree/refs%2Fconvert%2Fparquet/ARC-Challenge%2Ftest?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 05:07:07,710 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 05:07:08,176 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Rowan/hellaswag/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 05:07:08,398 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Rowan/hellaswag/tree/refs%2Fconvert%2Fparquet/default%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-26 05:08:56,644 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/parquet/parquet.py "HTTP/1.1 404 Not Found"
+2026-09-26 05:08:57,178 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/winogrande/revision/refs%2Fconvert%2Fparquet "HTTP/1.1 200 OK"
+2026-09-26 05:08:57,408 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/allenai/winogrande/tree/refs%2Fconvert%2Fparquet/winogrande_xl%2Fvalidation?recursive=false&expand=false "HTTP/1.1 200 OK"
+
+=== Evaluating piqa ===
+  piqa: 80/1000 items (6.3s, bs=8, RAM=1.72GB, VRAM=0.47GB)
+  piqa: 160/1000 items (8.9s, bs=8, RAM=1.72GB, VRAM=0.47GB)
+  piqa: 240/1000 items (11.3s, bs=8, RAM=1.72GB, VRAM=0.48GB)
+  piqa: 320/1000 items (13.8s, bs=8, RAM=1.72GB, VRAM=0.48GB)
+  piqa: 400/1000 items (16.4s, bs=8, RAM=1.73GB, VRAM=0.48GB)
+  piqa: 480/1000 items (19.5s, bs=8, RAM=1.73GB, VRAM=0.49GB)
+  piqa: 560/1000 items (23.1s, bs=8, RAM=1.73GB, VRAM=0.49GB)
+  piqa: 640/1000 items (27.3s, bs=8, RAM=1.73GB, VRAM=0.5GB)
+  piqa: 720/1000 items (31.2s, bs=8, RAM=1.73GB, VRAM=0.51GB)
+  piqa: 800/1000 items (34.9s, bs=8, RAM=1.73GB, VRAM=0.52GB)
+  piqa: 880/1000 items (39.6s, bs=8, RAM=1.73GB, VRAM=0.53GB)
+  piqa: 960/1000 items (44.0s, bs=8, RAM=1.73GB, VRAM=0.58GB)
+  piqa: 1000/1000 items (46.7s, bs=8, RAM=1.73GB, VRAM=0.67GB)
+  piqa: 54.80%
+
+=== Evaluating arc_easy ===
+  arc_easy: 80/1998 items (3.8s, bs=8, RAM=1.73GB, VRAM=0.47GB)
+  arc_easy: 160/1998 items (7.5s, bs=8, RAM=1.73GB, VRAM=0.47GB)
+  arc_easy: 240/1998 items (11.7s, bs=8, RAM=1.73GB, VRAM=0.47GB)
+  arc_easy: 320/1998 items (15.2s, bs=8, RAM=1.73GB, VRAM=0.47GB)
+  arc_easy: 400/1998 items (19.5s, bs=8, RAM=1.73GB, VRAM=0.47GB)
+  arc_easy: 480/1998 items (23.2s, bs=8, RAM=1.73GB, VRAM=0.48GB)
+  arc_easy: 560/1998 items (26.8s, bs=8, RAM=1.73GB, VRAM=0.48GB)
+  arc_easy: 640/1998 items (30.6s, bs=8, RAM=1.73GB, VRAM=0.48GB)
+  arc_easy: 720/1998 items (34.6s, bs=8, RAM=1.73GB, VRAM=0.48GB)
+  arc_easy: 800/1998 items (38.2s, bs=8, RAM=1.73GB, VRAM=0.48GB)
+  arc_easy: 880/1998 items (42.4s, bs=8, RAM=1.73GB, VRAM=0.49GB)
+  arc_easy: 960/1998 items (46.3s, bs=8, RAM=1.73GB, VRAM=0.49GB)
+  arc_easy: 1040/1998 items (50.2s, bs=8, RAM=1.73GB, VRAM=0.49GB)
+  arc_easy: 1120/1998 items (54.3s, bs=8, RAM=1.73GB, VRAM=0.49GB)
+  arc_easy: 1200/1998 items (57.9s, bs=8, RAM=1.73GB, VRAM=0.49GB)
+  arc_easy: 1280/1998 items (61.8s, bs=8, RAM=1.73GB, VRAM=0.5GB)
+  arc_easy: 1360/1998 items (65.8s, bs=8, RAM=1.73GB, VRAM=0.5GB)
+  arc_easy: 1440/1998 items (69.4s, bs=8, RAM=1.73GB, VRAM=0.5GB)
+  arc_easy: 1520/1998 items (73.8s, bs=8, RAM=1.73GB, VRAM=0.51GB)
+  arc_easy: 1600/1998 items (77.7s, bs=8, RAM=1.73GB, VRAM=0.51GB)
+  arc_easy: 1680/1998 items (82.1s, bs=8, RAM=1.73GB, VRAM=0.51GB)
+  arc_easy: 1760/1998 items (86.1s, bs=8, RAM=1.73GB, VRAM=0.52GB)
+  arc_easy: 1840/1998 items (90.1s, bs=8, RAM=1.73GB, VRAM=0.53GB)
+  arc_easy: 1920/1998 items (94.5s, bs=8, RAM=1.73GB, VRAM=0.54GB)
+  arc_easy: 2000/1998 items (98.0s, bs=8, RAM=1.73GB, VRAM=0.63GB)
+  arc_easy: 28.60%
+
+=== Evaluating arc_challenge ===
+  arc_challenge: 80/1997 items (2.5s, bs=8, RAM=1.74GB, VRAM=0.47GB)
+  arc_challenge: 160/1997 items (5.0s, bs=8, RAM=1.74GB, VRAM=0.47GB)
+  arc_challenge: 240/1997 items (7.5s, bs=8, RAM=1.74GB, VRAM=0.48GB)
+  arc_challenge: 320/1997 items (9.9s, bs=8, RAM=1.74GB, VRAM=0.48GB)
+  arc_challenge: 400/1997 items (12.4s, bs=8, RAM=1.74GB, VRAM=0.48GB)
+  arc_challenge: 480/1997 items (14.9s, bs=8, RAM=1.74GB, VRAM=0.48GB)
+  arc_challenge: 560/1997 items (17.3s, bs=8, RAM=1.74GB, VRAM=0.48GB)
+  arc_challenge: 640/1997 items (19.9s, bs=8, RAM=1.74GB, VRAM=0.48GB)
+  arc_challenge: 720/1997 items (22.7s, bs=8, RAM=1.74GB, VRAM=0.49GB)
+  arc_challenge: 800/1997 items (25.4s, bs=8, RAM=1.74GB, VRAM=0.49GB)
+  arc_challenge: 880/1997 items (28.1s, bs=8, RAM=1.74GB, VRAM=0.49GB)
+  arc_challenge: 960/1997 items (30.7s, bs=8, RAM=1.74GB, VRAM=0.5GB)
+  arc_challenge: 1040/1997 items (33.2s, bs=8, RAM=1.74GB, VRAM=0.5GB)
+  arc_challenge: 1120/1997 items (35.8s, bs=8, RAM=1.74GB, VRAM=0.5GB)
+  arc_challenge: 1200/1997 items (38.3s, bs=8, RAM=1.74GB, VRAM=0.5GB)
+  arc_challenge: 1280/1997 items (41.0s, bs=8, RAM=1.74GB, VRAM=0.51GB)
+  arc_challenge: 1360/1997 items (43.7s, bs=8, RAM=1.74GB, VRAM=0.51GB)
+  arc_challenge: 1440/1997 items (46.4s, bs=8, RAM=1.74GB, VRAM=0.52GB)
+  arc_challenge: 1520/1997 items (49.1s, bs=8, RAM=1.74GB, VRAM=0.52GB)
+  arc_challenge: 1600/1997 items (51.9s, bs=8, RAM=1.74GB, VRAM=0.52GB)
+  arc_challenge: 1680/1997 items (54.8s, bs=8, RAM=1.74GB, VRAM=0.53GB)
+  arc_challenge: 1760/1997 items (57.7s, bs=8, RAM=1.74GB, VRAM=0.54GB)
+  arc_challenge: 1840/1997 items (61.5s, bs=8, RAM=1.74GB, VRAM=0.55GB)
+  arc_challenge: 1920/1997 items (68.6s, bs=8, RAM=1.74GB, VRAM=0.56GB)
+  arc_challenge: 2000/1997 items (76.0s, bs=8, RAM=1.74GB, VRAM=0.68GB)
+  arc_challenge: 21.40%
+
+=== Evaluating hellaswag ===
+  hellaswag: 80/2000 items (4.7s, bs=8, RAM=1.74GB, VRAM=0.48GB)
+  hellaswag: 160/2000 items (10.9s, bs=8, RAM=1.74GB, VRAM=0.49GB)
+  hellaswag: 240/2000 items (17.0s, bs=8, RAM=1.74GB, VRAM=0.49GB)
+  hellaswag: 320/2000 items (22.1s, bs=8, RAM=1.74GB, VRAM=0.49GB)
+  hellaswag: 400/2000 items (26.2s, bs=8, RAM=1.74GB, VRAM=0.5GB)
+  hellaswag: 480/2000 items (30.1s, bs=8, RAM=1.74GB, VRAM=0.5GB)
+  hellaswag: 560/2000 items (34.4s, bs=8, RAM=1.74GB, VRAM=0.5GB)
+  hellaswag: 640/2000 items (38.1s, bs=8, RAM=1.74GB, VRAM=0.5GB)
+  hellaswag: 720/2000 items (42.6s, bs=8, RAM=1.74GB, VRAM=0.5GB)
+  hellaswag: 800/2000 items (46.4s, bs=8, RAM=1.74GB, VRAM=0.51GB)
+  hellaswag: 880/2000 items (50.3s, bs=8, RAM=1.74GB, VRAM=0.51GB)
+  hellaswag: 960/2000 items (54.8s, bs=8, RAM=1.74GB, VRAM=0.51GB)
+  hellaswag: 1040/2000 items (58.4s, bs=8, RAM=1.74GB, VRAM=0.51GB)
+  hellaswag: 1120/2000 items (62.9s, bs=8, RAM=1.74GB, VRAM=0.51GB)
+  hellaswag: 1200/2000 items (67.0s, bs=8, RAM=1.74GB, VRAM=0.52GB)
+  hellaswag: 1280/2000 items (71.3s, bs=8, RAM=1.74GB, VRAM=0.52GB)
+  hellaswag: 1360/2000 items (75.6s, bs=8, RAM=1.74GB, VRAM=0.52GB)
+  hellaswag: 1440/2000 items (79.8s, bs=8, RAM=1.74GB, VRAM=0.52GB)
+  hellaswag: 1520/2000 items (83.8s, bs=8, RAM=1.74GB, VRAM=0.53GB)
+  hellaswag: 1600/2000 items (86.7s, bs=8, RAM=1.74GB, VRAM=0.53GB)
+  hellaswag: 1680/2000 items (89.9s, bs=8, RAM=1.74GB, VRAM=0.53GB)
+  hellaswag: 1760/2000 items (93.3s, bs=8, RAM=1.74GB, VRAM=0.54GB)
+  hellaswag: 1840/2000 items (96.9s, bs=8, RAM=1.74GB, VRAM=0.54GB)
+  hellaswag: 1920/2000 items (100.6s, bs=8, RAM=1.74GB, VRAM=0.55GB)
+  hellaswag: 2000/2000 items (104.4s, bs=8, RAM=1.74GB, VRAM=0.58GB)
+  hellaswag: 28.40%
+
+=== Evaluating winogrande ===
+  winogrande: 80/1000 items (2.5s, bs=8, RAM=1.74GB, VRAM=0.48GB)
+  winogrande: 160/1000 items (5.1s, bs=8, RAM=1.74GB, VRAM=0.48GB)
+  winogrande: 240/1000 items (7.7s, bs=8, RAM=1.74GB, VRAM=0.48GB)
+  winogrande: 320/1000 items (10.3s, bs=8, RAM=1.74GB, VRAM=0.48GB)
+  winogrande: 400/1000 items (12.8s, bs=8, RAM=1.74GB, VRAM=0.48GB)
+  winogrande: 480/1000 items (15.5s, bs=8, RAM=1.74GB, VRAM=0.48GB)
+  winogrande: 560/1000 items (18.2s, bs=8, RAM=1.74GB, VRAM=0.49GB)
+  winogrande: 640/1000 items (21.1s, bs=8, RAM=1.74GB, VRAM=0.49GB)
+  winogrande: 720/1000 items (23.8s, bs=8, RAM=1.74GB, VRAM=0.49GB)
+  winogrande: 800/1000 items (26.8s, bs=8, RAM=1.74GB, VRAM=0.49GB)
+  winogrande: 880/1000 items (30.0s, bs=8, RAM=1.74GB, VRAM=0.49GB)
+  winogrande: 960/1000 items (33.1s, bs=8, RAM=1.74GB, VRAM=0.5GB)
+  winogrande: 1000/1000 items (34.8s, bs=8, RAM=1.74GB, VRAM=0.5GB)
+  winogrande: 50.20%
+
+Results saved to results\zeroshot_parallel\aegis_spectron_fp8

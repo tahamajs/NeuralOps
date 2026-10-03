@@ -1,0 +1,105 @@
+2026-09-14 18:34:41,780 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
+
+Loading weights:   0%|          | 0/320 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 320/320 [00:00<00:00, 3564.54it/s]
+[1mQwen3_5ForSequenceClassification LOAD REPORT[0m from: models\Qwen3.5-0.8B
+Key                                                | Status     | 
+---------------------------------------------------+------------+-
+model.visual.blocks.{0...11}.attn.proj.weight      | UNEXPECTED | 
+model.visual.blocks.{0...11}.norm1.bias            | UNEXPECTED | 
+model.visual.blocks.{0...11}.mlp.linear_fc1.bias   | UNEXPECTED | 
+model.visual.blocks.{0...11}.mlp.linear_fc2.bias   | UNEXPECTED | 
+model.visual.blocks.{0...11}.attn.qkv.weight       | UNEXPECTED | 
+model.visual.blocks.{0...11}.attn.qkv.bias         | UNEXPECTED | 
+model.visual.blocks.{0...11}.mlp.linear_fc1.weight | UNEXPECTED | 
+model.visual.blocks.{0...11}.norm2.weight          | UNEXPECTED | 
+model.visual.blocks.{0...11}.norm2.bias            | UNEXPECTED | 
+model.visual.blocks.{0...11}.mlp.linear_fc2.weight | UNEXPECTED | 
+model.visual.blocks.{0...11}.norm1.weight          | UNEXPECTED | 
+model.visual.blocks.{0...11}.attn.proj.bias        | UNEXPECTED | 
+model.visual.merger.norm.bias                      | UNEXPECTED | 
+model.visual.merger.linear_fc1.weight              | UNEXPECTED | 
+model.visual.merger.linear_fc2.weight              | UNEXPECTED | 
+model.visual.patch_embed.proj.weight               | UNEXPECTED | 
+model.visual.merger.norm.weight                    | UNEXPECTED | 
+model.visual.patch_embed.proj.bias                 | UNEXPECTED | 
+model.visual.pos_embed.weight                      | UNEXPECTED | 
+model.visual.merger.linear_fc1.bias                | UNEXPECTED | 
+model.visual.merger.linear_fc2.bias                | UNEXPECTED | 
+score.weight                                       | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-14 18:34:49,235 [INFO] QwenQualitySweep: model=models\Qwen3.5-0.8B qwen_compat=True hidden=1024 heads=8 head_dim=256 layers=24
+2026-09-14 18:34:49,236 [INFO] QwenQualitySweep: detected model family=qwen3_5 adapter={'family': 'qwen3_5', 'hidden_size': 1024, 'num_heads': 8, 'num_key_value_heads': 2, 'q_proj_out': 2048, 'kv_proj_out': 512, 'kv_repeat': 4, 'head_dim': 256, 'num_hidden_layers': 24, 'causal': True, 'mask_rank': 4, 'position_embedding': 'rotary', 'supports_gqa': True, 'supports_delta_net': True, 'supports_moe': True}
+2026-09-14 18:34:49,236 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 18:34:49,236 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-14 18:34:49,236 [INFO] QwenQualitySweep:   model:             models\Qwen3.5-0.8B
+2026-09-14 18:34:49,236 [INFO] QwenQualitySweep:   family:            qwen3_5
+2026-09-14 18:34:49,237 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-14 18:34:49,237 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-14 18:34:49,237 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-14 18:34:49,237 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-14 18:34:49,237 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-14 18:34:49,237 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 18:34:49,402 [INFO] QwenQualitySweep: Injected 186 LoRALinear layers into qwen3_5 backbone
+2026-09-14 18:34:49,402 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection
+2026-09-14 18:35:20,098 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.8494
+2026-09-14 18:35:45,881 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.9982
+2026-09-14 18:36:11,844 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.3990
+2026-09-14 18:36:37,896 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.9042
+2026-09-14 18:37:03,887 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.6664
+2026-09-14 18:37:29,863 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.7420
+2026-09-14 18:37:55,924 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.5748
+2026-09-14 18:38:21,984 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.5070
+2026-09-14 18:38:22,010 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_minimal_prism\qwen3_5\finetuned_model.pt
+2026-09-14 18:38:23,001 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-14 18:38:23,755 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-14 18:40:04,406 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 63.88%
+2026-09-14 18:40:04,462 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 18:40:04,462 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-14 18:40:04,462 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-14 18:40:04,462 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-14 18:40:04,463 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-14 18:40:04,463 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-14 18:40:04,463 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-14 18:40:04,463 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 18:40:04,463 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-14 18:42:00,205 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_minimal_prism\qwen3_5\Qwen3.5-0.8B_full_full_metrics.json
+2026-09-14 18:42:00,352 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_minimal_prism\qwen3_5\checkpoints\full\weights.pt (module_params=0, lora_params=373)
+2026-09-14 18:42:03,756 [INFO] QwenQualitySweep: [1/2] full -> PASS 63.88% (F1: 0.6392, Peak VRAM: 1796.79 MB)
+2026-09-14 18:42:03,756 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_minimal_prism\qwen3_5\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-14 18:42:04,099 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: minimal_prism (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-14 18:42:08,045 [WARNING] framework.attentions.minimal_prism: inject_minimal_prism: no source attention found, aborting.
+2026-09-14 18:42:08,045 [WARNING] framework.attentions.minimal_prism: inject_minimal_prism: no source attention found, aborting.
+2026-09-14 18:42:08,045 [WARNING] framework.attentions.minimal_prism: inject_minimal_prism: no source attention found, aborting.
+2026-09-14 18:42:09,332 [WARNING] framework.attentions.minimal_prism: inject_minimal_prism: no source attention found, aborting.
+2026-09-14 18:42:09,332 [WARNING] framework.attentions.minimal_prism: inject_minimal_prism: no source attention found, aborting.
+2026-09-14 18:42:09,332 [WARNING] framework.attentions.minimal_prism: inject_minimal_prism: no source attention found, aborting.
+2026-09-14 18:42:10,089 [WARNING] framework.attentions.minimal_prism: inject_minimal_prism: no source attention found, aborting.
+2026-09-14 18:42:10,089 [WARNING] framework.attentions.minimal_prism: inject_minimal_prism: no source attention found, aborting.
+2026-09-14 18:42:10,089 [WARNING] framework.attentions.minimal_prism: inject_minimal_prism: no source attention found, aborting.
+2026-09-14 18:42:11,036 [WARNING] framework.attentions.minimal_prism: inject_minimal_prism: no source attention found, aborting.
+2026-09-14 18:42:11,036 [WARNING] framework.attentions.minimal_prism: inject_minimal_prism: no source attention found, aborting.
+2026-09-14 18:42:11,036 [WARNING] framework.attentions.minimal_prism: inject_minimal_prism: no source attention found, aborting.
+2026-09-14 18:42:11,916 [WARNING] framework.attentions.minimal_prism: inject_minimal_prism: no source attention found, aborting.
+2026-09-14 18:42:11,916 [WARNING] framework.attentions.minimal_prism: inject_minimal_prism: no source attention found, aborting.
+2026-09-14 18:42:11,917 [WARNING] framework.attentions.minimal_prism: inject_minimal_prism: no source attention found, aborting.
+2026-09-14 18:42:12,589 [WARNING] framework.attentions.minimal_prism: inject_minimal_prism: no source attention found, aborting.
+2026-09-14 18:42:12,589 [WARNING] framework.attentions.minimal_prism: inject_minimal_prism: no source attention found, aborting.
+2026-09-14 18:42:12,589 [WARNING] framework.attentions.minimal_prism: inject_minimal_prism: no source attention found, aborting.
+2026-09-14 18:42:13,247 [INFO] QwenQualitySweep: module=minimal_prism path=adapted_qwen3_5
+2026-09-14 18:42:13,257 [INFO] QwenQualitySweep: module=minimal_prism injection summary: 186 SVDLinear layers active
+2026-09-14 18:42:13,257 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for minimal_prism (lr=2.0e-04)
+2026-09-14 18:42:15,147 [INFO] framework.utils.compat: Recovery fine-tuning selected 10626054 trainable parameters across 378 tensors.
+2026-09-14 18:42:15,160 [WARNING] framework.utils.compat: Total trainable parameters (10626054) exceeds 10000000 threshold for recovery. Pruning heavy base weights to prevent OOM.
+2026-09-14 18:42:15,170 [INFO] framework.utils.compat: Reduced recovery parameters to 10626054 trainable parameters across 378 tensors.
+2026-09-14 18:42:15,171 [INFO] framework.utils.compat: Discovered 378 trainable tensors (10626054 params)
+2026-09-14 18:42:15,204 [INFO] QwenQualitySweep: LoRA fine-tuning: 10626054 trainable parameters across 378 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-14 18:43:32,563 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=3.6016 (bs=8, micro_bs=8)
+2026-09-14 18:44:57,850 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=2.9690 (bs=8, micro_bs=8)
+2026-09-14 18:46:03,792 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=3.6500 (bs=8, micro_bs=8)
+2026-09-14 18:46:37,802 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=1.4833 (bs=8, micro_bs=8)
+2026-09-14 18:47:12,694 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.9512 (bs=8, micro_bs=8)

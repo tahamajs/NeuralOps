@@ -1,0 +1,126 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-23 12:01:17,658 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'compot', '--output_json', 'logs\\isolated_results\\compot_1790152264.json']
+2026-09-23 12:01:17,790 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-23 12:01:17,790 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=16 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-23 12:01:17,980 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 8865.29it/s]
+2026-09-23 12:01:18,278 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-23 12:01:18,278 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-23 12:01:18,279 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 12:01:18,279 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-23 12:01:18,279 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-23 12:01:18,279 [INFO] QwenQualitySweep:   family:            bert
+2026-09-23 12:01:18,279 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-23 12:01:18,279 [INFO] QwenQualitySweep:   batch_size:        16
+2026-09-23 12:01:18,279 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-23 12:01:18,279 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-23 12:01:18,279 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-23 12:01:18,279 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 12:01:18,281 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\distilbert_sst2_sst2_sweep\finetuned_model.pt
+2026-09-23 12:01:18,284 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
+2026-09-23 12:01:18,345 [INFO] QwenQualitySweep: Loading pre-cached batches from results\distilbert_sst2_sst2_sweep\batch_cache_sst2 (skipping tokenization)
+2026-09-23 12:01:18,472 [INFO] QwenQualitySweep: Prepared 28 eval batches and 50 train batches directly on GPU.
+2026-09-23 12:01:21,127 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.60%
+2026-09-23 12:01:21,143 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 12:01:21,143 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-23 12:01:21,143 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-23 12:01:21,143 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-23 12:01:21,143 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-23 12:01:21,143 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-23 12:01:21,143 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-23 12:01:21,143 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-23 12:01:21,143 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 12:01:21,145 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-23 12:01:21,241 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: compot (recovery_steps=50, batch_size=16, optimizer=adamw)
+2026-09-23 12:01:22,107 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8758 on distilbert.transformer.layer.0.attention.q_lin exceeded threshold 0.2000.
+2026-09-23 12:01:22,107 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.0.attention.q_lin (fallback to original).
+22026-09-23 12:01:22,143 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8898 on distilbert.transformer.layer.0.attention.k_lin exceeded threshold 0.2000.22026-09-23 12:01:22,143 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.0.attention.k_lin (fallback to original).2026-09-23 12:01:22,180 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8836 on distilbert.transformer.layer.0.attention.v_lin exceeded threshold 0.2000.
+2026-09-23 12:01:22,180 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.0.attention.v_lin (fallback to original).
+22026-09-23 12:01:22,221 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9095 on distilbert.transformer.layer.0.attention.out_lin exceeded threshold 0.2000.
+2026-09-23 12:01:22,221 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.0.attention.out_lin (fallback to original).2026-09-23 12:01:22,260 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8884 on distilbert.transformer.layer.0.ffn.lin1 exceeded threshold 0.2000.
+2026-09-23 12:01:22,260 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.0.ffn.lin1 (fallback to original).
+22026-09-23 12:01:22,323 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9804 on distilbert.transformer.layer.0.ffn.lin2 exceeded threshold 0.2000.
+2026-09-23 12:01:22,323 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.0.ffn.lin2 (fallback to original).2026-09-23 12:01:22,358 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.7909 on distilbert.transformer.layer.1.attention.q_lin exceeded threshold 0.2000.
+2026-09-23 12:01:22,358 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.1.attention.q_lin (fallback to original).
+2026-09-23 12:01:22,392 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.7947 on distilbert.transformer.layer.1.attention.k_lin exceeded threshold 0.2000.
+2026-09-23 12:01:22,392 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.1.attention.k_lin (fallback to original).
+2026-09-23 12:01:22,426 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8799 on distilbert.transformer.layer.1.attention.v_lin exceeded threshold 0.2000.
+2026-09-23 12:01:22,426 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.1.attention.v_lin (fallback to original).
+2026-09-23 12:01:22,461 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8797 on distilbert.transformer.layer.1.attention.out_lin exceeded threshold 0.2000.
+2026-09-23 12:01:22,461 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.1.attention.out_lin (fallback to original).
+22026-09-23 12:01:22,498 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9282 on distilbert.transformer.layer.1.ffn.lin1 exceeded threshold 0.2000.
+2026-09-23 12:01:22,498 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.1.ffn.lin1 (fallback to original).2026-09-23 12:01:22,548 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9752 on distilbert.transformer.layer.1.ffn.lin2 exceeded threshold 0.2000.
+2026-09-23 12:01:22,548 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.1.ffn.lin2 (fallback to original).
+2026-09-23 12:01:22,581 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8623 on distilbert.transformer.layer.2.attention.q_lin exceeded threshold 0.2000.
+2026-09-23 12:01:22,581 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.2.attention.q_lin (fallback to original).
+2026-09-23 12:01:22,610 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8610 on distilbert.transformer.layer.2.attention.k_lin exceeded threshold 0.2000.
+2026-09-23 12:01:22,610 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.2.attention.k_lin (fallback to original).
+2026-09-23 12:01:22,636 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8831 on distilbert.transformer.layer.2.attention.v_lin exceeded threshold 0.2000.
+2026-09-23 12:01:22,636 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.2.attention.v_lin (fallback to original).
+2026-09-23 12:01:22,671 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8879 on distilbert.transformer.layer.2.attention.out_lin exceeded threshold 0.2000.
+2026-09-23 12:01:22,671 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.2.attention.out_lin (fallback to original).
+2026-09-23 12:01:22,706 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8962 on distilbert.transformer.layer.2.ffn.lin1 exceeded threshold 0.2000.
+2026-09-23 12:01:22,706 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.2.ffn.lin1 (fallback to original).
+22026-09-23 12:01:22,749 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9757 on distilbert.transformer.layer.2.ffn.lin2 exceeded threshold 0.2000.
+2026-09-23 12:01:22,749 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.2.ffn.lin2 (fallback to original).22026-09-23 12:01:22,783 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9008 on distilbert.transformer.layer.3.attention.q_lin exceeded threshold 0.2000.
+2026-09-23 12:01:22,784 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.3.attention.q_lin (fallback to original).2026-09-23 12:01:22,816 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8537 on distilbert.transformer.layer.3.attention.k_lin exceeded threshold 0.2000.
+2026-09-23 12:01:22,816 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.3.attention.k_lin (fallback to original).
+2026-09-23 12:01:22,858 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8870 on distilbert.transformer.layer.3.attention.v_lin exceeded threshold 0.2000.
+2026-09-23 12:01:22,858 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.3.attention.v_lin (fallback to original).
+2026-09-23 12:01:22,882 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8880 on distilbert.transformer.layer.3.attention.out_lin exceeded threshold 0.2000.
+2026-09-23 12:01:22,882 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.3.attention.out_lin (fallback to original).
+2026-09-23 12:01:22,915 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8968 on distilbert.transformer.layer.3.ffn.lin1 exceeded threshold 0.2000.
+2026-09-23 12:01:22,915 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.3.ffn.lin1 (fallback to original).
+2026-09-23 12:01:22,957 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9761 on distilbert.transformer.layer.3.ffn.lin2 exceeded threshold 0.2000.
+2026-09-23 12:01:22,957 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.3.ffn.lin2 (fallback to original).
+2026-09-23 12:01:22,989 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8834 on distilbert.transformer.layer.4.attention.q_lin exceeded threshold 0.2000.
+2026-09-23 12:01:22,989 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.4.attention.q_lin (fallback to original).
+2026-09-23 12:01:23,024 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8777 on distilbert.transformer.layer.4.attention.k_lin exceeded threshold 0.2000.
+2026-09-23 12:01:23,024 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.4.attention.k_lin (fallback to original).
+2026-09-23 12:01:23,057 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8841 on distilbert.transformer.layer.4.attention.v_lin exceeded threshold 0.2000.
+2026-09-23 12:01:23,057 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.4.attention.v_lin (fallback to original).
+2026-09-23 12:01:23,089 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8873 on distilbert.transformer.layer.4.attention.out_lin exceeded threshold 0.2000.
+2026-09-23 12:01:23,089 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.4.attention.out_lin (fallback to original).
+2026-09-23 12:01:23,125 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8928 on distilbert.transformer.layer.4.ffn.lin1 exceeded threshold 0.2000.
+2026-09-23 12:01:23,125 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.4.ffn.lin1 (fallback to original).
+2026-09-23 12:01:23,168 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9626 on distilbert.transformer.layer.4.ffn.lin2 exceeded threshold 0.2000.
+2026-09-23 12:01:23,168 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.4.ffn.lin2 (fallback to original).
+22026-09-23 12:01:23,199 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9221 on distilbert.transformer.layer.5.attention.q_lin exceeded threshold 0.2000.
+2026-09-23 12:01:23,199 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.5.attention.q_lin (fallback to original).2026-09-23 12:01:23,233 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8878 on distilbert.transformer.layer.5.attention.k_lin exceeded threshold 0.2000.
+2026-09-23 12:01:23,233 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.5.attention.k_lin (fallback to original).
+2026-09-23 12:01:23,268 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8901 on distilbert.transformer.layer.5.attention.v_lin exceeded threshold 0.2000.
+2026-09-23 12:01:23,268 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.5.attention.v_lin (fallback to original).
+2026-09-23 12:01:23,298 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.8968 on distilbert.transformer.layer.5.attention.out_lin exceeded threshold 0.2000.
+2026-09-23 12:01:23,298 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.5.attention.out_lin (fallback to original).
+2026-09-23 12:01:23,333 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9110 on distilbert.transformer.layer.5.ffn.lin1 exceeded threshold 0.2000.
+2026-09-23 12:01:23,333 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.5.ffn.lin1 (fallback to original).
+2026-09-23 12:01:23,376 [WARNING] framework.compression_engine.compot_compressor: COMPOT reconstruction error 0.9761 on distilbert.transformer.layer.5.ffn.lin2 exceeded threshold 0.2000.
+2026-09-23 12:01:23,376 [INFO] framework.compression_engine.compot_compressor: Skipping COMPOT compression for distilbert.transformer.layer.5.ffn.lin2 (fallback to original).
+2026-09-23 12:01:23,376 [INFO] framework.compression_engine.compot_compressor: COMPOT compression complete: 0 compressed, 36 fallback. Avg error: 0.0000.
+22026-09-23 12:01:23,390 [INFO] QwenQualitySweep: module=compot path=legacy_bert
+2026-09-23 12:01:23,390 [INFO] QwenQualitySweep: module=compot injection summary: 0 SVDLinear layers active
+2026-09-23 12:01:23,390 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for compot (lr=2.0e-04)22026-09-23 12:01:23,404 [INFO] framework.utils.compat: Recovery fine-tuning selected 592130 trainable parameters across 4 tensors.
+2026-09-23 12:01:23,404 [INFO] framework.utils.compat: Discovered 4 trainable tensors (592130 params)
+2026-09-23 12:01:23,405 [INFO] QwenQualitySweep: LoRA fine-tuning: 592130 trainable parameters across 4 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)22026-09-23 12:01:23,571 [INFO] QwenQualitySweep: Step 1/50 took 0.17s (loss=0.0370, bs=32, micro=16)22026-09-23 12:01:23,764 [INFO] QwenQualitySweep: Step 5/50 took 0.04s (loss=0.0042, bs=32, micro=16)22026-09-23 12:01:23,994 [INFO] QwenQualitySweep: Step 10/50 took 0.05s (loss=0.0197, bs=32, micro=16)22026-09-23 12:01:24,229 [INFO] QwenQualitySweep: Step 15/50 took 0.05s (loss=0.0794, bs=32, micro=16)2026-09-23 12:01:24,466 [INFO] QwenQualitySweep: Step 20/50 took 0.05s (loss=0.0006, bs=32, micro=16)
+2026-09-23 12:01:24,698 [INFO] QwenQualitySweep: Step 25/50 took 0.05s (loss=0.0022, bs=32, micro=16)
+2026-09-23 12:01:24,933 [INFO] QwenQualitySweep: Step 30/50 took 0.05s (loss=0.0003, bs=32, micro=16)
+2026-09-23 12:01:25,164 [INFO] QwenQualitySweep: Step 35/50 took 0.05s (loss=0.0012, bs=32, micro=16)
+2026-09-23 12:01:25,394 [INFO] QwenQualitySweep: Step 40/50 took 0.05s (loss=0.1514, bs=32, micro=16)
+2026-09-23 12:01:25,629 [INFO] QwenQualitySweep: Step 45/50 took 0.05s (loss=0.0237, bs=32, micro=16)
+2026-09-23 12:01:25,858 [INFO] QwenQualitySweep: Step 50/50 took 0.04s (loss=0.0149, bs=32, micro=16)
+2026-09-23 12:01:27,079 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\distilbert_sst2_sst2_sweep\distilbert_sst2_compot_full_metrics.json
+2026-09-23 12:01:27,083 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\distilbert_sst2_sst2_sweep\checkpoints\compot\weights.pt (module_params=0, lora_params=4)
+2026-09-23 12:01:27,171 [INFO] QwenQualitySweep: [1/1] compot -> PASS 90.60% (F1: 0.9079, Peak VRAM: 368.29 MB)
+2026-09-23 12:01:27,171 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\distilbert_sst2_sst2_sweep\checkpoints\compot. Automated export will be handled post-sweep by orchestrator.
+2026-09-23 12:01:27,171 [INFO] QwenQualitySweep: [1/1] compot Timing: eval_time=5.93s
+2026-09-23 12:01:27,172 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+22026-09-23 12:01:27,381 [INFO] QwenQualitySweep: ================================================================================22026-09-23 12:01:27,381 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)22026-09-23 12:01:27,386 [INFO] QwenQualitySweep: 
+                 Module Status Accuracy    Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                   full   FAIL    0.00% 0.00% (base) 0.0000                 0            1.00x    0.0 MB               0.48               N/A
+                  aasvd   PASS   88.07%       -2.53% 0.8857                24            1.16x  413.8 MB              10.96               N/A
+compot (efficient-attn)   PASS   90.83%       +0.23% 0.9105                 0            1.00x  368.3 MB               1.16              1.34
+2026-09-23 12:01:27,387 [INFO] QwenQualitySweep: ================================================================================DD:\SVD_Project\Codes\framework\run_one_module_isolated.py:153: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

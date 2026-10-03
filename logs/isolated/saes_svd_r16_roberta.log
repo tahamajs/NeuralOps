@@ -1,0 +1,134 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+2026-09-27 08:49:21,485 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0% (leaving 5.20 GB headroom)
+2026-09-27 08:49:21,485 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-27 08:49:21,485 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-27 08:49:21,486 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0%
+2026-09-27 08:49:21,486 [INFO] QwenQualitySweep: Auto-resolving base model 'roberta-base' to fine-tuned SST-2 model: models\roberta_sst2
+2026-09-27 08:49:21,889 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights: 100%|##########| 201/201 [00:00<00:00, 5825.78it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta_sst2
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-09-27 08:49:22,701 [INFO] QwenQualitySweep: model=models\roberta_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-27 08:49:22,701 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'raw_family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-27 08:49:22,701 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:49:22,701 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-27 08:49:22,701 [INFO] QwenQualitySweep:   model:             models\roberta_sst2
+2026-09-27 08:49:22,702 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-27 08:49:22,702 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-27 08:49:22,702 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-27 08:49:22,703 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-27 08:49:22,703 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-27 08:49:22,703 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-27 08:49:22,703 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:49:22,705 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-27 08:49:24,905 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0015
+2026-09-27 08:49:26,555 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0143
+2026-09-27 08:49:28,291 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1419
+2026-09-27 08:49:29,920 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0326
+2026-09-27 08:49:31,665 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0266
+2026-09-27 08:49:33,523 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0969
+2026-09-27 08:49:35,040 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0999
+2026-09-27 08:49:36,618 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.1602
+2026-09-27 08:49:36,634 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\04_rank_sweeps\roberta\deep_rank_roberta\saes_svd\rank_16\finetuned_model.pt
+2026-09-27 08:49:37,811 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\04_rank_sweeps\roberta\deep_rank_roberta\saes_svd\rank_16\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-27 08:49:37,811 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-27 08:49:42,578 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 94.38%
+2026-09-27 08:49:42,733 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:49:42,733 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-27 08:49:42,734 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-27 08:49:42,734 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-27 08:49:42,734 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-27 08:49:42,734 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-27 08:49:42,734 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-27 08:49:42,734 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-27 08:49:42,735 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:49:42,735 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-27 08:49:42,871 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: saes_svd (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-27 08:49:43,642 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9193 on roberta.encoder.layer.0.attention.self.query exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:43,755 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.8726 on roberta.encoder.layer.0.attention.self.key exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:43,864 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9252 on roberta.encoder.layer.0.attention.self.value exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:43,978 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.8943 on roberta.encoder.layer.0.attention.output.dense exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:44,090 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9006 on roberta.encoder.layer.1.attention.self.query exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:44,203 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.8707 on roberta.encoder.layer.1.attention.self.key exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:44,316 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9173 on roberta.encoder.layer.1.attention.self.value exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:44,429 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.8998 on roberta.encoder.layer.1.attention.output.dense exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:44,547 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9062 on roberta.encoder.layer.2.attention.self.query exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:44,663 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.8991 on roberta.encoder.layer.2.attention.self.key exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:44,774 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9225 on roberta.encoder.layer.2.attention.self.value exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:44,887 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9208 on roberta.encoder.layer.2.attention.output.dense exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:45,002 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9046 on roberta.encoder.layer.3.attention.self.query exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:45,124 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9222 on roberta.encoder.layer.3.attention.self.key exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:45,241 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9207 on roberta.encoder.layer.3.attention.self.value exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:45,351 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9160 on roberta.encoder.layer.3.attention.output.dense exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:45,470 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9037 on roberta.encoder.layer.4.attention.self.query exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:45,589 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9171 on roberta.encoder.layer.4.attention.self.key exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:45,700 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9177 on roberta.encoder.layer.4.attention.self.value exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:45,819 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9231 on roberta.encoder.layer.4.attention.output.dense exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:45,938 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9060 on roberta.encoder.layer.5.attention.self.query exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:46,053 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9270 on roberta.encoder.layer.5.attention.self.key exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:46,164 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9289 on roberta.encoder.layer.5.attention.self.value exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:46,273 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9150 on roberta.encoder.layer.5.attention.output.dense exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:46,391 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9205 on roberta.encoder.layer.6.attention.self.query exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:46,505 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9164 on roberta.encoder.layer.6.attention.self.key exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:46,616 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9405 on roberta.encoder.layer.6.attention.self.value exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:46,729 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9212 on roberta.encoder.layer.6.attention.output.dense exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:46,845 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9216 on roberta.encoder.layer.7.attention.self.query exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:46,959 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9118 on roberta.encoder.layer.7.attention.self.key exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:47,072 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9329 on roberta.encoder.layer.7.attention.self.value exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:47,184 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9317 on roberta.encoder.layer.7.attention.output.dense exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:47,306 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9154 on roberta.encoder.layer.8.attention.self.query exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:47,433 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9125 on roberta.encoder.layer.8.attention.self.key exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:47,545 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9419 on roberta.encoder.layer.8.attention.self.value exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:47,658 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9460 on roberta.encoder.layer.8.attention.output.dense exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:47,778 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9008 on roberta.encoder.layer.9.attention.self.query exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:47,899 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9097 on roberta.encoder.layer.9.attention.self.key exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:48,007 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9371 on roberta.encoder.layer.9.attention.self.value exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:48,117 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9426 on roberta.encoder.layer.9.attention.output.dense exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:48,230 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9122 on roberta.encoder.layer.10.attention.self.query exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:48,342 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9250 on roberta.encoder.layer.10.attention.self.key exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:48,452 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9420 on roberta.encoder.layer.10.attention.self.value exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:48,565 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9434 on roberta.encoder.layer.10.attention.output.dense exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:48,681 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9068 on roberta.encoder.layer.11.attention.self.query exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:48,799 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9304 on roberta.encoder.layer.11.attention.self.key exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:48,914 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9548 on roberta.encoder.layer.11.attention.self.value exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:48,976 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.9464 on roberta.encoder.layer.11.attention.output.dense exceeded threshold 0.5000. Keeping original layer.
+2026-09-27 08:49:48,992 [INFO] QwenQualitySweep: module=saes_svd path=adapted_roberta
+2026-09-27 08:49:48,995 [INFO] QwenQualitySweep: module=saes_svd injection summary: 0 SVDLinear layers active
+2026-09-27 08:49:48,995 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for saes_svd (lr=2.0e-04)
+2026-09-27 08:49:49,207 [INFO] framework.utils.compat: Recovery fine-tuning selected 592130 trainable parameters across 4 tensors.
+2026-09-27 08:49:49,207 [INFO] framework.utils.compat: Discovered 4 trainable tensors (592130 params)
+2026-09-27 08:49:49,210 [INFO] QwenQualitySweep: LoRA fine-tuning: 592130 trainable parameters across 4 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-27 08:49:49,295 [INFO] QwenQualitySweep: Step 1/50 took 0.08s (loss=0.0551, bs=8, micro=8)
+2026-09-27 08:49:49,514 [INFO] QwenQualitySweep: Step 5/50 took 0.05s (loss=0.3119, bs=8, micro=8)
+2026-09-27 08:49:49,847 [INFO] QwenQualitySweep: Step 10/50 took 0.05s (loss=0.0128, bs=8, micro=8)
+2026-09-27 08:49:50,112 [INFO] QwenQualitySweep: Step 15/50 took 0.05s (loss=0.0044, bs=8, micro=8)
+2026-09-27 08:49:50,388 [INFO] QwenQualitySweep: Step 20/50 took 0.05s (loss=0.0499, bs=8, micro=8)
+2026-09-27 08:49:50,620 [INFO] QwenQualitySweep: Step 25/50 took 0.04s (loss=0.0006, bs=8, micro=8)
+2026-09-27 08:49:50,839 [INFO] QwenQualitySweep: Step 30/50 took 0.04s (loss=0.0018, bs=8, micro=8)
+2026-09-27 08:49:51,052 [INFO] QwenQualitySweep: Step 35/50 took 0.04s (loss=0.0741, bs=8, micro=8)
+2026-09-27 08:49:51,268 [INFO] QwenQualitySweep: Step 40/50 took 0.04s (loss=0.0524, bs=8, micro=8)
+2026-09-27 08:49:51,495 [INFO] QwenQualitySweep: Step 45/50 took 0.05s (loss=0.0029, bs=8, micro=8)
+2026-09-27 08:49:51,700 [INFO] QwenQualitySweep: Step 50/50 took 0.04s (loss=0.0024, bs=8, micro=8)
+2026-09-27 08:49:56,742 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\roberta\deep_rank_roberta\saes_svd\rank_16\roberta_sst2_saes_svd_full_metrics.json
+2026-09-27 08:49:57,019 [INFO] QwenQualitySweep: [1/1] saes_svd -> PASS 93.23% (F1: 0.9352, Peak VRAM: 292.72 MB)
+2026-09-27 08:49:57,019 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\04_rank_sweeps\roberta\deep_rank_roberta\saes_svd\rank_16\checkpoints\saes_svd. Automated export will be handled post-sweep by orchestrator.
+2026-09-27 08:49:57,019 [INFO] QwenQualitySweep: [1/1] saes_svd Timing: eval_time=14.15s
+2026-09-27 08:49:57,020 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-27 08:49:57,378 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:49:57,378 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-27 08:49:57,385 [INFO] QwenQualitySweep: 
+                   Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+saes_svd (efficient-attn)   PASS   93.23%    -1.15% 0.9352                  0            1.00x  292.7 MB               4.04              4.63
+2026-09-27 08:49:57,386 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:171: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

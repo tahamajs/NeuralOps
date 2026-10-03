@@ -1,0 +1,86 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-22 13:51:03,326 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'tomoe', '--output_json', 'logs\\isolated_results\\tomoe_1790072343.json']
+2026-09-22 13:51:04,667 [INFO] QwenQualitySweep: GPU VRAM: 0.47 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-22 13:51:04,667 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-22 13:51:04,668 [WARNING] QwenQualitySweep: LOW GPU MEMORY: Only 0.47 GB VRAM available (< 4.0 GB). High risk of CUDA OOM.
+2026-09-22 13:51:08,158 [INFO] QwenQualitySweep: Configured dataset 'mnli' with num_labels=3
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights:  20%|##        | 21/104 [00:00<00:00, 203.95it/s]Loading weights:  78%|#######7  | 81/104 [00:00<00:00, 428.79it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 469.05it/s]
+2026-09-22 13:51:19,214 [INFO] QwenQualitySweep: model=models/distilbert_mnli_full qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-22 13:51:19,214 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-22 13:51:19,215 [INFO] QwenQualitySweep: ================================================================================
+2026-09-22 13:51:19,215 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-22 13:51:19,215 [INFO] QwenQualitySweep:   model:             models/distilbert_mnli_full
+2026-09-22 13:51:19,215 [INFO] QwenQualitySweep:   family:            bert
+2026-09-22 13:51:19,215 [INFO] QwenQualitySweep:   dataset:           mnli
+2026-09-22 13:51:19,215 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-22 13:51:19,216 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-22 13:51:19,216 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-22 13:51:19,216 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-22 13:51:19,216 [INFO] QwenQualitySweep: ================================================================================
+2026-09-22 13:51:19,291 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\distilbert_mnli_full_mnli_sweep\finetuned_model.pt
+2026-09-22 13:51:19,573 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
+2026-09-22 13:51:23,141 [INFO] QwenQualitySweep: Loading pre-cached batches from results\distilbert_mnli_full_mnli_sweep\batch_cache_mnli (skipping tokenization)
+2026-09-22 13:51:31,654 [INFO] QwenQualitySweep: Prepared 16 eval batches and 50 train batches directly on GPU.
+[INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-22 13:50:51,686 [INFO] QwenQualitySweep:   Validation Majority Count: 341 / 1000
+2026-09-22 13:50:51,696 [INFO] QwenQualitySweep:   True Majority Baseline:    34.10%
+2026-09-22 13:50:51,696 [INFO] QwenQualitySweep:   Standard Error (SE):       1.499%
+2026-09-22 13:50:51,696 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.50%
+2026-09-22 13:50:51,696 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  38.60%
+2026-09-22 13:50:51,696 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%
+2026-09-22 13:50:51,697 [INFO] QwenQualitySweep: ================================================================================
+2026-09-22 13:50:51,714 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: tomoe (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-22 13:50:54,714 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: Skipping unsupported layer type DistilBertSelfAttention for distilbert.transformer.layer.0.attention
+2026-09-22 13:50:59,506 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.0.attention.q_lin activation reconstruction error (0.7940) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:00,191 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.0.attention.k_lin activation reconstruction error (0.7908) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:00,850 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.0.attention.v_lin activation reconstruction error (0.7982) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:01,471 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.0.attention.out_lin activation reconstruction error (0.7860) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:01,471 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: Skipping unsupported layer type Dropout for distilbert.transformer.layer.0.attention.dropout
+2026-09-22 13:51:01,472 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: Skipping unsupported layer type DistilBertSelfAttention for distilbert.transformer.layer.1.attention
+2026-09-22 13:51:02,069 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.1.attention.q_lin activation reconstruction error (0.8034) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:02,633 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.1.attention.k_lin activation reconstruction error (0.8032) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:03,157 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.1.attention.v_lin activation reconstruction error (0.7932) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:03,812 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.1.attention.out_lin activation reconstruction error (0.7809) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:03,813 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: Skipping unsupported layer type Dropout for distilbert.transformer.layer.1.attention.dropout
+2026-09-22 13:51:03,813 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: Skipping unsupported layer type DistilBertSelfAttention for distilbert.transformer.layer.2.attention
+2026-09-22 13:51:04,690 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.2.attention.q_lin activation reconstruction error (0.7935) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:05,853 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.2.attention.k_lin activation reconstruction error (0.7984) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:07,037 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.2.attention.v_lin activation reconstruction error (0.7961) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:08,110 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.2.attention.out_lin activation reconstruction error (0.7941) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:08,111 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: Skipping unsupported layer type Dropout for distilbert.transformer.layer.2.attention.dropout
+2026-09-22 13:51:08,111 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: Skipping unsupported layer type DistilBertSelfAttention for distilbert.transformer.layer.3.attention
+2026-09-22 13:51:09,168 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.3.attention.q_lin activation reconstruction error (0.7961) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:10,405 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.3.attention.k_lin activation reconstruction error (0.7976) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:11,305 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.3.attention.v_lin activation reconstruction error (0.7972) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:12,301 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.3.attention.out_lin activation reconstruction error (0.8001) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:12,301 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: Skipping unsupported layer type Dropout for distilbert.transformer.layer.3.attention.dropout
+2026-09-22 13:51:12,302 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: Skipping unsupported layer type DistilBertSelfAttention for distilbert.transformer.layer.4.attention
+2026-09-22 13:51:13,062 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.4.attention.q_lin activation reconstruction error (0.7976) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:14,462 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.4.attention.k_lin activation reconstruction error (0.7955) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:15,981 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.4.attention.v_lin activation reconstruction error (0.8016) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:17,204 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.4.attention.out_lin activation reconstruction error (0.7964) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:17,204 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: Skipping unsupported layer type Dropout for distilbert.transformer.layer.4.attention.dropout
+2026-09-22 13:51:17,205 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: Skipping unsupported layer type DistilBertSelfAttention for distilbert.transformer.layer.5.attention
+2026-09-22 13:51:18,642 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.5.attention.q_lin activation reconstruction error (0.7964) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:19,916 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.5.attention.k_lin activation reconstruction error (0.7978) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:21,223 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.5.attention.v_lin activation reconstruction error (0.7990) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:22,356 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: distilbert.transformer.layer.5.attention.out_lin activation reconstruction error (0.7948) exceeded max_error (0.4000). Keeping original layer.
+2026-09-22 13:51:22,356 [WARNING] framework.compression_engine.tomoe_compressor: ToMoE: Skipping unsupported layer type Dropout for distilbert.transformer.layer.5.attention.dropout
+2026-09-22 13:51:22,357 [INFO] framework.compression_engine.tomoe_compressor: ToMoE Summary: Converted 0 layers, Skipped 36 layers. Params: 66,955,779 -> 66,955,779 (ratio: 1.00x)
+2026-09-22 13:51:22,450 [INFO] QwenQualitySweep: module=tomoe path=legacy_bert
+2026-09-22 13:51:22,451 [INFO] QwenQualitySweep: module=tomoe injection summary: 0 SVDLinear layers active
+2026-09-22 13:51:22,478 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for tomoe (lr=2.0e-04)
+2026-09-22 13:51:23,216 [INFO] framework.utils.compat: Recovery fine-tuning selected 592899 trainable parameters across 4 tensors.
+2026-09-22 13:51:23,216 [INFO] framework.utils.compat: Discovered 4 trainable tensors (592899 params)
+2026-09-22 13:51:23,220 [INFO] QwenQualitySweep: LoRA fine-tuning: 592899 trainable parameters across 4 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-22 13:51:31,726 [INFO] QwenQualitySweep: Step 1/50 took 8.49s (loss=0.2741, bs=64, micro=8)
+2026-09-22 13:51:50,732 [INFO] QwenQualitySweep: Step 5/50 took 4.30s (loss=0.2011, bs=64, micro=8)
+2026-09-22 13:52:20,249 [INFO] QwenQualitySweep: Step 10/50 took 5.64s (loss=0.1556, bs=64, micro=8)
+2026-09-22 13:52:52,031 [INFO] QwenQualitySweep: Step 15/50 took 6.56s (loss=0.2828, bs=64, micro=8)
+2026-09-22 13:53:23,055 [INFO] QwenQualitySweep: Step 20/50 took 5.63s (loss=0.2302, bs=64, micro=8)
+2026-09-22 13:53:57,997 [INFO] QwenQualitySweep: Step 25/50 took 7.48s (loss=0.2552, bs=64, micro=8)
+2026-09-22 13:54:32,516 [INFO] QwenQualitySweep: Step 30/50 took 6.82s (loss=0.2697, bs=64, micro=8)
+2026-09-22 13:55:08,921 [INFO] QwenQualitySweep: Step 35/50 took 7.09s (loss=0.2319, bs=64, micro=8)

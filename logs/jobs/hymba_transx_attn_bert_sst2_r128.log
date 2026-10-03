@@ -1,0 +1,72 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-23 21:40:12,165 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-23 21:40:12,165 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=16 (explicit_parallel=True, explicit_batch=True)
+2026-09-23 21:40:12,170 [INFO] QwenQualitySweep: Running 1 attention modules in-memory sequentially
+2026-09-23 21:40:12,342 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 6132.02it/s]
+2026-09-23 21:40:12,844 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-23 21:40:12,844 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-23 21:40:12,844 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 21:40:12,844 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-23 21:40:12,844 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-23 21:40:12,845 [INFO] QwenQualitySweep:   family:            bert
+2026-09-23 21:40:12,845 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-23 21:40:12,845 [INFO] QwenQualitySweep:   batch_size:        16
+2026-09-23 21:40:12,847 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-23 21:40:12,847 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-23 21:40:12,847 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-23 21:40:12,847 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 21:40:12,858 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\distilbert_sst2_sst2_sweep\finetuned_model.pt
+2026-09-23 21:40:12,874 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
+2026-09-23 21:40:13,302 [INFO] QwenQualitySweep: Loading pre-cached batches from results\distilbert_sst2_sst2_sweep\batch_cache_sst2 (skipping tokenization)
+2026-09-23 21:40:13,616 [INFO] QwenQualitySweep: Prepared 28 eval batches and 50 train batches directly on GPU.
+2026-09-23 21:40:18,597 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.60%
+2026-09-23 21:40:18,671 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 21:40:18,672 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-23 21:40:18,672 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-23 21:40:18,672 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-23 21:40:18,672 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-23 21:40:18,672 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-23 21:40:18,673 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-23 21:40:18,673 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-23 21:40:18,673 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 21:40:18,675 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-23 21:40:18,959 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: hymba_transx_attn (recovery_steps=50, batch_size=16, optimizer=adamw)
+2026-09-23 21:40:20,054 [WARNING] framework.core.attention_utils: Unexpected error in custom copy_weights on distilbert.transformer.layer.0.attention: to() received an invalid combination of arguments - got (torch.dtype, torch.device), but expected one of:
+ * (torch.device device = None, torch.dtype dtype = None, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
+ * (torch.dtype dtype, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
+ * (Tensor tensor, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
+
+2026-09-23 21:40:20,568 [WARNING] framework.core.attention_utils: Unexpected error in custom copy_weights on distilbert.transformer.layer.1.attention: to() received an invalid combination of arguments - got (torch.dtype, torch.device), but expected one of:
+ * (torch.device device = None, torch.dtype dtype = None, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
+ * (torch.dtype dtype, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
+ * (Tensor tensor, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
+
+2026-09-23 21:40:21,112 [WARNING] framework.core.attention_utils: Unexpected error in custom copy_weights on distilbert.transformer.layer.2.attention: to() received an invalid combination of arguments - got (torch.dtype, torch.device), but expected one of:
+ * (torch.device device = None, torch.dtype dtype = None, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
+ * (torch.dtype dtype, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
+ * (Tensor tensor, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
+
+2026-09-23 21:40:21,680 [WARNING] framework.core.attention_utils: Unexpected error in custom copy_weights on distilbert.transformer.layer.3.attention: to() received an invalid combination of arguments - got (torch.dtype, torch.device), but expected one of:
+ * (torch.device device = None, torch.dtype dtype = None, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
+ * (torch.dtype dtype, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
+ * (Tensor tensor, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
+
+2026-09-23 21:40:22,367 [WARNING] framework.core.attention_utils: Unexpected error in custom copy_weights on distilbert.transformer.layer.4.attention: to() received an invalid combination of arguments - got (torch.dtype, torch.device), but expected one of:
+ * (torch.device device = None, torch.dtype dtype = None, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
+ * (torch.dtype dtype, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
+ * (Tensor tensor, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
+
+2026-09-23 21:40:23,601 [WARNING] framework.core.attention_utils: Unexpected error in custom copy_weights on distilbert.transformer.layer.5.attention: to() received an invalid combination of arguments - got (torch.dtype, torch.device), but expected one of:
+ * (torch.device device = None, torch.dtype dtype = None, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
+ * (torch.dtype dtype, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
+ * (Tensor tensor, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
+
+2026-09-23 21:40:23,602 [INFO] framework.core.attention_utils: Successfully injected 'hymba_transx_attn' into 6 transformer blocks.
+2026-09-23 21:40:23,615 [INFO] QwenQualitySweep: module=hymba_transx_attn path=legacy_bert
+2026-09-23 21:40:23,617 [INFO] QwenQualitySweep: module=hymba_transx_attn injection summary: 0 SVDLinear layers active
+2026-09-23 21:40:23,617 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for hymba_transx_attn (lr=2.0e-04)
+2026-09-23 21:40:23,789 [INFO] framework.utils.compat: Recovery fine-tuning selected 884748 trainable parameters across 84 tensors.
+2026-09-23 21:40:23,789 [INFO] framework.utils.compat: Discovered 84 trainable tensors (884748 params)
+2026-09-23 21:40:23,793 [INFO] QwenQualitySweep: LoRA fine-tuning: 884748 trainable parameters across 84 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)

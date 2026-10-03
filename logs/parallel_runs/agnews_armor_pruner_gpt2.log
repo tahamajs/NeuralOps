@@ -1,0 +1,124 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from 'framework.eval_all_models_datasets' (consider renaming 'D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py' if it has the same name as a library you intended to import)
+2026-09-18 20:39:43,420 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 20:39:44,004 [INFO] QwenQualitySweep: Configured dataset 'ag_news' with num_labels=4
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 2768.96it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models/gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-18 20:39:45,052 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-18 20:39:45,052 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 20:39:45,052 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:39:45,052 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 20:39:45,052 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-18 20:39:45,053 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-18 20:39:45,053 [INFO] QwenQualitySweep:   dataset:           ag_news
+2026-09-18 20:39:45,053 [INFO] QwenQualitySweep:   batch_size:        32
+2026-09-18 20:39:45,053 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 20:39:45,054 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 20:39:45,054 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 20:39:45,054 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:39:45,058 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-18 20:39:53,171 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=2.8972
+2026-09-18 20:39:59,780 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=1.3333
+2026-09-18 20:40:04,860 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.7966
+2026-09-18 20:40:08,628 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.9014
+2026-09-18 20:40:13,221 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.6814
+2026-09-18 20:40:20,398 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.7233
+2026-09-18 20:40:28,408 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.3555
+2026-09-18 20:40:36,641 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.4773
+2026-09-18 20:40:36,653 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\agnews_unified_armor_pruner\gpt2\finetuned_model.pt
+2026-09-18 20:40:36,793 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 20:40:38,138 [INFO] QwenQualitySweep: Prepared 32 eval batches and 50 train batches directly on GPU.
+2026-09-18 20:40:47,033 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 79.70%
+2026-09-18 20:40:47,125 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:40:47,126 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-18 20:40:47,126 [INFO] QwenQualitySweep:   Validation Majority Count: 274 / 1000
+2026-09-18 20:40:47,126 [INFO] QwenQualitySweep:   True Majority Baseline:    27.40%
+2026-09-18 20:40:47,126 [INFO] QwenQualitySweep:   Standard Error (SE):       1.410%
+2026-09-18 20:40:47,126 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.23%
+2026-09-18 20:40:47,126 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  31.63%
+2026-09-18 20:40:47,127 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:40:47,129 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: armor_pruner (recovery_steps=50, batch_size=32, optimizer=adamw)
+2026-09-18 20:40:49,138 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3609 on transformer.h.0.attn.c_attn exceeded threshold 0.3500.
+2026-09-18 20:40:49,366 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.4024 on transformer.h.0.attn.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:49,589 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3522 on transformer.h.0.mlp.c_fc exceeded threshold 0.3500.
+2026-09-18 20:40:49,877 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3713 on transformer.h.0.mlp.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:50,097 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3822 on transformer.h.1.attn.c_attn exceeded threshold 0.3500.
+2026-09-18 20:40:50,367 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.4055 on transformer.h.1.attn.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:50,618 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3838 on transformer.h.1.mlp.c_fc exceeded threshold 0.3500.
+2026-09-18 20:40:50,925 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3620 on transformer.h.1.mlp.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:51,213 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3784 on transformer.h.2.attn.c_attn exceeded threshold 0.3500.
+2026-09-18 20:40:51,485 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.4097 on transformer.h.2.attn.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:51,778 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3798 on transformer.h.2.mlp.c_fc exceeded threshold 0.3500.
+2026-09-18 20:40:52,074 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3966 on transformer.h.2.mlp.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:52,352 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3765 on transformer.h.3.attn.c_attn exceeded threshold 0.3500.
+2026-09-18 20:40:52,629 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.4037 on transformer.h.3.attn.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:52,893 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3822 on transformer.h.3.mlp.c_fc exceeded threshold 0.3500.
+2026-09-18 20:40:53,101 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3961 on transformer.h.3.mlp.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:53,293 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3725 on transformer.h.4.attn.c_attn exceeded threshold 0.3500.
+2026-09-18 20:40:53,470 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.4054 on transformer.h.4.attn.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:53,679 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3800 on transformer.h.4.mlp.c_fc exceeded threshold 0.3500.
+2026-09-18 20:40:53,909 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3920 on transformer.h.4.mlp.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:54,089 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3747 on transformer.h.5.attn.c_attn exceeded threshold 0.3500.
+2026-09-18 20:40:54,270 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.4241 on transformer.h.5.attn.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:54,492 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3812 on transformer.h.5.mlp.c_fc exceeded threshold 0.3500.
+2026-09-18 20:40:54,684 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.4055 on transformer.h.5.mlp.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:54,857 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3738 on transformer.h.6.attn.c_attn exceeded threshold 0.3500.
+2026-09-18 20:40:55,057 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.4038 on transformer.h.6.attn.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:55,282 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3806 on transformer.h.6.mlp.c_fc exceeded threshold 0.3500.
+2026-09-18 20:40:55,507 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3891 on transformer.h.6.mlp.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:55,685 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3758 on transformer.h.7.attn.c_attn exceeded threshold 0.3500.
+2026-09-18 20:40:55,884 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.4155 on transformer.h.7.attn.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:56,107 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3824 on transformer.h.7.mlp.c_fc exceeded threshold 0.3500.
+2026-09-18 20:40:56,337 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3840 on transformer.h.7.mlp.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:56,522 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3763 on transformer.h.8.attn.c_attn exceeded threshold 0.3500.
+2026-09-18 20:40:56,715 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.4102 on transformer.h.8.attn.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:56,924 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3813 on transformer.h.8.mlp.c_fc exceeded threshold 0.3500.
+2026-09-18 20:40:57,138 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3765 on transformer.h.8.mlp.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:57,302 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3783 on transformer.h.9.attn.c_attn exceeded threshold 0.3500.
+2026-09-18 20:40:57,503 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.4139 on transformer.h.9.attn.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:57,712 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3835 on transformer.h.9.mlp.c_fc exceeded threshold 0.3500.
+2026-09-18 20:40:57,936 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3788 on transformer.h.9.mlp.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:58,105 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3793 on transformer.h.10.attn.c_attn exceeded threshold 0.3500.
+2026-09-18 20:40:58,322 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.4153 on transformer.h.10.attn.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:58,529 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3829 on transformer.h.10.mlp.c_fc exceeded threshold 0.3500.
+2026-09-18 20:40:58,750 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3852 on transformer.h.10.mlp.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:58,908 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3798 on transformer.h.11.attn.c_attn exceeded threshold 0.3500.
+2026-09-18 20:40:59,123 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.4363 on transformer.h.11.attn.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:59,320 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3814 on transformer.h.11.mlp.c_fc exceeded threshold 0.3500.
+2026-09-18 20:40:59,552 [WARNING] framework.compression_engine.armor_pruner: ARMOR reconstruction error 0.3899 on transformer.h.11.mlp.c_proj exceeded threshold 0.3500.
+2026-09-18 20:40:59,814 [WARNING] framework.compression_engine.armor_pruner: ARMOR post-compression forward check warning: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.cuda.HalfTensor instead (while checking arguments for embedding)
+2026-09-18 20:40:59,844 [INFO] QwenQualitySweep: module=armor_pruner path=adapted_gpt
+2026-09-18 20:40:59,848 [INFO] QwenQualitySweep: module=armor_pruner injection summary: 0 SVDLinear layers active
+2026-09-18 20:40:59,852 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for armor_pruner (lr=2.0e-04)
+2026-09-18 20:41:00,052 [INFO] framework.utils.compat: Recovery fine-tuning selected 3072 trainable parameters across 1 tensors.
+2026-09-18 20:41:00,053 [INFO] framework.utils.compat: Discovered 1 trainable tensors (3072 params)
+2026-09-18 20:41:00,060 [INFO] QwenQualitySweep: LoRA fine-tuning: 3072 trainable parameters across 1 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 20:41:00,478 [INFO] QwenQualitySweep: Step 1/50 took 0.41s (loss=1.3231, bs=32, micro=32)
+2026-09-18 20:41:01,604 [INFO] QwenQualitySweep: Step 5/50 took 0.24s (loss=0.6851, bs=32, micro=32)
+2026-09-18 20:41:03,065 [INFO] QwenQualitySweep: Step 10/50 took 0.31s (loss=0.5073, bs=32, micro=32)
+2026-09-18 20:41:04,488 [INFO] QwenQualitySweep: Step 15/50 took 0.28s (loss=1.4023, bs=32, micro=32)
+2026-09-18 20:41:06,371 [INFO] QwenQualitySweep: Step 20/50 took 0.40s (loss=1.4046, bs=32, micro=32)
+2026-09-18 20:41:08,115 [INFO] QwenQualitySweep: Step 25/50 took 0.29s (loss=1.4702, bs=32, micro=32)
+2026-09-18 20:41:09,781 [INFO] QwenQualitySweep: Step 30/50 took 0.39s (loss=1.1785, bs=32, micro=32)
+2026-09-18 20:41:11,693 [INFO] QwenQualitySweep: Step 35/50 took 0.40s (loss=0.9398, bs=32, micro=32)
+2026-09-18 20:41:13,503 [INFO] QwenQualitySweep: Step 40/50 took 0.40s (loss=1.0926, bs=32, micro=32)
+2026-09-18 20:41:15,486 [INFO] QwenQualitySweep: Step 45/50 took 0.40s (loss=1.0483, bs=32, micro=32)
+2026-09-18 20:41:17,060 [INFO] QwenQualitySweep: Step 50/50 took 0.19s (loss=1.1055, bs=32, micro=32)
+2026-09-18 20:41:25,298 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\agnews_unified_armor_pruner\gpt2\gpt2_armor_pruner_full_metrics.json
+2026-09-18 20:41:25,309 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\agnews_unified_armor_pruner\gpt2\checkpoints\armor_pruner\weights.pt (module_params=0, lora_params=1)
+2026-09-18 20:41:26,355 [INFO] QwenQualitySweep: [1/1] armor_pruner -> PASS_NO_COMPRESSION 62.70% (F1: 0.6296, Peak VRAM: 743.2 MB)
+2026-09-18 20:41:26,355 [WARNING] QwenQualitySweep: Module 'armor_pruner' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-18 20:41:26,355 [INFO] QwenQualitySweep: [Quality Guard] Module 'armor_pruner' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=62.70%, pass_thresh=31.63%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-18 20:41:26,642 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:41:26,643 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on ag_news)
+2026-09-18 20:41:26,653 [INFO] QwenQualitySweep: 
+                       Module              Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+armor_pruner (efficient-attn) PASS_NO_COMPRESSION   62.70%   -17.00% 0.6296                  0            1.00x  743.2 MB               8.02              8.02
+2026-09-18 20:41:26,653 [INFO] QwenQualitySweep: ================================================================================

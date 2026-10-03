@@ -1,0 +1,64 @@
+2026-09-24 19:27:08,909 [INFO] QwenQualitySweep: GPU VRAM: 6.76 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 19:27:08,909 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+2026-09-24 19:27:08,937 [INFO] QwenQualitySweep: Running 2 attention modules in-memory sequentially
+2026-09-24 19:27:09,296 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 201/201 [00:00<00:00, 2715.73it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta_sst2
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-09-24 19:27:10,697 [INFO] QwenQualitySweep: model=models\roberta_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 19:27:10,697 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 19:27:10,697 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:27:10,697 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 19:27:10,698 [INFO] QwenQualitySweep:   model:             models\roberta_sst2
+2026-09-24 19:27:10,698 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-24 19:27:10,698 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-24 19:27:10,698 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-24 19:27:10,698 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 19:27:10,699 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 19:27:10,699 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 19:27:10,699 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:27:10,699 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\roberta_sst2_lora_baseline\finetuned_model.pt' does not exist; attempting automatic fallback search.
+2026-09-24 19:27:10,701 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-24 19:27:22,866 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0015
+2026-09-24 19:27:26,989 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0143
+2026-09-24 19:27:31,393 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1419
+2026-09-24 19:27:35,366 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0326
+2026-09-24 19:27:39,504 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0266
+2026-09-24 19:27:42,688 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0969
+2026-09-24 19:27:48,042 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0999
+2026-09-24 19:27:53,783 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.1602
+2026-09-24 19:27:53,798 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_hgrn2_outer\roberta\finetuned_model.pt
+2026-09-24 19:29:42,181 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\unified_hgrn2_outer\roberta\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-24 19:29:42,183 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-24 19:29:51,852 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 94.38%
+2026-09-24 19:29:52,019 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:29:52,019 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-24 19:29:52,019 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-24 19:29:52,020 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-24 19:29:52,020 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-24 19:29:52,020 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-24 19:29:52,020 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-24 19:29:52,020 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-24 19:29:52,020 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:29:52,021 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 19:29:52,130 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-24 19:29:58,069 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_hgrn2_outer\roberta\roberta_sst2_full_full_metrics.json
+2026-09-24 19:29:58,267 [INFO] QwenQualitySweep: [1/2] full -> PASS 94.38% (F1: 0.9445, Peak VRAM: 292.72 MB)
+2026-09-24 19:29:58,268 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_hgrn2_outer\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-24 19:29:58,268 [INFO] QwenQualitySweep: [1/2] full Timing: eval_time=6.14s
+2026-09-24 19:29:58,269 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 19:29:58,589 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: hgrn2_outer (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-24 19:29:59,501 [INFO] QwenQualitySweep: module=hgrn2_outer path=adapted_roberta
+2026-09-24 19:29:59,504 [INFO] QwenQualitySweep: module=hgrn2_outer injection summary: 0 SVDLinear layers active
+2026-09-24 19:29:59,504 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for hgrn2_outer (lr=2.0e-04)
+2026-09-24 19:29:59,865 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179648 trainable parameters across 96 tensors.
+2026-09-24 19:29:59,865 [INFO] framework.utils.compat: Discovered 96 trainable tensors (1179648 params)
+2026-09-24 19:29:59,873 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179648 trainable parameters across 96 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)

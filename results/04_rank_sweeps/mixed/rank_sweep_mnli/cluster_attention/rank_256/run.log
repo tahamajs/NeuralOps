@@ -1,0 +1,62 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-26 05:56:16,147 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-09-26 05:56:16,148 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-26 05:56:16,148 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=16 (explicit_parallel=True, explicit_batch=True)
+2026-09-26 05:56:16,365 [INFO] QwenQualitySweep: Running 1 attention modules in-memory sequentially
+2026-09-26 05:56:16,365 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0%
+2026-09-26 05:56:17,205 [INFO] QwenQualitySweep: Configured dataset 'mnli' with num_labels=3
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 5093.27it/s]
+2026-09-26 05:56:29,778 [INFO] QwenQualitySweep: model=models/base_checkpoints/distilbert_mnli qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-26 05:56:29,778 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'raw_family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-26 05:56:29,778 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 05:56:29,778 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-26 05:56:29,778 [INFO] QwenQualitySweep:   model:             models/base_checkpoints/distilbert_mnli
+2026-09-26 05:56:29,781 [INFO] QwenQualitySweep:   family:            bert
+2026-09-26 05:56:29,781 [INFO] QwenQualitySweep:   dataset:           mnli
+2026-09-26 05:56:29,781 [INFO] QwenQualitySweep:   batch_size:        16
+2026-09-26 05:56:29,781 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-26 05:56:29,781 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-26 05:56:29,781 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-26 05:56:29,781 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 05:56:32,200 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: models\base_checkpoints\distilbert_mnli\finetuned_model.pt
+2026-09-26 05:56:39,689 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\rank_sweep_mnli\cluster_attention\rank_256\batch_cache_mnli (will be reused by subsequent module runs)
+2026-09-26 05:56:39,690 [INFO] QwenQualitySweep: Prepared 63 eval batches and 50 train batches directly on GPU.
+2026-09-26 05:57:09,902 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 67.00%
+2026-09-26 05:57:13,348 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 05:57:13,349 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-26 05:57:13,349 [INFO] QwenQualitySweep:   Validation Majority Count: 341 / 1000
+2026-09-26 05:57:13,349 [INFO] QwenQualitySweep:   True Majority Baseline:    34.10%
+2026-09-26 05:57:13,349 [INFO] QwenQualitySweep:   Standard Error (SE):       1.499%
+2026-09-26 05:57:13,351 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.50%
+2026-09-26 05:57:13,351 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  38.60%
+2026-09-26 05:57:13,351 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%
+2026-09-26 05:57:13,351 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 05:57:13,352 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-26 05:57:14,704 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: cluster_attention (recovery_steps=50, batch_size=16, optimizer=adamw)
+2026-09-26 05:57:49,436 [INFO] QwenQualitySweep: module=cluster_attention path=legacy_bert
+2026-09-26 05:57:49,437 [INFO] QwenQualitySweep: module=cluster_attention injection summary: 0 SVDLinear layers active
+2026-09-26 05:57:49,438 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for cluster_attention (lr=2.0e-04)
+2026-09-26 05:57:49,548 [INFO] framework.utils.compat: Recovery fine-tuning selected 589824 trainable parameters across 48 tensors.
+2026-09-26 05:57:49,548 [INFO] framework.utils.compat: Discovered 48 trainable tensors (589824 params)
+2026-09-26 05:57:49,553 [INFO] QwenQualitySweep: LoRA fine-tuning: 589824 trainable parameters across 48 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-26 05:58:49,335 [INFO] QwenQualitySweep: Step 1/50 took 59.77s (loss=0.0405, bs=16, micro=16)
+2026-09-26 05:58:59,092 [INFO] QwenQualitySweep: Step 5/50 took 2.07s (loss=0.0908, bs=16, micro=16)
+2026-09-26 05:59:21,727 [INFO] QwenQualitySweep: Step 10/50 took 14.62s (loss=0.2026, bs=16, micro=16)
+2026-09-26 05:59:35,954 [INFO] QwenQualitySweep: Step 15/50 took 1.24s (loss=0.2586, bs=16, micro=16)
+2026-09-26 06:00:42,556 [INFO] QwenQualitySweep: Step 20/50 took 3.24s (loss=0.1167, bs=16, micro=16)
+2026-09-26 06:01:07,233 [INFO] QwenQualitySweep: Step 25/50 took 3.25s (loss=0.0049, bs=16, micro=16)
+2026-09-26 06:01:42,293 [INFO] QwenQualitySweep: Step 30/50 took 2.35s (loss=0.5413, bs=16, micro=16)
+2026-09-26 06:02:20,225 [INFO] QwenQualitySweep: Step 35/50 took 9.59s (loss=0.0718, bs=16, micro=16)
+2026-09-26 06:02:29,405 [INFO] QwenQualitySweep: Step 40/50 took 1.02s (loss=0.4157, bs=16, micro=16)
+2026-09-26 06:02:35,109 [INFO] QwenQualitySweep: Step 45/50 took 2.78s (loss=0.6450, bs=16, micro=16)
+2026-09-26 06:02:39,342 [INFO] QwenQualitySweep: Step 50/50 took 1.29s (loss=1.2316, bs=16, micro=16)
+2026-09-26 06:03:51,249 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\rank_sweep_mnli\cluster_attention\rank_256\distilbert_mnli_cluster_attention_full_metrics.json
+2026-09-26 06:03:54,879 [INFO] QwenQualitySweep: [1/1] cluster_attention -> PASS 60.10% (F1: 0.5999, Peak VRAM: 412.28 MB)
+2026-09-26 06:03:55,368 [INFO] HFGitExporter: [Automation] Run distilbert-mnli / cluster-attention is SUCCESSFUL (acc=60.10% >= 38.60%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-mnli-cluster-attention and Git recording.
+2026-09-26 06:03:57,915 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 200 OK"
+2026-09-26 06:03:58,179 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-26 06:03:58,574 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-mnli-cluster-attention/preupload/main "HTTP/1.1 200 OK"
+2026-09-26 06:04:00,482 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-mnli-cluster-attention/commit/main "HTTP/1.1 200 OK"
+2026-09-26 06:04:00,484 [INFO] HFGitExporter: Successfully uploaded private model to Hugging Face: https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-cluster-attention
+2026-09-26 06:04:00,547 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\cluster_attention.md

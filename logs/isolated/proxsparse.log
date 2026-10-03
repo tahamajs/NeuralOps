@@ -1,0 +1,159 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 11:13:27,116 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'proxsparse', '--output_json', 'logs\\isolated_results\\proxsparse_1790322181684_28088.json']
+2026-09-25 11:13:27,211 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 75.0% (leaving 2.00 GB headroom)
+2026-09-25 11:13:27,211 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 11:13:27,211 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=64 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-25 11:13:27,211 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 75.0%
+2026-09-25 11:13:27,607 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights: 100%|##########| 201/201 [00:00<00:00, 2892.14it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models/roberta_sst2
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-09-25 11:13:28,564 [INFO] QwenQualitySweep: model=models/roberta_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-25 11:13:28,564 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-25 11:13:28,564 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 11:13:28,564 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-25 11:13:28,564 [INFO] QwenQualitySweep:   model:             models/roberta_sst2
+2026-09-25 11:13:28,564 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-25 11:13:28,564 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-25 11:13:28,564 [INFO] QwenQualitySweep:   batch_size:        64
+2026-09-25 11:13:28,565 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-25 11:13:28,565 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-25 11:13:28,565 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-25 11:13:28,565 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 11:13:28,566 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-25 11:13:31,579 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.1548
+2026-09-25 11:13:33,772 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0796
+2026-09-25 11:13:35,953 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1766
+2026-09-25 11:13:38,199 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0516
+2026-09-25 11:13:40,380 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.1776
+2026-09-25 11:13:42,573 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.1528
+2026-09-25 11:13:44,771 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.1325
+2026-09-25 11:13:47,029 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.2733
+2026-09-25 11:13:47,048 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: D:\SVD_Project\results\batch3_roberta\proxsparse\finetuned_model.pt
+2026-09-25 11:13:48,405 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to D:\SVD_Project\results\batch3_roberta\proxsparse\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-25 11:13:48,405 [INFO] QwenQualitySweep: Prepared 14 eval batches and 50 train batches directly on GPU.
+2026-09-25 11:13:49,672 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 93.46%
+2026-09-25 11:13:49,834 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 11:13:49,834 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-25 11:13:49,835 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-25 11:13:49,835 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-25 11:13:49,835 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-25 11:13:49,835 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-25 11:13:49,835 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-25 11:13:49,835 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-25 11:13:49,836 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 11:13:49,836 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-25 11:13:49,965 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: proxsparse (recovery_steps=50, batch_size=64, optimizer=adamw)
+2026-09-25 11:13:50,503 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.5719 on roberta.encoder.layer.0.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:13:50,519 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.5654 on roberta.encoder.layer.0.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:13:50,534 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6493 on roberta.encoder.layer.0.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:13:50,551 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6145 on roberta.encoder.layer.0.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:50,570 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6289 on roberta.encoder.layer.0.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:13:50,587 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6228 on roberta.encoder.layer.0.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:50,604 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.5951 on roberta.encoder.layer.1.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:13:50,621 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.5869 on roberta.encoder.layer.1.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:13:50,639 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6410 on roberta.encoder.layer.1.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:13:50,656 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6121 on roberta.encoder.layer.1.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:50,673 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6180 on roberta.encoder.layer.1.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:13:50,688 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6236 on roberta.encoder.layer.1.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:50,703 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6222 on roberta.encoder.layer.2.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:13:50,719 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6129 on roberta.encoder.layer.2.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:13:50,734 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6219 on roberta.encoder.layer.2.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:13:50,750 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6123 on roberta.encoder.layer.2.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:50,765 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6153 on roberta.encoder.layer.2.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:13:50,782 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6230 on roberta.encoder.layer.2.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:50,799 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6117 on roberta.encoder.layer.3.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:13:50,814 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6082 on roberta.encoder.layer.3.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:13:50,829 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6487 on roberta.encoder.layer.3.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:13:50,844 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6178 on roberta.encoder.layer.3.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:50,862 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6103 on roberta.encoder.layer.3.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:13:50,878 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6216 on roberta.encoder.layer.3.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:50,893 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6078 on roberta.encoder.layer.4.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:13:50,910 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6022 on roberta.encoder.layer.4.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:13:50,926 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6258 on roberta.encoder.layer.4.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:13:50,942 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6184 on roberta.encoder.layer.4.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:50,958 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6154 on roberta.encoder.layer.4.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:13:50,974 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6356 on roberta.encoder.layer.4.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:50,991 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6100 on roberta.encoder.layer.5.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:13:51,007 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6117 on roberta.encoder.layer.5.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:13:51,023 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6214 on roberta.encoder.layer.5.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:13:51,039 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6160 on roberta.encoder.layer.5.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,055 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6280 on roberta.encoder.layer.5.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,072 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6436 on roberta.encoder.layer.5.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,089 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6130 on roberta.encoder.layer.6.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:13:51,115 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6108 on roberta.encoder.layer.6.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:13:51,135 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6323 on roberta.encoder.layer.6.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:13:51,150 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6270 on roberta.encoder.layer.6.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,167 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6225 on roberta.encoder.layer.6.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,186 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6262 on roberta.encoder.layer.6.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,201 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6067 on roberta.encoder.layer.7.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:13:51,220 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.5991 on roberta.encoder.layer.7.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:13:51,236 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6120 on roberta.encoder.layer.7.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:13:51,251 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6385 on roberta.encoder.layer.7.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,266 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6228 on roberta.encoder.layer.7.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,282 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6229 on roberta.encoder.layer.7.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,299 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6360 on roberta.encoder.layer.8.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:13:51,314 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6284 on roberta.encoder.layer.8.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:13:51,330 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6459 on roberta.encoder.layer.8.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:13:51,348 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6753 on roberta.encoder.layer.8.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,365 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6265 on roberta.encoder.layer.8.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,381 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6308 on roberta.encoder.layer.8.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,401 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6401 on roberta.encoder.layer.9.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:13:51,418 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6316 on roberta.encoder.layer.9.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:13:51,435 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6589 on roberta.encoder.layer.9.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:13:51,454 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6922 on roberta.encoder.layer.9.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,471 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6493 on roberta.encoder.layer.9.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,488 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6475 on roberta.encoder.layer.9.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,506 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6404 on roberta.encoder.layer.10.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:13:51,524 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6413 on roberta.encoder.layer.10.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:13:51,542 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6689 on roberta.encoder.layer.10.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:13:51,559 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6837 on roberta.encoder.layer.10.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,574 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6791 on roberta.encoder.layer.10.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,591 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6642 on roberta.encoder.layer.10.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,607 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6420 on roberta.encoder.layer.11.attention.self.query exceeded threshold 0.4000.
+2026-09-25 11:13:51,623 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6412 on roberta.encoder.layer.11.attention.self.key exceeded threshold 0.4000.
+2026-09-25 11:13:51,639 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6603 on roberta.encoder.layer.11.attention.self.value exceeded threshold 0.4000.
+2026-09-25 11:13:51,655 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6758 on roberta.encoder.layer.11.attention.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,671 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6764 on roberta.encoder.layer.11.intermediate.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,687 [WARNING] framework.compression_engine.proxsparse: ProxSparse: reconstruction error 0.6806 on roberta.encoder.layer.11.output.dense exceeded threshold 0.4000.
+2026-09-25 11:13:51,725 [WARNING] framework.compression_engine.proxsparse: ProxSparse post-compression forward sanity check warning: mat1 and mat2 must have the same dtype, but got Half and Float
+2026-09-25 11:13:51,742 [INFO] QwenQualitySweep: module=proxsparse path=adapted_roberta
+2026-09-25 11:13:51,744 [INFO] QwenQualitySweep: module=proxsparse injection summary: 0 SVDLinear layers active
+2026-09-25 11:13:51,745 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for proxsparse (lr=2.0e-04)
+2026-09-25 11:13:51,951 [INFO] framework.utils.compat: Recovery fine-tuning selected 592130 trainable parameters across 4 tensors.
+2026-09-25 11:13:51,952 [INFO] framework.utils.compat: Discovered 4 trainable tensors (592130 params)
+2026-09-25 11:13:51,955 [INFO] QwenQualitySweep: LoRA fine-tuning: 592130 trainable parameters across 4 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-25 11:13:52,209 [INFO] QwenQualitySweep: Step 1/50 took 0.25s (loss=0.1103, bs=64, micro=16)
+2026-09-25 11:13:53,003 [INFO] QwenQualitySweep: Step 5/50 took 0.22s (loss=0.1623, bs=64, micro=16)
+2026-09-25 11:13:53,981 [INFO] QwenQualitySweep: Step 10/50 took 0.18s (loss=0.0947, bs=64, micro=16)
+2026-09-25 11:13:54,943 [INFO] QwenQualitySweep: Step 15/50 took 0.18s (loss=0.1656, bs=64, micro=16)
+2026-09-25 11:13:55,864 [INFO] QwenQualitySweep: Step 20/50 took 0.19s (loss=0.1464, bs=64, micro=16)
+2026-09-25 11:13:57,053 [INFO] QwenQualitySweep: Step 25/50 took 0.27s (loss=0.1963, bs=64, micro=16)
+2026-09-25 11:13:58,353 [INFO] QwenQualitySweep: Step 30/50 took 0.25s (loss=0.1354, bs=64, micro=16)
+2026-09-25 11:13:59,377 [INFO] QwenQualitySweep: Step 35/50 took 0.20s (loss=0.0873, bs=64, micro=16)
+2026-09-25 11:14:00,386 [INFO] QwenQualitySweep: Step 40/50 took 0.19s (loss=0.1375, bs=64, micro=16)
+2026-09-25 11:14:01,526 [INFO] QwenQualitySweep: Step 45/50 took 0.28s (loss=0.0332, bs=64, micro=16)
+2026-09-25 11:14:02,477 [INFO] QwenQualitySweep: Step 50/50 took 0.19s (loss=0.1569, bs=64, micro=16)
+2026-09-25 11:14:05,148 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to D:\SVD_Project\results\batch3_roberta\proxsparse\roberta_sst2_proxsparse_full_metrics.json
+2026-09-25 11:14:05,342 [INFO] QwenQualitySweep: [1/1] proxsparse -> PASS_NO_COMPRESSION 94.04% (F1: 0.9417, Peak VRAM: 457.08 MB)
+2026-09-25 11:14:05,342 [WARNING] QwenQualitySweep: Module 'proxsparse' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-25 11:14:05,342 [INFO] QwenQualitySweep: [Quality Guard] Module 'proxsparse' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=94.04%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-25 11:14:05,349 [INFO] QwenQualitySweep: [1/1] proxsparse Timing: eval_time=15.38s
+2026-09-25 11:14:05,350 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-25 11:14:05,658 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 11:14:05,658 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-25 11:14:05,665 [INFO] QwenQualitySweep: 
+                     Module              Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+proxsparse (efficient-attn) PASS_NO_COMPRESSION   94.04%    +0.58% 0.9417                  0            1.00x  457.1 MB               2.06              2.36
+2026-09-25 11:14:05,665 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:169: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

@@ -1,0 +1,59 @@
+`torch_dtype` is deprecated! Use `dtype` instead!
+2026-09-11 11:43:54,705 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-11 11:43:54,705 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-11 11:43:54,705 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 11:43:54,705 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-11 11:43:54,705 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
+2026-09-11 11:43:54,705 [INFO] QwenQualitySweep:   family:            bert
+2026-09-11 11:43:54,705 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-11 11:43:54,705 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-11 11:43:54,706 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-11 11:43:54,706 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-11 11:43:54,706 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-11 11:43:54,706 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 11:43:54,707 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\unified_asvd\distilbert\finetuned_model.pt
+2026-09-11 11:43:54,760 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-11 11:43:55,620 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-11 11:43:58,755 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.48%
+2026-09-11 11:43:58,811 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 11:43:58,811 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-11 11:43:58,811 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-11 11:43:58,811 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-11 11:43:58,812 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-11 11:43:58,812 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-11 11:43:58,812 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-11 11:43:58,812 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 11:43:58,816 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-11 11:44:01,953 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_granite_hybrid\distilbert\distilbert_sst2_full_full_metrics.json
+2026-09-11 11:44:01,972 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_granite_hybrid\distilbert\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-11 11:44:02,179 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.48% (F1: 0.9077, Peak VRAM: 389.51 MB)
+2026-09-11 11:44:02,179 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_granite_hybrid\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-11 11:44:02,423 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: granite_hybrid (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-11 11:44:04,968 [INFO] framework.core.attention_utils: Successfully injected 'granite_hybrid' into 6 transformer blocks.
+2026-09-11 11:44:04,979 [INFO] QwenQualitySweep: module=granite_hybrid path=legacy_bert
+2026-09-11 11:44:04,980 [INFO] QwenQualitySweep: module=granite_hybrid injection summary: 0 SVDLinear layers active
+2026-09-11 11:44:04,980 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for granite_hybrid (lr=2.0e-04)
+2026-09-11 11:44:05,360 [INFO] framework.utils.compat: Recovery fine-tuning selected 1181984 trainable parameters across 82 tensors.
+2026-09-11 11:44:05,362 [INFO] QwenQualitySweep: LoRA fine-tuning: 1181984 trainable parameters across 82 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-11 11:44:08,594 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.5916 (bs=8, micro_bs=4)
+2026-09-11 11:44:10,175 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.6844 (bs=8, micro_bs=4)
+2026-09-11 11:44:12,028 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.3985 (bs=8, micro_bs=4)
+2026-09-11 11:44:13,893 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.4142 (bs=8, micro_bs=4)
+2026-09-11 11:44:15,751 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6567 (bs=8, micro_bs=4)
+2026-09-11 11:44:17,620 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.4089 (bs=8, micro_bs=4)
+2026-09-11 11:44:19,503 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.3968 (bs=8, micro_bs=4)
+2026-09-11 11:44:21,362 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.7204 (bs=8, micro_bs=4)
+2026-09-11 11:44:23,228 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.5915 (bs=8, micro_bs=4)
+2026-09-11 11:44:25,084 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.3293 (bs=8, micro_bs=4)
+2026-09-11 11:44:26,952 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.6991 (bs=8, micro_bs=4)
+2026-09-11 11:44:42,394 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_granite_hybrid\distilbert\distilbert_sst2_granite_hybrid_full_metrics.json
+2026-09-11 11:44:42,424 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_granite_hybrid\distilbert\checkpoints\granite_hybrid\weights.pt (module_params=0, lora_params=52)
+2026-09-11 11:44:42,887 [INFO] QwenQualitySweep: [2/2] granite_hybrid -> PASS 63.65% (F1: 0.7325, Peak VRAM: 1604.75 MB)
+2026-09-11 11:44:42,887 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_granite_hybrid\distilbert\checkpoints\granite_hybrid. Automated export will be handled post-sweep by orchestrator.
+2026-09-11 11:44:43,161 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 11:44:43,161 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-11 11:44:43,166 [INFO] QwenQualitySweep: 
+        Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+          full   PASS   90.48% 0.00% (base) 0.9077                  0            1.00x  389.5 MB               2.50              2.86
+granite_hybrid   PASS   63.65%      -26.83% 0.7325                  0            0.31x 1604.8 MB              13.59             15.59
+2026-09-11 11:44:43,166 [INFO] QwenQualitySweep: ================================================================================

@@ -1,0 +1,102 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+2026-09-27 09:43:21,348 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0% (leaving 5.20 GB headroom)
+2026-09-27 09:43:21,349 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-27 09:43:21,363 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-27 09:43:21,363 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0%
+2026-09-27 09:43:22,617 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
+2026-09-27 09:43:22,840 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-09-27 09:43:23,068 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert-base-uncased-finetuned-sst-2-english/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-09-27 09:43:23,283 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert/distilbert-base-uncased-finetuned-sst-2-english/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-09-27 09:43:23,513 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert-base-uncased-finetuned-sst-2-english/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+2026-09-27 09:43:23,730 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/distilbert/distilbert-base-uncased-finetuned-sst-2-english/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-27 09:43:24,023 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+2026-09-27 09:43:24,245 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
+2026-09-27 09:43:24,462 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
+2026-09-27 09:43:24,679 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english/resolve/main/config.json "HTTP/1.1 200 OK"
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 2083.98it/s]
+2026-09-27 09:43:25,573 [INFO] QwenQualitySweep: model=distilbert-base-uncased-finetuned-sst-2-english qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-27 09:43:25,573 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'raw_family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-27 09:43:25,573 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 09:43:25,573 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-27 09:43:25,574 [INFO] QwenQualitySweep:   model:             distilbert-base-uncased-finetuned-sst-2-english
+2026-09-27 09:43:25,574 [INFO] QwenQualitySweep:   family:            bert
+2026-09-27 09:43:25,574 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-27 09:43:25,574 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-27 09:43:25,575 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-27 09:43:25,575 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-27 09:43:25,577 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-27 09:43:25,577 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 09:43:25,604 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\bert_sst2_baseline\finetuned_model.pt
+2026-09-27 09:43:25,615 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
+2026-09-27 09:43:27,826 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\04_rank_sweeps\distilbert\deep_rank_distilbert\fwsvd\rank_16\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-27 09:43:27,826 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-27 09:43:32,578 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.60%
+2026-09-27 09:43:32,852 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 09:43:32,852 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-27 09:43:32,852 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-27 09:43:32,852 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-27 09:43:32,853 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-27 09:43:32,853 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-27 09:43:32,853 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-27 09:43:32,853 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-27 09:43:32,853 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 09:43:32,853 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-27 09:43:33,093 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: fwsvd (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-27 09:43:34,249 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.8921 on distilbert.transformer.layer.0.attention.q_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:34,322 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.8629 on distilbert.transformer.layer.0.attention.k_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:34,379 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9206 on distilbert.transformer.layer.0.attention.v_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:34,446 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9213 on distilbert.transformer.layer.0.attention.out_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:34,508 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.8056 on distilbert.transformer.layer.1.attention.q_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:34,591 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.8012 on distilbert.transformer.layer.1.attention.k_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:34,657 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9175 on distilbert.transformer.layer.1.attention.v_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:34,769 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9396 on distilbert.transformer.layer.1.attention.out_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:34,859 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9239 on distilbert.transformer.layer.2.attention.q_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:34,968 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9096 on distilbert.transformer.layer.2.attention.k_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:35,077 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9271 on distilbert.transformer.layer.2.attention.v_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:35,188 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9479 on distilbert.transformer.layer.2.attention.out_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:35,306 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9117 on distilbert.transformer.layer.3.attention.q_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:35,414 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.8853 on distilbert.transformer.layer.3.attention.k_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:35,517 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9504 on distilbert.transformer.layer.3.attention.v_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:35,627 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9525 on distilbert.transformer.layer.3.attention.out_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:35,750 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9278 on distilbert.transformer.layer.4.attention.q_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:35,865 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9203 on distilbert.transformer.layer.4.attention.k_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:35,971 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9483 on distilbert.transformer.layer.4.attention.v_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:36,086 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9560 on distilbert.transformer.layer.4.attention.out_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:36,200 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9044 on distilbert.transformer.layer.5.attention.q_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:36,321 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9225 on distilbert.transformer.layer.5.attention.k_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:36,437 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9599 on distilbert.transformer.layer.5.attention.v_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:36,551 [WARNING] framework.compression_engine.fwsvd_compressor: FWSVD reconstruction error 0.9639 on distilbert.transformer.layer.5.attention.out_lin exceeded threshold 0.5000. Skipping compression (fallback).
+2026-09-27 09:43:36,559 [INFO] QwenQualitySweep: module=fwsvd path=legacy_bert
+2026-09-27 09:43:36,560 [INFO] QwenQualitySweep: module=fwsvd injection summary: 0 SVDLinear layers active
+2026-09-27 09:43:36,560 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for fwsvd (lr=2.0e-04)
+2026-09-27 09:43:36,629 [INFO] framework.utils.compat: Recovery fine-tuning selected 592130 trainable parameters across 4 tensors.
+2026-09-27 09:43:36,629 [INFO] framework.utils.compat: Discovered 4 trainable tensors (592130 params)
+2026-09-27 09:43:36,631 [INFO] QwenQualitySweep: LoRA fine-tuning: 592130 trainable parameters across 4 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-27 09:43:36,836 [INFO] QwenQualitySweep: Step 1/50 took 0.20s (loss=0.0145, bs=8, micro=8)
+2026-09-27 09:43:37,026 [INFO] QwenQualitySweep: Step 5/50 took 0.05s (loss=0.0069, bs=8, micro=8)
+2026-09-27 09:43:37,252 [INFO] QwenQualitySweep: Step 10/50 took 0.05s (loss=0.0001, bs=8, micro=8)
+2026-09-27 09:43:37,480 [INFO] QwenQualitySweep: Step 15/50 took 0.05s (loss=0.0005, bs=8, micro=8)
+2026-09-27 09:43:37,700 [INFO] QwenQualitySweep: Step 20/50 took 0.04s (loss=0.0003, bs=8, micro=8)
+2026-09-27 09:43:37,941 [INFO] QwenQualitySweep: Step 25/50 took 0.04s (loss=0.0000, bs=8, micro=8)
+2026-09-27 09:43:38,135 [INFO] QwenQualitySweep: Step 30/50 took 0.04s (loss=0.0001, bs=8, micro=8)
+2026-09-27 09:43:38,311 [INFO] QwenQualitySweep: Step 35/50 took 0.03s (loss=0.0062, bs=8, micro=8)
+2026-09-27 09:43:38,531 [INFO] QwenQualitySweep: Step 40/50 took 0.05s (loss=0.1325, bs=8, micro=8)
+2026-09-27 09:43:38,827 [INFO] QwenQualitySweep: Step 45/50 took 0.05s (loss=0.0040, bs=8, micro=8)
+2026-09-27 09:43:39,058 [INFO] QwenQualitySweep: Step 50/50 took 0.05s (loss=0.0005, bs=8, micro=8)
+2026-09-27 09:43:43,805 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\distilbert\deep_rank_distilbert\fwsvd\rank_16\distilbert-base-uncased-finetuned-sst-2-english_fwsvd_full_metrics.json
+2026-09-27 09:43:44,041 [INFO] QwenQualitySweep: [1/1] fwsvd -> PASS 90.48% (F1: 0.9095, Peak VRAM: 302.94 MB)
+2026-09-27 09:43:44,041 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\04_rank_sweeps\distilbert\deep_rank_distilbert\fwsvd\rank_16\checkpoints\fwsvd. Automated export will be handled post-sweep by orchestrator.
+2026-09-27 09:43:44,042 [INFO] QwenQualitySweep: [1/1] fwsvd Timing: eval_time=10.95s
+2026-09-27 09:43:44,042 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-27 09:43:44,477 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 09:43:44,477 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert-base-uncased-finetuned-sst-2-english on sst2)
+2026-09-27 09:43:44,488 [INFO] QwenQualitySweep: 
+                Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+fwsvd (efficient-attn)   PASS   90.48%    -0.12% 0.9095                  0            1.00x  302.9 MB               3.89              4.46
+2026-09-27 09:43:44,489 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:171: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

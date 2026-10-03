@@ -1,0 +1,112 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 17:47:46,736 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'rpca_compressor', '--output_json', 'logs\\isolated_results\\rpca_compressor_1790345798267_24924.json']
+2026-09-25 17:47:46,817 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 45.0% (leaving 4.40 GB headroom)
+2026-09-25 17:47:46,818 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 17:47:46,818 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=64 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-25 17:47:46,818 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 45.0%
+2026-09-25 17:47:47,149 [INFO] QwenQualitySweep: Configured dataset 'agnews' with num_labels=2
+You passed `num_labels=2` which is incompatible to the `id2label` map of length `4`.
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 2328.29it/s]
+[1mDistilBertForSequenceClassification LOAD REPORT[0m from: models/distilbert_agnews_full
+Key               | Status   |                                                                                       
+------------------+----------+---------------------------------------------------------------------------------------
+classifier.bias   | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([4]) vs model:torch.Size([2])          
+classifier.weight | MISMATCH | Reinit due to size mismatch - ckpt: torch.Size([4, 768]) vs model:torch.Size([2, 768])
+
+Notes:
+- MISMATCH:	ckpt weights were loaded, but they did not match the original empty weight shapes.
+2026-09-25 17:47:48,117 [INFO] QwenQualitySweep: model=models/distilbert_agnews_full qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-25 17:47:48,117 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-25 17:47:48,117 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 17:47:48,117 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-25 17:47:48,117 [INFO] QwenQualitySweep:   model:             models/distilbert_agnews_full
+2026-09-25 17:47:48,118 [INFO] QwenQualitySweep:   family:            bert
+2026-09-25 17:47:48,118 [INFO] QwenQualitySweep:   dataset:           agnews
+2026-09-25 17:47:48,118 [INFO] QwenQualitySweep:   batch_size:        64
+2026-09-25 17:47:48,119 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-25 17:47:48,119 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-25 17:47:48,119 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-25 17:47:48,119 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 17:47:48,121 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-25 17:47:52,323 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.6515
+2026-09-25 17:47:55,492 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.6396
+2026-09-25 17:47:58,618 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.6355
+2026-09-25 17:48:01,684 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.6522
+2026-09-25 17:48:05,267 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.6332
+2026-09-25 17:48:07,387 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.7008
+2026-09-25 17:48:09,370 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.6378
+2026-09-25 17:48:11,039 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.6123
+2026-09-25 17:48:11,053 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: D:\SVD_Project\results\agnews_deep_sweep\rpca_compressor\finetuned_model.pt
+2026-09-25 17:48:13,161 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to D:\SVD_Project\results\agnews_deep_sweep\rpca_compressor\batch_cache_agnews (will be reused by subsequent module runs)
+2026-09-25 17:48:13,162 [INFO] QwenQualitySweep: Prepared 14 eval batches and 50 train batches directly on GPU.
+2026-09-25 17:48:13,995 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 69.84%
+2026-09-25 17:48:14,125 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 17:48:14,125 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-25 17:48:14,125 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-25 17:48:14,125 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-25 17:48:14,125 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-25 17:48:14,125 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-25 17:48:14,126 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-25 17:48:14,126 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-25 17:48:14,126 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 17:48:14,129 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-25 17:48:14,201 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: rpca_compressor (recovery_steps=50, batch_size=64, optimizer=adamw)
+2026-09-25 17:48:15,205 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.7274 exceeded threshold 0.4000.
+2026-09-25 17:48:15,540 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.7184 exceeded threshold 0.4000.
+2026-09-25 17:48:15,898 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.7669 exceeded threshold 0.4000.
+2026-09-25 17:48:16,275 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.7345 exceeded threshold 0.4000.
+2026-09-25 17:48:16,663 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.6645 exceeded threshold 0.4000.
+2026-09-25 17:48:17,069 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.6482 exceeded threshold 0.4000.
+2026-09-25 17:48:17,538 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.7492 exceeded threshold 0.4000.
+2026-09-25 17:48:18,023 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.7607 exceeded threshold 0.4000.
+2026-09-25 17:48:18,452 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.7586 exceeded threshold 0.4000.
+2026-09-25 17:48:18,893 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.7572 exceeded threshold 0.4000.
+2026-09-25 17:48:19,342 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.7627 exceeded threshold 0.4000.
+2026-09-25 17:48:19,790 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.7902 exceeded threshold 0.4000.
+2026-09-25 17:48:20,292 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.7272 exceeded threshold 0.4000.
+2026-09-25 17:48:20,772 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.7145 exceeded threshold 0.4000.
+2026-09-25 17:48:21,275 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.8184 exceeded threshold 0.4000.
+2026-09-25 17:48:21,806 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.8286 exceeded threshold 0.4000.
+2026-09-25 17:48:22,271 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.7617 exceeded threshold 0.4000.
+2026-09-25 17:48:22,759 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.7569 exceeded threshold 0.4000.
+2026-09-25 17:48:23,254 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.8188 exceeded threshold 0.4000.
+2026-09-25 17:48:23,768 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.8249 exceeded threshold 0.4000.
+2026-09-25 17:48:24,263 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.7517 exceeded threshold 0.4000.
+2026-09-25 17:48:24,793 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.7717 exceeded threshold 0.4000.
+2026-09-25 17:48:25,245 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.8231 exceeded threshold 0.4000.
+2026-09-25 17:48:25,732 [WARNING] framework.compression_engine.rpca_compressor: RPCA: reconstruction error 0.8373 exceeded threshold 0.4000.
+2026-09-25 17:48:25,816 [WARNING] framework.compression_engine.rpca_compressor: RPCA post-compression forward sanity check warning: mat1 and mat2 must have the same dtype, but got Half and Float
+2026-09-25 17:48:25,828 [INFO] QwenQualitySweep: module=rpca_compressor path=legacy_bert
+2026-09-25 17:48:25,831 [INFO] QwenQualitySweep: module=rpca_compressor injection summary: 0 SVDLinear layers active
+2026-09-25 17:48:25,831 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for rpca_compressor (lr=2.0e-04)
+2026-09-25 17:48:25,912 [INFO] framework.utils.compat: Recovery fine-tuning selected 1538 trainable parameters across 2 tensors.
+2026-09-25 17:48:25,912 [INFO] framework.utils.compat: Discovered 2 trainable tensors (1538 params)
+2026-09-25 17:48:25,914 [INFO] QwenQualitySweep: LoRA fine-tuning: 1538 trainable parameters across 2 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-25 17:48:26,078 [INFO] QwenQualitySweep: Step 1/50 took 0.16s (loss=0.5867, bs=64, micro=16)
+2026-09-25 17:48:26,689 [INFO] QwenQualitySweep: Step 5/50 took 0.15s (loss=0.6305, bs=64, micro=16)
+2026-09-25 17:48:27,592 [INFO] QwenQualitySweep: Step 10/50 took 0.20s (loss=0.5794, bs=64, micro=16)
+2026-09-25 17:48:28,536 [INFO] QwenQualitySweep: Step 15/50 took 0.18s (loss=0.6037, bs=64, micro=16)
+2026-09-25 17:48:29,434 [INFO] QwenQualitySweep: Step 20/50 took 0.18s (loss=0.5675, bs=64, micro=16)
+2026-09-25 17:48:30,338 [INFO] QwenQualitySweep: Step 25/50 took 0.21s (loss=0.6061, bs=64, micro=16)
+2026-09-25 17:48:31,237 [INFO] QwenQualitySweep: Step 30/50 took 0.18s (loss=0.5748, bs=64, micro=16)
+2026-09-25 17:48:32,140 [INFO] QwenQualitySweep: Step 35/50 took 0.20s (loss=0.6410, bs=64, micro=16)
+2026-09-25 17:48:32,986 [INFO] QwenQualitySweep: Step 40/50 took 0.15s (loss=0.5712, bs=64, micro=16)
+2026-09-25 17:48:33,775 [INFO] QwenQualitySweep: Step 45/50 took 0.15s (loss=0.5493, bs=64, micro=16)
+2026-09-25 17:48:34,477 [INFO] QwenQualitySweep: Step 50/50 took 0.14s (loss=0.6098, bs=64, micro=16)
+2026-09-25 17:48:35,479 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to D:\SVD_Project\results\agnews_deep_sweep\rpca_compressor\distilbert_agnews_full_rpca_compressor_full_metrics.json
+2026-09-25 17:48:35,641 [INFO] QwenQualitySweep: [1/1] rpca_compressor -> PASS_NO_COMPRESSION 70.30% (F1: 0.7259, Peak VRAM: 331.86 MB)
+2026-09-25 17:48:35,641 [WARNING] QwenQualitySweep: Module 'rpca_compressor' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-25 17:48:35,642 [INFO] QwenQualitySweep: [Quality Guard] Module 'rpca_compressor' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=70.30%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-25 17:48:35,649 [INFO] QwenQualitySweep: [1/1] rpca_compressor Timing: eval_time=21.45s
+2026-09-25 17:48:35,649 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-25 17:48:35,960 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 17:48:35,961 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_agnews_full on agnews)
+2026-09-25 17:48:35,969 [INFO] QwenQualitySweep: 
+                          Module              Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+rpca_compressor (efficient-attn) PASS_NO_COMPRESSION   70.30%    +0.46% 0.7259                  0            1.00x  331.9 MB               0.48              0.55
+2026-09-25 17:48:35,969 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:169: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

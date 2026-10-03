@@ -1,0 +1,291 @@
+================================================================================
+STARTING UNIFIED 4-MODEL HARDENED SVD Linear BENCHMARK ON GPU SERVER
+Running models: ['distilbert']
+================================================================================
+
+============================== RUNNING MODEL: distilbert ==============================
+
+>>> FINISHED MODEL: distilbert in 31.5s (Exit: 0, Status: PASS, Compressed Layers: 0, Comp Rate: 1.15x)
+
+================================================================================
+4-MODEL BENCHMARK RESULTS SUMMARY (SVD Linear on GPU)
+================================================================================
+     Model  Exit Code Baseline Acc SVD Linear Acc Delta Acc     F1 Status Compressed Layers Comp Rate Peak VRAM Time (s)
+distilbert          0       90.71%         87.61%    -3.10% 0.8846   PASS                 0     1.15x  282.6 MB     31.5
+================================================================================
+
+Saved consolidated summaries to:
+- results\unified_svd_linear_4models_summary.csv
+- results\unified_svd_linear_4models_summary.json
+Generated and saved comparative visualization charts to results\unified_baseline
+
+================================================================================
+STAGE 2: QUALITY-GATED EXPORT TO HUGGING FACE & GITHUB (SVD Linear)
+================================================================================
+[Quality Gate: PASSED] distilbert passed criteria (status=PASS, acc=87.61% >= 56.0%). Packaging for export...
+  Successfully uploaded to https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-svd_linear
+
+[+] Updated documentation benchmark table in Docs\content\compressions\svd_linear.md
+Committing results directly to main...
+[main 01002e3e5] feat(benchmark): evaluation (1/1 passed on SST-2)
+ 3 files changed, 8 insertions(+), 8 deletions(-)
+Results committed to main.
+
+================================================================================
+ALL TASKS COMPLETED!
+Passed Models: 1 / 1
+Uploaded Repositories: 1
+  - https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-svd_linear
+================================================================================
+
+--- STDERR ---
+2026-09-15 07:54:54,687 [INFO] QwenQualitySweep: Parsed 6 module-specific extended arguments: ['--svd_linear_rank', '64', '--svd_linear_max_error', '0.50', '--svd_linear_target_attention_only', 'true']
+2026-09-15 07:54:54,770 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 104/104 [00:00<00:00, 3448.42it/s]
+2026-09-15 07:54:55,337 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-15 07:54:55,337 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 07:54:55,337 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 07:54:55,338 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 07:54:55,338 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
+2026-09-15 07:54:55,338 [INFO] QwenQualitySweep:   family:            bert
+2026-09-15 07:54:55,338 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 07:54:55,338 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 07:54:55,339 [INFO] QwenQualitySweep:   recovery_steps:    10
+2026-09-15 07:54:55,339 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 07:54:55,339 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 07:54:55,339 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 07:54:55,339 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\unified_asvd\distilbert\finetuned_model.pt' does not exist; attempting automatic fallback search.
+2026-09-15 07:54:55,344 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\unified_svd_linear\distilbert\finetuned_model.pt
+2026-09-15 07:54:55,451 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 07:54:56,123 [INFO] QwenQualitySweep: Prepared 109 eval batches and 10 train batches directly on GPU.
+2026-09-15 07:54:58,950 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.71%
+2026-09-15 07:54:59,000 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 07:54:59,000 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 07:54:59,000 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 07:54:59,001 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 07:54:59,001 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 07:54:59,001 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 07:54:59,001 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 07:54:59,001 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 07:54:59,002 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=10, batch_size=8, optimizer=adamw)
+2026-09-15 07:55:01,677 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_svd_linear\distilbert\distilbert_sst2_full_full_metrics.json
+2026-09-15 07:55:01,688 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_svd_linear\distilbert\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-15 07:55:01,878 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.71% (F1: 0.9099, Peak VRAM: 388.55 MB)
+2026-09-15 07:55:01,878 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_svd_linear\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 07:55:02,099 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: svd_linear (recovery_steps=10, batch_size=8, optimizer=adamw)
+2026-09-15 07:55:04,597 [INFO] QwenQualitySweep: module=svd_linear path=legacy_bert
+2026-09-15 07:55:04,598 [INFO] QwenQualitySweep: module=svd_linear injection summary: 24 SVDLinear layers active
+2026-09-15 07:55:04,598 [INFO] QwenQualitySweep: Running 10 recovery fine-tuning steps for svd_linear (lr=2.0e-04)
+2026-09-15 07:55:04,670 [INFO] framework.utils.compat: Recovery fine-tuning selected 645192 trainable parameters across 60 tensors.
+2026-09-15 07:55:04,670 [INFO] framework.utils.compat: Discovered 60 trainable tensors (645192 params)
+2026-09-15 07:55:04,673 [INFO] QwenQualitySweep: LoRA fine-tuning: 645192 trainable parameters across 60 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 07:55:04,946 [INFO] QwenQualitySweep: LoRA fine-tune step 1/10 loss=0.3627 (bs=8, micro_bs=8)
+2026-09-15 07:55:05,393 [INFO] QwenQualitySweep: LoRA fine-tune step 5/10 loss=0.0538 (bs=8, micro_bs=8)
+2026-09-15 07:55:05,944 [INFO] QwenQualitySweep: LoRA fine-tune step 10/10 loss=0.1429 (bs=8, micro_bs=8)
+2026-09-15 07:55:10,618 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_svd_linear\distilbert\distilbert_sst2_svd_linear_full_metrics.json
+2026-09-15 07:55:10,707 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_svd_linear\distilbert\checkpoints\svd_linear\weights.pt (module_params=120, lora_params=52)
+2026-09-15 07:55:10,993 [INFO] QwenQualitySweep: [2/2] svd_linear -> PASS 87.61% (F1: 0.8846, Peak VRAM: 282.64 MB)
+2026-09-15 07:55:10,993 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_svd_linear\distilbert\checkpoints\svd_linear. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 07:55:11,221 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 07:55:11,221 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-15 07:55:11,228 [INFO] QwenQualitySweep: 
+                     Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                       full   PASS   90.71% 0.00% (base) 0.9099                  0            1.00x  388.6 MB               2.09              2.40
+svd_linear (efficient-attn)   PASS   87.61%       -3.10% 0.8846                  0            1.15x  282.6 MB               4.57              5.24
+2026-09-15 07:55:11,228 [INFO] QwenQualitySweep: ================================================================================
+No files have been modified since last commit. Skipping to prevent empty commit.
+No files have been modified since last commit. Skipping to prevent empty commit.
+No files have been modified since last commit. Skipping to prevent empty commit.
+
+weights.pt:   0%|          | 0.00/26.1M [00:00<?, ?B/s]
+weights.pt:   0%|          | 65.5k/26.1M [00:00<02:36, 166kB/s]
+weights.pt:   1%|          | 197k/26.1M [00:00<01:16, 340kB/s] 
+weights.pt:   1%|1         | 262k/26.1M [00:00<01:20, 322kB/s]
+weights.pt:   1%|1         | 328k/26.1M [00:01<01:23, 307kB/s]
+weights.pt:   2%|1         | 393k/26.1M [00:01<01:26, 297kB/s]
+weights.pt:   2%|1         | 459k/26.1M [00:01<01:27, 292kB/s]
+weights.pt:   2%|2         | 524k/26.1M [00:01<01:26, 295kB/s]
+weights.pt:   2%|2         | 590k/26.1M [00:01<01:16, 335kB/s]
+weights.pt:   3%|2         | 655k/26.1M [00:02<01:17, 327kB/s]
+weights.pt:   3%|2         | 721k/26.1M [00:02<01:09, 366kB/s]
+weights.pt:   3%|3         | 786k/26.1M [00:02<01:13, 344kB/s]
+weights.pt:   3%|3         | 852k/26.1M [00:02<01:45, 239kB/s]
+weights.pt:   4%|3         | 918k/26.1M [00:03<01:28, 286kB/s]
+weights.pt:   4%|3         | 983k/26.1M [00:03<01:27, 288kB/s]
+weights.pt:   4%|4         | 1.05M/26.1M [00:03<01:15, 332kB/s]
+weights.pt:   4%|4         | 1.11M/26.1M [00:03<01:06, 374kB/s]
+weights.pt:   5%|4         | 1.18M/26.1M [00:03<01:11, 351kB/s]
+weights.pt:   5%|4         | 1.25M/26.1M [00:03<01:04, 383kB/s]
+weights.pt:   5%|5         | 1.31M/26.1M [00:04<00:58, 422kB/s]
+weights.pt:   5%|5         | 1.38M/26.1M [00:04<01:04, 385kB/s]
+weights.pt:   6%|5         | 1.44M/26.1M [00:04<00:58, 422kB/s]
+weights.pt:   6%|5         | 1.51M/26.1M [00:04<00:54, 455kB/s]
+weights.pt:   6%|6         | 1.57M/26.1M [00:04<00:51, 480kB/s]
+weights.pt:   6%|6         | 1.64M/26.1M [00:04<00:49, 495kB/s]
+weights.pt:   7%|6         | 1.70M/26.1M [00:04<00:47, 512kB/s]
+weights.pt:   7%|6         | 1.77M/26.1M [00:04<00:46, 528kB/s]
+weights.pt:   7%|7         | 1.84M/26.1M [00:05<00:44, 540kB/s]
+weights.pt:   7%|7         | 1.90M/26.1M [00:05<00:44, 546kB/s]
+weights.pt:   8%|7         | 1.97M/26.1M [00:05<00:43, 557kB/s]
+weights.pt:   8%|7         | 2.03M/26.1M [00:05<00:42, 561kB/s]
+weights.pt:   8%|8         | 2.10M/26.1M [00:05<00:42, 567kB/s]
+weights.pt:   8%|8         | 2.16M/26.1M [00:05<00:40, 585kB/s]
+weights.pt:   9%|8         | 2.23M/26.1M [00:05<00:41, 578kB/s]
+weights.pt:   9%|8         | 2.29M/26.1M [00:05<00:41, 578kB/s]
+weights.pt:   9%|9         | 2.36M/26.1M [00:05<00:41, 578kB/s]
+weights.pt:   9%|9         | 2.42M/26.1M [00:06<00:40, 582kB/s]
+weights.pt:  10%|9         | 2.49M/26.1M [00:06<00:40, 583kB/s]
+weights.pt:  10%|#         | 2.62M/26.1M [00:06<00:34, 689kB/s]
+weights.pt:  11%|#         | 2.75M/26.1M [00:06<00:28, 821kB/s]
+weights.pt:  11%|#1        | 2.88M/26.1M [00:06<00:31, 742kB/s]
+weights.pt:  12%|#1        | 3.01M/26.1M [00:06<00:29, 779kB/s]
+weights.pt:  12%|#2        | 3.15M/26.1M [00:06<00:31, 730kB/s]
+weights.pt:  13%|#2        | 3.28M/26.1M [00:07<00:28, 787kB/s]
+weights.pt:  13%|#3        | 3.41M/26.1M [00:07<00:31, 727kB/s]
+weights.pt:  14%|#3        | 3.54M/26.1M [00:07<00:28, 793kB/s]
+weights.pt:  14%|#4        | 3.67M/26.1M [00:07<00:30, 732kB/s]
+weights.pt:  15%|#4        | 3.80M/26.1M [00:07<00:28, 784kB/s]
+weights.pt:  15%|#5        | 3.93M/26.1M [00:07<00:26, 851kB/s]
+weights.pt:  16%|#5        | 4.06M/26.1M [00:08<00:27, 792kB/s]
+weights.pt:  16%|#6        | 4.19M/26.1M [00:08<00:26, 817kB/s]
+weights.pt:  17%|#6        | 4.33M/26.1M [00:08<00:24, 876kB/s]
+weights.pt:  17%|#7        | 4.46M/26.1M [00:08<00:25, 842kB/s]
+weights.pt:  18%|#7        | 4.59M/26.1M [00:08<00:24, 880kB/s]
+weights.pt:  18%|#8        | 4.72M/26.1M [00:08<00:23, 892kB/s]
+weights.pt:  19%|#8        | 4.85M/26.1M [00:08<00:22, 941kB/s]
+weights.pt:  19%|#9        | 4.98M/26.1M [00:09<00:21, 979kB/s]
+weights.pt:  20%|#9        | 5.11M/26.1M [00:09<00:29, 706kB/s]
+weights.pt:  20%|##        | 5.24M/26.1M [00:09<00:26, 779kB/s]
+weights.pt:  21%|##        | 5.37M/26.1M [00:09<00:23, 865kB/s]
+weights.pt:  21%|##1       | 5.51M/26.1M [00:09<00:21, 938kB/s]
+weights.pt:  22%|##1       | 5.64M/26.1M [00:09<00:20, 995kB/s]
+weights.pt:  23%|##2       | 5.96M/26.1M [00:10<00:13, 1.44MB/s]
+weights.pt:  24%|##3       | 6.16M/26.1M [00:10<00:13, 1.44MB/s]
+weights.pt:  24%|##4       | 6.36M/26.1M [00:10<00:13, 1.43MB/s]
+weights.pt:  25%|##5       | 6.55M/26.1M [00:10<00:13, 1.47MB/s]
+weights.pt:  26%|##5       | 6.75M/26.1M [00:10<00:12, 1.53MB/s]
+weights.pt:  27%|##6       | 6.95M/26.1M [00:10<00:12, 1.58MB/s]
+weights.pt:  27%|##7       | 7.14M/26.1M [00:10<00:11, 1.64MB/s]
+weights.pt:  28%|##8       | 7.34M/26.1M [00:10<00:11, 1.69MB/s]
+weights.pt:  29%|##9       | 7.60M/26.1M [00:10<00:10, 1.80MB/s]
+weights.pt:  30%|##9       | 7.80M/26.1M [00:11<00:09, 1.84MB/s]
+weights.pt:  31%|###       | 8.00M/26.1M [00:11<00:10, 1.75MB/s]
+weights.pt:  31%|###1      | 8.19M/26.1M [00:11<00:10, 1.71MB/s]
+weights.pt:  32%|###2      | 8.39M/26.1M [00:11<00:12, 1.40MB/s]
+weights.pt:  33%|###2      | 8.59M/26.1M [00:11<00:11, 1.47MB/s]
+weights.pt:  34%|###3      | 8.78M/26.1M [00:11<00:14, 1.19MB/s]
+weights.pt:  35%|###4      | 9.04M/26.1M [00:12<00:12, 1.41MB/s]
+weights.pt:  35%|###5      | 9.24M/26.1M [00:12<00:11, 1.42MB/s]
+weights.pt:  36%|###6      | 9.44M/26.1M [00:12<00:13, 1.25MB/s]
+weights.pt:  37%|###6      | 9.63M/26.1M [00:12<00:12, 1.30MB/s]
+weights.pt:  38%|###7      | 9.83M/26.1M [00:12<00:13, 1.22MB/s]
+weights.pt:  38%|###8      | 10.0M/26.1M [00:12<00:12, 1.24MB/s]
+weights.pt:  39%|###8      | 10.2M/26.1M [00:12<00:12, 1.23MB/s]
+weights.pt:  39%|###9      | 10.3M/26.1M [00:13<00:12, 1.24MB/s]
+weights.pt:  40%|####      | 10.5M/26.1M [00:13<00:11, 1.31MB/s]
+weights.pt:  41%|####      | 10.7M/26.1M [00:13<00:11, 1.35MB/s]
+weights.pt:  42%|####1     | 10.9M/26.1M [00:13<00:11, 1.30MB/s]
+weights.pt:  42%|####2     | 11.1M/26.1M [00:13<00:11, 1.29MB/s]
+weights.pt:  43%|####2     | 11.2M/26.1M [00:13<00:11, 1.29MB/s]
+weights.pt:  44%|####3     | 11.4M/26.1M [00:13<00:10, 1.35MB/s]
+weights.pt:  44%|####4     | 11.6M/26.1M [00:13<00:10, 1.40MB/s]
+weights.pt:  45%|####5     | 11.8M/26.1M [00:14<00:10, 1.43MB/s]
+weights.pt:  46%|####5     | 12.0M/26.1M [00:14<00:10, 1.40MB/s]
+weights.pt:  47%|####6     | 12.2M/26.1M [00:14<00:10, 1.35MB/s]
+weights.pt:  47%|####7     | 12.4M/26.1M [00:14<00:09, 1.38MB/s]
+weights.pt:  48%|####8     | 12.6M/26.1M [00:14<00:09, 1.40MB/s]
+weights.pt:  49%|####8     | 12.8M/26.1M [00:14<00:09, 1.45MB/s]
+weights.pt:  50%|####9     | 13.0M/26.1M [00:14<00:08, 1.49MB/s]
+weights.pt:  50%|#####     | 13.2M/26.1M [00:15<00:08, 1.47MB/s]
+weights.pt:  51%|#####1    | 13.4M/26.1M [00:15<00:09, 1.41MB/s]
+weights.pt:  52%|#####1    | 13.6M/26.1M [00:15<00:09, 1.39MB/s]
+weights.pt:  53%|#####2    | 13.8M/26.1M [00:15<00:13, 928kB/s] 
+weights.pt:  53%|#####3    | 13.9M/26.1M [00:15<00:13, 906kB/s]
+weights.pt:  54%|#####3    | 14.0M/26.1M [00:16<00:14, 818kB/s]
+weights.pt:  54%|#####4    | 14.2M/26.1M [00:16<00:13, 879kB/s]
+weights.pt:  55%|#####4    | 14.3M/26.1M [00:16<00:12, 931kB/s]
+weights.pt:  55%|#####5    | 14.4M/26.1M [00:16<00:11, 973kB/s]
+weights.pt:  56%|#####5    | 14.5M/26.1M [00:16<00:11, 1.01MB/s]
+weights.pt:  56%|#####6    | 14.7M/26.1M [00:16<00:11, 1.03MB/s]
+weights.pt:  57%|#####6    | 14.8M/26.1M [00:16<00:10, 1.06MB/s]
+weights.pt:  57%|#####7    | 14.9M/26.1M [00:16<00:10, 1.09MB/s]
+weights.pt:  58%|#####7    | 15.1M/26.1M [00:17<00:09, 1.12MB/s]
+weights.pt:  58%|#####8    | 15.2M/26.1M [00:17<00:09, 1.16MB/s]
+weights.pt:  59%|#####9    | 15.4M/26.1M [00:17<00:08, 1.24MB/s]
+weights.pt:  60%|#####9    | 15.5M/26.1M [00:17<00:08, 1.20MB/s]
+weights.pt:  60%|######    | 15.7M/26.1M [00:17<00:07, 1.31MB/s]
+weights.pt:  61%|######    | 15.9M/26.1M [00:17<00:07, 1.28MB/s]
+weights.pt:  61%|######1   | 16.0M/26.1M [00:17<00:07, 1.28MB/s]
+weights.pt:  62%|######1   | 16.1M/26.1M [00:18<00:14, 711kB/s] 
+weights.pt:  63%|######2   | 16.4M/26.1M [00:18<00:09, 980kB/s]
+weights.pt:  63%|######3   | 16.5M/26.1M [00:18<00:11, 833kB/s]
+weights.pt:  64%|######4   | 16.7M/26.1M [00:18<00:09, 978kB/s]
+weights.pt:  65%|######4   | 16.9M/26.1M [00:18<00:09, 1.00MB/s]
+weights.pt:  65%|######5   | 17.0M/26.1M [00:18<00:08, 1.02MB/s]
+weights.pt:  66%|######5   | 17.1M/26.1M [00:19<00:08, 1.03MB/s]
+weights.pt:  66%|######6   | 17.2M/26.1M [00:19<00:09, 912kB/s] 
+weights.pt:  67%|######6   | 17.4M/26.1M [00:19<00:09, 935kB/s]
+weights.pt:  67%|######7   | 17.5M/26.1M [00:19<00:08, 969kB/s]
+weights.pt:  68%|######7   | 17.6M/26.1M [00:19<00:08, 990kB/s]
+weights.pt:  68%|######8   | 17.8M/26.1M [00:19<00:08, 1.01MB/s]
+weights.pt:  69%|######8   | 17.9M/26.1M [00:19<00:08, 1.02MB/s]
+weights.pt:  69%|######9   | 18.0M/26.1M [00:19<00:07, 1.04MB/s]
+weights.pt:  70%|######9   | 18.2M/26.1M [00:20<00:07, 1.06MB/s]
+weights.pt:  70%|#######   | 18.3M/26.1M [00:20<00:07, 1.08MB/s]
+weights.pt:  71%|#######   | 18.4M/26.1M [00:20<00:07, 1.09MB/s]
+weights.pt:  71%|#######1  | 18.6M/26.1M [00:20<00:06, 1.10MB/s]
+weights.pt:  72%|#######1  | 18.7M/26.1M [00:20<00:06, 1.10MB/s]
+weights.pt:  72%|#######2  | 18.8M/26.1M [00:20<00:06, 1.10MB/s]
+weights.pt:  73%|#######2  | 18.9M/26.1M [00:20<00:06, 1.09MB/s]
+weights.pt:  73%|#######3  | 19.1M/26.1M [00:20<00:06, 1.11MB/s]
+weights.pt:  74%|#######3  | 19.2M/26.1M [00:21<00:06, 1.12MB/s]
+weights.pt:  74%|#######4  | 19.3M/26.1M [00:21<00:06, 1.12MB/s]
+weights.pt:  75%|#######4  | 19.5M/26.1M [00:21<00:05, 1.14MB/s]
+weights.pt:  75%|#######5  | 19.6M/26.1M [00:21<00:05, 1.15MB/s]
+weights.pt:  76%|#######5  | 19.7M/26.1M [00:21<00:05, 1.17MB/s]
+weights.pt:  76%|#######6  | 19.9M/26.1M [00:21<00:05, 1.13MB/s]
+weights.pt:  77%|#######6  | 20.0M/26.1M [00:21<00:05, 1.12MB/s]
+weights.pt:  77%|#######7  | 20.1M/26.1M [00:21<00:05, 1.08MB/s]
+weights.pt:  78%|#######7  | 20.3M/26.1M [00:21<00:05, 1.13MB/s]
+weights.pt:  78%|#######8  | 20.4M/26.1M [00:22<00:05, 1.12MB/s]
+weights.pt:  79%|#######8  | 20.5M/26.1M [00:22<00:05, 1.10MB/s]
+weights.pt:  79%|#######9  | 20.7M/26.1M [00:22<00:04, 1.09MB/s]
+weights.pt:  80%|#######9  | 20.8M/26.1M [00:22<00:04, 1.10MB/s]
+weights.pt:  80%|########  | 20.9M/26.1M [00:22<00:04, 1.12MB/s]
+weights.pt:  81%|########  | 21.0M/26.1M [00:22<00:04, 1.17MB/s]
+weights.pt:  81%|########1 | 21.2M/26.1M [00:22<00:04, 1.17MB/s]
+weights.pt:  82%|########1 | 21.3M/26.1M [00:22<00:04, 1.17MB/s]
+weights.pt:  82%|########2 | 21.4M/26.1M [00:22<00:03, 1.19MB/s]
+weights.pt:  83%|########2 | 21.6M/26.1M [00:23<00:03, 1.20MB/s]
+weights.pt:  83%|########3 | 21.7M/26.1M [00:23<00:03, 1.22MB/s]
+weights.pt:  84%|########3 | 21.9M/26.1M [00:23<00:03, 1.20MB/s]
+weights.pt:  85%|########4 | 22.1M/26.1M [00:23<00:03, 1.23MB/s]
+weights.pt:  85%|########5 | 22.2M/26.1M [00:23<00:03, 1.22MB/s]
+weights.pt:  86%|########5 | 22.4M/26.1M [00:23<00:03, 1.22MB/s]
+weights.pt:  86%|########6 | 22.5M/26.1M [00:23<00:02, 1.21MB/s]
+weights.pt:  87%|########6 | 22.7M/26.1M [00:23<00:02, 1.25MB/s]
+weights.pt:  87%|########7 | 22.8M/26.1M [00:24<00:02, 1.26MB/s]
+weights.pt:  88%|########7 | 22.9M/26.1M [00:24<00:02, 1.24MB/s]
+weights.pt:  88%|########8 | 23.1M/26.1M [00:24<00:02, 1.19MB/s]
+weights.pt:  89%|########8 | 23.2M/26.1M [00:24<00:02, 1.20MB/s]
+weights.pt:  90%|########9 | 23.4M/26.1M [00:24<00:02, 1.29MB/s]
+weights.pt:  90%|######### | 23.5M/26.1M [00:24<00:02, 1.24MB/s]
+weights.pt:  91%|######### | 23.7M/26.1M [00:24<00:01, 1.25MB/s]
+weights.pt:  91%|#########1| 23.9M/26.1M [00:24<00:01, 1.29MB/s]
+weights.pt:  92%|#########1| 24.0M/26.1M [00:25<00:01, 1.26MB/s]
+weights.pt:  92%|#########2| 24.1M/26.1M [00:25<00:01, 1.26MB/s]
+weights.pt:  93%|#########3| 24.3M/26.1M [00:25<00:01, 1.34MB/s]
+weights.pt:  94%|#########3| 24.5M/26.1M [00:25<00:01, 1.35MB/s]
+weights.pt:  95%|#########4| 24.7M/26.1M [00:25<00:01, 1.31MB/s]
+weights.pt:  95%|#########5| 24.9M/26.1M [00:25<00:00, 1.30MB/s]
+weights.pt:  96%|#########6| 25.1M/26.1M [00:25<00:00, 1.35MB/s]
+weights.pt:  97%|#########6| 25.3M/26.1M [00:25<00:00, 1.39MB/s]
+weights.pt:  98%|#########7| 25.5M/26.1M [00:26<00:00, 1.35MB/s]
+weights.pt:  98%|#########8| 25.7M/26.1M [00:26<00:00, 1.33MB/s]
+weights.pt:  99%|#########9| 25.9M/26.1M [00:26<00:00, 1.34MB/s]
+weights.pt: 100%|#########9| 26.1M/26.1M [00:26<00:00, 1.40MB/s]
+weights.pt: 100%|##########| 26.1M/26.1M [00:26<00:00, 969kB/s] 
+To https://github.com/tahamajs/SVD_linear_Attention.git
+   d4e658a47..01002e3e5  main -> main

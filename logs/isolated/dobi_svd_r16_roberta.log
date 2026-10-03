@@ -1,0 +1,172 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+2026-09-27 07:50:01,994 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0% (leaving 5.20 GB headroom)
+2026-09-27 07:50:01,994 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-27 07:50:01,994 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-27 07:50:01,995 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0%
+2026-09-27 07:50:01,995 [INFO] QwenQualitySweep: Auto-resolving base model 'roberta-base' to fine-tuned SST-2 model: models\roberta_sst2
+2026-09-27 07:50:02,450 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights: 100%|##########| 201/201 [00:00<00:00, 3119.54it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta_sst2
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-09-27 07:50:03,383 [INFO] QwenQualitySweep: model=models\roberta_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-27 07:50:03,384 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'raw_family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-27 07:50:03,384 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 07:50:03,384 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-27 07:50:03,384 [INFO] QwenQualitySweep:   model:             models\roberta_sst2
+2026-09-27 07:50:03,385 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-27 07:50:03,385 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-27 07:50:03,385 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-27 07:50:03,385 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-27 07:50:03,385 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-27 07:50:03,385 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-27 07:50:03,385 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 07:50:03,393 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-27 07:50:05,479 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0015
+2026-09-27 07:50:07,221 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0143
+2026-09-27 07:50:08,915 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1419
+2026-09-27 07:50:10,410 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0326
+2026-09-27 07:50:11,964 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0266
+2026-09-27 07:50:13,504 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0969
+2026-09-27 07:50:14,927 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0999
+2026-09-27 07:50:16,537 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.1602
+2026-09-27 07:50:16,554 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\04_rank_sweeps\roberta\deep_rank_roberta\dobi_svd\rank_16\finetuned_model.pt
+2026-09-27 07:50:17,960 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\04_rank_sweeps\roberta\deep_rank_roberta\dobi_svd\rank_16\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-27 07:50:17,961 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-27 07:50:22,661 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 94.38%
+2026-09-27 07:50:22,801 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 07:50:22,801 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-27 07:50:22,801 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-27 07:50:22,801 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-27 07:50:22,801 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-27 07:50:22,801 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-27 07:50:22,802 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-27 07:50:22,802 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-27 07:50:22,802 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 07:50:22,802 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-27 07:50:22,896 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: dobi_svd (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-27 07:50:23,481 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9193 on roberta.encoder.layer.0.attention.self.query exceeded threshold 0.5000.
+2026-09-27 07:50:23,481 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.0.attention.self.query (fallback to original and frozen).
+2026-09-27 07:50:23,558 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.8726 on roberta.encoder.layer.0.attention.self.key exceeded threshold 0.5000.
+2026-09-27 07:50:23,558 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.0.attention.self.key (fallback to original and frozen).
+2026-09-27 07:50:23,636 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9252 on roberta.encoder.layer.0.attention.self.value exceeded threshold 0.5000.
+2026-09-27 07:50:23,636 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.0.attention.self.value (fallback to original and frozen).
+2026-09-27 07:50:23,717 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.8943 on roberta.encoder.layer.0.attention.output.dense exceeded threshold 0.5000.
+2026-09-27 07:50:23,717 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.0.attention.output.dense (fallback to original and frozen).
+2026-09-27 07:50:23,811 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9006 on roberta.encoder.layer.1.attention.self.query exceeded threshold 0.5000.
+2026-09-27 07:50:23,811 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.1.attention.self.query (fallback to original and frozen).
+2026-09-27 07:50:23,910 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.8707 on roberta.encoder.layer.1.attention.self.key exceeded threshold 0.5000.
+2026-09-27 07:50:23,910 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.1.attention.self.key (fallback to original and frozen).
+2026-09-27 07:50:24,012 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9173 on roberta.encoder.layer.1.attention.self.value exceeded threshold 0.5000.
+2026-09-27 07:50:24,012 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.1.attention.self.value (fallback to original and frozen).
+2026-09-27 07:50:24,112 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.8998 on roberta.encoder.layer.1.attention.output.dense exceeded threshold 0.5000.
+2026-09-27 07:50:24,112 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.1.attention.output.dense (fallback to original and frozen).
+2026-09-27 07:50:24,221 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9062 on roberta.encoder.layer.2.attention.self.query exceeded threshold 0.5000.
+2026-09-27 07:50:24,221 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.2.attention.self.query (fallback to original and frozen).
+2026-09-27 07:50:24,338 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.8991 on roberta.encoder.layer.2.attention.self.key exceeded threshold 0.5000.
+2026-09-27 07:50:24,340 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.2.attention.self.key (fallback to original and frozen).
+2026-09-27 07:50:24,448 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9225 on roberta.encoder.layer.2.attention.self.value exceeded threshold 0.5000.
+2026-09-27 07:50:24,448 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.2.attention.self.value (fallback to original and frozen).
+2026-09-27 07:50:24,553 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9208 on roberta.encoder.layer.2.attention.output.dense exceeded threshold 0.5000.
+2026-09-27 07:50:24,553 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.2.attention.output.dense (fallback to original and frozen).
+2026-09-27 07:50:24,662 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9046 on roberta.encoder.layer.3.attention.self.query exceeded threshold 0.5000.
+2026-09-27 07:50:24,662 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.3.attention.self.query (fallback to original and frozen).
+2026-09-27 07:50:24,768 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9222 on roberta.encoder.layer.3.attention.self.key exceeded threshold 0.5000.
+2026-09-27 07:50:24,768 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.3.attention.self.key (fallback to original and frozen).
+2026-09-27 07:50:24,870 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9207 on roberta.encoder.layer.3.attention.self.value exceeded threshold 0.5000.
+2026-09-27 07:50:24,870 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.3.attention.self.value (fallback to original and frozen).
+2026-09-27 07:50:24,973 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9160 on roberta.encoder.layer.3.attention.output.dense exceeded threshold 0.5000.
+2026-09-27 07:50:24,973 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.3.attention.output.dense (fallback to original and frozen).
+2026-09-27 07:50:25,080 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9037 on roberta.encoder.layer.4.attention.self.query exceeded threshold 0.5000.
+2026-09-27 07:50:25,081 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.4.attention.self.query (fallback to original and frozen).
+2026-09-27 07:50:25,189 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9171 on roberta.encoder.layer.4.attention.self.key exceeded threshold 0.5000.
+2026-09-27 07:50:25,189 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.4.attention.self.key (fallback to original and frozen).
+2026-09-27 07:50:25,328 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9177 on roberta.encoder.layer.4.attention.self.value exceeded threshold 0.5000.
+2026-09-27 07:50:25,328 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.4.attention.self.value (fallback to original and frozen).
+2026-09-27 07:50:25,436 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9231 on roberta.encoder.layer.4.attention.output.dense exceeded threshold 0.5000.
+2026-09-27 07:50:25,436 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.4.attention.output.dense (fallback to original and frozen).
+2026-09-27 07:50:25,543 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9060 on roberta.encoder.layer.5.attention.self.query exceeded threshold 0.5000.
+2026-09-27 07:50:25,543 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.5.attention.self.query (fallback to original and frozen).
+2026-09-27 07:50:25,651 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9270 on roberta.encoder.layer.5.attention.self.key exceeded threshold 0.5000.
+2026-09-27 07:50:25,652 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.5.attention.self.key (fallback to original and frozen).
+2026-09-27 07:50:25,753 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9289 on roberta.encoder.layer.5.attention.self.value exceeded threshold 0.5000.
+2026-09-27 07:50:25,753 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.5.attention.self.value (fallback to original and frozen).
+2026-09-27 07:50:25,853 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9150 on roberta.encoder.layer.5.attention.output.dense exceeded threshold 0.5000.
+2026-09-27 07:50:25,853 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.5.attention.output.dense (fallback to original and frozen).
+2026-09-27 07:50:25,964 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9205 on roberta.encoder.layer.6.attention.self.query exceeded threshold 0.5000.
+2026-09-27 07:50:25,964 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.6.attention.self.query (fallback to original and frozen).
+2026-09-27 07:50:26,076 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9164 on roberta.encoder.layer.6.attention.self.key exceeded threshold 0.5000.
+2026-09-27 07:50:26,076 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.6.attention.self.key (fallback to original and frozen).
+2026-09-27 07:50:26,181 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9405 on roberta.encoder.layer.6.attention.self.value exceeded threshold 0.5000.
+2026-09-27 07:50:26,181 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.6.attention.self.value (fallback to original and frozen).
+2026-09-27 07:50:26,285 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9212 on roberta.encoder.layer.6.attention.output.dense exceeded threshold 0.5000.
+2026-09-27 07:50:26,286 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.6.attention.output.dense (fallback to original and frozen).
+2026-09-27 07:50:26,397 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9216 on roberta.encoder.layer.7.attention.self.query exceeded threshold 0.5000.
+2026-09-27 07:50:26,397 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.7.attention.self.query (fallback to original and frozen).
+2026-09-27 07:50:26,510 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9118 on roberta.encoder.layer.7.attention.self.key exceeded threshold 0.5000.
+2026-09-27 07:50:26,510 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.7.attention.self.key (fallback to original and frozen).
+2026-09-27 07:50:26,616 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9329 on roberta.encoder.layer.7.attention.self.value exceeded threshold 0.5000.
+2026-09-27 07:50:26,617 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.7.attention.self.value (fallback to original and frozen).
+2026-09-27 07:50:26,721 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9317 on roberta.encoder.layer.7.attention.output.dense exceeded threshold 0.5000.
+2026-09-27 07:50:26,722 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.7.attention.output.dense (fallback to original and frozen).
+2026-09-27 07:50:26,832 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9154 on roberta.encoder.layer.8.attention.self.query exceeded threshold 0.5000.
+2026-09-27 07:50:26,832 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.8.attention.self.query (fallback to original and frozen).
+2026-09-27 07:50:26,945 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9125 on roberta.encoder.layer.8.attention.self.key exceeded threshold 0.5000.
+2026-09-27 07:50:26,945 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.8.attention.self.key (fallback to original and frozen).
+2026-09-27 07:50:27,049 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9419 on roberta.encoder.layer.8.attention.self.value exceeded threshold 0.5000.
+2026-09-27 07:50:27,049 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.8.attention.self.value (fallback to original and frozen).
+2026-09-27 07:50:27,153 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9460 on roberta.encoder.layer.8.attention.output.dense exceeded threshold 0.5000.
+2026-09-27 07:50:27,153 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.8.attention.output.dense (fallback to original and frozen).
+2026-09-27 07:50:27,265 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9008 on roberta.encoder.layer.9.attention.self.query exceeded threshold 0.5000.
+2026-09-27 07:50:27,265 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.9.attention.self.query (fallback to original and frozen).
+2026-09-27 07:50:27,382 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9097 on roberta.encoder.layer.9.attention.self.key exceeded threshold 0.5000.
+2026-09-27 07:50:27,383 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.9.attention.self.key (fallback to original and frozen).
+2026-09-27 07:50:27,486 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9371 on roberta.encoder.layer.9.attention.self.value exceeded threshold 0.5000.
+2026-09-27 07:50:27,486 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.9.attention.self.value (fallback to original and frozen).
+2026-09-27 07:50:27,589 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9426 on roberta.encoder.layer.9.attention.output.dense exceeded threshold 0.5000.
+2026-09-27 07:50:27,589 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.9.attention.output.dense (fallback to original and frozen).
+2026-09-27 07:50:27,698 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9122 on roberta.encoder.layer.10.attention.self.query exceeded threshold 0.5000.
+2026-09-27 07:50:27,698 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.10.attention.self.query (fallback to original and frozen).
+2026-09-27 07:50:27,808 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9250 on roberta.encoder.layer.10.attention.self.key exceeded threshold 0.5000.
+2026-09-27 07:50:27,808 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.10.attention.self.key (fallback to original and frozen).
+2026-09-27 07:50:27,911 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9420 on roberta.encoder.layer.10.attention.self.value exceeded threshold 0.5000.
+2026-09-27 07:50:27,911 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.10.attention.self.value (fallback to original and frozen).
+2026-09-27 07:50:28,013 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9434 on roberta.encoder.layer.10.attention.output.dense exceeded threshold 0.5000.
+2026-09-27 07:50:28,014 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.10.attention.output.dense (fallback to original and frozen).
+2026-09-27 07:50:28,122 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9068 on roberta.encoder.layer.11.attention.self.query exceeded threshold 0.5000.
+2026-09-27 07:50:28,122 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.11.attention.self.query (fallback to original and frozen).
+2026-09-27 07:50:28,231 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9304 on roberta.encoder.layer.11.attention.self.key exceeded threshold 0.5000.
+2026-09-27 07:50:28,232 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.11.attention.self.key (fallback to original and frozen).
+2026-09-27 07:50:28,348 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9548 on roberta.encoder.layer.11.attention.self.value exceeded threshold 0.5000.
+2026-09-27 07:50:28,349 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.11.attention.self.value (fallback to original and frozen).
+2026-09-27 07:50:28,452 [WARNING] framework.compression_engine.dobi_svd: Dobi-SVD reconstruction error 0.9464 on roberta.encoder.layer.11.attention.output.dense exceeded threshold 0.5000.
+2026-09-27 07:50:28,452 [INFO] framework.compression_engine.dobi_svd: Skipping Dobi-SVD compression for roberta.encoder.layer.11.attention.output.dense (fallback to original and frozen).
+2026-09-27 07:50:28,455 [INFO] framework.compression_engine.dobi_svd: Compressor dobi finished: 0 compressed, 48 fallback, avg_err=0.0000, max_err_threshold=0.5000
+2026-09-27 07:50:28,467 [INFO] QwenQualitySweep: module=dobi_svd path=adapted_roberta
+2026-09-27 07:50:28,469 [INFO] QwenQualitySweep: module=dobi_svd injection summary: 0 SVDLinear layers active
+2026-09-27 07:50:28,471 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for dobi_svd (lr=2.0e-04)
+2026-09-27 07:50:28,658 [INFO] framework.utils.compat: Recovery fine-tuning selected 0 trainable parameters across 0 tensors.
+2026-09-27 07:50:28,658 [INFO] framework.utils.compat: Discovered 0 trainable tensors (0 params)
+2026-09-27 07:50:34,488 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\roberta\deep_rank_roberta\dobi_svd\rank_16\roberta_sst2_dobi_svd_full_metrics.json
+2026-09-27 07:50:34,760 [INFO] QwenQualitySweep: [1/1] dobi_svd -> PASS_NO_COMPRESSION 94.38% (F1: 0.9445, Peak VRAM: 292.72 MB)
+2026-09-27 07:50:34,761 [WARNING] QwenQualitySweep: Module 'dobi_svd' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-27 07:50:34,761 [INFO] QwenQualitySweep: [Quality Guard] Module 'dobi_svd' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=94.38%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-27 07:50:34,766 [INFO] QwenQualitySweep: [1/1] dobi_svd Timing: eval_time=11.87s
+2026-09-27 07:50:34,767 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-27 07:50:35,171 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 07:50:35,172 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-27 07:50:35,180 [INFO] QwenQualitySweep: 
+                   Module              Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+dobi_svd (efficient-attn) PASS_NO_COMPRESSION   94.38%    +0.00% 0.9445                  0            1.00x  292.7 MB               4.94              5.67
+2026-09-27 07:50:35,181 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:171: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

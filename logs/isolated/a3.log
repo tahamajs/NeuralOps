@@ -1,0 +1,132 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 20:37:37,852 [INFO] QwenQualitySweep: Parsed 5 module-specific extended arguments: ['--module', 'a3', '--output_json', 'logs\\isolated_results\\a3_1790356034189_30364.json', '\\']
+2026-09-25 20:37:37,932 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-09-25 20:37:37,932 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 20:37:37,932 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=32 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-25 20:37:37,933 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0%
+2026-09-25 20:37:39,066 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-09-25 20:37:39,285 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Qwen/Qwen2.5-0.5B-Instruct/7ae557604adf67be50417f59c2c2f167def9a775/config.json "HTTP/1.1 200 OK"
+2026-09-25 20:37:39,534 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-09-25 20:37:39,766 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Qwen/Qwen2.5-0.5B-Instruct/7ae557604adf67be50417f59c2c2f167def9a775/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-09-25 20:37:40,012 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen2.5-0.5B-Instruct/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-09-25 20:37:40,551 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen2.5-0.5B-Instruct/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-25 20:37:41,738 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen2.5-0.5B-Instruct "HTTP/1.1 200 OK"
+2026-09-25 20:37:41,934 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+2026-09-25 20:37:42,158 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-09-25 20:37:42,280 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Qwen/Qwen2.5-0.5B-Instruct/7ae557604adf67be50417f59c2c2f167def9a775/config.json "HTTP/1.1 200 OK"
+2026-09-25 20:37:42,507 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-09-25 20:37:42,628 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Qwen/Qwen2.5-0.5B-Instruct/7ae557604adf67be50417f59c2c2f167def9a775/config.json "HTTP/1.1 200 OK"
+2026-09-25 20:37:42,901 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-09-25 20:37:43,021 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Qwen/Qwen2.5-0.5B-Instruct/7ae557604adf67be50417f59c2c2f167def9a775/config.json "HTTP/1.1 200 OK"
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:   0%|          | 1/290 [00:00<03:44,  1.29it/s]Loading weights: 100%|##########| 290/290 [00:00<00:00, 354.00it/s]
+[1mQwen2ForSequenceClassification LOAD REPORT[0m from: Qwen/Qwen2.5-0.5B-Instruct
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-25 20:37:45,166 [INFO] QwenQualitySweep: model=Qwen/Qwen2.5-0.5B-Instruct qwen_compat=True hidden=896 heads=14 head_dim=? layers=24
+2026-09-25 20:37:45,166 [INFO] QwenQualitySweep: detected model family=qwen adapter={'family': 'qwen', 'hidden_size': 896, 'num_heads': 14, 'num_key_value_heads': 2, 'q_proj_out': 896, 'kv_proj_out': 128, 'kv_repeat': 7, 'head_dim': 64, 'num_hidden_layers': 24, 'causal': True, 'mask_rank': 4, 'position_embedding': 'rotary', 'supports_gqa': True, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-25 20:37:45,166 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 20:37:45,166 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-25 20:37:45,166 [INFO] QwenQualitySweep:   model:             Qwen/Qwen2.5-0.5B-Instruct
+2026-09-25 20:37:45,166 [INFO] QwenQualitySweep:   family:            qwen
+2026-09-25 20:37:45,167 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-25 20:37:45,167 [INFO] QwenQualitySweep:   batch_size:        32
+2026-09-25 20:37:45,167 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-25 20:37:45,167 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-25 20:37:45,167 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-25 20:37:45,167 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 20:37:45,418 [INFO] QwenQualitySweep: Injected 168 LoRALinear layers into qwen backbone
+2026-09-25 20:37:45,419 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-04)
+2026-09-25 20:38:05,781 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.9876
+2026-09-25 20:38:24,721 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.6712
+2026-09-25 20:38:43,678 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=1.1019
+2026-09-25 20:39:02,619 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.8190
+2026-09-25 20:39:21,784 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.7310
+2026-09-25 20:39:40,932 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.8947
+2026-09-25 20:40:00,102 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.6942
+2026-09-25 20:40:19,295 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.6832
+2026-09-25 20:40:19,350 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\qwen2.5_0.5b_instruct_sst2_sweep\finetuned_model.pt
+2026-09-25 20:40:20,862 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\qwen2.5_0.5b_instruct_sst2_sweep\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-25 20:40:20,862 [INFO] QwenQualitySweep: Prepared 28 eval batches and 50 train batches directly on GPU.
+2026-09-25 20:41:07,040 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 69.27%
+2026-09-25 20:41:07,512 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 20:41:07,513 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-25 20:41:07,513 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-25 20:41:07,513 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-25 20:41:07,513 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-25 20:41:07,513 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-25 20:41:07,513 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-25 20:41:07,514 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-25 20:41:07,514 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 20:41:07,526 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-25 20:41:08,825 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: a3 (recovery_steps=50, batch_size=32, optimizer=adamw)
+2026-09-25 20:41:11,552 [INFO] QwenQualitySweep: Calling apply_module_to_model with rank=64 for module=a3 (lora_rank=32)
+2026-09-25 20:41:14,848 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.2.self_attn.v_proj.base_layer failed at r_ceiling=100 (err=0.416 > 0.400). Falling back to original layer.
+2026-09-25 20:41:16,315 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.3.self_attn.o_proj.base_layer failed at r_ceiling=320 (err=0.410 > 0.400). Falling back to original layer.
+2026-09-25 20:41:16,854 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.4.self_attn.v_proj.base_layer failed at r_ceiling=100 (err=0.412 > 0.400). Falling back to original layer.
+2026-09-25 20:41:17,773 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.5.self_attn.v_proj.base_layer failed at r_ceiling=100 (err=0.417 > 0.400). Falling back to original layer.
+2026-09-25 20:41:18,076 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.5.self_attn.o_proj.base_layer failed at r_ceiling=320 (err=0.425 > 0.400). Falling back to original layer.
+2026-09-25 20:41:19,556 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.7.self_attn.v_proj.base_layer failed at r_ceiling=100 (err=0.401 > 0.400). Falling back to original layer.
+2026-09-25 20:41:19,918 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.7.self_attn.o_proj.base_layer failed at r_ceiling=320 (err=0.439 > 0.400). Falling back to original layer.
+2026-09-25 20:41:20,505 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.8.self_attn.v_proj.base_layer failed at r_ceiling=100 (err=0.445 > 0.400). Falling back to original layer.
+2026-09-25 20:41:20,903 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.8.self_attn.o_proj.base_layer failed at r_ceiling=320 (err=0.404 > 0.400). Falling back to original layer.
+2026-09-25 20:41:21,794 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.9.self_attn.o_proj.base_layer failed at r_ceiling=320 (err=0.466 > 0.400). Falling back to original layer.
+2026-09-25 20:41:22,676 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.10.self_attn.o_proj.base_layer failed at r_ceiling=320 (err=0.442 > 0.400). Falling back to original layer.
+2026-09-25 20:41:23,698 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.12.self_attn.v_proj.base_layer failed at r_ceiling=100 (err=0.415 > 0.400). Falling back to original layer.
+2026-09-25 20:41:23,903 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.12.self_attn.o_proj.base_layer failed at r_ceiling=320 (err=0.403 > 0.400). Falling back to original layer.
+2026-09-25 20:41:24,544 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.13.self_attn.o_proj.base_layer failed at r_ceiling=320 (err=0.435 > 0.400). Falling back to original layer.
+2026-09-25 20:41:25,017 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.14.self_attn.v_proj.base_layer failed at r_ceiling=100 (err=0.425 > 0.400). Falling back to original layer.
+2026-09-25 20:41:27,058 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.17.self_attn.o_proj.base_layer failed at r_ceiling=320 (err=0.464 > 0.400). Falling back to original layer.
+2026-09-25 20:41:27,380 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.18.self_attn.v_proj.base_layer failed at r_ceiling=100 (err=0.412 > 0.400). Falling back to original layer.
+2026-09-25 20:41:27,969 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.19.self_attn.v_proj.base_layer failed at r_ceiling=100 (err=0.449 > 0.400). Falling back to original layer.
+2026-09-25 20:41:28,502 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.20.self_attn.v_proj.base_layer failed at r_ceiling=100 (err=0.428 > 0.400). Falling back to original layer.
+2026-09-25 20:41:29,147 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.21.self_attn.o_proj failed at r_ceiling=320 (err=0.403 > 0.400). Falling back to original layer.
+2026-09-25 20:41:29,225 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.21.self_attn.o_proj.base_layer failed at r_ceiling=320 (err=0.487 > 0.400). Falling back to original layer.
+2026-09-25 20:41:29,727 [WARNING] framework.compression_engine.a3_compressor: A3 compression for model.layers.22.self_attn.o_proj.base_layer failed at r_ceiling=320 (err=0.424 > 0.400). Falling back to original layer.
+2026-09-25 20:41:30,667 [INFO] framework.compression_engine.a3_compressor: LayerNorm recalibration succeeded.
+2026-09-25 20:41:30,804 [INFO] QwenQualitySweep: module=a3 path=adapted_qwen
+2026-09-25 20:41:30,814 [INFO] QwenQualitySweep: module=a3 injection summary: 287 SVDLinear layers active
+2026-09-25 20:41:30,832 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for a3 (lr=2.0e-04)
+2026-09-25 20:41:37,303 [INFO] framework.utils.compat: Recovery fine-tuning selected 13193216 trainable parameters across 1102 tensors.
+2026-09-25 20:41:37,317 [WARNING] framework.utils.compat: Total trainable parameters (13193216) exceeds 10000000 threshold for recovery. Pruning heavy base weights to prevent OOM.
+2026-09-25 20:41:37,336 [INFO] framework.utils.compat: Reduced recovery parameters to 13193216 trainable parameters across 1102 tensors.
+2026-09-25 20:41:37,336 [INFO] framework.utils.compat: Discovered 1102 trainable tensors (13193216 params)
+2026-09-25 20:41:37,425 [INFO] QwenQualitySweep: LoRA fine-tuning: 13193216 trainable parameters across 1102 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-25 20:41:39,045 [INFO] QwenQualitySweep: Step 1/50 took 1.61s (loss=0.8833, bs=32, micro=16)
+2026-09-25 20:41:44,245 [INFO] QwenQualitySweep: Step 5/50 took 1.15s (loss=1.0981, bs=32, micro=16)
+2026-09-25 20:41:50,820 [INFO] QwenQualitySweep: Step 10/50 took 1.25s (loss=0.6223, bs=32, micro=16)
+2026-09-25 20:41:56,698 [INFO] QwenQualitySweep: Step 15/50 took 0.99s (loss=0.8373, bs=32, micro=16)
+2026-09-25 20:42:02,400 [INFO] QwenQualitySweep: Step 20/50 took 1.34s (loss=0.5825, bs=32, micro=16)
+2026-09-25 20:42:08,725 [INFO] QwenQualitySweep: Step 25/50 took 1.21s (loss=0.7424, bs=32, micro=16)
+2026-09-25 20:42:15,126 [INFO] QwenQualitySweep: Step 30/50 took 1.24s (loss=0.7427, bs=32, micro=16)
+2026-09-25 20:42:21,311 [INFO] QwenQualitySweep: Step 35/50 took 1.17s (loss=0.7966, bs=32, micro=16)
+2026-09-25 20:42:26,649 [INFO] QwenQualitySweep: Step 40/50 took 0.96s (loss=0.8054, bs=32, micro=16)
+2026-09-25 20:42:32,169 [INFO] QwenQualitySweep: Step 45/50 took 1.38s (loss=0.7009, bs=32, micro=16)
+2026-09-25 20:42:38,562 [INFO] QwenQualitySweep: Step 50/50 took 1.19s (loss=0.7587, bs=32, micro=16)
+2026-09-25 20:42:45,993 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\qwen2.5_0.5b_instruct_sst2_sweep\Qwen2.5-0.5B-Instruct_a3_full_metrics.json
+2026-09-25 20:42:47,214 [INFO] QwenQualitySweep: [1/1] a3 -> PASS 60.78% (F1: 0.5899, Peak VRAM: 1329.01 MB)
+2026-09-25 20:42:47,214 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\qwen2.5_0.5b_instruct_sst2_sweep\checkpoints\a3. Automated export will be handled post-sweep by orchestrator.
+2026-09-25 20:42:47,214 [INFO] QwenQualitySweep: [1/1] a3 Timing: eval_time=98.39s
+2026-09-25 20:42:47,215 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-25 20:42:47,724 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 20:42:47,724 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (Qwen2.5-0.5B-Instruct on sst2)
+2026-09-25 20:42:47,745 [INFO] QwenQualitySweep: 
+                      Module Status Accuracy Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                          a3   PASS   60.78%    -8.49% 0.5899               362            1.02x 1329.0 MB               5.87              6.73
+      aasvd (efficient-attn)  CRASH    0.00%   -69.27% 0.0000                 0            1.00x    0.0 MB               0.00               N/A
+   aatc_xkv (efficient-attn)  CRASH    0.00%   -69.27% 0.0000                 0            1.00x    0.0 MB               0.00               N/A
+   adaptive (efficient-attn)  CRASH    0.00%   -69.27% 0.0000                 0            1.00x    0.0 MB               0.00               N/A
+     adasvd (efficient-attn)  CRASH    0.00%   -69.27% 0.0000                 0            1.00x    0.0 MB               0.00               N/A
+       admm (efficient-attn)  CRASH    0.00%   -69.27% 0.0000                 0            1.00x    0.0 MB               0.00               N/A
+admm_pruner (efficient-attn)  CRASH    0.00%   -69.27% 0.0000                 0            1.00x    0.0 MB               0.00               N/A
+      armor (efficient-attn)  CRASH    0.00%   -69.27% 0.0000                 0            1.00x    0.0 MB               0.00               N/A
+        ast (efficient-attn)  CRASH    0.00%   -69.27% 0.0000                 0            1.00x    0.0 MB               0.00               N/A
+2026-09-25 20:42:47,745 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:169: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

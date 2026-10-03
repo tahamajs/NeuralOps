@@ -1,0 +1,136 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from 'framework.eval_all_models_datasets' (consider renaming 'D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py' if it has the same name as a library you intended to import)
+2026-09-18 08:48:17,022 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 08:48:17,430 [INFO] QwenQualitySweep: Configured dataset 'ag_news' with num_labels=4
+Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]Loading weights: 100%|##########| 197/197 [00:00<00:00, 3685.09it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models/roberta-base
+Key                             | Status     | 
+--------------------------------+------------+-
+lm_head.layer_norm.bias         | UNEXPECTED | 
+lm_head.bias                    | UNEXPECTED | 
+lm_head.layer_norm.weight       | UNEXPECTED | 
+lm_head.dense.bias              | UNEXPECTED | 
+lm_head.dense.weight            | UNEXPECTED | 
+roberta.embeddings.position_ids | UNEXPECTED | 
+classifier.dense.weight         | MISSING    | 
+classifier.out_proj.weight      | MISSING    | 
+classifier.dense.bias           | MISSING    | 
+classifier.out_proj.bias        | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-18 08:48:18,264 [INFO] QwenQualitySweep: model=models/roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-18 08:48:18,264 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 08:48:18,264 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:48:18,265 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 08:48:18,265 [INFO] QwenQualitySweep:   model:             models/roberta-base
+2026-09-18 08:48:18,265 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-18 08:48:18,265 [INFO] QwenQualitySweep:   dataset:           ag_news
+2026-09-18 08:48:18,265 [INFO] QwenQualitySweep:   batch_size:        32
+2026-09-18 08:48:18,266 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 08:48:18,266 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 08:48:18,266 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 08:48:18,266 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:48:18,267 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-18 08:48:20,288 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=1.8012
+2026-09-18 08:48:21,624 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=1.2795
+2026-09-18 08:48:22,935 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=1.0905
+2026-09-18 08:48:24,278 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=1.0636
+2026-09-18 08:48:25,608 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.8146
+2026-09-18 08:48:26,938 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.7128
+2026-09-18 08:48:28,296 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.5348
+2026-09-18 08:48:29,602 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.6845
+2026-09-18 08:48:29,617 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\agnews_unified_aasvd\roberta\finetuned_model.pt
+2026-09-18 08:48:29,741 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 08:48:30,604 [INFO] QwenQualitySweep: Prepared 32 eval batches and 50 train batches directly on GPU.
+2026-09-18 08:48:31,817 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 74.50%
+2026-09-18 08:48:31,873 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:48:31,874 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-18 08:48:31,874 [INFO] QwenQualitySweep:   Validation Majority Count: 274 / 1000
+2026-09-18 08:48:31,874 [INFO] QwenQualitySweep:   True Majority Baseline:    27.40%
+2026-09-18 08:48:31,874 [INFO] QwenQualitySweep:   Standard Error (SE):       1.410%
+2026-09-18 08:48:31,874 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.23%
+2026-09-18 08:48:31,874 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  31.63%
+2026-09-18 08:48:31,875 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:48:31,875 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: aasvd (recovery_steps=50, batch_size=32, optimizer=adamw)
+2026-09-18 08:48:33,914 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8646 on roberta.encoder.layer.0.attention.self.query exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:34,074 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8524 on roberta.encoder.layer.0.attention.self.value exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:34,265 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8675 on roberta.encoder.layer.1.attention.self.query exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:34,580 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8660 on roberta.encoder.layer.2.attention.self.query exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:34,752 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8522 on roberta.encoder.layer.2.attention.self.value exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:34,830 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8731 on roberta.encoder.layer.2.attention.output.dense exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:34,902 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8752 on roberta.encoder.layer.3.attention.self.query exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:34,984 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8703 on roberta.encoder.layer.3.attention.self.key exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:35,055 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8609 on roberta.encoder.layer.3.attention.self.value exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:35,135 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8740 on roberta.encoder.layer.3.attention.output.dense exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:35,205 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8634 on roberta.encoder.layer.4.attention.self.query exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:35,277 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8500 on roberta.encoder.layer.4.attention.self.key exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:35,358 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8526 on roberta.encoder.layer.4.attention.self.value exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:35,429 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8742 on roberta.encoder.layer.4.attention.output.dense exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:35,510 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8754 on roberta.encoder.layer.5.attention.self.query exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:35,579 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8642 on roberta.encoder.layer.5.attention.self.key exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:35,652 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8573 on roberta.encoder.layer.5.attention.self.value exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:35,723 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8717 on roberta.encoder.layer.5.attention.output.dense exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:35,976 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8689 on roberta.encoder.layer.6.attention.self.value exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:36,058 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8824 on roberta.encoder.layer.6.attention.output.dense exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:36,280 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8712 on roberta.encoder.layer.7.attention.self.value exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:36,350 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8954 on roberta.encoder.layer.7.attention.output.dense exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:36,574 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.9056 on roberta.encoder.layer.8.attention.self.value exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:36,647 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.9049 on roberta.encoder.layer.8.attention.output.dense exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:36,881 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.9110 on roberta.encoder.layer.9.attention.self.value exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:36,958 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.9024 on roberta.encoder.layer.9.attention.output.dense exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:37,188 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.9028 on roberta.encoder.layer.10.attention.self.value exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:37,262 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.9104 on roberta.encoder.layer.10.attention.output.dense exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:37,479 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.9043 on roberta.encoder.layer.11.attention.self.value exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:37,557 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD reconstruction error 0.8960 on roberta.encoder.layer.11.attention.output.dense exceeded threshold 0.8500. Skipping compression (fallback to original).
+2026-09-18 08:48:37,577 [INFO] framework.compression_engine.aa_svd_compressor: AASVD compression complete: 18 compressed, 30 fallback. Avg error: 0.8346.
+2026-09-18 08:48:37,581 [INFO] QwenQualitySweep: module=aasvd path=adapted_roberta
+2026-09-18 08:48:37,582 [INFO] QwenQualitySweep: module=aasvd injection summary: 18 SVDLinear layers active
+2026-09-18 08:48:37,585 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for aasvd (lr=2.0e-04)
+2026-09-18 08:48:37,775 [INFO] framework.utils.compat: Recovery fine-tuning selected 2376964 trainable parameters across 58 tensors.
+2026-09-18 08:48:37,775 [INFO] framework.utils.compat: Discovered 58 trainable tensors (2376964 params)
+2026-09-18 08:48:37,783 [INFO] QwenQualitySweep: LoRA fine-tuning: 2376964 trainable parameters across 58 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 08:48:37,903 [INFO] QwenQualitySweep: Step 1/50 took 0.12s (loss=0.6089, bs=32, micro=32)
+2026-09-18 08:48:38,281 [INFO] QwenQualitySweep: Step 5/50 took 0.09s (loss=1.1122, bs=32, micro=32)
+2026-09-18 08:48:38,750 [INFO] QwenQualitySweep: Step 10/50 took 0.09s (loss=0.6206, bs=32, micro=32)
+2026-09-18 08:48:39,213 [INFO] QwenQualitySweep: Step 15/50 took 0.09s (loss=5.7336, bs=32, micro=32)
+2026-09-18 08:48:39,661 [INFO] QwenQualitySweep: Step 20/50 took 0.09s (loss=5.3521, bs=32, micro=32)
+2026-09-18 08:48:40,135 [INFO] QwenQualitySweep: Step 25/50 took 0.09s (loss=2.0879, bs=32, micro=32)
+2026-09-18 08:48:40,605 [INFO] QwenQualitySweep: Step 30/50 took 0.09s (loss=1.0931, bs=32, micro=32)
+2026-09-18 08:48:41,087 [INFO] QwenQualitySweep: Step 35/50 took 0.09s (loss=0.6722, bs=32, micro=32)
+2026-09-18 08:48:41,554 [INFO] QwenQualitySweep: Step 40/50 took 0.09s (loss=0.7253, bs=32, micro=32)
+2026-09-18 08:48:42,015 [INFO] QwenQualitySweep: Step 45/50 took 0.09s (loss=0.9889, bs=32, micro=32)
+2026-09-18 08:48:42,496 [INFO] QwenQualitySweep: Step 50/50 took 0.09s (loss=0.6656, bs=32, micro=32)
+2026-09-18 08:48:43,861 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\agnews_unified_aasvd\roberta\roberta-base_aasvd_full_metrics.json
+2026-09-18 08:48:43,930 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\agnews_unified_aasvd\roberta\checkpoints\aasvd\weights.pt (module_params=54, lora_params=4)
+2026-09-18 08:48:44,584 [INFO] QwenQualitySweep: [1/1] aasvd -> PASS 84.70% (F1: 0.8406, Peak VRAM: 389.43 MB)
+2026-09-18 08:48:44,605 [INFO] HFGitExporter: [Automation] Run roberta-base / aasvd is SUCCESSFUL (acc=84.70% >= 31.63%). Starting automated HF export to tahamajs/svd-linear-attention-roberta-base-aasvd and Git recording.
+2026-09-18 08:48:45,939 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 403 Forbidden"
+2026-09-18 08:48:46,196 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/tahamajs/svd-linear-attention-roberta-base-aasvd "HTTP/1.1 404 Not Found"
+2026-09-18 08:48:46,196 [WARNING] HFGitExporter: Hugging Face upload failed for tahamajs/svd-linear-attention-roberta-base-aasvd: (Request ID: Root=1-6aacc9bf-69068df629eee1274361d6f9;3e36ad6b-7164-4358-bd7c-3e3952d37d45)
+
+403 Forbidden: You don't have the rights to create a model under the namespace "tahamajs".
+Cannot access content at: https://huggingface.co/api/repos/create.
+Make sure your token has the correct permissions.
+2026-09-18 08:48:46,214 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\compressions\aasvd.md
+[main ea4802cad] feat(benchmark): record successful aasvd on roberta-base (Acc: 84.70%, F1: 0.8406)
+ 5 files changed, 312 insertions(+)
+ create mode 100644 results/agnews_unified_aasvd/roberta/aasvd_stats.json
+ create mode 100644 results/agnews_unified_aasvd/roberta/finetune_metadata.json
+ create mode 100644 results/agnews_unified_aasvd/roberta/roberta-base_aasvd_full_metrics.json
+ create mode 100644 results/agnews_unified_aasvd/roberta/summary.csv
+From https://github.com/tahamajs/SVD_linear_Attention
+ * branch                main       -> FETCH_HEAD
+Current branch main is up to date.
+To https://github.com/tahamajs/SVD_linear_Attention.git
+   96eb55586..ea4802cad  main -> main
+branch 'main' set up to track 'origin/main'.
+2026-09-18 08:48:51,015 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: ea4802ca
+2026-09-18 08:48:51,267 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 08:48:51,268 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on ag_news)
+2026-09-18 08:48:51,272 [INFO] QwenQualitySweep: 
+Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+ aasvd   PASS   84.70%   +10.20% 0.8406                 18            1.08x  389.4 MB               1.19              1.19
+2026-09-18 08:48:51,272 [INFO] QwenQualitySweep: ================================================================================

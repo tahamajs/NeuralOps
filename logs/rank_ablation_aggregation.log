@@ -1,0 +1,575 @@
+=== Loading ablation results ===
+  [OK] mnli/rank32: 52 rows
+  [OK] mnli/rank64: 52 rows
+  [OK] mnli/rank128: 52 rows
+  [MISSING] results\rank_ablation\mnli_rank192\summary.csv
+  [OK] mnli/rank256: 52 rows
+  [OK] sst2/rank32: 52 rows
+  [OK] sst2/rank64: 52 rows
+  [OK] sst2/rank128: 52 rows
+  [MISSING] results\rank_ablation\sst2_rank192\summary.csv
+  [OK] sst2/rank256: 52 rows
+  [MISSING] results\rank_ablation\agnews_rank32\summary.csv
+  [MISSING] results\rank_ablation\agnews_rank64\summary.csv
+  [MISSING] results\rank_ablation\agnews_rank128\summary.csv
+  [MISSING] results\rank_ablation\agnews_rank192\summary.csv
+  [OK] agnews/rank256: 6 rows
+Total rows loaded: 422
+
+=== Table 1: Accuracy vs Rank ===
+  Saved: results\rank_ablation\table1_accuracy_vs_rank.csv
+col                                mnli_rank32  mnli_rank64  mnli_rank128  mnli_rank256  sst2_rank32  sst2_rank64  sst2_rank128  sst2_rank256
+module_name                                                                                                                                  
+a3                                        74.7         74.7          74.7          71.1        88.07        85.67         85.67         85.67
+aasvd                                     79.4         69.2          68.6          79.4        90.37        89.11         85.32         88.53
+adaptive                                  75.4         75.4          75.4          75.4        85.09        85.89         85.89         85.89
+adaptive_svd                              67.4         67.4          67.4          67.4        87.96        87.73         87.73         87.73
+adasvd                                    62.6         62.6          62.6          62.6        85.55        87.04         87.04         87.04
+aegis_hybrid                              42.3         45.7          53.9          78.1        80.50        83.60         87.50         90.48
+aegis_v3                                  39.9         39.9          39.9          39.9        82.00        82.34         82.34         82.34
+aegis_v4                                  41.5         41.5          41.5          41.5        81.88        83.14         83.14         83.14
+aegis_v5                                  41.5         41.5          41.5          41.5        81.88        83.14         83.14         83.14
+aegis_v6                                  79.5         79.5          79.5          79.5        90.94        90.60         90.60         90.60
+come                                      57.5         57.5          57.5          57.5        85.44        84.63         84.63         84.63
+compressed_attention_layer_energy         43.1         47.2          50.6          36.4        76.38        80.28         83.26         82.57
+cur_moe                                   81.9         76.4          35.8          31.9        90.83        86.24         77.52         77.41
+cur_moe_class                             81.8         76.3          40.1          34.1        90.83        86.70         68.92         77.06
+fused_svd_kernel                          48.5         46.6          56.7          62.5        76.95        83.03         86.12         90.02
+gqa                                       34.5         34.5          34.5          34.5        47.59        48.28         48.28         48.28
+hybrid_svd                                38.5         38.5          38.5          38.5        77.29        76.95         76.95         76.95
+inject_aegis_hybrid                       42.3         45.7          53.9          78.1        80.50        83.60         87.50         90.48
+inject_aegis_v6                           79.5         79.5          79.5          79.5        90.94        90.60         90.60         90.60
+inject_minimal_aurora                     53.6         53.6          53.6          53.6        88.30        87.84         87.84         87.84
+inject_minimal_svd                        53.6         53.6          53.6          53.6        88.30        87.84         87.84         87.84
+inject_minimal_svd_v2                     53.6         53.6          53.6          53.6        88.30        87.84         87.84         87.84
+inject_svd_proj_attn                      38.8         43.5          48.6          67.1        78.33        82.91         87.04         90.25
+inject_swift_svd                          54.0         51.8          46.4          51.7        83.03        83.03         81.54         83.03
+kmeans                                    81.1         81.1          81.1          81.1        90.37        90.14         90.14         90.14
+kronecker                                 37.9         37.5          37.4          47.6        72.25        74.54         77.18         82.22
+lola                                      39.1         44.3          56.0          75.4        78.33        83.49         86.81         89.56
+minimal_aurora                            53.6         53.6          53.6          53.6        88.30        87.84         87.84         87.84
+minimal_nova                              53.0         53.0          53.0          53.0        88.30        87.73         87.73         87.73
+minimal_prism                             53.0         53.0          53.0          53.0        88.30        87.73         87.73         87.73
+minimal_svd                               53.6         53.6          53.6          53.6        88.30        87.84         87.84         87.84
+minimal_svd_v2                            53.6         53.6          53.6          53.6        88.30        87.84         87.84         87.84
+mla                                       36.8         36.8          36.8          36.8        68.92        69.27         69.27         69.27
+orion                                     35.6         38.3          35.8          35.4        69.38        68.46         73.39         73.05
+phantom                                   34.0         32.4          33.8          32.9        51.38        51.49         49.43         48.85
+projection_factorized_attn                43.9         50.9          68.8          79.7        82.45        84.86         88.19         90.71
+replaceme                                 64.0         64.0          64.0          64.0        78.78        78.33         78.33         78.33
+res_svd                                   44.6         49.8          65.0          78.9        80.62        84.63         89.56         90.71
+ressvd                                    46.5         32.9          60.2          79.1        77.41        83.72         88.19         90.48
+salt                                      45.1         49.6          63.2          64.9        80.96        85.09         88.88         89.79
+soa_attn                                  71.6         71.6          71.6          71.6        89.45        89.11         89.11         89.11
+soa_fused_attention                       49.8         54.1          66.7          77.1        80.85        84.40         87.50         88.99
+spectral_residual_lora                    35.0         36.7          39.3          50.2        60.67        74.08         74.20         83.49
+spectron                                  60.0         60.0          60.0          60.0        86.93        87.50         87.50         87.50
+svd_compressed                            44.9         53.5          69.2          80.0          NaN        85.32         87.73         91.06
+svd_linear                                43.9         50.9          68.8          79.7        84.52        84.86         88.19         90.71
+svd_linear_decay                          43.9         50.9          68.8          79.7        84.52        84.86         88.19         90.71
+svd_llm_v2                                41.5         45.4          65.2          80.2        70.99        83.94         87.96         90.37
+svd_proj                                  38.8         43.5          48.6          67.1        81.77        82.91         87.04         90.25
+swift_svd                                 54.0         51.8          46.4          51.7        82.45        83.03         81.54         83.03
+swift_svd_class                           54.2         51.5          44.5          51.3        82.45        83.03         81.88         83.49
+vspec                                     42.7         45.9          62.2          79.3        50.92        84.06         87.04         89.91
+
+=== Table 2: Compression Rate vs Rank ===
+  Saved: results\rank_ablation\table2_compression_vs_rank.csv
+col                                mnli_rank32  mnli_rank64  mnli_rank128  mnli_rank256  sst2_rank32  sst2_rank64  sst2_rank128  sst2_rank256
+module_name                                                                                                                                  
+a3                                      1.0522       1.0522        1.0522        1.0522       1.0522       1.0522        1.0522        1.0522
+aasvd                                   1.0164       1.1331        1.1641        1.0758       1.0164       1.1331        1.1641        1.0758
+adaptive                                1.0437       1.0437        1.0437        1.0437       1.0437       1.0437        1.0437        1.0437
+adaptive_svd                            1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523
+adasvd                                  1.1621       1.1621        1.1621        1.1621       1.1621       1.1621        1.1621        1.1621
+aegis_hybrid                            1.2059       1.1808        1.1336        1.0498       1.2059       1.1808        1.1336        1.0498
+aegis_v3                                1.1968       1.1968        1.1968        1.1968       1.1968       1.1968        1.1968        1.1968
+aegis_v4                                1.1968       1.1968        1.1968        1.1968       1.1968       1.1968        1.1968        1.1968
+aegis_v5                                1.1968       1.1968        1.1968        1.1968       1.1968       1.1968        1.1968        1.1968
+aegis_v6                                1.2525       1.2525        1.2525        1.2525       1.2525       1.2525        1.2525        1.2525
+come                                    1.2408       1.2408        1.2408        1.2408       1.2409       1.2409        1.2409        1.2409
+compressed_attention_layer_energy       1.2370       1.2171        1.1792        1.1099       1.2370       1.2171        1.1792        1.1099
+cur_moe                                 1.0000       1.0563        1.3806        1.3070       1.0000       1.0563        1.3806        1.3070
+cur_moe_class                           1.0000       1.0563        1.3806        1.3070       1.0000       1.0563        1.3806        1.3070
+fused_svd_kernel                        1.2404       1.2139        1.1641        1.0758       1.2404       1.2139        1.1641        1.0758
+gqa                                     1.0779       1.0779        1.0779        1.0779       1.0779       1.0779        1.0779        1.0779
+hybrid_svd                              1.9073       1.9073        1.9073        1.9073       1.9073       1.9073        1.9073        1.9073
+inject_aegis_hybrid                     1.2059       1.1808        1.1336        1.0498       1.2059       1.1808        1.1336        1.0498
+inject_aegis_v6                         1.2525       1.2525        1.2525        1.2525       1.2525       1.2525        1.2525        1.2525
+inject_minimal_aurora                   1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523
+inject_minimal_svd                      1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523
+inject_minimal_svd_v2                   1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523
+inject_svd_proj_attn                    1.2270       1.2010        1.1523        1.0657       1.2270       1.2010        1.1523        1.0657
+inject_swift_svd                        1.3444       1.4410        1.4964        1.4218       1.3445       1.4410        1.4964        1.4218
+kmeans                                  2.7331       2.7331        2.7331        2.7331       2.7332       2.7332        2.7332        2.7332
+kronecker                               1.9371       1.9316        1.8378        1.4231       1.9371       1.9316        1.8378        1.4231
+lola                                    1.2270       1.2010        1.1523        1.0657       1.2270       1.2010        1.1523        1.0657
+minimal_aurora                          1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523
+minimal_nova                            1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523
+minimal_prism                           1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523
+minimal_svd                             1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523
+minimal_svd_v2                          1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523
+mla                                     1.0811       1.0811        1.0811        1.0811       1.0811       1.0811        1.0811        1.0811
+orion                                   1.2270       1.2010        1.1523        1.0657       1.2270       1.2010        1.1523        1.0657
+phantom                                 1.2270       1.2010        1.1523        1.0657       1.2270       1.2010        1.1523        1.0657
+projection_factorized_attn              1.2257       1.1998        1.1512        1.0648       1.2257       1.1998        1.1512        1.0648
+replaceme                               1.2407       1.2407        1.2407        1.2407       1.2407       1.2407        1.2407        1.2407
+res_svd                                 1.2336       1.2010        1.1407        1.0365       1.2337       1.2010        1.1407        1.0365
+ressvd                                  1.2336       1.2010        1.1407        1.0365       1.2337       1.2010        1.1407        1.0365
+salt                                    1.2404       1.2138        1.1640        1.0757       1.2404       1.2138        1.1640        1.0757
+soa_attn                                1.1107       1.1107        1.1107        1.1107       1.1107       1.1107        1.1107        1.1107
+soa_fused_attention                     1.1627       1.1449        1.1109        1.0487       1.1627       1.1449        1.1109        1.0487
+spectral_residual_lora                  2.4079       2.1981        1.8719        1.4435       2.1982       2.1982        1.8719        1.4435
+spectron                                1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523
+svd_compressed                          1.2270       1.2010        1.1523        1.0657          NaN       1.2010        1.1523        1.0657
+svd_linear                              1.2257       1.1998        1.1512        1.0648       1.1998       1.1998        1.1512        1.0648
+svd_linear_decay                        1.2257       1.1998        1.1512        1.0648       1.1998       1.1998        1.1512        1.0648
+svd_llm_v2                              1.2270       1.2010        1.1522        1.0656       1.2010       1.2010        1.1522        1.0656
+svd_proj                                1.2270       1.2010        1.1523        1.0657       1.2010       1.2010        1.1523        1.0657
+swift_svd                               1.3444       1.4410        1.4964        1.4218       1.4410       1.4410        1.4964        1.4218
+swift_svd_class                         1.3444       1.4410        1.4964        1.4218       1.4410       1.4410        1.4964        1.4218
+vspec                                   1.1993       1.1729        1.1235        1.0362       1.1729       1.1729        1.1235        1.0362
+
+=== Table 3: Tokens/sec vs Rank ===
+  Saved: results\rank_ablation\table3_tps_vs_rank.csv
+
+=== Table 4: Optimal Rank per Module per Dataset ===
+                           module_name dataset  best_rank  best_accuracy  best_compression_rate
+0                                   a3    mnli         32          74.70                 1.0522
+1                                   a3    sst2         32          88.07                 1.0522
+2                                aasvd    mnli         32          79.40                 1.0164
+3                                aasvd    sst2         32          90.37                 1.0164
+4                             adaptive    mnli         32          75.40                 1.0437
+5                             adaptive    sst2         64          85.89                 1.0437
+6                         adaptive_svd    mnli         32          67.40                 1.1523
+7                         adaptive_svd    sst2         32          87.96                 1.1523
+8                               adasvd    mnli         32          62.60                 1.1621
+9                               adasvd    sst2         64          87.04                 1.1621
+10                        aegis_hybrid    mnli        256          78.10                 1.0498
+11                        aegis_hybrid    sst2        256          90.48                 1.0498
+12                            aegis_v3    mnli         32          39.90                 1.1968
+13                            aegis_v3    sst2         64          82.34                 1.1968
+14                            aegis_v4    mnli         32          41.50                 1.1968
+15                            aegis_v4    sst2         64          83.14                 1.1968
+16                            aegis_v5    mnli         32          41.50                 1.1968
+17                            aegis_v5    sst2         64          83.14                 1.1968
+18                            aegis_v6    mnli         32          79.50                 1.2525
+19                            aegis_v6    sst2         32          90.94                 1.2525
+20                                come    mnli         32          57.50                 1.2408
+21                                come    sst2         32          85.44                 1.2409
+22   compressed_attention_layer_energy    mnli        128          50.60                 1.1792
+23   compressed_attention_layer_energy    sst2        128          83.26                 1.1792
+24                             cur_moe    mnli         32          81.90                 1.0000
+25                             cur_moe    sst2         32          90.83                 1.0000
+26                       cur_moe_class    mnli         32          81.80                 1.0000
+27                       cur_moe_class    sst2         32          90.83                 1.0000
+28                    fused_svd_kernel    mnli        256          62.50                 1.0758
+29                    fused_svd_kernel    sst2        256          90.02                 1.0758
+30                                 gqa    mnli         32          34.50                 1.0779
+31                                 gqa    sst2         64          48.28                 1.0779
+32                          hybrid_svd    mnli         32          38.50                 1.9073
+33                          hybrid_svd    sst2         32          77.29                 1.9073
+34                 inject_aegis_hybrid    mnli        256          78.10                 1.0498
+35                 inject_aegis_hybrid    sst2        256          90.48                 1.0498
+36                     inject_aegis_v6    mnli         32          79.50                 1.2525
+37                     inject_aegis_v6    sst2         32          90.94                 1.2525
+38               inject_minimal_aurora    mnli         32          53.60                 1.1523
+39               inject_minimal_aurora    sst2         32          88.30                 1.1523
+40                  inject_minimal_svd    mnli         32          53.60                 1.1523
+41                  inject_minimal_svd    sst2         32          88.30                 1.1523
+42               inject_minimal_svd_v2    mnli         32          53.60                 1.1523
+43               inject_minimal_svd_v2    sst2         32          88.30                 1.1523
+44                inject_svd_proj_attn    mnli        256          67.10                 1.0657
+45                inject_svd_proj_attn    sst2        256          90.25                 1.0657
+46                    inject_swift_svd    mnli         32          54.00                 1.3444
+47                    inject_swift_svd    sst2         32          83.03                 1.3445
+48                              kmeans    mnli         32          81.10                 2.7331
+49                              kmeans    sst2         32          90.37                 2.7332
+50                           kronecker    mnli        256          47.60                 1.4231
+51                           kronecker    sst2        256          82.22                 1.4231
+52                                lola    mnli        256          75.40                 1.0657
+53                                lola    sst2        256          89.56                 1.0657
+54                      minimal_aurora    mnli         32          53.60                 1.1523
+55                      minimal_aurora    sst2         32          88.30                 1.1523
+56                        minimal_nova    mnli         32          53.00                 1.1523
+57                        minimal_nova    sst2         32          88.30                 1.1523
+58                       minimal_prism    mnli         32          53.00                 1.1523
+59                       minimal_prism    sst2         32          88.30                 1.1523
+60                         minimal_svd    mnli         32          53.60                 1.1523
+61                         minimal_svd    sst2         32          88.30                 1.1523
+62                      minimal_svd_v2    mnli         32          53.60                 1.1523
+63                      minimal_svd_v2    sst2         32          88.30                 1.1523
+64                                 mla    mnli         32          36.80                 1.0811
+65                                 mla    sst2         64          69.27                 1.0811
+66                               orion    mnli         64          38.30                 1.2010
+67                               orion    sst2        128          73.39                 1.1523
+68                             phantom    mnli         32          34.00                 1.2270
+69                             phantom    sst2         64          51.49                 1.2010
+70          projection_factorized_attn    mnli        256          79.70                 1.0648
+71          projection_factorized_attn    sst2        256          90.71                 1.0648
+72                           replaceme    mnli         32          64.00                 1.2407
+73                           replaceme    sst2         32          78.78                 1.2407
+74                             res_svd    mnli        256          78.90                 1.0365
+75                             res_svd    sst2        256          90.71                 1.0365
+76                              ressvd    mnli        256          79.10                 1.0365
+77                              ressvd    sst2        256          90.48                 1.0365
+78                                salt    mnli        256          64.90                 1.0757
+79                                salt    sst2        256          89.79                 1.0757
+80                            soa_attn    mnli         32          71.60                 1.1107
+81                            soa_attn    sst2         32          89.45                 1.1107
+82                 soa_fused_attention    mnli        256          77.10                 1.0487
+83                 soa_fused_attention    sst2        256          88.99                 1.0487
+84              spectral_residual_lora    mnli        256          50.20                 1.4435
+85              spectral_residual_lora    sst2        256          83.49                 1.4435
+86                            spectron    mnli         32          60.00                 1.1523
+87                            spectron    sst2         64          87.50                 1.1523
+88                      svd_compressed    mnli        256          80.00                 1.0657
+89                      svd_compressed    sst2        256          91.06                 1.0657
+90                          svd_linear    mnli        256          79.70                 1.0648
+91                          svd_linear    sst2        256          90.71                 1.0648
+92                    svd_linear_decay    mnli        256          79.70                 1.0648
+93                    svd_linear_decay    sst2        256          90.71                 1.0648
+94                          svd_llm_v2    mnli        256          80.20                 1.0656
+95                          svd_llm_v2    sst2        256          90.37                 1.0656
+96                            svd_proj    mnli        256          67.10                 1.0657
+97                            svd_proj    sst2        256          90.25                 1.0657
+98                           swift_svd    mnli         32          54.00                 1.3444
+99                           swift_svd    sst2         64          83.03                 1.4410
+100                    swift_svd_class    mnli         32          54.20                 1.3444
+101                    swift_svd_class    sst2        256          83.49                 1.4218
+102                              vspec    mnli        256          79.30                 1.0362
+103                              vspec    sst2        256          89.91                 1.0362
+
+=== Table 5: Pareto Frontiers (rank=128) ===
+
+  MNLI Pareto front (1 modules):
+module_name  accuracy_pct  compression_rate
+     kmeans          81.1            2.7331
+
+  SST2 Pareto front (3 modules):
+    module_name  accuracy_pct  compression_rate
+         kmeans         90.14            2.7332
+       aegis_v6         90.60            1.2525
+inject_aegis_v6         90.60            1.2525
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\aggregate_rank_ablation.py", line 151, in <module>
+    main()
+    ~~~~^^
+  File "D:\SVD_Project\Codes\framework\aggregate_rank_ablation.py", line 147, in main
+    print(f"\n\u2705 All tables written to: {out_dir}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\encodings\cp1256.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 2: character maps to <undefined>
+=== Loading ablation results ===
+  [OK] mnli/rank32: 52 rows
+  [OK] mnli/rank64: 52 rows
+  [OK] mnli/rank128: 52 rows
+  [MISSING] results\rank_ablation\mnli_rank192\summary.csv
+  [OK] mnli/rank256: 52 rows
+  [OK] sst2/rank32: 52 rows
+  [OK] sst2/rank64: 52 rows
+  [OK] sst2/rank128: 52 rows
+  [MISSING] results\rank_ablation\sst2_rank192\summary.csv
+  [OK] sst2/rank256: 52 rows
+  [OK] agnews/rank32: 52 rows
+  [OK] agnews/rank64: 52 rows
+  [OK] agnews/rank128: 52 rows
+  [MISSING] results\rank_ablation\agnews_rank192\summary.csv
+  [OK] agnews/rank256: 52 rows
+Total rows loaded: 624
+
+=== Table 1: Accuracy vs Rank ===
+  Saved: results\rank_ablation\table1_accuracy_vs_rank.csv
+col                                mnli_rank32  mnli_rank64  mnli_rank128  mnli_rank256  sst2_rank32  sst2_rank64  sst2_rank128  sst2_rank256  agnews_rank32  agnews_rank64  agnews_rank128  agnews_rank256
+module_name                                                                                                                                                                                                
+a3                                        74.7         74.7          74.7          71.1        88.07        85.67         85.67         85.67           86.8           86.8            86.8            86.8
+aasvd                                     79.4         69.2          68.6          79.4        90.37        89.11         85.32         88.53           94.5           88.2            83.6            71.6
+adaptive                                  75.4         75.4          75.4          75.4        85.09        85.89         85.89         85.89           85.9           85.9            85.9            85.9
+adaptive_svd                              67.4         67.4          67.4          67.4        87.96        87.73         87.73         87.73           89.8           89.8            89.8            89.8
+adasvd                                    62.6         62.6          62.6          62.6        85.55        87.04         87.04         87.04           86.8           86.8            86.8            86.8
+aegis_hybrid                              42.3         45.7          53.9          78.1        80.50        83.60         87.50         90.48           44.9           86.1            88.7            93.0
+aegis_v3                                  39.9         39.9          39.9          39.9        82.00        82.34         82.34         82.34           87.6           87.6            87.6            87.6
+aegis_v4                                  41.5         41.5          41.5          41.5        81.88        83.14         83.14         83.14           87.7           87.7            87.7            87.7
+aegis_v5                                  41.5         41.5          41.5          41.5        81.88        83.14         83.14         83.14           87.7           87.7            87.7            87.7
+aegis_v6                                  79.5         79.5          79.5          79.5        90.94        90.60         90.60         90.60           93.3           93.3            93.3            93.3
+come                                      57.5         57.5          57.5          57.5        85.44        84.63         84.63         84.63           90.0           90.0            90.0            90.0
+compressed_attention_layer_energy         43.1         47.2          50.6          36.4        76.38        80.28         83.26         82.57           26.8           26.8            69.7            56.5
+cur_moe                                   81.9         76.4          35.8          31.9        90.83        86.24         77.52         77.41           94.0           91.0            77.7            25.3
+cur_moe_class                             81.8         76.3          40.1          34.1        90.83        86.70         68.92         77.06           94.3           92.7            67.4            47.1
+fused_svd_kernel                          48.5         46.6          56.7          62.5        76.95        83.03         86.12         90.02           25.3           86.4            69.1            91.9
+gqa                                       34.5         34.5          34.5          34.5        47.59        48.28         48.28         48.28           42.4           42.4            42.4            42.4
+hybrid_svd                                38.5         38.5          38.5          38.5        77.29        76.95         76.95         76.95           65.2           65.2            65.2            65.2
+inject_aegis_hybrid                       42.3         45.7          53.9          78.1        80.50        83.60         87.50         90.48           44.9           86.1            88.7            93.0
+inject_aegis_v6                           79.5         79.5          79.5          79.5        90.94        90.60         90.60         90.60           93.3           93.3            93.3            93.3
+inject_minimal_aurora                     53.6         53.6          53.6          53.6        88.30        87.84         87.84         87.84           88.3           88.3            88.3            88.3
+inject_minimal_svd                        53.6         53.6          53.6          53.6        88.30        87.84         87.84         87.84           88.3           88.3            88.3            88.3
+inject_minimal_svd_v2                     53.6         53.6          53.6          53.6        88.30        87.84         87.84         87.84           88.3           88.3            88.3            88.3
+inject_svd_proj_attn                      38.8         43.5          48.6          67.1        78.33        82.91         87.04         90.25           75.1           83.3            90.1            93.3
+inject_swift_svd                          54.0         51.8          46.4          51.7        83.03        83.03         81.54         83.03           89.3           88.3            86.7            88.4
+kmeans                                    81.1         81.1          81.1          81.1        90.37        90.14         90.14         90.14           94.0           94.0            94.0            94.0
+kronecker                                 37.9         37.5          37.4          47.6        72.25        74.54         77.18         82.22           65.9           66.8            55.9            85.9
+lola                                      39.1         44.3          56.0          75.4        78.33        83.49         86.81         89.56           25.3           87.0            87.3            91.5
+minimal_aurora                            53.6         53.6          53.6          53.6        88.30        87.84         87.84         87.84           88.3           88.3            88.3            88.3
+minimal_nova                              53.0         53.0          53.0          53.0        88.30        87.73         87.73         87.73           88.1           88.1            88.1            88.1
+minimal_prism                             53.0         53.0          53.0          53.0        88.30        87.73         87.73         87.73           88.1           88.1            88.1            88.1
+minimal_svd                               53.6         53.6          53.6          53.6        88.30        87.84         87.84         87.84           88.3           88.3            88.3            88.3
+minimal_svd_v2                            53.6         53.6          53.6          53.6        88.30        87.84         87.84         87.84           88.3           88.3            88.3            88.3
+mla                                       36.8         36.8          36.8          36.8        68.92        69.27         69.27         69.27           31.3           31.3            31.3            31.3
+orion                                     35.6         38.3          35.8          35.4        69.38        68.46         73.39         73.05           34.2           42.1            60.5            62.7
+phantom                                   34.0         32.4          33.8          32.9        51.38        51.49         49.43         48.85           26.5           26.9            26.8            26.8
+projection_factorized_attn                43.9         50.9          68.8          79.7        82.45        84.86         88.19         90.71           83.7           87.8            90.8            94.5
+replaceme                                 64.0         64.0          64.0          64.0        78.78        78.33         78.33         78.33           90.8           90.8            90.8            90.8
+res_svd                                   44.6         49.8          65.0          78.9        80.62        84.63         89.56         90.71           57.6           84.5            88.0            92.7
+ressvd                                    46.5         32.9          60.2          79.1        77.41        83.72         88.19         90.48           33.7           54.3            27.3            92.7
+salt                                      45.1         49.6          63.2          64.9        80.96        85.09         88.88         89.79           32.0           83.9            88.2            91.4
+soa_attn                                  71.6         71.6          71.6          71.6        89.45        89.11         89.11         89.11           93.3           93.3            93.3            93.3
+soa_fused_attention                       49.8         54.1          66.7          77.1        80.85        84.40         87.50         88.99           82.2           87.6            91.5            93.2
+spectral_residual_lora                    35.0         36.7          39.3          50.2        60.67        74.08         74.20         83.49           30.4           61.3            73.2            88.3
+spectron                                  60.0         60.0          60.0          60.0        86.93        87.50         87.50         87.50           88.5           88.5            88.5            88.5
+svd_compressed                            44.9         53.5          69.2          80.0          NaN        85.32         87.73         91.06           84.1           87.4            90.6            94.8
+svd_linear                                43.9         50.9          68.8          79.7        84.52        84.86         88.19         90.71           83.7           87.8            90.8            94.5
+svd_linear_decay                          43.9         50.9          68.8          79.7        84.52        84.86         88.19         90.71           83.7           87.8            90.8            94.5
+svd_llm_v2                                41.5         45.4          65.2          80.2        70.99        83.94         87.96         90.37           78.2           86.4            90.4            93.8
+svd_proj                                  38.8         43.5          48.6          67.1        81.77        82.91         87.04         90.25           75.1           83.3            90.1            93.3
+swift_svd                                 54.0         51.8          46.4          51.7        82.45        83.03         81.54         83.03           89.3           88.3            86.7            88.4
+swift_svd_class                           54.2         51.5          44.5          51.3        82.45        83.03         81.88         83.49           88.6           88.9            87.3            89.1
+vspec                                     42.7         45.9          62.2          79.3        50.92        84.06         87.04         89.91           76.0           85.4            90.2            93.5
+
+=== Table 2: Compression Rate vs Rank ===
+  Saved: results\rank_ablation\table2_compression_vs_rank.csv
+col                                mnli_rank32  mnli_rank64  mnli_rank128  mnli_rank256  sst2_rank32  sst2_rank64  sst2_rank128  sst2_rank256  agnews_rank32  agnews_rank64  agnews_rank128  agnews_rank256
+module_name                                                                                                                                                                                                
+a3                                      1.0522       1.0522        1.0522        1.0522       1.0522       1.0522        1.0522        1.0522         1.0502         1.0502          1.0502          1.0502
+aasvd                                   1.0164       1.1331        1.1641        1.0758       1.0164       1.1331        1.1641        1.0758         1.0164         1.1331          1.1641          1.0758
+adaptive                                1.0437       1.0437        1.0437        1.0437       1.0437       1.0437        1.0437        1.0437         1.0437         1.0437          1.0437          1.0437
+adaptive_svd                            1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523         1.1523         1.1523          1.1523          1.1523
+adasvd                                  1.1621       1.1621        1.1621        1.1621       1.1621       1.1621        1.1621        1.1621         1.1621         1.1621          1.1621          1.1621
+aegis_hybrid                            1.2059       1.1808        1.1336        1.0498       1.2059       1.1808        1.1336        1.0498         1.2059         1.1808          1.1336          1.0498
+aegis_v3                                1.1968       1.1968        1.1968        1.1968       1.1968       1.1968        1.1968        1.1968         1.1968         1.1968          1.1968          1.1968
+aegis_v4                                1.1968       1.1968        1.1968        1.1968       1.1968       1.1968        1.1968        1.1968         1.1968         1.1968          1.1968          1.1968
+aegis_v5                                1.1968       1.1968        1.1968        1.1968       1.1968       1.1968        1.1968        1.1968         1.1968         1.1968          1.1968          1.1968
+aegis_v6                                1.2525       1.2525        1.2525        1.2525       1.2525       1.2525        1.2525        1.2525         1.2525         1.2525          1.2525          1.2525
+come                                    1.2408       1.2408        1.2408        1.2408       1.2409       1.2409        1.2409        1.2409         1.2408         1.2408          1.2408          1.2408
+compressed_attention_layer_energy       1.2370       1.2171        1.1792        1.1099       1.2370       1.2171        1.1792        1.1099         1.2370         1.2171          1.1792          1.1099
+cur_moe                                 1.0000       1.0563        1.3806        1.3070       1.0000       1.0563        1.3806        1.3070         1.0000         1.0563          1.3806          1.3070
+cur_moe_class                           1.0000       1.0563        1.3806        1.3070       1.0000       1.0563        1.3806        1.3070         1.0000         1.0563          1.3806          1.3070
+fused_svd_kernel                        1.2404       1.2139        1.1641        1.0758       1.2404       1.2139        1.1641        1.0758         1.2404         1.2139          1.1641          1.0758
+gqa                                     1.0779       1.0779        1.0779        1.0779       1.0779       1.0779        1.0779        1.0779         1.0779         1.0779          1.0779          1.0779
+hybrid_svd                              1.9073       1.9073        1.9073        1.9073       1.9073       1.9073        1.9073        1.9073         1.9073         1.9073          1.9073          1.9073
+inject_aegis_hybrid                     1.2059       1.1808        1.1336        1.0498       1.2059       1.1808        1.1336        1.0498         1.2059         1.1808          1.1336          1.0498
+inject_aegis_v6                         1.2525       1.2525        1.2525        1.2525       1.2525       1.2525        1.2525        1.2525         1.2525         1.2525          1.2525          1.2525
+inject_minimal_aurora                   1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523         1.1523         1.1523          1.1523          1.1523
+inject_minimal_svd                      1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523         1.1523         1.1523          1.1523          1.1523
+inject_minimal_svd_v2                   1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523         1.1523         1.1523          1.1523          1.1523
+inject_svd_proj_attn                    1.2270       1.2010        1.1523        1.0657       1.2270       1.2010        1.1523        1.0657         1.2270         1.2010          1.1523          1.0657
+inject_swift_svd                        1.3444       1.4410        1.4964        1.4218       1.3445       1.4410        1.4964        1.4218         1.3444         1.4410          1.4964          1.4218
+kmeans                                  2.7331       2.7331        2.7331        2.7331       2.7332       2.7332        2.7332        2.7332         2.7331         2.7331          2.7331          2.7331
+kronecker                               1.9371       1.9316        1.8378        1.4231       1.9371       1.9316        1.8378        1.4231         1.9371         1.9316          1.8378          1.4231
+lola                                    1.2270       1.2010        1.1523        1.0657       1.2270       1.2010        1.1523        1.0657         1.2270         1.2010          1.1523          1.0657
+minimal_aurora                          1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523         1.1523         1.1523          1.1523          1.1523
+minimal_nova                            1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523         1.1523         1.1523          1.1523          1.1523
+minimal_prism                           1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523         1.1523         1.1523          1.1523          1.1523
+minimal_svd                             1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523         1.1523         1.1523          1.1523          1.1523
+minimal_svd_v2                          1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523         1.1523         1.1523          1.1523          1.1523
+mla                                     1.0811       1.0811        1.0811        1.0811       1.0811       1.0811        1.0811        1.0811         1.0811         1.0811          1.0811          1.0811
+orion                                   1.2270       1.2010        1.1523        1.0657       1.2270       1.2010        1.1523        1.0657         1.2270         1.2010          1.1523          1.0657
+phantom                                 1.2270       1.2010        1.1523        1.0657       1.2270       1.2010        1.1523        1.0657         1.2270         1.2010          1.1523          1.0657
+projection_factorized_attn              1.2257       1.1998        1.1512        1.0648       1.2257       1.1998        1.1512        1.0648         1.2257         1.1998          1.1512          1.0648
+replaceme                               1.2407       1.2407        1.2407        1.2407       1.2407       1.2407        1.2407        1.2407         1.2407         1.2407          1.2407          1.2407
+res_svd                                 1.2336       1.2010        1.1407        1.0365       1.2337       1.2010        1.1407        1.0365         1.2336         1.2010          1.1407          1.0365
+ressvd                                  1.2336       1.2010        1.1407        1.0365       1.2337       1.2010        1.1407        1.0365         1.2336         1.2010          1.1407          1.0365
+salt                                    1.2404       1.2138        1.1640        1.0757       1.2404       1.2138        1.1640        1.0757         1.2404         1.2138          1.1640          1.0757
+soa_attn                                1.1107       1.1107        1.1107        1.1107       1.1107       1.1107        1.1107        1.1107         1.1107         1.1107          1.1107          1.1107
+soa_fused_attention                     1.1627       1.1449        1.1109        1.0487       1.1627       1.1449        1.1109        1.0487         1.1627         1.1449          1.1109          1.0487
+spectral_residual_lora                  2.4079       2.1981        1.8719        1.4435       2.1982       2.1982        1.8719        1.4435         2.4079         2.1981          1.8719          1.4435
+spectron                                1.1523       1.1523        1.1523        1.1523       1.1523       1.1523        1.1523        1.1523         1.1523         1.1523          1.1523          1.1523
+svd_compressed                          1.2270       1.2010        1.1523        1.0657          NaN       1.2010        1.1523        1.0657         1.2270         1.2010          1.1523          1.0657
+svd_linear                              1.2257       1.1998        1.1512        1.0648       1.1998       1.1998        1.1512        1.0648         1.2257         1.1998          1.1512          1.0648
+svd_linear_decay                        1.2257       1.1998        1.1512        1.0648       1.1998       1.1998        1.1512        1.0648         1.2257         1.1998          1.1512          1.0648
+svd_llm_v2                              1.2270       1.2010        1.1522        1.0656       1.2010       1.2010        1.1522        1.0656         1.2270         1.2010          1.1522          1.0656
+svd_proj                                1.2270       1.2010        1.1523        1.0657       1.2010       1.2010        1.1523        1.0657         1.2270         1.2010          1.1523          1.0657
+swift_svd                               1.3444       1.4410        1.4964        1.4218       1.4410       1.4410        1.4964        1.4218         1.3444         1.4410          1.4964          1.4218
+swift_svd_class                         1.3444       1.4410        1.4964        1.4218       1.4410       1.4410        1.4964        1.4218         1.3444         1.4410          1.4964          1.4218
+vspec                                   1.1993       1.1729        1.1235        1.0362       1.1729       1.1729        1.1235        1.0362         1.1993         1.1729          1.1235          1.0362
+
+=== Table 3: Tokens/sec vs Rank ===
+  Saved: results\rank_ablation\table3_tps_vs_rank.csv
+
+=== Table 4: Optimal Rank per Module per Dataset ===
+                           module_name dataset  best_rank  best_accuracy  best_compression_rate
+0                                   a3  agnews         32          86.80                 1.0502
+1                                   a3    mnli         32          74.70                 1.0522
+2                                   a3    sst2         32          88.07                 1.0522
+3                                aasvd  agnews         32          94.50                 1.0164
+4                                aasvd    mnli         32          79.40                 1.0164
+5                                aasvd    sst2         32          90.37                 1.0164
+6                             adaptive  agnews         32          85.90                 1.0437
+7                             adaptive    mnli         32          75.40                 1.0437
+8                             adaptive    sst2         64          85.89                 1.0437
+9                         adaptive_svd  agnews         32          89.80                 1.1523
+10                        adaptive_svd    mnli         32          67.40                 1.1523
+11                        adaptive_svd    sst2         32          87.96                 1.1523
+12                              adasvd  agnews         32          86.80                 1.1621
+13                              adasvd    mnli         32          62.60                 1.1621
+14                              adasvd    sst2         64          87.04                 1.1621
+15                        aegis_hybrid  agnews        256          93.00                 1.0498
+16                        aegis_hybrid    mnli        256          78.10                 1.0498
+17                        aegis_hybrid    sst2        256          90.48                 1.0498
+18                            aegis_v3  agnews         32          87.60                 1.1968
+19                            aegis_v3    mnli         32          39.90                 1.1968
+20                            aegis_v3    sst2         64          82.34                 1.1968
+21                            aegis_v4  agnews         32          87.70                 1.1968
+22                            aegis_v4    mnli         32          41.50                 1.1968
+23                            aegis_v4    sst2         64          83.14                 1.1968
+24                            aegis_v5  agnews         32          87.70                 1.1968
+25                            aegis_v5    mnli         32          41.50                 1.1968
+26                            aegis_v5    sst2         64          83.14                 1.1968
+27                            aegis_v6  agnews         32          93.30                 1.2525
+28                            aegis_v6    mnli         32          79.50                 1.2525
+29                            aegis_v6    sst2         32          90.94                 1.2525
+30                                come  agnews         32          90.00                 1.2408
+31                                come    mnli         32          57.50                 1.2408
+32                                come    sst2         32          85.44                 1.2409
+33   compressed_attention_layer_energy  agnews        128          69.70                 1.1792
+34   compressed_attention_layer_energy    mnli        128          50.60                 1.1792
+35   compressed_attention_layer_energy    sst2        128          83.26                 1.1792
+36                             cur_moe  agnews         32          94.00                 1.0000
+37                             cur_moe    mnli         32          81.90                 1.0000
+38                             cur_moe    sst2         32          90.83                 1.0000
+39                       cur_moe_class  agnews         32          94.30                 1.0000
+40                       cur_moe_class    mnli         32          81.80                 1.0000
+41                       cur_moe_class    sst2         32          90.83                 1.0000
+42                    fused_svd_kernel  agnews        256          91.90                 1.0758
+43                    fused_svd_kernel    mnli        256          62.50                 1.0758
+44                    fused_svd_kernel    sst2        256          90.02                 1.0758
+45                                 gqa  agnews         32          42.40                 1.0779
+46                                 gqa    mnli         32          34.50                 1.0779
+47                                 gqa    sst2         64          48.28                 1.0779
+48                          hybrid_svd  agnews         32          65.20                 1.9073
+49                          hybrid_svd    mnli         32          38.50                 1.9073
+50                          hybrid_svd    sst2         32          77.29                 1.9073
+51                 inject_aegis_hybrid  agnews        256          93.00                 1.0498
+52                 inject_aegis_hybrid    mnli        256          78.10                 1.0498
+53                 inject_aegis_hybrid    sst2        256          90.48                 1.0498
+54                     inject_aegis_v6  agnews         32          93.30                 1.2525
+55                     inject_aegis_v6    mnli         32          79.50                 1.2525
+56                     inject_aegis_v6    sst2         32          90.94                 1.2525
+57               inject_minimal_aurora  agnews         32          88.30                 1.1523
+58               inject_minimal_aurora    mnli         32          53.60                 1.1523
+59               inject_minimal_aurora    sst2         32          88.30                 1.1523
+60                  inject_minimal_svd  agnews         32          88.30                 1.1523
+61                  inject_minimal_svd    mnli         32          53.60                 1.1523
+62                  inject_minimal_svd    sst2         32          88.30                 1.1523
+63               inject_minimal_svd_v2  agnews         32          88.30                 1.1523
+64               inject_minimal_svd_v2    mnli         32          53.60                 1.1523
+65               inject_minimal_svd_v2    sst2         32          88.30                 1.1523
+66                inject_svd_proj_attn  agnews        256          93.30                 1.0657
+67                inject_svd_proj_attn    mnli        256          67.10                 1.0657
+68                inject_svd_proj_attn    sst2        256          90.25                 1.0657
+69                    inject_swift_svd  agnews         32          89.30                 1.3444
+70                    inject_swift_svd    mnli         32          54.00                 1.3444
+71                    inject_swift_svd    sst2         32          83.03                 1.3445
+72                              kmeans  agnews         32          94.00                 2.7331
+73                              kmeans    mnli         32          81.10                 2.7331
+74                              kmeans    sst2         32          90.37                 2.7332
+75                           kronecker  agnews        256          85.90                 1.4231
+76                           kronecker    mnli        256          47.60                 1.4231
+77                           kronecker    sst2        256          82.22                 1.4231
+78                                lola  agnews        256          91.50                 1.0657
+79                                lola    mnli        256          75.40                 1.0657
+80                                lola    sst2        256          89.56                 1.0657
+81                      minimal_aurora  agnews         32          88.30                 1.1523
+82                      minimal_aurora    mnli         32          53.60                 1.1523
+83                      minimal_aurora    sst2         32          88.30                 1.1523
+84                        minimal_nova  agnews         32          88.10                 1.1523
+85                        minimal_nova    mnli         32          53.00                 1.1523
+86                        minimal_nova    sst2         32          88.30                 1.1523
+87                       minimal_prism  agnews         32          88.10                 1.1523
+88                       minimal_prism    mnli         32          53.00                 1.1523
+89                       minimal_prism    sst2         32          88.30                 1.1523
+90                         minimal_svd  agnews         32          88.30                 1.1523
+91                         minimal_svd    mnli         32          53.60                 1.1523
+92                         minimal_svd    sst2         32          88.30                 1.1523
+93                      minimal_svd_v2  agnews         32          88.30                 1.1523
+94                      minimal_svd_v2    mnli         32          53.60                 1.1523
+95                      minimal_svd_v2    sst2         32          88.30                 1.1523
+96                                 mla  agnews         32          31.30                 1.0811
+97                                 mla    mnli         32          36.80                 1.0811
+98                                 mla    sst2         64          69.27                 1.0811
+99                               orion  agnews        256          62.70                 1.0657
+100                              orion    mnli         64          38.30                 1.2010
+101                              orion    sst2        128          73.39                 1.1523
+102                            phantom  agnews         64          26.90                 1.2010
+103                            phantom    mnli         32          34.00                 1.2270
+104                            phantom    sst2         64          51.49                 1.2010
+105         projection_factorized_attn  agnews        256          94.50                 1.0648
+106         projection_factorized_attn    mnli        256          79.70                 1.0648
+107         projection_factorized_attn    sst2        256          90.71                 1.0648
+108                          replaceme  agnews         32          90.80                 1.2407
+109                          replaceme    mnli         32          64.00                 1.2407
+110                          replaceme    sst2         32          78.78                 1.2407
+111                            res_svd  agnews        256          92.70                 1.0365
+112                            res_svd    mnli        256          78.90                 1.0365
+113                            res_svd    sst2        256          90.71                 1.0365
+114                             ressvd  agnews        256          92.70                 1.0365
+115                             ressvd    mnli        256          79.10                 1.0365
+116                             ressvd    sst2        256          90.48                 1.0365
+117                               salt  agnews        256          91.40                 1.0757
+118                               salt    mnli        256          64.90                 1.0757
+119                               salt    sst2        256          89.79                 1.0757
+120                           soa_attn  agnews         32          93.30                 1.1107
+121                           soa_attn    mnli         32          71.60                 1.1107
+122                           soa_attn    sst2         32          89.45                 1.1107
+123                soa_fused_attention  agnews        256          93.20                 1.0487
+124                soa_fused_attention    mnli        256          77.10                 1.0487
+125                soa_fused_attention    sst2        256          88.99                 1.0487
+126             spectral_residual_lora  agnews        256          88.30                 1.4435
+127             spectral_residual_lora    mnli        256          50.20                 1.4435
+128             spectral_residual_lora    sst2        256          83.49                 1.4435
+129                           spectron  agnews         32          88.50                 1.1523
+130                           spectron    mnli         32          60.00                 1.1523
+131                           spectron    sst2         64          87.50                 1.1523
+132                     svd_compressed  agnews        256          94.80                 1.0657
+133                     svd_compressed    mnli        256          80.00                 1.0657
+134                     svd_compressed    sst2        256          91.06                 1.0657
+135                         svd_linear  agnews        256          94.50                 1.0648
+136                         svd_linear    mnli        256          79.70                 1.0648
+137                         svd_linear    sst2        256          90.71                 1.0648
+138                   svd_linear_decay  agnews        256          94.50                 1.0648
+139                   svd_linear_decay    mnli        256          79.70                 1.0648
+140                   svd_linear_decay    sst2        256          90.71                 1.0648
+141                         svd_llm_v2  agnews        256          93.80                 1.0656
+142                         svd_llm_v2    mnli        256          80.20                 1.0656
+143                         svd_llm_v2    sst2        256          90.37                 1.0656
+144                           svd_proj  agnews        256          93.30                 1.0657
+145                           svd_proj    mnli        256          67.10                 1.0657
+146                           svd_proj    sst2        256          90.25                 1.0657
+147                          swift_svd  agnews         32          89.30                 1.3444
+148                          swift_svd    mnli         32          54.00                 1.3444
+149                          swift_svd    sst2         64          83.03                 1.4410
+150                    swift_svd_class  agnews        256          89.10                 1.4218
+151                    swift_svd_class    mnli         32          54.20                 1.3444
+152                    swift_svd_class    sst2        256          83.49                 1.4218
+153                              vspec  agnews        256          93.50                 1.0362
+154                              vspec    mnli        256          79.30                 1.0362
+155                              vspec    sst2        256          89.91                 1.0362
+
+=== Table 5: Pareto Frontiers (rank=128) ===
+
+  MNLI Pareto front (1 modules):
+module_name  accuracy_pct  compression_rate
+     kmeans          81.1            2.7331
+
+  SST2 Pareto front (3 modules):
+    module_name  accuracy_pct  compression_rate
+         kmeans         90.14            2.7332
+       aegis_v6         90.60            1.2525
+inject_aegis_v6         90.60            1.2525
+
+  AGNEWS Pareto front (1 modules):
+module_name  accuracy_pct  compression_rate
+     kmeans          94.0            2.7331
+
+[SUCCESS] All tables written to: results\rank_ablation

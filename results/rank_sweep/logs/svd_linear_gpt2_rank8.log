@@ -1,0 +1,104 @@
+================================================================================
+STARTING UNIFIED 4-MODEL HARDENED SVD Linear BENCHMARK ON GPU SERVER
+Running models: ['gpt2']
+================================================================================
+
+============================== RUNNING MODEL: gpt2 ==============================
+
+>>> FINISHED MODEL: gpt2 in 47.5s (Exit: 0, Status: PASS_LOW, Compressed Layers: 0, Comp Rate: 1.27x)
+
+================================================================================
+4-MODEL BENCHMARK RESULTS SUMMARY (SVD Linear on GPU)
+================================================================================
+Model  Exit Code Baseline Acc SVD Linear Acc Delta Acc     F1   Status Compressed Layers Comp Rate Peak VRAM Time (s)
+ gpt2          0       79.36%         48.39%   -30.97% 0.1071 PASS_LOW                 0     1.27x  460.7 MB     47.5
+================================================================================
+
+Saved consolidated summaries to:
+- results\unified_svd_linear_4models_summary.csv
+- results\unified_svd_linear_4models_summary.json
+Generated and saved comparative visualization charts to results\unified_baseline
+
+================================================================================
+STAGE 2: QUALITY-GATED EXPORT TO HUGGING FACE & GITHUB (SVD Linear)
+================================================================================
+[Quality Gate: REJECTED] gpt2 did not meet criteria (status=PASS_LOW, acc=48.39% < 56.0%).
+  Pruning local checkpoint artifacts in results\unified_svd_linear\gpt2\checkpoints\svd_linear
+
+[+] Updated documentation benchmark table in Docs\content\compressions\svd_linear.md
+Committing results directly to main...
+[main 5a0b0211c] feat(benchmark): evaluation (0/1 passed on SST-2)
+ 3 files changed, 11 insertions(+), 11 deletions(-)
+Results committed to main.
+
+================================================================================
+ALL TASKS COMPLETED!
+Passed Models: 0 / 1
+Uploaded Repositories: 0
+================================================================================
+
+--- STDERR ---
+2026-09-15 08:05:22,884 [INFO] QwenQualitySweep: Parsed 6 module-specific extended arguments: ['--svd_linear_rank', '64', '--svd_linear_max_error', '0.50', '--svd_linear_target_attention_only', 'true']
+2026-09-15 08:05:22,961 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 148/148 [00:00<00:00, 2259.86it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-15 08:05:24,669 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-15 08:05:24,669 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 08:05:24,670 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 08:05:24,670 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 08:05:24,670 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-15 08:05:24,670 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-15 08:05:24,670 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 08:05:24,670 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 08:05:24,671 [INFO] QwenQualitySweep:   recovery_steps:    10
+2026-09-15 08:05:24,671 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 08:05:24,671 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 08:05:24,671 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 08:05:25,065 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-15 08:05:25,644 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 08:05:26,256 [INFO] QwenQualitySweep: Prepared 109 eval batches and 10 train batches directly on GPU.
+2026-09-15 08:05:31,039 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 79.36%
+2026-09-15 08:05:31,088 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 08:05:31,089 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 08:05:31,089 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 08:05:31,089 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 08:05:31,089 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 08:05:31,089 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 08:05:31,089 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 08:05:31,089 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 08:05:31,093 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=10, batch_size=8, optimizer=adamw)
+2026-09-15 08:05:36,394 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_svd_linear\gpt2\gpt2_full_full_metrics.json
+2026-09-15 08:05:36,408 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_svd_linear\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
+2026-09-15 08:05:37,119 [INFO] QwenQualitySweep: [1/2] full -> PASS 79.36% (F1: 0.7978, Peak VRAM: 792.54 MB)
+2026-09-15 08:05:37,119 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_svd_linear\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 08:05:37,327 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: svd_linear (recovery_steps=10, batch_size=8, optimizer=adamw)
+2026-09-15 08:05:41,411 [INFO] QwenQualitySweep: module=svd_linear path=adapted_gpt
+2026-09-15 08:05:41,412 [INFO] QwenQualitySweep: module=svd_linear injection summary: 48 SVDLinear layers active
+2026-09-15 08:05:41,413 [INFO] QwenQualitySweep: Running 10 recovery fine-tuning steps for svd_linear (lr=2.0e-04)
+2026-09-15 08:05:41,650 [INFO] framework.utils.compat: Recovery fine-tuning selected 1290384 trainable parameters across 120 tensors.
+2026-09-15 08:05:41,651 [INFO] framework.utils.compat: Discovered 120 trainable tensors (1290384 params)
+2026-09-15 08:05:41,657 [INFO] QwenQualitySweep: LoRA fine-tuning: 1290384 trainable parameters across 120 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 08:05:42,128 [INFO] QwenQualitySweep: LoRA fine-tune step 1/10 loss=0.7378 (bs=8, micro_bs=8)
+2026-09-15 08:05:43,004 [INFO] QwenQualitySweep: LoRA fine-tune step 5/10 loss=0.9773 (bs=8, micro_bs=8)
+2026-09-15 08:05:44,168 [INFO] QwenQualitySweep: LoRA fine-tune step 10/10 loss=0.6457 (bs=8, micro_bs=8)
+2026-09-15 08:05:53,954 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_svd_linear\gpt2\gpt2_svd_linear_full_metrics.json
+2026-09-15 08:05:54,010 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_svd_linear\gpt2\checkpoints\svd_linear\weights.pt (module_params=240, lora_params=97)
+2026-09-15 08:05:54,835 [INFO] QwenQualitySweep: [2/2] svd_linear -> PASS_LOW 48.39% (F1: 0.1071, Peak VRAM: 460.69 MB)
+2026-09-15 08:05:54,835 [INFO] QwenQualitySweep: [Quality Guard] Module 'svd_linear' did not pass quality criteria (status=PASS_LOW, acc=48.39%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 08:05:55,133 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 08:05:55,133 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-15 08:05:55,140 [INFO] QwenQualitySweep: 
+                     Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                       full     PASS   79.36% 0.00% (base) 0.7978                  0            1.00x  792.5 MB               4.04              4.64
+svd_linear (efficient-attn) PASS_LOW   48.39%      -30.97% 0.1071                  0            1.27x  460.7 MB               9.52             10.92
+2026-09-15 08:05:55,140 [INFO] QwenQualitySweep: ================================================================================
+To https://github.com/tahamajs/SVD_linear_Attention.git
+   9527f5107..5a0b0211c  main -> main

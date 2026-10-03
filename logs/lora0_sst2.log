@@ -1,0 +1,109 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'naive_svd' due to: 'Registry' object has no attribute 'register_inject'
+2026-09-20 05:16:23,008 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-20 05:16:23,015 [INFO] QwenQualitySweep: Running 52 modules with 3 parallel workers on GPU
+[ISOLATED] Launching adaptive_span (timeout=3600s) -> logs\isolated\adaptive_span.log
+[ISOLATED] Launching adasplash (timeout=3600s) -> logs\isolated\adasplash.log
+[ISOLATED] Launching block_transformer_hiba (timeout=3600s) -> logs\isolated\block_transformer_hiba.log
+[ISOLATED] block_transformer_hiba exited with code 0 in 45.8s
+[ISOLATED] adaptive_span exited with code 0 in 46.8s
+[ISOLATED] Launching chela_slay (timeout=3600s) -> logs\isolated\chela_slay.log
+[ISOLATED] Launching cluster (timeout=3600s) -> logs\isolated\cluster.log
+[ISOLATED] adasplash exited with code 0 in 77.6s
+[ISOLATED] Launching cosformer (timeout=3600s) -> logs\isolated\cosformer.log
+[ISOLATED] chela_slay exited with code 0 in 45.6s
+[ISOLATED] Launching decay_linear_attn (timeout=3600s) -> logs\isolated\decay_linear_attn.log
+[ISOLATED] cluster exited with code 0 in 55.0s
+[ISOLATED] Launching eat (timeout=3600s) -> logs\isolated\eat.log
+[ISOLATED] cosformer exited with code 0 in 46.0s
+[ISOLATED] Launching fasa (timeout=3600s) -> logs\isolated\fasa.log
+[ISOLATED] eat exited with code 0 in 39.6s
+[ISOLATED] Launching flash3 (timeout=3600s) -> logs\isolated\flash3.log
+[ISOLATED] fasa exited with code 0 in 41.5s
+[ISOLATED] Launching flash3_fp8 (timeout=3600s) -> logs\isolated\flash3_fp8.log
+[ISOLATED] decay_linear_attn exited with code 0 in 84.7s
+[ISOLATED] Launching fusion_attn (timeout=3600s) -> logs\isolated\fusion_attn.log
+[ISOLATED] flash3 exited with code 0 in 39.1s
+[ISOLATED] Launching galerkin (timeout=3600s) -> logs\isolated\galerkin.log
+[ISOLATED] flash3_fp8 exited with code 0 in 37.9s
+[ISOLATED] Launching halo_regla (timeout=3600s) -> logs\isolated\halo_regla.log
+[ISOLATED] fusion_attn exited with code 0 in 35.8s
+[ISOLATED] Launching hamming (timeout=3600s) -> logs\isolated\hamming.log
+[ISOLATED] galerkin exited with code 0 in 48.0s
+[ISOLATED] Launching hgrn2_outer (timeout=3600s) -> logs\isolated\hgrn2_outer.log
+[ISOLATED] halo_regla exited with code 0 in 43.8s
+[ISOLATED] Launching hla (timeout=3600s) -> logs\isolated\hla.log
+[ISOLATED] hamming exited with code 0 in 41.1s
+[ISOLATED] Launching inject_cosformer (timeout=3600s) -> logs\isolated\inject_cosformer.log
+[ISOLATED] hla exited with code 0 in 45.1s
+[ISOLATED] Launching inject_decay_linear_attention (timeout=3600s) -> logs\isolated\inject_decay_linear_attention.log
+[ISOLATED] inject_cosformer exited with code 0 in 43.0s
+[ISOLATED] Launching inject_galerkin (timeout=3600s) -> logs\isolated\inject_galerkin.log
+[ISOLATED] inject_galerkin exited with code 0 in 45.8s
+[ISOLATED] Launching inject_lsh (timeout=3600s) -> logs\isolated\inject_lsh.log
+[ISOLATED] inject_decay_linear_attention exited with code 0 in 82.3s
+[ISOLATED] Launching inject_nsa (timeout=3600s) -> logs\isolated\inject_nsa.log
+[ISOLATED] inject_lsh exited with code 0 in 51.6s
+[ISOLATED] Launching inject_nystrom (timeout=3600s) -> logs\isolated\inject_nystrom.log
+[ISOLATED] inject_nsa exited with code 0 in 41.7s
+[ISOLATED] Launching inject_simple_ssm (timeout=3600s) -> logs\isolated\inject_simple_ssm.log
+[ISOLATED] inject_nystrom exited with code 0 in 41.1s
+[ISOLATED] Launching kda (timeout=3600s) -> logs\isolated\kda.log
+[ISOLATED] inject_simple_ssm exited with code 0 in 49.3s
+[ISOLATED] Launching leka_v1 (timeout=3600s) -> logs\isolated\leka_v1.log
+[ISOLATED] kda exited with code 0 in 45.2s
+[ISOLATED] Launching lsh (timeout=3600s) -> logs\isolated\lsh.log
+[ISOLATED] leka_v1 exited with code 0 in 44.6s
+[ISOLATED] Launching moba (timeout=3600s) -> logs\isolated\moba.log
+[ISOLATED] lsh exited with code 0 in 48.6s
+[ISOLATED] Launching moe_deltakv_paged (timeout=3600s) -> logs\isolated\moe_deltakv_paged.log
+[ISOLATED] moba exited with code 0 in 44.6s
+[ISOLATED] Launching nasc (timeout=3600s) -> logs\isolated\nasc.log
+[ISOLATED] moe_deltakv_paged exited with code 0 in 45.3s
+[ISOLATED] Launching nexus (timeout=3600s) -> logs\isolated\nexus.log
+[ISOLATED] nasc exited with code 0 in 65.0s
+[ISOLATED] Launching nha (timeout=3600s) -> logs\isolated\nha.log
+[ISOLATED] nexus exited with code 0 in 79.1s
+[ISOLATED] Launching nli_softmax (timeout=3600s) -> logs\isolated\nli_softmax.log
+[ISOLATED] nha exited with code 0 in 50.5s
+[ISOLATED] Launching nsa (timeout=3600s) -> logs\isolated\nsa.log
+[ISOLATED] nli_softmax exited with code 0 in 40.0s
+[ISOLATED] Launching nystrom (timeout=3600s) -> logs\isolated\nystrom.log
+[ISOLATED] nsa exited with code 0 in 42.5s
+[ISOLATED] Launching padre (timeout=3600s) -> logs\isolated\padre.log
+[ISOLATED] nystrom exited with code 0 in 41.5s
+[ISOLATED] Launching performer (timeout=3600s) -> logs\isolated\performer.log
+[ISOLATED] padre exited with code 0 in 42.5s
+[ISOLATED] Launching qcqa (timeout=3600s) -> logs\isolated\qcqa.log
+[ISOLATED] performer exited with code 0 in 44.8s
+[ISOLATED] Launching rala (timeout=3600s) -> logs\isolated\rala.log
+[ISOLATED] qcqa exited with code 0 in 41.0s
+[ISOLATED] Launching routing (timeout=3600s) -> logs\isolated\routing.log
+[ISOLATED] rala exited with code 0 in 42.6s
+[ISOLATED] Launching rpc (timeout=3600s) -> logs\isolated\rpc.log
+[ISOLATED] rpc exited with code 0 in 71.5s
+[ISOLATED] Launching simple_ssm (timeout=3600s) -> logs\isolated\simple_ssm.log
+[ISOLATED] routing exited with code 0 in 122.5s
+[ISOLATED] Launching span_expanded (timeout=3600s) -> logs\isolated\span_expanded.log
+[ISOLATED] simple_ssm exited with code 0 in 50.2s
+[ISOLATED] Launching spectra_v2 (timeout=3600s) -> logs\isolated\spectra_v2.log
+[ISOLATED] span_expanded exited with code 0 in 37.6s
+[ISOLATED] Launching squeezing_heads (timeout=3600s) -> logs\isolated\squeezing_heads.log
+[ISOLATED] spectra_v2 exited with code 0 in 37.5s
+[ISOLATED] Launching svd (timeout=3600s) -> logs\isolated\svd.log
+[ISOLATED] squeezing_heads exited with code 0 in 39.1s
+[ISOLATED] Launching unified_rope (timeout=3600s) -> logs\isolated\unified_rope.log
+[ISOLATED] svd exited with code 0 in 44.6s
+[ISOLATED] Launching vig (timeout=3600s) -> logs\isolated\vig.log
+[ISOLATED] unified_rope exited with code 0 in 41.0s
+[ISOLATED] Launching weighted_ensemble (timeout=3600s) -> logs\isolated\weighted_ensemble.log
+[ISOLATED] vig exited with code 0 in 44.9s
+[ISOLATED] weighted_ensemble exited with code 0 in 38.5s
+[ISOLATED] Launching wgqa (timeout=3600s) -> logs\isolated\wgqa.log
+[ISOLATED] Launching xattention (timeout=3600s) -> logs\isolated\xattention.log
+[ISOLATED] wgqa exited with code 0 in 39.4s
+[ISOLATED] Launching zeros (timeout=3600s) -> logs\isolated\zeros.log
+[ISOLATED] xattention exited with code 0 in 40.6s
+[ISOLATED] hgrn2_outer exited with code 0 in 942.5s
+[ISOLATED] zeros exited with code 0 in 40.7s

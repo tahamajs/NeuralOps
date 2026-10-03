@@ -1,0 +1,85 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from 'framework.eval_all_models_datasets' (consider renaming 'D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py' if it has the same name as a library you intended to import)
+2026-09-18 20:55:05,578 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 20:55:07,024 [INFO] QwenQualitySweep: Configured dataset 'ag_news' with num_labels=4
+Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]Loading weights:  10%|9         | 19/197 [00:00<00:01, 161.30it/s]Loading weights:  18%|#8        | 36/197 [00:00<00:02, 79.76it/s] Loading weights:  24%|##3       | 47/197 [00:00<00:01, 85.99it/s]Loading weights:  32%|###1      | 63/197 [00:00<00:01, 99.69it/s]Loading weights:  71%|#######   | 139/197 [00:00<00:00, 276.42it/s]Loading weights: 100%|##########| 197/197 [00:00<00:00, 257.33it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models/roberta-base
+Key                             | Status     | 
+--------------------------------+------------+-
+lm_head.dense.bias              | UNEXPECTED | 
+lm_head.bias                    | UNEXPECTED | 
+lm_head.dense.weight            | UNEXPECTED | 
+lm_head.layer_norm.bias         | UNEXPECTED | 
+roberta.embeddings.position_ids | UNEXPECTED | 
+lm_head.layer_norm.weight       | UNEXPECTED | 
+classifier.dense.bias           | MISSING    | 
+classifier.dense.weight         | MISSING    | 
+classifier.out_proj.weight      | MISSING    | 
+classifier.out_proj.bias        | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-18 20:55:25,997 [INFO] QwenQualitySweep: model=models/roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-18 20:55:25,997 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 20:55:25,999 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:55:25,999 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 20:55:26,001 [INFO] QwenQualitySweep:   model:             models/roberta-base
+2026-09-18 20:55:26,002 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-18 20:55:26,002 [INFO] QwenQualitySweep:   dataset:           ag_news
+2026-09-18 20:55:26,002 [INFO] QwenQualitySweep:   batch_size:        32
+2026-09-18 20:55:26,002 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 20:55:26,003 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 20:55:26,003 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 20:55:26,003 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:55:26,004 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-18 20:55:37,929 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=1.8012
+2026-09-18 20:55:40,293 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=1.2795
+2026-09-18 20:55:42,480 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=1.0905
+2026-09-18 20:55:44,774 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=1.0636
+2026-09-18 20:55:46,755 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.8146
+2026-09-18 20:55:51,256 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.7128
+2026-09-18 20:55:54,210 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.5348
+2026-09-18 20:55:57,595 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.6845
+2026-09-18 20:55:57,935 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\agnews_unified_aegis_v2\roberta\finetuned_model.pt
+2026-09-18 20:55:58,439 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 20:56:02,027 [INFO] QwenQualitySweep: Prepared 32 eval batches and 50 train batches directly on GPU.
+2026-09-18 20:56:07,250 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 74.50%
+2026-09-18 20:56:07,457 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:56:07,458 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-18 20:56:07,458 [INFO] QwenQualitySweep:   Validation Majority Count: 274 / 1000
+2026-09-18 20:56:07,458 [INFO] QwenQualitySweep:   True Majority Baseline:    27.40%
+2026-09-18 20:56:07,458 [INFO] QwenQualitySweep:   Standard Error (SE):       1.410%
+2026-09-18 20:56:07,461 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.23%
+2026-09-18 20:56:07,461 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  31.63%
+2026-09-18 20:56:07,461 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:56:07,464 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: aegis_v2 (recovery_steps=50, batch_size=32, optimizer=adamw)
+2026-09-18 20:57:08,394 [INFO] framework.core.attention_utils: Successfully injected 'aegis_v2' into 12 transformer blocks.
+2026-09-18 20:57:08,442 [INFO] QwenQualitySweep: module=aegis_v2 path=adapted_roberta
+2026-09-18 20:57:08,447 [INFO] QwenQualitySweep: module=aegis_v2 injection summary: 48 SVDLinear layers active
+2026-09-18 20:57:08,447 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for aegis_v2 (lr=2.0e-04)
+2026-09-18 20:57:09,783 [INFO] framework.utils.compat: Recovery fine-tuning selected 3089952 trainable parameters across 168 tensors.
+2026-09-18 20:57:09,784 [INFO] framework.utils.compat: Discovered 168 trainable tensors (3089952 params)
+2026-09-18 20:57:09,834 [INFO] QwenQualitySweep: LoRA fine-tuning: 3089952 trainable parameters across 168 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 20:57:10,700 [INFO] QwenQualitySweep: Step 1/50 took 0.86s (loss=1.0061, bs=32, micro=32)
+2026-09-18 20:57:13,526 [INFO] QwenQualitySweep: Step 5/50 took 0.74s (loss=1.4474, bs=32, micro=32)
+2026-09-18 20:57:16,830 [INFO] QwenQualitySweep: Step 10/50 took 0.70s (loss=0.5745, bs=32, micro=32)
+2026-09-18 20:57:20,501 [INFO] QwenQualitySweep: Step 15/50 took 0.73s (loss=9.4353, bs=32, micro=32)
+2026-09-18 20:57:24,811 [INFO] QwenQualitySweep: Step 20/50 took 0.86s (loss=5.3039, bs=32, micro=32)
+2026-09-18 20:57:27,960 [INFO] QwenQualitySweep: Step 25/50 took 0.54s (loss=2.6091, bs=32, micro=32)
+2026-09-18 20:57:30,659 [INFO] QwenQualitySweep: Step 30/50 took 0.55s (loss=2.2274, bs=32, micro=32)
+2026-09-18 20:57:33,005 [INFO] QwenQualitySweep: Step 35/50 took 0.45s (loss=1.7277, bs=32, micro=32)
+2026-09-18 20:57:35,489 [INFO] QwenQualitySweep: Step 40/50 took 0.43s (loss=1.4528, bs=32, micro=32)
+2026-09-18 20:57:37,647 [INFO] QwenQualitySweep: Step 45/50 took 0.39s (loss=1.5128, bs=32, micro=32)
+2026-09-18 20:57:39,947 [INFO] QwenQualitySweep: Step 50/50 took 0.48s (loss=1.4136, bs=32, micro=32)
+2026-09-18 20:57:46,649 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\agnews_unified_aegis_v2\roberta\roberta-base_aegis_v2_full_metrics.json
+2026-09-18 20:57:46,746 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\agnews_unified_aegis_v2\roberta\checkpoints\aegis_v2\weights.pt (module_params=0, lora_params=100)
+2026-09-18 20:57:47,847 [INFO] QwenQualitySweep: [1/1] aegis_v2 -> PASS_LOW 20.70% (F1: 0.0945, Peak VRAM: 453.33 MB)
+2026-09-18 20:57:47,847 [INFO] QwenQualitySweep: [Quality Guard] Module 'aegis_v2' did not pass quality criteria (status=PASS_LOW, acc=20.70%, pass_thresh=31.63%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-18 20:57:48,210 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:57:48,211 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on ag_news)
+2026-09-18 20:57:48,227 [INFO] QwenQualitySweep: 
+  Module   Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+aegis_v2 PASS_LOW   20.70%   -53.80% 0.0945                 12            1.12x  453.3 MB               5.82              5.82
+2026-09-18 20:57:48,227 [INFO] QwenQualitySweep: ================================================================================

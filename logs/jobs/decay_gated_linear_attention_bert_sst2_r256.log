@@ -1,0 +1,76 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-23 12:23:32,146 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-23 12:23:32,146 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=16 (explicit_parallel=True, explicit_batch=True)
+2026-09-23 12:23:32,151 [INFO] QwenQualitySweep: Running 1 attention modules in-memory sequentially
+2026-09-23 12:23:32,337 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 9166.91it/s]
+2026-09-23 12:23:32,629 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-23 12:23:32,629 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-23 12:23:32,629 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 12:23:32,629 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-23 12:23:32,629 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-23 12:23:32,629 [INFO] QwenQualitySweep:   family:            bert
+2026-09-23 12:23:32,629 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-23 12:23:32,629 [INFO] QwenQualitySweep:   batch_size:        16
+2026-09-23 12:23:32,629 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-23 12:23:32,629 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-23 12:23:32,629 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-23 12:23:32,629 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 12:23:32,633 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\distilbert_sst2_sst2_sweep\finetuned_model.pt
+2026-09-23 12:23:32,635 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
+2026-09-23 12:23:32,697 [INFO] QwenQualitySweep: Loading pre-cached batches from results\distilbert_sst2_sst2_sweep\batch_cache_sst2 (skipping tokenization)
+2026-09-23 12:23:32,817 [INFO] QwenQualitySweep: Prepared 28 eval batches and 50 train batches directly on GPU.
+2026-09-23 12:23:34,406 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.60%
+2026-09-23 12:23:34,416 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 12:23:34,416 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-23 12:23:34,416 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-23 12:23:34,416 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-23 12:23:34,416 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-23 12:23:34,416 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-23 12:23:34,416 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-23 12:23:34,416 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-23 12:23:34,416 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 12:23:34,416 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-23 12:23:34,477 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: decay_gated_linear_attention (recovery_steps=50, batch_size=16, optimizer=adamw)
+2026-09-23 12:23:36,823 [INFO] framework.core.attention_utils: Successfully injected 'decay_gated_linear_attention' into 6 transformer blocks.
+2026-09-23 12:23:36,825 [INFO] QwenQualitySweep: module=decay_gated_linear_attention path=legacy_bert
+2026-09-23 12:23:36,825 [INFO] QwenQualitySweep: module=decay_gated_linear_attention injection summary: 24 SVDLinear layers active
+2026-09-23 12:23:36,825 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for decay_gated_linear_attention (lr=2.0e-04)
+2026-09-23 12:23:36,856 [INFO] framework.utils.compat: Recovery fine-tuning selected 645192 trainable parameters across 60 tensors.
+2026-09-23 12:23:36,856 [INFO] framework.utils.compat: Discovered 60 trainable tensors (645192 params)
+2026-09-23 12:23:36,857 [INFO] QwenQualitySweep: LoRA fine-tuning: 645192 trainable parameters across 60 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-23 12:23:37,036 [INFO] QwenQualitySweep: Step 1/50 took 0.18s (loss=0.0511, bs=32, micro=16)
+2026-09-23 12:23:37,402 [INFO] QwenQualitySweep: Step 5/50 took 0.09s (loss=0.0129, bs=32, micro=16)
+2026-09-23 12:23:37,856 [INFO] QwenQualitySweep: Step 10/50 took 0.09s (loss=0.0630, bs=32, micro=16)
+2026-09-23 12:23:38,300 [INFO] QwenQualitySweep: Step 15/50 took 0.09s (loss=0.1565, bs=32, micro=16)
+2026-09-23 12:23:38,754 [INFO] QwenQualitySweep: Step 20/50 took 0.09s (loss=0.0088, bs=32, micro=16)
+2026-09-23 12:23:39,211 [INFO] QwenQualitySweep: Step 25/50 took 0.09s (loss=0.0061, bs=32, micro=16)
+2026-09-23 12:23:39,664 [INFO] QwenQualitySweep: Step 30/50 took 0.09s (loss=0.0081, bs=32, micro=16)
+2026-09-23 12:23:40,117 [INFO] QwenQualitySweep: Step 35/50 took 0.09s (loss=0.0086, bs=32, micro=16)
+2026-09-23 12:23:40,569 [INFO] QwenQualitySweep: Step 40/50 took 0.09s (loss=0.0865, bs=32, micro=16)
+2026-09-23 12:23:41,026 [INFO] QwenQualitySweep: Step 45/50 took 0.10s (loss=0.1037, bs=32, micro=16)
+2026-09-23 12:23:41,482 [INFO] QwenQualitySweep: Step 50/50 took 0.09s (loss=0.0977, bs=32, micro=16)
+2026-09-23 12:23:42,578 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\distilbert_sst2_sst2_sweep\distilbert_sst2_decay_gated_linear_attention_full_metrics.json
+2026-09-23 12:23:42,626 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\distilbert_sst2_sst2_sweep\checkpoints\decay_gated_linear_attention\weights.pt (module_params=120, lora_params=52)
+2026-09-23 12:23:42,747 [INFO] QwenQualitySweep: [1/1] decay_gated_linear_attention -> PASS 90.02% (F1: 0.9026, Peak VRAM: 407.31 MB)
+2026-09-23 12:23:42,760 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / decay-gated-linear-attention is SUCCESSFUL (acc=90.02% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-sst2-decay-gated-linear-attention and Git recording.
+2026-09-23 12:23:43,429 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 409 Conflict"
+2026-09-23 12:23:43,691 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-23 12:23:44,106 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-sst2-decay-gated-linear-attention/preupload/main "HTTP/1.1 200 OK"
+2026-09-23 12:23:48,045 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-sst2-decay-gated-linear-attention/commit/main "HTTP/1.1 200 OK"
+2026-09-23 12:23:48,047 [INFO] HFGitExporter: Successfully uploaded private model to Hugging Face: https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-decay-gated-linear-attention
+[main cc34be1a1] feat(benchmark): record successful decay_gated_linear_attention on distilbert-sst2 (Acc: 90.02%, F1: 0.9026)
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+2026-09-23 12:23:56,775 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: cc34be1a
+2026-09-23 12:23:56,789 [INFO] QwenQualitySweep: [1/1] decay_gated_linear_attention Timing: eval_time=22.31s
+2026-09-23 12:23:56,790 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-23 12:23:57,381 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 12:23:57,381 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-23 12:23:57,390 [INFO] QwenQualitySweep: 
+                      Module Status Accuracy    Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                        full   FAIL    0.00% 0.00% (base) 0.0000                 0            1.00x    0.0 MB               0.48               N/A
+                       aasvd   PASS   88.07%       -2.53% 0.8857                24            1.16x  413.8 MB              10.96               N/A
+decay_gated_linear_attention   PASS   90.02%       -0.58% 0.9026                 6            1.06x  407.3 MB               1.04              1.19
+2026-09-23 12:23:57,390 [INFO] QwenQualitySweep: ================================================================================
+==

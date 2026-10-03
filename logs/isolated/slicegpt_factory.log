@@ -1,0 +1,143 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-24 04:55:11,240 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'slicegpt_factory', '--output_json', 'logs\\isolated_results\\slicegpt_factory_1790213092.json']
+2026-09-24 04:55:11,303 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 04:55:11,304 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=4 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-24 04:55:12,306 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-09-24 04:55:12,433 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md "HTTP/1.1 200 OK"
+2026-09-24 04:55:12,667 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-24 04:55:13,328 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-24 04:55:13,578 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-09-24 04:55:13,812 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-09-24 04:55:14,465 [INFO] httpx: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-09-24 04:55:14,709 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-24 04:55:14,940 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-24 04:55:15,176 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-09-24 04:55:15,414 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-24 04:55:16,117 [INFO] QwenQualitySweep: Configured dataset 'wikitext2' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 2897.98it/s]
+2026-09-24 04:55:17,235 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 04:55:17,236 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 04:55:17,236 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 04:55:17,236 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 04:55:17,236 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-24 04:55:17,237 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-24 04:55:17,237 [INFO] QwenQualitySweep:   dataset:           wikitext2
+2026-09-24 04:55:17,237 [INFO] QwenQualitySweep:   batch_size:        4
+2026-09-24 04:55:17,237 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 04:55:17,237 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 04:55:17,237 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 04:55:17,237 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 04:55:17,246 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\gpt2_wikitext2_sweep\finetuned_model.pt
+2026-09-24 04:55:17,250 [WARNING] QwenQualitySweep: Missing keys during load: ['transformer.wte.weight', 'transformer.wpe.weight', 'transformer.h.0.ln_1.weight', 'transformer.h.0.ln_1.bias', 'transformer.h.0.attn.c_attn.weight', 'transformer.h.0.attn.c_attn.bias', 'transformer.h.0.attn.c_proj.weight', 'transformer.h.0.attn.c_proj.bias', 'transformer.h.0.ln_2.weight', 'transformer.h.0.ln_2.bias']
+2026-09-24 04:55:17,454 [INFO] QwenQualitySweep: Prepared 0 eval batches and 0 train batches directly on GPU.
+Token indices sequence length is longer than the specified maximum sequence length for this model (249749 > 1024). Running this sequence through the model will result in indexing errors
+`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+2026-09-24 04:57:24,911 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 0.00%
+2026-09-24 04:57:24,911 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 04:57:24,912 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-24 04:57:24,912 [INFO] QwenQualitySweep:   Validation Majority Count: 500 / 1000
+2026-09-24 04:57:24,912 [INFO] QwenQualitySweep:   True Majority Baseline:    50.00%
+2026-09-24 04:57:24,912 [INFO] QwenQualitySweep:   Standard Error (SE):       1.581%
+2026-09-24 04:57:24,912 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.74%
+2026-09-24 04:57:24,912 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  54.74%
+2026-09-24 04:57:24,913 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.00% (500/1000), SE=1.581%, 3*SE=4.740%
+2026-09-24 04:57:24,913 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 04:57:24,916 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 04:57:25,636 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: slicegpt_factory (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-24 04:57:26,468 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4873 on transformer.h.0.attn.c_attn exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:26,469 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.0.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:26,490 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4913 on transformer.h.0.attn.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:26,490 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.0.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:26,836 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.5057 on transformer.h.0.mlp.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:26,836 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.0.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:26,859 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4893 on transformer.h.1.attn.c_attn exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:26,859 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.1.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:26,882 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.5055 on transformer.h.1.attn.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:26,883 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.1.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:27,218 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.5015 on transformer.h.1.mlp.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:27,219 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.1.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:27,241 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.5001 on transformer.h.2.attn.c_attn exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:27,241 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.2.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:27,262 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4983 on transformer.h.2.attn.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:27,262 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.2.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:27,602 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4895 on transformer.h.2.mlp.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:27,602 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.2.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:27,624 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4954 on transformer.h.3.attn.c_attn exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:27,624 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.3.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:27,645 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4860 on transformer.h.3.attn.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:27,646 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.3.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:27,987 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4800 on transformer.h.3.mlp.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:27,988 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.3.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:28,009 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4974 on transformer.h.4.attn.c_attn exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:28,010 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.4.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:28,032 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4806 on transformer.h.4.attn.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:28,033 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.4.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:28,366 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4927 on transformer.h.4.mlp.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:28,366 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.4.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:28,387 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4976 on transformer.h.5.attn.c_attn exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:28,388 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.5.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:28,409 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.5008 on transformer.h.5.attn.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:28,409 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.5.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:28,747 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4937 on transformer.h.5.mlp.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:28,747 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.5.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:28,769 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.5083 on transformer.h.6.attn.c_attn exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:28,769 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.6.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:28,791 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4895 on transformer.h.6.attn.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:28,791 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.6.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:29,126 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4965 on transformer.h.6.mlp.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:29,126 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.6.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:29,150 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.5011 on transformer.h.7.attn.c_attn exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:29,150 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.7.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:29,173 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.5077 on transformer.h.7.attn.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:29,173 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.7.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:29,509 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4977 on transformer.h.7.mlp.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:29,509 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.7.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:29,531 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4997 on transformer.h.8.attn.c_attn exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:29,532 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.8.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:29,552 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.5058 on transformer.h.8.attn.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:29,552 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.8.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:29,891 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4984 on transformer.h.8.mlp.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:29,891 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.8.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:29,912 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4966 on transformer.h.9.attn.c_attn exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:29,912 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.9.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:29,934 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4918 on transformer.h.9.attn.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:29,934 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.9.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:30,274 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4983 on transformer.h.9.mlp.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:30,274 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.9.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:30,296 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4922 on transformer.h.10.attn.c_attn exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:30,296 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.10.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:30,318 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4933 on transformer.h.10.attn.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:30,318 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.10.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:30,659 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4949 on transformer.h.10.mlp.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:30,659 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.10.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:30,681 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4936 on transformer.h.11.attn.c_attn exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:30,682 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.11.attn.c_attn. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:30,704 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4637 on transformer.h.11.attn.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:30,704 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.11.attn.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:31,038 [WARNING] framework.compression_engine.slicegpt: SliceGPT reconstruction error 0.4874 on transformer.h.11.mlp.c_proj exceeded threshold 0.4000. Skipping (fallback to original).
+2026-09-24 04:57:31,038 [WARNING] framework.compression_engine.slicegpt: Fallback triggered for transformer.h.11.mlp.c_proj. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.
+2026-09-24 04:57:31,124 [INFO] QwenQualitySweep: module=slicegpt_factory path=adapted_gpt
+2026-09-24 04:57:31,126 [INFO] QwenQualitySweep: module=slicegpt_factory injection summary: 0 SVDLinear layers active
+2026-09-24 04:57:31,126 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for slicegpt_factory (lr=2.0e-04)
+2026-09-24 04:57:31,254 [INFO] framework.utils.compat: Recovery fine-tuning selected 0 trainable parameters across 0 tensors.
+2026-09-24 04:57:31,255 [INFO] framework.utils.compat: Discovered 0 trainable tensors (0 params)
+2026-09-24 04:59:32,581 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\gpt2_wikitext2_sweep\gpt2_slicegpt_factory_full_metrics.json
+2026-09-24 04:59:32,588 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\gpt2_wikitext2_sweep\checkpoints\slicegpt_factory\weights.pt (module_params=0, lora_params=0)
+2026-09-24 04:59:32,966 [INFO] QwenQualitySweep: [1/1] slicegpt_factory -> PASS 0.00% (F1: 0.0, Peak VRAM: 0.0 MB)
+2026-09-24 04:59:32,966 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\gpt2_wikitext2_sweep\checkpoints\slicegpt_factory. Automated export will be handled post-sweep by orchestrator.
+2026-09-24 04:59:32,967 [INFO] QwenQualitySweep: [1/1] slicegpt_factory Timing: eval_time=127.33s
+2026-09-24 04:59:32,967 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 04:59:33,355 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 04:59:33,355 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on wikitext2)
+2026-09-24 04:59:33,365 [INFO] QwenQualitySweep: 
+                           Module          Status Accuracy    Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                             full            PASS    0.00% 0.00% (base)    N/A                              1.00x  916.2 MB               7.88               N/A
+       swift_svd (efficient-attn)   PASS_DEGRADED    0.00%       +0.00%    N/A                              1.50x  838.8 MB               3.23               N/A
+ gated_delta_net (efficient-attn) SKIP_DEPRECATED    0.00%       +0.00%    N/A                              1.00x       N/A               0.00               N/A
+slicegpt_factory (efficient-attn)            PASS    0.00%       +0.00% 0.0000                 0            1.00x    0.0 MB             127.33              0.00
+2026-09-24 04:59:33,366 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:153: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

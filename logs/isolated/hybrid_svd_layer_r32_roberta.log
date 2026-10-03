@@ -1,0 +1,146 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'naive_svd' due to: No module named 'framework.attentions.minimal_svd'
+2026-09-27 08:00:06,960 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0% (leaving 5.20 GB headroom)
+2026-09-27 08:00:06,961 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-27 08:00:06,961 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-27 08:00:06,961 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 35.0%
+2026-09-27 08:00:06,961 [INFO] QwenQualitySweep: Auto-resolving base model 'roberta-base' to fine-tuned SST-2 model: models\roberta_sst2
+2026-09-27 08:00:07,322 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights: 100%|##########| 201/201 [00:00<00:00, 3643.60it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta_sst2
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-09-27 08:00:08,186 [INFO] QwenQualitySweep: model=models\roberta_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-27 08:00:08,186 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'raw_family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-27 08:00:08,186 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:00:08,186 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-27 08:00:08,186 [INFO] QwenQualitySweep:   model:             models\roberta_sst2
+2026-09-27 08:00:08,187 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-27 08:00:08,187 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-27 08:00:08,187 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-27 08:00:08,187 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-27 08:00:08,187 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-27 08:00:08,188 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-27 08:00:08,188 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:00:08,189 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-27 08:00:10,087 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0015
+2026-09-27 08:00:11,327 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0143
+2026-09-27 08:00:12,560 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1419
+2026-09-27 08:00:13,748 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0326
+2026-09-27 08:00:14,988 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0266
+2026-09-27 08:00:16,187 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0969
+2026-09-27 08:00:17,414 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0999
+2026-09-27 08:00:18,622 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.1602
+2026-09-27 08:00:18,640 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\04_rank_sweeps\roberta\deep_rank_roberta\hybrid_svd_layer\rank_32\finetuned_model.pt
+2026-09-27 08:00:19,772 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\04_rank_sweeps\roberta\deep_rank_roberta\hybrid_svd_layer\rank_32\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-27 08:00:19,772 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-27 08:00:23,443 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 94.38%
+2026-09-27 08:00:23,585 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:00:23,585 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-27 08:00:23,585 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-27 08:00:23,585 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-27 08:00:23,585 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-27 08:00:23,586 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-27 08:00:23,586 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-27 08:00:23,586 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-27 08:00:23,586 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:00:23,586 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-27 08:00:23,684 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: hybrid_svd_layer (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-27 08:00:24,421 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.0.attention.self.query err=0.6440 at rank=128, escalating to rank=192
+2026-09-27 08:00:24,423 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.0.attention.self.query err=0.5233 at rank=192, escalating to rank=288
+2026-09-27 08:00:24,554 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.0.attention.self.key err=0.6044 at rank=128, escalating to rank=192
+2026-09-27 08:00:24,626 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.0.attention.self.value err=0.6258 at rank=128, escalating to rank=192
+2026-09-27 08:00:24,628 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.0.attention.self.value err=0.5053 at rank=192, escalating to rank=288
+2026-09-27 08:00:24,813 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.1.attention.self.query err=0.6222 at rank=128, escalating to rank=192
+2026-09-27 08:00:24,815 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.1.attention.self.query err=0.5081 at rank=192, escalating to rank=288
+2026-09-27 08:00:24,946 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.1.attention.self.key err=0.6055 at rank=128, escalating to rank=192
+2026-09-27 08:00:25,064 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.1.attention.self.value err=0.6008 at rank=128, escalating to rank=192
+2026-09-27 08:00:25,197 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.2.attention.self.query err=0.6152 at rank=128, escalating to rank=192
+2026-09-27 08:00:25,326 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.2.attention.self.key err=0.6158 at rank=128, escalating to rank=192
+2026-09-27 08:00:25,416 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.2.attention.self.value err=0.6076 at rank=128, escalating to rank=192
+2026-09-27 08:00:25,523 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.3.attention.self.query err=0.6223 at rank=128, escalating to rank=192
+2026-09-27 08:00:25,525 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.3.attention.self.query err=0.5062 at rank=192, escalating to rank=288
+2026-09-27 08:00:25,649 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.3.attention.self.key err=0.6422 at rank=128, escalating to rank=192
+2026-09-27 08:00:25,651 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.3.attention.self.key err=0.5240 at rank=192, escalating to rank=288
+2026-09-27 08:00:25,774 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.3.attention.self.value err=0.6151 at rank=128, escalating to rank=192
+2026-09-27 08:00:25,894 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.4.attention.self.query err=0.6221 at rank=128, escalating to rank=192
+2026-09-27 08:00:25,895 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.4.attention.self.query err=0.5016 at rank=192, escalating to rank=288
+2026-09-27 08:00:26,035 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.4.attention.self.key err=0.6296 at rank=128, escalating to rank=192
+2026-09-27 08:00:26,037 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.4.attention.self.key err=0.5078 at rank=192, escalating to rank=288
+2026-09-27 08:00:26,177 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.4.attention.self.value err=0.5993 at rank=128, escalating to rank=192
+2026-09-27 08:00:26,307 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.5.attention.self.query err=0.6249 at rank=128, escalating to rank=192
+2026-09-27 08:00:26,309 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.5.attention.self.query err=0.5062 at rank=192, escalating to rank=288
+2026-09-27 08:00:26,445 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.5.attention.self.key err=0.6401 at rank=128, escalating to rank=192
+2026-09-27 08:00:26,446 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.5.attention.self.key err=0.5171 at rank=192, escalating to rank=288
+2026-09-27 08:00:26,556 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.5.attention.self.value err=0.6113 at rank=128, escalating to rank=192
+2026-09-27 08:00:26,680 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.6.attention.self.query err=0.6125 at rank=128, escalating to rank=192
+2026-09-27 08:00:26,805 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.6.attention.self.key err=0.6009 at rank=128, escalating to rank=192
+2026-09-27 08:00:26,927 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.6.attention.self.value err=0.6385 at rank=128, escalating to rank=192
+2026-09-27 08:00:26,929 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.6.attention.self.value err=0.5093 at rank=192, escalating to rank=288
+2026-09-27 08:00:27,075 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.7.attention.self.query err=0.6276 at rank=128, escalating to rank=192
+2026-09-27 08:00:27,077 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.7.attention.self.query err=0.5026 at rank=192, escalating to rank=288
+2026-09-27 08:00:27,217 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.7.attention.self.key err=0.6156 at rank=128, escalating to rank=192
+2026-09-27 08:00:27,337 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.7.attention.self.value err=0.6281 at rank=128, escalating to rank=192
+2026-09-27 08:00:27,337 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.7.attention.self.value err=0.5047 at rank=192, escalating to rank=288
+2026-09-27 08:00:27,421 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.8.attention.self.query err=0.6089 at rank=128, escalating to rank=192
+2026-09-27 08:00:27,507 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.8.attention.self.key err=0.6031 at rank=128, escalating to rank=192
+2026-09-27 08:00:27,617 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.8.attention.self.value err=0.6881 at rank=128, escalating to rank=192
+2026-09-27 08:00:27,619 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.8.attention.self.value err=0.5761 at rank=192, escalating to rank=288
+2026-09-27 08:00:27,738 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.9.attention.self.query err=0.5795 at rank=128, escalating to rank=192
+2026-09-27 08:00:27,872 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.9.attention.self.key err=0.5914 at rank=128, escalating to rank=192
+2026-09-27 08:00:27,995 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.9.attention.self.value err=0.7009 at rank=128, escalating to rank=192
+2026-09-27 08:00:27,996 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.9.attention.self.value err=0.5935 at rank=192, escalating to rank=288
+2026-09-27 08:00:28,119 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.10.attention.self.query err=0.5979 at rank=128, escalating to rank=192
+2026-09-27 08:00:28,249 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.10.attention.self.key err=0.5929 at rank=128, escalating to rank=192
+2026-09-27 08:00:28,376 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.10.attention.self.value err=0.7019 at rank=128, escalating to rank=192
+2026-09-27 08:00:28,378 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.10.attention.self.value err=0.5916 at rank=192, escalating to rank=288
+2026-09-27 08:00:28,526 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.11.attention.self.query err=0.5927 at rank=128, escalating to rank=192
+2026-09-27 08:00:28,606 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.11.attention.self.key err=0.6242 at rank=128, escalating to rank=192
+2026-09-27 08:00:28,608 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.11.attention.self.key err=0.5008 at rank=192, escalating to rank=288
+2026-09-27 08:00:28,701 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.11.attention.self.value err=0.7151 at rank=128, escalating to rank=192
+2026-09-27 08:00:28,703 [INFO] framework.compression_engine.hybrid_svd_layer: HybridSVD: roberta.encoder.layer.11.attention.self.value err=0.5953 at rank=192, escalating to rank=288
+2026-09-27 08:00:28,791 [WARNING] framework.compression_engine.hybrid_svd_layer: HybridSVD post-compression forward check warning: too many values to unpack (expected 2)
+2026-09-27 08:00:28,806 [INFO] QwenQualitySweep: module=hybrid_svd_layer path=adapted_roberta
+2026-09-27 08:00:28,808 [INFO] QwenQualitySweep: module=hybrid_svd_layer injection summary: 36 SVDLinear layers active
+2026-09-27 08:00:28,809 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for hybrid_svd_layer (lr=2.0e-04)
+2026-09-27 08:00:29,066 [INFO] framework.utils.compat: Recovery fine-tuning selected 13151232 trainable parameters across 108 tensors.
+2026-09-27 08:00:29,067 [WARNING] framework.utils.compat: Total trainable parameters (13151232) exceeds 10000000 threshold for recovery. Pruning with priority-based allocation.
+2026-09-27 08:00:29,069 [INFO] framework.utils.compat:   priority=0: kept=0 pruned=0 (running total=0)
+2026-09-27 08:00:29,069 [INFO] framework.utils.compat:   priority=1: kept=90 pruned=18 (running total=9907200)
+2026-09-27 08:00:29,069 [INFO] framework.utils.compat:   priority=2: kept=0 pruned=0 (running total=9907200)
+2026-09-27 08:00:29,069 [INFO] framework.utils.compat:   priority=3: kept=0 pruned=0 (running total=9907200)
+2026-09-27 08:00:29,071 [INFO] framework.utils.compat: Reduced recovery parameters to 9907200 trainable parameters across 90 tensors.
+2026-09-27 08:00:29,071 [INFO] framework.utils.compat: Discovered 90 trainable tensors (9907200 params)
+2026-09-27 08:00:29,079 [INFO] QwenQualitySweep: LoRA fine-tuning: 9907200 trainable parameters across 90 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-27 08:00:29,218 [INFO] QwenQualitySweep: Step 1/50 took 0.14s (loss=0.2822, bs=8, micro=8)
+2026-09-27 08:00:29,699 [INFO] QwenQualitySweep: Step 5/50 took 0.13s (loss=0.2465, bs=8, micro=8)
+2026-09-27 08:00:30,292 [INFO] QwenQualitySweep: Step 10/50 took 0.12s (loss=0.0587, bs=8, micro=8)
+2026-09-27 08:00:30,885 [INFO] QwenQualitySweep: Step 15/50 took 0.12s (loss=0.3942, bs=8, micro=8)
+2026-09-27 08:00:31,486 [INFO] QwenQualitySweep: Step 20/50 took 0.11s (loss=0.3937, bs=8, micro=8)
+2026-09-27 08:00:32,101 [INFO] QwenQualitySweep: Step 25/50 took 0.12s (loss=0.1277, bs=8, micro=8)
+2026-09-27 08:00:32,682 [INFO] QwenQualitySweep: Step 30/50 took 0.11s (loss=0.0620, bs=8, micro=8)
+2026-09-27 08:00:33,259 [INFO] QwenQualitySweep: Step 35/50 took 0.12s (loss=0.2143, bs=8, micro=8)
+2026-09-27 08:00:33,874 [INFO] QwenQualitySweep: Step 40/50 took 0.11s (loss=0.5072, bs=8, micro=8)
+2026-09-27 08:00:34,490 [INFO] QwenQualitySweep: Step 45/50 took 0.11s (loss=0.0912, bs=8, micro=8)
+2026-09-27 08:00:35,062 [INFO] QwenQualitySweep: Step 50/50 took 0.11s (loss=0.0537, bs=8, micro=8)
+2026-09-27 08:00:40,562 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\04_rank_sweeps\roberta\deep_rank_roberta\hybrid_svd_layer\rank_32\roberta_sst2_hybrid_svd_layer_full_metrics.json
+2026-09-27 08:00:40,817 [INFO] QwenQualitySweep: [1/1] hybrid_svd_layer -> PASS 89.79% (F1: 0.9052, Peak VRAM: 393.34 MB)
+2026-09-27 08:00:40,817 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\04_rank_sweeps\roberta\deep_rank_roberta\hybrid_svd_layer\rank_32\checkpoints\hybrid_svd_layer. Automated export will be handled post-sweep by orchestrator.
+2026-09-27 08:00:40,818 [INFO] QwenQualitySweep: [1/1] hybrid_svd_layer Timing: eval_time=17.13s
+2026-09-27 08:00:40,818 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-27 08:00:41,124 [INFO] QwenQualitySweep: ================================================================================
+2026-09-27 08:00:41,124 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-27 08:00:41,133 [INFO] QwenQualitySweep: 
+          Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+hybrid_svd_layer   PASS   89.79%    -4.59% 0.9052                 36            1.07x  393.3 MB               4.68              5.37
+2026-09-27 08:00:41,134 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:171: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

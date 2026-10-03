@@ -1,0 +1,45 @@
+================================================================================
+STARTING UNIFIED 4-MODEL HARDENED SAMBA-MOE BENCHMARK ON GPU SERVER
+Running models: ['distilbert', 'roberta', 'gpt2', 'qwen3_5']
+================================================================================
+
+============================== RUNNING MODEL: distilbert ==============================
+
+>>> FINISHED MODEL: distilbert in 38.4s (Exit: 0, Status: FAIL)
+
+============================== RUNNING MODEL: roberta ==============================
+
+>>> FINISHED MODEL: roberta in 40.1s (Exit: 0, Status: FAIL)
+
+============================== RUNNING MODEL: gpt2 ==============================
+
+>>> FINISHED MODEL: gpt2 in 39.8s (Exit: 0, Status: FAIL)
+
+============================== RUNNING MODEL: qwen3_5 ==============================
+
+>>> FINISHED MODEL: qwen3_5 in 441.7s (Exit: 0, Status: FAIL)
+
+================================================================================
+4-MODEL BENCHMARK RESULTS SUMMARY (SambaMoE on GPU)
+================================================================================
+     Model  Exit Code Baseline Acc SambaMoE Acc Delta Acc     F1 Status Compressed Layers Comp Rate Peak VRAM Time (s)
+distilbert          0       90.48%        0.00%   -90.48% 0.9077   FAIL                 0     1.00x  181.1 MB     38.4
+   roberta          0       75.11%        0.00%   -75.11% 0.7586   FAIL                 0     1.00x  295.8 MB     40.1
+      gpt2          0       54.13%        0.00%   -54.13% 0.6390   FAIL                 0     1.00x  390.2 MB     39.8
+   qwen3_5          0       67.89%        0.00%   -67.89% 0.5570   FAIL                 0     1.00x 1796.8 MB    441.7
+================================================================================
+
+Saved consolidated summaries to:
+- results\unified_kronecker_linear_4models_summary.csv
+- results\unified_kronecker_linear_4models_summary.json
+Generated and saved comparative visualization charts to results\unified_baseline
+
+================================================================================
+STAGE 2: QUALITY-GATED EXPORT TO HUGGING FACE & GITHUB (SambaMoE)
+================================================================================
+[Quality Gate: REJECTED] distilbert did not meet criteria (status=FAIL, acc=0.00% < 56.0%).
+[Quality Gate: REJECTED] roberta did not meet criteria (status=FAIL, acc=0.00% < 56.0%).
+[Quality Gate: REJECTED] gpt2 did not meet criteria (status=FAIL, acc=0.00% < 56.0%).
+[Quality Gate: REJECTED] qwen3_5 did not meet criteria (status=FAIL, acc=0.00% < 56.0%).
+
+Export Complete: 0/4 passed quality gate.

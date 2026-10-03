@@ -1,0 +1,121 @@
+Skipping attention module 'fused_svd_kernel' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'projection_factorized_attn' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping compression_engine module 'svd_linear' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'svd_linear_attention' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'svd_linear_decay' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+2026-09-15 04:04:29,197 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+
+Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 197/197 [00:00<00:00, 2867.05it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta-base
+Key                             | Status     | 
+--------------------------------+------------+-
+lm_head.bias                    | UNEXPECTED | 
+roberta.embeddings.position_ids | UNEXPECTED | 
+lm_head.dense.bias              | UNEXPECTED | 
+lm_head.dense.weight            | UNEXPECTED | 
+lm_head.layer_norm.weight       | UNEXPECTED | 
+lm_head.layer_norm.bias         | UNEXPECTED | 
+classifier.dense.weight         | MISSING    | 
+classifier.out_proj.bias        | MISSING    | 
+classifier.out_proj.weight      | MISSING    | 
+classifier.dense.bias           | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-15 04:04:30,608 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-15 04:04:30,609 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 04:04:30,609 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 04:04:30,609 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 04:04:30,609 [INFO] QwenQualitySweep:   model:             models\roberta-base
+2026-09-15 04:04:30,609 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-15 04:04:30,609 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 04:04:30,610 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 04:04:30,610 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-15 04:04:30,610 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 04:04:30,610 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 04:04:30,610 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 04:04:30,988 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\roberta_sst2_lora_baseline\finetuned_model.pt
+2026-09-15 04:04:31,793 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 04:04:32,631 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-15 04:04:37,809 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 78.56%
+2026-09-15 04:04:37,862 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 04:04:37,862 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 04:04:37,862 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 04:04:37,862 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 04:04:37,862 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 04:04:37,862 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 04:04:37,863 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 04:04:37,863 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 04:04:37,864 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 04:04:43,284 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_kda\roberta\roberta-base_full_full_metrics.json
+2026-09-15 04:04:43,305 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_kda\roberta\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-15 04:04:44,052 [INFO] QwenQualitySweep: [1/2] full -> PASS 78.56% (F1: 0.8124, Peak VRAM: 712.34 MB)
+2026-09-15 04:04:44,052 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_kda\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 04:04:44,320 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: kda (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 04:04:46,120 [INFO] QwenQualitySweep: module=kda path=adapted_roberta
+2026-09-15 04:04:46,122 [INFO] QwenQualitySweep: module=kda injection summary: 48 SVDLinear layers active
+2026-09-15 04:04:46,123 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for kda (lr=2.0e-04)
+2026-09-15 04:04:46,387 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179804 trainable parameters across 120 tensors.
+2026-09-15 04:04:46,387 [INFO] framework.utils.compat: Discovered 120 trainable tensors (1179804 params)
+2026-09-15 04:04:46,393 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179804 trainable parameters across 120 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 04:04:46,664 [WARNING] QwenQualitySweep: CUDA OOM during LoRA training; reducing micro-batch size to 4 (effective bs=8)
+2026-09-15 04:04:47,108 [ERROR] QwenQualitySweep: Module kda execution failure:
+Traceback (most recent call last):
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2302, in main
+    pipe_res = future.result(timeout=effective_timeout)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2201, in _run_candidate_pipeline
+    had_nan = finetune_lora(
+        model, tokenizer, train, args.dataset, rec_steps, args.seq_len, effective_batch_size, device,
+    ...<2 lines>...
+        weight_decay=args.weight_decay, timeout=effective_timeout,
+    )
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 633, in finetune_lora
+    scaler.scale(loss_chunk).backward()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\_tensor.py", line 626, in backward
+    torch.autograd.backward(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        self, gradient, retain_graph, create_graph, inputs=inputs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\autograd\__init__.py", line 347, in backward
+    _engine_run_backward(
+    ~~~~~~~~~~~~~~~~~~~~^
+        tensors,
+        ^^^^^^^^
+    ...<5 lines>...
+        accumulate_grad=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\autograd\graph.py", line 823, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        t_outputs, *args, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )  # Calls into the C++ engine to run the backward pass
+    ^
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+2026-09-15 04:04:47,190 [INFO] QwenQualitySweep: [2/2] kda -> FAIL 0.00% (F1: 0.8124, Peak VRAM: 712.34 MB)
+2026-09-15 04:04:47,190 [INFO] QwenQualitySweep: [Quality Guard] Module 'kda' did not pass quality criteria (status=FAIL, acc=0.00%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 04:04:47,418 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 04:04:47,418 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
+2026-09-15 04:04:47,426 [INFO] QwenQualitySweep: 
+Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+  full   PASS   78.56% 0.00% (base) 0.8124                  0            1.00x  712.3 MB               4.09              4.70
+   kda   FAIL    0.00%      -78.56% 0.8124                  0            1.00x  712.3 MB               4.09              4.70
+2026-09-15 04:04:47,426 [INFO] QwenQualitySweep: ================================================================================

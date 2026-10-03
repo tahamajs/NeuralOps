@@ -1,0 +1,86 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 16:51:34,326 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'oats', '--output_json', 'logs\\isolated_results\\oats_1790342472807_1912.json']
+2026-09-25 16:51:34,397 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 50.0% (leaving 4.00 GB headroom)
+2026-09-25 16:51:34,397 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 16:51:34,397 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=64 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-25 16:51:34,398 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 50.0%
+2026-09-25 16:51:34,824 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights: 100%|##########| 201/201 [00:00<00:00, 3072.01it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models/roberta_sst2
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-09-25 16:51:35,734 [INFO] QwenQualitySweep: model=models/roberta_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-25 16:51:35,734 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-25 16:51:35,734 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 16:51:35,735 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-25 16:51:35,735 [INFO] QwenQualitySweep:   model:             models/roberta_sst2
+2026-09-25 16:51:35,735 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-25 16:51:35,735 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-25 16:51:35,735 [INFO] QwenQualitySweep:   batch_size:        64
+2026-09-25 16:51:35,735 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-25 16:51:35,735 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-25 16:51:35,736 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-25 16:51:35,736 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 16:51:35,737 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-25 16:51:38,637 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.1548
+2026-09-25 16:51:40,769 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0796
+2026-09-25 16:51:42,888 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1766
+2026-09-25 16:51:44,991 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0516
+2026-09-25 16:51:47,112 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.1776
+2026-09-25 16:51:49,231 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.1528
+2026-09-25 16:51:51,355 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.1325
+2026-09-25 16:51:53,484 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.2733
+2026-09-25 16:51:53,500 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: D:\SVD_Project\results\deep_rank_roberta\oats\rank_384\finetuned_model.pt
+2026-09-25 16:51:54,722 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to D:\SVD_Project\results\deep_rank_roberta\oats\rank_384\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-25 16:51:54,722 [INFO] QwenQualitySweep: Prepared 14 eval batches and 50 train batches directly on GPU.
+2026-09-25 16:51:55,664 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 93.46%
+2026-09-25 16:51:55,804 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 16:51:55,804 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-25 16:51:55,804 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-25 16:51:55,804 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-25 16:51:55,804 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-25 16:51:55,804 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-25 16:51:55,805 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-25 16:51:55,805 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-25 16:51:55,805 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 16:51:55,805 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-25 16:51:55,897 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: oats (recovery_steps=50, batch_size=64, optimizer=adamw)
+2026-09-25 16:52:10,430 [WARNING] framework.compression_engine.oats_compressor: OATS post-compression forward check warning: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.cuda.FloatTensor instead (while checking arguments for embedding)
+2026-09-25 16:52:10,493 [INFO] QwenQualitySweep: module=oats path=adapted_roberta
+2026-09-25 16:52:10,495 [INFO] QwenQualitySweep: module=oats injection summary: 0 SVDLinear layers active
+2026-09-25 16:52:10,495 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for oats (lr=2.0e-04)
+2026-09-25 16:52:10,697 [INFO] framework.utils.compat: Recovery fine-tuning selected 592130 trainable parameters across 4 tensors.
+2026-09-25 16:52:10,697 [INFO] framework.utils.compat: Discovered 4 trainable tensors (592130 params)
+2026-09-25 16:52:10,701 [INFO] QwenQualitySweep: LoRA fine-tuning: 592130 trainable parameters across 4 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-25 16:52:10,899 [INFO] QwenQualitySweep: Step 1/50 took 0.20s (loss=0.1035, bs=64, micro=16)
+2026-09-25 16:52:11,600 [INFO] QwenQualitySweep: Step 5/50 took 0.18s (loss=0.1648, bs=64, micro=16)
+2026-09-25 16:52:12,531 [INFO] QwenQualitySweep: Step 10/50 took 0.19s (loss=0.0919, bs=64, micro=16)
+2026-09-25 16:52:13,407 [INFO] QwenQualitySweep: Step 15/50 took 0.19s (loss=0.1941, bs=64, micro=16)
+2026-09-25 16:52:14,320 [INFO] QwenQualitySweep: Step 20/50 took 0.20s (loss=0.1762, bs=64, micro=16)
+2026-09-25 16:52:15,191 [INFO] QwenQualitySweep: Step 25/50 took 0.17s (loss=0.2104, bs=64, micro=16)
+2026-09-25 16:52:16,107 [INFO] QwenQualitySweep: Step 30/50 took 0.18s (loss=0.1468, bs=64, micro=16)
+2026-09-25 16:52:17,022 [INFO] QwenQualitySweep: Step 35/50 took 0.18s (loss=0.0748, bs=64, micro=16)
+2026-09-25 16:52:17,856 [INFO] QwenQualitySweep: Step 40/50 took 0.17s (loss=0.1414, bs=64, micro=16)
+2026-09-25 16:52:18,672 [INFO] QwenQualitySweep: Step 45/50 took 0.16s (loss=0.0315, bs=64, micro=16)
+2026-09-25 16:52:19,472 [INFO] QwenQualitySweep: Step 50/50 took 0.15s (loss=0.1567, bs=64, micro=16)
+2026-09-25 16:52:21,818 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to D:\SVD_Project\results\deep_rank_roberta\oats\rank_384\roberta_sst2_oats_full_metrics.json
+2026-09-25 16:52:22,066 [INFO] QwenQualitySweep: [1/1] oats -> PASS 93.81% (F1: 0.9397, Peak VRAM: 514.58 MB)
+2026-09-25 16:52:22,066 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in D:\SVD_Project\results\deep_rank_roberta\oats\rank_384\checkpoints\oats. Automated export will be handled post-sweep by orchestrator.
+2026-09-25 16:52:22,066 [INFO] QwenQualitySweep: [1/1] oats Timing: eval_time=26.17s
+2026-09-25 16:52:22,066 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-25 16:52:22,320 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 16:52:22,321 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-25 16:52:22,331 [INFO] QwenQualitySweep: 
+Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+  oats   PASS   93.81%    +0.35% 0.9397                 48            1.00x  514.6 MB               1.78              2.05
+2026-09-25 16:52:22,331 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:169: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

@@ -1,0 +1,415 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-26 05:56:16,147 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-09-26 05:56:16,148 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-26 05:56:16,148 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=16 (explicit_parallel=True, explicit_batch=True)
+2026-09-26 05:56:16,365 [INFO] QwenQualitySweep: Running 1 attention modules in-memory sequentially
+2026-09-26 05:56:16,365 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0%
+2026-09-26 05:56:17,205 [INFO] QwenQualitySweep: Configured dataset 'mnli' with num_labels=3
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 5093.27it/s]
+2026-09-26 05:56:29,778 [INFO] QwenQualitySweep: model=models/base_checkpoints/distilbert_mnli qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-26 05:56:29,778 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'raw_family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-26 05:56:29,778 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 05:56:29,778 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-26 05:56:29,778 [INFO] QwenQualitySweep:   model:             models/base_checkpoints/distilbert_mnli
+2026-09-26 05:56:29,781 [INFO] QwenQualitySweep:   family:            bert
+2026-09-26 05:56:29,781 [INFO] QwenQualitySweep:   dataset:           mnli
+2026-09-26 05:56:29,781 [INFO] QwenQualitySweep:   batch_size:        16
+2026-09-26 05:56:29,781 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-26 05:56:29,781 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-26 05:56:29,781 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-26 05:56:29,781 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 05:56:32,200 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: models\base_checkpoints\distilbert_mnli\finetuned_model.pt
+2026-09-26 05:56:39,689 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\rank_sweep_mnli\cluster_attention\rank_256\batch_cache_mnli (will be reused by subsequent module runs)
+2026-09-26 05:56:39,690 [INFO] QwenQualitySweep: Prepared 63 eval batches and 50 train batches directly on GPU.
+2026-09-26 05:57:09,902 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 67.00%
+2026-09-26 05:57:13,348 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 05:57:13,349 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-26 05:57:13,349 [INFO] QwenQualitySweep:   Validation Majority Count: 341 / 1000
+2026-09-26 05:57:13,349 [INFO] QwenQualitySweep:   True Majority Baseline:    34.10%
+2026-09-26 05:57:13,349 [INFO] QwenQualitySweep:   Standard Error (SE):       1.499%
+2026-09-26 05:57:13,351 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.50%
+2026-09-26 05:57:13,351 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  38.60%
+2026-09-26 05:57:13,351 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=34.10% (341/1000), SE=1.499%, 3*SE=4.500%
+2026-09-26 05:57:13,351 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 05:57:13,352 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-26 05:57:14,704 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: cluster_attention (recovery_steps=50, batch_size=16, optimizer=adamw)
+2026-09-26 05:57:49,436 [INFO] QwenQualitySweep: module=cluster_attention path=legacy_bert
+2026-09-26 05:57:49,437 [INFO] QwenQualitySweep: module=cluster_attention injection summary: 0 SVDLinear layers active
+2026-09-26 05:57:49,438 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for cluster_attention (lr=2.0e-04)
+2026-09-26 05:57:49,548 [INFO] framework.utils.compat: Recovery fine-tuning selected 589824 trainable parameters across 48 tensors.
+2026-09-26 05:57:49,548 [INFO] framework.utils.compat: Discovered 48 trainable tensors (589824 params)
+2026-09-26 05:57:49,553 [INFO] QwenQualitySweep: LoRA fine-tuning: 589824 trainable parameters across 48 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-26 05:58:49,335 [INFO] QwenQualitySweep: Step 1/50 took 59.77s (loss=0.0405, bs=16, micro=16)
+2026-09-26 05:58:59,092 [INFO] QwenQualitySweep: Step 5/50 took 2.07s (loss=0.0908, bs=16, micro=16)
+2026-09-26 05:59:21,727 [INFO] QwenQualitySweep: Step 10/50 took 14.62s (loss=0.2026, bs=16, micro=16)
+2026-09-26 05:59:35,954 [INFO] QwenQualitySweep: Step 15/50 took 1.24s (loss=0.2586, bs=16, micro=16)
+2026-09-26 06:00:42,556 [INFO] QwenQualitySweep: Step 20/50 took 3.24s (loss=0.1167, bs=16, micro=16)
+2026-09-26 06:01:07,233 [INFO] QwenQualitySweep: Step 25/50 took 3.25s (loss=0.0049, bs=16, micro=16)
+2026-09-26 06:01:42,293 [INFO] QwenQualitySweep: Step 30/50 took 2.35s (loss=0.5413, bs=16, micro=16)
+2026-09-26 06:02:20,225 [INFO] QwenQualitySweep: Step 35/50 took 9.59s (loss=0.0718, bs=16, micro=16)
+2026-09-26 06:02:29,405 [INFO] QwenQualitySweep: Step 40/50 took 1.02s (loss=0.4157, bs=16, micro=16)
+2026-09-26 06:02:35,109 [INFO] QwenQualitySweep: Step 45/50 took 2.78s (loss=0.6450, bs=16, micro=16)
+2026-09-26 06:02:39,342 [INFO] QwenQualitySweep: Step 50/50 took 1.29s (loss=1.2316, bs=16, micro=16)
+2026-09-26 06:03:51,249 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\rank_sweep_mnli\cluster_attention\rank_256\distilbert_mnli_cluster_attention_full_metrics.json
+2026-09-26 06:03:54,879 [INFO] QwenQualitySweep: [1/1] cluster_attention -> PASS 60.10% (F1: 0.5999, Peak VRAM: 412.28 MB)
+2026-09-26 06:03:55,368 [INFO] HFGitExporter: [Automation] Run distilbert-mnli / cluster-attention is SUCCESSFUL (acc=60.10% >= 38.60%). Starting automated HF export to Hooshaai/svd-linear-attention-distilbert-mnli-cluster-attention and Git recording.
+2026-09-26 06:03:57,915 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 200 OK"
+2026-09-26 06:03:58,179 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-26 06:03:58,574 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-mnli-cluster-attention/preupload/main "HTTP/1.1 200 OK"
+2026-09-26 06:04:00,482 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-mnli-cluster-attention/commit/main "HTTP/1.1 200 OK"
+2026-09-26 06:04:00,484 [INFO] HFGitExporter: Successfully uploaded private model to Hugging Face: https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-cluster-attention
+2026-09-26 06:04:00,547 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\attentions\cluster_attention.md
+[main d686bd7e4] feat(benchmark): record successful cluster_attention on distilbert-mnli (Acc: 60.10%, F1: 0.5999)
+ 347 files changed, 266109 insertions(+), 949 deletions(-)
+ create mode 100644 results/_archive_partial/aa_svd_compressor/aa_svd_compressor_zeroshot.json
+ create mode 100644 results/_archive_partial/aa_svd_compressor/arc_challenge.json
+ create mode 100644 results/_archive_partial/aa_svd_compressor/arc_easy.json
+ create mode 100644 results/_archive_partial/aa_svd_compressor/hellaswag.json
+ create mode 100644 results/_archive_partial/aa_svd_compressor/piqa.json
+ create mode 100644 results/_archive_partial/aa_svd_compressor/run.log
+ create mode 100644 results/_archive_partial/aa_svd_compressor/winogrande.json
+ create mode 100644 results/_archive_partial/aatc_xkv_compressor/aatc_xkv_compressor_zeroshot.json
+ create mode 100644 results/_archive_partial/aatc_xkv_compressor/arc_challenge.json
+ create mode 100644 results/_archive_partial/aatc_xkv_compressor/arc_easy.json
+ create mode 100644 results/_archive_partial/aatc_xkv_compressor/hellaswag.json
+ create mode 100644 results/_archive_partial/aatc_xkv_compressor/piqa.json
+ create mode 100644 results/_archive_partial/aatc_xkv_compressor/run.log
+ create mode 100644 results/_archive_partial/aatc_xkv_compressor/winogrande.json
+ create mode 100644 results/_archive_partial/adaptive_ranks/adaptive_ranks_zeroshot.json
+ create mode 100644 results/_archive_partial/adaptive_ranks/arc_challenge.json
+ create mode 100644 results/_archive_partial/adaptive_ranks/arc_easy.json
+ create mode 100644 results/_archive_partial/adaptive_ranks/hellaswag.json
+ create mode 100644 results/_archive_partial/adaptive_ranks/piqa.json
+ create mode 100644 results/_archive_partial/adaptive_ranks/run.log
+ create mode 100644 results/_archive_partial/adaptive_ranks/winogrande.json
+ create mode 100644 results/_archive_partial/adaptive_span_attention/adaptive_span_attention_zeroshot.json
+ create mode 100644 results/_archive_partial/adaptive_span_attention/arc_challenge.json
+ create mode 100644 results/_archive_partial/adaptive_span_attention/arc_easy.json
+ create mode 100644 results/_archive_partial/adaptive_span_attention/hellaswag.json
+ create mode 100644 results/_archive_partial/adaptive_span_attention/piqa.json
+ create mode 100644 results/_archive_partial/adaptive_span_attention/run.log
+ create mode 100644 results/_archive_partial/adaptive_span_attention/winogrande.json
+ create mode 100644 results/_archive_partial/adaptive_sparse_attention/adaptive_sparse_attention_zeroshot.json
+ create mode 100644 results/_archive_partial/adaptive_sparse_attention/arc_challenge.json
+ create mode 100644 results/_archive_partial/adaptive_sparse_attention/arc_easy.json
+ create mode 100644 results/_archive_partial/adaptive_sparse_attention/hellaswag.json
+ create mode 100644 results/_archive_partial/adaptive_sparse_attention/piqa.json
+ create mode 100644 results/_archive_partial/adaptive_sparse_attention/run.log
+ create mode 100644 results/_archive_partial/adaptive_sparse_attention/winogrande.json
+ create mode 100644 results/_archive_partial/adaptive_svd_attention/adaptive_svd_attention_zeroshot.json
+ create mode 100644 results/_archive_partial/adaptive_svd_attention/arc_challenge.json
+ create mode 100644 results/_archive_partial/adaptive_svd_attention/arc_easy.json
+ create mode 100644 results/_archive_partial/adaptive_svd_attention/hellaswag.json
+ create mode 100644 results/_archive_partial/adaptive_svd_attention/piqa.json
+ create mode 100644 results/_archive_partial/adaptive_svd_attention/run.log
+ create mode 100644 results/_archive_partial/adaptive_svd_attention/winogrande.json
+ create mode 100644 results/_archive_partial/adasplash_attention/adasplash_attention_zeroshot.json
+ create mode 100644 results/_archive_partial/adasplash_attention/arc_challenge.json
+ create mode 100644 results/_archive_partial/adasplash_attention/arc_easy.json
+ create mode 100644 results/_archive_partial/adasplash_attention/hellaswag.json
+ create mode 100644 results/_archive_partial/adasplash_attention/piqa.json
+ create mode 100644 results/_archive_partial/adasplash_attention/run.log
+ create mode 100644 results/_archive_partial/adasplash_attention/winogrande.json
+ create mode 100644 results/_archive_partial/admm_compressor/admm_compressor_zeroshot.json
+ create mode 100644 results/_archive_partial/admm_compressor/arc_challenge.json
+ create mode 100644 results/_archive_partial/admm_compressor/arc_easy.json
+ create mode 100644 results/_archive_partial/admm_compressor/hellaswag.json
+ create mode 100644 results/_archive_partial/admm_compressor/piqa.json
+ create mode 100644 results/_archive_partial/admm_compressor/run.log
+ create mode 100644 results/_archive_partial/admm_compressor/winogrande.json
+ create mode 100644 results/_archive_partial/admm_pruner/admm_pruner_zeroshot.json
+ create mode 100644 results/_archive_partial/admm_pruner/arc_challenge.json
+ create mode 100644 results/_archive_partial/admm_pruner/arc_easy.json
+ create mode 100644 results/_archive_partial/admm_pruner/hellaswag.json
+ create mode 100644 results/_archive_partial/admm_pruner/piqa.json
+ create mode 100644 results/_archive_partial/admm_pruner/run.log
+ create mode 100644 results/_archive_partial/admm_pruner/winogrande.json
+ create mode 100644 results/_archive_partial/aegis_hybrid/aegis_hybrid_zeroshot.json
+ create mode 100644 results/_archive_partial/aegis_hybrid/arc_challenge.json
+ create mode 100644 results/_archive_partial/aegis_hybrid/arc_easy.json
+ create mode 100644 results/_archive_partial/aegis_hybrid/hellaswag.json
+ create mode 100644 results/_archive_partial/aegis_hybrid/piqa.json
+ create mode 100644 results/_archive_partial/aegis_hybrid/run.log
+ create mode 100644 results/_archive_partial/aegis_hybrid/winogrande.json
+ create mode 100644 results/_archive_partial/aegis_spectron_fp8/aegis_spectron_fp8_zeroshot.json
+ create mode 100644 results/_archive_partial/aegis_spectron_fp8/arc_challenge.json
+ create mode 100644 results/_archive_partial/aegis_spectron_fp8/arc_easy.json
+ create mode 100644 results/_archive_partial/aegis_spectron_fp8/hellaswag.json
+ create mode 100644 results/_archive_partial/aegis_spectron_fp8/piqa.json
+ create mode 100644 results/_archive_partial/aegis_spectron_fp8/run.log
+ create mode 100644 results/_archive_partial/aegis_spectron_fp8/winogrande.json
+ create mode 100644 results/_archive_partial/aegis_v2/aegis_v2_zeroshot.json
+ create mode 100644 results/_archive_partial/aegis_v2/arc_challenge.json
+ create mode 100644 results/_archive_partial/aegis_v2/arc_easy.json
+ create mode 100644 results/_archive_partial/aegis_v2/hellaswag.json
+ create mode 100644 results/_archive_partial/aegis_v2/piqa.json
+ create mode 100644 results/_archive_partial/aegis_v2/run.log
+ create mode 100644 results/_archive_partial/aegis_v2/winogrande.json
+ create mode 100644 results/_archive_partial/aegis_v5/aegis_v5_zeroshot.json
+ create mode 100644 results/_archive_partial/aegis_v5/arc_challenge.json
+ create mode 100644 results/_archive_partial/aegis_v5/arc_easy.json
+ create mode 100644 results/_archive_partial/aegis_v5/hellaswag.json
+ create mode 100644 results/_archive_partial/aegis_v5/piqa.json
+ create mode 100644 results/_archive_partial/aegis_v5/run.log
+ create mode 100644 results/_archive_partial/aegis_v5/winogrande.json
+ create mode 100644 results/_archive_partial/aegis_v6/aegis_v6_zeroshot.json
+ create mode 100644 results/_archive_partial/aegis_v6/arc_challenge.json
+ create mode 100644 results/_archive_partial/aegis_v6/arc_easy.json
+ create mode 100644 results/_archive_partial/aegis_v6/hellaswag.json
+ create mode 100644 results/_archive_partial/aegis_v6/piqa.json
+ create mode 100644 results/_archive_partial/aegis_v6/run.log
+ create mode 100644 results/_archive_partial/aegis_v6/winogrande.json
+ create mode 100644 results/_archive_partial/armor_pruner/arc_challenge.json
+ create mode 100644 results/_archive_partial/armor_pruner/arc_easy.json
+ create mode 100644 results/_archive_partial/armor_pruner/armor_pruner_zeroshot.json
+ create mode 100644 results/_archive_partial/armor_pruner/hellaswag.json
+ create mode 100644 results/_archive_partial/armor_pruner/piqa.json
+ create mode 100644 results/_archive_partial/armor_pruner/run.log
+ create mode 100644 results/_archive_partial/armor_pruner/winogrande.json
+ create mode 100644 results/_archive_partial/ast_pruner/arc_challenge.json
+ create mode 100644 results/_archive_partial/ast_pruner/arc_easy.json
+ create mode 100644 results/_archive_partial/ast_pruner/ast_pruner_zeroshot.json
+ create mode 100644 results/_archive_partial/ast_pruner/hellaswag.json
+ create mode 100644 results/_archive_partial/ast_pruner/piqa.json
+ create mode 100644 results/_archive_partial/ast_pruner/run.log
+ create mode 100644 results/_archive_partial/ast_pruner/winogrande.json
+ create mode 100644 results/_archive_partial/astro_quantizer/arc_challenge.json
+ create mode 100644 results/_archive_partial/astro_quantizer/arc_easy.json
+ create mode 100644 results/_archive_partial/astro_quantizer/astro_quantizer_zeroshot.json
+ create mode 100644 results/_archive_partial/astro_quantizer/hellaswag.json
+ create mode 100644 results/_archive_partial/astro_quantizer/piqa.json
+ create mode 100644 results/_archive_partial/astro_quantizer/run.log
+ create mode 100644 results/_archive_partial/astro_quantizer/winogrande.json
+ create mode 100644 results/_archive_partial/asvd_attention/arc_challenge.json
+ create mode 100644 results/_archive_partial/asvd_attention/arc_easy.json
+ create mode 100644 results/_archive_partial/asvd_attention/asvd_attention_zeroshot.json
+ create mode 100644 results/_archive_partial/asvd_attention/hellaswag.json
+ create mode 100644 results/_archive_partial/asvd_attention/piqa.json
+ create mode 100644 results/_archive_partial/asvd_attention/run.log
+ create mode 100644 results/_archive_partial/asvd_attention/winogrande.json
+ create mode 100644 results/_archive_partial/bam_umoe/arc_challenge.json
+ create mode 100644 results/_archive_partial/bam_umoe/arc_easy.json
+ create mode 100644 results/_archive_partial/bam_umoe/bam_umoe_zeroshot.json
+ create mode 100644 results/_archive_partial/bam_umoe/hellaswag.json
+ create mode 100644 results/_archive_partial/bam_umoe/piqa.json
+ create mode 100644 results/_archive_partial/bam_umoe/run.log
+ create mode 100644 results/_archive_partial/bam_umoe/winogrande.json
+ create mode 100644 results/_archive_partial/block_transformer_hiba/arc_challenge.json
+ create mode 100644 results/_archive_partial/block_transformer_hiba/arc_easy.json
+ create mode 100644 results/_archive_partial/block_transformer_hiba/block_transformer_hiba_zeroshot.json
+ create mode 100644 results/_archive_partial/block_transformer_hiba/hellaswag.json
+ create mode 100644 results/_archive_partial/block_transformer_hiba/piqa.json
+ create mode 100644 results/_archive_partial/block_transformer_hiba/winogrande.json
+ create mode 100644 results/_archive_partial/bonsai_pruner/arc_challenge.json
+ create mode 100644 results/_archive_partial/bonsai_pruner/arc_easy.json
+ create mode 100644 results/_archive_partial/bonsai_pruner/bonsai_pruner_zeroshot.json
+ create mode 100644 results/_archive_partial/bonsai_pruner/hellaswag.json
+ create mode 100644 results/_archive_partial/bonsai_pruner/piqa.json
+ create mode 100644 results/_archive_partial/bonsai_pruner/winogrande.json
+ create mode 100644 results/_archive_partial/cluster_attention/arc_challenge_detailed.json
+ create mode 100644 results/_archive_partial/cluster_attention/arc_easy_detailed.json
+ create mode 100644 results/_archive_partial/cluster_attention/piqa_detailed.json
+ create mode 100644 results/_archive_partial/cluster_attention/run.log
+ create mode 100644 results/bert_baselines/adasvd/summary.csv
+ create mode 100644 results/c4_baselines/armor_pruner_stats.json
+ create mode 100644 results/c4_baselines/finetune_metadata.json
+ create mode 100644 results/rank_sweep_agnews/armor_pruner/rank_128/run.log
+ create mode 100644 results/rank_sweep_agnews/armor_pruner/rank_128/summary.csv
+ create mode 100644 results/rank_sweep_agnews/armor_pruner/rank_256/run.log
+ create mode 100644 results/rank_sweep_agnews/armor_pruner/rank_384/run.log
+ create mode 100644 results/rank_sweep_agnews/armor_pruner/rank_64/armor_pruner_stats.json
+ create mode 100644 results/rank_sweep_agnews/armor_pruner/rank_64/batch_cache_ag_news/meta.json
+ create mode 100644 results/rank_sweep_agnews/armor_pruner/rank_64/distilbert_agnews_armor_pruner_full_metrics.json
+ create mode 100644 results/rank_sweep_agnews/armor_pruner/rank_64/finetune_metadata.json
+ create mode 100644 results/rank_sweep_agnews/armor_pruner/rank_64/run.log
+ create mode 100644 results/rank_sweep_agnews/armor_pruner/rank_64/summary.csv
+ create mode 100644 results/rank_sweep_agnews/armor_pruner/rank_curve.csv
+ create mode 100644 results/rank_sweep_agnews/block_transformer_hiba/rank_128/run.log
+ create mode 100644 results/rank_sweep_agnews/block_transformer_hiba/rank_256/run.log
+ create mode 100644 results/rank_sweep_agnews/block_transformer_hiba/rank_64/run.log
+ create mode 100644 results/rank_sweep_agnews/cluster_attention/rank_128/run.log
+ create mode 100644 results/rank_sweep_agnews/cluster_attention/rank_256/run.log
+ create mode 100644 results/rank_sweep_agnews/cluster_attention/rank_384/run.log
+ create mode 100644 results/rank_sweep_agnews/cluster_attention/rank_64/run.log
+ create mode 100644 results/rank_sweep_agnews/cluster_attention/rank_curve.csv
+ create mode 100644 results/rank_sweep_mnli/adasvd_compressor/rank_128/run.log
+ create mode 100644 results/rank_sweep_mnli/adasvd_compressor/rank_256/run.log
+ create mode 100644 results/rank_sweep_mnli/adasvd_compressor/rank_curve.csv
+ create mode 100644 results/rank_sweep_mnli/all_rank_curves.csv
+ create mode 100644 results/rank_sweep_mnli/armor_pruner/rank_128/run.log
+ create mode 100644 results/rank_sweep_mnli/armor_pruner/rank_128/summary.csv
+ create mode 100644 results/rank_sweep_mnli/armor_pruner/rank_256/run.log
+ create mode 100644 results/rank_sweep_mnli/armor_pruner/rank_384/run.log
+ create mode 100644 results/rank_sweep_mnli/armor_pruner/rank_64/armor_pruner_stats.json
+ create mode 100644 results/rank_sweep_mnli/armor_pruner/rank_64/batch_cache_mnli/meta.json
+ create mode 100644 results/rank_sweep_mnli/armor_pruner/rank_64/distilbert_mnli_armor_pruner_full_metrics.json
+ create mode 100644 results/rank_sweep_mnli/armor_pruner/rank_64/finetune_metadata.json
+ create mode 100644 results/rank_sweep_mnli/armor_pruner/rank_64/run.log
+ create mode 100644 results/rank_sweep_mnli/armor_pruner/rank_64/summary.csv
+ create mode 100644 results/rank_sweep_mnli/armor_pruner/rank_curve.csv
+ create mode 100644 results/rank_sweep_mnli/cluster_attention/rank_128/run.log
+ create mode 100644 results/rank_sweep_mnli/cluster_attention/rank_256/batch_cache_mnli/meta.json
+ create mode 100644 results/rank_sweep_mnli/cluster_attention/rank_256/distilbert_mnli_cluster_attention_full_metrics.json
+ create mode 100644 results/rank_sweep_mnli/cluster_attention/rank_256/finetune_metadata.json
+ create mode 100644 results/rank_sweep_mnli/cluster_attention/rank_256/run.log
+ create mode 100644 results/rank_sweep_mnli/cluster_attention/rank_256/summary.csv
+ create mode 100644 results/rank_sweep_mnli/cluster_attention/rank_64/run.log
+ create mode 100644 results/rank_sweep_mnli/svd_llm_compressor/rank_curve.csv
+ create mode 100644 results/test_batch/none_zeroshot.json
+ create mode 100644 results/test_batch/piqa.json
+ create mode 100644 results/test_c4_a3/a3_compressor_stats.json
+ create mode 100644 results/test_c4_a3/finetune_metadata.json
+ create mode 100644 results/test_c4_a3/gpt2_a3_compressor_full_metrics.json
+ create mode 100644 results/test_c4_a3/summary.csv
+ create mode 100644 results/test_c4_a3_r128/a3_compressor_stats.json
+ create mode 100644 results/test_c4_a3_r128/finetune_metadata.json
+ create mode 100644 results/test_c4_adasvd/gpt2_adasvd_compressor_full_metrics.json
+ create mode 100644 results/test_c4_adasvd/summary.csv
+ create mode 100644 results/test_c4_adasvd_r128/finetune_metadata.json
+ create mode 100644 results/test_c4_adasvd_r128/gpt2_adasvd_compressor_full_metrics.json
+ create mode 100644 results/test_c4_adasvd_r128/summary.csv
+ create mode 100644 results/test_c4_adasvd_r384/finetune_metadata.json
+ create mode 100644 results/test_c4_slicegpt/failed_runs.json
+ create mode 100644 results/test_c4_slicegpt/finetune_metadata.json
+ create mode 100644 results/test_c4_slicegpt/gpt2_slicegpt_pca_full_metrics.json
+ create mode 100644 results/test_c4_slicegpt/summary.csv
+ create mode 100644 results/test_memory_safe/none_zeroshot.json
+ create mode 100644 results/test_memory_safe/piqa.json
+ create mode 100644 results/test_memory_safe/piqa_detailed.json
+ create mode 100644 results/test_perf/none_zeroshot.json
+ create mode 100644 results/test_perf/piqa.json
+ create mode 100644 results/test_zeroshot/none_zeroshot.json
+ create mode 100644 results/zeroshot/a3/a3_compressor_zeroshot.json
+ create mode 100644 results/zeroshot/adaptive_ranks/adaptive_ranks_zeroshot.json
+ create mode 100644 results/zeroshot/adasvd/adasvd_compressor_zeroshot.json
+ create mode 100644 results/zeroshot/baseline/none_zeroshot.json
+ create mode 100644 results/zeroshot/direct_svd/direct_svd_zeroshot.json
+ create mode 100644 results/zeroshot/kronecker/kronecker_compressor_zeroshot.json
+ create mode 100644 results/zeroshot/svd_llm/svd_llm_compressor_zeroshot.json
+ create mode 100644 results/zeroshot_parallel/cachenotes_compressor/arc_challenge.json
+ create mode 100644 results/zeroshot_parallel/cachenotes_compressor/arc_easy.json
+ create mode 100644 results/zeroshot_parallel/cachenotes_compressor/cachenotes_compressor_zeroshot.json
+ create mode 100644 results/zeroshot_parallel/cachenotes_compressor/hellaswag.json
+ create mode 100644 results/zeroshot_parallel/cachenotes_compressor/piqa.json
+ create mode 100644 results/zeroshot_parallel/cachenotes_compressor/run_metadata.json
+ create mode 100644 results/zeroshot_parallel/cachenotes_compressor/winogrande.json
+ create mode 100644 results/zeroshot_parallel/cachenotes_compressor/winogrande_detailed.json
+ create mode 100644 results/zeroshot_parallel/compot_compressor/arc_challenge.json
+ create mode 100644 results/zeroshot_parallel/compot_compressor/arc_easy.json
+ create mode 100644 results/zeroshot_parallel/compot_compressor/compot_compressor_zeroshot.json
+ create mode 100644 results/zeroshot_parallel/compot_compressor/hellaswag.json
+ create mode 100644 results/zeroshot_parallel/compot_compressor/hellaswag_detailed.json
+ create mode 100644 results/zeroshot_parallel/compot_compressor/piqa.json
+ create mode 100644 results/zeroshot_parallel/compot_compressor/run_metadata.json
+ create mode 100644 results/zeroshot_parallel/compot_compressor/winogrande.json
+ create mode 100644 results/zeroshot_parallel/compot_compressor/winogrande_detailed.json
+ create mode 100644 results/zeroshot_parallel/compressed_attention/arc_challenge.json
+ create mode 100644 results/zeroshot_parallel/compressed_attention/arc_challenge_detailed.json
+ create mode 100644 results/zeroshot_parallel/compressed_attention/arc_easy.json
+ create mode 100644 results/zeroshot_parallel/compressed_attention/compressed_attention_zeroshot.json
+ create mode 100644 results/zeroshot_parallel/compressed_attention/hellaswag.json
+ create mode 100644 results/zeroshot_parallel/compressed_attention/hellaswag_detailed.json
+ create mode 100644 results/zeroshot_parallel/compressed_attention/piqa.json
+ create mode 100644 results/zeroshot_parallel/compressed_attention/run_metadata.json
+ create mode 100644 results/zeroshot_parallel/compressed_attention/winogrande.json
+ create mode 100644 results/zeroshot_parallel/compressed_attention/winogrande_detailed.json
+ create mode 100644 results/zeroshot_parallel/compressed_mha_attention/arc_challenge.json
+ create mode 100644 results/zeroshot_parallel/compressed_mha_attention/arc_challenge_detailed.json
+ create mode 100644 results/zeroshot_parallel/compressed_mha_attention/arc_easy.json
+ create mode 100644 results/zeroshot_parallel/compressed_mha_attention/arc_easy_detailed.json
+ create mode 100644 results/zeroshot_parallel/compressed_mha_attention/compressed_mha_attention_zeroshot.json
+ create mode 100644 results/zeroshot_parallel/compressed_mha_attention/hellaswag.json
+ create mode 100644 results/zeroshot_parallel/compressed_mha_attention/hellaswag_detailed.json
+ create mode 100644 results/zeroshot_parallel/compressed_mha_attention/piqa.json
+ create mode 100644 results/zeroshot_parallel/compressed_mha_attention/piqa_detailed.json
+ create mode 100644 results/zeroshot_parallel/compressed_mha_attention/run_metadata.json
+ create mode 100644 results/zeroshot_parallel/compressed_mha_attention/winogrande.json
+ create mode 100644 results/zeroshot_parallel/compressed_mha_attention/winogrande_detailed.json
+ create mode 100644 results/zeroshot_parallel/coopq_quantizer/arc_challenge.json
+ create mode 100644 results/zeroshot_parallel/coopq_quantizer/arc_challenge_detailed.json
+ create mode 100644 results/zeroshot_parallel/coopq_quantizer/arc_easy.json
+ create mode 100644 results/zeroshot_parallel/coopq_quantizer/arc_easy_detailed.json
+ create mode 100644 results/zeroshot_parallel/coopq_quantizer/coopq_quantizer_zeroshot.json
+ create mode 100644 results/zeroshot_parallel/coopq_quantizer/hellaswag.json
+ create mode 100644 results/zeroshot_parallel/coopq_quantizer/hellaswag_detailed.json
+ create mode 100644 results/zeroshot_parallel/coopq_quantizer/piqa.json
+ create mode 100644 results/zeroshot_parallel/coopq_quantizer/piqa_detailed.json
+ create mode 100644 results/zeroshot_parallel/coopq_quantizer/run.log
+ create mode 100644 results/zeroshot_parallel/coopq_quantizer/run_metadata.json
+ create mode 100644 results/zeroshot_parallel/coopq_quantizer/winogrande.json
+ create mode 100644 results/zeroshot_parallel/coopq_quantizer/winogrande_detailed.json
+ create mode 100644 results/zeroshot_parallel/cosformer/arc_challenge.json
+ create mode 100644 results/zeroshot_parallel/cosformer/arc_challenge_detailed.json
+ create mode 100644 results/zeroshot_parallel/cosformer/arc_easy.json
+ create mode 100644 results/zeroshot_parallel/cosformer/arc_easy_detailed.json
+ create mode 100644 results/zeroshot_parallel/cosformer/cosformer_zeroshot.json
+ create mode 100644 results/zeroshot_parallel/cosformer/hellaswag.json
+ create mode 100644 results/zeroshot_parallel/cosformer/hellaswag_detailed.json
+ create mode 100644 results/zeroshot_parallel/cosformer/piqa.json
+ create mode 100644 results/zeroshot_parallel/cosformer/piqa_detailed.json
+ create mode 100644 results/zeroshot_parallel/cosformer/run.log
+ create mode 100644 results/zeroshot_parallel/cosformer/run_metadata.json
+ create mode 100644 results/zeroshot_parallel/cosformer/winogrande.json
+ create mode 100644 results/zeroshot_parallel/cosformer/winogrande_detailed.json
+ create mode 100644 results/zeroshot_parallel/cr_compressor/arc_challenge.json
+ create mode 100644 results/zeroshot_parallel/cr_compressor/arc_challenge_detailed.json
+ create mode 100644 results/zeroshot_parallel/cr_compressor/arc_easy.json
+ create mode 100644 results/zeroshot_parallel/cr_compressor/arc_easy_detailed.json
+ create mode 100644 results/zeroshot_parallel/cr_compressor/cr_compressor_zeroshot.json
+ create mode 100644 results/zeroshot_parallel/cr_compressor/hellaswag.json
+ create mode 100644 results/zeroshot_parallel/cr_compressor/hellaswag_detailed.json
+ create mode 100644 results/zeroshot_parallel/cr_compressor/piqa.json
+ create mode 100644 results/zeroshot_parallel/cr_compressor/piqa_detailed.json
+ create mode 100644 results/zeroshot_parallel/cr_compressor/run.log
+ create mode 100644 results/zeroshot_parallel/cr_compressor/run_metadata.json
+ create mode 100644 results/zeroshot_parallel/cr_compressor/winogrande.json
+ create mode 100644 results/zeroshot_parallel/cr_compressor/winogrande_detailed.json
+ create mode 100644 results/zeroshot_parallel/cur_compressor/arc_challenge_detailed.json
+ create mode 100644 results/zeroshot_parallel/cur_compressor/arc_easy_detailed.json
+ create mode 100644 results/zeroshot_parallel/cur_compressor/piqa_detailed.json
+ create mode 100644 results/zeroshot_parallel/cur_compressor/run.log
+ create mode 100644 results/zeroshot_parallel/cur_moe_compressor/arc_challenge.json
+ create mode 100644 results/zeroshot_parallel/cur_moe_compressor/arc_challenge_detailed.json
+ create mode 100644 results/zeroshot_parallel/cur_moe_compressor/arc_easy.json
+ create mode 100644 results/zeroshot_parallel/cur_moe_compressor/arc_easy_detailed.json
+ create mode 100644 results/zeroshot_parallel/cur_moe_compressor/cur_moe_compressor_zeroshot.json
+ create mode 100644 results/zeroshot_parallel/cur_moe_compressor/hellaswag.json
+ create mode 100644 results/zeroshot_parallel/cur_moe_compressor/hellaswag_detailed.json
+ create mode 100644 results/zeroshot_parallel/cur_moe_compressor/piqa.json
+ create mode 100644 results/zeroshot_parallel/cur_moe_compressor/piqa_detailed.json
+ create mode 100644 results/zeroshot_parallel/cur_moe_compressor/run.log
+ create mode 100644 results/zeroshot_parallel/cur_moe_compressor/run_metadata.json
+ create mode 100644 results/zeroshot_parallel/cur_moe_compressor/winogrande.json
+ create mode 100644 results/zeroshot_parallel/cur_moe_compressor/winogrande_detailed.json
+ create mode 100644 results/zeroshot_parallel/decay_linear_attention/arc_challenge.json
+ create mode 100644 results/zeroshot_parallel/decay_linear_attention/arc_challenge_detailed.json
+ create mode 100644 results/zeroshot_parallel/decay_linear_attention/arc_easy.json
+ create mode 100644 results/zeroshot_parallel/decay_linear_attention/arc_easy_detailed.json
+ create mode 100644 results/zeroshot_parallel/decay_linear_attention/decay_linear_attention_zeroshot.json
+ create mode 100644 results/zeroshot_parallel/decay_linear_attention/hellaswag.json
+ create mode 100644 results/zeroshot_parallel/decay_linear_attention/hellaswag_detailed.json
+ create mode 100644 results/zeroshot_parallel/decay_linear_attention/piqa.json
+ create mode 100644 results/zeroshot_parallel/decay_linear_attention/piqa_detailed.json
+ create mode 100644 results/zeroshot_parallel/decay_linear_attention/run.log
+ create mode 100644 results/zeroshot_parallel/decay_linear_attention/run_metadata.json
+ create mode 100644 results/zeroshot_parallel/decay_linear_attention/winogrande.json
+ create mode 100644 results/zeroshot_parallel/decay_linear_attention/winogrande_detailed.json
+ create mode 100644 results/zeroshot_parallel/delta_kv/arc_challenge_detailed.json
+ create mode 100644 results/zeroshot_parallel/delta_kv/arc_easy_detailed.json
+ create mode 100644 results/zeroshot_parallel/delta_kv/piqa_detailed.json
+ create mode 100644 results/zeroshot_parallel/delta_kv/run.log
+ create mode 100644 results/zeroshot_parallel/dobi_svd/run.log
+ create mode 100644 results/zeroshot_parallel/drone_compressor/piqa_detailed.json
+ create mode 100644 results/zeroshot_parallel/drone_compressor/run.log
+ create mode 100644 results/zeroshot_parallel/dynamic_rank/run.log
+ create mode 100644 results/zeroshot_parallel/eat/run.log
+2026-09-26 06:04:11,152 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: d686bd7e
+2026-09-26 06:04:11,158 [INFO] QwenQualitySweep: [1/1] cluster_attention Timing: eval_time=416.45s
+2026-09-26 06:04:11,158 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-26 06:04:19,957 [INFO] QwenQualitySweep: ================================================================================
+2026-09-26 06:04:19,957 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_mnli on mnli)
+2026-09-26 06:04:19,985 [INFO] QwenQualitySweep: 
+                            Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+cluster_attention (efficient-attn)   PASS   60.10%    -6.90% 0.5999                  0            1.00x  412.3 MB              66.67             66.67
+2026-09-26 06:04:19,985 [INFO] QwenQualitySweep: ================================================================================

@@ -1,0 +1,161 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-25 18:40:22,499 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'saes_svd_compressor', '--output_json', 'logs\\isolated_results\\saes_svd_compressor_1790348994823_28932.json']
+2026-09-25 18:40:22,590 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 45.0% (leaving 4.40 GB headroom)
+2026-09-25 18:40:22,590 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-25 18:40:22,590 [INFO] QwenQualitySweep: Configured execution sizing: parallel=2, batch_size=96 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:54: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-25 18:40:22,591 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 45.0%
+2026-09-25 18:40:23,040 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights: 100%|##########| 201/201 [00:00<00:00, 4030.90it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models/roberta_sst2
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-09-25 18:40:23,991 [INFO] QwenQualitySweep: model=models/roberta_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-25 18:40:23,991 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-25 18:40:23,991 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 18:40:23,991 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-25 18:40:23,992 [INFO] QwenQualitySweep:   model:             models/roberta_sst2
+2026-09-25 18:40:23,992 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-25 18:40:23,992 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-25 18:40:23,992 [INFO] QwenQualitySweep:   batch_size:        96
+2026-09-25 18:40:23,993 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-25 18:40:23,993 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-25 18:40:23,993 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-25 18:40:23,993 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 18:40:23,995 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-25 18:40:36,876 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.2057
+2026-09-25 18:40:49,040 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.2469
+2026-09-25 18:40:59,180 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.0912
+2026-09-25 18:41:09,674 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0699
+2026-09-25 18:41:21,248 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0509
+2026-09-25 18:41:32,879 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.1192
+2026-09-25 18:41:41,913 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.1657
+2026-09-25 18:41:49,699 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.2452
+2026-09-25 18:41:49,719 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: D:\SVD_Project\results\deep_rank_roberta\saes_svd_compressor\rank_384\finetuned_model.pt
+2026-09-25 18:41:51,527 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to D:\SVD_Project\results\deep_rank_roberta\saes_svd_compressor\rank_384\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-25 18:41:51,527 [INFO] QwenQualitySweep: Prepared 10 eval batches and 50 train batches directly on GPU.
+2026-09-25 18:41:53,617 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 93.81%
+2026-09-25 18:41:53,780 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 18:41:53,780 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-25 18:41:53,780 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-25 18:41:53,780 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-25 18:41:53,781 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-25 18:41:53,781 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-25 18:41:53,781 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-25 18:41:53,781 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-25 18:41:53,781 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 18:41:53,781 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-25 18:41:53,888 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: saes_svd_compressor (recovery_steps=50, batch_size=96, optimizer=adamw)
+2026-09-25 18:42:05,183 [INFO] QwenQualitySweep: module=saes_svd_compressor path=adapted_roberta
+2026-09-25 18:42:05,185 [INFO] QwenQualitySweep: module=saes_svd_compressor injection summary: 48 SVDLinear layers active
+2026-09-25 18:42:05,185 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for saes_svd_compressor (lr=2.0e-04)
+2026-09-25 18:42:05,472 [INFO] framework.utils.compat: Recovery fine-tuning selected 28866818 trainable parameters across 148 tensors.
+2026-09-25 18:42:05,474 [WARNING] framework.utils.compat: Total trainable parameters (28866818) exceeds 10000000 threshold for recovery. Pruning heavy base weights to prevent OOM.
+2026-09-25 18:42:05,478 [INFO] framework.utils.compat: Reduced recovery parameters to 628994 trainable parameters across 52 tensors.
+2026-09-25 18:42:05,478 [INFO] framework.utils.compat: Discovered 52 trainable tensors (628994 params)
+2026-09-25 18:42:05,485 [INFO] QwenQualitySweep: LoRA fine-tuning: 628994 trainable parameters across 52 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-25 18:42:06,314 [INFO] QwenQualitySweep: Step 1/50 took 0.83s (loss=0.1802, bs=96, micro=16)
+2026-09-25 18:42:09,548 [INFO] QwenQualitySweep: Step 5/50 took 0.76s (loss=0.1664, bs=96, micro=16)
+2026-09-25 18:42:13,507 [INFO] QwenQualitySweep: Step 10/50 took 0.84s (loss=0.1826, bs=96, micro=16)
+2026-09-25 18:42:17,544 [INFO] QwenQualitySweep: Step 15/50 took 0.80s (loss=0.1215, bs=96, micro=16)
+2026-09-25 18:42:21,568 [INFO] QwenQualitySweep: Step 20/50 took 0.82s (loss=0.1526, bs=96, micro=16)
+2026-09-25 18:42:25,477 [INFO] QwenQualitySweep: Step 25/50 took 0.80s (loss=0.2530, bs=96, micro=16)
+2026-09-25 18:42:29,520 [INFO] QwenQualitySweep: Step 30/50 took 0.80s (loss=0.1146, bs=96, micro=16)
+2026-09-25 18:42:33,494 [INFO] QwenQualitySweep: Step 35/50 took 0.80s (loss=0.1844, bs=96, micro=16)
+2026-09-25 18:42:37,553 [INFO] QwenQualitySweep: Step 40/50 took 0.82s (loss=0.1403, bs=96, micro=16)
+2026-09-25 18:42:41,565 [INFO] QwenQualitySweep: Step 45/50 took 0.82s (loss=0.2101, bs=96, micro=16)
+2026-09-25 18:42:45,625 [INFO] QwenQualitySweep: Step 50/50 took 0.79s (loss=0.2229, bs=96, micro=16)
+2026-09-25 18:42:49,589 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to D:\SVD_Project\results\deep_rank_roberta\saes_svd_compressor\rank_384\roberta_sst2_saes_svd_compressor_full_metrics.json
+2026-09-25 18:42:49,910 [INFO] QwenQualitySweep: [1/1] saes_svd_compressor -> PASS_NO_COMPRESSION 92.78% (F1: 0.9302, Peak VRAM: 604.65 MB)
+2026-09-25 18:42:49,910 [WARNING] QwenQualitySweep: Module 'saes_svd_compressor' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-25 18:42:49,912 [INFO] QwenQualitySweep: [Quality Guard] Module 'saes_svd_compressor' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=92.78%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-25 18:42:49,916 [INFO] QwenQualitySweep: [1/1] saes_svd_compressor Timing: eval_time=56.03s
+2026-09-25 18:42:49,918 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-25 18:42:50,207 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 18:42:50,207 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-25 18:42:50,217 [INFO] QwenQualitySweep: 
+                              Module              Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+saes_svd_compressor (efficient-attn) PASS_NO_COMPRESSION   92.78%    -1.03% 0.9302                  0            1.00x  604.6 MB               3.33              3.82
+2026-09-25 18:42:50,217 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:169: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()
+ping original layer.
+2026-09-25 18:42:00,327 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.5189 on roberta.encoder.layer.11.attention.output.dense exceeded threshold 0.4000. Keeping original layer.
+2026-09-25 18:42:00,345 [INFO] QwenQualitySweep: module=saes_svd_compressor path=adapted_roberta
+2026-09-25 18:42:00,347 [INFO] QwenQualitySweep: module=saes_svd_compressor injection summary: 27 SVDLinear layers active
+2026-09-25 18:42:00,347 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for saes_svd_compressor (lr=2.0e-04)
+2026-09-25 18:42:00,597 [INFO] framework.utils.compat: Recovery fine-tuning selected 11229698 trainable parameters across 85 tensors.
+2026-09-25 18:42:00,598 [WARNING] framework.utils.compat: Total trainable parameters (11229698) exceeds 10000000 threshold for recovery. Pruning heavy base weights to prevent OOM.
+2026-09-25 18:42:00,601 [INFO] framework.utils.compat: Reduced recovery parameters to 612866 trainable parameters across 31 tensors.
+2026-09-25 18:42:00,601 [INFO] framework.utils.compat: Discovered 31 trainable tensors (612866 params)
+2026-09-25 18:42:00,607 [INFO] QwenQualitySweep: LoRA fine-tuning: 612866 trainable parameters across 31 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-25 18:42:01,246 [INFO] QwenQualitySweep: Step 1/50 took 0.64s (loss=0.2097, bs=96, micro=16)
+2026-09-25 18:42:03,911 [INFO] QwenQualitySweep: Step 5/50 took 0.66s (loss=0.1848, bs=96, micro=16)
+2026-09-25 18:42:07,212 [INFO] QwenQualitySweep: Step 10/50 took 0.72s (loss=0.2080, bs=96, micro=16)
+2026-09-25 18:42:10,578 [INFO] QwenQualitySweep: Step 15/50 took 0.64s (loss=0.1107, bs=96, micro=16)
+2026-09-25 18:42:13,968 [INFO] QwenQualitySweep: Step 20/50 took 0.68s (loss=0.1831, bs=96, micro=16)
+2026-09-25 18:42:17,403 [INFO] QwenQualitySweep: Step 25/50 took 0.68s (loss=0.3231, bs=96, micro=16)
+2026-09-25 18:42:20,823 [INFO] QwenQualitySweep: Step 30/50 took 0.66s (loss=0.1667, bs=96, micro=16)
+2026-09-25 18:42:24,266 [INFO] QwenQualitySweep: Step 35/50 took 0.67s (loss=0.2627, bs=96, micro=16)
+2026-09-25 18:42:27,650 [INFO] QwenQualitySweep: Step 40/50 took 0.67s (loss=0.1800, bs=96, micro=16)
+2026-09-25 18:42:31,099 [INFO] QwenQualitySweep: Step 45/50 took 0.69s (loss=0.1826, bs=96, micro=16)
+2026-09-25 18:42:34,466 [INFO] QwenQualitySweep: Step 50/50 took 0.66s (loss=0.2564, bs=96, micro=16)
+2026-09-25 18:42:37,999 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to D:\SVD_Project\results\deep_rank_roberta\saes_svd_compressor\rank_256\roberta_sst2_saes_svd_compressor_full_metrics.json
+2026-09-25 18:42:38,294 [INFO] QwenQualitySweep: [1/1] saes_svd_compressor -> PASS 91.51% (F1: 0.9178, Peak VRAM: 570.17 MB)
+2026-09-25 18:42:38,294 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in D:\SVD_Project\results\deep_rank_roberta\saes_svd_compressor\rank_256\checkpoints\saes_svd_compressor. Automated export will be handled post-sweep by orchestrator.
+2026-09-25 18:42:38,296 [INFO] QwenQualitySweep: [1/1] saes_svd_compressor Timing: eval_time=45.39s
+2026-09-25 18:42:38,297 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-25 18:42:38,580 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 18:42:38,580 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-25 18:42:38,589 [INFO] QwenQualitySweep: 
+                              Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+saes_svd_compressor (efficient-attn)   PASS   91.51%    -2.30% 0.9178                  0            1.04x  570.2 MB               2.86              3.28
+2026-09-25 18:42:38,589 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:169: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()
+,786 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.5979 on roberta.encoder.layer.10.attention.self.query exceeded threshold 0.4000. Keeping original layer.
+2026-09-25 18:41:07,040 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.5929 on roberta.encoder.layer.10.attention.self.key exceeded threshold 0.4000. Keeping original layer.
+2026-09-25 18:41:07,304 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.7019 on roberta.encoder.layer.10.attention.self.value exceeded threshold 0.4000. Keeping original layer.
+2026-09-25 18:41:07,573 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.7293 on roberta.encoder.layer.10.attention.output.dense exceeded threshold 0.4000. Keeping original layer.
+2026-09-25 18:41:07,822 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.5927 on roberta.encoder.layer.11.attention.self.query exceeded threshold 0.4000. Keeping original layer.
+2026-09-25 18:41:08,104 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.6242 on roberta.encoder.layer.11.attention.self.key exceeded threshold 0.4000. Keeping original layer.
+2026-09-25 18:41:08,391 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.7151 on roberta.encoder.layer.11.attention.self.value exceeded threshold 0.4000. Keeping original layer.
+2026-09-25 18:41:08,635 [WARNING] framework.compression_engine.saes_svd_v2: SAES-SVD reconstruction error 0.7285 on roberta.encoder.layer.11.attention.output.dense exceeded threshold 0.4000. Keeping original layer.
+2026-09-25 18:41:08,651 [INFO] QwenQualitySweep: module=saes_svd_compressor path=adapted_roberta
+2026-09-25 18:41:08,654 [INFO] QwenQualitySweep: module=saes_svd_compressor injection summary: 0 SVDLinear layers active
+2026-09-25 18:41:08,654 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for saes_svd_compressor (lr=2.0e-04)
+2026-09-25 18:41:08,853 [INFO] framework.utils.compat: Recovery fine-tuning selected 592130 trainable parameters across 4 tensors.
+2026-09-25 18:41:08,853 [INFO] framework.utils.compat: Discovered 4 trainable tensors (592130 params)
+2026-09-25 18:41:08,857 [INFO] QwenQualitySweep: LoRA fine-tuning: 592130 trainable parameters across 4 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-25 18:41:09,299 [INFO] QwenQualitySweep: Step 1/50 took 0.44s (loss=0.1094, bs=96, micro=16)
+2026-09-25 18:41:11,024 [INFO] QwenQualitySweep: Step 5/50 took 0.43s (loss=0.1026, bs=96, micro=16)
+2026-09-25 18:41:13,204 [INFO] QwenQualitySweep: Step 10/50 took 0.45s (loss=0.1722, bs=96, micro=16)
+2026-09-25 18:41:15,361 [INFO] QwenQualitySweep: Step 15/50 took 0.43s (loss=0.0957, bs=96, micro=16)
+2026-09-25 18:41:17,541 [INFO] QwenQualitySweep: Step 20/50 took 0.43s (loss=0.1580, bs=96, micro=16)
+2026-09-25 18:41:19,670 [INFO] QwenQualitySweep: Step 25/50 took 0.42s (loss=0.1850, bs=96, micro=16)
+2026-09-25 18:41:21,773 [INFO] QwenQualitySweep: Step 30/50 took 0.43s (loss=0.0590, bs=96, micro=16)
+2026-09-25 18:41:23,871 [INFO] QwenQualitySweep: Step 35/50 took 0.42s (loss=0.1303, bs=96, micro=16)
+2026-09-25 18:41:25,990 [INFO] QwenQualitySweep: Step 40/50 took 0.42s (loss=0.1311, bs=96, micro=16)
+2026-09-25 18:41:28,138 [INFO] QwenQualitySweep: Step 45/50 took 0.43s (loss=0.1470, bs=96, micro=16)
+2026-09-25 18:41:30,270 [INFO] QwenQualitySweep: Step 50/50 took 0.42s (loss=0.1720, bs=96, micro=16)
+2026-09-25 18:41:34,606 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to D:\SVD_Project\results\deep_rank_roberta\saes_svd_compressor\rank_128\roberta_sst2_saes_svd_compressor_full_metrics.json
+2026-09-25 18:41:34,804 [INFO] QwenQualitySweep: [1/1] saes_svd_compressor -> PASS_NO_COMPRESSION 93.92% (F1: 0.9413, Peak VRAM: 549.76 MB)
+2026-09-25 18:41:34,804 [WARNING] QwenQualitySweep: Module 'saes_svd_compressor' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-25 18:41:34,804 [INFO] QwenQualitySweep: [Quality Guard] Module 'saes_svd_compressor' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=93.92%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-25 18:41:34,810 [INFO] QwenQualitySweep: [1/1] saes_svd_compressor Timing: eval_time=39.82s
+2026-09-25 18:41:34,810 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-25 18:41:35,101 [INFO] QwenQualitySweep: ================================================================================
+2026-09-25 18:41:35,101 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta_sst2 on sst2)
+2026-09-25 18:41:35,108 [INFO] QwenQualitySweep: 
+                              Module              Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+saes_svd_compressor (efficient-attn) PASS_NO_COMPRESSION   93.92%    +0.11% 0.9413                  0            1.00x  549.8 MB               3.76              4.31
+2026-09-25 18:41:35,109 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:169: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

@@ -1,0 +1,86 @@
+2026-09-24 18:00:19,498 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'cur', '--output_json', 'logs\\isolated_results\\cur_1790260183792_12872.json']
+2026-09-24 18:00:19,585 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 18:00:19,585 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-24 18:00:20,142 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/149 [00:00<?, ?it/s]Loading weights: 100%|##########| 149/149 [00:00<00:00, 2400.15it/s]
+2026-09-24 18:00:21,513 [INFO] QwenQualitySweep: model=models\gpt2_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 18:00:21,513 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 18:00:21,513 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:00:21,513 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 18:00:21,513 [INFO] QwenQualitySweep:   model:             models\gpt2_sst2
+2026-09-24 18:00:21,514 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-24 18:00:21,514 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-24 18:00:21,514 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-24 18:00:21,515 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 18:00:21,515 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 18:00:21,515 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 18:00:21,515 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:00:21,518 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-24 18:00:24,566 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.1143
+2026-09-24 18:00:26,720 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.3716
+2026-09-24 18:00:28,825 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.4990
+2026-09-24 18:00:30,854 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.4857
+2026-09-24 18:00:32,878 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0739
+2026-09-24 18:00:34,830 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.6662
+2026-09-24 18:00:36,840 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.1685
+2026-09-24 18:00:38,789 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.2618
+2026-09-24 18:00:38,796 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_cur\gpt2\finetuned_model.pt
+2026-09-24 18:00:40,483 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\unified_cur\gpt2\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-24 18:00:40,483 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-24 18:00:47,497 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 89.33%
+2026-09-24 18:00:47,722 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:00:47,722 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-24 18:00:47,722 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-24 18:00:47,723 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-24 18:00:47,723 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-24 18:00:47,723 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-24 18:00:47,723 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-24 18:00:47,723 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-24 18:00:47,724 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:00:47,724 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 18:00:47,973 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: cur (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-24 18:00:49,226 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.0.attn.c_attn error 0.7387 exceeded max_error 0.3500
+2026-09-24 18:00:49,497 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.0.attn.c_proj error 0.4854 exceeded max_error 0.3500
+2026-09-24 18:00:49,913 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.1.attn.c_attn error 0.7249 exceeded max_error 0.3500
+2026-09-24 18:00:50,176 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.1.attn.c_proj error 0.7385 exceeded max_error 0.3500
+2026-09-24 18:00:50,604 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.2.attn.c_attn error 0.7547 exceeded max_error 0.3500
+2026-09-24 18:00:50,821 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.2.attn.c_proj error 0.7603 exceeded max_error 0.3500
+2026-09-24 18:00:51,184 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.3.attn.c_attn error 0.7923 exceeded max_error 0.3500
+2026-09-24 18:00:51,405 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.3.attn.c_proj error 0.7320 exceeded max_error 0.3500
+2026-09-24 18:00:51,749 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.4.attn.c_attn error 0.7589 exceeded max_error 0.3500
+2026-09-24 18:00:51,942 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.4.attn.c_proj error 0.7481 exceeded max_error 0.3500
+2026-09-24 18:00:52,252 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.5.attn.c_attn error 0.7540 exceeded max_error 0.3500
+2026-09-24 18:00:52,486 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.5.attn.c_proj error 0.7691 exceeded max_error 0.3500
+2026-09-24 18:00:52,845 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.6.attn.c_attn error 0.7938 exceeded max_error 0.3500
+2026-09-24 18:00:53,070 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.6.attn.c_proj error 0.7471 exceeded max_error 0.3500
+2026-09-24 18:00:53,468 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.7.attn.c_attn error 0.7909 exceeded max_error 0.3500
+2026-09-24 18:00:53,729 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.7.attn.c_proj error 0.7632 exceeded max_error 0.3500
+2026-09-24 18:00:54,222 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.8.attn.c_attn error 0.8157 exceeded max_error 0.3500
+2026-09-24 18:00:54,532 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.8.attn.c_proj error 0.7652 exceeded max_error 0.3500
+2026-09-24 18:00:55,056 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.9.attn.c_attn error 0.8557 exceeded max_error 0.3500
+2026-09-24 18:00:55,383 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.9.attn.c_proj error 0.8045 exceeded max_error 0.3500
+2026-09-24 18:00:55,945 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.10.attn.c_attn error 0.8442 exceeded max_error 0.3500
+2026-09-24 18:00:56,281 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.10.attn.c_proj error 0.8289 exceeded max_error 0.3500
+2026-09-24 18:00:56,824 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.11.attn.c_attn error 0.8139 exceeded max_error 0.3500
+2026-09-24 18:00:57,127 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.11.attn.c_proj error 0.7654 exceeded max_error 0.3500
+2026-09-24 18:00:57,145 [INFO] QwenQualitySweep: module=cur path=adapted_gpt
+2026-09-24 18:00:57,148 [INFO] QwenQualitySweep: module=cur injection summary: 0 SVDLinear layers active
+2026-09-24 18:00:57,150 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for cur (lr=2.0e-04)
+2026-09-24 18:00:57,321 [INFO] framework.utils.compat: Recovery fine-tuning selected 0 trainable parameters across 0 tensors.
+2026-09-24 18:00:57,323 [INFO] framework.utils.compat: Discovered 0 trainable tensors (0 params)
+2026-09-24 18:01:04,972 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_cur\gpt2\gpt2_sst2_cur_full_metrics.json
+2026-09-24 18:01:05,302 [INFO] QwenQualitySweep: [1/1] cur -> PASS_NO_COMPRESSION 89.33% (F1: 0.8942, Peak VRAM: 382.63 MB)
+2026-09-24 18:01:05,303 [WARNING] QwenQualitySweep: Module 'cur' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-24 18:01:05,303 [INFO] QwenQualitySweep: [Quality Guard] Module 'cur' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=89.33%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-24 18:01:05,312 [INFO] QwenQualitySweep: [1/1] cur Timing: eval_time=17.34s
+2026-09-24 18:01:05,312 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 18:01:05,834 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 18:01:05,834 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2_sst2 on sst2)
+2026-09-24 18:01:05,873 [INFO] QwenQualitySweep: 
+              Module              Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+cur (efficient-attn) PASS_NO_COMPRESSION   89.33%    +0.00% 0.8942                  0            1.00x  382.6 MB               7.12              8.17
+2026-09-24 18:01:05,873 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:153: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

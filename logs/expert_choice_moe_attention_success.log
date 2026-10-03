@@ -1,0 +1,3 @@
+[main c91300140] feat(benchmark): record successful expert_choice_moe_attention on distilbert-sst2 (Acc: 90.60%, F1: 0.9091)
+ 1 file changed, 487 insertions(+), 482 deletions(-)
+branch 'main' set up to track 'origin/main'.

@@ -1,0 +1,152 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-24 21:31:24,727 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'hashed_net_factory', '--output_json', 'logs\\isolated_results\\hashed_net_factory_1790272847553_12236.json']
+2026-09-24 21:31:24,950 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 21:31:24,950 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=4 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-24 21:31:26,121 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-09-24 21:31:26,253 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md "HTTP/1.1 200 OK"
+2026-09-24 21:31:26,516 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-24 21:31:27,158 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-24 21:31:27,436 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-09-24 21:31:27,704 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-09-24 21:31:28,409 [INFO] httpx: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-09-24 21:31:28,692 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-24 21:31:28,960 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-24 21:31:29,233 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-09-24 21:31:29,504 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-24 21:31:30,412 [INFO] QwenQualitySweep: Configured dataset 'wikitext2' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 2569.68it/s]
+2026-09-24 21:31:31,740 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 21:31:31,740 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 21:31:31,740 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 21:31:31,740 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 21:31:31,741 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-24 21:31:31,741 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-24 21:31:31,741 [INFO] QwenQualitySweep:   dataset:           wikitext2
+2026-09-24 21:31:31,741 [INFO] QwenQualitySweep:   batch_size:        4
+2026-09-24 21:31:31,741 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 21:31:31,742 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 21:31:31,742 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 21:31:31,742 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 21:31:32,117 [INFO] QwenQualitySweep: Prepared 0 eval batches and 0 train batches directly on GPU.
+Token indices sequence length is longer than the specified maximum sequence length for this model (249749 > 1024). Running this sequence through the model will result in indexing errors
+`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+2026-09-24 21:34:59,815 [INFO] QwenQualitySweep: Baseline model benchmark perplexity on validation set: 41.346157 (loss=3.7220)
+2026-09-24 21:35:00,201 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 21:35:00,201 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-24 21:35:00,201 [INFO] QwenQualitySweep:   Validation Majority Count: 500 / 1000
+2026-09-24 21:35:00,201 [INFO] QwenQualitySweep:   True Majority Baseline:    50.00%
+2026-09-24 21:35:00,202 [INFO] QwenQualitySweep:   Standard Error (SE):       1.581%
+2026-09-24 21:35:00,202 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.74%
+2026-09-24 21:35:00,202 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  54.74%
+2026-09-24 21:35:00,202 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.00% (500/1000), SE=1.581%, 3*SE=4.740%
+2026-09-24 21:35:00,202 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 21:35:00,213 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 21:35:00,715 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: hashed_net_factory (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-24 21:35:02,049 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3653 on transformer.h.0.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 21:35:02,050 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.0.attn.c_attn (fallback to original).
+2026-09-24 21:35:02,334 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3285 on transformer.h.0.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:02,334 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.0.attn.c_proj (fallback to original).
+2026-09-24 21:35:02,665 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3721 on transformer.h.0.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:02,665 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.0.mlp.c_proj (fallback to original).
+2026-09-24 21:35:02,971 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3651 on transformer.h.1.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 21:35:02,972 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.1.attn.c_attn (fallback to original).
+2026-09-24 21:35:03,256 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3277 on transformer.h.1.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:03,257 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.1.attn.c_proj (fallback to original).
+2026-09-24 21:35:03,577 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3716 on transformer.h.1.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:03,577 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.1.mlp.c_proj (fallback to original).
+2026-09-24 21:35:03,884 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3663 on transformer.h.2.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 21:35:03,884 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.2.attn.c_attn (fallback to original).
+2026-09-24 21:35:04,162 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3281 on transformer.h.2.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:04,162 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.2.attn.c_proj (fallback to original).
+2026-09-24 21:35:04,490 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3722 on transformer.h.2.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:04,490 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.2.mlp.c_proj (fallback to original).
+2026-09-24 21:35:04,796 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3651 on transformer.h.3.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 21:35:04,797 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.3.attn.c_attn (fallback to original).
+2026-09-24 21:35:05,099 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3293 on transformer.h.3.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:05,099 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.3.attn.c_proj (fallback to original).
+2026-09-24 21:35:05,415 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3724 on transformer.h.3.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:05,416 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.3.mlp.c_proj (fallback to original).
+2026-09-24 21:35:05,714 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3651 on transformer.h.4.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 21:35:05,715 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.4.attn.c_attn (fallback to original).
+2026-09-24 21:35:05,992 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3279 on transformer.h.4.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:05,992 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.4.attn.c_proj (fallback to original).
+2026-09-24 21:35:06,308 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3721 on transformer.h.4.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:06,308 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.4.mlp.c_proj (fallback to original).
+2026-09-24 21:35:06,623 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3656 on transformer.h.5.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 21:35:06,624 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.5.attn.c_attn (fallback to original).
+2026-09-24 21:35:06,908 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3281 on transformer.h.5.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:06,908 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.5.attn.c_proj (fallback to original).
+2026-09-24 21:35:07,227 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3719 on transformer.h.5.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:07,227 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.5.mlp.c_proj (fallback to original).
+2026-09-24 21:35:07,529 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3660 on transformer.h.6.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 21:35:07,529 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.6.attn.c_attn (fallback to original).
+2026-09-24 21:35:07,811 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3278 on transformer.h.6.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:07,812 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.6.attn.c_proj (fallback to original).
+2026-09-24 21:35:08,141 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3718 on transformer.h.6.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:08,141 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.6.mlp.c_proj (fallback to original).
+2026-09-24 21:35:08,438 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3651 on transformer.h.7.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 21:35:08,438 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.7.attn.c_attn (fallback to original).
+2026-09-24 21:35:08,719 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3287 on transformer.h.7.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:08,719 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.7.attn.c_proj (fallback to original).
+2026-09-24 21:35:09,047 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3717 on transformer.h.7.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:09,047 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.7.mlp.c_proj (fallback to original).
+2026-09-24 21:35:09,352 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3643 on transformer.h.8.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 21:35:09,353 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.8.attn.c_attn (fallback to original).
+2026-09-24 21:35:09,643 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3283 on transformer.h.8.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:09,643 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.8.attn.c_proj (fallback to original).
+2026-09-24 21:35:09,972 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3719 on transformer.h.8.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:09,972 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.8.mlp.c_proj (fallback to original).
+2026-09-24 21:35:10,273 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3653 on transformer.h.9.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 21:35:10,273 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.9.attn.c_attn (fallback to original).
+2026-09-24 21:35:10,564 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3275 on transformer.h.9.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:10,565 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.9.attn.c_proj (fallback to original).
+2026-09-24 21:35:10,890 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3722 on transformer.h.9.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:10,890 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.9.mlp.c_proj (fallback to original).
+2026-09-24 21:35:11,191 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3654 on transformer.h.10.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 21:35:11,191 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.10.attn.c_attn (fallback to original).
+2026-09-24 21:35:11,476 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3280 on transformer.h.10.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:11,477 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.10.attn.c_proj (fallback to original).
+2026-09-24 21:35:11,800 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3724 on transformer.h.10.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:11,800 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.10.mlp.c_proj (fallback to original).
+2026-09-24 21:35:12,112 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3652 on transformer.h.11.attn.c_attn exceeded threshold 0.4000.
+2026-09-24 21:35:12,112 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.11.attn.c_attn (fallback to original).
+2026-09-24 21:35:12,402 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3284 on transformer.h.11.attn.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:12,402 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.11.attn.c_proj (fallback to original).
+2026-09-24 21:35:12,726 [WARNING] framework.compression_engine.hashed_net_compressor: HashedNet reconstruction error 1.3717 on transformer.h.11.mlp.c_proj exceeded threshold 0.4000.
+2026-09-24 21:35:12,726 [INFO] framework.compression_engine.hashed_net_compressor: Skipping HashedNet compression for transformer.h.11.mlp.c_proj (fallback to original).
+2026-09-24 21:35:12,776 [INFO] framework.compression_engine.hashed_net_compressor: HashedNet compression complete: 0 compressed, 36 fallback. Avg error: 0.0000, Effective Param Ratio: 1.00x
+2026-09-24 21:35:12,788 [INFO] QwenQualitySweep: module=hashed_net_factory path=adapted_gpt
+2026-09-24 21:35:12,789 [INFO] QwenQualitySweep: module=hashed_net_factory injection summary: 0 SVDLinear layers active
+2026-09-24 21:35:12,790 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for hashed_net_factory (lr=2.0e-04)
+2026-09-24 21:35:12,943 [INFO] framework.utils.compat: Recovery fine-tuning selected 0 trainable parameters across 0 tensors.
+2026-09-24 21:35:12,946 [INFO] framework.utils.compat: Discovered 0 trainable tensors (0 params)
+2026-09-24 21:38:36,865 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\gpt2_wikitext2_sweep\gpt2_hashed_net_factory_full_metrics.json
+2026-09-24 21:38:37,443 [INFO] QwenQualitySweep: [1/1] hashed_net_factory -> PASS_NO_COMPRESSION 0.00% (F1: 0.0, Peak VRAM: 816.22509765625 MB)
+2026-09-24 21:38:37,444 [WARNING] QwenQualitySweep: Module 'hashed_net_factory' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-24 21:38:37,444 [INFO] QwenQualitySweep: [Quality Guard] Module 'hashed_net_factory' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=0.00%, pass_thresh=54.74%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-24 21:38:37,476 [INFO] QwenQualitySweep: [1/1] hashed_net_factory Timing: eval_time=216.76s
+2026-09-24 21:38:37,476 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 21:38:38,287 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 21:38:38,288 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on wikitext2)
+2026-09-24 21:38:38,324 [INFO] QwenQualitySweep: 
+                                           Module              Status Accuracy    Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                                             full                PASS    0.00% 0.00% (base)    N/A                              1.00x  916.2 MB               7.88               N/A
+                       swift_svd (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             235.02               N/A
+                 gated_delta_net (efficient-attn)     SKIP_DEPRECATED    0.00%       +0.00%    N/A                              1.00x       N/A               0.00               N/A
+                              flat_llm_compressor   FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 6            1.00x  816.2 MB             181.14               N/A
+           tt_compressor_factory (efficient-attn)   FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 0            1.05x  816.2 MB             272.95               N/A
+              hybrid_svd_factory (efficient-attn)   FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 0            1.08x 1241.0 MB             313.73               N/A
+                    svd_sequence (efficient-attn)   FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 0            1.00x 1273.3 MB             518.73               N/A
+                                     kmeans_class                PASS    0.00%       +0.00% 0.0000                36            1.83x 1400.3 MB             214.19               N/A
+                   uniql_factory (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             205.34               N/A
+                          zerokv (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             181.44               N/A
+                                 armor_compressor        PASS_LOW_PPL    0.00%       +0.00% 0.0000                12            0.98x 1229.4 MB             230.55               N/A
+rotational_slicegpt_int4_factory (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             375.93               N/A
+                   swift_svd_act (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             217.05               N/A
+              hashed_net_factory (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             203.32              0.00
+2026-09-24 21:38:38,324 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:154: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

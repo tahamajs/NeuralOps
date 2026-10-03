@@ -1,0 +1,99 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-24 21:58:05,317 [INFO] QwenQualitySweep: Parsed 4 module-specific extended arguments: ['--module', 'adaptive_compressor_factory', '--output_json', 'logs\\isolated_results\\adaptive_compressor_factory_1790274455249_7512.json']
+2026-09-24 21:58:05,434 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 21:58:05,434 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=4 (explicit_parallel=False, explicit_batch=True)
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "started_at": datetime.utcnow().isoformat(),
+2026-09-24 21:58:08,169 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-09-24 21:58:08,308 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/Salesforce/wikitext/b08601e04326c79dfdd32d625aee71d232d685c3/README.md "HTTP/1.1 200 OK"
+2026-09-24 21:58:08,927 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-24 21:58:10,137 [INFO] httpx: HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/Salesforce/wikitext/Salesforce/wikitext.py "HTTP/1.1 404 Not Found"
+2026-09-24 21:58:10,396 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/revision/b08601e04326c79dfdd32d625aee71d232d685c3 "HTTP/1.1 200 OK"
+2026-09-24 21:58:10,622 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-09-24 21:58:11,294 [INFO] httpx: HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=Salesforce/wikitext "HTTP/1.1 200 OK"
+2026-09-24 21:58:11,843 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-24 21:58:12,093 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-09-24 21:58:12,634 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/Salesforce/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-09-24 21:58:12,876 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/datasets/Salesforce/wikitext/tree/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-2-raw-v1?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-09-24 21:58:13,637 [INFO] QwenQualitySweep: Configured dataset 'wikitext2' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 2658.65it/s]
+2026-09-24 21:58:14,943 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 21:58:14,944 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 21:58:14,944 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 21:58:14,944 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 21:58:14,944 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-24 21:58:14,945 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-24 21:58:14,945 [INFO] QwenQualitySweep:   dataset:           wikitext2
+2026-09-24 21:58:14,945 [INFO] QwenQualitySweep:   batch_size:        4
+2026-09-24 21:58:14,945 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 21:58:14,945 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 21:58:14,946 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 21:58:14,946 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 21:58:15,287 [INFO] QwenQualitySweep: Prepared 0 eval batches and 0 train batches directly on GPU.
+Token indices sequence length is longer than the specified maximum sequence length for this model (249749 > 1024). Running this sequence through the model will result in indexing errors
+`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+2026-09-24 22:01:20,080 [INFO] QwenQualitySweep: Baseline model benchmark perplexity on validation set: 41.346157 (loss=3.7220)
+2026-09-24 22:01:20,368 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 22:01:20,368 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=1000):
+2026-09-24 22:01:20,368 [INFO] QwenQualitySweep:   Validation Majority Count: 500 / 1000
+2026-09-24 22:01:20,368 [INFO] QwenQualitySweep:   True Majority Baseline:    50.00%
+2026-09-24 22:01:20,369 [INFO] QwenQualitySweep:   Standard Error (SE):       1.581%
+2026-09-24 22:01:20,369 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 4.74%
+2026-09-24 22:01:20,369 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  54.74%
+2026-09-24 22:01:20,369 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.00% (500/1000), SE=1.581%, 3*SE=4.740%
+2026-09-24 22:01:20,369 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 22:01:20,371 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 22:01:20,753 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: adaptive_compressor_factory (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-24 22:01:29,699 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.4081 on transformer.h.9.attn.c_proj exceeded threshold 0.4000. Falling back to original layer.
+2026-09-24 22:01:30,481 [WARNING] framework.compression_engine.adaptive_ranks: AdaptiveRanks error 0.4561 on transformer.h.10.attn.c_proj exceeded threshold 0.4000. Falling back to original layer.
+2026-09-24 22:01:31,267 [INFO] framework.compression_engine.adaptive_ranks: AdaptiveRanks compression complete: 22 compressed, 2 fallback. Avg error: 0.3383.
+2026-09-24 22:01:31,334 [INFO] QwenQualitySweep: module=adaptive_compressor_factory path=adapted_gpt
+2026-09-24 22:01:31,336 [INFO] QwenQualitySweep: module=adaptive_compressor_factory injection summary: 22 SVDLinear layers active
+2026-09-24 22:01:31,336 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for adaptive_compressor_factory (lr=2.0e-04)
+2026-09-24 22:01:31,465 [INFO] framework.utils.compat: Recovery fine-tuning selected 20186112 trainable parameters across 66 tensors.
+2026-09-24 22:01:31,467 [WARNING] framework.utils.compat: Total trainable parameters (20186112) exceeds 2000000 threshold for recovery. Pruning heavy base weights to prevent OOM.
+2026-09-24 22:01:31,469 [INFO] framework.utils.compat: Reduced recovery parameters to 35328 trainable parameters across 22 tensors.
+2026-09-24 22:01:31,470 [INFO] framework.utils.compat: Discovered 22 trainable tensors (35328 params)
+2026-09-24 22:01:31,473 [INFO] QwenQualitySweep: LoRA fine-tuning: 35328 trainable parameters across 22 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-24 22:01:31,915 [INFO] QwenQualitySweep: Step 1/50 took 0.44s (loss=8.9220, bs=4, micro=2)
+2026-09-24 22:01:32,881 [INFO] QwenQualitySweep: Step 5/50 took 0.27s (loss=8.0973, bs=4, micro=2)
+2026-09-24 22:01:34,060 [INFO] QwenQualitySweep: Step 10/50 took 0.22s (loss=7.3757, bs=4, micro=2)
+2026-09-24 22:01:35,246 [INFO] QwenQualitySweep: Step 15/50 took 0.23s (loss=7.7613, bs=4, micro=2)
+2026-09-24 22:01:36,431 [INFO] QwenQualitySweep: Step 20/50 took 0.25s (loss=7.8065, bs=4, micro=2)
+2026-09-24 22:01:37,698 [INFO] QwenQualitySweep: Step 25/50 took 0.24s (loss=7.6687, bs=4, micro=2)
+2026-09-24 22:01:38,909 [INFO] QwenQualitySweep: Step 30/50 took 0.24s (loss=6.8337, bs=4, micro=2)
+2026-09-24 22:01:40,339 [INFO] QwenQualitySweep: Step 35/50 took 0.28s (loss=6.2887, bs=4, micro=2)
+2026-09-24 22:01:41,863 [INFO] QwenQualitySweep: Step 40/50 took 0.35s (loss=6.5627, bs=4, micro=2)
+2026-09-24 22:01:43,272 [INFO] QwenQualitySweep: Step 45/50 took 0.29s (loss=6.0223, bs=4, micro=2)
+2026-09-24 22:01:44,777 [INFO] QwenQualitySweep: Step 50/50 took 0.30s (loss=5.1027, bs=4, micro=2)
+2026-09-24 22:05:39,696 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\gpt2_wikitext2_sweep\gpt2_adaptive_compressor_factory_full_metrics.json
+2026-09-24 22:05:40,125 [INFO] QwenQualitySweep: [1/1] adaptive_compressor_factory -> FAIL_PPL_DIVERGED 0.00% (F1: 0.0, Peak VRAM: 1093.3076171875 MB)
+2026-09-24 22:05:40,125 [INFO] QwenQualitySweep: [Quality Guard] Module 'adaptive_compressor_factory' did not pass quality criteria (status=FAIL_PPL_DIVERGED, acc=0.00%, pass_thresh=54.74%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-24 22:05:40,151 [INFO] QwenQualitySweep: [1/1] adaptive_compressor_factory Timing: eval_time=259.40s
+2026-09-24 22:05:40,152 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 22:05:40,562 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 22:05:40,562 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on wikitext2)
+2026-09-24 22:05:40,577 [INFO] QwenQualitySweep: 
+                                           Module              Status Accuracy    Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                                             full                PASS    0.00% 0.00% (base)    N/A                              1.00x  916.2 MB               7.88               N/A
+                       swift_svd (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             235.02               N/A
+                 gated_delta_net (efficient-attn)     SKIP_DEPRECATED    0.00%       +0.00%    N/A                              1.00x       N/A               0.00               N/A
+                              flat_llm_compressor   FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 6            1.00x  816.2 MB             181.14               N/A
+           tt_compressor_factory (efficient-attn)   FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 0            1.05x  816.2 MB             272.95               N/A
+              hybrid_svd_factory (efficient-attn)   FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 0            1.08x 1241.0 MB             313.73               N/A
+                    svd_sequence (efficient-attn)   FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 0            1.00x 1273.3 MB             518.73               N/A
+                                     kmeans_class                PASS    0.00%       +0.00% 0.0000                36            1.83x 1400.3 MB             214.19               N/A
+                   uniql_factory (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             205.34               N/A
+                          zerokv (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             181.44               N/A
+                                 armor_compressor        PASS_LOW_PPL    0.00%       +0.00% 0.0000                12            0.98x 1229.4 MB             230.55               N/A
+rotational_slicegpt_int4_factory (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             375.93               N/A
+                   swift_svd_act (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             217.05               N/A
+              hashed_net_factory (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             216.72               N/A
+                mlorq_compressor (efficient-attn)                FAIL    0.00%       +0.00% 0.0000                 0            1.00x    0.0 MB               6.80               N/A
+      dynamic_entropy_compressor (efficient-attn) PASS_NO_COMPRESSION    0.00%       +0.00% 0.0000                 0            1.00x  816.2 MB             221.69               N/A
+                        kronecker_tt_lora_factory  MODERATE_EXPANSION    0.00%       +0.00% 0.0000                36            0.95x 1400.4 MB             443.28               N/A
+     adaptive_compressor_factory (efficient-attn)   FAIL_PPL_DIVERGED    0.00%       +0.00% 0.0000                 0            1.06x 1093.3 MB             234.38              0.00
+2026-09-24 22:05:40,578 [INFO] QwenQualitySweep: ================================================================================
+D:\SVD_Project\Codes\framework\run_one_module_isolated.py:154: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  result["finished_at"] = datetime.utcnow().isoformat()

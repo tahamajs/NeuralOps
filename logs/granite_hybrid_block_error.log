@@ -1,0 +1,55 @@
+
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from 'framework.eval_all_models_datasets' (consider renaming 'D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py' if it has the same name as a library you intended to import)
+2026-09-18 22:41:47,323 [INFO] QwenQualitySweep: Parsed 3 module-specific extended arguments: ['--hf_org', 'Hooshaai', '--upload_to_hf']
+2026-09-18 22:41:47,386 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 22:41:47,565 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 104/104 [00:00<00:00, 2916.04it/s]
+2026-09-18 22:41:48,076 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-18 22:41:48,077 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 22:41:48,077 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:41:48,077 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 22:41:48,077 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-18 22:41:48,077 [INFO] QwenQualitySweep:   family:            bert
+2026-09-18 22:41:48,078 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-18 22:41:48,078 [INFO] QwenQualitySweep:   batch_size:        32
+2026-09-18 22:41:48,078 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 22:41:48,078 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 22:41:48,078 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 22:41:48,079 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:41:48,081 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-18 22:41:49,798 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0032
+2026-09-18 22:41:51,062 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0213
+2026-09-18 22:41:52,131 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.0074
+2026-09-18 22:41:53,536 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0110
+2026-09-18 22:41:54,939 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0901
+2026-09-18 22:41:56,344 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.2050
+2026-09-18 22:41:57,752 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0085
+2026-09-18 22:41:59,189 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.0838
+2026-09-18 22:41:59,199 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\all_modules\granite_hybrid_block\finetuned_model.pt
+2026-09-18 22:41:59,265 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 22:42:00,195 [INFO] QwenQualitySweep: Prepared 28 eval batches and 50 train batches directly on GPU.
+2026-09-18 22:42:00,808 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.60%
+2026-09-18 22:42:00,860 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:42:00,860 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-18 22:42:00,860 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-18 22:42:00,861 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-18 22:42:00,861 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-18 22:42:00,861 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-18 22:42:00,861 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-18 22:42:00,861 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 22:42:00,861 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: granite_hybrid_block (recovery_steps=50, batch_size=32, optimizer=adamw)
+2026-09-18 22:42:03,006 [INFO] framework.core.attention_utils: Successfully injected 'granite_hybrid_block' into 6 transformer blocks.
+2026-09-18 22:42:03,026 [INFO] QwenQualitySweep: module=granite_hybrid_block path=legacy_bert
+2026-09-18 22:42:03,028 [INFO] QwenQualitySweep: module=granite_hybrid_block injection summary: 0 SVDLinear layers active
+2026-09-18 22:42:03,028 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for granite_hybrid_block (lr=2.0e-04)
+2026-09-18 22:42:03,362 [INFO] framework.utils.compat: Recovery fine-tuning selected 589848 trainable parameters across 72 tensors.
+2026-09-18 22:42:03,362 [INFO] framework.utils.compat: Discovered 72 trainable tensors (589848 params)
+2026-09-18 22:42:03,371 [INFO] QwenQualitySweep: LoRA fine-tuning: 589848 trainable parameters across 72 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 22:42:05,117 [WARNING] QwenQualitySweep: CUDA OOM during LoRA training; reducing micro-batch size to 16 (effective bs=32)
+2026-09-18 22:42:16,052 [INFO] QwenQualitySweep: Step 1/50 took 10.93s (loss=0.6500, bs=32, micro=16)
+2026-09-18 22:44:34,448 [INFO] QwenQualitySweep: Step 5/50 took 8.92s (loss=0.5698, bs=32, micro=16)
+2026-09-18 22:46:52,355 [INFO] QwenQualitySweep: Step 10/50 took 8.82s (loss=0.5979, bs=32, micro=16)
+2026-09-18 22:47:36,381 [INFO] QwenQualitySweep: Step 15/50 took 8.81s (loss=0.6110, bs=32, micro=16)
+2026-09-18 22:48:30,951 [INFO] QwenQualitySweep: Step 20/50 took 16.14s (loss=0.4961, bs=32, micro=16)

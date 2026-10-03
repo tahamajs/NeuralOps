@@ -1,0 +1,80 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+2026-09-23 23:03:41,372 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-23 23:03:41,373 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=4 (explicit_parallel=True, explicit_batch=True)
+2026-09-23 23:03:41,377 [INFO] QwenQualitySweep: Running 1 attention modules in-memory sequentially
+2026-09-23 23:03:41,771 [INFO] QwenQualitySweep: Configured dataset 'wikitext2' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 4101.60it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models/gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-23 23:03:42,544 [INFO] QwenQualitySweep: model=models/gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-23 23:03:42,544 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-23 23:03:42,545 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 23:03:42,545 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-23 23:03:42,545 [INFO] QwenQualitySweep:   model:             models/gpt2
+2026-09-23 23:03:42,545 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-23 23:03:42,545 [INFO] QwenQualitySweep:   dataset:           wikitext2
+2026-09-23 23:03:42,545 [INFO] QwenQualitySweep:   batch_size:        4
+2026-09-23 23:03:42,545 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-23 23:03:42,545 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-23 23:03:42,546 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-23 23:03:42,546 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 23:03:42,548 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\gpt2_wikitext2_sweep\finetuned_model.pt
+2026-09-23 23:03:42,554 [WARNING] QwenQualitySweep: Missing keys during load: ['transformer.wte.weight', 'transformer.wpe.weight', 'transformer.h.0.ln_1.weight', 'transformer.h.0.ln_1.bias', 'transformer.h.0.attn.c_attn.weight', 'transformer.h.0.attn.c_attn.bias', 'transformer.h.0.attn.c_proj.weight', 'transformer.h.0.attn.c_proj.bias', 'transformer.h.0.ln_2.weight', 'transformer.h.0.ln_2.bias']
+2026-09-23 23:03:42,732 [INFO] QwenQualitySweep: Loading pre-cached batches from results\gpt2_wikitext2_sweep\batch_cache_wikitext2 (skipping tokenization)
+2026-09-23 23:03:43,066 [INFO] QwenQualitySweep: Prepared 616 eval batches and 50 train batches directly on GPU.
+2026-09-23 23:04:07,475 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 99.72%
+2026-09-23 23:04:07,527 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 23:04:07,527 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-23 23:04:07,527 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-23 23:04:07,527 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-23 23:04:07,528 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-23 23:04:07,528 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-23 23:04:07,528 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-23 23:04:07,528 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-23 23:04:07,528 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 23:04:07,529 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-23 23:04:07,700 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: lola_attn (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-23 23:04:13,579 [INFO] framework.core.attention_utils: Successfully injected 'lola_attn' into 12 transformer blocks.
+2026-09-23 23:04:13,599 [INFO] QwenQualitySweep: module=lola_attn path=adapted_gpt
+2026-09-23 23:04:13,601 [INFO] QwenQualitySweep: module=lola_attn injection summary: 0 SVDLinear layers active
+2026-09-23 23:04:13,601 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for lola_attn (lr=2.0e-04)
+2026-09-23 23:04:13,859 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179672 trainable parameters across 120 tensors.
+2026-09-23 23:04:13,861 [INFO] framework.utils.compat: Discovered 120 trainable tensors (1179672 params)
+2026-09-23 23:04:13,865 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179672 trainable parameters across 120 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-23 23:04:14,317 [INFO] QwenQualitySweep: Step 1/50 took 0.45s (loss=0.0000, bs=4, micro=4)
+2026-09-23 23:04:15,330 [INFO] QwenQualitySweep: Step 5/50 took 0.26s (loss=0.0000, bs=4, micro=4)
+2026-09-23 23:04:16,589 [INFO] QwenQualitySweep: Step 10/50 took 0.25s (loss=0.0000, bs=4, micro=4)
+2026-09-23 23:04:17,825 [INFO] QwenQualitySweep: Step 15/50 took 0.24s (loss=0.0001, bs=4, micro=4)
+2026-09-23 23:04:19,081 [INFO] QwenQualitySweep: Step 20/50 took 0.25s (loss=0.0000, bs=4, micro=4)
+2026-09-23 23:04:20,322 [INFO] QwenQualitySweep: Step 25/50 took 0.25s (loss=0.0000, bs=4, micro=4)
+2026-09-23 23:04:21,503 [INFO] QwenQualitySweep: Step 30/50 took 0.24s (loss=0.0001, bs=4, micro=4)
+2026-09-23 23:04:22,712 [INFO] QwenQualitySweep: Step 35/50 took 0.24s (loss=0.0000, bs=4, micro=4)
+2026-09-23 23:04:23,898 [INFO] QwenQualitySweep: Step 40/50 took 0.23s (loss=0.0000, bs=4, micro=4)
+2026-09-23 23:04:25,091 [INFO] QwenQualitySweep: Step 45/50 took 0.23s (loss=0.0000, bs=4, micro=4)
+2026-09-23 23:04:26,279 [INFO] QwenQualitySweep: Step 50/50 took 0.24s (loss=0.0000, bs=4, micro=4)
+2026-09-23 23:05:27,594 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\gpt2_wikitext2_sweep\gpt2_lola_attn_full_metrics.json
+2026-09-23 23:05:27,726 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\gpt2_wikitext2_sweep\checkpoints\lola_attn\weights.pt (module_params=264, lora_params=97)
+2026-09-23 23:05:28,014 [INFO] QwenQualitySweep: [1/1] lola_attn -> PASS 100.00% (F1: 0.0, Peak VRAM: 636.31 MB)
+2026-09-23 23:05:28,025 [INFO] HFGitExporter: [Automation] Run gpt2 / lola-attn is SUCCESSFUL (acc=100.00% >= 56.00%). Starting automated HF export to Hooshaai/svd-linear-attention-gpt2-lola-attn and Git recording.
+2026-09-23 23:05:29,310 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 409 Conflict"
+2026-09-23 23:05:36,638 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-23 23:05:37,210 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-gpt2-lola-attn/preupload/main "HTTP/1.1 200 OK"
+2026-09-23 23:27:32,650 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-gpt2-lola-attn/commit/main "HTTP/1.1 200 OK"
+2026-09-23 23:27:32,678 [INFO] HFGitExporter: Successfully uploaded private model to Hugging Face: https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-lola-attn
+2026-09-23 23:27:33,879 [INFO] HFGitExporter: No changes to commit to Git.
+2026-09-23 23:27:33,924 [INFO] QwenQualitySweep: [1/1] lola_attn Timing: eval_time=1406.22s
+2026-09-23 23:27:33,925 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-23 23:27:41,583 [INFO] QwenQualitySweep: ================================================================================
+2026-09-23 23:27:41,584 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on wikitext2)
+2026-09-23 23:27:41,627 [INFO] QwenQualitySweep: 
+                    Module        Status Accuracy    Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                      full          PASS    0.00% 0.00% (base)    N/A                 0            1.00x  916.2 MB               7.88               N/A
+swift_svd (efficient-attn) PASS_DEGRADED    0.00%      -99.72%    N/A                 0            1.50x  838.8 MB               3.23               N/A
+                 lola_attn          PASS  100.00%       +0.28% 0.0000                12            1.22x  636.3 MB              60.84             24.72
+2026-09-23 23:27:41,627 [INFO] QwenQualitySweep: ================================================================================
