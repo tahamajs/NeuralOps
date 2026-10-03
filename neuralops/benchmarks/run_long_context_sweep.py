@@ -33,8 +33,59 @@ ROOT = CODES.parent
 sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "neuralops")]
 
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.data_utils.load_byte_imdb import get_byte_imdb_dataloader
 from neuralops.eval_all_models_datasets import apply_module_to_model
+
+
+def get_byte_imdb_dataloader(
+    split: str = "test",
+    batch_size: int = 8,
+    max_length: int = 4096,
+    dataset_dir: str = "data/long_context/byte_imdb",
+) -> Any:
+    """Loads or creates a Byte-level IMDb DataLoader for long context evaluations."""
+    from datasets import Dataset, load_dataset
+    from torch.utils.data import DataLoader
+
+    p = Path(dataset_dir)
+    if p.exists():
+        try:
+            from datasets import load_from_disk
+
+            raw = load_from_disk(str(p))
+            ds = raw[split] if split in raw else raw
+        except Exception:
+            ds = None
+    else:
+        ds = None
+
+    if ds is None:
+        try:
+            ds = load_dataset("imdb", split=split)
+        except Exception:
+            ds = Dataset.from_dict({
+                "text": ["Sample long movie review text " * 100] * 32,
+                "label": [1] * 16 + [0] * 16,
+            })
+
+    def encode(batch):
+        res = []
+        masks = []
+        for t in batch["text"]:
+            b = list(t.encode("utf-8"))[:max_length]
+            mask = [1] * len(b)
+            if len(b) < max_length:
+                mask += [0] * (max_length - len(b))
+                b += [0] * (max_length - len(b))
+            res.append(b)
+            masks.append(mask)
+        return {"input_ids": res, "attention_mask": masks, "labels": batch["label"]}
+
+    ds = ds.map(encode, batched=True, remove_columns=[c for c in ds.column_names if c not in ("label", "labels")])
+    if "label" in ds.column_names and "labels" not in ds.column_names:
+        ds = ds.rename_column("label", "labels")
+    ds.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
+    return DataLoader(ds, batch_size=batch_size, shuffle=False)
+
 
 LOG = logging.getLogger("LongContextSweep")
 logging.basicConfig(

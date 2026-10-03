@@ -14,7 +14,59 @@ if str(_codes_dir) not in sys.path:
 if str(_cur_dir) not in sys.path:
     sys.path.insert(0, str(_cur_dir))
 
-from svd_whitened import cholesky_whitened_svd, collect_activations
+def collect_activations(model: torch.nn.Module, dataloader: Any, num_samples: int = 512) -> dict[str, torch.Tensor]:
+    """Collects input activations for all Linear layers using forward hooks."""
+    activations: dict[str, list[torch.Tensor]] = {}
+    hooks = []
+
+    def get_hook(name):
+        def hook(module, inp, out):
+            if inp and isinstance(inp[0], torch.Tensor):
+                x = inp[0].detach().cpu().reshape(-1, inp[0].shape[-1])
+                if name not in activations:
+                    activations[name] = []
+                activations[name].append(x)
+        return hook
+
+    for name, mod in model.named_modules():
+        if isinstance(mod, torch.nn.Linear):
+            hooks.append(mod.register_forward_hook(get_hook(name)))
+
+    count = 0
+    with torch.no_grad():
+        for batch in dataloader:
+            device = next(model.parameters()).device
+            inp = {k: v.to(device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
+            model(**inp)
+            count += next(iter(inp.values())).shape[0]
+            if count >= num_samples:
+                break
+
+    for h in hooks:
+        h.remove()
+
+    return {k: torch.cat(v, dim=0)[:num_samples] for k, v in activations.items()}
+
+
+def cholesky_whitened_svd(W: torch.Tensor, X: torch.Tensor, rank: int, eps: float = 1e-4) -> torch.Tensor:
+    """Computes Cholesky-whitened SVD on weight matrix W using activation covariance X^T X."""
+    X = X.float()
+    cov = (X.t() @ X) / max(1, X.shape[0]) + eps * torch.eye(X.shape[1])
+    try:
+        L = torch.linalg.cholesky(cov)
+    except Exception:
+        L = torch.diag(torch.sqrt(torch.diag(cov) + eps))
+    W_f = W.float()
+    W_tilde = W_f @ L
+    U, S, Vt = torch.linalg.svd(W_tilde, full_matrices=False)
+    r = min(rank, S.shape[0])
+    W_approx = (U[:, :r] * S[:r]) @ Vt[:r, :]
+    try:
+        W_out = W_approx @ torch.linalg.inv(L)
+    except Exception:
+        W_out = W_approx
+    return W_out.to(W.dtype)
+
 
 
 def compress_whitened(model_path, dataset_name, rank, num_samples, output_dir):
