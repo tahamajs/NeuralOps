@@ -30,7 +30,7 @@ from transformers import AutoModelForSequenceClassification
 HERE = Path(__file__).resolve().parent
 CODES = HERE.parent
 ROOT = CODES.parent
-sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "Codes")]
+sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "neuralops")]
 
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.data_utils.load_byte_imdb import get_byte_imdb_dataloader
