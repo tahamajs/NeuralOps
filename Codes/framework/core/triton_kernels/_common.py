@@ -10,6 +10,7 @@ Provides the unified `triton_dispatch` router with automatic capability checking
   5. Maximum sequence length threshold (<= 4096 tokens)
   6. Graceful, single-log fallback to mathematically equivalent PyTorch operations.
 """
+
 from __future__ import annotations
 
 import logging
@@ -27,6 +28,7 @@ logger = logging.getLogger("TritonKernels")
 try:
     import triton
     import triton.language as tl
+
     HAS_TRITON = True
 except ImportError:
     HAS_TRITON = False
@@ -72,13 +74,22 @@ def check_triton_suitability(
         return False, f"tensor is on {tensor.device}, expected CUDA"
 
     if tensor.dtype not in (torch.float16, torch.bfloat16):
-        return False, f"dtype {tensor.dtype} not in (float16, bfloat16); Triton kernels require fp16/bf16"
+        return (
+            False,
+            f"dtype {tensor.dtype} not in (float16, bfloat16); Triton kernels require fp16/bf16",
+        )
 
     if head_dim is not None and head_dim not in SUPPORTED_HEAD_DIMS:
-        return False, f"head dimension {head_dim} not in supported set {SUPPORTED_HEAD_DIMS}"
+        return (
+            False,
+            f"head dimension {head_dim} not in supported set {SUPPORTED_HEAD_DIMS}",
+        )
 
     if seq_len is not None and seq_len > MAX_TRITON_SEQ_LEN:
-        return False, f"sequence length {seq_len} exceeds max supported length {MAX_TRITON_SEQ_LEN}"
+        return (
+            False,
+            f"sequence length {seq_len} exceeds max supported length {MAX_TRITON_SEQ_LEN}",
+        )
 
     return True, None
 
@@ -86,6 +97,7 @@ def check_triton_suitability(
 # ===========================================================================
 # PYTORCH FALLBACK IMPLEMENTATIONS
 # ===========================================================================
+
 
 def linear_attn_pytorch_fallback(
     q: torch.Tensor,
@@ -183,11 +195,19 @@ def linear_attn_pytorch_fallback(
 
                 # Inter-chunk projection
                 num_inter = torch.matmul(qc, S_cos) + torch.matmul(qs, S_sin)
-                denom_inter = torch.matmul(qc, Z_cos.unsqueeze(-1)).squeeze(-1) + torch.matmul(qs, Z_sin.unsqueeze(-1)).squeeze(-1)
+                denom_inter = torch.matmul(qc, Z_cos.unsqueeze(-1)).squeeze(
+                    -1
+                ) + torch.matmul(qs, Z_sin.unsqueeze(-1)).squeeze(-1)
 
                 # Intra-chunk causal scores
-                A_intra = torch.matmul(qc, kc.transpose(-1, -2)) + torch.matmul(qs, ks.transpose(-1, -2))
-                causal_mask = torch.tril(torch.ones(end - start, end - start, device=q.device, dtype=torch.bool))
+                A_intra = torch.matmul(qc, kc.transpose(-1, -2)) + torch.matmul(
+                    qs, ks.transpose(-1, -2)
+                )
+                causal_mask = torch.tril(
+                    torch.ones(
+                        end - start, end - start, device=q.device, dtype=torch.bool
+                    )
+                )
                 A_intra = torch.where(causal_mask, A_intra, torch.zeros_like(A_intra))
                 num_intra = torch.matmul(A_intra, vc)
                 denom_intra = A_intra.sum(dim=-1)
@@ -197,8 +217,12 @@ def linear_attn_pytorch_fallback(
                     denom_safe = torch.clamp(denom_val, min=eff_eps)
                 else:
                     denom_sign = torch.sign(denom_val)
-                    denom_sign = torch.where(denom_sign == 0, torch.ones_like(denom_sign), denom_sign)
-                    denom_safe = torch.where(denom_val.abs() < eff_eps, eff_eps * denom_sign, denom_val)
+                    denom_sign = torch.where(
+                        denom_sign == 0, torch.ones_like(denom_sign), denom_sign
+                    )
+                    denom_safe = torch.where(
+                        denom_val.abs() < eff_eps, eff_eps * denom_sign, denom_val
+                    )
 
                 chunk_out = (num_inter + num_intra) / denom_safe
                 out[:, :, start:end] = chunk_out
@@ -224,7 +248,11 @@ def linear_attn_pytorch_fallback(
                 denom_inter = torch.matmul(qc, Z.unsqueeze(-1)).squeeze(-1)
 
                 A_intra = torch.matmul(qc, kc.transpose(-1, -2))
-                causal_mask = torch.tril(torch.ones(end - start, end - start, device=q.device, dtype=torch.bool))
+                causal_mask = torch.tril(
+                    torch.ones(
+                        end - start, end - start, device=q.device, dtype=torch.bool
+                    )
+                )
                 A_intra = torch.where(causal_mask, A_intra, torch.zeros_like(A_intra))
                 num_intra = torch.matmul(A_intra, vc)
                 denom_intra = A_intra.sum(dim=-1)
@@ -234,8 +262,12 @@ def linear_attn_pytorch_fallback(
                     denom_safe = torch.clamp(denom_val, min=eff_eps)
                 else:
                     denom_sign = torch.sign(denom_val)
-                    denom_sign = torch.where(denom_sign == 0, torch.ones_like(denom_sign), denom_sign)
-                    denom_safe = torch.where(denom_val.abs() < eff_eps, eff_eps * denom_sign, denom_val)
+                    denom_sign = torch.where(
+                        denom_sign == 0, torch.ones_like(denom_sign), denom_sign
+                    )
+                    denom_safe = torch.where(
+                        denom_val.abs() < eff_eps, eff_eps * denom_sign, denom_val
+                    )
 
                 chunk_out = (num_inter + num_intra) / denom_safe
                 out[:, :, start:end] = chunk_out
@@ -253,13 +285,19 @@ def linear_attn_pytorch_fallback(
             Z_sin = k_s.sum(dim=-2, keepdim=True)
 
             num = torch.matmul(q_c, S_cos) + torch.matmul(q_s, S_sin)
-            denom = torch.matmul(q_c, Z_cos.transpose(-1, -2)) + torch.matmul(q_s, Z_sin.transpose(-1, -2))
+            denom = torch.matmul(q_c, Z_cos.transpose(-1, -2)) + torch.matmul(
+                q_s, Z_sin.transpose(-1, -2)
+            )
             if phi in ("elu+1", "relu", "softmax_free"):
                 denom_safe = torch.clamp(denom, min=eff_eps)
             else:
                 denom_sign = torch.sign(denom)
-                denom_sign = torch.where(denom_sign == 0, torch.ones_like(denom_sign), denom_sign)
-                denom_safe = torch.where(denom.abs() < eff_eps, eff_eps * denom_sign, denom)
+                denom_sign = torch.where(
+                    denom_sign == 0, torch.ones_like(denom_sign), denom_sign
+                )
+                denom_safe = torch.where(
+                    denom.abs() < eff_eps, eff_eps * denom_sign, denom
+                )
             res = (num / denom_safe).to(orig_dtype)
         else:
             KV = torch.matmul(phi_k.transpose(-1, -2), v_f)
@@ -270,8 +308,12 @@ def linear_attn_pytorch_fallback(
                 denom_safe = torch.clamp(denom, min=eff_eps)
             else:
                 denom_sign = torch.sign(denom)
-                denom_sign = torch.where(denom_sign == 0, torch.ones_like(denom_sign), denom_sign)
-                denom_safe = torch.where(denom.abs() < eff_eps, eff_eps * denom_sign, denom)
+                denom_sign = torch.where(
+                    denom_sign == 0, torch.ones_like(denom_sign), denom_sign
+                )
+                denom_safe = torch.where(
+                    denom.abs() < eff_eps, eff_eps * denom_sign, denom
+                )
             res = (num / denom_safe).to(orig_dtype)
 
     if orig_dim == 3:
@@ -309,16 +351,24 @@ def sparse_attn_pytorch_fallback(
         # Expand block_mask to element-wise boolean mask
         bm = block_mask.to(torch.bool)
         if bm.dim() == 2:
-            expanded_mask = bm.repeat_interleave(block_size, dim=0).repeat_interleave(block_size, dim=1)
+            expanded_mask = bm.repeat_interleave(block_size, dim=0).repeat_interleave(
+                block_size, dim=1
+            )
             expanded_mask = expanded_mask[:N_q, :N_k]
-            scores = scores.masked_fill(~expanded_mask.unsqueeze(0).unsqueeze(0), float("-inf"))
+            scores = scores.masked_fill(
+                ~expanded_mask.unsqueeze(0).unsqueeze(0), float("-inf")
+            )
         elif bm.dim() == 4:
-            expanded_mask = bm.repeat_interleave(block_size, dim=2).repeat_interleave(block_size, dim=3)
+            expanded_mask = bm.repeat_interleave(block_size, dim=2).repeat_interleave(
+                block_size, dim=3
+            )
             expanded_mask = expanded_mask[..., :N_q, :N_k]
             scores = scores.masked_fill(~expanded_mask, float("-inf"))
 
     if is_causal:
-        causal_mask = torch.tril(torch.ones(N_q, N_k, device=q.device, dtype=torch.bool))
+        causal_mask = torch.tril(
+            torch.ones(N_q, N_k, device=q.device, dtype=torch.bool)
+        )
         scores = scores.masked_fill(~causal_mask, float("-inf"))
 
     attn_probs = F.softmax(scores, dim=-1)
@@ -445,6 +495,7 @@ def gqa_pytorch_fallback(
 # UNIFIED DISPATCHER
 # ===========================================================================
 
+
 def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
     """
     Unified router that executes high-performance Triton kernels when supported,
@@ -452,10 +503,13 @@ def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
     """
     if kernel_name == "linear_attn":
         from framework.core.triton_kernels.linear_attn import fwd, is_supported
+
         q, k, v = args[0], args[1], args[2]
         head_dim = q.shape[-1]
         seq_len = q.shape[-2]
-        suitable, reason = check_triton_suitability(q, kernel_name, head_dim=head_dim, seq_len=seq_len)
+        suitable, reason = check_triton_suitability(
+            q, kernel_name, head_dim=head_dim, seq_len=seq_len
+        )
         if suitable and is_supported(q, k, v, **kwargs):
             try:
                 return fwd(q, k, v, **kwargs)
@@ -471,10 +525,13 @@ def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
 
     elif kernel_name == "sparse_attn":
         from framework.core.triton_kernels.sparse_attn import fwd, is_supported
+
         q, k, v = args[0], args[1], args[2]
         head_dim = q.shape[-1]
         seq_len = q.shape[-2]
-        suitable, reason = check_triton_suitability(q, kernel_name, head_dim=head_dim, seq_len=seq_len)
+        suitable, reason = check_triton_suitability(
+            q, kernel_name, head_dim=head_dim, seq_len=seq_len
+        )
         if suitable and is_supported(q, k, v, **kwargs):
             try:
                 return fwd(q, k, v, **kwargs)
@@ -490,6 +547,7 @@ def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
 
     elif kernel_name == "low_rank":
         from framework.core.triton_kernels.low_rank import fwd, is_supported
+
         kw = dict(kwargs)
         x = args[0]
         U = args[1] if len(args) > 1 else kw.pop("U", None)
@@ -511,6 +569,7 @@ def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
 
     elif kernel_name == "state_update":
         from framework.core.triton_kernels.state_update import fwd, is_supported
+
         kw = dict(kwargs)
         u = args[0]
         delta = args[1] if len(args) > 1 else kw.pop("delta", None)
@@ -534,6 +593,7 @@ def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
 
     elif kernel_name == "gqa":
         from framework.core.triton_kernels.gqa import fwd, is_supported
+
         kw = dict(kwargs)
         k = args[0]
         v = args[1]

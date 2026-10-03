@@ -10,17 +10,9 @@ Provides high-performance fused GPU kernels with transparent PyTorch CPU/CUDA fa
   - gqa: Grouped Query Attention head expansion
   - selective_scan: Triton-accelerated selective scan for Mamba-1
 """
+
 from __future__ import annotations
 
-from framework.core.triton_kernels._common import (
-    HAS_TRITON,
-    triton_dispatch,
-    linear_attn_pytorch_fallback,
-    sparse_attn_pytorch_fallback,
-    low_rank_pytorch_fallback,
-    state_update_pytorch_fallback,
-    gqa_pytorch_fallback,
-)
 from framework.core.triton_kernels import (
     gqa,
     linear_attn,
@@ -28,10 +20,21 @@ from framework.core.triton_kernels import (
     sparse_attn,
     state_update,
 )
+from framework.core.triton_kernels._common import (
+    HAS_TRITON,
+    gqa_pytorch_fallback,
+    linear_attn_pytorch_fallback,
+    low_rank_pytorch_fallback,
+    sparse_attn_pytorch_fallback,
+    state_update_pytorch_fallback,
+    triton_dispatch,
+)
+
 try:
     from framework.core.triton_kernels.softplus import softplus
 except Exception:
     import torch.nn.functional as F
+
     softplus = F.softplus
 
 try:

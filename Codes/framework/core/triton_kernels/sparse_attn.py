@@ -9,13 +9,13 @@ Supports:
   - Online safe softmax reduction in GPU SRAM
   - Full autograd integration and fallback handling.
 """
+
 from __future__ import annotations
 
 import math
 from typing import Any
 
 import torch
-
 from framework.core.triton_kernels._common import (
     HAS_TRITON,
     check_triton_suitability,
@@ -28,12 +28,27 @@ if HAS_TRITON:
 
     @triton.jit
     def _triton_block_sparse_fwd_kernel(
-        Q_ptr, K_ptr, V_ptr, Mask_ptr, Out_ptr,
-        stride_qbh, stride_qn, stride_qd,
-        stride_kbh, stride_kn, stride_kd,
-        stride_vbh, stride_vn, stride_vd,
-        stride_obh, stride_on, stride_od,
-        stride_mb, stride_mh, stride_mq, stride_mk,
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        Mask_ptr,
+        Out_ptr,
+        stride_qbh,
+        stride_qn,
+        stride_qd,
+        stride_kbh,
+        stride_kn,
+        stride_kd,
+        stride_vbh,
+        stride_vn,
+        stride_vd,
+        stride_obh,
+        stride_on,
+        stride_od,
+        _stride_mb,
+        _stride_mh,
+        stride_mq,
+        stride_mk,
         sm_scale,
         N_Q: tl.constexpr,
         N_K: tl.constexpr,
@@ -70,7 +85,9 @@ if HAS_TRITON:
             if IS_CAUSAL:
                 process_block = process_block and (k_blk_idx <= q_blk_idx)
             if HAS_MASK:
-                mask_val = tl.load(Mask_ptr + q_blk_idx * stride_mq + k_blk_idx * stride_mk)
+                mask_val = tl.load(
+                    Mask_ptr + q_blk_idx * stride_mq + k_blk_idx * stride_mk
+                )
                 process_block = process_block and (mask_val != 0)
 
             if process_block:
@@ -78,8 +95,12 @@ if HAS_TRITON:
                 offs_k = k_start + tl.arange(0, BLOCK_SIZE)
                 mask_k = offs_k < N_K
 
-                k_ptrs = k_base + (offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd)
-                v_ptrs = v_base + (offs_k[:, None] * stride_vn + offs_d[None, :] * stride_vd)
+                k_ptrs = k_base + (
+                    offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+                )
+                v_ptrs = v_base + (
+                    offs_k[:, None] * stride_vn + offs_d[None, :] * stride_vd
+                )
 
                 k = tl.load(k_ptrs, mask=mask_k[:, None], other=0.0)
                 v = tl.load(v_ptrs, mask=mask_k[:, None], other=0.0)
@@ -89,7 +110,11 @@ if HAS_TRITON:
 
                 if IS_CAUSAL:
                     causal_cond = offs_q[:, None] >= offs_k[None, :]
-                    s = tl.where(causal_cond & mask_q[:, None] & mask_k[None, :], s, float("-inf"))
+                    s = tl.where(
+                        causal_cond & mask_q[:, None] & mask_k[None, :],
+                        s,
+                        float("-inf"),
+                    )
                 else:
                     s = tl.where(mask_q[:, None] & mask_k[None, :], s, float("-inf"))
 
@@ -106,7 +131,9 @@ if HAS_TRITON:
 
         # Normalize output
         out = acc / (l_prev[:, None] + 1e-6)
-        out_ptrs = out_base + (offs_q[:, None] * stride_on + offs_d[None, :] * stride_od)
+        out_ptrs = out_base + (
+            offs_q[:, None] * stride_on + offs_d[None, :] * stride_od
+        )
         tl.store(out_ptrs, out.to(Out_ptr.dtype.element_ty), mask=mask_q[:, None])
 
 
@@ -147,14 +174,31 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
         grid = (BH, n_q_blocks)
 
         _triton_block_sparse_fwd_kernel[grid](
-            q_flat, k_flat, v_flat, bm_flat, out,
-            q_flat.stride(0), q_flat.stride(1), q_flat.stride(2),
-            k_flat.stride(0), k_flat.stride(1), k_flat.stride(2),
-            v_flat.stride(0), v_flat.stride(1), v_flat.stride(2),
-            out.stride(0), out.stride(1), out.stride(2),
-            0, 0, stride_mq, stride_mk,
+            q_flat,
+            k_flat,
+            v_flat,
+            bm_flat,
+            out,
+            q_flat.stride(0),
+            q_flat.stride(1),
+            q_flat.stride(2),
+            k_flat.stride(0),
+            k_flat.stride(1),
+            k_flat.stride(2),
+            v_flat.stride(0),
+            v_flat.stride(1),
+            v_flat.stride(2),
+            out.stride(0),
+            out.stride(1),
+            out.stride(2),
+            0,
+            0,
+            stride_mq,
+            stride_mk,
             sm_scale,
-            N_Q=N_Q, N_K=N_K, D=D,
+            N_Q=N_Q,
+            N_K=N_K,
+            D=D,
             BLOCK_SIZE=block_size,
             HAS_MASK=has_mask,
             IS_CAUSAL=is_causal,
@@ -175,13 +219,17 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
 
         with torch.enable_grad():
             out = sparse_attn_pytorch_fallback(
-                q_req, k_req, v_req,
+                q_req,
+                k_req,
+                v_req,
                 block_mask=block_mask,
                 block_size=ctx.block_size,
                 is_causal=ctx.is_causal,
                 eps=ctx.eps,
             )
-            grads = torch.autograd.grad(out, [q_req, k_req, v_req], grad_out, retain_graph=False)
+            grads = torch.autograd.grad(
+                out, [q_req, k_req, v_req], grad_out, retain_graph=False
+            )
 
         g_q = grads[0] if ctx.needs_input_grad[0] else None
         g_k = grads[1] if ctx.needs_input_grad[1] else None
@@ -189,11 +237,15 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
         return g_q, g_k, g_v, None, None, None, None
 
 
-def is_supported(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, **kwargs: Any) -> bool:
+def is_supported(
+    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, **kwargs: Any
+) -> bool:
     """Check whether block-sparse attention can run on the Triton kernel."""
     head_dim = q.shape[-1]
     seq_len = q.shape[-2]
-    suitable, _ = check_triton_suitability(q, "sparse_attn", head_dim=head_dim, seq_len=seq_len)
+    suitable, _ = check_triton_suitability(
+        q, "sparse_attn", head_dim=head_dim, seq_len=seq_len
+    )
     return suitable
 
 
@@ -210,7 +262,14 @@ def fwd(
     """Forward entrypoint for fused Triton block-sparse attention."""
     if not is_supported(q, k, v, **kwargs):
         return sparse_attn_pytorch_fallback(
-            q, k, v, block_mask=block_mask, block_size=block_size, is_causal=is_causal, eps=eps, **kwargs
+            q,
+            k,
+            v,
+            block_mask=block_mask,
+            block_size=block_size,
+            is_causal=is_causal,
+            eps=eps,
+            **kwargs,
         )
     return _TritonSparseAttnAutogradFunction.apply(
         q, k, v, block_mask, block_size, is_causal, eps
@@ -234,8 +293,14 @@ def bwd(
     v_req = v.detach().requires_grad_(True)
     with torch.enable_grad():
         out = fwd(
-            q_req, k_req, v_req,
-            block_mask=block_mask, block_size=block_size, is_causal=is_causal, eps=eps, **kwargs
+            q_req,
+            k_req,
+            v_req,
+            block_mask=block_mask,
+            block_size=block_size,
+            is_causal=is_causal,
+            eps=eps,
+            **kwargs,
         )
         g_q, g_k, g_v = torch.autograd.grad(out, [q_req, k_req, v_req], grad_out)
     return g_q, g_k, g_v

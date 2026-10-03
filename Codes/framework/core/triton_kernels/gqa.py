@@ -5,12 +5,12 @@ Triton Grouped Query Attention (GQA) Head Expansion Kernel.
 Efficiently repeats KV heads along the head dimension for multi-query and grouped-query attention:
   (k, v) with num_kv_heads -> (k_expanded, v_expanded) with num_heads
 """
+
 from __future__ import annotations
 
 from typing import Any
 
 import torch
-
 from framework.core.triton_kernels._common import (
     HAS_TRITON,
     check_triton_suitability,
@@ -23,10 +23,20 @@ if HAS_TRITON:
 
     @triton.jit
     def _triton_gqa_expand_kernel(
-        In_ptr, Out_ptr,
-        stride_in_b, stride_in_h, stride_in_n, stride_in_d,
-        stride_out_b, stride_out_h, stride_out_n, stride_out_d,
-        B, H_OUT, N, D,
+        In_ptr,
+        Out_ptr,
+        stride_in_b,
+        stride_in_h,
+        stride_in_n,
+        stride_in_d,
+        stride_out_b,
+        stride_out_h,
+        stride_out_n,
+        stride_out_d,
+        B,
+        _H_OUT,
+        N,
+        D,
         NUM_GROUPS: tl.constexpr,
         BLOCK_D: tl.constexpr,
     ):
@@ -39,14 +49,28 @@ if HAS_TRITON:
         offs_d = tl.arange(0, BLOCK_D)
         mask_d = offs_d < D
 
-        in_ptrs = In_ptr + b_id * stride_in_b + h_in_id * stride_in_h + n_id * stride_in_n + offs_d * stride_in_d
+        in_ptrs = (
+            In_ptr
+            + b_id * stride_in_b
+            + h_in_id * stride_in_h
+            + n_id * stride_in_n
+            + offs_d * stride_in_d
+        )
         vals = tl.load(in_ptrs, mask=mask_d, other=0.0)
 
-        out_ptrs = Out_ptr + b_id * stride_out_b + h_out_id * stride_out_h + n_id * stride_out_n + offs_d * stride_out_d
+        out_ptrs = (
+            Out_ptr
+            + b_id * stride_out_b
+            + h_out_id * stride_out_h
+            + n_id * stride_out_n
+            + offs_d * stride_out_d
+        )
         tl.store(out_ptrs, vals, mask=mask_d)
 
 
-def is_supported(k: torch.Tensor, v: torch.Tensor, num_kv_heads: int, num_heads: int, **kwargs: Any) -> bool:
+def is_supported(
+    k: torch.Tensor, v: torch.Tensor, num_kv_heads: int, num_heads: int, **kwargs: Any
+) -> bool:
     """Check whether GQA expansion can run on the Triton kernel."""
     suitable, _ = check_triton_suitability(k, "gqa")
     if not suitable or not v.is_cuda:
@@ -80,18 +104,38 @@ def fwd(
     grid = (B, num_heads, N)
 
     _triton_gqa_expand_kernel[grid](
-        k, k_out,
-        k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-        k_out.stride(0), k_out.stride(1), k_out.stride(2), k_out.stride(3),
-        B, num_heads, N, D,
+        k,
+        k_out,
+        k.stride(0),
+        k.stride(1),
+        k.stride(2),
+        k.stride(3),
+        k_out.stride(0),
+        k_out.stride(1),
+        k_out.stride(2),
+        k_out.stride(3),
+        B,
+        num_heads,
+        N,
+        D,
         NUM_GROUPS=n_rep,
         BLOCK_D=block_d,
     )
     _triton_gqa_expand_kernel[grid](
-        v, v_out,
-        v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-        v_out.stride(0), v_out.stride(1), v_out.stride(2), v_out.stride(3),
-        B, num_heads, N, D,
+        v,
+        v_out,
+        v.stride(0),
+        v.stride(1),
+        v.stride(2),
+        v.stride(3),
+        v_out.stride(0),
+        v_out.stride(1),
+        v_out.stride(2),
+        v_out.stride(3),
+        B,
+        num_heads,
+        N,
+        D,
         NUM_GROUPS=n_rep,
         BLOCK_D=block_d,
     )

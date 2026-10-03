@@ -10,12 +10,12 @@ Used by:
   - SVD-LLM, ASVD, Direct SVD, DOBI SVD, Frandi
   - Triton SVD Linear Attention low-rank projections
 """
+
 from __future__ import annotations
 
 from typing import Any
 
 import torch
-
 from framework.core.triton_kernels._common import (
     HAS_TRITON,
     check_triton_suitability,
@@ -28,11 +28,19 @@ if HAS_TRITON:
 
     @triton.jit
     def _triton_gemm_bias_kernel(
-        A_ptr, B_ptr, Bias_ptr, C_ptr,
-        M, N, K,
-        stride_am, stride_ak,
-        stride_bk, stride_bn,
-        stride_cm, stride_cn,
+        A_ptr,
+        B_ptr,
+        Bias_ptr,
+        C_ptr,
+        M,
+        N,
+        K,
+        stride_am,
+        stride_ak,
+        stride_bk,
+        stride_bn,
+        stride_cm,
+        stride_cn,
         BLOCK_M: tl.constexpr,
         BLOCK_N: tl.constexpr,
         BLOCK_K: tl.constexpr,
@@ -100,12 +108,22 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
             triton.cdiv(Rank, 64),
         )
         _triton_gemm_bias_kernel[grid_z](
-            x_2d, V_mat, V_mat, z,
-            M, Rank, D_in,
-            x_2d.stride(0), x_2d.stride(1),
-            V_mat.stride(0), V_mat.stride(1),
-            z.stride(0), z.stride(1),
-            BLOCK_M=64, BLOCK_N=64, BLOCK_K=32,
+            x_2d,
+            V_mat,
+            V_mat,
+            z,
+            M,
+            Rank,
+            D_in,
+            x_2d.stride(0),
+            x_2d.stride(1),
+            V_mat.stride(0),
+            V_mat.stride(1),
+            z.stride(0),
+            z.stride(1),
+            BLOCK_M=64,
+            BLOCK_N=64,
+            BLOCK_K=32,
             HAS_BIAS=False,
         )
 
@@ -118,12 +136,22 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
         has_bias = bias is not None
         bias_t = bias.contiguous() if has_bias else z
         _triton_gemm_bias_kernel[grid_y](
-            z, U_mat, bias_t, y,
-            M, D_out, Rank,
-            z.stride(0), z.stride(1),
-            U_mat.stride(0), U_mat.stride(1),
-            y.stride(0), y.stride(1),
-            BLOCK_M=64, BLOCK_N=64, BLOCK_K=32,
+            z,
+            U_mat,
+            bias_t,
+            y,
+            M,
+            D_out,
+            Rank,
+            z.stride(0),
+            z.stride(1),
+            U_mat.stride(0),
+            U_mat.stride(1),
+            y.stride(0),
+            y.stride(1),
+            BLOCK_M=64,
+            BLOCK_N=64,
+            BLOCK_K=32,
             HAS_BIAS=has_bias,
         )
 
@@ -182,7 +210,13 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
         return g_x, g_U, g_V, g_bias
 
 
-def is_supported(x: torch.Tensor, U: torch.Tensor, V: torch.Tensor, bias: torch.Tensor | None = None, **kwargs: Any) -> bool:
+def is_supported(
+    x: torch.Tensor,
+    U: torch.Tensor,
+    V: torch.Tensor,
+    bias: torch.Tensor | None = None,
+    **kwargs: Any,
+) -> bool:
     """Check whether low-rank projection can run on the Triton kernel."""
     suitable, _ = check_triton_suitability(x, "low_rank")
     return suitable and U.is_cuda and V.is_cuda
