@@ -1,5 +1,5 @@
 """
-framework.results_saver.backends.huggingface
+neuralops.results_saver.backends.huggingface
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Optional Hugging Face Hub upload backend for ResultsSaver.
 
