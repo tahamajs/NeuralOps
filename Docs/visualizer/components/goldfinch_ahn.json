@@ -1,19 +1,19 @@
 {
   "id": "goldfinch_ahn",
-  "name": "GoldFinch-AHN: Adaptive Hybrid Network Combining Sliding Window and Gated D",
+  "name": "GoldFinch-AHN: Adaptive Hybrid Network \u2014 Sliding Window + Gated Recurrent M",
   "file": "Codes/framework/attentions/goldfinch_ahn.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "GoldFinch-AHN: Adaptive Hybrid Network Combining Sliding Window and Gated DeltaNet Memory (Hardened).  Combines short-term multi-head sliding-window attention with long-term GatedDeltaNet recurrent memory via a learned input-dependent dynamic gating mechanism initialized for stable representation transfer.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, Distil",
+  "description": "GoldFinch-AHN: Adaptive Hybrid Network \u2014 Sliding Window + Gated Recurrent Memory. Production-Hardened (v2).",
   "classes": [
     "LoRALinear",
-    "GatedDeltaNetLayer",
+    "GatedRecurrentMemory",
     "GoldFinchAHNBlock"
   ],
-  "methods_count": 28,
-  "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
+  "methods_count": 33,
+  "math_latex": "\\mathbf{Q} = \\mathbf{X}\\mathbf{W}_Q, \\quad \\mathbf{K} = \\mathbf{X}\\mathbf{W}_K, \\quad \\mathbf{V} = \\mathbf{X}\\mathbf{W}_V",
   "components": [
     {
       "id": "v_factor",

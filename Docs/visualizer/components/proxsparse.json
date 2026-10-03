@@ -6,7 +6,7 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "ProxSparse: Proximal Gradient Regularized Structured & Semi-Structured Sparsity. Registered in COMPRESSOR_REGISTRY as 'proxsparse', 'proxsparse_pruner', 'proxsparse_compressor', 'proxsparse_factory', 'proxsparse_pruner_factory', and 'proxsparse_compressor_factory'.  Mathematical Formulation: 77850\\min_W \\frac{1}{2} \\|W - W_0\\|_F^2 + \\lambda \\|W\\|_1 + \\mathcal{I}_{\\mathcal{S}}(W)77850  Proximal Ope",
+  "description": "ProxSparse: Proximal Gradient Regularized Structured & Semi-Structured Sparsity.  Registered in COMPRESSOR_REGISTRY as 'proxsparse', 'proxsparse_pruner', 'proxsparse_compressor', 'proxsparse_factory', ...  Mathematical Formulation:     min_W  0.5 * ||W - W_0||_F^2 + lambda * ||W||_1 + I_S(W)  where:   - W_0 is the original (pretrained) weight,   - ||.||_1 is the L1 regularizer,   - I_S(W) is the i",
   "classes": [
     "ProxSparsePrunedLoRALinear",
     "ProxSparsePruner"

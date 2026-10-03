@@ -1,17 +1,18 @@
 {
   "id": "moe_deltakv_paged",
-  "name": "MoE-DeltaKV-Paged Hybrid Attention Module.",
+  "name": "MoE-DeltaKV-Paged Hybrid Attention \u2014 Production-Hardened v2.",
   "file": "Codes/framework/attentions/moe_deltakv_paged.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "MoE-DeltaKV-Paged Hybrid Attention Module. Combines Mixture-of-Block-Attention (MoBA) with Paged Delta-KV cache compression.  Fixes: - Straight-Through Estimator (STE) for differentiable 4-bit uniform and SVD quantization. - Non-causal bidirectional attention for encoder architectures (DistilBERT). - CLS token preservation in block 0. - Pretrained weight initialization via copy_weights.",
+  "description": "MoE-DeltaKV-Paged Hybrid Attention \u2014 Production-Hardened v2.  Combines:   1. Mixture-of-Block-Attention (MoBA) with learnable page routing.   2. Paged Delta-KV temporal compression with adaptive quantization.   3. Optional low-rank factorization of temporal deltas.  Fixes (v2):   MDP-FIX-01  **Adaptive page_size**: if `page_size >= seq_len`, paging is               disabled (falls back to full att",
   "classes": [
     "LoRALinear",
-    "MoEDeltaKVPagedAttention"
+    "MoEDeltaKVPagedAttention",
+    "_Cfg"
   ],
-  "methods_count": 14,
+  "methods_count": 25,
   "math_latex": "\\Delta \\mathbf{K}_t = \\mathbf{K}_t - \\mathbf{K}_{t-1}, \\quad \\forall t \\in \\{1, \\dots, N-1\\}",
   "components": [
     {

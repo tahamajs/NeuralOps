@@ -1,12 +1,12 @@
 {
   "id": "nli_softmax",
-  "name": "NLI Softmax approximation \u2013 a fast, quantisation\u2011friendly softmax.",
+  "name": "NLI Softmax approximation \u2013 a fast, quantisation-friendly softmax.",
   "file": "Codes/framework/compression_engine/nli_softmax.py",
   "type": "Compression Engine",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "NLI Softmax approximation \u2013 a fast, quantisation\u2011friendly softmax. Uses standard forward softmax, simplified sigmoid\u2011based backward.",
+  "description": "NLI Softmax approximation \u2013 a fast, quantisation-friendly softmax. Uses standard forward softmax, simplified sigmoid-based backward.",
   "classes": [
     "NLISoftmaxFunction",
     "NLISoftmax",
@@ -14,7 +14,7 @@
     "NLISoftmaxAttention",
     "NLISoftmaxCompressor"
   ],
-  "methods_count": 25,
+  "methods_count": 28,
   "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
   "components": [
     {

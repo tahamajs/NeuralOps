@@ -11,7 +11,7 @@
     "DecayGatedLinearAttention"
   ],
   "methods_count": 2,
-  "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
+  "math_latex": "Q = (X U_Q) V_Q^T, \\quad K = (X U_K) V_K^T, \\quad V = (X U_V) V_V^T",
   "components": [
     {
       "id": "v_factor",

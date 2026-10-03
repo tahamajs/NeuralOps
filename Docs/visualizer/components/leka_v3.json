@@ -6,12 +6,12 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "LEKAv3: Linear-time Efficient Kernel Attention with Value-Scored Landmarks (Hardened).  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base weights - GQA with repeat_kv - RoPE position embeddings - Exact causal masking for decoders - Nested encoder bypass - Frobenius norm verification (>= 1e-4) - Safe injection",
+  "description": "LEKAv3: Linear-time Efficient Kernel Attention with Value-Scored Landmarks (Corrected O(N)).  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - FactorizedLoRALinear (parameter-reducing) with frozen base weights - GQA with repeat_kv - RoPE position embeddings - Exact causal masking for decoders - Chunk-wise Landmark Selection (Solves Causal Starvatio",
   "classes": [
-    "LoRALinear",
+    "FactorizedLoRALinear",
     "LEKAV3Attention"
   ],
-  "methods_count": 15,
+  "methods_count": 26,
   "math_latex": "\\mathbf{s} = \\operatorname{MLP}_{\\text{scorer}}(\\mathbf{V}) = \\mathbf{W}_2 \\operatorname{GELU}(\\mathbf{V} \\mathbf{W}_1 + \\mathbf{b}_1) + \\mathbf{b}_2 \\in \\mathbb{R}^{B \\times H \\times N}",
   "components": [
     {

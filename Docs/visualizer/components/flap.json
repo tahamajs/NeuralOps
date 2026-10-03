@@ -1,16 +1,16 @@
 {
   "id": "flap",
-  "name": "FLAP: Fluctuation-Based Adaptive Structured Pruning.",
+  "name": "FLAP: Fluctuation-Based Adaptive Structured Pruning (Corrected).",
   "file": "Codes/framework/compression_engine/flap.py",
   "type": "Compression Engine",
   "category": "Structured Pruning & Channel Slicing",
   "paradigm": "pruning",
   "icon": "\u2702\ufe0f",
-  "description": "FLAP: Fluctuation-Based Adaptive Structured Pruning. Registered in COMPRESSOR_REGISTRY as 'flap' and 'flap_compressor'. Production hardened for multi-architecture compatibility (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with reconstruction validation, Conv1D support, and safe fallback.",
+  "description": "FLAP: Fluctuation-Based Adaptive Structured Pruning (Corrected).  Registered in COMPRESSOR_REGISTRY as 'flap' and 'flap_compressor'. Production hardened for multi-architecture compatibility (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with reconstruction validation, Conv1D support, and safe fallback.",
   "classes": [
     "FLAPCompressor"
   ],
-  "methods_count": 9,
+  "methods_count": 10,
   "math_latex": "I(i) = \\frac{1}{N} \\sum_{t=1}^N |X_{t, i} - \\bar{X}_i| \\cdot \\|W_{:, i}\\|_2",
   "components": [
     {

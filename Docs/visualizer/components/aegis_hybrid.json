@@ -1,19 +1,19 @@
 {
   "id": "aegis_hybrid",
-  "name": "Aegis-Hybrid Attention Mechanism.",
+  "name": "Aegis-Hybrid Attention \u2014 Production-Hardened (v2).",
   "file": "Codes/framework/attentions/aegis_hybrid.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Aegis-Hybrid Attention Mechanism.  Combines low-rank factorized projections, localized sliding-window dense attention, causal/bidirectional kernelized global linear attention with token-importance pruning, and learned gating fusion.",
+  "description": "Aegis-Hybrid Attention \u2014 Production-Hardened (v2).  Combines:   1. Local sliding-window attention (chunked).   2. Optional global linear attention via FAVOR+ style kernel features.   3. Trainable LoRA adapters on top of frozen low-rank base.   4. Learnable fusion gate between local and global branches.  Fixes (v2):   AH-FIX-01  `FactorizedLinear.is_custom_attention = False`.   AH-FIX-02  `use_glob",
   "classes": [
     "AegisHybridConfig",
     "FactorizedLinear",
-    "AegisHybridAttention",
-    "DummyConfig"
+    "KernelFeatureMap",
+    "AegisHybridAttention"
   ],
-  "methods_count": 37,
+  "methods_count": 36,
   "math_latex": "O_t = \\alpha_t \\odot O_t^{\\text{local}} + (1 - \\alpha_t) \\odot O_t^{\\text{global}}",
   "components": [
     {

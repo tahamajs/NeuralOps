@@ -1,12 +1,12 @@
 {
   "id": "rala_attention",
-  "name": "Rank\u2011Augmented Linear Attention (RALA) \u2013 Production-Hardened.",
+  "name": "Rank-Augmented Linear Attention (RALA) \u2013 Corrected.",
   "file": "Codes/framework/attentions/rala_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Rank\u2011Augmented Linear Attention (RALA) \u2013 Production-Hardened.  Augments linear attention kernel maps with low-rank static head interaction matrices.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base weights - GQA with repeat_kv - RoPE position embeddings - Causal prefix scan for decoders - Nested encoder byp",
+  "description": "Rank-Augmented Linear Attention (RALA) \u2013 Corrected.  Augments linear attention kernel maps with low-rank static head interaction matrices.",
   "classes": [
     "LoRALinear",
     "RALALinearAttention"

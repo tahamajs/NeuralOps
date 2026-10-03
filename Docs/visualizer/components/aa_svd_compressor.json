@@ -1,18 +1,18 @@
 {
   "id": "aa_svd_compressor",
-  "name": "Activation-Aware Singular Value Decomposition (AASVD) Compressor.",
+  "name": "Activation-Aware SVD (AASVD) Compressor \u2014 Production-Hardened (v2).",
   "file": "Codes/framework/compression_engine/aa_svd_compressor.py",
   "type": "Compression Engine",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Activation-Aware Singular Value Decomposition (AASVD) Compressor.  Implements streaming Exponential Moving Average (EMA) activation covariance accumulation: $$C_X^{(t)} = \\beta C_X^{(t-1)} + (1 - \\beta) \\frac{1}{B} \\sum_{i=1}^B X_i^\\top X_i$$ Projects weights onto principal activation subspaces and replaces dense `nn.Linear` layers with structural low-rank factorized `SVDLinear` modules ($y = (x V",
+  "description": "Activation-Aware SVD (AASVD) Compressor \u2014 Production-Hardened (v2).  Streaming EMA activation covariance accumulation:     C_X^(t) = \u03b2\u00b7C_X^(t-1) + (1-\u03b2)\u00b7(X^T X) / B Projects weights onto principal activation subspaces and replaces dense nn.Linear/Conv1D layers with structural low-rank SVDLinear modules:     y = (x \u00b7 V^T) \u00b7 U^T + LoRA(x) + b",
   "classes": [
     "SVDLinear",
     "AASVDCompressor"
   ],
-  "methods_count": 16,
-  "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
+  "methods_count": 19,
+  "math_latex": "y = (x V^T) U^T + ((x A_{\\text{LoRA}}^T) B_{\\text{LoRA}}^T) \\cdot \\alpha_{\\text{scale}} + b",
   "components": [
     {
       "id": "v_factor",

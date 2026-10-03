@@ -1,17 +1,17 @@
 {
   "id": "gqa_attention",
-  "name": "Grouped-Query Attention (GQA).",
+  "name": "Grouped-Query Attention (GQA) \u2014 v3, rank-aware.",
   "file": "Codes/framework/attentions/gqa_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Grouped-Query Attention (GQA).  Interpolates between Multi-Head Attention (MHA) and Multi-Query Attention (MQA) by dividing $H_Q$ query heads into $G$ groups, where each group shares a single Key-Value head pair ($H_{KV} = G \\le H_Q$).",
+  "description": "Grouped-Query Attention (GQA) \u2014 v3, rank-aware.  Interpolates between Multi-Head Attention (MHA) and Multi-Query Attention (MQA) by dividing H_Q query heads into G groups, where each group shares a single Key-Value head pair (H_KV = G \u2264 H_Q).  Fixes (v3):   GQA-FIX-01  Causal mask via past_len, always applied for decoders.   GQA-FIX-02  Removed output padding/truncation hack.   GQA-FIX-03  Determi",
   "classes": [
     "LoRALinear",
     "GroupedQueryAttention"
   ],
-  "methods_count": 13,
+  "methods_count": 29,
   "math_latex": "K_{\\text{shared}} = \\text{repeat\\_interleave}(K, H_Q / H_{KV}, \\text{dim}=\\text{heads})",
   "components": [
     {

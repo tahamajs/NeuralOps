@@ -1,17 +1,17 @@
 {
   "id": "gated_delta_net",
-  "name": "Gated DeltaNet Attention Module.",
+  "name": "Gated DeltaNet Attention Module \u2014 Production-Hardened (v2).",
   "file": "Codes/framework/attentions/gated_delta_net.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Gated DeltaNet Attention Module.  Implements multi-head bidirectional/causal Delta Rule linear recurrent attention with input-dependent exponential decay gating, associative state error correction, and pretrained self-attention weight transfer.  Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA architectures: - Robust pretrained weight extraction (GPT-2 fused c_attn, R",
+  "description": "Gated DeltaNet Attention Module \u2014 Production-Hardened (v2).",
   "classes": [
     "LoRALinear",
     "GatedDeltaNet"
   ],
-  "methods_count": 30,
+  "methods_count": 33,
   "math_latex": "Q = X W_q \\in \\mathbb{R}^{B \\times L \\times D}, \\quad K = X W_k \\in \\mathbb{R}^{B \\times L \\times D}",
   "components": [
     {

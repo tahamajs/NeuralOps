@@ -1,18 +1,18 @@
 {
   "id": "adaptive_span_attention",
-  "name": "Adaptive Span Attention Module (Sukhbaatar et al., 2019).",
+  "name": "Adaptive Span Attention \u2014 Final Corrected Implementation.",
   "file": "Codes/framework/attentions/adaptive_span_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Adaptive Span Attention Module (Sukhbaatar et al., 2019).  Mathematical Formulation:     1. Query-Key Attention Scores:        $$S_{ij} = \\frac{Q_i K_j^\\top}{\\sqrt{d}}$$      2. Dynamic Per-Head Span Masking (Continuous Soft Ramp):        Let $z_h = \\sigma(\\text{logit}_h) \\cdot S_{\\max}$, and $R$ be ramp size.        $$g_{z_h}(d) = \\operatorname{clamp}\\left(\\frac{R + z_h - d}{R}, 0, 1\\right)$$",
+  "description": "Adaptive Span Attention \u2014 Final Corrected Implementation. Based on: Sukhbaatar et al., 2019 (arXiv:1905.07799)  Math:     z_h = sigmoid(logit_h) * S_max     g_{z_h}(d) = clamp((R + z_h - d) / R, 0, 1)          # FIX applied: The mask must be applied INSIDE the softmax     A = Softmax(S + log(g_z) + M)     O = (A V) W_O",
   "classes": [
     "LoRALinear",
     "IdentityOutProj",
     "AdaptiveSpanAttention"
   ],
-  "methods_count": 15,
+  "methods_count": 23,
   "math_latex": "S_{ij} = \\frac{Q_i K_j^\\top}{\\sqrt{d}}",
   "components": [
     {

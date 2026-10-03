@@ -6,12 +6,12 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "ReplaceMe: Layer Removal and Replacement with Linear Residual Block. Replaces the last N layers of a Transformer encoder or decoder with a compatible LayerNorm + Linear residual block with optional trainable LoRA fine-tuning adapters. Registered in COMPRESSOR_REGISTRY as 'replaceme', 'replaceme_compressor', and 'replaceme_factory'.",
+  "description": "ReplaceMe: Layer Removal and Replacement with Linear Residual Block.  Replaces the last N layers of a Transformer encoder or decoder with a compatible LayerNorm + Linear residual block with optional trainable LoRA fine-tuning adapters.  Registered in COMPRESSOR_REGISTRY as 'replaceme', 'replaceme_compressor', and 'replaceme_factory'.",
   "classes": [
     "ReplacementBlock",
     "ReplaceMeCompressor"
   ],
-  "methods_count": 7,
+  "methods_count": 8,
   "math_latex": "\\text{CKA}(X_l, X_{l+1}) = \\frac{\\|X_l^\\top X_{l+1}\\|_F^2}{\\|X_l^\\top X_l\\|_F \\|X_{l+1}^\\top X_{l+1}\\|_F}",
   "components": [
     {

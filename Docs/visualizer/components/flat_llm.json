@@ -1,16 +1,17 @@
 {
   "id": "flat_llm",
-  "name": "FLAT-LLM: Activation-Aware Structured Dimension & Neuron Pruning via Eigen-",
+  "name": "FLAT-LLM: Activation-Aware Structured Dimension & Neuron Pruning.",
   "file": "Codes/framework/compression_engine/flat_llm.py",
   "type": "Compression Engine",
   "category": "Structured Pruning & Channel Slicing",
   "paradigm": "pruning",
   "icon": "\u2702\ufe0f",
-  "description": "FLAT-LLM: Activation-Aware Structured Dimension & Neuron Pruning via Eigen-Decomposition. Registered in COMPRESSOR_REGISTRY as 'flat_llm' and 'flat_llm_compressor'. Production hardened for multi-architecture compatibility (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with reconstruction validation, Conv1D support, and safe fallback.",
+  "description": "FLAT-LLM: Activation-Aware Structured Dimension & Neuron Pruning.  Registered as 'flat_llm', 'flat_llm_compressor'.",
   "classes": [
+    "PrunedChannelLinear",
     "FLATLLMCompressor"
   ],
-  "methods_count": 8,
+  "methods_count": 13,
   "math_latex": "\\min_{W_r} \\text{Tr}((W - W_r) R_{XX} (W - W_r)^\\top)",
   "components": [
     {

@@ -16,7 +16,7 @@
     "SpectraformerRectify",
     "NEXUSAttention"
   ],
-  "methods_count": 29,
+  "methods_count": 32,
   "math_latex": "\\mathbf{Q}_{\\text{sample}} = \\mathbf{Q}[:, :, ::\\sigma, :], \\quad \\mathbf{K}_{\\text{sample}} = \\mathbf{K}[:, :, ::\\sigma, :]",
   "components": [
     {

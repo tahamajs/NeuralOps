@@ -6,7 +6,7 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "NMF: Non-negative Matrix Factorization Linear Compressor. Registered in COMPRESSOR_REGISTRY as 'nmf'.",
+  "description": "NMF: Non-negative Matrix Factorization Linear Compressor.  Registered in COMPRESSOR_REGISTRY as 'nmf', 'nmf_compressor'.",
   "classes": [
     "NMFLinear",
     "NMFCompressor"

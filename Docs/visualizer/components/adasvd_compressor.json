@@ -1,16 +1,17 @@
 {
   "id": "adasvd_compressor",
-  "name": "AdaSVD: Adaptive SVD with per-layer importance allocation and iterative ALS",
+  "name": "AdaSVD: Adaptive SVD with Activation Whitening, Two-Sided Weighted ALS,",
   "file": "Codes/framework/compression_engine/adasvd_compressor.py",
   "type": "Compression Engine",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "AdaSVD: Adaptive SVD with per-layer importance allocation and iterative ALS refinement. Registered as 'adasvd'. Production hardened with reconstruction validation, fallback, Conv1D support, rank reduction bounds, and comprehensive per-layer stats.",
+  "description": "AdaSVD: Adaptive SVD with Activation Whitening, Two-Sided Weighted ALS, and Mean-Shift Bias Absorption.  Registered as 'adasvd', 'adasvd_compressor', 'adasvd_factory', 'adasvd_compressor_factory'.  Key components:   1. Mean-Shift Bias Absorption:        b_new = b + W @ mu_x        y = A B (x - mu_x) + b_new   2. Two-Sided Weighted ALS:        minimize || D^{1/2} (W - AB) C^{1/2} ||_F^2        with",
   "classes": [
+    "FusedQKVSVDLinear",
     "AdaSVDCompressor"
   ],
-  "methods_count": 7,
+  "methods_count": 25,
   "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
   "components": [
     {

@@ -1,17 +1,17 @@
 {
   "id": "regla_attention",
-  "name": "Refined Gated Linear Attention (ReGLA) \u2013 Production-Hardened.",
+  "name": "Refined Gated Linear Attention (ReGLA) \u2013 Production-Hardened (v2).",
   "file": "Codes/framework/attentions/regla_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Refined Gated Linear Attention (ReGLA) \u2013 Production-Hardened.  Combines element-wise key gating, normalized linear attention kernel evaluation, and short-range depthwise 1D convolutions without O(L) memory explosion. Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base weights - GQA with repeat_kv - RoPE positio",
+  "description": "Refined Gated Linear Attention (ReGLA) \u2013 Production-Hardened (v2).",
   "classes": [
     "LoRALinear",
     "ReGLAAttention"
   ],
-  "methods_count": 15,
+  "methods_count": 12,
   "math_latex": "Q = X W_Q, \\quad K = X W_K, \\quad V = X W_V, \\quad G = X W_G",
   "components": [
     {

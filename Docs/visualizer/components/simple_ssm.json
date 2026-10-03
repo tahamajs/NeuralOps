@@ -1,17 +1,16 @@
 {
   "id": "simple_ssm",
-  "name": "Simple State Space Model (SimpleSSM).",
+  "name": "Simple SSM: Simplified State Space Attention Block.",
   "file": "Codes/framework/attentions/simple_ssm.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Simple State Space Model (SimpleSSM).  Lightweight bidirectional/causal selective state space recurrence block featuring symmetric depthwise 1D convolution, input-dependent discretization timescales (Delta t), diagonal state transitions (A), multiplicative gating, and pretrained weight transfer. Hardened for production use across diverse transformer architectures: - DistilBERT (Flat MHA) - RoBERTa",
+  "description": "Simple SSM: Simplified State Space Attention Block.  Production-hardened across DistilBERT, RoBERTa, GPT-2, and Qwen architectures. Supports: - Multi-architecture weight copy (GPT-2, RoBERTa/BERT nested, DistilBERT, Qwen/LLaMA) - Trainable LoRA adapters with frozen base weights - GQA repeating with repeat_kv - Rotary position embeddings (RoPE) - Forward / bidirectional state-space scan - Complete",
   "classes": [
-    "LoRALinear",
     "SimpleSSM"
   ],
-  "methods_count": 10,
+  "methods_count": 7,
   "math_latex": "[X_{\\text{ssm}}, Z] = \\operatorname{chunk}(X W_{\\text{in}}, 2) \\in \\mathbb{R}^{B \\times L \\times D}",
   "components": [
     {

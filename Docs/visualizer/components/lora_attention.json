@@ -1,17 +1,17 @@
 {
   "id": "lora_attention",
-  "name": "LoRA Parameter-Efficient Fine-Tuning Attention Module.",
+  "name": "LoRA Parameter-Efficient Fine-Tuning Attention Module (v2, Production-Harde",
   "file": "Codes/framework/attentions/lora_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "LoRA Parameter-Efficient Fine-Tuning Attention Module.  Replaces standard query, key, value, and output linear projections with frozen pretrained base weights and trainable low-rank residual adapters, with multi-architecture weight transfer, GQA, RoPE, and causal decoding.",
+  "description": "LoRA Parameter-Efficient Fine-Tuning Attention Module (v2, Production-Hardened).  Replaces standard Q/K/V/O projections with frozen pretrained base weights plus trainable low-rank residual adapters, with multi-architecture weight transfer, GQA, RoPE, and causal decoding support.  This is intentionally an attention-swap module, NOT a compressor:   - Base weights are frozen.   - Only LoRA A/B are tr",
   "classes": [
     "LoRALinear",
     "LoRAAttention"
   ],
-  "methods_count": 11,
+  "methods_count": 22,
   "math_latex": "y = W_0 x + \\frac{\\alpha}{r} B A x",
   "components": [
     {

@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 from collections import defaultdict
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 PAPERS_DIR = PROJECT_ROOT / "paper" / "PerModulePaper"
 RESULTS_DIR = PROJECT_ROOT / "results"
 CSV_OUT = PROJECT_ROOT / "paper" / "_ALL_MODULES_ANALYSIS.csv"

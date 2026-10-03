@@ -6,11 +6,11 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Swift-SVD: fast closed-form truncated SVD with symmetric square-root singular value distribution. Registered as 'swift_svd'. Production-hardened with: - Relative Frobenius reconstruction error validation (err <= max_error) - Adaptive rank retries stepping up rank if error threshold is exceeded - Safe fallback preserving original layer on failure (fallback_to_original default True) - Accurate Conv1",
+  "description": "Swift-SVD: fast closed-form truncated SVD with symmetric square-root singular value distribution. Registered as 'swift_svd'.",
   "classes": [
     "SwiftSVDCompressor"
   ],
-  "methods_count": 7,
+  "methods_count": 8,
   "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
   "components": [
     {

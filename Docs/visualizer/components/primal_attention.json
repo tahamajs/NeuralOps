@@ -6,7 +6,7 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Primal Attention: Self-Attention through Asymmetric Kernel SVD in Primal Representation \u2013 Production-Hardened.  Nystr\u00f6m-inspired low-rank landmark approximation of self-attention using segment pooling landmarks and iterative Schulz pseudoinverse refinement.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base w",
+  "description": "Primal Attention: Self-Attention through Asymmetric Kernel SVD in Primal Representation.  Nystr\u00f6m-inspired low-rank landmark approximation of self-attention using segment pooling landmarks and iterative Schulz pseudoinverse refinement.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base weights - GQA with repe",
   "classes": [
     "LoRALinear",
     "PrimalAttention"

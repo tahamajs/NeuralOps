@@ -1,43 +1,43 @@
 {
   "id": "kmeans_quantize",
-  "name": "KMeans-based weight clustering quantizer with STE. Registered as 'kmeans' a",
+  "name": "KMeans-based weight clustering quantizer with Straight-Through Estimator.",
   "file": "Codes/framework/compression_engine/kmeans_quantize.py",
   "type": "Compression Engine",
-  "category": "Quantization & Mixed Precision",
-  "paradigm": "quant",
-  "icon": "\ud83d\udc8e",
-  "description": "KMeans-based weight clustering quantizer with STE. Registered as 'kmeans' and 'kmeans_quantize'.",
+  "category": "Low-Rank SVD & Factorization",
+  "paradigm": "svd",
+  "icon": "\u26a1",
+  "description": "KMeans-based weight clustering quantizer with Straight-Through Estimator.  Registered as 'kmeans_class', 'kmeans_quantize_class', 'kmeans_compressor_class',               'kmeans', 'kmeans_quantize', 'kmeans_factory', 'kmeans_quantize_factory'.",
   "classes": [
     "KMeansSTEFunction",
     "KMeansLinear",
     "KMeansCompressor"
   ],
-  "methods_count": 14,
-  "math_latex": "W = S \\odot (Q_W - Z), \\quad Q_W \\in \\{-8, \\dots, 7\\}, \\quad S = \\text{scale}",
+  "methods_count": 19,
+  "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
   "components": [
     {
-      "id": "scale_quant",
-      "name": "Channel / Block Scales (FP8 / INT4)",
-      "role": "Dynamic Range Quantization",
-      "shape_transform": "[d_{out} // block_size]",
-      "color": "#a855f7",
-      "math_latex": "s = \\frac{\\max(|W|)}{2^{b-1} - 1}, \\quad b=4"
+      "id": "v_factor",
+      "name": "Factor V (Low-Rank Subspace Projection)",
+      "role": "Projection to Rank r",
+      "shape_transform": "[r \u00d7 d_in]",
+      "color": "#3acbb8",
+      "math_latex": "z_t = x_t V_r^\\top, \\quad V_r \\in \\mathbb{R}^{r \\times d_{in}}"
     },
     {
-      "id": "packed_weight",
-      "name": "Packed Low-Bit Integer Weight Matrix",
-      "role": "4-bit Memory Footprint",
-      "shape_transform": "[d_{out} \u00d7 d_{in} // 2]",
-      "color": "#c084fc",
-      "math_latex": "q = \\text{clamp}\\left(\\left\\lfloor \\frac{W}{s} \\right\\rceil, -8, 7\\right)"
+      "id": "u_factor",
+      "name": "Factor U (Full-Rank Expansion Projection)",
+      "role": "Expansion to Output Space",
+      "shape_transform": "[d_out \u00d7 r]",
+      "color": "#2dd4bf",
+      "math_latex": "y_t = z_t (\\Sigma_r U_r^\\top) + b, \\quad U_r \\in \\mathbb{R}^{d_{out} \\times r}"
     },
     {
-      "id": "dequant_kernel",
-      "name": "Fused GEMM Dequantization Kernel",
-      "role": "Zero-Overhead Accumulation",
-      "shape_transform": "TensorCore Fused",
-      "color": "#e9d5ff",
-      "math_latex": "\\hat{W} = q \\times s, \\quad Y = X \\hat{W}^\\top"
+      "id": "adapter",
+      "name": "Residual LoRA / Norm Calibration",
+      "role": "Fidelity Compensation",
+      "shape_transform": "[d_out \u00d7 d_in] Residual",
+      "color": "#5eead4",
+      "math_latex": "\\Delta y_t = x_t (B A)^\\top \\cdot \\frac{\\alpha}{r}, \\quad A \\in \\mathbb{R}^{r \\times d_{in}}, \\; B \\in \\mathbb{R}^{d_{out} \\times r}"
     }
   ],
   "model_projections": {
@@ -45,29 +45,29 @@
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 1622016,
-      "savings_ratio": 4.0
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "roberta": {
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 1622016,
-      "savings_ratio": 4.0
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "gpt2": {
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 1622016,
-      "savings_ratio": 4.0
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "qwen": {
       "hidden_size": 896,
       "intermediate_size": 4864,
       "baseline_layer_params": 11124736,
-      "compressed_layer_params": 2781184,
-      "savings_ratio": 4.0
+      "compressed_layer_params": 1081344,
+      "savings_ratio": 10.29
     }
   }
 }

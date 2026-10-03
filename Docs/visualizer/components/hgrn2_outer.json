@@ -1,17 +1,17 @@
 {
   "id": "hgrn2_outer",
-  "name": "HGRN-2 Outer-Product Recurrent Linear Attention Module.",
+  "name": "HGRN-2 Outer-Product Recurrent Linear Attention \u2014 Production-Hardened v2.",
   "file": "Codes/framework/attentions/hgrn2_outer.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "HGRN-2 Outer-Product Recurrent Linear Attention Module.  Implements multi-head bidirectional/causal outer-product associative matrix memory updates with log-space bounded decay gating, denominator normalization, and pretrained weight transfer. Hardened for production use across diverse transformer architectures: - DistilBERT (Flat MHA) - RoBERTa / BERT (Nested Encoder Self-Attention) - GPT-2 (Caus",
+  "description": "HGRN-2 Outer-Product Recurrent Linear Attention \u2014 Production-Hardened v2.  Multi-head bidirectional/causal outer-product associative matrix memory updates with log-space bounded decay gating and denominator normalization.  Fixes (v2):   HGRN2-FIX-01  **Chunked cumsum scan** replaces the naive Python loop.                 Complexity drops from O(L) sequential steps to O(L/C)                 chunks.",
   "classes": [
     "LoRALinear",
     "HGRN2OuterBlock"
   ],
-  "methods_count": 12,
+  "methods_count": 22,
   "math_latex": "Q = X W_q, \\quad K = X W_k, \\quad V = X W_v",
   "components": [
     {

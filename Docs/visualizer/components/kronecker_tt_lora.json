@@ -6,12 +6,12 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Kronecker-TT-LoRA Hybrid Compression Engine Adapter.  Implements a hybrid parameter-efficient fine-tuning (PEFT) and compression mechanism by decomposing weight updates into a Kronecker product multiplied element-wise by a Tensor-Train (TT) core tensor with dynamic singular value entropy adaptation, orthogonal initialization with spectral normalization, symmetric LoRA residual bypass, and shape pa",
+  "description": "Kronecker-TT-LoRA Hybrid Compression Engine Adapter.  Decomposes weight updates as:   \u0394W = \u03b3 * ((A1 \u2297 A2) \u2299 TT(G1, G2, G3))[:out, :in] + (\u03b1/r) * (B_lora @ A_lora)  where (A1 \u2297 A2) is a Kronecker product and TT is a 3-core Tensor-Train.",
   "classes": [
     "KroneckerTTLoRALayer",
     "KroneckerTTLoRACompressor"
   ],
-  "methods_count": 18,
+  "methods_count": 19,
   "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
   "components": [
     {

@@ -1,18 +1,19 @@
 {
   "id": "bam_umoe",
-  "name": "BAM-UMoE: Unified Mixture of Experts Attention Block.",
+  "name": "BAM-UMoE: Unified Mixture of Experts Attention Block (Activation-Aware v2).",
   "file": "Codes/framework/attentions/bam_umoe.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "BAM-UMoE: Unified Mixture of Experts Attention Block.  This module implements a production-hardened Unified Mixture of Experts (UMoE) attention mechanism supporting multi-architecture deployments: DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA/Mistral (GQA + partial RoPE).  Key architectural features: 1. Robust Weight Extraction across fused Conv1D (GPT-2), nested self-attention (RoBERTa/BERT),",
+  "description": "BAM-UMoE: Unified Mixture of Experts Attention Block (Activation-Aware v2).  Combines:   1. Optional SVD factorization of Q/K/V/O for actual parameter reduction.   2. Optional Mixture-of-Experts (MoE) branch for residual refinement.   3. Cross-architecture weight transfer (DistilBERT, RoBERTa/BERT, GPT-2, Qwen/LLaMA).   4. LoRA adapters for recovery fine-tuning.  Fixes (v2):   BAM-FIX-01  `Unified",
   "classes": [
-    "LoRALinear",
+    "FactorisedLoRALinear",
     "UnifiedMoE",
-    "BAMUMoEBlock"
+    "BAMUMoEBlock",
+    "_Cfg"
   ],
-  "methods_count": 22,
+  "methods_count": 26,
   "math_latex": "\\mathbf{Q} = \\mathbf{X} \\mathbf{W}_Q, \\quad \\mathbf{K} = \\mathbf{X} \\mathbf{W}_K, \\quad \\mathbf{V}_{\\text{base}} = \\mathbf{X} \\mathbf{W}_V",
   "components": [
     {

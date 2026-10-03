@@ -1,18 +1,18 @@
 {
   "id": "jamba",
-  "name": "Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block (Producti",
+  "name": "Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block .",
   "file": "Codes/framework/attentions/jamba.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block (Production-Hardened).  Combines: - SVD-Mamba selective state space branch - Multi-Head Attention branch with GQA, RoPE, and causal masking - Expert Choice MoE branch with auxiliary loss tracking  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen ba",
+  "description": "Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block .",
   "classes": [
     "LoRALinear",
     "SVDMambaSub",
     "Jamba2Block"
   ],
-  "methods_count": 15,
+  "methods_count": 28,
   "math_latex": "\\mathbf{X}_{\\text{proj}} = \\mathbf{X} \\mathbf{W}_{\\text{in}}, \\quad \\mathbf{W}_{\\text{in}} \\in \\mathbb{R}^{D \\times D}",
   "components": [
     {

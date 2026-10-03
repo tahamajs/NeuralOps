@@ -6,14 +6,14 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "REAP-MoE: Robust Expert Allocation and Pruning Mixture of Experts Attention Module \u2013 Production-Hardened.  Implements a vectorized Mixture-of-Experts block with load-balancing regularization, SVD low-rank expert factorization, and multi-head attention weight transfer.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with fr",
+  "description": "REAP-MoE: Robust Expert Allocation and Pruning Mixture of Experts Attention Module.  Vectorized Mixture-of-Experts block with load-balancing regularization, SVD low-rank expert factorization, and multi-head attention weight transfer.",
   "classes": [
     "LoRALinear",
     "SVDLinear",
     "REAPMoE",
     "REAPMoEAttention"
   ],
-  "methods_count": 15,
+  "methods_count": 22,
   "math_latex": "\\mathbf{W}_e = \\mathbf{U}_e \\mathbf{\\Sigma}_e \\mathbf{V}_e^\\top, \\quad \\operatorname{rank}(\\mathbf{W}_e) \\le r \\ll \\min(d_{\\text{in}}, d_{\\text{out}})",
   "components": [
     {

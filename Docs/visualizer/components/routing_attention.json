@@ -6,12 +6,12 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Routing Attention: Content-Based Clustering for Sparse Attention \u2013 Production-Hardened.  Partitions sequence tokens into discrete clusters, confining attention computation to intra-cluster tokens without materializing full [B, H, L, L] tensors. Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base weights - GQA w",
+  "description": "Routing Attention: Content-Based Clustering for Sparse Attention \u2013 Production-Hardened.  Partitions sequence tokens into discrete clusters, confining attention computation to intra-cluster tokens without materializing full [B, H, L, L] tensors.",
   "classes": [
-    "LoRALinear",
+    "FactorizedLoRALinear",
     "RoutingAttention"
   ],
-  "methods_count": 16,
+  "methods_count": 22,
   "math_latex": "\\mathbf{Q} = \\mathbf{X} \\mathbf{W}_Q, \\quad \\mathbf{K} = \\mathbf{X} \\mathbf{W}_K, \\quad \\mathbf{V} = \\mathbf{X} \\mathbf{W}_V \\quad \\in \\mathbb{R}^{B \\times H \\times L \\times d_h}",
   "components": [
     {

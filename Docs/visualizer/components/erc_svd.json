@@ -6,11 +6,11 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "ERC-SVD: Error-Controlled SVD with Bounded Frobenius Truncation Error. Registered as 'erc' and 'erc_svd'. Production hardened for multi-architecture compatibility (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with error validation, Conv1D support, parameter bounds, and safe fallback.",
+  "description": "ERC-SVD: Error-Controlled SVD with Bounded Frobenius Truncation Error. Registered as 'erc' and 'erc_svd'.  Bug-fix map:   ER-FIX-01  fallback path handles svd_layer=None safely.   ER-FIX-02  LoRA rank detected via lora_A.weight.shape[0] (PEFT-compatible).   ER-FIX-03  forward sanity check error message corrected.   ER-FIX-04  attention_mask included in forward check.   ER-FIX-05  r_init clamped to",
   "classes": [
     "ERCCompressor"
   ],
-  "methods_count": 6,
+  "methods_count": 7,
   "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
   "components": [
     {

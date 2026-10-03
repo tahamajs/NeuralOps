@@ -11,7 +11,7 @@
     "ROASTLinear",
     "ROASTCompressor"
   ],
-  "methods_count": 10,
+  "methods_count": 11,
   "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
   "components": [
     {

@@ -1,18 +1,19 @@
 {
   "id": "chela_slay",
-  "name": "CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel.",
+  "name": "CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel \u2014 Production-Har",
   "file": "Codes/framework/attentions/chela_slay.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel.  Implements hybrid linear attention via spherical normalization onto the unit hypersphere combined with trigonometric random Fourier feature mappings (Yat-Kernel) and adaptive gating for smooth distillation from pretrained attention.  Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA architectures: - Robust pr",
+  "description": "CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel \u2014 Production-Hardened (v3).  Fixes (v3) relative to v2:   CS-FIX-16  `_safe_int`, `_safe_float` helpers handle `None` values and missing              attributes uniformly. Previously `int(None)` could crash __init__.   CS-FIX-17  `_extract_attn_config` robustly resolves hidden_size, num_heads,              head_dim, num_kv_heads across HF",
   "classes": [
     "LoRALinear",
     "ChelaSlayAttention",
-    "DummyConfig"
+    "_Dummy",
+    "_DefaultCfg"
   ],
-  "methods_count": 28,
+  "methods_count": 38,
   "math_latex": "\\hat{Q} = \\frac{Q}{\\|Q\\|_2}, \\quad \\hat{K} = \\frac{K}{\\|K\\|_2}",
   "components": [
     {

@@ -1,12 +1,12 @@
 {
   "id": "galerkin_attention",
-  "name": "Galerkin Attention: Petrov-Galerkin Projection Attention for Transformer Ar",
+  "name": "Galerkin Attention: Petrov-Galerkin Projection Attention (Corrected v3).",
   "file": "Codes/framework/attentions/galerkin_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Galerkin Attention: Petrov-Galerkin Projection Attention for Transformer Architectures.  Formulates transformer self-attention as a continuous non-local integral operator discretized via Petrov-Galerkin projection onto an orthonormal basis (e.g., discrete cosine basis). Supports fallback to standard causal attention for decoder models.  Hardened for production across DistilBERT, RoBERTa/BERT, GPT-",
+  "description": "Galerkin Attention: Petrov-Galerkin Projection Attention (Corrected v3).  Rollback notes:   The previous \"linear attention with sequence-space normalization\" attempt   introduced NaN in training because \u03a6 \u03a6\u1d40 \u2260 I_N, so \u03a6 (\u03a6\u1d40 1_N) is not a   valid reconstruction of the all-ones vector. This version reverts to the   original softmax-in-basis-space formulation, which is mathematically   valid and nume",
   "classes": [
     "LoRALinear",
     "GalerkinAttention",

@@ -3,40 +3,56 @@
   "name": "ToMoE: converts dense linear and Conv1D layers (e.g. FFN and attention proj",
   "file": "Codes/framework/compression_engine/tomoe_compressor.py",
   "type": "Compression Engine",
-  "category": "Low-Rank SVD & Factorization",
-  "paradigm": "svd",
-  "icon": "\u26a1",
-  "description": "ToMoE: converts dense linear and Conv1D layers (e.g. FFN and attention projections) into a Mixture of Experts using weight clustering. Registered as 'tomoe' and 'tomoe_compressor'.  Production-hardened with: - Fix 1: Reconstruction error validation with configurable max_error (default 0.20) and safe fallback. - Fix 2: Support for Conv1D (GPT-2) with weight transposition and fused/GQA projections (",
+  "category": "Mixture of Experts & Routing",
+  "paradigm": "moe",
+  "icon": "\ud83d\udd00",
+  "description": "ToMoE: converts dense linear and Conv1D layers (e.g. FFN and attention projections) into a Mixture of Experts using weight clustering. Registered as 'tomoe' and 'tomoe_compressor'.",
   "classes": [
     "ToMoELinear",
     "ToMoECompressor"
   ],
   "methods_count": 13,
-  "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
+  "math_latex": "y = \\sum_{i=1}^K G(x)_i \\cdot E_i(x), \\quad G(x) = \\text{Softmax}(\\text{TopK}(x W_g, K=2))",
   "components": [
     {
-      "id": "v_factor",
-      "name": "Factor V (Low-Rank Subspace Projection)",
-      "role": "Projection to Rank r",
-      "shape_transform": "[r \u00d7 d_in]",
-      "color": "#3acbb8",
-      "math_latex": "z_t = x_t V_r^\\top, \\quad V_r \\in \\mathbb{R}^{r \\times d_{in}}"
+      "id": "router",
+      "name": "Top-K Gating Router",
+      "role": "Sparse Token Dispatch",
+      "shape_transform": "[K \u00d7 d_in] Softmax",
+      "color": "#b57ee0",
+      "math_latex": "G(x) = \\text{Softmax}(\\text{TopK}(x W_g, K=2))"
     },
     {
-      "id": "u_factor",
-      "name": "Factor U (Full-Rank Expansion Projection)",
-      "role": "Expansion to Output Space",
-      "shape_transform": "[d_out \u00d7 r]",
-      "color": "#2dd4bf",
-      "math_latex": "y_t = z_t (\\Sigma_r U_r^\\top) + b, \\quad U_r \\in \\mathbb{R}^{d_{out} \\times r}"
+      "id": "expert_0",
+      "name": "Specialized Feed-Forward Expert 0",
+      "role": "Semantic Representation Subspace",
+      "shape_transform": "[d_ffn // 2 \u00d7 d_in]",
+      "color": "#c084fc",
+      "math_latex": "E_0(x) = \\text{GELU}(x W_{0,1} + b_{0,1}) W_{0,2} + b_{0,2}"
     },
     {
-      "id": "adapter",
-      "name": "Residual LoRA / Norm Calibration",
-      "role": "Fidelity Compensation",
-      "shape_transform": "[d_out \u00d7 d_in] Residual",
-      "color": "#5eead4",
-      "math_latex": "\\Delta y_t = x_t (B A)^\\top \\cdot \\frac{\\alpha}{r}, \\quad A \\in \\mathbb{R}^{r \\times d_{in}}, \\; B \\in \\mathbb{R}^{d_{out} \\times r}"
+      "id": "expert_1",
+      "name": "Specialized Feed-Forward Expert 1",
+      "role": "Semantic Representation Subspace",
+      "shape_transform": "[d_ffn // 2 \u00d7 d_in]",
+      "color": "#a855f7",
+      "math_latex": "E_1(x) = \\text{GELU}(x W_{1,1} + b_{1,1}) W_{1,2} + b_{1,2}"
+    },
+    {
+      "id": "expert_2",
+      "name": "Specialized Feed-Forward Expert 2",
+      "role": "Semantic Representation Subspace",
+      "shape_transform": "[d_ffn // 2 \u00d7 d_in]",
+      "color": "#9333ea",
+      "math_latex": "E_2(x) = \\text{GELU}(x W_{2,1} + b_{2,1}) W_{2,2} + b_{2,2}"
+    },
+    {
+      "id": "expert_3",
+      "name": "Specialized Feed-Forward Expert 3",
+      "role": "Semantic Representation Subspace",
+      "shape_transform": "[d_ffn // 2 \u00d7 d_in]",
+      "color": "#7e22ce",
+      "math_latex": "E_3(x) = \\text{GELU}(x W_{3,1} + b_{3,1}) W_{3,2} + b_{3,2}"
     }
   ],
   "model_projections": {
@@ -44,29 +60,29 @@
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 786432,
-      "savings_ratio": 8.25
+      "compressed_layer_params": 11206656,
+      "savings_ratio": 0.58
     },
     "roberta": {
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 786432,
-      "savings_ratio": 8.25
+      "compressed_layer_params": 11206656,
+      "savings_ratio": 0.58
     },
     "gpt2": {
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 786432,
-      "savings_ratio": 8.25
+      "compressed_layer_params": 11206656,
+      "savings_ratio": 0.58
     },
     "qwen": {
       "hidden_size": 896,
       "intermediate_size": 4864,
       "baseline_layer_params": 11124736,
-      "compressed_layer_params": 1081344,
-      "savings_ratio": 10.29
+      "compressed_layer_params": 19841024,
+      "savings_ratio": 0.56
     }
   }
 }

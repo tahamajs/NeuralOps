@@ -1,49 +1,41 @@
 {
   "id": "hgrn2_gated_deltanet",
-  "name": "HGRN-2 Gated DeltaNet Hybrid Attention Module.",
+  "name": "HGRN-2 Gated DeltaNet Hybrid Attention Module \u2014 Production-Hardened (v2).",
   "file": "Codes/framework/attentions/hgrn2_gated_deltanet.py",
   "type": "Attention Module",
-  "category": "Linear Attention & State-Space (SSM)",
-  "paradigm": "ssm",
-  "icon": "\ud83d\udc0d",
-  "description": "HGRN-2 Gated DeltaNet Hybrid Attention Module.  Combines bidirectional/causal HGRN-2 element-wise linear recurrence with multi-head Gated DeltaNet associative matrix memory for rich representational capacity. Hardened across DistilBERT, RoBERTa, GPT-2, and Qwen3.5 architectures.",
+  "category": "Low-Rank SVD & Factorization",
+  "paradigm": "svd",
+  "icon": "\u26a1",
+  "description": "HGRN-2 Gated DeltaNet Hybrid Attention Module \u2014 Production-Hardened (v2).  Combines bidirectional/causal HGRN-2 element-wise linear recurrence with multi-head Gated DeltaNet associative matrix memory.  Fixes (v2):   HGD-FIX-01  is_custom_attention = True (this IS attention).   HGD-FIX-02  Balanced gate init (+/-log(0.9/0.1) instead of 4.0).   HGD-FIX-03  Idempotency guard in injector.   HGD-FIX-04",
   "classes": [
     "HGRN2GatedDeltaNet"
   ],
-  "methods_count": 6,
+  "methods_count": 9,
   "math_latex": "\\begin{aligned}\nY_{\\text{hgrn}} &= \\text{HGRN2}(X) \\\\\nY_{\\text{deltanet}} &= \\text{GatedDeltaNet}(X) \\\\\n\\gamma &= \\sigma(W_g X) \\\\\nY &= \\gamma \\odot Y_{\\text{hgrn}} + (1 - \\gamma) \\odot Y_{\\text{deltanet}} \\\\\n\\text{Output} &= Y W_o\n\\end{aligned}",
   "components": [
     {
-      "id": "in_proj",
-      "name": "Input SVD / Linear Projection",
-      "role": "Channel Expansion",
-      "shape_transform": "[2 \\cdot d_{in} \u00d7 d_{in}]",
-      "color": "#34d399",
-      "math_latex": "u_t = \\text{SiLU}(x_t W_{in}), \\quad W_{in} \\in \\mathbb{R}^{2 d_{in} \\times d_{in}}"
+      "id": "v_factor",
+      "name": "Factor V (Low-Rank Subspace Projection)",
+      "role": "Projection to Rank r",
+      "shape_transform": "[r \u00d7 d_in]",
+      "color": "#3acbb8",
+      "math_latex": "z_t = x_t V_r^\\top, \\quad V_r \\in \\mathbb{R}^{r \\times d_{in}}"
     },
     {
-      "id": "conv1d",
-      "name": "Depthwise Causal 1D Convolution",
-      "role": "Local Token Mixing",
-      "shape_transform": "[d_{inner} \u00d7 kernel=4]",
-      "color": "#10b981",
-      "math_latex": "x'_t = \\sum_{k=0}^{K-1} w_k \\cdot x_{t-k}"
+      "id": "u_factor",
+      "name": "Factor U (Full-Rank Expansion Projection)",
+      "role": "Expansion to Output Space",
+      "shape_transform": "[d_out \u00d7 r]",
+      "color": "#2dd4bf",
+      "math_latex": "y_t = z_t (\\Sigma_r U_r^\\top) + b, \\quad U_r \\in \\mathbb{R}^{d_{out} \\times r}"
     },
     {
-      "id": "ssm_recurrence",
-      "name": "Selective SSM Recurrence Matrix (A, B, C)",
-      "role": "Continuous-Time State Space",
-      "shape_transform": "[d_{state}=16 \u00d7 d_{inner}]",
-      "color": "#059669",
-      "math_latex": "h_t = \\bar{A} h_{t-1} + \\bar{B} x'_t, \\quad y_t = C h_t + D x'_t"
-    },
-    {
-      "id": "out_proj",
-      "name": "Output Gated Projection",
-      "role": "Dimension Recovery",
-      "shape_transform": "[d_{in} \u00d7 d_{inner}]",
-      "color": "#047857",
-      "math_latex": "y_t = u_t \\odot (h_t W_{out})"
+      "id": "adapter",
+      "name": "Residual LoRA / Norm Calibration",
+      "role": "Fidelity Compensation",
+      "shape_transform": "[d_out \u00d7 d_in] Residual",
+      "color": "#5eead4",
+      "math_latex": "\\Delta y_t = x_t (B A)^\\top \\cdot \\frac{\\alpha}{r}, \\quad A \\in \\mathbb{R}^{r \\times d_{in}}, \\; B \\in \\mathbb{R}^{d_{out} \\times r}"
     }
   ],
   "model_projections": {
@@ -51,29 +43,29 @@
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 3568435,
-      "savings_ratio": 1.82
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "roberta": {
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 3568435,
-      "savings_ratio": 1.82
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "gpt2": {
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 3568435,
-      "savings_ratio": 1.82
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "qwen": {
       "hidden_size": 896,
       "intermediate_size": 4864,
       "baseline_layer_params": 11124736,
-      "compressed_layer_params": 6118604,
-      "savings_ratio": 1.82
+      "compressed_layer_params": 1081344,
+      "savings_ratio": 10.29
     }
   }
 }

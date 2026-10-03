@@ -1,17 +1,17 @@
 {
   "id": "a3_compressor",
-  "name": "A3 Compressor: Activation-Aware Factorized SVD Compression with Fisher/Acti",
+  "name": "A3 Compressor: Activation-Aware Factorized SVD with Activation Energy",
   "file": "Codes/framework/compression_engine/a3_compressor.py",
   "type": "Compression Engine",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "A3 Compressor: Activation-Aware Factorized SVD Compression with Fisher/Activation Energy Weighting and LayerNorm Recalibration. Registered in COMPRESSOR_REGISTRY as 'a3' and 'a3_compressor'.  Mathematical Formulation: 1. Online Streaming Activation Covariance & Empirical Fisher Diagonal Proxy (Activation Energy):    $$C_X = \\frac{1}{N} \\sum_{t=1}^N x_t x_t^\\top, \\quad F = \\mathbb{E}_{x \\sim \\mathc",
+  "description": "A3 Compressor: Activation-Aware Factorized SVD with Activation Energy Weighting and LayerNorm Recalibration.  Registered as 'a3' and 'a3_compressor'.  Algorithm:   1. Activation energy weighting (second moment E[x\u00b2]) \u2014 NOT Fisher.      s_j = sqrt(E[x_j\u00b2] + eps), optionally normalized by RMS.   2. Optional full Cholesky whitening of input covariance.   3. STRS rank search: minimal rank satisfying t",
   "classes": [
     "A3FactorizedLinear",
     "A3Compressor"
   ],
-  "methods_count": 18,
+  "methods_count": 20,
   "math_latex": "\\text{FLOPs}_{\\text{dense}} = 2 \\cdot m \\cdot n \\quad \\longrightarrow \\quad \\text{FLOPs}_{\\text{factorized}} = 2 \\cdot r \\cdot (m + n)",
   "components": [
     {

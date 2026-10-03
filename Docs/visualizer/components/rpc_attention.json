@@ -1,17 +1,17 @@
 {
   "id": "rpc_attention",
-  "name": "Random Projection Compressed (RPC) Attention \u2013 Production-Hardened.",
+  "name": "Random Projection Compressed (RPC) Attention \u2014 Production-Hardened (v2).",
   "file": "Codes/framework/attentions/rpc_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Random Projection Compressed (RPC) Attention \u2013 Production-Hardened.  Employs randomized linear subspace sketching via fixed head-wise Gaussian random projection buffers to compress query-key similarity evaluations into lower-dimensional manifolds.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base weights - G",
+  "description": "Random Projection Compressed (RPC) Attention \u2014 Production-Hardened (v2).  Randomized linear subspace sketching via fixed head-wise Gaussian random projection buffers to compress query-key similarity evaluations.",
   "classes": [
-    "LoRALinear",
+    "FactorizedLoRALinear",
     "RPCAttention"
   ],
-  "methods_count": 11,
+  "methods_count": 26,
   "math_latex": "\\widetilde{Q} = Q P \\in \\mathbb{R}^{B \\times H \\times L \\times d_p}, \\quad \\widetilde{K} = K P \\in \\mathbb{R}^{B \\times H \\times L \\times d_p}",
   "components": [
     {

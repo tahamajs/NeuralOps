@@ -1,17 +1,17 @@
 {
   "id": "squeezing_heads_distill",
-  "name": "Squeezing Heads Attention Distillation Layer.",
+  "name": "Squeezing Heads Attention Distillation Layer (v2, Real Head Compression).",
   "file": "Codes/framework/attentions/squeezing_heads_distill.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Squeezing Heads Attention Distillation Layer. Multi-head attention wrapper designed for knowledge distillation and head capacity compression experiments.  Hardened for production use across diverse transformer architectures: - DistilBERT (Flat MHA) - RoBERTa / BERT (Nested Encoder Self-Attention) - GPT-2 (Causal Decoder with Conv1D) - Qwen / LLaMA (GQA with Rotary Position Embeddings)",
+  "description": "Squeezing Heads Attention Distillation Layer (v2, Real Head Compression).  Multi-head attention wrapper that truly compresses Q/O projections by keeping only the top-k most important heads, selected from pretrained Q/K/V.  Fixes (v2):   SQ2-FIX-01  Real head compression: Q and O are sized to num_kept_heads,               not num_heads. `head_keep_ratio` is derived from `rank`               when no",
   "classes": [
     "LoRALinear",
     "SqueezingHeadsDistiller"
   ],
-  "methods_count": 15,
+  "methods_count": 24,
   "math_latex": "Q = X W_Q, \\quad K = X W_K, \\quad V = X W_V \\in \\mathbb{R}^{B \\times H \\times L \\times d}",
   "components": [
     {

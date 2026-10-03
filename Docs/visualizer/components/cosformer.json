@@ -11,7 +11,7 @@
     "LoRALinear",
     "CosformerAttention"
   ],
-  "methods_count": 27,
+  "methods_count": 32,
   "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
   "components": [
     {
