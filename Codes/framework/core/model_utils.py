@@ -125,6 +125,7 @@ def activation_hooks(
 
     def make_hook(name) -> Any:
         """Make hook."""
+
         def hook(module, input, output) -> None:
             """Hook."""
             data = {}

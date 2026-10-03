@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.minimal_aurora import MinimalAURORAAttention, inject_minimal_aurora
+from framework.attentions.minimal_aurora import (MinimalAURORAAttention,
+                                                 inject_minimal_aurora)
 
 
 class MockConfig:

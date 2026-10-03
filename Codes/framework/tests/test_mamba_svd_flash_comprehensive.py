@@ -1,13 +1,12 @@
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
-from types import SimpleNamespace
-from framework.attentions.mamba_svd_flash import (
-    MambaSVDFlash,
-    inject_mamba_svd_flash,
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
+from framework.attentions.mamba_svd_flash import (LoRALinear, MambaSVDFlash,
+                                                  apply_rotary_pos_emb,
+                                                  inject_mamba_svd_flash)
+
 
 def test_mamba_svd_flash_lora_config_independence():
     # 1. config=None, comp_config present

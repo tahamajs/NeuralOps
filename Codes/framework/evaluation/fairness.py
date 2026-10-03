@@ -6,9 +6,9 @@ References:
   - AIF360: https://aif360.res.ibm.com
   - Fairlearn: https://fairlearn.org
 """
-from typing import Any
 
 from dataclasses import dataclass, field
+from typing import Any
 
 import numpy as np
 from framework.core.registry import Registry
@@ -239,7 +239,7 @@ class FairnessEvaluator:
     def _generate_suggestions(
         self, metrics: dict[str, dict[str, float]], threshold: float
     ) -> list[str]:
-        """ generate suggestions."""
+        """generate suggestions."""
         suggestions = []
         # Check demographic parity
         dp = metrics.get("demographic_parity", {})

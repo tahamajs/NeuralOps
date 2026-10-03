@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import contextlib
 import logging
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -47,7 +47,16 @@ class CustomLoopTrainer(BaseTrainer):
         self.config = config or {}
         self.results_manager = results_manager
         self.device = device or (
-            torch.device("cuda" if torch.cuda.is_available() else ("mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available() else "cpu"))
+            torch.device(
+                "cuda"
+                if torch.cuda.is_available()
+                else (
+                    "mps"
+                    if hasattr(torch.backends, "mps")
+                    and torch.backends.mps.is_available()
+                    else "cpu"
+                )
+            )
         )
         self.num_labels = num_labels
         self.is_multichoice = is_multichoice
@@ -59,14 +68,18 @@ class CustomLoopTrainer(BaseTrainer):
     def _make_loader(self, dataset: Any, shuffle: bool = False) -> DataLoader:
         """Make DataLoader optimized for high-throughput GPU training."""
         pin = self.device.type in ["cuda", "mps"]
-        num_workers = int(self.config.get("num_workers", 4 if self.device.type == "cuda" else 0))
+        num_workers = int(
+            self.config.get("num_workers", 4 if self.device.type == "cuda" else 0)
+        )
         batch_size = int(self.config.get("batch_size", 128))
         loader_kwargs = {
             "batch_size": batch_size,
             "shuffle": shuffle,
             "pin_memory": pin,
             "num_workers": num_workers,
-            "collate_fn": dataset.collate_fn if hasattr(dataset, "collate_fn") else None,
+            "collate_fn": (
+                dataset.collate_fn if hasattr(dataset, "collate_fn") else None
+            ),
         }
         if num_workers > 0:
             loader_kwargs["prefetch_factor"] = 2
@@ -103,7 +116,11 @@ class CustomLoopTrainer(BaseTrainer):
             # FIX: Wrap non-final micro-batches in model.no_sync() for DDP to eliminate redundant all-reduce synchronization
             sync_context = (
                 contextlib.nullcontext()
-                if (is_sync_step or not hasattr(self.model, "no_sync") or not callable(self.model.no_sync))
+                if (
+                    is_sync_step
+                    or not hasattr(self.model, "no_sync")
+                    or not callable(self.model.no_sync)
+                )
                 else self.model.no_sync()
             )
 
@@ -114,22 +131,50 @@ class CustomLoopTrainer(BaseTrainer):
                     enabled=(use_amp and self.device.type in ["cuda", "mps"]),
                 ):
                     if self.is_multichoice:
-                        input_ids = batch["input_ids"].to(self.device, non_blocking=True)
-                        attention_mask = batch["attention_mask"].to(self.device, non_blocking=True)
+                        input_ids = batch["input_ids"].to(
+                            self.device, non_blocking=True
+                        )
+                        attention_mask = batch["attention_mask"].to(
+                            self.device, non_blocking=True
+                        )
                         true_labels = batch["labels"].to(self.device, non_blocking=True)
                         bs, nc, sl = input_ids.shape
                         flat_ids = input_ids.view(-1, sl)
                         flat_mask = attention_mask.view(-1, sl)
-                        outputs = self.model(input_ids=flat_ids, attention_mask=flat_mask)
-                        logits = outputs["logits"] if isinstance(outputs, dict) else (outputs.logits if hasattr(outputs, "logits") else outputs)
+                        outputs = self.model(
+                            input_ids=flat_ids, attention_mask=flat_mask
+                        )
+                        logits = (
+                            outputs["logits"]
+                            if isinstance(outputs, dict)
+                            else (
+                                outputs.logits
+                                if hasattr(outputs, "logits")
+                                else outputs
+                            )
+                        )
                         combined_labels = true_labels.repeat_interleave(nc)
                         loss = nn.functional.cross_entropy(logits, combined_labels)
                     else:
-                        input_ids = batch["input_ids"].to(self.device, non_blocking=True)
-                        attention_mask = batch["attention_mask"].to(self.device, non_blocking=True)
+                        input_ids = batch["input_ids"].to(
+                            self.device, non_blocking=True
+                        )
+                        attention_mask = batch["attention_mask"].to(
+                            self.device, non_blocking=True
+                        )
                         labels = batch["labels"].to(self.device, non_blocking=True)
-                        outputs = self.model(input_ids=input_ids, attention_mask=attention_mask)
-                        logits = outputs["logits"] if isinstance(outputs, dict) else (outputs.logits if hasattr(outputs, "logits") else outputs)
+                        outputs = self.model(
+                            input_ids=input_ids, attention_mask=attention_mask
+                        )
+                        logits = (
+                            outputs["logits"]
+                            if isinstance(outputs, dict)
+                            else (
+                                outputs.logits
+                                if hasattr(outputs, "logits")
+                                else outputs
+                            )
+                        )
                         loss = nn.functional.cross_entropy(logits, labels)
 
                     # FIX: Scale loss by accumulation factor so gradient magnitudes match the full effective batch size
@@ -147,7 +192,7 @@ class CustomLoopTrainer(BaseTrainer):
                 else:
                     curr_loss = 0.0
 
-            # FIX: Only unscale, clip gradients, and step optimizer when synchronized on accumulation boundary
+                # FIX: Only unscale, clip gradients, and step optimizer when synchronized on accumulation boundary
                 if scaler is not None and scaler.is_enabled():
                     try:
                         scaler.unscale_(optimizer)
@@ -161,7 +206,10 @@ class CustomLoopTrainer(BaseTrainer):
                     optimizer.step()
                 optimizer.zero_grad(set_to_none=True)
 
-            if pbar is not None and ((step + 1) % max(1, int(self.config.get("logging_steps", 10))) == 0 or step == num_batches - 1):
+            if pbar is not None and (
+                (step + 1) % max(1, int(self.config.get("logging_steps", 10))) == 0
+                or step == num_batches - 1
+            ):
                 pbar.set_postfix({"loss": f"{curr_loss:.4f}"})
 
         return total_epoch_loss / max(1, num_batches)
@@ -178,7 +226,9 @@ class CustomLoopTrainer(BaseTrainer):
         cfg.learning_rate = float(self.config.get("learning_rate", 2e-5))
         cfg.epochs = int(self.config.get("epochs", 3))
         cfg.max_grad_norm = float(self.config.get("max_grad_norm", 1.0))
-        cfg.gradient_accumulation_steps = int(self.config.get("gradient_accumulation_steps", 1))
+        cfg.gradient_accumulation_steps = int(
+            self.config.get("gradient_accumulation_steps", 1)
+        )
         cfg.fp16 = bool(self.config.get("fp16", False))
         cfg.amp = bool(self.config.get("amp", True))
         cfg.logging_steps = int(self.config.get("logging_steps", 10))

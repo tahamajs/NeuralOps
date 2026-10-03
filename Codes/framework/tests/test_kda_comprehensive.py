@@ -1,13 +1,12 @@
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
-from types import SimpleNamespace
-from framework.attentions.kda_attention import (
-    KDAAttention,
-    inject_kda,
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
+from framework.attentions.kda_attention import (KDAAttention, LoRALinear,
+                                                apply_rotary_pos_emb,
+                                                inject_kda)
+
 
 def test_kda_lora_config_independence():
     # 1. config=None, comp_config present

@@ -5,15 +5,15 @@ Used as an uncalibrated low-rank baseline in comparative evaluations.
 Paper comparison reference:
 Standard truncated SVD approximation W ~ U[:, :r] @ diag(S[:r]) @ V^T[:r, :].
 """
+
 from __future__ import annotations
 
 import logging
 from typing import Any
 
 import torch.nn as nn
-
-from framework.core.registry import ATTENTION_REGISTRY
 from framework.attentions.minimal_svd import MinimalSVDAttention
+from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,7 @@ class NaiveSVDAttention(MinimalSVDAttention):
     Inherits production-hardened multi-architecture routing from MinimalSVDAttention
     with uncalibrated plain truncated SVD initialization and no recovery adapters.
     """
+
     is_custom_attention: bool = True
     supports_causal: bool = True
     supports_gqa: bool = True
@@ -72,7 +73,11 @@ def inject_naive_svd(
         energy=1.0,
         dropout=getattr(comp_config, "dropout", 0.1) if comp_config else 0.1,
     )
-    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
+    src_attn = (
+        old_attn
+        if old_attn is not None
+        else getattr(layer, "attention", getattr(layer, "self", None))
+    )
     if src_attn is not None:
         try:
             new_attn.copy_weights(src_attn)

@@ -1,7 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.attentions.compressed_attention import CompressedAttentionLayer, inject_compressed_attention
+from framework.attentions.compressed_attention import (
+    CompressedAttentionLayer, inject_compressed_attention)
 
 
 class MockConfig:

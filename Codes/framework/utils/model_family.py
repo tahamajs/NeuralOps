@@ -16,10 +16,10 @@ Bug fixes (2026-09-25):
   "phi", "falcon"} map to the canonical internal family "gpt", while
   preserving the raw family name in raw_family for logging.
 """
+
 from __future__ import annotations
 
 from typing import Any
-
 
 FAMILIES = ("bert", "roberta", "gpt", "qwen", "qwen3_5", "t5", "ssm", "unknown")
 
@@ -28,23 +28,43 @@ FAMILIES = ("bert", "roberta", "gpt", "qwen", "qwen3_5", "t5", "ssm", "unknown")
 # Canonical family sets (single source of truth)
 # ---------------------------------------------------------------------------
 # All model types that use causal attention. This is the authoritative list.
-CAUSAL_FAMILIES = frozenset({
-    "gpt", "gpt2", "gpt_neo", "gpt_neox",
-    "llama", "mistral", "phi", "falcon",
-    "qwen", "qwen3_5",
-    "ssm",
-})
+CAUSAL_FAMILIES = frozenset(
+    {
+        "gpt",
+        "gpt2",
+        "gpt_neo",
+        "gpt_neox",
+        "llama",
+        "mistral",
+        "phi",
+        "falcon",
+        "qwen",
+        "qwen3_5",
+        "ssm",
+    }
+)
 
 # Causal decoder families whose input uses learned absolute position embeddings.
-GPT_ABSOLUTE_POSITION_FAMILIES = frozenset({
-    "gpt", "gpt2", "gpt_neo", "gpt_neox",
-    "phi", "falcon",
-})
+GPT_ABSOLUTE_POSITION_FAMILIES = frozenset(
+    {
+        "gpt",
+        "gpt2",
+        "gpt_neo",
+        "gpt_neox",
+        "phi",
+        "falcon",
+    }
+)
 
 # Causal decoder families using rotary position embeddings.
-ROTARY_FAMILIES = frozenset({
-    "qwen", "qwen3_5", "llama", "mistral",
-})
+ROTARY_FAMILIES = frozenset(
+    {
+        "qwen",
+        "qwen3_5",
+        "llama",
+        "mistral",
+    }
+)
 
 # Bidirectional encoder families (for mask_rank=2).
 BIDIRECTIONAL_FAMILIES = frozenset({"bert", "roberta"})
@@ -74,7 +94,9 @@ def detect_family(model_or_config: Any) -> str:
     model_type = str(getattr(cfg, "model_type", "")).lower()
     cls = type(model_or_config).__name__.lower()
 
-    if any(x in model_type or x in cls for x in ("qwen3_5", "qwen3.5", "qwen35", "qwen3")):
+    if any(
+        x in model_type or x in cls for x in ("qwen3_5", "qwen3.5", "qwen35", "qwen3")
+    ):
         return "qwen3_5"
     if model_type.startswith("qwen") or "qwen" in cls:
         return "qwen"
@@ -88,8 +110,14 @@ def detect_family(model_or_config: Any) -> str:
 
     # All GPT-style causal decoders map to canonical "gpt" family.
     if model_type in {
-        "gpt", "gpt2", "gpt_neo", "gpt_neox",
-        "llama", "mistral", "phi", "falcon",
+        "gpt",
+        "gpt2",
+        "gpt_neo",
+        "gpt_neox",
+        "llama",
+        "mistral",
+        "phi",
+        "falcon",
     }:
         return "gpt"
 
@@ -116,32 +144,42 @@ class ModelAdapter:
         self.family = FAMILY_ALIASES.get(raw_family, raw_family)
 
         self.hidden_size = int(
-            getattr(self.source, "hidden_size",
-                    getattr(self.source, "d_model", 0)) or 0
+            getattr(self.source, "hidden_size", getattr(self.source, "d_model", 0)) or 0
         )
         heads = getattr(
-            self.source, "num_attention_heads",
-            getattr(self.source, "num_heads",
-                    getattr(self.source, "num_decoder_attention_heads", 0)),
+            self.source,
+            "num_attention_heads",
+            getattr(
+                self.source,
+                "num_heads",
+                getattr(self.source, "num_decoder_attention_heads", 0),
+            ),
         )
         self.num_heads = int(heads or 0)
         h_dim = getattr(self.source, "head_dim", None)
         self.head_dim = int(
-            h_dim if h_dim is not None
+            h_dim
+            if h_dim is not None
             else (self.hidden_size // self.num_heads if self.num_heads else 0)
         )
         kv_heads = getattr(
-            self.source, "num_key_value_heads",
-            getattr(self.source, "num_key_value_heads_decoder",
-                    getattr(self.source, "num_decoder_attention_heads",
-                            self.num_heads or 0)),
+            self.source,
+            "num_key_value_heads",
+            getattr(
+                self.source,
+                "num_key_value_heads_decoder",
+                getattr(
+                    self.source, "num_decoder_attention_heads", self.num_heads or 0
+                ),
+            ),
         )
         self.num_key_value_heads = int(kv_heads or self.num_heads or 0)
         if self.num_key_value_heads <= 0:
             self.num_key_value_heads = self.num_heads
         self.num_hidden_layers = int(
-            getattr(self.source, "num_hidden_layers",
-                    getattr(self.source, "num_layers", 0))
+            getattr(
+                self.source, "num_hidden_layers", getattr(self.source, "num_layers", 0)
+            )
         )
         self.q_proj_out = self.num_heads * self.head_dim
         self.kv_proj_out = self.num_key_value_heads * self.head_dim
@@ -159,7 +197,9 @@ class ModelAdapter:
         # A family is causal if either:
         #   (a) its canonical family is in CAUSAL_FAMILIES, OR
         #   (b) its raw family is in CAUSAL_FAMILIES (defense in depth).
-        self.causal = (self.family in CAUSAL_FAMILIES) or (raw_family in CAUSAL_FAMILIES)
+        self.causal = (self.family in CAUSAL_FAMILIES) or (
+            raw_family in CAUSAL_FAMILIES
+        )
 
         # mask_rank: 4 for causal decoders, 2 for bidirectional encoders, 3 otherwise.
         if self.causal:
@@ -175,16 +215,20 @@ class ModelAdapter:
         # relative for T5, none for unknown.
         if self.family in ROTARY_FAMILIES or raw_family in ROTARY_FAMILIES:
             self.position_embedding = "rotary"
-        elif (self.family in GPT_ABSOLUTE_POSITION_FAMILIES
-              or raw_family in GPT_ABSOLUTE_POSITION_FAMILIES
-              or self.family in {"bert", "roberta"}):
+        elif (
+            self.family in GPT_ABSOLUTE_POSITION_FAMILIES
+            or raw_family in GPT_ABSOLUTE_POSITION_FAMILIES
+            or self.family in {"bert", "roberta"}
+        ):
             self.position_embedding = "absolute"
         elif self.family == "t5":
             self.position_embedding = "relative"
         else:
             self.position_embedding = "none"
 
-        self.supports_gqa = (self.num_key_value_heads < self.num_heads) or self.family == "qwen3_5"
+        self.supports_gqa = (
+            self.num_key_value_heads < self.num_heads
+        ) or self.family == "qwen3_5"
         self.supports_delta_net = self.family == "qwen3_5"
         self.supports_moe = self.family == "qwen3_5"
 

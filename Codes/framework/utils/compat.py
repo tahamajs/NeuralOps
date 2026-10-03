@@ -13,6 +13,7 @@ Bug fixes (2026-09-25):
 - Fix CP-04: Better diagnostics: log how many params were kept per priority
   bucket so recovery behavior is observable.
 """
+
 from __future__ import annotations
 
 import logging
@@ -23,7 +24,7 @@ import torch.nn as nn
 
 logger = logging.getLogger(__name__)
 
-from .model_family import ModelAdapter, detect_family, CAUSAL_FAMILIES
+from .model_family import CAUSAL_FAMILIES, ModelAdapter, detect_family
 from .qwen_compat import QwenIncompatibleError
 
 
@@ -33,9 +34,11 @@ def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
         return x
     if x.dim() != 4:
         raise ValueError(f"repeat_kv expects [B,H,L,D], got {tuple(x.shape)}")
-    return x[:, :, None, :, :].expand(
-        x.size(0), x.size(1), n_rep, x.size(2), x.size(3)
-    ).reshape(x.size(0), x.size(1) * n_rep, x.size(2), x.size(3))
+    return (
+        x[:, :, None, :, :]
+        .expand(x.size(0), x.size(1), n_rep, x.size(2), x.size(3))
+        .reshape(x.size(0), x.size(1) * n_rep, x.size(2), x.size(3))
+    )
 
 
 def init_output_scale(module: nn.Module, name: str = "output_scale") -> None:
@@ -56,9 +59,18 @@ def is_decoder_family(family: str) -> bool:
 def is_decoder_projection_name(name: str) -> bool:
     """Whether a parameter name denotes a decoder attention projection."""
     name_low = name.lower()
-    if any(p in name_low for p in [
-        "c_attn", "c_proj", "q_proj", "k_proj", "v_proj", "o_proj", "out_proj"
-    ]):
+    if any(
+        p in name_low
+        for p in [
+            "c_attn",
+            "c_proj",
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "out_proj",
+        ]
+    ):
         if "attn" in name_low or "attention" in name_low or "self_attn" in name_low:
             return True
     leaf = name.rsplit(".", 1)[-1].lower()
@@ -66,19 +78,48 @@ def is_decoder_projection_name(name: str) -> bool:
         parts = name.rsplit(".", 2)
         leaf = parts[-2].lower() if len(parts) >= 2 else leaf
     return leaf in {
-        "q_proj", "k_proj", "v_proj", "o_proj",
-        "out_proj", "c_attn", "c_proj",
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "out_proj",
+        "c_attn",
+        "c_proj",
     }
 
 
 SENSITIVE_PATTERNS = [
-    "attn", "attention", "delta", "delta_net", "gate", "expert",
-    "router", "norm", "rope", "embed", "lm_head", "score", "classifier",
-    "conv1d", "in_proj", "q_proj", "k_proj", "v_proj", "o_proj", "out_proj",
+    "attn",
+    "attention",
+    "delta",
+    "delta_net",
+    "gate",
+    "expert",
+    "router",
+    "norm",
+    "rope",
+    "embed",
+    "lm_head",
+    "score",
+    "classifier",
+    "conv1d",
+    "in_proj",
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "out_proj",
     "lora",
 ]
 ALLOWED_FFN_PATTERNS = [
-    "mlp", "ffn", "dense", "feed_forward", "down_proj", "up_proj", "wi", "wo",
+    "mlp",
+    "ffn",
+    "dense",
+    "feed_forward",
+    "down_proj",
+    "up_proj",
+    "wi",
+    "wo",
 ]
 
 
@@ -104,9 +145,14 @@ def should_compress_linear(model: Any, name: str, family: str | None = None) -> 
 
     name_low = name.lower()
     if leaf in {"classifier", "score", "lm_head", "pooler", "pre_classifier"} or any(
-        k in name_low for k in [
-            "classifier", "score", "lm_head", "pooler",
-            "pre_classifier", "classification_head",
+        k in name_low
+        for k in [
+            "classifier",
+            "score",
+            "lm_head",
+            "pooler",
+            "pre_classifier",
+            "classification_head",
         ]
     ):
         return False
@@ -121,19 +167,30 @@ def should_compress_linear(model: Any, name: str, family: str | None = None) -> 
         return should_compress_qwen3_5(name)
 
     recognized_attn = [
-        "q_lin", "k_lin", "v_lin", "out_lin",                 # DistilBERT
-        "query", "key", "value", "dense", "output.dense",     # RoBERTa / BERT
-        "c_attn", "c_proj",                                   # GPT-2
-        "q_proj", "k_proj", "v_proj", "o_proj", "out_proj",   # Qwen / LLaMA
+        "q_lin",
+        "k_lin",
+        "v_lin",
+        "out_lin",  # DistilBERT
+        "query",
+        "key",
+        "value",
+        "dense",
+        "output.dense",  # RoBERTa / BERT
+        "c_attn",
+        "c_proj",  # GPT-2
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "out_proj",  # Qwen / LLaMA
     ]
 
     if any(leaf == k or k in name_low.split(".") for k in recognized_attn):
         return True
 
     if is_decoder_family(fam):
-        return (
-            is_decoder_projection_name(name)
-            or any(kw in name_low for kw in ["mlp", "ffn", "dense", "feed_forward"])
+        return is_decoder_projection_name(name) or any(
+            kw in name_low for kw in ["mlp", "ffn", "dense", "feed_forward"]
         )
 
     return True
@@ -183,13 +240,29 @@ def get_dynamic_compression_rank(
 # Priority buckets for recovery pruning (Fix CP-01/CP-02)
 # ---------------------------------------------------------------------------
 PROTECTED_KEYWORDS = (
-    "lora_a", "lora_b", "lora_", "classifier", "score", "gate",
-    "scale", "alpha", "beta",
+    "lora_a",
+    "lora_b",
+    "lora_",
+    "classifier",
+    "score",
+    "gate",
+    "scale",
+    "alpha",
+    "beta",
 )
 SVD_FACTOR_KEYWORDS = (
-    ".u", ".v", ".weight_u", ".weight_v",
-    ".svd_u", ".svd_v", ".factor_u", ".factor_v",
-    ".q_down", ".q_up", ".down.", ".up.",
+    ".u",
+    ".v",
+    ".weight_u",
+    ".weight_v",
+    ".svd_u",
+    ".svd_v",
+    ".factor_u",
+    ".factor_v",
+    ".q_down",
+    ".q_up",
+    ".down.",
+    ".up.",
 )
 
 
@@ -219,7 +292,8 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     """
     # Collect SVD module parameter ids and LoRA presence.
     svd_modules = [
-        m for m in model.modules()
+        m
+        for m in model.modules()
         if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear")
     ]
     svd_param_ids = {id(p) for m in svd_modules for p in m.parameters()}
@@ -227,12 +301,13 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
 
     LORA_KEYWORDS = ("lora_a", "lora_b", "lora_")
     has_lora = any(
-        any(t in n.lower() for t in LORA_KEYWORDS)
-        for n, _ in model.named_parameters()
+        any(t in n.lower() for t in LORA_KEYWORDS) for n, _ in model.named_parameters()
     )
 
     fallback_layers = set()
-    if hasattr(model, "compression_stats") and isinstance(model.compression_stats, dict):
+    if hasattr(model, "compression_stats") and isinstance(
+        model.compression_stats, dict
+    ):
         fb = model.compression_stats.get("fallback_layers", [])
         if isinstance(fb, (list, tuple, set)):
             fallback_layers = set(fb)
@@ -285,42 +360,87 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
             continue
 
         # Always trainable: LoRA / gates / scales / decay / span / alpha / beta.
-        if any(tag in n_low for tag in (
-            "lora_a", "lora_b", "lora_", ".adapter", ".prompt",
-            ".gate", "gate.", ".alpha", ".beta", ".output_scale",
-            ".decay", "span_logits", ".span_logits",
-        )):
+        if any(
+            tag in n_low
+            for tag in (
+                "lora_a",
+                "lora_b",
+                "lora_",
+                ".adapter",
+                ".prompt",
+                ".gate",
+                "gate.",
+                ".alpha",
+                ".beta",
+                ".output_scale",
+                ".decay",
+                "span_logits",
+                ".span_logits",
+            )
+        ):
             trainable_params.append(param)
             continue
 
         # Classification head handling.
-        if any(h in n_low for h in (
-            "score.", "classifier.", "classification_head",
-            "pre_classifier", "pooler",
-        )):
+        if any(
+            h in n_low
+            for h in (
+                "score.",
+                "classifier.",
+                "classification_head",
+                "pre_classifier",
+                "pooler",
+            )
+        ):
             if (
                 has_lora
-                and any(d in n_low for d in ("classifier.", "pre_classifier.", "score."))
+                and any(
+                    d in n_low for d in ("classifier.", "pre_classifier.", "score.")
+                )
             ) or not param.requires_grad:
                 continue
             trainable_params.append(param)
             continue
 
         # Standard base weight/bias handling.
-        if any(n_low.endswith(sfx) for sfx in (
-            ".weight", ".bias", ".u", ".v", ".a", ".b", ".beta", ".alpha",
-            ".gate", ".in_proj", ".out_proj", ".x_proj",
-            ".q_proj", ".k_proj", ".v_proj", ".z_proj",
-        )):
+        if any(
+            n_low.endswith(sfx)
+            for sfx in (
+                ".weight",
+                ".bias",
+                ".u",
+                ".v",
+                ".a",
+                ".b",
+                ".beta",
+                ".alpha",
+                ".gate",
+                ".in_proj",
+                ".out_proj",
+                ".x_proj",
+                ".q_proj",
+                ".k_proj",
+                ".v_proj",
+                ".z_proj",
+            )
+        ):
             if not any(tag in n_low for tag in LORA_KEYWORDS):
                 if layer_has_lora or has_lora:
                     continue
 
         # If this layer has LoRA, its base weight/bias and base factors stay frozen.
         if layer_has_lora and (
-            any(n_low.endswith(sfx) for sfx in (
-                ".u", ".s", ".v", ".weight_u", ".weight_v", ".bias",
-            ))
+            any(
+                n_low.endswith(sfx)
+                for sfx in (
+                    ".u",
+                    ".s",
+                    ".v",
+                    ".weight_u",
+                    ".weight_v",
+                    ".bias",
+                )
+            )
             or ".base_layer." in n_low
             or ".lin1." in n_low
             or ".lin2." in n_low
@@ -341,39 +461,90 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
             if ".inner.e" in n_low or ".inner.f" in n_low:
                 trainable_params.append(param)
                 continue
-            if (
-                ".inner." in n_low or "._wrapped_attention." in n_low
-            ) and not (
+            if (".inner." in n_low or "._wrapped_attention." in n_low) and not (
                 n_low.endswith(".weight") or n_low.endswith(".bias")
             ):
                 trainable_params.append(param)
                 continue
-            if any(tag in n_low for tag in (
-                ".delta_mem.", ".beta_gate.", ".forget_gate.",
-                ".input_gate.", ".output_proj.", ".mem_proj.",
-            )):
+            if any(
+                tag in n_low
+                for tag in (
+                    ".delta_mem.",
+                    ".beta_gate.",
+                    ".forget_gate.",
+                    ".input_gate.",
+                    ".output_proj.",
+                    ".mem_proj.",
+                )
+            ):
                 trainable_params.append(param)
                 continue
             continue
 
         # Non-LoRA / non-SVD path.
         if (
-            any(tag in n_low for tag in (".inner.", "._wrapped_attention.", "swa_mamba", "kernel_linear"))
-            or any(f".{x}." in n_low or n_low.endswith(f".{x}") for x in (
-                "u", "v", "weight_u", "weight_v",
-            ))
-        ) or any(tag in n_low for tag in (
-            ".down.", ".up.", ".u_proj", ".v_proj", ".u_matrix", ".v_matrix",
-            ".w_a", ".w_b", ".weight_u", ".weight_v", ".factor", ".factors",
-            ".comp_", ".svd_", ".cur_", ".salr", ".direct_svd", ".sparse_proj",
-            ".cores", ".centroids", ".weight_table", ".alpha",
-            ".proj_k", ".proj_v",
-        )) or not (n_low.endswith(".weight") or n_low.endswith(".bias")) and any(
-            tag in n_low for tag in ("attention.", "self_attn.", ".attn.")
-        ) or any(tag in n_low for tag in (
-            ".gate.", ".beta.", ".input_gate.",
-            ".forget_gate.", ".alpha_gate.",
-        )):
+            (
+                any(
+                    tag in n_low
+                    for tag in (
+                        ".inner.",
+                        "._wrapped_attention.",
+                        "swa_mamba",
+                        "kernel_linear",
+                    )
+                )
+                or any(
+                    f".{x}." in n_low or n_low.endswith(f".{x}")
+                    for x in (
+                        "u",
+                        "v",
+                        "weight_u",
+                        "weight_v",
+                    )
+                )
+            )
+            or any(
+                tag in n_low
+                for tag in (
+                    ".down.",
+                    ".up.",
+                    ".u_proj",
+                    ".v_proj",
+                    ".u_matrix",
+                    ".v_matrix",
+                    ".w_a",
+                    ".w_b",
+                    ".weight_u",
+                    ".weight_v",
+                    ".factor",
+                    ".factors",
+                    ".comp_",
+                    ".svd_",
+                    ".cur_",
+                    ".salr",
+                    ".direct_svd",
+                    ".sparse_proj",
+                    ".cores",
+                    ".centroids",
+                    ".weight_table",
+                    ".alpha",
+                    ".proj_k",
+                    ".proj_v",
+                )
+            )
+            or not (n_low.endswith(".weight") or n_low.endswith(".bias"))
+            and any(tag in n_low for tag in ("attention.", "self_attn.", ".attn."))
+            or any(
+                tag in n_low
+                for tag in (
+                    ".gate.",
+                    ".beta.",
+                    ".input_gate.",
+                    ".forget_gate.",
+                    ".alpha_gate.",
+                )
+            )
+        ):
             trainable_params.append(param)
 
     # Deduplicate preserving order.
@@ -393,7 +564,8 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     total_trainable = sum(p.numel() for p in trainable_params)
     logger.info(
         "Recovery fine-tuning selected %d trainable parameters across %d tensors.",
-        total_trainable, len(trainable_params),
+        total_trainable,
+        len(trainable_params),
     )
 
     is_nested_or_deep = any(
@@ -419,7 +591,8 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
         logger.warning(
             "Total trainable parameters (%d) exceeds %d threshold for recovery. "
             "Pruning with priority-based allocation.",
-            total_trainable, prune_threshold,
+            total_trainable,
+            prune_threshold,
         )
 
         # Bucket every trainable param by priority.
@@ -462,7 +635,10 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
                     bucket_pruned += 1
             logger.info(
                 "  priority=%d: kept=%d pruned=%d (running total=%d)",
-                priority, bucket_kept, bucket_pruned, curr_count,
+                priority,
+                bucket_kept,
+                bucket_pruned,
+                curr_count,
             )
 
         trainable_params = kept_params
@@ -472,16 +648,20 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
         total_trainable = sum(p.numel() for p in trainable_params)
         logger.info(
             "Reduced recovery parameters to %d trainable parameters across %d tensors.",
-            total_trainable, len(trainable_params),
+            total_trainable,
+            len(trainable_params),
         )
 
     logger.info(
         "Discovered %d trainable tensors (%d params)",
-        len(trainable_params), total_trainable,
+        len(trainable_params),
+        total_trainable,
     )
     for name, param in model.named_parameters():
         if param.requires_grad:
-            logger.debug("  %s: %s (%d params)", name, tuple(param.shape), param.numel())
+            logger.debug(
+                "  %s: %s (%d params)", name, tuple(param.shape), param.numel()
+            )
 
     return trainable_params
 
@@ -514,7 +694,8 @@ def maybe_apply_rotary(
 
     def rotate_half(x):
         return torch.cat(
-            (-x[..., x.shape[-1] // 2:], x[..., :x.shape[-1] // 2]), dim=-1,
+            (-x[..., x.shape[-1] // 2 :], x[..., : x.shape[-1] // 2]),
+            dim=-1,
         )
 
     if cos.dim() == 3:
@@ -522,7 +703,7 @@ def maybe_apply_rotary(
     while cos.dim() < q.dim():
         cos, sin = cos.unsqueeze(0), sin.unsqueeze(0)
     if cos.shape[-2] != q.shape[-2]:
-        cos, sin = cos[..., :q.shape[-2], :], sin[..., :q.shape[-2], :]
+        cos, sin = cos[..., : q.shape[-2], :], sin[..., : q.shape[-2], :]
     return (
         (q * cos) + (rotate_half(q) * sin),
         (k * cos) + (rotate_half(k) * sin),
@@ -541,7 +722,9 @@ def causal_mask_from_attention_mask(
     if adapter.causal and attention_mask.dim() == 2:
         bsz, seqlen = attention_mask.shape
         causal = torch.ones(
-            (seqlen, seqlen), dtype=torch.bool, device=attention_mask.device,
+            (seqlen, seqlen),
+            dtype=torch.bool,
+            device=attention_mask.device,
         ).tril()
         return causal[None, None, :, :] & attention_mask.bool()[:, None, None, :]
     if not adapter.causal and attention_mask.dim() == 2:
@@ -556,6 +739,7 @@ def causal_mask_from_attention_mask(
 def install_projection_aliases(module: nn.Module) -> nn.Module:
     """Install bidirectional attribute aliases across canonical projection names."""
     from framework.core.adapters import CANONICAL_PROJECTION_ALIASES
+
     for child in module.modules():
         if hasattr(child, "self") and hasattr(child.self, "query"):
             for attr_name in ["query", "key", "value"]:
@@ -606,11 +790,17 @@ def convert_mask(
 
 
 def fp32_linalg(op, *tensors: torch.Tensor, **kwargs: Any):
-    dtypes = [x.dtype for x in tensors if isinstance(x, torch.Tensor) and x.is_floating_point()]
+    dtypes = [
+        x.dtype
+        for x in tensors
+        if isinstance(x, torch.Tensor) and x.is_floating_point()
+    ]
     dtype = dtypes[0] if dtypes else torch.float32
     result = op(
-        *[(x.float() if isinstance(x, torch.Tensor) and x.is_floating_point() else x)
-          for x in tensors],
+        *[
+            (x.float() if isinstance(x, torch.Tensor) and x.is_floating_point() else x)
+            for x in tensors
+        ],
         **kwargs,
     )
     if isinstance(result, tuple):
@@ -618,7 +808,11 @@ def fp32_linalg(op, *tensors: torch.Tensor, **kwargs: Any):
             x.to(dtype) if isinstance(x, torch.Tensor) and x.is_floating_point() else x
             for x in result
         )
-    return result.to(dtype) if isinstance(result, torch.Tensor) and result.is_floating_point() else result
+    return (
+        result.to(dtype)
+        if isinstance(result, torch.Tensor) and result.is_floating_point()
+        else result
+    )
 
 
 class FamilyModuleWrapper(nn.Module):
@@ -641,7 +835,8 @@ class FamilyModuleWrapper(nn.Module):
             raise QwenIncompatibleError("module_does_not_support_rope")
         if mask is not None:
             adapted = convert_mask(
-                mask, self.adapter,
+                mask,
+                self.adapter,
                 bool(getattr(self.module, "expects_bidirectional", False)),
             )
             if "attention_mask" in kwargs:
@@ -657,8 +852,16 @@ def wrap_for_family(module: nn.Module, model_family: str | None = None) -> nn.Mo
     family = model_family or detect_family(module)
     install_projection_aliases(module)
     family_aliases = globals().get("FAMILY_ALIASES", {})
-    canonical = family_aliases.get(family, family) if isinstance(family_aliases, dict) else family
-    return module if canonical in {"bert", "roberta", "unknown"} else FamilyModuleWrapper(module, family)
+    canonical = (
+        family_aliases.get(family, family)
+        if isinstance(family_aliases, dict)
+        else family
+    )
+    return (
+        module
+        if canonical in {"bert", "roberta", "unknown"}
+        else FamilyModuleWrapper(module, family)
+    )
 
 
 def module_family_support(name: str) -> dict[str, str]:

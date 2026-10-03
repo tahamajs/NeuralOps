@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from framework.utils.replace_attention import UniversalAttentionWrapper
 
+
 def test_wrapper_standardizes_tensor_to_tuple():
     class RawTensorAttention(nn.Module):
         def forward(self, x):

@@ -21,14 +21,13 @@ Registered in COMPRESSOR_REGISTRY as:
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any
-import logging
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
@@ -46,8 +45,21 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 _ATTN_NAMES = {
-    "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-    "c_attn", "c_proj", "query", "key", "value", "q_lin", "k_lin", "v_lin", "out_lin",
+    "attn",
+    "attention",
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "c_attn",
+    "c_proj",
+    "query",
+    "key",
+    "value",
+    "q_lin",
+    "k_lin",
+    "v_lin",
+    "out_lin",
 }
 
 
@@ -65,7 +77,9 @@ class SimpleEntropyCoder:
         return float(entropy)
 
     @staticmethod
-    def compute_compression_ratio(tensor: torch.Tensor, uncompressed_bits: int = 16) -> float:
+    def compute_compression_ratio(
+        tensor: torch.Tensor, uncompressed_bits: int = 16
+    ) -> float:
         """Estimate theoretical compression ratio relative to FP16/FP32 baseline."""
         entropy = SimpleEntropyCoder.compute_entropy(tensor)
         return float(uncompressed_bits / max(entropy, 1e-4))
@@ -97,8 +111,12 @@ class KVTCStore:
         v_flat = v.detach().float().reshape(-1, v.shape[-1])
 
         # SVD on centered channels in FP32
-        _, _, Vt_k = torch.linalg.svd(k_flat - k_flat.mean(dim=0, keepdim=True), full_matrices=False)
-        _, _, Vt_v = torch.linalg.svd(v_flat - v_flat.mean(dim=0, keepdim=True), full_matrices=False)
+        _, _, Vt_k = torch.linalg.svd(
+            k_flat - k_flat.mean(dim=0, keepdim=True), full_matrices=False
+        )
+        _, _, Vt_v = torch.linalg.svd(
+            v_flat - v_flat.mean(dim=0, keepdim=True), full_matrices=False
+        )
 
         self.pca_basis_k = Vt_k.t().contiguous().to(device=k.device, dtype=k.dtype)
         self.pca_basis_v = Vt_v.t().contiguous().to(device=v.device, dtype=v.dtype)
@@ -133,8 +151,12 @@ class KVTCStore:
         h_k = SimpleEntropyCoder.compute_entropy(q_k)
         h_v = SimpleEntropyCoder.compute_entropy(q_v)
 
-        k_hat = torch.matmul(q_k * scale_k, self.pca_basis_k.t().contiguous()).reshape(orig_shape)
-        v_hat = torch.matmul(q_v * scale_v, self.pca_basis_v.t().contiguous()).reshape(orig_shape)
+        k_hat = torch.matmul(q_k * scale_k, self.pca_basis_k.t().contiguous()).reshape(
+            orig_shape
+        )
+        v_hat = torch.matmul(q_v * scale_v, self.pca_basis_v.t().contiguous()).reshape(
+            orig_shape
+        )
 
         mean_h = (h_k + h_v) / 2.0
         stats: dict[str, Any] = {
@@ -181,8 +203,12 @@ class KVTCQuantizedLoRALinear(nn.Module):
 
         # Store true integer weights as buffer (not float Parameter)
         self.register_buffer("int_weight", int_weight.to(device=target_device))
-        self.register_buffer("scale", scale.to(device=target_device, dtype=torch.float32))
-        self.register_buffer("zero_point", zero_point.to(device=target_device, dtype=torch.float32))
+        self.register_buffer(
+            "scale", scale.to(device=target_device, dtype=torch.float32)
+        )
+        self.register_buffer(
+            "zero_point", zero_point.to(device=target_device, dtype=torch.float32)
+        )
 
         if bias is not None:
             self.bias = nn.Parameter(
@@ -194,10 +220,18 @@ class KVTCQuantizedLoRALinear(nn.Module):
 
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, in_features), dtype=compute_dtype, device=target_device)
+                torch.empty(
+                    (self.lora_r, in_features),
+                    dtype=compute_dtype,
+                    device=target_device,
+                )
             )
             self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_r), dtype=compute_dtype, device=target_device)
+                torch.zeros(
+                    (out_features, self.lora_r),
+                    dtype=compute_dtype,
+                    device=target_device,
+                )
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -207,7 +241,9 @@ class KVTCQuantizedLoRALinear(nn.Module):
     @property
     def weight(self) -> torch.Tensor:
         """Backward-compatibility property returning on-the-fly dequantized weight."""
-        return (self.int_weight.to(dtype=self.compute_dtype) * self.scale + self.zero_point)
+        return (
+            self.int_weight.to(dtype=self.compute_dtype) * self.scale + self.zero_point
+        )
 
     @classmethod
     def from_linear(
@@ -221,7 +257,11 @@ class KVTCQuantizedLoRALinear(nn.Module):
         compute_dtype: torch.dtype | None = None,
     ) -> KVTCQuantizedLoRALinear:
         target_mod = getattr(linear, "base_layer", linear)
-        bias = target_mod.bias.detach() if hasattr(target_mod, "bias") and target_mod.bias is not None else None
+        bias = (
+            target_mod.bias.detach()
+            if hasattr(target_mod, "bias") and target_mod.bias is not None
+            else None
+        )
         in_features = getattr(target_mod, "in_features", int_weight.shape[1])
         out_features = getattr(target_mod, "out_features", int_weight.shape[0])
 
@@ -259,22 +299,36 @@ class KVTCQuantizedLoRALinear(nn.Module):
         if existing_lora_A is not None and existing_lora_B is not None:
             w_A = getattr(existing_lora_A, "weight", existing_lora_A)
             w_B = getattr(existing_lora_B, "weight", existing_lora_B)
-            if hasattr(w_A, "data") and hasattr(w_B, "data") and new_layer.lora_A is not None and new_layer.lora_B is not None:
-                new_layer.lora_A.data.copy_(w_A.data.to(dtype=new_layer.lora_A.dtype, device=new_layer.lora_A.device))
-                new_layer.lora_B.data.copy_(w_B.data.to(dtype=new_layer.lora_B.dtype, device=new_layer.lora_B.device))
+            if (
+                hasattr(w_A, "data")
+                and hasattr(w_B, "data")
+                and new_layer.lora_A is not None
+                and new_layer.lora_B is not None
+            ):
+                new_layer.lora_A.data.copy_(
+                    w_A.data.to(
+                        dtype=new_layer.lora_A.dtype, device=new_layer.lora_A.device
+                    )
+                )
+                new_layer.lora_B.data.copy_(
+                    w_B.data.to(
+                        dtype=new_layer.lora_B.dtype, device=new_layer.lora_B.device
+                    )
+                )
                 new_layer.lora_A.requires_grad = True
                 new_layer.lora_B.requires_grad = True
 
         return new_layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        w_eff = (self.int_weight.to(dtype=x.dtype) * self.scale.to(dtype=x.dtype) + self.zero_point.to(dtype=x.dtype))
+        w_eff = self.int_weight.to(dtype=x.dtype) * self.scale.to(
+            dtype=x.dtype
+        ) + self.zero_point.to(dtype=x.dtype)
         bias = self.bias.to(dtype=x.dtype) if self.bias is not None else None
         out = F.linear(x, w_eff, bias)
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(
-                F.linear(x.to(dtype=self.lora_A.dtype), self.lora_A),
-                self.lora_B
+                F.linear(x.to(dtype=self.lora_A.dtype), self.lora_A), self.lora_B
             ).to(dtype=out.dtype)
             out = out + self.scaling * lora_out
         return out
@@ -308,18 +362,36 @@ class KVTCCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="kvtc", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", getattr(model, "config", None)))
+        cfg = kwargs.get(
+            "comp_config", kwargs.get("cfg", getattr(model, "config", None))
+        )
         self.cfg = cfg
         self.bits = int(_cfg_get(cfg, "kvtc_bits", _cfg_get(cfg, "bits", bits)))
-        self.pca_energy = float(_cfg_get(cfg, "kvtc_pca_energy", _cfg_get(cfg, "pca_energy", pca_energy)))
-        self.max_error = float(_cfg_get(cfg, "kvtc_max_error", _cfg_get(cfg, "max_error", max_error)))
-        self.fallback_to_original = bool(_cfg_get(cfg, "kvtc_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original)))
+        self.pca_energy = float(
+            _cfg_get(cfg, "kvtc_pca_energy", _cfg_get(cfg, "pca_energy", pca_energy))
+        )
+        self.max_error = float(
+            _cfg_get(cfg, "kvtc_max_error", _cfg_get(cfg, "max_error", max_error))
+        )
+        self.fallback_to_original = bool(
+            _cfg_get(
+                cfg,
+                "kvtc_fallback_to_original",
+                _cfg_get(cfg, "fallback_to_original", fallback_to_original),
+            )
+        )
         self.lora_r = int(_cfg_get(cfg, "lora_r", lora_r))
         self.lora_alpha = float(_cfg_get(cfg, "lora_alpha", lora_alpha))
         self.target_attention_only = bool(
-            _cfg_get(cfg, "kvtc_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
+            _cfg_get(
+                cfg,
+                "kvtc_target_attention_only",
+                _cfg_get(cfg, "target_attention_only", target_attention_only),
+            )
         )
-        self.skip_attention_qkv = bool(_cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv))
+        self.skip_attention_qkv = bool(
+            _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
+        )
         self.min_rank = max(1, int(_cfg_get(cfg, "min_rank", min_rank)))
         self.target_modules = target_modules
 
@@ -330,7 +402,9 @@ class KVTCCompressor(BaseCompressor):
         self.stats: dict[str, Any] = {}
 
     @staticmethod
-    def _percentile_clip(W: torch.Tensor, low: float = 0.001, high: float = 0.999) -> torch.Tensor:
+    def _percentile_clip(
+        W: torch.Tensor, low: float = 0.001, high: float = 0.999
+    ) -> torch.Tensor:
         """Clip extreme outliers from weight tensor before computing quantization scale."""
         if W.numel() == 0:
             return W
@@ -403,9 +477,24 @@ class KVTCCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
+        if (
+            num_heads is not None
+            and num_kv_heads is not None
+            and num_kv_heads < num_heads
+        ):
             name_lower = name.lower()
-            if any(p in name_lower for p in ["q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"]):
+            if any(
+                p in name_lower
+                for p in [
+                    "q_proj",
+                    "k_proj",
+                    "v_proj",
+                    "query",
+                    "key",
+                    "value",
+                    "c_attn",
+                ]
+            ):
                 return True
         return False
 
@@ -413,7 +502,18 @@ class KVTCCompressor(BaseCompressor):
         name_lower = name.lower()
         if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
             return False
-        if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate"]):
+        if any(
+            skip in name_lower
+            for skip in [
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embedding",
+                "router",
+                "gate",
+            ]
+        ):
             return False
 
         if self.target_attention_only:
@@ -425,7 +525,11 @@ class KVTCCompressor(BaseCompressor):
 
         target_mod = getattr(module, "base_layer", module)
         cls_name = target_mod.__class__.__name__.lower()
-        is_linear_like = isinstance(target_mod, nn.Linear) or "conv1d" in cls_name or hasattr(target_mod, "nf")
+        is_linear_like = (
+            isinstance(target_mod, nn.Linear)
+            or "conv1d" in cls_name
+            or hasattr(target_mod, "nf")
+        )
         if not is_linear_like:
             return False
         if isinstance(target_mod, KVTCQuantizedLoRALinear):
@@ -459,7 +563,9 @@ class KVTCCompressor(BaseCompressor):
                 cls_name = target_mod.__class__.__name__.lower()
                 is_linear = isinstance(target_mod, nn.Linear)
                 is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-                if (is_linear or is_conv1d) and not self._is_target_module(name, module):
+                if (is_linear or is_conv1d) and not self._is_target_module(
+                    name, module
+                ):
                     for p in module.parameters():
                         p.requires_grad = False
                     self.skipped_layers.append(name)
@@ -489,16 +595,20 @@ class KVTCCompressor(BaseCompressor):
             device = raw_w.device
             dtype = raw_w.dtype
 
-            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
+            W = (
+                raw_w.t().contiguous().clone().float()
+                if is_conv1d
+                else raw_w.clone().float()
+            )
             d_out, d_in = W.shape
             min_dim = min(d_out, d_in)
 
             try:
                 # Step 1: PCA decorrelation via SVD in FP32
                 U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-                total_energy = (S ** 2).sum()
+                total_energy = (S**2).sum()
                 if total_energy > 0:
-                    cum_energy = torch.cumsum(S ** 2, dim=0) / total_energy
+                    cum_energy = torch.cumsum(S**2, dim=0) / total_energy
                     idx = torch.where(cum_energy >= self.pca_energy)[0]
                     rank = int(idx[0].item()) + 1 if len(idx) > 0 else min_dim
                 else:
@@ -523,7 +633,9 @@ class KVTCCompressor(BaseCompressor):
 
                 # Reconstruction error check against original W
                 norm_orig = torch.norm(W, p="fro").item()
-                rel_err = (torch.norm(W - W_quant, p="fro") / max(norm_orig, 1e-12)).item()
+                rel_err = (
+                    torch.norm(W - W_quant, p="fro") / max(norm_orig, 1e-12)
+                ).item()
                 self.layer_errors[name] = float(rel_err)
 
                 if not math.isfinite(rel_err) or rel_err > self.max_error:
@@ -532,7 +644,11 @@ class KVTCCompressor(BaseCompressor):
                         rel_err,
                         name,
                         self.max_error,
-                        ". Keeping original layer." if self.fallback_to_original else ". Proceeding with quantized weight.",
+                        (
+                            ". Keeping original layer."
+                            if self.fallback_to_original
+                            else ". Proceeding with quantized weight."
+                        ),
                     )
                     if self.fallback_to_original:
                         self.fallback_layers.append(name)
@@ -562,7 +678,7 @@ class KVTCCompressor(BaseCompressor):
                     if (new_layer.lora_A is not None and new_layer.lora_B is not None)
                     else 0
                 )
-                total_comp_params += (quant_equiv_params + lora_params)
+                total_comp_params += quant_equiv_params + lora_params
 
                 replace_module(self.model, name, new_layer)
                 self.compressed_layers.append(name)
@@ -573,7 +689,11 @@ class KVTCCompressor(BaseCompressor):
                     "shape": tuple(int_w.shape),
                 }
             except Exception as e:
-                logger.warning("KVTC compression exception on %s: %s. Keeping original layer.", name, e)
+                logger.warning(
+                    "KVTC compression exception on %s: %s. Keeping original layer.",
+                    name,
+                    e,
+                )
                 self.fallback_layers.append(name)
                 for p in module.parameters():
                     p.requires_grad = False
@@ -622,49 +742,60 @@ class KVTCCompressor(BaseCompressor):
         stats = self.get_compression_stats()
         avg_entropy = total_entropy / max(len(self.compressed_layers), 1)
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers)
+            / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
-        param_ratio = round(total_comp_params / max(total_orig_params, 1), 4) if total_orig_params > 0 else 1.0
+        param_ratio = (
+            round(total_comp_params / max(total_orig_params, 1), 4)
+            if total_orig_params > 0
+            else 1.0
+        )
 
         bytes_reduction_pct = (
-            (initial_actual_bytes - final_actual_bytes) / float(initial_actual_bytes) * 100.0
+            (initial_actual_bytes - final_actual_bytes)
+            / float(initial_actual_bytes)
+            * 100.0
             if initial_actual_bytes > 0
             else 0.0
         )
 
-        stats.update({
-            "compressed_layers": self.compressed_layers,
-            "fallback_layers": self.fallback_layers,
-            "skipped_layers": self.skipped_layers,
-            "num_compressed": len(self.compressed_layers),
-            "num_fallback": len(self.fallback_layers),
-            "num_skipped": len(self.skipped_layers),
-            "bits": self.bits,
-            "pca_energy": self.pca_energy,
-            "max_error": self.max_error,
-            "fallback_to_original": self.fallback_to_original,
-            "target_attention_only": self.target_attention_only,
-            "skip_attention_qkv": self.skip_attention_qkv,
-            "avg_entropy_bits": round(avg_entropy, 2),
-            "entropy_lower_bound_bits": round(avg_entropy, 2),
-            "entropy_coding_note": "Theoretical lower bound; actual bitstream not implemented.",
-            "avg_reconstruction_error": avg_err,
-            "effective_parameter_ratio": param_ratio,
-            "initial_actual_bytes": initial_actual_bytes,
-            "final_actual_bytes": final_actual_bytes,
-            "actual_bytes_reduction_pct": round(bytes_reduction_pct, 2),
-            "theoretical_entropy_compression_ratio": round(16.0 / max(avg_entropy, 1e-4), 2),
-            "theoretical_vram_saving": f"{(1.0 - self.bits / 16.0) * 100:.1f}% vs FP16",
-            "layer_errors": self.layer_errors,
-            "layer_details": layer_details,
-            "lora_r": self.lora_r,
-            "lora_alpha": self.lora_alpha,
-            "forward_check_success": forward_check_success,
-            "forward_check_error": forward_check_error,
-            "method": "kvtc_pca_quant",
-        })
+        stats.update(
+            {
+                "compressed_layers": self.compressed_layers,
+                "fallback_layers": self.fallback_layers,
+                "skipped_layers": self.skipped_layers,
+                "num_compressed": len(self.compressed_layers),
+                "num_fallback": len(self.fallback_layers),
+                "num_skipped": len(self.skipped_layers),
+                "bits": self.bits,
+                "pca_energy": self.pca_energy,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "target_attention_only": self.target_attention_only,
+                "skip_attention_qkv": self.skip_attention_qkv,
+                "avg_entropy_bits": round(avg_entropy, 2),
+                "entropy_lower_bound_bits": round(avg_entropy, 2),
+                "entropy_coding_note": "Theoretical lower bound; actual bitstream not implemented.",
+                "avg_reconstruction_error": avg_err,
+                "effective_parameter_ratio": param_ratio,
+                "initial_actual_bytes": initial_actual_bytes,
+                "final_actual_bytes": final_actual_bytes,
+                "actual_bytes_reduction_pct": round(bytes_reduction_pct, 2),
+                "theoretical_entropy_compression_ratio": round(
+                    16.0 / max(avg_entropy, 1e-4), 2
+                ),
+                "theoretical_vram_saving": f"{(1.0 - self.bits / 16.0) * 100:.1f}% vs FP16",
+                "layer_errors": self.layer_errors,
+                "layer_details": layer_details,
+                "lora_r": self.lora_r,
+                "lora_alpha": self.lora_alpha,
+                "forward_check_success": forward_check_success,
+                "forward_check_error": forward_check_error,
+                "method": "kvtc_pca_quant",
+            }
+        )
         self.stats = stats
         return self.model, stats
 
@@ -675,14 +806,30 @@ def kvtc_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> An
     """KVTC compressor factory function."""
     cfg = comp_config if comp_config is not None else getattr(model, "config", None)
     bits = kwargs.pop("bits", _cfg_get(cfg, "kvtc_bits", _cfg_get(cfg, "bits", 4)))
-    pca_energy = kwargs.pop("pca_energy", _cfg_get(cfg, "kvtc_pca_energy", _cfg_get(cfg, "pca_energy", 0.95)))
-    max_error = kwargs.pop("max_error", _cfg_get(cfg, "kvtc_max_error", _cfg_get(cfg, "max_error", 0.50)))
-    fallback_to_original = kwargs.pop("fallback_to_original", _cfg_get(cfg, "kvtc_fallback_to_original", _cfg_get(cfg, "fallback_to_original", True)))
+    pca_energy = kwargs.pop(
+        "pca_energy",
+        _cfg_get(cfg, "kvtc_pca_energy", _cfg_get(cfg, "pca_energy", 0.95)),
+    )
+    max_error = kwargs.pop(
+        "max_error", _cfg_get(cfg, "kvtc_max_error", _cfg_get(cfg, "max_error", 0.50))
+    )
+    fallback_to_original = kwargs.pop(
+        "fallback_to_original",
+        _cfg_get(
+            cfg,
+            "kvtc_fallback_to_original",
+            _cfg_get(cfg, "fallback_to_original", True),
+        ),
+    )
     lora_r = kwargs.pop("lora_r", _cfg_get(cfg, "lora_r", 16))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(cfg, "lora_alpha", 1.0))
     target_attention_only = kwargs.pop(
         "target_attention_only",
-        _cfg_get(cfg, "kvtc_target_attention_only", _cfg_get(cfg, "target_attention_only", False)),
+        _cfg_get(
+            cfg,
+            "kvtc_target_attention_only",
+            _cfg_get(cfg, "target_attention_only", False),
+        ),
     )
     skip_attention_qkv = kwargs.pop(
         "skip_attention_qkv",

@@ -11,7 +11,6 @@ from typing import Any
 
 import torch
 import torch.nn as nn
-
 from framework.compression_engine.aa_svd_compressor import SVDLinear
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
@@ -60,15 +59,25 @@ class SwiftSVDCompressor(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = _cfg_get(cfg, "swift_svd_rank", _cfg_get(cfg, "rank", rank))
-            rank_ratio = _cfg_get(cfg, "swift_svd_rank_ratio",
-                                  _cfg_get(cfg, "rank_ratio", rank_ratio))
-            max_error = _cfg_get(cfg, "max_error",
-                                 _cfg_get(cfg, "max_reconstruction_error", max_error))
+            rank_ratio = _cfg_get(
+                cfg, "swift_svd_rank_ratio", _cfg_get(cfg, "rank_ratio", rank_ratio)
+            )
+            max_error = _cfg_get(
+                cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error", max_error)
+            )
             max_retries = _cfg_get(cfg, "max_retries", max_retries)
-            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
-            validation_calibration = _cfg_get(cfg, "validation_calibration", validation_calibration)
-            calibration_threshold = _cfg_get(cfg, "calibration_threshold", calibration_threshold)
-            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
+            fallback_to_original = _cfg_get(
+                cfg, "fallback_to_original", fallback_to_original
+            )
+            validation_calibration = _cfg_get(
+                cfg, "validation_calibration", validation_calibration
+            )
+            calibration_threshold = _cfg_get(
+                cfg, "calibration_threshold", calibration_threshold
+            )
+            target_attention_only = _cfg_get(
+                cfg, "target_attention_only", target_attention_only
+            )
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
 
@@ -113,8 +122,19 @@ class SwiftSVDCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if self.target_attention_only:
-            attn_keywords = ["attn", "attention", "q_proj", "k_proj", "v_proj",
-                             "o_proj", "c_attn", "c_proj", "query", "key", "value"]
+            attn_keywords = [
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "c_attn",
+                "c_proj",
+                "query",
+                "key",
+                "value",
+            ]
             if not any(k in name.lower() for k in attn_keywords):
                 return False
 
@@ -180,7 +200,9 @@ class SwiftSVDCompressor(BaseCompressor):
         if rank is not None:
             target_r = max(1, min(int(rank), max_r))
         else:
-            target_r = max(1, min(int(round(min(out_f, in_f) * self.rank_ratio)), max_r))
+            target_r = max(
+                1, min(int(round(min(out_f, in_f) * self.rank_ratio)), max_r)
+            )
 
         # SV-FIX-01: single try/except with explicit CUDA OOM handling.
         U: torch.Tensor | None = None
@@ -198,7 +220,9 @@ class SwiftSVDCompressor(BaseCompressor):
                 U, S, Vt = torch.linalg.svd(W.cpu(), full_matrices=False)
                 U, S, Vt = U.to(device), S.to(device), Vt.to(device)
             except Exception as e2:
-                logger.warning("SwiftSVD SVD (OOM fallback) failed for %s: %s", name, e2)
+                logger.warning(
+                    "SwiftSVD SVD (OOM fallback) failed for %s: %s", name, e2
+                )
                 return None, 1.0, 0
         except Exception as e:
             logger.warning("SwiftSVD SVD failed for %s: %s", name, e)
@@ -236,8 +260,15 @@ class SwiftSVDCompressor(BaseCompressor):
         if best_err > self.max_error:
             logger.warning(
                 "SwiftSVD: %s error (%.4f) > max_error (%.4f) at rank %d. %s",
-                name, best_err, self.max_error, best_r,
-                "Keeping original." if self.fallback_to_original else "Using compressed layer anyway.",
+                name,
+                best_err,
+                self.max_error,
+                best_r,
+                (
+                    "Keeping original."
+                    if self.fallback_to_original
+                    else "Using compressed layer anyway."
+                ),
             )
             if self.fallback_to_original:
                 return None, best_err, best_r
@@ -275,10 +306,16 @@ class SwiftSVDCompressor(BaseCompressor):
         svd_layer.set_low_rank_factors(U_final, V_final)
 
         if has_bias and svd_layer.bias is not None and base_layer.bias is not None:
-            svd_layer.bias.data.copy_(base_layer.bias.data.to(dtype=dtype, device=device))
+            svd_layer.bias.data.copy_(
+                base_layer.bias.data.to(dtype=dtype, device=device)
+            )
 
         # SV-FIX-04: robust LoRA copy via data-shape check.
-        if not has_base_layer and has_existing_lora and getattr(svd_layer, "use_lora", False):
+        if (
+            not has_base_layer
+            and has_existing_lora
+            and getattr(svd_layer, "use_lora", False)
+        ):
             try:
                 src_lA = getattr(layer, "lora_A", None)
                 src_lB = getattr(layer, "lora_B", None)
@@ -298,7 +335,11 @@ class SwiftSVDCompressor(BaseCompressor):
         if svd_layer.in_features != in_f or svd_layer.out_features != out_f:
             logger.error(
                 "SwiftSVD: shape mismatch for %s: expected (in=%d, out=%d), got (in=%d, out=%d)",
-                name, in_f, out_f, svd_layer.in_features, svd_layer.out_features,
+                name,
+                in_f,
+                out_f,
+                svd_layer.in_features,
+                svd_layer.out_features,
             )
             return None, best_err, best_r
 
@@ -316,11 +357,15 @@ class SwiftSVDCompressor(BaseCompressor):
                     if rel_diff > self.calibration_threshold:
                         logger.warning(
                             "SwiftSVD: %s calibration diff=%.4f > %.4f. Keeping original.",
-                            name, rel_diff, self.calibration_threshold,
+                            name,
+                            rel_diff,
+                            self.calibration_threshold,
                         )
                         return None, rel_diff, best_r
             except Exception as ce:
-                logger.warning("SwiftSVD: %s calibration error %s. Proceeding.", name, ce)
+                logger.warning(
+                    "SwiftSVD: %s calibration error %s. Proceeding.", name, ce
+                )
 
         return svd_layer, best_err, best_r
 
@@ -378,7 +423,9 @@ class SwiftSVDCompressor(BaseCompressor):
         total_error = 0.0
 
         for name, module in target_layers:
-            svd_layer, rel_err, final_rank = self.compress_linear(module, rank=self.rank, name=name)
+            svd_layer, rel_err, final_rank = self.compress_linear(
+                module, rank=self.rank, name=name
+            )
 
             if svd_layer is not None:
                 # SV-FIX-03: raw_shape from base_layer, correctly oriented.
@@ -389,15 +436,25 @@ class SwiftSVDCompressor(BaseCompressor):
                     expected_in = base_mod.weight.shape[0]
                     expected_out = base_mod.weight.shape[1]
                 else:
-                    expected_in = getattr(base_mod, "in_features", base_mod.weight.shape[1])
-                    expected_out = getattr(base_mod, "out_features", base_mod.weight.shape[0])
+                    expected_in = getattr(
+                        base_mod, "in_features", base_mod.weight.shape[1]
+                    )
+                    expected_out = getattr(
+                        base_mod, "out_features", base_mod.weight.shape[0]
+                    )
 
-                if svd_layer.in_features != expected_in or svd_layer.out_features != expected_out:
+                if (
+                    svd_layer.in_features != expected_in
+                    or svd_layer.out_features != expected_out
+                ):
                     logger.error(
                         "SwiftSVD: skipping %s due to shape mismatch "
                         "(expected in=%d, out=%d; got in=%d, out=%d)",
-                        name, expected_in, expected_out,
-                        svd_layer.in_features, svd_layer.out_features,
+                        name,
+                        expected_in,
+                        expected_out,
+                        svd_layer.in_features,
+                        svd_layer.out_features,
                     )
                     fallback_layers.append(name)
                     continue
@@ -408,18 +465,24 @@ class SwiftSVDCompressor(BaseCompressor):
                         sub = getattr(module, attr, None)
                         if sub is None:
                             continue
-                        params = sub.parameters() if hasattr(sub, "parameters") else iter([sub])
+                        params = (
+                            sub.parameters()
+                            if hasattr(sub, "parameters")
+                            else iter([sub])
+                        )
                         for p in params:
                             p.requires_grad = True
                 else:
                     replace_module(self.model, name, svd_layer)
 
-                self.compressed_layers.append({
-                    "name": name,
-                    "original_shape": (expected_out, expected_in),
-                    "rank": final_rank,
-                    "rel_error": float(rel_err),
-                })
+                self.compressed_layers.append(
+                    {
+                        "name": name,
+                        "original_shape": (expected_out, expected_in),
+                        "rank": final_rank,
+                        "rel_error": float(rel_err),
+                    }
+                )
                 total_error += rel_err
             else:
                 fallback_layers.append(name)
@@ -439,24 +502,32 @@ class SwiftSVDCompressor(BaseCompressor):
         except Exception:
             stats = {}
 
-        avg_err = (total_error / len(self.compressed_layers)) if self.compressed_layers else 0.0
-        stats.update({
-            "compressed_layers": self.compressed_layers,
-            "fallback_layers": fallback_layers,
-            "num_compressed_layers": len(self.compressed_layers),
-            "num_fallback": len(fallback_layers),
-            "avg_reconstruction_error": avg_err,
-            "rank": self.rank,
-            "rank_ratio": self.rank_ratio,
-            "max_error": self.max_error,
-            "fallback_to_original": self.fallback_to_original,
-            "param_reduction_pct": stats.get("param_reduction_pct", 0.0),
-            "method": "swift_svd",
-        })
+        avg_err = (
+            (total_error / len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
+        stats.update(
+            {
+                "compressed_layers": self.compressed_layers,
+                "fallback_layers": fallback_layers,
+                "num_compressed_layers": len(self.compressed_layers),
+                "num_fallback": len(fallback_layers),
+                "avg_reconstruction_error": avg_err,
+                "rank": self.rank,
+                "rank_ratio": self.rank_ratio,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "param_reduction_pct": stats.get("param_reduction_pct", 0.0),
+                "method": "swift_svd",
+            }
+        )
         self.stats = stats
         logger.info(
             "SwiftSVD: %d layers compressed, avg error %.4f, param reduction %.2f%%",
-            len(self.compressed_layers), avg_err, stats.get("param_reduction_pct", 0.0),
+            len(self.compressed_layers),
+            avg_err,
+            stats.get("param_reduction_pct", 0.0),
         )
         return self.model, stats
 
@@ -465,14 +536,16 @@ class SwiftSVDCompressor(BaseCompressor):
 # Factories
 # ===========================================================================
 
+
 @COMPRESSOR_REGISTRY.register("swift_svd")
 @COMPRESSOR_REGISTRY.register("swift_svd_factory")
 @COMPRESSOR_REGISTRY.register("swift_svd_compressor")
 def swift_svd_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     """Swift-SVD factory function."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
-    target_attn = kwargs.pop("target_attention_only",
-                             _cfg_get(comp_config, "target_attention_only", False))
+    target_attn = kwargs.pop(
+        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
+    )
     compressor = SwiftSVDCompressor(
         model,
         comp_config=comp_config,

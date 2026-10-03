@@ -17,18 +17,17 @@ _FRAMEWORK_PARENT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."
 if _FRAMEWORK_PARENT not in sys.path:
     sys.path.insert(0, _FRAMEWORK_PARENT)
 
-from framework.compression_engine.aa_svd_compressor import AASVDCompressor, SVDLinear
-from framework.compression_engine.kronecker_compressor import KroneckerCompressor
+from framework.compression_engine.aa_svd_compressor import (AASVDCompressor,
+                                                            SVDLinear)
+from framework.compression_engine.kronecker_compressor import \
+    KroneckerCompressor
 from framework.compression_engine.kronecker_linear import KroneckerLinear
 from framework.compression_engine.kronecker_tt_lora import (
-    KroneckerTTLoRACompressor,
-    KroneckerTTLoRALayer,
-)
-from framework.compression_engine.replaceme_compressor import ReplaceMeCompressor
+    KroneckerTTLoRACompressor, KroneckerTTLoRALayer)
+from framework.compression_engine.replaceme_compressor import \
+    ReplaceMeCompressor
 from framework.compression_engine.rotational_slicegpt_int4 import (
-    RotationalSliceGPTCompressor,
-    RotationalSliceGPTINT4Compressor,
-)
+    RotationalSliceGPTCompressor, RotationalSliceGPTINT4Compressor)
 from framework.compression_engine.svd_linear import SVDLinearLayer
 from framework.core.registry import COMPRESSOR_REGISTRY
 
@@ -163,9 +162,9 @@ if __name__ == "__main__":
     unittest.main()
 
 
-from framework.utils.compat import should_compress_linear
 from framework.compression_engine.a3_compressor import A3Compressor
 from framework.compression_engine.direct_svd import DirectSVDCompressor
+from framework.utils.compat import should_compress_linear
 from framework.utils.lora import LoRALinear
 
 

@@ -3,13 +3,13 @@ Unit tests for strict parameter freezing on hybrid recurrent attention modules
 and trainable parameter count thresholds.
 """
 import unittest
+
 import torch
 import torch.nn as nn
-
-from framework.utils.compat import get_recovery_params
 from framework.attentions.gated_delta_net import GatedDeltaNet, LoRALinear
-from framework.attentions.hgrn2_layer import HGRN2Layer
 from framework.attentions.hgrn2_gated_deltanet import HGRN2GatedDeltaNet
+from framework.attentions.hgrn2_layer import HGRN2Layer
+from framework.utils.compat import get_recovery_params
 
 
 class DummyRecurrentModule(nn.Module):

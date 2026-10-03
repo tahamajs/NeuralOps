@@ -10,10 +10,11 @@ Verifies:
 - End-to-end full dashboard payload serialization
 """
 
+import json
 import os
 import sys
-import json
 import unittest
+
 import numpy as np
 import torch
 
@@ -21,21 +22,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from framework.visualization.attention_canvas_suite import (
-    AttentionCanvasSuite,
-    HeadViewData,
-    ModelViewData,
-    SankeyData,
-    QKEmbeddingData,
-    LiveMathBreakdown,
-    extract_head_view,
-    compute_model_view_metrics,
-    generate_sankey_flow_data,
-    compute_qk_joint_embedding,
-    generate_live_math_breakdown,
-    generate_head_heatmap_svg,
-    generate_paper_latex_section,
-    classify_head_specialization,
-)
+    AttentionCanvasSuite, HeadViewData, LiveMathBreakdown, ModelViewData,
+    QKEmbeddingData, SankeyData, classify_head_specialization,
+    compute_model_view_metrics, compute_qk_joint_embedding, extract_head_view,
+    generate_head_heatmap_svg, generate_live_math_breakdown,
+    generate_paper_latex_section, generate_sankey_flow_data)
 
 
 class TestAttentionCanvasSuite(unittest.TestCase):

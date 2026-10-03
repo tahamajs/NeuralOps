@@ -1,7 +1,8 @@
+import framework.attentions.asvd_attention
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.asvd_attention
+
 
 def test_asvd_attention_module_present():
     assert hasattr(framework.attentions, 'asvd_attention')

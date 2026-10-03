@@ -1,7 +1,9 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.attentions.hamming_attention import HammingAttention, inject_hamming_attention
+from framework.attentions.hamming_attention import (HammingAttention,
+                                                    inject_hamming_attention)
+
 
 def test_hamming_attention_standalone():
     attn = HammingAttention(hidden_size=64, num_heads=4, lora_rank=8)

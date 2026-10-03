@@ -14,9 +14,9 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
+
 from .samba_m3 import SAMBAM3Block
 
 try:
@@ -44,20 +44,26 @@ class MinimalMoEFallback(nn.Module):
         self.d_model = d_model
         self.n_experts = n_experts
         self.router = nn.Linear(d_model, n_experts, bias=False)
-        self.experts = nn.ModuleList([
-            nn.Sequential(
-                nn.Linear(d_model, d_model * 2),
-                nn.GELU(),
-                nn.Linear(d_model * 2, d_model),
-            )
-            for _ in range(n_experts)
-        ])
+        self.experts = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Linear(d_model, d_model * 2),
+                    nn.GELU(),
+                    nn.Linear(d_model * 2, d_model),
+                )
+                for _ in range(n_experts)
+            ]
+        )
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         router_in = self.router.in_features
         if x.shape[-1] != router_in:
-            x_in = F.pad(x, (0, router_in - x.shape[-1])) if x.shape[-1] < router_in else x[..., :router_in]
+            x_in = (
+                F.pad(x, (0, router_in - x.shape[-1]))
+                if x.shape[-1] < router_in
+                else x[..., :router_in]
+            )
         else:
             x_in = x
         logits = self.router(x_in)
@@ -66,7 +72,11 @@ class MinimalMoEFallback(nn.Module):
         for i, exp in enumerate(self.experts):
             out = out + weights[..., i : i + 1] * exp(x_in)
         if out.shape[-1] != x.shape[-1]:
-            out = F.pad(out, (0, x.shape[-1] - out.shape[-1])) if out.shape[-1] < x.shape[-1] else out[..., :x.shape[-1]]
+            out = (
+                F.pad(out, (0, x.shape[-1] - out.shape[-1]))
+                if out.shape[-1] < x.shape[-1]
+                else out[..., : x.shape[-1]]
+            )
         self.aux_loss = torch.tensor(0.0, device=x.device)
         return out, weights
 
@@ -95,28 +105,56 @@ class SambaMoEBlock(BaseAttention):
         super().__init__(config, rank)
         hidden_size = kwargs.get("d_model") or kwargs.get("hidden_size") or d_model
         if pretrained_attn is not None:
-            cand = getattr(pretrained_attn, "hidden_size", getattr(pretrained_attn, "embed_dim", getattr(pretrained_attn, "all_head_size", None)))
-            if cand is None and hasattr(pretrained_attn, "q_proj") and hasattr(pretrained_attn.q_proj, "in_features"):
+            cand = getattr(
+                pretrained_attn,
+                "hidden_size",
+                getattr(
+                    pretrained_attn,
+                    "embed_dim",
+                    getattr(pretrained_attn, "all_head_size", None),
+                ),
+            )
+            if (
+                cand is None
+                and hasattr(pretrained_attn, "q_proj")
+                and hasattr(pretrained_attn.q_proj, "in_features")
+            ):
                 cand = pretrained_attn.q_proj.in_features
-            elif cand is None and hasattr(pretrained_attn, "q_lin") and hasattr(pretrained_attn.q_lin, "in_features"):
+            elif (
+                cand is None
+                and hasattr(pretrained_attn, "q_lin")
+                and hasattr(pretrained_attn.q_lin, "in_features")
+            ):
                 cand = pretrained_attn.q_lin.in_features
             if cand is not None:
                 hidden_size = cand
         if hidden_size is None and config is not None:
-            hidden_size = _cfg_get(config, "hidden_size", _cfg_get(config, "d_model", None))
+            hidden_size = _cfg_get(
+                config, "hidden_size", _cfg_get(config, "d_model", None)
+            )
         hidden_size = int(hidden_size or 768)
 
         if config is not None:
-            n_heads = _cfg_get(config, "num_attention_heads", _cfg_get(config, "n_heads", n_heads or 12))
-            n_experts = _cfg_get(config, "num_experts", _cfg_get(config, "n_experts", n_experts))
+            n_heads = _cfg_get(
+                config,
+                "num_attention_heads",
+                _cfg_get(config, "n_heads", n_heads or 12),
+            )
+            n_experts = _cfg_get(
+                config, "num_experts", _cfg_get(config, "n_experts", n_experts)
+            )
             window = _cfg_get(config, "window_size", window)
         else:
             n_heads = n_heads or 12
 
         self.d_model = hidden_size
         self.n_heads = int(n_heads)
-        self.lora_rank = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
-        self.lora_alpha = kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
+        self.lora_rank = kwargs.get(
+            "lora_rank", _cfg_get(config, "lora_rank", lora_rank)
+        )
+        self.lora_alpha = kwargs.get(
+            "lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha)
+        )
 
         self.swa_mamba = SAMBAM3Block(
             config=config,
@@ -133,7 +171,9 @@ class SambaMoEBlock(BaseAttention):
             try:
                 self.moe = REAPMoE(self.d_model, n_experts=n_experts)
             except Exception as e:
-                logger.warning("REAPMoE construction failed: %s, using MinimalMoEFallback", e)
+                logger.warning(
+                    "REAPMoE construction failed: %s, using MinimalMoEFallback", e
+                )
                 self.moe = MinimalMoEFallback(self.d_model, n_experts=min(4, n_experts))
         else:
             self.moe = MinimalMoEFallback(self.d_model, n_experts=min(4, n_experts))
@@ -167,8 +207,22 @@ class SambaMoEBlock(BaseAttention):
 
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
         """Propagate weight transfer to internal SAMBA-M3 and SSM components."""
-        src_cls_name = getattr(pretrained_attn, "__class__", type(pretrained_attn)).__name__
-        has_out_proj = any(hasattr(pretrained_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+        src_cls_name = getattr(
+            pretrained_attn, "__class__", type(pretrained_attn)
+        ).__name__
+        has_out_proj = any(
+            hasattr(pretrained_attn, attr)
+            for attr in (
+                "dense",
+                "out_proj",
+                "c_proj",
+                "out_lin",
+                "o_proj",
+                "wo",
+                "o",
+                "proj",
+            )
+        )
         if (
             src_cls_name in ("BertSelfAttention", "RobertaSelfAttention")
             or (src_cls_name.endswith("SelfAttention") and not has_out_proj)
@@ -217,15 +271,25 @@ class SambaMoEBlock(BaseAttention):
             router_in = self.moe.router.in_features
 
         if x.shape[-1] != router_in:
-            x_moe = F.pad(x, (0, router_in - x.shape[-1])) if x.shape[-1] < router_in else x[..., :router_in]
+            x_moe = (
+                F.pad(x, (0, router_in - x.shape[-1]))
+                if x.shape[-1] < router_in
+                else x[..., :router_in]
+            )
         else:
             x_moe = x
 
         moe_out, _ = self.moe(x_moe)
-        self.aux_loss = getattr(self.moe, "aux_loss", torch.tensor(0.0, device=x.device))
+        self.aux_loss = getattr(
+            self.moe, "aux_loss", torch.tensor(0.0, device=x.device)
+        )
 
         if moe_out.shape[-1] != x.shape[-1]:
-            moe_out = F.pad(moe_out, (0, x.shape[-1] - moe_out.shape[-1])) if moe_out.shape[-1] < x.shape[-1] else moe_out[..., :x.shape[-1]]
+            moe_out = (
+                F.pad(moe_out, (0, x.shape[-1] - moe_out.shape[-1]))
+                if moe_out.shape[-1] < x.shape[-1]
+                else moe_out[..., : x.shape[-1]]
+            )
 
         target_dtype = hidden_states.dtype
         x = x.to(target_dtype)
@@ -238,7 +302,11 @@ class SambaMoEBlock(BaseAttention):
             out = self.norm(x + moe_out).to(target_dtype)
 
         if out.shape[-1] != hidden_states.shape[-1]:
-            out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1])) if out.shape[-1] < hidden_states.shape[-1] else out[..., :hidden_states.shape[-1]]
+            out = (
+                F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
+                if out.shape[-1] < hidden_states.shape[-1]
+                else out[..., : hidden_states.shape[-1]]
+            )
         return (out.to(target_dtype), attn_w)
 
 
@@ -276,7 +344,9 @@ def inject_samba_moe(
             layer_list = target.model.layers
         elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
             layer_list = target.encoder.layer
-        elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        elif hasattr(target, "layers") and isinstance(
+            target.layers, (nn.ModuleList, list)
+        ):
             layer_list = target.layers
 
         if layer_list is not None:
@@ -314,7 +384,11 @@ def inject_samba_moe(
         d_model = 768
         n_heads = 12
         if src is not None:
-            d_model = getattr(src, "hidden_size", getattr(src, "embed_dim", getattr(src, "all_head_size", 768)))
+            d_model = getattr(
+                src,
+                "hidden_size",
+                getattr(src, "embed_dim", getattr(src, "all_head_size", 768)),
+            )
             if hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features"):
                 d_model = src.q_proj.in_features
             elif hasattr(src, "q_lin") and hasattr(src.q_lin, "in_features"):
@@ -322,7 +396,9 @@ def inject_samba_moe(
             n_heads = getattr(src, "num_heads", getattr(src, "num_attention_heads", 12))
 
         if model_config is not None:
-            d_model = _cfg_get(model_config, "hidden_size", _cfg_get(model_config, "dim", d_model))
+            d_model = _cfg_get(
+                model_config, "hidden_size", _cfg_get(model_config, "dim", d_model)
+            )
             n_heads = _cfg_get(model_config, "num_attention_heads", n_heads)
 
         lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))

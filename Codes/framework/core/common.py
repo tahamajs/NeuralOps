@@ -5,8 +5,8 @@ Centralizes repeatedly copied helpers (_cfg_get, repeat_kv, _detect_decoder, LoR
 
 from __future__ import annotations
 
-import math
 import logging
+import math
 from typing import Any
 
 import torch
@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 # ==============================================================================
 # 1. Configuration Helper
 # ==============================================================================
+
 
 def _cfg_get(config: Any, key: str, default: Any = None) -> Any:
     """
@@ -36,6 +37,7 @@ def _cfg_get(config: Any, key: str, default: Any = None) -> Any:
 # ==============================================================================
 # 2. Attention Tensor Helpers
 # ==============================================================================
+
 
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     """
@@ -67,8 +69,22 @@ def _detect_decoder(
         if getattr(config, "is_decoder", False) or getattr(config, "causal", False):
             return True
         mt = str(getattr(config, "model_type", "")).lower()
-        if mt.startswith(("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                          "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")):
+        if mt.startswith(
+            (
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
+            )
+        ):
             return True
         arch = getattr(config, "architectures", None)
         if arch and any(("GPT" in str(a) or "CausalLM" in str(a)) for a in arch):
@@ -110,12 +126,14 @@ def _apply_rope(
 # 3. Parameter-Efficient / Decomposed Layers
 # ==============================================================================
 
+
 class LoRALinear(nn.Module):
     r"""
     Universal LoRA linear layer:
     Supports both wrapper mode: LoRALinear(base_layer, r=16, ...)
     and standalone mode: LoRALinear(in_features, out_features, bias=True, lora_rank=16, ...)
     """
+
     def __init__(
         self,
         base_or_in_features: nn.Module | int,
@@ -137,7 +155,9 @@ class LoRALinear(nn.Module):
         self.lora_alpha = float(lora_alpha)
         self.lora_scaling = (lora_alpha / effective_r) if effective_r > 0 else 1.0
         self.scaling = self.lora_scaling
-        self.lora_dropout = nn.Dropout(p=lora_dropout) if lora_dropout > 0.0 else nn.Identity()
+        self.lora_dropout = (
+            nn.Dropout(p=lora_dropout) if lora_dropout > 0.0 else nn.Identity()
+        )
         self.merged = False
         self.merge_weights = merge_weights
 
@@ -149,10 +169,16 @@ class LoRALinear(nn.Module):
             in_feat = getattr(self.base_layer, "in_features", None)
             out_feat = getattr(self.base_layer, "out_features", None)
             if in_feat is None and hasattr(self.base_layer, "weight"):
-                if hasattr(self.base_layer, "nf"): # Conv1D
-                    in_feat, out_feat = self.base_layer.weight.shape[0], self.base_layer.weight.shape[1]
+                if hasattr(self.base_layer, "nf"):  # Conv1D
+                    in_feat, out_feat = (
+                        self.base_layer.weight.shape[0],
+                        self.base_layer.weight.shape[1],
+                    )
                 else:
-                    out_feat, in_feat = self.base_layer.weight.shape[0], self.base_layer.weight.shape[1]
+                    out_feat, in_feat = (
+                        self.base_layer.weight.shape[0],
+                        self.base_layer.weight.shape[1],
+                    )
             self.in_features = in_feat
             self.out_features = out_feat
             self.is_wrapper = True
@@ -160,16 +186,26 @@ class LoRALinear(nn.Module):
             # Standalone mode
             self.is_wrapper = False
             self.in_features = int(base_or_in_features)
-            self.out_features = int(out_features if out_features is not None else base_or_in_features)
-            self.weight = nn.Parameter(torch.empty((self.out_features, self.in_features), **factory_kwargs))
+            self.out_features = int(
+                out_features if out_features is not None else base_or_in_features
+            )
+            self.weight = nn.Parameter(
+                torch.empty((self.out_features, self.in_features), **factory_kwargs)
+            )
             if bias:
-                self.bias = nn.Parameter(torch.empty(self.out_features, **factory_kwargs))
+                self.bias = nn.Parameter(
+                    torch.empty(self.out_features, **factory_kwargs)
+                )
             else:
                 self.register_parameter("bias", None)
 
         if self.lora_rank > 0 and self.in_features and self.out_features:
-            self.lora_A = nn.Parameter(torch.empty((self.lora_rank, self.in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((self.out_features, self.lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((self.lora_rank, self.in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((self.out_features, self.lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -247,8 +283,16 @@ class LoRALinear(nn.Module):
         else:
             res = F.linear(x, self.weight, self.bias)
 
-        if not self.merged and self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(self.lora_dropout(x), self.lora_A), self.lora_B) * self.lora_scaling
+        if (
+            not self.merged
+            and self.lora_rank > 0
+            and self.lora_A is not None
+            and self.lora_B is not None
+        ):
+            lora_out = (
+                F.linear(F.linear(self.lora_dropout(x), self.lora_A), self.lora_B)
+                * self.lora_scaling
+            )
             res = res + lora_out
         return res
 
@@ -257,6 +301,7 @@ class FactorizedLinear(nn.Module):
     """
     Decomposed linear layer: W ≈ W2 @ W1 with optional LoRA residual branch.
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -274,7 +319,11 @@ class FactorizedLinear(nn.Module):
         self.out_features = int(out_features)
         self.rank = max(1, min(int(rank), self.in_features, self.out_features))
         self.svd_rank = self.rank
-        self.lora_rank = min(int(lora_rank), min(self.in_features, self.out_features)) if lora_rank > 0 else 0
+        self.lora_rank = (
+            min(int(lora_rank), min(self.in_features, self.out_features))
+            if lora_rank > 0
+            else 0
+        )
 
         factory_kwargs = {"device": device, "dtype": dtype}
         self.lin1 = nn.Linear(self.in_features, self.rank, bias=False, **factory_kwargs)
@@ -286,8 +335,12 @@ class FactorizedLinear(nn.Module):
             self.lin2.bias.requires_grad = False
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty(self.out_features, self.lora_rank, **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty(self.lora_rank, self.in_features, **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty(self.out_features, self.lora_rank, **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)

@@ -29,7 +29,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
@@ -73,12 +72,13 @@ class SVDLLMLinear(nn.Module):
     """
     SVD-LLM Factorized Linear Layer executing as:
     y = (x @ W_v.T + lora_v(x)) @ (W_u.T) + lora_u(x @ W_v.T) + bias
-    
+
     Specifically, with sequential LoRA support:
     - W_u ∈ R^(d_out × r), W_v ∈ R^(r × d_in)
     - LoRA for W_u: A_u ∈ R^(r_L × r), B_u ∈ R^(d_out × r_L)
     - LoRA for W_v: A_v ∈ R^(r_L × d_in), B_v ∈ R^(r × r_L)
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -101,22 +101,36 @@ class SVDLLMLinear(nn.Module):
         self.scaling = lora_alpha / max(1, lora_rank)
 
         # Explicit factor buffers: W_u and W_v
-        self.W_u = nn.Parameter(torch.empty(out_features, self.rank, device=device, dtype=dtype))
-        self.W_v = nn.Parameter(torch.empty(self.rank, in_features, device=device, dtype=dtype))
+        self.W_u = nn.Parameter(
+            torch.empty(out_features, self.rank, device=device, dtype=dtype)
+        )
+        self.W_v = nn.Parameter(
+            torch.empty(self.rank, in_features, device=device, dtype=dtype)
+        )
         if bias:
-            self.bias = nn.Parameter(torch.zeros(out_features, device=device, dtype=dtype))
+            self.bias = nn.Parameter(
+                torch.zeros(out_features, device=device, dtype=dtype)
+            )
         else:
             self.register_parameter("bias", None)
 
         # LoRA adapters for W_u and W_v
         if self.lora_rank > 0:
             # LoRA for W_u: input dim = r, output dim = out_features
-            self.lora_A_u = nn.Parameter(torch.empty(lora_rank, self.rank, device=device, dtype=dtype))
-            self.lora_B_u = nn.Parameter(torch.empty(out_features, lora_rank, device=device, dtype=dtype))
+            self.lora_A_u = nn.Parameter(
+                torch.empty(lora_rank, self.rank, device=device, dtype=dtype)
+            )
+            self.lora_B_u = nn.Parameter(
+                torch.empty(out_features, lora_rank, device=device, dtype=dtype)
+            )
 
             # LoRA for W_v: input dim = in_features, output dim = r
-            self.lora_A_v = nn.Parameter(torch.empty(lora_rank, in_features, device=device, dtype=dtype))
-            self.lora_B_v = nn.Parameter(torch.empty(self.rank, lora_rank, device=device, dtype=dtype))
+            self.lora_A_v = nn.Parameter(
+                torch.empty(lora_rank, in_features, device=device, dtype=dtype)
+            )
+            self.lora_B_v = nn.Parameter(
+                torch.empty(self.rank, lora_rank, device=device, dtype=dtype)
+            )
 
             self.reset_lora_parameters()
         else:
@@ -142,15 +156,23 @@ class SVDLLMLinear(nn.Module):
                 nn.init.kaiming_uniform_(self.lora_A_v, a=math.sqrt(5))
                 nn.init.zeros_(self.lora_B_v)
 
-    def set_factors(self, W_u: torch.Tensor, W_v: torch.Tensor, bias: torch.Tensor | None = None) -> None:
+    def set_factors(
+        self, W_u: torch.Tensor, W_v: torch.Tensor, bias: torch.Tensor | None = None
+    ) -> None:
         with torch.no_grad():
             r = min(self.rank, W_u.size(1), W_v.size(0))
             self.W_u.data.zero_()
             self.W_v.data.zero_()
-            self.W_u.data[:, :r].copy_(W_u[:, :r].to(device=self.W_u.device, dtype=self.W_u.dtype))
-            self.W_v.data[:r, :].copy_(W_v[:r, :].to(device=self.W_v.device, dtype=self.W_v.dtype))
+            self.W_u.data[:, :r].copy_(
+                W_u[:, :r].to(device=self.W_u.device, dtype=self.W_u.dtype)
+            )
+            self.W_v.data[:r, :].copy_(
+                W_v[:r, :].to(device=self.W_v.device, dtype=self.W_v.dtype)
+            )
             if bias is not None and self.bias is not None:
-                self.bias.data.copy_(bias.to(device=self.bias.device, dtype=self.bias.dtype))
+                self.bias.data.copy_(
+                    bias.to(device=self.bias.device, dtype=self.bias.dtype)
+                )
 
     def set_active_lora_stage(self, stage: str | None) -> None:
         """
@@ -192,15 +214,34 @@ class SVDLLMLinear(nn.Module):
         # 1. Compute latent representation through W_v
         # latent = x @ W_v.T + (optional LoRA_v)
         latent = F.linear(x, self.W_v)
-        if self.lora_rank > 0 and self.lora_A_v is not None and self.lora_B_v is not None:
-            lora_v = F.linear(F.linear(x.to(self.lora_A_v.dtype), self.lora_A_v), self.lora_B_v) * self.scaling
+        if (
+            self.lora_rank > 0
+            and self.lora_A_v is not None
+            and self.lora_B_v is not None
+        ):
+            lora_v = (
+                F.linear(
+                    F.linear(x.to(self.lora_A_v.dtype), self.lora_A_v), self.lora_B_v
+                )
+                * self.scaling
+            )
             latent = latent + lora_v.to(latent.dtype)
 
         # 2. Compute output through W_u
         # out = latent @ W_u.T + (optional LoRA_u)
         out = F.linear(latent, self.W_u)
-        if self.lora_rank > 0 and self.lora_A_u is not None and self.lora_B_u is not None:
-            lora_u = F.linear(F.linear(latent.to(self.lora_A_u.dtype), self.lora_A_u), self.lora_B_u) * self.scaling
+        if (
+            self.lora_rank > 0
+            and self.lora_A_u is not None
+            and self.lora_B_u is not None
+        ):
+            lora_u = (
+                F.linear(
+                    F.linear(latent.to(self.lora_A_u.dtype), self.lora_A_u),
+                    self.lora_B_u,
+                )
+                * self.scaling
+            )
             out = out + lora_u.to(out.dtype)
 
         if self.bias is not None:
@@ -272,18 +313,27 @@ class SVDLLMCompressor(BaseCompressor):
         """
         try:
             from datasets import load_dataset
+
             try:
                 ds = load_dataset("wikitext", "wikitext-2-raw-v1", split="train")
             except Exception:
-                ds = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="train")
+                ds = load_dataset(
+                    "Salesforce/wikitext", "wikitext-2-raw-v1", split="train"
+                )
             texts = [t.strip() for t in ds["text"] if t and len(t.strip()) > 50]
             if len(texts) >= n_samples:
-                logger.info("Loaded %d calibration samples from WikiText-2 for SVD-LLM.", n_samples)
+                logger.info(
+                    "Loaded %d calibration samples from WikiText-2 for SVD-LLM.",
+                    n_samples,
+                )
                 return texts[:n_samples]
             elif texts:
                 return texts
         except Exception as e:
-            logger.warning("Could not download WikiText-2 calibration dataset (%s); using default corpus.", e)
+            logger.warning(
+                "Could not download WikiText-2 calibration dataset (%s); using default corpus.",
+                e,
+            )
         return DEFAULT_CALIBRATION_CORPUS
 
     def compute_rank_from_ratio(self, m: int, n: int, ratio: float) -> int:
@@ -303,7 +353,10 @@ class SVDLLMCompressor(BaseCompressor):
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, SVDLLMLinear):
             return False
-        if any(name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]):
+        if any(
+            name.endswith(sfx)
+            for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]
+        ):
             return False
 
         target_mod = getattr(module, "base_layer", module)
@@ -322,18 +375,51 @@ class SVDLLMCompressor(BaseCompressor):
             return False
 
         name_lower = name.lower()
-        if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score", "pooler"]):
+        if any(
+            skip in name_lower
+            for skip in [
+                "lm_head",
+                "classifier",
+                "head",
+                "output_layer",
+                "score",
+                "pooler",
+            ]
+        ):
             return False
 
         if self.target_attention_only:
-            ffn_patterns = ["ffn", "mlp", "lin1", "lin2", "intermediate", "gate_proj", "up_proj", "down_proj", "c_fc"]
+            ffn_patterns = [
+                "ffn",
+                "mlp",
+                "lin1",
+                "lin2",
+                "intermediate",
+                "gate_proj",
+                "up_proj",
+                "down_proj",
+                "c_fc",
+            ]
             if any(p in name_lower for p in ffn_patterns):
                 return False
             if "output.dense" in name_lower and "attention" not in name_lower:
                 return False
             attn_patterns = [
-                "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-                "out_lin", "q_lin", "k_lin", "v_lin", "c_attn", "c_proj", "query", "key", "value"
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "out_lin",
+                "q_lin",
+                "k_lin",
+                "v_lin",
+                "c_attn",
+                "c_proj",
+                "query",
+                "key",
+                "value",
             ]
             if not any(p in name_lower for p in attn_patterns):
                 return False
@@ -367,11 +453,20 @@ class SVDLLMCompressor(BaseCompressor):
                     target_mod = getattr(module, "base_layer", module)
                     cls_name = module.__class__.__name__.lower()
                     target_cls = target_mod.__class__.__name__.lower()
-                    is_conv1d = "conv1d" in cls_name or "conv1d" in target_cls or hasattr(module, "nf") or hasattr(target_mod, "nf")
-                    weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
+                    is_conv1d = (
+                        "conv1d" in cls_name
+                        or "conv1d" in target_cls
+                        or hasattr(module, "nf")
+                        or hasattr(target_mod, "nf")
+                    )
+                    weight_tensor = getattr(
+                        target_mod, "weight", getattr(module, "weight", None)
+                    )
                     if weight_tensor is None:
                         return
-                    in_f = weight_tensor.shape[0] if is_conv1d else weight_tensor.shape[1]
+                    in_f = (
+                        weight_tensor.shape[0] if is_conv1d else weight_tensor.shape[1]
+                    )
                     x_fp32 = x.float()
                     x_flat = x_fp32.reshape(-1, in_f)
                     mask = x_flat.abs().sum(dim=-1) > 1e-5
@@ -429,7 +524,9 @@ class SVDLLMCompressor(BaseCompressor):
         for exp in [-6, -5, -4, -3, -2, -1, 0]:
             eps = max(10**exp * mean_diag, 10**exp)
             try:
-                S = torch.linalg.cholesky(C + eps * torch.eye(n, device=C.device, dtype=C.dtype))
+                S = torch.linalg.cholesky(
+                    C + eps * torch.eye(n, device=C.device, dtype=C.dtype)
+                )
                 return S
             except Exception:
                 continue
@@ -465,7 +562,9 @@ class SVDLLMCompressor(BaseCompressor):
             try:
                 S_inv = torch.linalg.pinv(S)
             except Exception:
-                S_inv = torch.inverse(S + 1e-5 * torch.eye(n, device=S.device, dtype=S.dtype))
+                S_inv = torch.inverse(
+                    S + 1e-5 * torch.eye(n, device=S.device, dtype=S.dtype)
+                )
             W_white = W_fp32 @ S
         else:
             # Identity whitening (standard SVD fallback if covariance unavailable)
@@ -491,7 +590,9 @@ class SVDLLMCompressor(BaseCompressor):
 
         return W_u, W_v, error
 
-    def _compute_recovery_loss(self, batch_ids: torch.Tensor, batch_mask: torch.Tensor) -> torch.Tensor | None:
+    def _compute_recovery_loss(
+        self, batch_ids: torch.Tensor, batch_mask: torch.Tensor
+    ) -> torch.Tensor | None:
         """
         Compute recovery training loss across both CausalLM and Sequence Classification architectures.
         - CausalLM (GPT-2, LLaMA): cross-entropy autoregressive loss with labels=batch_ids.
@@ -499,8 +600,13 @@ class SVDLLMCompressor(BaseCompressor):
         """
         try:
             # 1. CausalLM path
-            if hasattr(self.model, "lm_head") or "causallm" in self.model.__class__.__name__.lower():
-                outputs = self.model(input_ids=batch_ids, attention_mask=batch_mask, labels=batch_ids)
+            if (
+                hasattr(self.model, "lm_head")
+                or "causallm" in self.model.__class__.__name__.lower()
+            ):
+                outputs = self.model(
+                    input_ids=batch_ids, attention_mask=batch_mask, labels=batch_ids
+                )
                 loss = outputs.loss if hasattr(outputs, "loss") else None
                 if loss is None and isinstance(outputs, tuple):
                     loss = outputs[0]
@@ -511,7 +617,11 @@ class SVDLLMCompressor(BaseCompressor):
             logits = getattr(outputs, "logits", None)
             if logits is None and isinstance(outputs, tuple):
                 logits = outputs[0]
-            if logits is not None and isinstance(logits, torch.Tensor) and logits.ndim >= 2:
+            if (
+                logits is not None
+                and isinstance(logits, torch.Tensor)
+                and logits.ndim >= 2
+            ):
                 probs = torch.softmax(logits.float(), dim=-1)
                 entropy = -(probs * torch.log(probs + 1e-10)).sum(dim=-1).mean()
                 return entropy
@@ -531,7 +641,10 @@ class SVDLLMCompressor(BaseCompressor):
         if self.tokenizer is None or not self.calibration_texts:
             return
 
-        logger.info("[SVD-LLM] Starting 2-Stage Sequential LoRA Recovery (%d steps/stage)...", self.recovery_steps)
+        logger.info(
+            "[SVD-LLM] Starting 2-Stage Sequential LoRA Recovery (%d steps/stage)...",
+            self.recovery_steps,
+        )
         device = self.device
 
         # Step 0: Freeze ALL model parameters (embeddings, layernorms, heads, and base weights)
@@ -546,10 +659,17 @@ class SVDLLMCompressor(BaseCompressor):
             max_length=512,
             return_tensors="pt",
         )
-        dataset = torch.utils.data.TensorDataset(encodings["input_ids"], encodings["attention_mask"])
-        loader = torch.utils.data.DataLoader(dataset, batch_size=min(self.batch_size, len(dataset)), shuffle=True)
+        dataset = torch.utils.data.TensorDataset(
+            encodings["input_ids"], encodings["attention_mask"]
+        )
+        loader = torch.utils.data.DataLoader(
+            dataset, batch_size=min(self.batch_size, len(dataset)), shuffle=True
+        )
 
-        for stage, stage_name in [("stage1", "Stage 1 (Update W_u)"), ("stage2", "Stage 2 (Update W_v)")]:
+        for stage, stage_name in [
+            ("stage1", "Stage 1 (Update W_u)"),
+            ("stage2", "Stage 2 (Update W_v)"),
+        ]:
             logger.info(f"[SVD-LLM Sequential LoRA] {stage_name}...")
             # Set active LoRA adapters
             for m in self.model.modules():
@@ -560,7 +680,9 @@ class SVDLLMCompressor(BaseCompressor):
             if not trainable_params:
                 continue
 
-            optimizer = torch.optim.AdamW(trainable_params, lr=self.learning_rate, weight_decay=self.weight_decay)
+            optimizer = torch.optim.AdamW(
+                trainable_params, lr=self.learning_rate, weight_decay=self.weight_decay
+            )
             step = 0
             self.model.train()
 
@@ -599,15 +721,25 @@ class SVDLLMCompressor(BaseCompressor):
             if self._is_target_module(name, module):
                 target_layers.append((name, module))
 
-        logger.info("Found %d linear layers targeted for SVD-LLM compression.", len(target_layers))
+        logger.info(
+            "Found %d linear layers targeted for SVD-LLM compression.",
+            len(target_layers),
+        )
 
         for name, layer in target_layers:
             target_mod = getattr(layer, "base_layer", layer)
             cls_name = layer.__class__.__name__.lower()
             target_cls = target_mod.__class__.__name__.lower()
-            is_conv1d = "conv1d" in cls_name or "conv1d" in target_cls or hasattr(layer, "nf") or hasattr(target_mod, "nf")
+            is_conv1d = (
+                "conv1d" in cls_name
+                or "conv1d" in target_cls
+                or hasattr(layer, "nf")
+                or hasattr(target_mod, "nf")
+            )
 
-            weight_tensor = getattr(target_mod, "weight", getattr(layer, "weight", None))
+            weight_tensor = getattr(
+                target_mod, "weight", getattr(layer, "weight", None)
+            )
             if weight_tensor is None:
                 continue
 
@@ -626,9 +758,13 @@ class SVDLLMCompressor(BaseCompressor):
 
             C = covariances.get(name, None)
             try:
-                W_u, W_v, error = self._cholesky_whiten_and_decompose(W, C, target_rank=r)
+                W_u, W_v, error = self._cholesky_whiten_and_decompose(
+                    W, C, target_rank=r
+                )
             except Exception as decomp_err:
-                logger.warning("SVD-LLM decomposition failed for layer %s: %s", name, decomp_err)
+                logger.warning(
+                    "SVD-LLM decomposition failed for layer %s: %s", name, decomp_err
+                )
                 self.fallback_layers.append(name)
                 continue
 
@@ -637,7 +773,12 @@ class SVDLLMCompressor(BaseCompressor):
 
             # In faithful SVD-LLM (ICLR 2025), fallback is not used; all target layers are compressed.
             if self.fallback_to_original and error > self.max_error:
-                logger.info("SVD-LLM layer %s error %.4f > max_error %.4f; skipping (fallback).", name, error, self.max_error)
+                logger.info(
+                    "SVD-LLM layer %s error %.4f > max_error %.4f; skipping (fallback).",
+                    name,
+                    error,
+                    self.max_error,
+                )
                 self.fallback_layers.append(name)
                 continue
 
@@ -666,7 +807,9 @@ class SVDLLMCompressor(BaseCompressor):
             "fallback_layers": self.fallback_layers,
             "layer_errors": self.layer_errors,
             "layer_ranks": self.layer_ranks,
-            "mean_error": float(sum(self.layer_errors.values()) / max(1, len(self.layer_errors))),
+            "mean_error": float(
+                sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
+            ),
         }
         self.model.compression_stats = stats
         return self.model, stats

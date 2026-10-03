@@ -24,6 +24,7 @@ class StreamingLayerAccumulator:
     Online Welford & spectral accumulator for single-layer activations.
     Updates statistical moments dynamically and frees raw activation buffers immediately.
     """
+
     total_tokens: int = 0
     total_batches: int = 0
     running_mean_vector: np.ndarray | None = None
@@ -68,10 +69,9 @@ class StreamingLayerAccumulator:
             if self.running_mean_vector is None:
                 self.running_mean_vector = batch_mean.copy()
             else:
-                self.running_mean_vector = (
-                    self.running_mean_vector * (self.total_tokens / (self.total_tokens + n_tokens))
-                    + batch_mean * (n_tokens / (self.total_tokens + n_tokens))
-                )
+                self.running_mean_vector = self.running_mean_vector * (
+                    self.total_tokens / (self.total_tokens + n_tokens)
+                ) + batch_mean * (n_tokens / (self.total_tokens + n_tokens))
 
             # 2. Update Peak Outlier Magnitude
             batch_max = float(flat_act.abs().max().item())
@@ -84,8 +84,8 @@ class StreamingLayerAccumulator:
 
             mu = float(np.mean(act_cpu))
             centered = act_cpu - mu
-            m2 = float(np.mean(centered ** 2))
-            m4 = float(np.mean(centered ** 4))
+            m2 = float(np.mean(centered**2))
+            m4 = float(np.mean(centered**4))
 
             self.sum_m2 += m2 * global_elem
             self.sum_m4 += m4 * global_elem
@@ -103,10 +103,9 @@ class StreamingLayerAccumulator:
                 self.cov_samples = sub_n
             else:
                 total_s = self.cov_samples + sub_n
-                self.cov_matrix = (
-                    self.cov_matrix * (self.cov_samples / total_s)
-                    + batch_cov * (sub_n / total_s)
-                )
+                self.cov_matrix = self.cov_matrix * (
+                    self.cov_samples / total_s
+                ) + batch_cov * (sub_n / total_s)
                 self.cov_samples = total_s
 
             self.total_tokens += n_tokens
@@ -118,7 +117,7 @@ class StreamingLayerAccumulator:
             return 0.0
         m2 = self.sum_m2 / self.total_elements
         m4 = self.sum_m4 / self.total_elements
-        var_sq = m2 ** 2
+        var_sq = m2**2
         if var_sq < 1e-12:
             return 0.0
         return float((m4 / var_sq) - 3.0)
@@ -200,7 +199,9 @@ class LayerwiseAnalyzer:
         # Fallback: if no digit-indexed layers found, look for any layer module
         if not target_layers:
             for name, module in self.model.named_modules():
-                if "layer" in name.lower() and isinstance(module, (nn.ModuleList, nn.Sequential)):
+                if "layer" in name.lower() and isinstance(
+                    module, (nn.ModuleList, nn.Sequential)
+                ):
                     for sub_idx, sub_mod in enumerate(module):
                         target_layers.append((f"{name}.{sub_idx}", sub_mod))
                     break
@@ -212,9 +213,12 @@ class LayerwiseAnalyzer:
         layers = self._find_transformer_layers()
 
         num_layers = len(layers)
-        self.layer_accumulators = [StreamingLayerAccumulator() for _ in range(num_layers)]
+        self.layer_accumulators = [
+            StreamingLayerAccumulator() for _ in range(num_layers)
+        ]
 
         for layer_idx, (layer_name, module) in enumerate(layers):
+
             def make_hook(idx: int):
                 def hook_fn(mod: nn.Module, inputs: Any, output: Any) -> None:
                     # Extract tensor
@@ -224,6 +228,7 @@ class LayerwiseAnalyzer:
                         self.layer_accumulators[idx].update(tensor)
                         # Explicitly release references
                         del tensor
+
                 return hook_fn
 
             hook_handle = module.register_forward_hook(make_hook(layer_idx))
@@ -287,9 +292,11 @@ class LayerwiseAnalyzer:
 
         # Extract per-layer mean vectors
         mean_vectors = [
-            acc.running_mean_vector
-            if acc.running_mean_vector is not None
-            else np.zeros(128, dtype=np.float32)
+            (
+                acc.running_mean_vector
+                if acc.running_mean_vector is not None
+                else np.zeros(128, dtype=np.float32)
+            )
             for acc in self.layer_accumulators
         ]
 
@@ -305,9 +312,13 @@ class LayerwiseAnalyzer:
                 sim_clamped = 1.0
             similarities.append(sim_clamped)
 
-        effective_ranks = [acc.compute_effective_rank() for acc in self.layer_accumulators]
+        effective_ranks = [
+            acc.compute_effective_rank() for acc in self.layer_accumulators
+        ]
         max_outliers = [acc.max_activation for acc in self.layer_accumulators]
-        outlier_ratios = [acc.compute_outlier_ratio() for acc in self.layer_accumulators]
+        outlier_ratios = [
+            acc.compute_outlier_ratio() for acc in self.layer_accumulators
+        ]
         kurtosis_scores = [acc.compute_kurtosis() for acc in self.layer_accumulators]
 
         # Estimate intrinsic dimension using mean vectors

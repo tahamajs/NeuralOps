@@ -14,11 +14,12 @@ Tests:
 """
 
 import math
+
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.factorised_matrix_state import FactorisedMatrixState, _rotate_half, inject_factorised_matrix_state
+from framework.attentions.factorised_matrix_state import (
+    FactorisedMatrixState, _rotate_half, inject_factorised_matrix_state)
 
 
 class MockConfig:

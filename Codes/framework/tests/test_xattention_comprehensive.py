@@ -1,15 +1,12 @@
+import types
+
 import pytest
 import torch
 import torch.nn as nn
-import types
-
-from framework.attentions.xattention import (
-    XAttention,
-    inject_xattention,
-    _rotate_half,
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
+from framework.attentions.xattention import (LoRALinear, XAttention,
+                                             _rotate_half,
+                                             apply_rotary_pos_emb,
+                                             inject_xattention)
 
 
 def make_config(hidden_size=64, num_heads=4, is_decoder=False, model_type="bert", block_size=4, sparsity=0.5):

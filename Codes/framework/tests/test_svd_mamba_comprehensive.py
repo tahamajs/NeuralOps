@@ -1,13 +1,9 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.svd_mamba import (
-    SVDMamba,
-    inject_svd_mamba,
-    inject_svd_mamba_attention,
-    inject_SVD_Mamba,
-)
+from framework.attentions.svd_mamba import (SVDMamba, inject_svd_mamba,
+                                            inject_SVD_Mamba,
+                                            inject_svd_mamba_attention)
 
 
 class MockConfig:

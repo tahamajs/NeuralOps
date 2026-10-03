@@ -3,8 +3,8 @@
 import os
 import py_compile
 from pathlib import Path
-import pytest
 
+import pytest
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 
 

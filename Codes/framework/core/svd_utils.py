@@ -3,6 +3,7 @@ Centralized SVD & Factorization Utilities for Attention and Compression Modules.
 Provides numerical stability (FP32 execution for half-precision inputs),
 truncated SVD factor initialization, and energy-based rank selection.
 """
+
 from __future__ import annotations
 
 import torch
@@ -70,7 +71,7 @@ def select_rank_by_energy(
     """
     if singular_values.numel() == 0:
         return min_rank
-    energy = torch.cumsum(singular_values ** 2, dim=0)
+    energy = torch.cumsum(singular_values**2, dim=0)
     total_energy = energy[-1]
     if total_energy <= 0:
         return min_rank

@@ -1,19 +1,17 @@
+import types
+
 import pytest
 import torch
 import torch.nn as nn
-import types
-
-from framework.attentions.svd_attention import (
-    SVDLinearAttention,
-    LowRankSVDSequenceAttention,
-    _rotate_half,
-    apply_rotary_pos_emb,
-    inject_svd_linear_attention,
-)
-from framework.attentions.svd_sequence_attention import (
-    SVDLinearAttention as SVDLinearAttentionAlias,
-    LowRankSVDSequenceAttention as LowRankSVDSequenceAttentionAlias,
-)
+from framework.attentions.svd_attention import (LowRankSVDSequenceAttention,
+                                                SVDLinearAttention,
+                                                _rotate_half,
+                                                apply_rotary_pos_emb,
+                                                inject_svd_linear_attention)
+from framework.attentions.svd_sequence_attention import \
+    LowRankSVDSequenceAttention as LowRankSVDSequenceAttentionAlias
+from framework.attentions.svd_sequence_attention import \
+    SVDLinearAttention as SVDLinearAttentionAlias
 
 
 def make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=False, model_type="bert"):

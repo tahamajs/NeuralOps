@@ -20,15 +20,13 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+
 import torch
 import torch.nn as nn
-
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
+from framework.core.pruning_utils import apply_24_structured_mask
 from framework.core.registry import COMPRESSOR_REGISTRY
-from framework.core.pruning_utils import (
-    apply_24_structured_mask,
-)
 from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
@@ -67,12 +65,20 @@ class SLiMCompressor(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             bits = _cfg_get(cfg, "slim_bits", _cfg_get(cfg, "bits", bits))
-            sparsity = _cfg_get(cfg, "slim_sparsity", _cfg_get(cfg, "sparsity", sparsity))
+            sparsity = _cfg_get(
+                cfg, "slim_sparsity", _cfg_get(cfg, "sparsity", sparsity)
+            )
             rank = _cfg_get(cfg, "slim_rank", _cfg_get(cfg, "rank", rank))
-            structured_24 = _cfg_get(cfg, "slim_structured_24", _cfg_get(cfg, "structured_24", structured_24))
+            structured_24 = _cfg_get(
+                cfg, "slim_structured_24", _cfg_get(cfg, "structured_24", structured_24)
+            )
             max_error = _cfg_get(cfg, "max_error", max_error)
-            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
-            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
+            fallback_to_original = _cfg_get(
+                cfg, "fallback_to_original", fallback_to_original
+            )
+            target_attention_only = _cfg_get(
+                cfg, "target_attention_only", target_attention_only
+            )
 
         if "fallback_to_original" in kwargs:
             fallback_to_original = bool(kwargs["fallback_to_original"])
@@ -95,14 +101,30 @@ class SLiMCompressor(BaseCompressor):
         """
         name_l = name.lower()
         if self.target_attention_only:
-            attn_keywords = ['attn', 'attention', 'q_proj', 'k_proj', 'v_proj', 'o_proj', 'c_attn', 'c_proj', 'query', 'key', 'value']
+            attn_keywords = [
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "c_attn",
+                "c_proj",
+                "query",
+                "key",
+                "value",
+            ]
             if not any(k in name_l for k in attn_keywords):
                 return False
 
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__.lower()
         # Fix 2: Reliable Conv1D check using class name and hasattr(nf)
-        is_linear_like = isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
+        is_linear_like = (
+            isinstance(base_mod, nn.Linear)
+            or "conv1d" in cls_name
+            or hasattr(base_mod, "nf")
+        )
         if not is_linear_like:
             return False
         if not should_compress_linear(self.model, name):
@@ -119,7 +141,7 @@ class SLiMCompressor(BaseCompressor):
         max_val = W.max()
         if (max_val - min_val).abs() < 1e-6:
             max_val = min_val + 1e-6
-        scale = (max_val - min_val) / (2.0 ** self.bits - 1.0)
+        scale = (max_val - min_val) / (2.0**self.bits - 1.0)
         W_q = torch.round((W - min_val) / scale) * scale + min_val
         return W_q
 
@@ -139,14 +161,20 @@ class SLiMCompressor(BaseCompressor):
                 device = raw_w.device
                 dtype = raw_w.dtype
 
-                W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
+                W = (
+                    raw_w.t().contiguous().clone().float()
+                    if is_conv1d
+                    else raw_w.clone().float()
+                )
 
                 # 1. Quantize (Weights only; biases are preserved in full precision to avoid drift)
                 W_q = self._quantize(W)
 
                 # 2. Apply 2:4 structured sparsity or magnitude sparsity
                 if self.structured_24:
-                    W_sp, _ = apply_24_structured_mask(W_q, saliency=torch.abs(W_q), dim=1)
+                    W_sp, _ = apply_24_structured_mask(
+                        W_q, saliency=torch.abs(W_q), dim=1
+                    )
                 else:
                     flat = W_q.abs().reshape(-1)
                     k = max(1, int(flat.numel() * (1.0 - self.sparsity)))
@@ -160,7 +188,9 @@ class SLiMCompressor(BaseCompressor):
                     U, S, Vh = torch.linalg.svd(residual, full_matrices=False)
                     r = min(self.rank, len(S))
                     if r > 0:
-                        correction = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])
+                        correction = torch.matmul(
+                            U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :]
+                        )
                         total_svd_energy += torch.norm(correction).item()
                         W_final = W_sp + correction
                     else:
@@ -181,10 +211,17 @@ class SLiMCompressor(BaseCompressor):
                         rel_err,
                         name,
                         self.max_error,
-                        ". Skipping (fallback to original)." if self.fallback_to_original else ". Proceeding with compressed weight.",
+                        (
+                            ". Skipping (fallback to original)."
+                            if self.fallback_to_original
+                            else ". Proceeding with compressed weight."
+                        ),
                     )
                     if self.fallback_to_original:
-                        logger.warning("Fallback triggered for %s. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.", name)
+                        logger.warning(
+                            "Fallback triggered for %s. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.",
+                            name,
+                        )
                         for p in module.parameters():
                             p.requires_grad = False
                         continue
@@ -193,19 +230,35 @@ class SLiMCompressor(BaseCompressor):
                 base_mod.weight.data = final_w.to(dtype=dtype, device=device)
                 compressed_layer = base_mod
                 # Preserve existing LoRA adapter weights if the source module has them
-                if hasattr(module, 'lora_A') and hasattr(module, 'lora_B') and \
-                   module.lora_A is not None and module.lora_B is not None:
-                    src_lA = getattr(module.lora_A, 'weight', module.lora_A)
-                    src_lB = getattr(module.lora_B, 'weight', module.lora_B)
-                    if hasattr(compressed_layer, 'lora_A') and compressed_layer.lora_A is not None:
-                        if hasattr(src_lA, 'data') and src_lA.shape == compressed_layer.lora_A.shape:
+                if (
+                    hasattr(module, "lora_A")
+                    and hasattr(module, "lora_B")
+                    and module.lora_A is not None
+                    and module.lora_B is not None
+                ):
+                    src_lA = getattr(module.lora_A, "weight", module.lora_A)
+                    src_lB = getattr(module.lora_B, "weight", module.lora_B)
+                    if (
+                        hasattr(compressed_layer, "lora_A")
+                        and compressed_layer.lora_A is not None
+                    ):
+                        if (
+                            hasattr(src_lA, "data")
+                            and src_lA.shape == compressed_layer.lora_A.shape
+                        ):
                             compressed_layer.lora_A.data.copy_(src_lA.data)
-                    if hasattr(compressed_layer, 'lora_B') and compressed_layer.lora_B is not None:
-                        if hasattr(src_lB, 'data') and src_lB.shape == compressed_layer.lora_B.shape:
+                    if (
+                        hasattr(compressed_layer, "lora_B")
+                        and compressed_layer.lora_B is not None
+                    ):
+                        if (
+                            hasattr(src_lB, "data")
+                            and src_lB.shape == compressed_layer.lora_B.shape
+                        ):
                             compressed_layer.lora_B.data.copy_(src_lB.data)
 
                 # Determine if module is wrapped (LoRALinear) or standalone
-                is_wrapped = hasattr(module, 'base_layer')
+                is_wrapped = hasattr(module, "base_layer")
                 if is_wrapped:
                     module.base_layer = compressed_layer
                     new_module = module
@@ -217,19 +270,21 @@ class SLiMCompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         # Fix 6: Store max_error and fallback_to_original in stats
-        stats.update({
-            "pruned_layers": pruned_layers_count,
-            "quant_bits": self.bits,
-            "rank": self.rank,
-            "structured_24": self.structured_24,
-            "total_svd_energy": total_svd_energy,
-            "layer_errors": self.layer_errors,
-            "max_error": self.max_error,
-            "fallback_to_original": self.fallback_to_original,
-            "target_attention_only": self.target_attention_only,
-            "biases_quantized": False,  # Fix 5: Explicitly document bias policy
-            "method": "slim_quant_sparse_lowrank",
-        })
+        stats.update(
+            {
+                "pruned_layers": pruned_layers_count,
+                "quant_bits": self.bits,
+                "rank": self.rank,
+                "structured_24": self.structured_24,
+                "total_svd_energy": total_svd_energy,
+                "layer_errors": self.layer_errors,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "target_attention_only": self.target_attention_only,
+                "biases_quantized": False,  # Fix 5: Explicitly document bias policy
+                "method": "slim_quant_sparse_lowrank",
+            }
+        )
         self.stats = stats
         return self.model, stats
 
@@ -243,13 +298,31 @@ def slim_factory(
     **kwargs: Any,
 ) -> Any:
     """Factory function for SLiM compressor."""
-    bits = kwargs.pop("bits", _cfg_get(comp_config, "slim_bits", _cfg_get(comp_config, "bits", 4)))
-    sparsity = kwargs.pop("sparsity", _cfg_get(comp_config, "slim_sparsity", _cfg_get(comp_config, "sparsity", 0.5)))
-    rank = kwargs.pop("rank", _cfg_get(comp_config, "slim_rank", _cfg_get(comp_config, "rank", 8)))
-    structured_24 = kwargs.pop("structured_24", _cfg_get(comp_config, "slim_structured_24", _cfg_get(comp_config, "structured_24", True)))
+    bits = kwargs.pop(
+        "bits", _cfg_get(comp_config, "slim_bits", _cfg_get(comp_config, "bits", 4))
+    )
+    sparsity = kwargs.pop(
+        "sparsity",
+        _cfg_get(comp_config, "slim_sparsity", _cfg_get(comp_config, "sparsity", 0.5)),
+    )
+    rank = kwargs.pop(
+        "rank", _cfg_get(comp_config, "slim_rank", _cfg_get(comp_config, "rank", 8))
+    )
+    structured_24 = kwargs.pop(
+        "structured_24",
+        _cfg_get(
+            comp_config,
+            "slim_structured_24",
+            _cfg_get(comp_config, "structured_24", True),
+        ),
+    )
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.20))
-    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
-    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
+    fallback = kwargs.pop(
+        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
+    )
+    target_attention_only = kwargs.pop(
+        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
+    )
 
     compressor = SLiMCompressor(
         model,

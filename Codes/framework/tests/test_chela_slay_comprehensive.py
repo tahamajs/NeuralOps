@@ -1,7 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.attentions.chela_slay import ChelaSlayAttention, inject_chela_slay
+from framework.attentions.chela_slay import (ChelaSlayAttention,
+                                             inject_chela_slay)
 
 
 class MockConfig:

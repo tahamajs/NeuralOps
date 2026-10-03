@@ -12,7 +12,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.adapters import UniversalAdapter
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
@@ -168,7 +167,9 @@ class LoRALinear(nn.Module):
 
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A if self.lora_A.dtype == x.dtype else self.lora_A.to(x.dtype)
-            bb = self.lora_B if self.lora_B.dtype == x.dtype else self.lora_B.to(x.dtype)
+            bb = (
+                self.lora_B if self.lora_B.dtype == x.dtype else self.lora_B.to(x.dtype)
+            )
             lora_out = F.linear(F.linear(x, a), bb) * self.scaling
             out = out + lora_out
         return out
@@ -185,10 +186,14 @@ class LoRALinear(nn.Module):
 
 
 class SpectralMamba(nn.Module):
-    def __init__(self, d_model: int = 768, config: Any | None = None, **kwargs: Any) -> None:
+    def __init__(
+        self, d_model: int = 768, config: Any | None = None, **kwargs: Any
+    ) -> None:
         super().__init__()
         if config is not None:
-            d_model = _cfg_get(config, "hidden_size", _cfg_get(config, "d_model", d_model))
+            d_model = _cfg_get(
+                config, "hidden_size", _cfg_get(config, "d_model", d_model)
+            )
         elif hasattr(d_model, "hidden_size"):
             d_model = d_model.hidden_size
 
@@ -206,7 +211,9 @@ class SpectralMamba(nn.Module):
         # SM3-FIX-12: bounded per-channel gate (0..1)
         self.dt_scale = nn.Parameter(torch.full((self.d_model,), 0.5))
 
-    def forward(self, x: torch.Tensor, **kwargs: Any) -> tuple[torch.Tensor, torch.Tensor | None]:
+    def forward(
+        self, x: torch.Tensor, **kwargs: Any
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         out = self.mamba(x, **kwargs)
         if isinstance(out, tuple):
             out = out[0]
@@ -246,7 +253,9 @@ class SAMBAM3Block(nn.Module):
         # ---- d_model / n_heads ----
         if d_model is None:
             if config is not None:
-                d_model = _cfg_get(config, "hidden_size", _cfg_get(config, "d_model", 768))
+                d_model = _cfg_get(
+                    config, "hidden_size", _cfg_get(config, "d_model", 768)
+                )
             elif pretrained_attn is not None:
                 for attr in ("q_proj", "q_lin", "query"):
                     m = getattr(pretrained_attn, attr, None)
@@ -277,12 +286,20 @@ class SAMBAM3Block(nn.Module):
 
         self.head_dim: int = self.d_model // self.n_heads
         self.window: int = window
-        self.lora_rank: int = int(kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank)))
-        self.lora_alpha: float = float(kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha)))
+        self.lora_rank: int = int(
+            kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
+        )
+        self.lora_alpha: float = float(
+            kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
+        )
 
-        cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
+        cfg_kv = _cfg_get(
+            config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None)
+        )
         self.num_kv_heads: int = int(cfg_kv) if cfg_kv is not None else self.n_heads
-        self.num_key_value_groups: int = max(1, self.n_heads // max(1, self.num_kv_heads))
+        self.num_key_value_groups: int = max(
+            1, self.n_heads // max(1, self.num_kv_heads)
+        )
 
         self.q_head_size: int = self.n_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
@@ -298,12 +315,24 @@ class SAMBAM3Block(nn.Module):
                 or kwargs.get("is_causal", False)
             )
             decoder_prefixes = (
-                "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
             )
             if any(model_type.startswith(p) for p in decoder_prefixes):
                 is_dec = True
-            arch = getattr(config, "architectures", None) if config is not None else None
+            arch = (
+                getattr(config, "architectures", None) if config is not None else None
+            )
             if arch and any("GPT" in str(a) or "CausalLM" in str(a) for a in arch):
                 is_dec = True
         self.is_decoder: bool = bool(is_dec)
@@ -312,36 +341,52 @@ class SAMBAM3Block(nn.Module):
 
         # ---- Projections ----
         self.q_lin = LoRALinear(
-            self.d_model, self.q_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.d_model,
+            self.q_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=True,
         )
         self.k_lin = LoRALinear(
-            self.d_model, self.kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.d_model,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=True,
         )
         self.v_lin = LoRALinear(
-            self.d_model, self.kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.d_model,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=True,
         )
         self.out_lin = LoRALinear(
-            self.q_head_size, self.d_model, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.q_head_size,
+            self.d_model,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=True,
         )
 
         # ---- Mamba branch ----
-        self.mamba = SpectralMamba(self.d_model, config=config,
-                                    is_decoder=self.is_decoder, **kwargs)
+        self.mamba = SpectralMamba(
+            self.d_model, config=config, is_decoder=self.is_decoder, **kwargs
+        )
 
         # ---- SM3-FIX-04: alpha always fp32, cast in forward ----
         self.alpha = nn.Parameter(torch.tensor(0.0, dtype=torch.float32))
         self.gate_fn = nn.Sigmoid()
 
-        dropout_p = float(_cfg_get(config, "dropout",
-                                    _cfg_get(config, "attention_probs_dropout_prob", 0.1)))
+        dropout_p = float(
+            _cfg_get(
+                config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1)
+            )
+        )
         self.dropout = nn.Dropout(dropout_p)
 
         if pretrained_attn is not None:
@@ -349,17 +394,28 @@ class SAMBAM3Block(nn.Module):
 
     # ---- aliases ----
     @property
-    def query(self): return self.q_lin
+    def query(self):
+        return self.q_lin
+
     @property
-    def key(self): return self.k_lin
+    def key(self):
+        return self.k_lin
+
     @property
-    def value(self): return self.v_lin
+    def value(self):
+        return self.v_lin
+
     @property
-    def q_proj(self): return self.q_lin
+    def q_proj(self):
+        return self.q_lin
+
     @property
-    def k_proj(self): return self.k_lin
+    def k_proj(self):
+        return self.k_lin
+
     @property
-    def v_proj(self): return self.v_lin
+    def v_proj(self):
+        return self.v_lin
 
     def get_ortho_loss(self) -> float:
         return 0.0
@@ -379,7 +435,9 @@ class SAMBAM3Block(nn.Module):
         with torch.no_grad():
             w_q = b_q = w_k = b_k = w_v = b_v = w_o = b_o = None
 
-            src_cls_name = getattr(pretrained_attn, "__class__", type(pretrained_attn)).__name__
+            src_cls_name = getattr(
+                pretrained_attn, "__class__", type(pretrained_attn)
+            ).__name__
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
                 hasattr(pretrained_attn, "query")
                 and not hasattr(pretrained_attn, "dense")
@@ -399,31 +457,47 @@ class SAMBAM3Block(nn.Module):
             # --- GPT-2 fused ---
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
-                c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
+                c_attn_b = (
+                    src.c_attn.bias.detach() if src.c_attn.bias is not None else None
+                )
                 p_cls = getattr(src.c_attn, "__class__", type(src.c_attn)).__name__
-                if ("Conv1D" in p_cls or hasattr(src.c_attn, "nf")
-                        or (c_attn_w.shape[0] == self.d_model and c_attn_w.shape[1] != self.d_model)):
+                if (
+                    "Conv1D" in p_cls
+                    or hasattr(src.c_attn, "nf")
+                    or (
+                        c_attn_w.shape[0] == self.d_model
+                        and c_attn_w.shape[1] != self.d_model
+                    )
+                ):
                     c_attn_w = c_attn_w.t().contiguous()
                 q_dim = self.q_head_size
                 k_dim = self.kv_head_size
                 v_dim = self.kv_head_size
                 w_q = c_attn_w[:q_dim, :]
-                w_k = c_attn_w[q_dim:q_dim + k_dim, :]
-                w_v = c_attn_w[q_dim + k_dim:q_dim + k_dim + v_dim, :]
+                w_k = c_attn_w[q_dim : q_dim + k_dim, :]
+                w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
                 if c_attn_b is not None:
                     b_q = c_attn_b[:q_dim]
-                    b_k = c_attn_b[q_dim:q_dim + k_dim]
-                    b_v = c_attn_b[q_dim + k_dim:q_dim + k_dim + v_dim]
+                    b_k = c_attn_b[q_dim : q_dim + k_dim]
+                    b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
                 out_w = src.c_proj.weight.detach()
                 p_proj_cls = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
-                if ("Conv1D" in p_proj_cls or hasattr(src.c_proj, "nf")
-                        or (out_w.shape[0] == self.d_model and out_w.shape[1] != self.d_model)):
+                if (
+                    "Conv1D" in p_proj_cls
+                    or hasattr(src.c_proj, "nf")
+                    or (
+                        out_w.shape[0] == self.d_model
+                        and out_w.shape[1] != self.d_model
+                    )
+                ):
                     out_w = out_w.t().contiguous()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
             # --- BERT/RoBERTa nested ---
-            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
+            elif (
+                hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value")
+            ):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
                 w_k = src.key.weight.detach()
@@ -439,19 +513,43 @@ class SAMBAM3Block(nn.Module):
                             break
 
             # --- Qwen / LLaMA ---
-            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
+            elif (
+                hasattr(src, "q_proj")
+                and hasattr(src, "k_proj")
+                and hasattr(src, "v_proj")
+            ):
                 w_q = src.q_proj.weight.detach()
-                b_q = src.q_proj.bias.detach() if getattr(src.q_proj, "bias", None) is not None else None
+                b_q = (
+                    src.q_proj.bias.detach()
+                    if getattr(src.q_proj, "bias", None) is not None
+                    else None
+                )
                 w_k = src.k_proj.weight.detach()
-                b_k = src.k_proj.bias.detach() if getattr(src.k_proj, "bias", None) is not None else None
+                b_k = (
+                    src.k_proj.bias.detach()
+                    if getattr(src.k_proj, "bias", None) is not None
+                    else None
+                )
                 w_v = src.v_proj.weight.detach()
-                b_v = src.v_proj.bias.detach() if getattr(src.v_proj, "bias", None) is not None else None
+                b_v = (
+                    src.v_proj.bias.detach()
+                    if getattr(src.v_proj, "bias", None) is not None
+                    else None
+                )
                 if hasattr(src, "o_proj"):
                     w_o = src.o_proj.weight.detach()
-                    b_o = src.o_proj.bias.detach() if getattr(src.o_proj, "bias", None) is not None else None
+                    b_o = (
+                        src.o_proj.bias.detach()
+                        if getattr(src.o_proj, "bias", None) is not None
+                        else None
+                    )
 
             # --- Flat (DistilBERT) ---
-            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
+            elif (
+                hasattr(src, "q_lin")
+                and hasattr(src, "k_lin")
+                and hasattr(src, "v_lin")
+            ):
                 w_q = src.q_lin.weight.detach()
                 b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
                 w_k = src.k_lin.weight.detach()
@@ -460,14 +558,22 @@ class SAMBAM3Block(nn.Module):
                 b_v = src.v_lin.bias.detach() if src.v_lin.bias is not None else None
                 if hasattr(src, "out_lin"):
                     w_o = src.out_lin.weight.detach()
-                    b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
+                    b_o = (
+                        src.out_lin.bias.detach()
+                        if src.out_lin.bias is not None
+                        else None
+                    )
 
             # --- Fallback ---
             if w_q is None:
                 try:
                     adapter = UniversalAdapter()
-                    for proj, target in (("q", self.q_lin), ("k", self.k_lin),
-                                          ("v", self.v_lin), ("o", self.out_lin)):
+                    for proj, target in (
+                        ("q", self.q_lin),
+                        ("k", self.k_lin),
+                        ("v", self.v_lin),
+                        ("o", self.out_lin),
+                    ):
                         w, b = adapter.get_weight_bias(src, proj)
                         if w is None:
                             continue
@@ -494,7 +600,10 @@ class SAMBAM3Block(nn.Module):
                 tw = target_mod.weight
                 w_cast = w_src.to(dtype=tw.dtype, device=tw.device)
                 # orient if transposed
-                if w_cast.shape != tw.shape and w_cast.t().contiguous().shape == tw.shape:
+                if (
+                    w_cast.shape != tw.shape
+                    and w_cast.t().contiguous().shape == tw.shape
+                ):
                     w_cast = w_cast.t().contiguous()
                 min_r = min(tw.shape[0], w_cast.shape[0])
                 min_c = min(tw.shape[1], w_cast.shape[1])
@@ -506,7 +615,9 @@ class SAMBAM3Block(nn.Module):
                     tb.data[:mb].copy_(b_cast[:mb])
                 fnorm = float(torch.linalg.norm(tw.data.float()))
                 if fnorm < 1e-4:
-                    logger.warning("SAMBAM3Block: %s norm too small (%.2e)", name, fnorm)
+                    logger.warning(
+                        "SAMBAM3Block: %s norm too small (%.2e)", name, fnorm
+                    )
                 target_mod.freeze_base_weights()
 
     def _chunked_sliding_window_attention(
@@ -544,10 +655,17 @@ class SAMBAM3Block(nn.Module):
             k_c = k[:, :, k_abs_start:k_abs_end]
             v_c = v[:, :, k_abs_start:k_abs_end]
 
-            scores = torch.matmul(q_c.float(), k_c.transpose(-2, -1).contiguous().float()) * scale
+            scores = (
+                torch.matmul(q_c.float(), k_c.transpose(-2, -1).contiguous().float())
+                * scale
+            )
 
-            q_idx = torch.arange(q_abs_start, q_abs_end, device=q.device).view(1, 1, C_q, 1)
-            k_idx = torch.arange(k_abs_start, k_abs_end, device=q.device).view(1, 1, 1, -1)
+            q_idx = torch.arange(q_abs_start, q_abs_end, device=q.device).view(
+                1, 1, C_q, 1
+            )
+            k_idx = torch.arange(k_abs_start, k_abs_end, device=q.device).view(
+                1, 1, 1, -1
+            )
             dist = (q_idx - k_idx).abs()
             valid = dist <= self.window
             if self.is_decoder:
@@ -559,12 +677,20 @@ class SAMBAM3Block(nn.Module):
             if attention_mask is not None:
                 if attention_mask.dim() == 2:
                     # (B, N_total)
-                    pad = (attention_mask[:, k_abs_start:k_abs_end] == 0).unsqueeze(1).unsqueeze(2)
+                    pad = (
+                        (attention_mask[:, k_abs_start:k_abs_end] == 0)
+                        .unsqueeze(1)
+                        .unsqueeze(2)
+                    )
                     scores = scores.masked_fill(pad, -1e4)
                 elif attention_mask.dim() == 3:
-                    scores = scores + attention_mask[:, start:end, k_abs_start:k_abs_end].unsqueeze(1).to(scores.dtype)
+                    scores = scores + attention_mask[
+                        :, start:end, k_abs_start:k_abs_end
+                    ].unsqueeze(1).to(scores.dtype)
                 elif attention_mask.dim() == 4:
-                    scores = scores + attention_mask[:, :, start:end, k_abs_start:k_abs_end].to(scores.dtype)
+                    scores = scores + attention_mask[
+                        :, :, start:end, k_abs_start:k_abs_end
+                    ].to(scores.dtype)
 
             probs = F.softmax(scores, dim=-1)
             probs = torch.nan_to_num(probs, nan=0.0)
@@ -621,9 +747,24 @@ class SAMBAM3Block(nn.Module):
                 past_len = past_k.shape[-2]
 
         # ---- QKV ----
-        q = self.q_lin(hidden_states).view(B, L, self.n_heads, self.head_dim).transpose(1, 2).contiguous()
-        k = self.k_lin(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        v = self.v_lin(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        q = (
+            self.q_lin(hidden_states)
+            .view(B, L, self.n_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        k = (
+            self.k_lin(hidden_states)
+            .view(B, L, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_lin(hidden_states)
+            .view(B, L, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # ---- SM3-FIX-06: RoPE with offset ----
         pos_emb = position_embeddings or kwargs.get("position_embeddings")
@@ -650,7 +791,9 @@ class SAMBAM3Block(nn.Module):
 
         # ---- Attention ----
         attn_out = self._chunked_sliding_window_attention(
-            q, k_exp, v_exp,
+            q,
+            k_exp,
+            v_exp,
             attention_mask=attention_mask,
             head_mask=head_mask,
             past_len=past_len,
@@ -659,7 +802,9 @@ class SAMBAM3Block(nn.Module):
         attn_out = attn_out.to(target_dtype)
 
         # ---- Mamba branch ----
-        mamba_out, _ = self.mamba(hidden_states, attention_mask=attention_mask, **kwargs)
+        mamba_out, _ = self.mamba(
+            hidden_states, attention_mask=attention_mask, **kwargs
+        )
         mamba_out = mamba_out.to(target_dtype)
 
         # ---- Fusion (SM3-FIX-04: alpha cast) ----
@@ -679,7 +824,11 @@ class SAMBAM3Block(nn.Module):
                 f"SAMBAM3Block: output dim {out.shape[-1]} != expected {D}"
             )
 
-        return out, present_key_value if output_attentions is False else (out, present_key_value)
+        return out, (
+            present_key_value
+            if output_attentions is False
+            else (out, present_key_value)
+        )
 
 
 @ATTENTION_REGISTRY.register("samba_m3_inject")
@@ -735,8 +884,13 @@ def inject_samba_m3(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_samba_m3(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 num_injected += 1
@@ -769,21 +923,26 @@ def inject_samba_m3(
     d_model = 768
     n_heads = 12
     if src is not None:
-        d_model = getattr(src, "hidden_size",
-                          getattr(src, "embed_dim",
-                                  getattr(src, "all_head_size", 768)))
+        d_model = getattr(
+            src,
+            "hidden_size",
+            getattr(src, "embed_dim", getattr(src, "all_head_size", 768)),
+        )
         for attr in ("q_proj", "q_lin", "query"):
             m = getattr(src, attr, None)
             if m is not None and hasattr(m, "in_features"):
                 d_model = m.in_features
                 break
-        n_heads = getattr(src, "num_heads",
-                          getattr(src, "num_attention_heads",
-                                  getattr(src, "n_heads", 12)))
+        n_heads = getattr(
+            src,
+            "num_heads",
+            getattr(src, "num_attention_heads", getattr(src, "n_heads", 12)),
+        )
     if cfg is not None:
         d_model = _cfg_get(cfg, "hidden_size", _cfg_get(cfg, "dim", d_model))
-        n_heads = _cfg_get(cfg, "num_attention_heads",
-                            _cfg_get(cfg, "n_heads", n_heads))
+        n_heads = _cfg_get(
+            cfg, "num_attention_heads", _cfg_get(cfg, "n_heads", n_heads)
+        )
 
     lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 32.0))
@@ -835,8 +994,10 @@ def inject_samba_m3(
         spliced = True
 
     if not spliced:
-        logger.error("inject_samba_m3: no writable attention attribute on %s",
-                     type(target).__name__)
+        logger.error(
+            "inject_samba_m3: no writable attention attribute on %s",
+            type(target).__name__,
+        )
         return None
 
     return new_block

@@ -1,7 +1,8 @@
+import framework.attentions.SOAFusedAttention
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.SOAFusedAttention
+
 
 def test_SOAFusedAttention_module_present():
     assert hasattr(framework.attentions, 'SOAFusedAttention')

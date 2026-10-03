@@ -15,6 +15,7 @@ Tests all 9 core properties:
 import math
 import os
 import sys
+
 import torch
 import torch.nn as nn
 
@@ -22,13 +23,8 @@ sys.path.insert(0, os.path.abspath("Codes"))
 sys.path.insert(0, os.path.abspath("."))
 
 from framework.compression_engine.adaptive_ranks import (
-    AdaptiveRanksCompressor,
-    _gelu_derivative_sq,
-    _silu_derivative_sq,
-    _detect_activation_type,
-    _is_attention_qk,
-    adaptive_ranks_factory,
-)
+    AdaptiveRanksCompressor, _detect_activation_type, _gelu_derivative_sq,
+    _is_attention_qk, _silu_derivative_sq, adaptive_ranks_factory)
 
 
 def test_1_gelu_derivative_at_zero():

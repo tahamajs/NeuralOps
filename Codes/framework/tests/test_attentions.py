@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+
 import torch
 import torch.nn as nn
 
@@ -8,8 +9,8 @@ _FRAMEWORK_PARENT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."
 if _FRAMEWORK_PARENT not in sys.path:
     sys.path.insert(0, _FRAMEWORK_PARENT)
 
-from framework.core.registry import ATTENTION_REGISTRY
 import framework.attentions
+from framework.core.registry import ATTENTION_REGISTRY
 
 
 class DummyConfig:

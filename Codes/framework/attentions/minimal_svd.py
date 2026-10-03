@@ -5,7 +5,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
@@ -46,10 +45,22 @@ def apply_rotary_pos_emb(
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
-        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
+            _rotate_half(q_rot) * sin.to(q_rot.dtype)
+        )
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
+            _rotate_half(k_rot) * sin.to(k_rot.dtype)
+        )
+        q = (
+            torch.cat([q_rot_embed, q_pass], dim=-1)
+            if q_pass.numel() > 0
+            else q_rot_embed
+        )
+        k = (
+            torch.cat([k_rot_embed, k_pass], dim=-1)
+            if k_pass.numel() > 0
+            else k_rot_embed
+        )
     else:
         cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
         q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
@@ -125,8 +136,16 @@ class FactorisedLinear(nn.Module):
                 if bias is not None:
                     bias = bias.view(self.out_features, rep).mean(dim=1)
             elif W.shape[0] != self.out_features or W.shape[1] != self.in_features:
-                padded_W = torch.zeros(self.out_features, self.in_features, device=W.device, dtype=W.dtype)
-                padded_W[:min(self.out_features, W.shape[0]), :min(self.in_features, W.shape[1])] = W[:min(self.out_features, W.shape[0]), :min(self.in_features, W.shape[1])]
+                padded_W = torch.zeros(
+                    self.out_features, self.in_features, device=W.device, dtype=W.dtype
+                )
+                padded_W[
+                    : min(self.out_features, W.shape[0]),
+                    : min(self.in_features, W.shape[1]),
+                ] = W[
+                    : min(self.out_features, W.shape[0]),
+                    : min(self.in_features, W.shape[1]),
+                ]
                 W = padded_W
 
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
@@ -147,7 +166,9 @@ class FactorisedLinear(nn.Module):
             self.down.weight.data[:r, :] = B
 
             if bias is not None and self.up.bias is not None:
-                self.up.bias.data[:min(len(self.up.bias), len(bias))].copy_(bias[:min(len(self.up.bias), len(bias))])
+                self.up.bias.data[: min(len(self.up.bias), len(bias))].copy_(
+                    bias[: min(len(self.up.bias), len(bias))]
+                )
 
             self.freeze_base_weights()
 
@@ -176,7 +197,10 @@ class FactorisedLinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.up(self.down(x))
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            out = (
+                out
+                + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            )
         return out
 
 
@@ -214,13 +238,35 @@ class MinimalSVDAttention(BaseAttention):
             rank if rank is not None else getattr(cfg, "rank", 64),
         )
         super().__init__(cfg, actual_rank)
-        self.num_heads: int = getattr(cfg, "num_attention_heads", getattr(cfg, "num_heads", kwargs.get("num_attention_heads", 4)))
-        self.hidden_size: int = getattr(cfg, "hidden_size", kwargs.get("hidden_size", 768))
-        cfg_head_dim = getattr(cfg, "head_dim", None) if cfg else (getattr(model_config, "head_dim", None) if model_config else None)
-        self.head_dim: int = int(cfg_head_dim or kwargs.get("head_dim") or (self.hidden_size // self.num_heads if self.num_heads > 0 else (self.hidden_size or 64)))
+        self.num_heads: int = getattr(
+            cfg,
+            "num_attention_heads",
+            getattr(cfg, "num_heads", kwargs.get("num_attention_heads", 4)),
+        )
+        self.hidden_size: int = getattr(
+            cfg, "hidden_size", kwargs.get("hidden_size", 768)
+        )
+        cfg_head_dim = (
+            getattr(cfg, "head_dim", None)
+            if cfg
+            else (getattr(model_config, "head_dim", None) if model_config else None)
+        )
+        self.head_dim: int = int(
+            cfg_head_dim
+            or kwargs.get("head_dim")
+            or (
+                self.hidden_size // self.num_heads
+                if self.num_heads > 0
+                else (self.hidden_size or 64)
+            )
+        )
         self.all_head_size: int = self.num_heads * self.head_dim
 
-        cfg_kv = getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", None)) if cfg else None
+        cfg_kv = (
+            getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", None))
+            if cfg
+            else None
+        )
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -243,22 +289,90 @@ class MinimalSVDAttention(BaseAttention):
             self.is_decoder = (
                 getattr(cfg, "is_decoder", False)
                 or getattr(cfg, "causal", False)
-                or getattr(cfg, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama") or any(str(getattr(cfg if "cfg" in locals() else (config if "config" in locals() else None), "model_type", "")).lower().startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
-                if cfg else False
+                or getattr(cfg, "model_type", "").lower()
+                in ("gpt2", "qwen", "qwen2", "llama")
+                or any(
+                    str(
+                        getattr(
+                            (
+                                cfg
+                                if "cfg" in locals()
+                                else (config if "config" in locals() else None)
+                            ),
+                            "model_type",
+                            "",
+                        )
+                    )
+                    .lower()
+                    .startswith(p)
+                    for p in (
+                        "gpt",
+                        "qwen",
+                        "llama",
+                        "mistral",
+                        "gemma",
+                        "phi",
+                        "opt",
+                        "bloom",
+                        "falcon",
+                        "olmo",
+                        "mpt",
+                        "stablelm",
+                    )
+                )
+                if cfg
+                else False
             )
 
         model_type = getattr(cfg, "model_type", "").lower() if cfg else ""
-        self.is_nested_encoder: bool = (
-            getattr(cfg, "is_nested_encoder", False)
-            or model_type in ("roberta", "bert", "xlm-roberta")
+        self.is_nested_encoder: bool = getattr(
+            cfg, "is_nested_encoder", False
+        ) or model_type in ("roberta", "bert", "xlm-roberta")
+
+        self.q_proj = FactorisedLinear(
+            self.hidden_size,
+            self.all_head_size,
+            rank=self.rank,
+            bias=True,
+            energy=energy,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+        )
+        self.k_proj = FactorisedLinear(
+            self.hidden_size,
+            self.kv_head_size,
+            rank=self.rank,
+            bias=True,
+            energy=energy,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+        )
+        self.v_proj = FactorisedLinear(
+            self.hidden_size,
+            self.kv_head_size,
+            rank=self.rank,
+            bias=True,
+            energy=energy,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+        )
+        self.out_proj = FactorisedLinear(
+            self.all_head_size,
+            self.hidden_size,
+            rank=self.rank,
+            bias=True,
+            energy=energy,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
         )
 
-        self.q_proj = FactorisedLinear(self.hidden_size, self.all_head_size, rank=self.rank, bias=True, energy=energy, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
-        self.k_proj = FactorisedLinear(self.hidden_size, self.kv_head_size, rank=self.rank, bias=True, energy=energy, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
-        self.v_proj = FactorisedLinear(self.hidden_size, self.kv_head_size, rank=self.rank, bias=True, energy=energy, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
-        self.out_proj = FactorisedLinear(self.all_head_size, self.hidden_size, rank=self.rank, bias=True, energy=energy, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
-
-        dropout_p = getattr(cfg, "dropout", getattr(cfg, "attention_probs_dropout_prob", dropout)) if cfg else dropout
+        dropout_p = (
+            getattr(
+                cfg, "dropout", getattr(cfg, "attention_probs_dropout_prob", dropout)
+            )
+            if cfg
+            else dropout
+        )
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
         if pretrained_attn is not None:
@@ -296,7 +410,11 @@ class MinimalSVDAttention(BaseAttention):
                 logger.debug(f"UniversalAdapter extraction failed for {proj}: {e}")
 
         # 2. GPT-2 Fused c_attn / c_proj Conv1D handling
-        if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+        if hasattr(src, "c_attn") and (
+            extracted["q"][0] is None
+            or extracted["k"][0] is None
+            or extracted["v"][0] is None
+        ):
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             weight = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
@@ -305,14 +423,27 @@ class MinimalSVDAttention(BaseAttention):
                 bias = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 bias_data = bias.data.clone() if bias is not None else None
                 p_cls = getattr(base_c, "__class__", type(base_c)).__name__
-                if ("Conv1D" in p_cls) or hasattr(base_c, "nf") or ("Conv1D" in getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__) or hasattr(c_attn_mod, "nf") or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size):
+                if (
+                    ("Conv1D" in p_cls)
+                    or hasattr(base_c, "nf")
+                    or (
+                        "Conv1D"
+                        in getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__
+                    )
+                    or hasattr(c_attn_mod, "nf")
+                    or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size)
+                ):
                     weight = weight.t().contiguous()
                 split_size = weight.shape[0] // 3
                 q_w = weight[:split_size, :]
                 k_w = weight[split_size : 2 * split_size, :]
                 v_w = weight[2 * split_size :, :]
                 q_b = bias_data[:split_size] if bias_data is not None else None
-                k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
+                k_b = (
+                    bias_data[split_size : 2 * split_size]
+                    if bias_data is not None
+                    else None
+                )
                 v_b = bias_data[2 * split_size :] if bias_data is not None else None
                 extracted["q"] = (q_w, q_b)
                 extracted["k"] = (k_w, k_b)
@@ -325,13 +456,26 @@ class MinimalSVDAttention(BaseAttention):
             if w_o is not None:
                 w_o = w_o.data.clone()
                 p_cls = getattr(base_o, "__class__", type(base_o)).__name__
-                if ("Conv1D" in p_cls) or hasattr(base_o, "nf") or ("Conv1D" in getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__) or hasattr(c_proj_mod, "nf") or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1]):
+                if (
+                    ("Conv1D" in p_cls)
+                    or hasattr(base_o, "nf")
+                    or (
+                        "Conv1D"
+                        in getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__
+                    )
+                    or hasattr(c_proj_mod, "nf")
+                    or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1])
+                ):
                     w_o = w_o.t().contiguous()
                 b_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                 extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
         # 3. RoBERTa / BERT Nested Encoder handling
-        if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+        if hasattr(src, "self") and (
+            extracted["q"][0] is None
+            or extracted["k"][0] is None
+            or extracted["v"][0] is None
+        ):
             s = src.self
             if hasattr(s, "query"):
                 extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
@@ -340,7 +484,11 @@ class MinimalSVDAttention(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
+        if (
+            hasattr(src, "output")
+            and hasattr(src.output, "dense")
+            and extracted["o"][0] is None
+        ):
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -357,21 +505,52 @@ class MinimalSVDAttention(BaseAttention):
                     if hasattr(src, name):
                         layer = getattr(src, name)
                         if hasattr(layer, "weight"):
-                            extracted[proj] = (layer.weight.data, getattr(layer, "bias", None))
+                            extracted[proj] = (
+                                layer.weight.data,
+                                getattr(layer, "bias", None),
+                            )
                             break
 
         # Detect nested encoder architecture
         cls_name = src.__class__.__name__
-        has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+        has_out_proj = any(
+            hasattr(src, attr)
+            for attr in (
+                "dense",
+                "out_proj",
+                "c_proj",
+                "out_lin",
+                "o_proj",
+                "wo",
+                "o",
+                "proj",
+            )
+        )
         is_nested = False
-        if hasattr(src, "self") and hasattr(src.self, "query") or (
-            cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
-            or (cls_name.endswith("SelfAttention") and not has_out_proj)
-            or (("roberta" in cls_name.lower() or "bert" in cls_name.lower()) and not has_out_proj)
+        if (
+            hasattr(src, "self")
+            and hasattr(src.self, "query")
+            or (
+                cls_name
+                in (
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                )
+                or (cls_name.endswith("SelfAttention") and not has_out_proj)
+                or (
+                    ("roberta" in cls_name.lower() or "bert" in cls_name.lower())
+                    and not has_out_proj
+                )
+            )
         ):
             is_nested = True
         if hasattr(src, "config"):
-            if getattr(src.config, "model_type", "").lower() in ("roberta", "bert", "xlm-roberta") and not has_out_proj:
+            if (
+                getattr(src.config, "model_type", "").lower()
+                in ("roberta", "bert", "xlm-roberta")
+                and not has_out_proj
+            ):
                 is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -380,7 +559,9 @@ class MinimalSVDAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            logger.warning(f"MinimalSVDAttention missing required weights for projections: {missing}. Proceeding with initialized weights.")
+            logger.warning(
+                f"MinimalSVDAttention missing required weights for projections: {missing}. Proceeding with initialized weights."
+            )
 
         # Frobenius norm validation
         for proj_key in ["q", "k", "v"]:
@@ -388,12 +569,16 @@ class MinimalSVDAttention(BaseAttention):
             if w is not None:
                 norm = torch.linalg.norm(w.float())
                 if norm < 1e-4:
-                    logger.warning(f"MinimalSVDAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})")
+                    logger.warning(
+                        f"MinimalSVDAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})"
+                    )
 
         if extracted["o"][0] is not None:
             norm_o = torch.linalg.norm(extracted["o"][0].float())
             if norm_o < 1e-4:
-                logger.warning(f"MinimalSVDAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})")
+                logger.warning(
+                    f"MinimalSVDAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})"
+                )
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
@@ -402,14 +587,24 @@ class MinimalSVDAttention(BaseAttention):
 
         # Copy into factorized projection modules
         with torch.no_grad():
-            for proj_key, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
+            for proj_key, target in [
+                ("q", self.q_proj),
+                ("k", self.k_proj),
+                ("v", self.v_proj),
+                ("o", self.out_proj),
+            ]:
                 w, b = extracted[proj_key]
                 if w is not None:
                     in_dim = self.all_head_size if proj_key == "o" else self.hidden_size
                     w_oriented = _orient(w, in_dim)
                     target.decompose_from_weight(w_oriented, b, self.energy)
                 elif proj_key == "o" and self.is_nested_encoder:
-                    eye_w = torch.eye(self.all_head_size, self.all_head_size, device=self.out_proj.up.weight.device, dtype=self.out_proj.up.weight.dtype)
+                    eye_w = torch.eye(
+                        self.all_head_size,
+                        self.all_head_size,
+                        device=self.out_proj.up.weight.device,
+                        dtype=self.out_proj.up.weight.dtype,
+                    )
                     target.decompose_from_weight(eye_w, None, self.energy)
 
                 target.freeze_base_weights()
@@ -437,7 +632,10 @@ class MinimalSVDAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        if self.q_proj.down.weight.device != device or self.q_proj.down.weight.dtype != dtype:
+        if (
+            self.q_proj.down.weight.device != device
+            or self.q_proj.down.weight.dtype != dtype
+        ):
             self.to(device=device, dtype=dtype)
 
         is_cross = encoder_hidden_states is not None
@@ -445,8 +643,18 @@ class MinimalSVDAttention(BaseAttention):
         N_kv = kv_input.shape[1]
 
         Q = self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2).contiguous()
-        K = self.k_proj(kv_input).view(B, N_kv, self.num_kv_heads, D).transpose(1, 2).contiguous()
-        V = self.v_proj(kv_input).view(B, N_kv, self.num_kv_heads, D).transpose(1, 2).contiguous()
+        K = (
+            self.k_proj(kv_input)
+            .view(B, N_kv, self.num_kv_heads, D)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        V = (
+            self.v_proj(kv_input)
+            .view(B, N_kv, self.num_kv_heads, D)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -469,38 +677,70 @@ class MinimalSVDAttention(BaseAttention):
 
             _vs = V.half() if V.dtype == torch.float32 else V
 
-            _is_causal = getattr(self, 'is_decoder', False) and not is_cross and N > 1 if 'is_cross' in dir() else getattr(self, 'is_decoder', False) and N > 1
+            _is_causal = (
+                getattr(self, "is_decoder", False) and not is_cross and N > 1
+                if "is_cross" in dir()
+                else getattr(self, "is_decoder", False) and N > 1
+            )
 
-            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=_is_causal, dropout_p=self.dropout.p if self.training else 0.0)
+            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
+                _qs,
+                _ks,
+                _vs,
+                is_causal=_is_causal,
+                dropout_p=self.dropout.p if self.training else 0.0,
+            )
 
-            _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+            _sdpa_out = (
+                _sdpa_out.to(hidden_states.dtype)
+                .transpose(1, 2)
+                .contiguous()
+                .view(B, N, self.all_head_size)
+            )
 
             _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-            return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
+            return (
+                self.out_proj(_sdpa_out)
+                if not getattr(self, "is_nested_encoder", False)
+                else _sdpa_out
+            ), None
 
         except Exception:
 
             pass
 
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+        scores = (
+            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+        )
 
         if self.is_decoder and not is_cross and N > 1:
-            causal_mask = torch.triu(
-                torch.full((N, N_kv), float("-inf"), device=device, dtype=torch.float32),
-                diagonal=1,
-            ).unsqueeze(0).unsqueeze(0)
+            causal_mask = (
+                torch.triu(
+                    torch.full(
+                        (N, N_kv), float("-inf"), device=device, dtype=torch.float32
+                    ),
+                    diagonal=1,
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
             scores = scores + causal_mask
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is not None:
             if eff_mask.dim() == 2:
                 if eff_mask.dtype == torch.bool:
-                    scores = scores.masked_fill(~eff_mask.unsqueeze(1).unsqueeze(2), -10000.0)
+                    scores = scores.masked_fill(
+                        ~eff_mask.unsqueeze(1).unsqueeze(2), -10000.0
+                    )
                 elif torch.is_floating_point(eff_mask) and (eff_mask < 0).any():
                     scores = scores + eff_mask.unsqueeze(1).unsqueeze(2).float()
                 else:
-                    scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+                    scores = (
+                        scores
+                        + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+                    )
             elif eff_mask.dim() == 3:
                 scores = scores + eff_mask.unsqueeze(1).float()
             elif eff_mask.dim() == 4:
@@ -574,9 +814,15 @@ def inject_minimal_svd(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+    elif hasattr(target, "layers") and isinstance(
+        target.layers, (torch.nn.ModuleList, list)
+    ):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -586,7 +832,11 @@ def inject_minimal_svd(
             res = inject_minimal_svd(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                comp_config=(
+                    comp_config
+                    if "comp_config" in locals() or "comp_config" in kwargs
+                    else None
+                ),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
@@ -598,7 +848,9 @@ def inject_minimal_svd(
     layer = target
 
     if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+        model_config = type(
+            "Cfg", (), {"hidden_size": 64, "num_heads": 4, "rank": 32}
+        )()
 
     r"""Injection hook for MinimalSVDAttention into transformer layer."""
     energy = getattr(comp_config, "svd_energy", 0.95) if comp_config else 0.95
@@ -608,7 +860,11 @@ def inject_minimal_svd(
         energy=energy,
         dropout=dropout,
     )
-    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
+    src_attn = (
+        old_attn
+        if old_attn is not None
+        else getattr(layer, "attention", getattr(layer, "self", None))
+    )
     if src_attn is not None:
         try:
             new_attn.copy_weights(src_attn)

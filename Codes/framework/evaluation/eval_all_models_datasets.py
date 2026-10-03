@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 import contextlib
+
 """
 Universal Evaluation Engine for NeuralOps Framework.
 
@@ -46,7 +48,9 @@ if hasattr(torch, "set_float32_matmul_precision"):
 
 import torch.nn as nn
 import torch.nn.functional as F
-
+from framework.core.attention_utils import inject_attention
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+from framework.utils.replace_attention import UniversalAttentionWrapper
 from transformers import (
     BertConfig,
     BertForSequenceClassification,
@@ -59,10 +63,6 @@ from transformers import (
     T5Config,
     T5EncoderModel,
 )
-
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-from framework.core.attention_utils import inject_attention
-from framework.utils.replace_attention import UniversalAttentionWrapper
 
 logging.basicConfig(
     level=logging.INFO,
@@ -87,80 +87,134 @@ MODEL_TOKENIZER_MAPPING: dict[str, str] = {
     "qwen3_5": "Qwen/Qwen2.5-0.5B",
 }
 
-LM_DATASETS = {"wikitext2", "wikitext-2-raw-v1", "wikitext", "wikitext103", "c4", "ptb", "lm"}
+LM_DATASETS = {
+    "wikitext2",
+    "wikitext-2-raw-v1",
+    "wikitext",
+    "wikitext103",
+    "c4",
+    "ptb",
+    "lm",
+}
 
 GLUE_DATASETS = {"sst2", "cola", "mrpc", "qqp", "mnli", "qnli", "rte", "wnli", "stsb"}
 
 ACTIVATION_AWARE_MODULES = {
-    "a3_compressor", "a3",
-    "aasvd", "asvd", "adasvd_compressor", "adasvd",
+    "a3_compressor",
+    "a3",
+    "aasvd",
+    "asvd",
+    "adasvd_compressor",
+    "adasvd",
     "flat_llm",
-    "armor", "armor_pruner", "armor_compressor",
+    "armor",
+    "armor_pruner",
+    "armor_compressor",
     "flap",
-    "mgie", "mgie_svd", "mgie_budget",
-    "frandi", "frandi_compressor",
+    "mgie",
+    "mgie_svd",
+    "mgie_budget",
+    "frandi",
+    "frandi_compressor",
     "optimal_subspace_projection",
-    "slicegpt", "slicegpt_pca", "rotational_slicegpt_int4", "rotational_slicegpt",
+    "slicegpt",
+    "slicegpt_pca",
+    "rotational_slicegpt_int4",
+    "rotational_slicegpt",
     "proxsparse",
     "mamba_shedder",
-    "mlorq", "mlorq_compressor",
-    "compot", "compot_compressor",
-    "hashed_net", "hashed_net_compressor",
-    "lsc", "lsc_compressor",
-    "grecodec", "grecodec_compressor",
+    "mlorq",
+    "mlorq_compressor",
+    "compot",
+    "compot_compressor",
+    "hashed_net",
+    "hashed_net_compressor",
+    "lsc",
+    "lsc_compressor",
+    "grecodec",
+    "grecodec_compressor",
     "direct_svd",
     "adaptive_ranks",
-    "entropy_budget", "entropy_budget_allocation",
+    "entropy_budget",
+    "entropy_budget_allocation",
     "dynamic_rank",
-    "dobi_svd", "dobi",
-    "erc", "erc_svd",
-    "gfws", "gfws_d_compressor",
+    "dobi_svd",
+    "dobi",
+    "erc",
+    "erc_svd",
+    "gfws",
+    "gfws_d_compressor",
     "modegpt",
     "subspace_projection",
     "roast",
-    "bonsai", "bonsai_pruner",
-    "swift_svd", "swift_svd_act",
+    "bonsai",
+    "bonsai_pruner",
+    "swift_svd",
+    "swift_svd_act",
     "hybrid_svd",
 }
 
 COMPUTE_OPTIMIZERS = {
-    "nha", "nha_class", "nha_attention",
-    "replace", "replace_class",
-    "nli_softmax", "nli_softmax_class", "nli_softmax_attn",
+    "nha",
+    "nha_class",
+    "nha_attention",
+    "replace",
+    "replace_class",
+    "nli_softmax",
+    "nli_softmax_class",
+    "nli_softmax_attn",
     "block_transformer_hiba",
-    "flash3", "flash_attention3", "flash3_fp8",
-    "adasplash", "adasplash_attention",
+    "flash3",
+    "flash_attention3",
+    "flash3_fp8",
+    "adasplash",
+    "adasplash_attention",
     "moba",
     "xattention",
     "fasa",
-    "cluster", "cluster_attention",
+    "cluster",
+    "cluster_attention",
     "cosformer",
 }
 
 KV_CACHE_OPTIMIZERS = {
-    "hybridkv", "hybridkv_class",
-    "aatc_xkv", "aatc_xkv_compressor",
+    "hybridkv",
+    "hybridkv_class",
+    "aatc_xkv",
+    "aatc_xkv_compressor",
     "kvtc",
-    "delta_kv", "delta_kv_class",
-    "zerokv", "zerokv_neo",
+    "delta_kv",
+    "delta_kv_class",
+    "zerokv",
+    "zerokv_neo",
     "moe_deltakv_paged",
     "padre",
 }
 
 DEPRECATED_MODULES = {
-    "eat", "eat_attention",
+    "eat",
+    "eat_attention",
     "granite_hybrid",
     "jamba_info",
-    "tpa", "tpa_attention", "tp_attention",
-    "tt", "tt_linear", "tt_compressor", "tt_linear_compressor",
-    "tt_factory", "tt_compressor_factory", "tt_linear_factory",
-    "lillama_compressor", "mamba_svd_flash",
+    "tpa",
+    "tpa_attention",
+    "tp_attention",
+    "tt",
+    "tt_linear",
+    "tt_compressor",
+    "tt_linear_compressor",
+    "tt_factory",
+    "tt_compressor_factory",
+    "tt_linear_factory",
+    "lillama_compressor",
+    "mamba_svd_flash",
 }
 
 
 # =============================================================================
 # Result schema
 # =============================================================================
+
 
 @dataclass
 class BenchmarkResult:
@@ -235,64 +289,148 @@ class BenchmarkResult:
 TRACK_MODULES: dict[str, dict[str, list[str]]] = {
     "track1_svd": {
         "attentions": [
-            "svd_linear_attention", "adaptive_svd_attention", "asvd_attention",
-            "linformer_attention", "res_svd", "svd_attention", "svd_compressed",
-            "svd_projection_attention", "svd_llm_v2_attention",
-            "factorised_matrix_state", "mamba_svd_flash",
-            "minimal_svd", "minimal_svd_v2",
+            "svd_linear_attention",
+            "adaptive_svd_attention",
+            "asvd_attention",
+            "linformer_attention",
+            "res_svd",
+            "svd_attention",
+            "svd_compressed",
+            "svd_projection_attention",
+            "svd_llm_v2_attention",
+            "factorised_matrix_state",
+            "mamba_svd_flash",
+            "minimal_svd",
+            "minimal_svd_v2",
         ],
         "compressors": [
-            "adaptive_ranks", "direct_svd", "dobi_svd", "erc_svd",
-            "entropy_budget_allocation", "kronecker_tt_lora", "saes_svd_v2",
-            "swift_svd", "swift_svd_act", "aasvd", "rpca", "cur_moe",
-            "grecodec", "frandi", "dynamic_rank", "hybrid_svd",
-            "svd_linear", "svd_llm", "svd_llm_compressor",
+            "adaptive_ranks",
+            "direct_svd",
+            "dobi_svd",
+            "erc_svd",
+            "entropy_budget_allocation",
+            "kronecker_tt_lora",
+            "saes_svd_v2",
+            "swift_svd",
+            "swift_svd_act",
+            "aasvd",
+            "rpca",
+            "cur_moe",
+            "grecodec",
+            "frandi",
+            "dynamic_rank",
+            "hybrid_svd",
+            "svd_linear",
+            "svd_llm",
+            "svd_llm_compressor",
         ],
     },
     "track2_ssm": {
         "attentions": [
-            "aegis_v1", "aegis_v2", "aegis_v3", "aegis_v4", "aegis_v5",
-            "aegis_v6", "aegis_hybrid", "aegis_spectron_fp8", "spectra_v2",
-            "spectral_mamba", "Mamba", "SVD-Mamba", "simple_ssm",
-            "gated_delta_net", "gated_deltanet_block", "gated_linear_attention",
-            "hgrn2_layer", "hgrn2_gated_deltanet", "hgrn2_outer",
-            "griffin_ssd", "regla_attention", "halo_regla",
-            "kda_attention", "decay_linear_attention", "spectron",
-            "galerkin_attention", "vspec", "vspec_attention",
+            "aegis_v1",
+            "aegis_v2",
+            "aegis_v3",
+            "aegis_v4",
+            "aegis_v5",
+            "aegis_v6",
+            "aegis_hybrid",
+            "aegis_spectron_fp8",
+            "spectra_v2",
+            "spectral_mamba",
+            "Mamba",
+            "SVD-Mamba",
+            "simple_ssm",
+            "gated_delta_net",
+            "gated_deltanet_block",
+            "gated_linear_attention",
+            "hgrn2_layer",
+            "hgrn2_gated_deltanet",
+            "hgrn2_outer",
+            "griffin_ssd",
+            "regla_attention",
+            "halo_regla",
+            "kda_attention",
+            "decay_linear_attention",
+            "spectron",
+            "galerkin_attention",
+            "vspec",
+            "vspec_attention",
         ],
         "compressors": ["mamba_shedder"],
     },
     "track3_moe": {
         "attentions": [
-            "bam_umoe", "expert_choice_moe", "reap_moe", "samba_moe",
-            "samba_m3", "jamba", "jamba_info", "hymba_transx",
-            "moe_deltakv_paged", "block_transformer_hiba", "nexus",
-            "leka_v1", "leka_v2", "leka_v3", "mixattention_moska",
-            "phantom", "moba", "fasa", "upi_stuffed_mamba", "granite_hybrid",
+            "bam_umoe",
+            "expert_choice_moe",
+            "reap_moe",
+            "samba_moe",
+            "samba_m3",
+            "jamba",
+            "jamba_info",
+            "hymba_transx",
+            "moe_deltakv_paged",
+            "block_transformer_hiba",
+            "nexus",
+            "leka_v1",
+            "leka_v2",
+            "leka_v3",
+            "mixattention_moska",
+            "phantom",
+            "moba",
+            "fasa",
+            "upi_stuffed_mamba",
+            "granite_hybrid",
         ],
         "compressors": ["cur_moe"],
     },
     "track4_kernel_quant": {
         "attentions": [
-            "performer_attention", "nystrom_attention", "flash_attention3",
-            "cluster_attention", "adasplash_attention", "hamming_attention",
-            "cosformer", "decay_linear_attention", "gated_linear_attention",
-            "SOAFusedAttention", "fused_svd_kernel",
+            "performer_attention",
+            "nystrom_attention",
+            "flash_attention3",
+            "cluster_attention",
+            "adasplash_attention",
+            "hamming_attention",
+            "cosformer",
+            "decay_linear_attention",
+            "gated_linear_attention",
+            "SOAFusedAttention",
+            "fused_svd_kernel",
         ],
         "compressors": [
-            "astro_quantizer", "faq_quantizer", "coopq_quantizer",
-            "kmeans_quantize", "zerokv_neo", "modegpt", "delta_kv",
-            "kvtc", "aatc_xkv", "hybridkv",
+            "astro_quantizer",
+            "faq_quantizer",
+            "coopq_quantizer",
+            "kmeans_quantize",
+            "zerokv_neo",
+            "modegpt",
+            "delta_kv",
+            "kvtc",
+            "aatc_xkv",
+            "hybridkv",
         ],
     },
     "track5_pruning": {
         "attentions": ["linformer_attention", "adaptive_sparse_attention"],
         "compressors": [
-            "slicegpt", "slicegpt_pca", "sparsegpt", "admm_pruner",
-            "armor_pruner", "ast_pruner", "bonsai_pruner", "flap",
-            "flat_llm", "lillama_compressor", "cachenotes_compressor",
-            "come", "oats", "proxsparse", "soka", "liftr",
-            "mamba_shedder", "sdrm",
+            "slicegpt",
+            "slicegpt_pca",
+            "sparsegpt",
+            "admm_pruner",
+            "armor_pruner",
+            "ast_pruner",
+            "bonsai_pruner",
+            "flap",
+            "flat_llm",
+            "lillama_compressor",
+            "cachenotes_compressor",
+            "come",
+            "oats",
+            "proxsparse",
+            "soka",
+            "liftr",
+            "mamba_shedder",
+            "sdrm",
         ],
     },
 }
@@ -301,6 +439,7 @@ TRACK_MODULES: dict[str, dict[str, list[str]]] = {
 # =============================================================================
 # Model factory
 # =============================================================================
+
 
 def build_model_instance(
     model_family: str,
@@ -325,50 +464,71 @@ def build_model_instance(
 
     if family == "bert":
         cfg = BertConfig(
-            vocab_size=vocab_size, hidden_size=hidden_size,
-            num_hidden_layers=num_layers, num_attention_heads=num_heads,
-            intermediate_size=hidden_size * 4, num_labels=num_labels,
+            vocab_size=vocab_size,
+            hidden_size=hidden_size,
+            num_hidden_layers=num_layers,
+            num_attention_heads=num_heads,
+            intermediate_size=hidden_size * 4,
+            num_labels=num_labels,
             max_position_embeddings=512,
         )
         model = BertForSequenceClassification(cfg)
     elif family == "roberta":
         cfg = RobertaConfig(
-            vocab_size=vocab_size, hidden_size=hidden_size,
-            num_hidden_layers=num_layers, num_attention_heads=num_heads,
-            intermediate_size=hidden_size * 4, num_labels=num_labels,
+            vocab_size=vocab_size,
+            hidden_size=hidden_size,
+            num_hidden_layers=num_layers,
+            num_attention_heads=num_heads,
+            intermediate_size=hidden_size * 4,
+            num_labels=num_labels,
             max_position_embeddings=512,
         )
         model = RobertaForSequenceClassification(cfg)
     elif family == "t5":
         cfg = T5Config(
-            vocab_size=vocab_size, d_model=hidden_size,
-            d_kv=hidden_size // max(1, num_heads), d_ff=hidden_size * 4,
-            num_layers=num_layers, num_decoder_layers=num_layers,
+            vocab_size=vocab_size,
+            d_model=hidden_size,
+            d_kv=hidden_size // max(1, num_heads),
+            d_ff=hidden_size * 4,
+            num_layers=num_layers,
+            num_decoder_layers=num_layers,
             num_heads=num_heads,
         )
         model = T5EncoderModel(cfg)
     elif family == "gpt2":
         cfg = GPT2Config(
-            vocab_size=vocab_size, n_embd=hidden_size,
-            n_layer=num_layers, n_head=num_heads, n_positions=512,
+            vocab_size=vocab_size,
+            n_embd=hidden_size,
+            n_layer=num_layers,
+            n_head=num_heads,
+            n_positions=512,
         )
         model = GPT2LMHeadModel(cfg)
     elif family == "distilbert":
         cfg = DistilBertConfig(
-            vocab_size=vocab_size, dim=hidden_size,
-            n_layers=num_layers, n_heads=num_heads,
-            hidden_dim=hidden_size * 4, num_labels=num_labels,
+            vocab_size=vocab_size,
+            dim=hidden_size,
+            n_layers=num_layers,
+            n_heads=num_heads,
+            hidden_dim=hidden_size * 4,
+            num_labels=num_labels,
         )
         model = DistilBertForSequenceClassification(cfg)
     elif family in ("qwen", "qwen2", "qwen3.5", "qwen3_5"):
         from transformers import Qwen2Config, Qwen2ForSequenceClassification
+
         kv_heads = max(1, num_heads // 2)
         cfg = Qwen2Config(
-            vocab_size=151936, hidden_size=hidden_size,
+            vocab_size=151936,
+            hidden_size=hidden_size,
             intermediate_size=hidden_size * 2,
-            num_hidden_layers=num_layers, num_attention_heads=num_heads,
-            num_key_value_heads=kv_heads, head_dim=hidden_size // num_heads,
-            num_labels=num_labels, max_position_embeddings=512, pad_token_id=0,
+            num_hidden_layers=num_layers,
+            num_attention_heads=num_heads,
+            num_key_value_heads=kv_heads,
+            head_dim=hidden_size // num_heads,
+            num_labels=num_labels,
+            max_position_embeddings=512,
+            pad_token_id=0,
         )
         model = Qwen2ForSequenceClassification(cfg)
     else:
@@ -383,6 +543,7 @@ def build_model_instance(
 # Batch filter (FIX-7, FIX-9)
 # =============================================================================
 
+
 def _filter_batch(
     batch: dict[str, torch.Tensor],
     model_family: str,
@@ -390,6 +551,7 @@ def _filter_batch(
 ) -> dict[str, torch.Tensor]:
     """Strip keys invalid for the given architecture. FIX-7: never drop labels."""
     import inspect
+
     family = model_family.lower()
     b = dict(batch)
     if "t5" in family:
@@ -418,6 +580,7 @@ def _filter_batch(
 # =============================================================================
 # Logit / loss extraction (FIX-3)
 # =============================================================================
+
 
 def _extract_logits_and_loss(
     outputs: Any,
@@ -471,6 +634,7 @@ def _extract_logits_and_loss(
 # Module injection (FIX-1, FIX-2, FIX-11)
 # =============================================================================
 
+
 def apply_module_to_model(
     model: nn.Module,
     module_name: str,
@@ -509,6 +673,7 @@ def apply_module_to_model(
         module_type = "compressor"
     else:
         import importlib.util
+
         if importlib.util.find_spec(f"framework.compression_engine.{module_name}"):
             module_type = "compressor"
         elif importlib.util.find_spec(f"framework.attentions.{module_name}"):
@@ -521,13 +686,18 @@ def apply_module_to_model(
         if module_name not in ATTENTION_REGISTRY:
             try:
                 import importlib
+
                 importlib.import_module(f"framework.attentions.{module_name}")
             except ImportError as e:
                 logger.warning("Could not import attention '%s': %s", module_name, e)
 
         resolved_mod = ATTENTION_REGISTRY.get(module_name)
         custom_injector = None
-        if resolved_mod is not None and callable(resolved_mod) and not isinstance(resolved_mod, type):
+        if (
+            resolved_mod is not None
+            and callable(resolved_mod)
+            and not isinstance(resolved_mod, type)
+        ):
             custom_injector = resolved_mod
         if custom_injector is None:
             custom_injector = (
@@ -541,12 +711,21 @@ def apply_module_to_model(
             try:
                 res = custom_injector(model=model, rank=rank, copy_weights=True)
                 from framework.core.base import BaseAttention
-                is_single_layer = (
-                    isinstance(res, (BaseAttention, nn.Linear))
-                    or ("Attention" in type(res).__name__
-                        and not any(hasattr(res, a) for a in
-                                    ("encoder", "transformer", "bert", "roberta",
-                                     "distilbert", "gpt2", "qwen2")))
+
+                is_single_layer = isinstance(res, (BaseAttention, nn.Linear)) or (
+                    "Attention" in type(res).__name__
+                    and not any(
+                        hasattr(res, a)
+                        for a in (
+                            "encoder",
+                            "transformer",
+                            "bert",
+                            "roberta",
+                            "distilbert",
+                            "gpt2",
+                            "qwen2",
+                        )
+                    )
                 )
                 is_whole_model = (
                     res is not None
@@ -572,14 +751,17 @@ def apply_module_to_model(
                 inject_attention(model, module_name, rank=rank, copy_weights=True)
             else:
                 import importlib
+
                 mod = importlib.import_module(f"framework.attentions.{module_name}")
                 target_cls = None
                 for attr in dir(mod):
                     obj = getattr(mod, attr)
-                    if (isinstance(obj, type)
-                            and issubclass(obj, nn.Module)
-                            and ("Attention" in attr or "Block" in attr)
-                            and attr != "BaseAttention"):
+                    if (
+                        isinstance(obj, type)
+                        and issubclass(obj, nn.Module)
+                        and ("Attention" in attr or "Block" in attr)
+                        and attr != "BaseAttention"
+                    ):
                         target_cls = obj
                         break
                 if target_cls is None:
@@ -598,6 +780,7 @@ def apply_module_to_model(
         if module_name not in COMPRESSOR_REGISTRY:
             try:
                 import importlib
+
                 importlib.import_module(f"framework.compression_engine.{module_name}")
             except ImportError as e:
                 logger.warning("Could not import compressor '%s': %s", module_name, e)
@@ -617,10 +800,19 @@ def apply_module_to_model(
         c_kwargs: dict[str, Any] = {}
         if cfg is not None:
             for k in (
-                "rank_ratio", "max_error", "lora_rank", "target_attention_only",
-                "use_jg_svd", "use_cholesky_jg", "energy_threshold",
-                "group_size", "strict_rank", "n_calib", "calib_samples",
-                "keep_ratio", "bits",
+                "rank_ratio",
+                "max_error",
+                "lora_rank",
+                "target_attention_only",
+                "use_jg_svd",
+                "use_cholesky_jg",
+                "energy_threshold",
+                "group_size",
+                "strict_rank",
+                "n_calib",
+                "calib_samples",
+                "keep_ratio",
+                "bits",
             ):
                 if hasattr(cfg, k):
                     c_kwargs[k] = getattr(cfg, k)
@@ -647,14 +839,20 @@ def apply_module_to_model(
                     attempts.append(lambda: m(calibration_data=calibration_data))
                 attempts.append(lambda: m(model))
                 if calibration_loader is not None:
-                    attempts.append(lambda: m(model, calibration_loader=calibration_loader))
+                    attempts.append(
+                        lambda: m(model, calibration_loader=calibration_loader)
+                    )
                 if calibration_data is not None:
                     attempts.append(lambda: m(model, calibration_data=calibration_data))
 
                 for fn in attempts:
                     try:
                         res = fn()
-                        if isinstance(res, tuple) and res and isinstance(res[0], nn.Module):
+                        if (
+                            isinstance(res, tuple)
+                            and res
+                            and isinstance(res[0], nn.Module)
+                        ):
                             if len(res) > 1 and isinstance(res[1], dict):
                                 try:
                                     res[0].compression_stats = res[1]
@@ -691,14 +889,20 @@ def apply_module_to_model(
                 continue
 
         if candidate is not None:
-            if isinstance(candidate, tuple) and candidate and isinstance(candidate[0], nn.Module):
+            if (
+                isinstance(candidate, tuple)
+                and candidate
+                and isinstance(candidate[0], nn.Module)
+            ):
                 model = candidate[0]
                 if len(candidate) > 1 and isinstance(candidate[1], dict):
                     try:
                         model.compression_stats = candidate[1]
                     except Exception:
                         pass
-            elif isinstance(candidate, nn.Module) and not hasattr(candidate, "compress"):
+            elif isinstance(candidate, nn.Module) and not hasattr(
+                candidate, "compress"
+            ):
                 model = candidate
             else:
                 res_mod = _invoke(candidate)
@@ -739,7 +943,9 @@ def apply_module_to_model(
 
 _MAX_CACHE_SIZE = 16
 
-_TOKENIZED_BATCH_CACHE: dict[tuple[str, str, int, int, str], dict[str, torch.Tensor]] = {}
+_TOKENIZED_BATCH_CACHE: dict[
+    tuple[str, str, int, int, str], dict[str, torch.Tensor]
+] = {}
 _PREPARED_DATASET_CACHE: dict[tuple[str, str, int], Any] = {}
 
 
@@ -755,6 +961,7 @@ def _evict_if_needed(cache: dict, max_size: int = _MAX_CACHE_SIZE) -> None:
 # =============================================================================
 # Synthetic batch (FIX-8)
 # =============================================================================
+
 
 def _generate_synthetic_batch(
     dataset_name: str,
@@ -781,7 +988,9 @@ def _generate_synthetic_batch(
         labels[:, :-1] = input_ids[:, 1:]
         labels[:, -1] = -100
     else:
-        labels = torch.randint(0, num_labels, (batch_size,), dtype=torch.long, device=device)
+        labels = torch.randint(
+            0, num_labels, (batch_size,), dtype=torch.long, device=device
+        )
 
     return {
         "input_ids": input_ids,
@@ -794,6 +1003,7 @@ def _generate_synthetic_batch(
 # Dataset batch (single-shot)
 # =============================================================================
 
+
 def get_dataset_batch(
     dataset_name: str,
     model_family: str,
@@ -802,7 +1012,7 @@ def get_dataset_batch(
     vocab_size: int = 30522,
     num_labels: int = 2,
     device: torch.device = torch.device("cpu"),
-    allow_synthetic: bool = False,   # FIX-12
+    allow_synthetic: bool = False,  # FIX-12
 ) -> dict[str, torch.Tensor]:
     ds = dataset_name.lower()
     family = model_family.lower()
@@ -811,7 +1021,10 @@ def get_dataset_batch(
 
     if cache_key in _TOKENIZED_BATCH_CACHE:
         cached = _TOKENIZED_BATCH_CACHE[cache_key]
-        return {k: v.clone() if isinstance(v, torch.Tensor) else v for k, v in cached.items()}
+        return {
+            k: v.clone() if isinstance(v, torch.Tensor) else v
+            for k, v in cached.items()
+        }
 
     if ds == "synthetic":
         batch = _generate_synthetic_batch(
@@ -819,13 +1032,16 @@ def get_dataset_batch(
         )
         _TOKENIZED_BATCH_CACHE[cache_key] = batch
         _evict_if_needed(_TOKENIZED_BATCH_CACHE)
-        return {k: v.clone() if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
+        return {
+            k: v.clone() if isinstance(v, torch.Tensor) else v for k, v in batch.items()
+        }
 
     tok_name = MODEL_TOKENIZER_MAPPING.get(family, "bert-base-uncased")
     dataset_cache_key = (ds, tok_name, seq_len)
 
     try:
         from framework.data.prepare_datasets import GLUE_TASK_CONFIG
+
         val_tokenized = None
         if ds in GLUE_TASK_CONFIG:
             if dataset_cache_key not in _PREPARED_DATASET_CACHE:
@@ -843,14 +1059,18 @@ def get_dataset_batch(
 
                 def tok_fn(ex):
                     args = (ex[k1],) if k2 is None else (ex[k1], ex[k2])
-                    return tokenizer(*args, padding="max_length",
-                                     truncation=True, max_length=seq_len)
+                    return tokenizer(
+                        *args, padding="max_length", truncation=True, max_length=seq_len
+                    )
 
                 val_tokenized = val_data.map(tok_fn, batched=True)
                 val_tokenized.set_format(
                     type="torch",
-                    columns=[c for c in ("input_ids", "attention_mask", "label")
-                             if c in val_tokenized.column_names],
+                    columns=[
+                        c
+                        for c in ("input_ids", "attention_mask", "label")
+                        if c in val_tokenized.column_names
+                    ],
                 )
                 _PREPARED_DATASET_CACHE[dataset_cache_key] = val_tokenized
                 _evict_if_needed(_PREPARED_DATASET_CACHE)
@@ -858,7 +1078,7 @@ def get_dataset_batch(
                 val_tokenized = _PREPARED_DATASET_CACHE[dataset_cache_key]
         elif ds in LM_DATASETS or "wikitext" in ds:
             if dataset_cache_key not in _PREPARED_DATASET_CACHE:
-                from datasets import load_dataset, Dataset
+                from datasets import Dataset, load_dataset
                 from transformers import AutoTokenizer
 
                 tokenizer = AutoTokenizer.from_pretrained(tok_name)
@@ -867,13 +1087,19 @@ def get_dataset_batch(
                     tokenizer.pad_token_id = tokenizer.eos_token_id
 
                 try:
-                    raw_val = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
+                    raw_val = load_dataset(
+                        "wikitext", "wikitext-2-raw-v1", split="test"
+                    )
                 except Exception:
-                    raw_val = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="test")
+                    raw_val = load_dataset(
+                        "Salesforce/wikitext", "wikitext-2-raw-v1", split="test"
+                    )
 
                 valid_texts = [t for t in raw_val["text"] if len(t.strip()) > 10][:200]
                 if not valid_texts:
-                    valid_texts = ["WikiText language model benchmark sample evaluation string."] * 50
+                    valid_texts = [
+                        "WikiText language model benchmark sample evaluation string."
+                    ] * 50
 
                 enc = tokenizer(
                     valid_texts,
@@ -882,18 +1108,22 @@ def get_dataset_batch(
                     max_length=seq_len,
                     return_tensors="pt",
                 )
-                val_tokenized = Dataset.from_dict({
-                    "input_ids": enc["input_ids"],
-                    "attention_mask": enc["attention_mask"],
-                })
-                val_tokenized.set_format(type="torch", columns=["input_ids", "attention_mask"])
+                val_tokenized = Dataset.from_dict(
+                    {
+                        "input_ids": enc["input_ids"],
+                        "attention_mask": enc["attention_mask"],
+                    }
+                )
+                val_tokenized.set_format(
+                    type="torch", columns=["input_ids", "attention_mask"]
+                )
                 _PREPARED_DATASET_CACHE[dataset_cache_key] = val_tokenized
                 _evict_if_needed(_PREPARED_DATASET_CACHE)
             else:
                 val_tokenized = _PREPARED_DATASET_CACHE[dataset_cache_key]
 
         if val_tokenized is not None and len(val_tokenized) > 0:
-            is_cuda = (device.type == "cuda")
+            is_cuda = device.type == "cuda"
             n = min(batch_size, len(val_tokenized))
             sample = val_tokenized[list(range(n))]
             raw_batch = {}
@@ -902,23 +1132,36 @@ def get_dataset_batch(
                     vals = sample[k]
                     if isinstance(vals, torch.Tensor):
                         raw_batch[k] = vals
-                    elif isinstance(vals, (list, tuple)) and len(vals) > 0 and isinstance(vals[0], torch.Tensor):
+                    elif (
+                        isinstance(vals, (list, tuple))
+                        and len(vals) > 0
+                        and isinstance(vals[0], torch.Tensor)
+                    ):
                         raw_batch[k] = torch.stack(vals)
-                    elif isinstance(vals, (list, tuple)) and len(vals) > 0 and isinstance(vals[0], (int, float, bool)):
+                    elif (
+                        isinstance(vals, (list, tuple))
+                        and len(vals) > 0
+                        and isinstance(vals[0], (int, float, bool))
+                    ):
                         raw_batch[k] = torch.tensor(vals)
                     elif isinstance(vals, (int, float, bool)):
                         raw_batch[k] = torch.tensor([vals])
                     else:
                         raw_batch[k] = vals
             batch = {
-                ("labels" if k == "label" else k):
-                    (v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v)
+                ("labels" if k == "label" else k): (
+                    v.to(device, non_blocking=is_cuda)
+                    if isinstance(v, torch.Tensor)
+                    else v
+                )
                 for k, v in raw_batch.items()
             }
             _TOKENIZED_BATCH_CACHE[cache_key] = batch
             _evict_if_needed(_TOKENIZED_BATCH_CACHE)
-            return {k: v.clone() if isinstance(v, torch.Tensor) else v
-                    for k, v in batch.items()}
+            return {
+                k: v.clone() if isinstance(v, torch.Tensor) else v
+                for k, v in batch.items()
+            }
     except Exception as e:
         logger.warning("Could not load GLUE dataset '%s': %s", ds, e)
         if not allow_synthetic:
@@ -929,7 +1172,9 @@ def get_dataset_batch(
     )
     _TOKENIZED_BATCH_CACHE[cache_key] = batch
     _evict_if_needed(_TOKENIZED_BATCH_CACHE)
-    return {k: v.clone() if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
+    return {
+        k: v.clone() if isinstance(v, torch.Tensor) else v for k, v in batch.items()
+    }
 
 
 # =============================================================================
@@ -961,13 +1206,15 @@ def get_base_model_cached(
     if cache_key not in _BASE_MODEL_TEMPLATE_CACHE:
         with torch.device("cpu"):
             template_model, cfg = build_model_instance(
-                model_family=family, num_labels=num_labels,
-                hidden_size=hidden_size, num_heads=num_heads,
-                num_layers=num_layers, device=torch.device("cpu"),
+                model_family=family,
+                num_labels=num_labels,
+                hidden_size=hidden_size,
+                num_heads=num_heads,
+                num_layers=num_layers,
+                device=torch.device("cpu"),
             )
         template_state = {
-            k: v.detach().cpu().clone()
-            for k, v in template_model.state_dict().items()
+            k: v.detach().cpu().clone() for k, v in template_model.state_dict().items()
         }
         del template_model
         _BASE_MODEL_TEMPLATE_CACHE[cache_key] = (template_state, cfg)
@@ -975,9 +1222,12 @@ def get_base_model_cached(
         template_state, cfg = _BASE_MODEL_TEMPLATE_CACHE[cache_key]
 
     fresh_model, _ = build_model_instance(
-        model_family=family, num_labels=num_labels,
-        hidden_size=hidden_size, num_heads=num_heads,
-        num_layers=num_layers, device=device,
+        model_family=family,
+        num_labels=num_labels,
+        hidden_size=hidden_size,
+        num_heads=num_heads,
+        num_layers=num_layers,
+        device=device,
     )
     fresh_model.load_state_dict(
         {k: v.to(device) for k, v in template_state.items()},
@@ -990,16 +1240,17 @@ def get_base_model_cached(
 # Batch probe (FIX-6, FIX-12)
 # =============================================================================
 
+
 def probe_optimal_batch_size(
     model: nn.Module,
     model_family: str,
     dataset: str,
     seq_len: int,
     device: torch.device,
-    target_vram_ratio: float = 0.35,   # FIX-6
+    target_vram_ratio: float = 0.35,  # FIX-6
     max_batch_cap: int = 64,
     min_batch_floor: int = 4,
-    allow_synthetic: bool = False,     # FIX-12
+    allow_synthetic: bool = False,  # FIX-12
 ) -> int:
     if device.type != "cuda":
         return 64
@@ -1018,8 +1269,12 @@ def probe_optimal_batch_size(
 
     try:
         probe_batch = get_dataset_batch(
-            dataset, model_family, probe_b, seq_len,
-            num_labels=num_labels, device=device,
+            dataset,
+            model_family,
+            probe_b,
+            seq_len,
+            num_labels=num_labels,
+            device=device,
             allow_synthetic=allow_synthetic,
         )
         filtered_batch = _filter_batch(probe_batch, model_family, model)
@@ -1034,7 +1289,8 @@ def probe_optimal_batch_size(
             with torch.amp.autocast("cuda"):
                 out2 = model(**filtered_batch)
             _, loss = _extract_logits_and_loss(
-                out2, num_labels=num_labels,
+                out2,
+                num_labels=num_labels,
                 labels=filtered_batch.get("labels"),
                 is_lm=dataset.lower() in LM_DATASETS,
             )
@@ -1076,6 +1332,7 @@ def probe_optimal_batch_size(
 # Calibration loader builder (FIX-1)
 # =============================================================================
 
+
 def build_calibration_loader(
     dataset: str,
     model_family: str,
@@ -1099,12 +1356,15 @@ def build_calibration_loader(
         return None, None, None
 
     if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token or tokenizer.sep_token or tokenizer.pad_token
+        tokenizer.pad_token = (
+            tokenizer.eos_token or tokenizer.sep_token or tokenizer.pad_token
+        )
 
     ds = dataset.lower()
     source = None
     try:
         from datasets import load_dataset
+
         if ds in GLUE_DATASETS:
             raw = load_dataset("glue", ds, split=f"train[:{n_samples}]")
             # pick a text column
@@ -1115,8 +1375,9 @@ def build_calibration_loader(
             texts = raw[col][:n_samples]
             source = f"glue/{ds}_train"
         elif ds in LM_DATASETS:
-            raw = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1",
-                               split=f"train[:{n_samples}]")
+            raw = load_dataset(
+                "Salesforce/wikitext", "wikitext-2-raw-v1", split=f"train[:{n_samples}]"
+            )
             texts = [t for t in raw["text"] if len(t.strip()) > 20][:n_samples]
             source = "wikitext2_train"
         else:
@@ -1144,7 +1405,10 @@ def build_calibration_loader(
     loader = DataLoader(items, batch_size=batch_size, shuffle=False)
     logger.info(
         "[CALIB] Built calibration loader from %s: n=%d, batch_size=%d, seq_len=%d",
-        source, len(items), batch_size, seq_len,
+        source,
+        len(items),
+        batch_size,
+        seq_len,
     )
     return loader, tokenizer, source
 
@@ -1152,6 +1416,7 @@ def build_calibration_loader(
 # =============================================================================
 # Main evaluator (FIX-1, FIX-3, FIX-4, FIX-6, FIX-10, FIX-14, FIX-15, FIX-17, FIX-18)
 # =============================================================================
+
 
 def evaluate_single_combination_opt(
     track: str,
@@ -1170,13 +1435,17 @@ def evaluate_single_combination_opt(
     skip_deprecated: bool = True,
 ) -> BenchmarkResult:
 
-    from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
     from scipy.stats import pearsonr, spearmanr
-    from torch.profiler import profile, ProfilerActivity
+    from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
+    from torch.profiler import ProfilerActivity, profile
 
     result = BenchmarkResult(
-        track=track, module_name=module_name, module_type=module_type,
-        model_family=model_family, dataset=dataset, status="RUNNING",
+        track=track,
+        module_name=module_name,
+        module_type=module_type,
+        model_family=model_family,
+        dataset=dataset,
+        status="RUNNING",
     )
 
     t_run_start = time.time()
@@ -1210,7 +1479,9 @@ def evaluate_single_combination_opt(
     if skip_deprecated and module_name in DEPRECATED_MODULES:
         result.status = "SKIP_DEPRECATED"
         result.error_message = f"Module '{module_name}' is in DEPRECATED_MODULES."
-        run_log_lines.append(f"[SKIP] Module '{module_name}' is in DEPRECATED_MODULES. Skipping execution.")
+        run_log_lines.append(
+            f"[SKIP] Module '{module_name}' is in DEPRECATED_MODULES. Skipping execution."
+        )
         run_log_lines.append("[DONE] Status: SKIP_DEPRECATED, Elapsed: 0.00s")
         # Proceed directly to artifact writing
         success = True
@@ -1219,7 +1490,7 @@ def evaluate_single_combination_opt(
         model = None
         baseline_model = None
         try:
-            is_cuda = (device.type == "cuda")
+            is_cuda = device.type == "cuda"
             if is_cuda:
                 torch.cuda.empty_cache()
 
@@ -1229,21 +1500,33 @@ def evaluate_single_combination_opt(
             if is_cuda:
                 torch.cuda.synchronize(device)
                 mem_phases["idle"] = {
-                    "allocated_mb": round(torch.cuda.memory_allocated(device) / (1024 * 1024), 2),
-                    "reserved_mb": round(torch.cuda.memory_reserved(device) / (1024 * 1024), 2),
+                    "allocated_mb": round(
+                        torch.cuda.memory_allocated(device) / (1024 * 1024), 2
+                    ),
+                    "reserved_mb": round(
+                        torch.cuda.memory_reserved(device) / (1024 * 1024), 2
+                    ),
                 }
 
             model, cfg = get_base_model_cached(
-                model_family=model_family, num_labels=num_labels,
-                hidden_size=128, num_heads=4, num_layers=2, device=device,
+                model_family=model_family,
+                num_labels=num_labels,
+                hidden_size=128,
+                num_heads=4,
+                num_layers=2,
+                device=device,
             )
             model.train()
             t_model_load = time.time() - t_load_0
             if is_cuda:
                 torch.cuda.synchronize(device)
                 mem_phases["model_load"] = {
-                    "allocated_mb": round(torch.cuda.memory_allocated(device) / (1024 * 1024), 2),
-                    "reserved_mb": round(torch.cuda.memory_reserved(device) / (1024 * 1024), 2),
+                    "allocated_mb": round(
+                        torch.cuda.memory_allocated(device) / (1024 * 1024), 2
+                    ),
+                    "reserved_mb": round(
+                        torch.cuda.memory_reserved(device) / (1024 * 1024), 2
+                    ),
                 }
 
             # ============ FIX-1: build calibration ============
@@ -1252,43 +1535,59 @@ def evaluate_single_combination_opt(
             calib_tok = None
             calib_source = None
             if module_type == "compressor" and module_name in ACTIVATION_AWARE_MODULES:
-                run_log_lines.append(f"[CALIB] Building calibration loader for {module_name} on {dataset}...")
+                run_log_lines.append(
+                    f"[CALIB] Building calibration loader for {module_name} on {dataset}..."
+                )
                 calib_loader, calib_tok, calib_source = build_calibration_loader(
-                    dataset=dataset, model_family=model_family,
-                    seq_len=seq_len, device=device,
-                    n_samples=500, batch_size=8,
+                    dataset=dataset,
+                    model_family=model_family,
+                    seq_len=seq_len,
+                    device=device,
+                    n_samples=500,
+                    batch_size=8,
                 )
                 if calib_loader is None:
                     result.calibration_used = False
                     result.calibration_source = None
-                    run_log_lines.append(f"[CALIB] Warning: Failed to build calibration loader for {module_name}")
+                    run_log_lines.append(
+                        f"[CALIB] Warning: Failed to build calibration loader for {module_name}"
+                    )
                     logger.warning(
                         "[CALIB] No calibration loader built for %s on %s.",
-                        module_name, dataset,
+                        module_name,
+                        dataset,
                     )
                 else:
                     result.calibration_used = True
                     result.calibration_source = calib_source
-                    run_log_lines.append(f"[CALIB] Successfully built calibration loader from {calib_source} (500 samples)")
+                    run_log_lines.append(
+                        f"[CALIB] Successfully built calibration loader from {calib_source} (500 samples)"
+                    )
             t_calib = time.time() - t_calib_0
             if is_cuda:
                 torch.cuda.synchronize(device)
                 mem_phases["calibration"] = {
-                    "allocated_mb": round(torch.cuda.memory_allocated(device) / (1024 * 1024), 2),
-                    "reserved_mb": round(torch.cuda.memory_reserved(device) / (1024 * 1024), 2),
+                    "allocated_mb": round(
+                        torch.cuda.memory_allocated(device) / (1024 * 1024), 2
+                    ),
+                    "reserved_mb": round(
+                        torch.cuda.memory_reserved(device) / (1024 * 1024), 2
+                    ),
                 }
 
             # ============ Inject module ============
             t_comp_0 = time.time()
-            run_log_lines.append(f"[INJECT] Injecting module '{module_name}' (type={module_type}, rank={rank})")
+            run_log_lines.append(
+                f"[INJECT] Injecting module '{module_name}' (type={module_type}, rank={rank})"
+            )
             model, comp_ratio = apply_module_to_model(
                 model=model,
                 module_name=module_name,
                 module_type=module_type,
                 rank=rank,
                 device=device,
-                calibration_loader=calib_loader,   # FIX-1
-                tokenizer=calib_tok,                # FIX-1
+                calibration_loader=calib_loader,  # FIX-1
+                tokenizer=calib_tok,  # FIX-1
             )
             result.compression_ratio = comp_ratio
             result.params_before = sum(p.numel() for p in model.parameters())
@@ -1296,31 +1595,45 @@ def evaluate_single_combination_opt(
             if is_cuda:
                 torch.cuda.synchronize(device)
                 mem_phases["compression"] = {
-                    "allocated_mb": round(torch.cuda.memory_allocated(device) / (1024 * 1024), 2),
-                    "reserved_mb": round(torch.cuda.memory_reserved(device) / (1024 * 1024), 2),
+                    "allocated_mb": round(
+                        torch.cuda.memory_allocated(device) / (1024 * 1024), 2
+                    ),
+                    "reserved_mb": round(
+                        torch.cuda.memory_reserved(device) / (1024 * 1024), 2
+                    ),
                 }
 
             comp_stats = getattr(model, "compression_stats", {}) or {}
-            if "layer_stats" in comp_stats and isinstance(comp_stats["layer_stats"], dict):
+            if "layer_stats" in comp_stats and isinstance(
+                comp_stats["layer_stats"], dict
+            ):
                 for l_name, l_info in comp_stats["layer_stats"].items():
-                    per_layer_list.append({
-                        "layer_name": l_name,
-                        "status": "compressed",
-                        "reconstruction_error": l_info.get("rel_error", 0.0),
-                        "rank": l_info.get("rank", rank),
-                    })
+                    per_layer_list.append(
+                        {
+                            "layer_name": l_name,
+                            "status": "compressed",
+                            "reconstruction_error": l_info.get("rel_error", 0.0),
+                            "rank": l_info.get("rank", rank),
+                        }
+                    )
                     per_layer_errors[l_name] = l_info.get("rel_error", 0.0)
-            elif "layer_errors" in comp_stats and isinstance(comp_stats["layer_errors"], dict):
+            elif "layer_errors" in comp_stats and isinstance(
+                comp_stats["layer_errors"], dict
+            ):
                 for l_name, l_err in comp_stats["layer_errors"].items():
                     st = "fallback" if l_err > 0.5 else "compressed"
-                    per_layer_list.append({
-                        "layer_name": l_name,
-                        "status": st,
-                        "reconstruction_error": l_err,
-                        "rank": rank,
-                    })
+                    per_layer_list.append(
+                        {
+                            "layer_name": l_name,
+                            "status": st,
+                            "reconstruction_error": l_err,
+                            "rank": rank,
+                        }
+                    )
                     per_layer_errors[l_name] = l_err
-            elif "per_layer" in comp_stats and isinstance(comp_stats["per_layer"], list):
+            elif "per_layer" in comp_stats and isinstance(
+                comp_stats["per_layer"], list
+            ):
                 per_layer_list = comp_stats["per_layer"]
                 for item in per_layer_list:
                     if isinstance(item, dict):
@@ -1330,18 +1643,37 @@ def evaluate_single_combination_opt(
 
             num_compressed = comp_stats.get(
                 "num_compressed_layers",
-                comp_stats.get("factorized_layers", comp_stats.get("pruned_layers", sum(1 for x in per_layer_list if x.get("status") == "compressed")))
+                comp_stats.get(
+                    "factorized_layers",
+                    comp_stats.get(
+                        "pruned_layers",
+                        sum(
+                            1 for x in per_layer_list if x.get("status") == "compressed"
+                        ),
+                    ),
+                ),
             )
             num_fallback = comp_stats.get(
                 "num_fallback_layers",
-                comp_stats.get("skipped_layers", sum(1 for x in per_layer_list if x.get("status") in ("fallback", "skipped")))
+                comp_stats.get(
+                    "skipped_layers",
+                    sum(
+                        1
+                        for x in per_layer_list
+                        if x.get("status") in ("fallback", "skipped")
+                    ),
+                ),
             )
             if num_compressed == 0 and comp_ratio > 1.001:
                 num_compressed = max(1, len(per_layer_list) or 1)
 
-            run_log_lines.append(f"[COMPRESS] Compressed layers={num_compressed}, fallback layers={num_fallback}, comp_ratio={comp_ratio:.3f}")
+            run_log_lines.append(
+                f"[COMPRESS] Compressed layers={num_compressed}, fallback layers={num_fallback}, comp_ratio={comp_ratio:.3f}"
+            )
             if num_fallback > 0:
-                run_log_lines.append(f"[FALLBACK] {num_fallback} layers fell back to dense/original")
+                run_log_lines.append(
+                    f"[FALLBACK] {num_fallback} layers fell back to dense/original"
+                )
 
             model = model.to(device)
             if hasattr(model, "train"):
@@ -1350,17 +1682,24 @@ def evaluate_single_combination_opt(
             # ============ Batch probe (FIX-6) ============
             if retry_count == 0 and is_cuda:
                 current_batch_size = probe_optimal_batch_size(
-                    model=model, model_family=model_family,
-                    dataset=dataset, seq_len=seq_len, device=device,
-                    target_vram_ratio=0.35,     # FIX-6
+                    model=model,
+                    model_family=model_family,
+                    dataset=dataset,
+                    seq_len=seq_len,
+                    device=device,
+                    target_vram_ratio=0.35,  # FIX-6
                     max_batch_cap=min(batch_size, 512) if batch_size > 0 else 512,
                     min_batch_floor=4,
-                    allow_synthetic=allow_synthetic,   # FIX-12
+                    allow_synthetic=allow_synthetic,  # FIX-12
                 )
 
             batch = get_dataset_batch(
-                dataset, model_family, current_batch_size, seq_len,
-                num_labels=num_labels, device=device,
+                dataset,
+                model_family,
+                current_batch_size,
+                seq_len,
+                num_labels=num_labels,
+                device=device,
                 allow_synthetic=allow_synthetic,
             )
             filtered_batch = _filter_batch(batch, model_family, model)
@@ -1375,20 +1714,24 @@ def evaluate_single_combination_opt(
             model.eval()
             # ---------- FLOPs warmup ----------
             try:
-                with profile(
-                    activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-                    record_shapes=True, with_flops=True,
-                ) as prof, torch.amp.autocast("cuda") if is_cuda else contextlib.nullcontext():
+                with (
+                    profile(
+                        activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+                        record_shapes=True,
+                        with_flops=True,
+                    ) as prof,
+                    torch.amp.autocast("cuda") if is_cuda else contextlib.nullcontext(),
+                ):
                     _ = model(**filtered_batch)
-                result.flops_macs = sum(
-                    (e.flops or 0) for e in prof.key_averages()
-                )
+                result.flops_macs = sum((e.flops or 0) for e in prof.key_averages())
             except Exception as fe:
                 logger.debug("FLOPs profiling failed: %s", fe)
 
             # ---------- Additional warmups ----------
             for _ in range(num_warmup):
-                with torch.amp.autocast("cuda") if is_cuda else contextlib.nullcontext():
+                with (
+                    torch.amp.autocast("cuda") if is_cuda else contextlib.nullcontext()
+                ):
                     _ = model(**filtered_batch)
 
             model.train()
@@ -1398,10 +1741,18 @@ def evaluate_single_combination_opt(
             # ============ Timing loop ============
             if is_cuda:
                 torch.cuda.reset_peak_memory_stats(device)
-                fwd_start = [torch.cuda.Event(enable_timing=True) for _ in range(num_steps)]
-                fwd_end   = [torch.cuda.Event(enable_timing=True) for _ in range(num_steps)]
-                bwd_start = [torch.cuda.Event(enable_timing=True) for _ in range(num_steps)]
-                bwd_end   = [torch.cuda.Event(enable_timing=True) for _ in range(num_steps)]
+                fwd_start = [
+                    torch.cuda.Event(enable_timing=True) for _ in range(num_steps)
+                ]
+                fwd_end = [
+                    torch.cuda.Event(enable_timing=True) for _ in range(num_steps)
+                ]
+                bwd_start = [
+                    torch.cuda.Event(enable_timing=True) for _ in range(num_steps)
+                ]
+                bwd_end = [
+                    torch.cuda.Event(enable_timing=True) for _ in range(num_steps)
+                ]
 
                 for i in range(num_steps):
                     fwd_start[i].record()
@@ -1411,7 +1762,8 @@ def evaluate_single_combination_opt(
 
                     with torch.amp.autocast("cuda"):
                         _, loss = _extract_logits_and_loss(
-                            out, num_labels=num_labels,
+                            out,
+                            num_labels=num_labels,
                             labels=filtered_batch.get("labels"),
                             is_lm=is_lm,
                         )
@@ -1419,7 +1771,9 @@ def evaluate_single_combination_opt(
                     # FIX-4: NO fake loss
                     if loss is None or not loss.requires_grad:
                         logger.warning(
-                            "Step %d/%d: no valid loss; skipping backward.", i + 1, num_steps,
+                            "Step %d/%d: no valid loss; skipping backward.",
+                            i + 1,
+                            num_steps,
                         )
                         traj_loss.append(0.0)
                         traj_grad_norm.append(0.0)
@@ -1439,15 +1793,19 @@ def evaluate_single_combination_opt(
                     for p in model.parameters():
                         if p.requires_grad and p.grad is not None:
                             total_norm_sq += float(p.grad.detach().norm(2).item() ** 2)
-                    traj_grad_norm.append(round(float(total_norm_sq ** 0.5), 4))
+                    traj_grad_norm.append(round(float(total_norm_sq**0.5), 4))
                     model.zero_grad()
 
                 if num_steps > 0:
                     bwd_end[-1].synchronize()
                 for i in range(num_steps):
                     try:
-                        traj_fwd_ms.append(round(float(fwd_start[i].elapsed_time(fwd_end[i])), 4))
-                        traj_bwd_ms.append(round(float(bwd_start[i].elapsed_time(bwd_end[i])), 4))
+                        traj_fwd_ms.append(
+                            round(float(fwd_start[i].elapsed_time(fwd_end[i])), 4)
+                        )
+                        traj_bwd_ms.append(
+                            round(float(bwd_start[i].elapsed_time(bwd_end[i])), 4)
+                        )
                     except Exception:
                         pass
 
@@ -1461,7 +1819,8 @@ def evaluate_single_combination_opt(
                     traj_fwd_ms.append(round((time.perf_counter() - t0) * 1000.0, 4))
 
                     _, loss = _extract_logits_and_loss(
-                        out, num_labels=num_labels,
+                        out,
+                        num_labels=num_labels,
                         labels=filtered_batch.get("labels"),
                         is_lm=is_lm,
                     )
@@ -1481,17 +1840,23 @@ def evaluate_single_combination_opt(
                     for p in model.parameters():
                         if p.requires_grad and p.grad is not None:
                             total_norm_sq += float(p.grad.detach().norm(2).item() ** 2)
-                    traj_grad_norm.append(round(float(total_norm_sq ** 0.5), 4))
+                    traj_grad_norm.append(round(float(total_norm_sq**0.5), 4))
                     model.zero_grad()
 
-            result.forward_latency_ms = round(float(np.mean(traj_fwd_ms)), 2) if traj_fwd_ms else 0.0
-            result.backward_latency_ms = round(float(np.mean(traj_bwd_ms)), 2) if traj_bwd_ms else 0.0
+            result.forward_latency_ms = (
+                round(float(np.mean(traj_fwd_ms)), 2) if traj_fwd_ms else 0.0
+            )
+            result.backward_latency_ms = (
+                round(float(np.mean(traj_bwd_ms)), 2) if traj_bwd_ms else 0.0
+            )
             result.total_step_latency_ms = round(
                 result.forward_latency_ms + result.backward_latency_ms, 2
             )
-            result.latency_variance_ms = round(
-                float(np.var(traj_fwd_ms) + np.var(traj_bwd_ms)), 4
-            ) if traj_fwd_ms else 0.0
+            result.latency_variance_ms = (
+                round(float(np.var(traj_fwd_ms) + np.var(traj_bwd_ms)), 4)
+                if traj_fwd_ms
+                else 0.0
+            )
 
             # FIX-16: bounded throughput
             total_time_s = max(1e-4, sum(traj_fwd_ms + traj_bwd_ms) / 1000.0)
@@ -1502,7 +1867,9 @@ def evaluate_single_combination_opt(
                 (num_steps * current_batch_size * seq_len) / total_time_s, 2
             )
             result.loss = round(float(np.mean(traj_loss)), 4) if traj_loss else 0.0
-            result.grad_norm = round(float(np.mean(traj_grad_norm)), 4) if traj_grad_norm else 0.0
+            result.grad_norm = (
+                round(float(np.mean(traj_grad_norm)), 4) if traj_grad_norm else 0.0
+            )
             result.trajectories = {
                 "loss": traj_loss,
                 "grad_norm": traj_grad_norm,
@@ -1523,14 +1890,20 @@ def evaluate_single_combination_opt(
             run_log_lines.append(f"[EVAL] Starting evaluation on {dataset}...")
 
             baseline_model, _ = get_base_model_cached(
-                model_family=model_family, num_labels=num_labels,
-                hidden_size=128, num_heads=4, num_layers=2, device=device,
+                model_family=model_family,
+                num_labels=num_labels,
+                hidden_size=128,
+                num_heads=4,
+                num_layers=2,
+                device=device,
             )
             baseline_model.eval()
             baseline_model = baseline_model.to(device)
 
             try:
-                tok_name = MODEL_TOKENIZER_MAPPING.get(model_family.lower(), "bert-base-uncased")
+                tok_name = MODEL_TOKENIZER_MAPPING.get(
+                    model_family.lower(), "bert-base-uncased"
+                )
                 dataset_cache_key = (dataset.lower(), tok_name, seq_len)
 
                 if dataset_cache_key in _PREPARED_DATASET_CACHE:
@@ -1552,9 +1925,11 @@ def evaluate_single_combination_opt(
                     with torch.no_grad():
                         for val_batch in loader:
                             inputs = {
-                                ("labels" if k == "label" else k):
-                                    (v.to(device, non_blocking=True)
-                                     if isinstance(v, torch.Tensor) else v)
+                                ("labels" if k == "label" else k): (
+                                    v.to(device, non_blocking=True)
+                                    if isinstance(v, torch.Tensor)
+                                    else v
+                                )
                                 for k, v in val_batch.items()
                             }
                             filtered_inputs = _filter_batch(inputs, model_family, model)
@@ -1574,12 +1949,14 @@ def evaluate_single_combination_opt(
                                 base_out = baseline_model(**filtered_base_inputs)
 
                             logits, _ = _extract_logits_and_loss(
-                                out, num_labels=num_labels,
+                                out,
+                                num_labels=num_labels,
                                 labels=filtered_inputs.get("labels"),
                                 is_lm=is_lm,
                             )
                             base_logits, _ = _extract_logits_and_loss(
-                                base_out, num_labels=num_labels,
+                                base_out,
+                                num_labels=num_labels,
                                 labels=filtered_inputs.get("labels"),
                                 is_lm=is_lm,
                             )
@@ -1588,49 +1965,95 @@ def evaluate_single_combination_opt(
                             if is_lm and out.loss is not None:
                                 target_labels = filtered_inputs.get("labels")
                                 if target_labels is not None:
-                                    n_targets = int((target_labels != -100).sum().item())
-                                    lm_nll_sum += float(out.loss.detach().item()) * max(1, n_targets)
+                                    n_targets = int(
+                                        (target_labels != -100).sum().item()
+                                    )
+                                    lm_nll_sum += float(out.loss.detach().item()) * max(
+                                        1, n_targets
+                                    )
                                     lm_token_count += max(1, n_targets)
 
                             # FIX-15: per-sample cosine for fidelity
-                            if (logits is not None and base_logits is not None
-                                    and logits.dim() == base_logits.dim()
-                                    and logits.shape == base_logits.shape):
+                            if (
+                                logits is not None
+                                and base_logits is not None
+                                and logits.dim() == base_logits.dim()
+                                and logits.shape == base_logits.shape
+                            ):
                                 if logits.dim() == 1:
-                                    sim = F.cosine_similarity(
-                                        base_logits.unsqueeze(0),
-                                        logits.unsqueeze(0),
-                                        dim=-1,
-                                    ).mean().item()
+                                    sim = (
+                                        F.cosine_similarity(
+                                            base_logits.unsqueeze(0),
+                                            logits.unsqueeze(0),
+                                            dim=-1,
+                                        )
+                                        .mean()
+                                        .item()
+                                    )
                                 else:
-                                    sim = F.cosine_similarity(
-                                        base_logits, logits, dim=-1
-                                    ).mean().item()
+                                    sim = (
+                                        F.cosine_similarity(base_logits, logits, dim=-1)
+                                        .mean()
+                                        .item()
+                                    )
                                 sum_cosine_sim += float(sim)
                                 batches_for_fidelity += 1
 
                                 if len(baseline_logits_samples) < 8:
-                                    b_count = min(8 - len(baseline_logits_samples), logits.shape[0])
+                                    b_count = min(
+                                        8 - len(baseline_logits_samples),
+                                        logits.shape[0],
+                                    )
                                     for b_i in range(b_count):
-                                        b_flat = base_logits[b_i].detach().cpu().float().reshape(-1)[:10].tolist()
-                                        c_flat = logits[b_i].detach().cpu().float().reshape(-1)[:10].tolist()
-                                        baseline_logits_samples.append([round(x, 4) for x in b_flat])
-                                        compressed_logits_samples.append([round(x, 4) for x in c_flat])
+                                        b_flat = (
+                                            base_logits[b_i]
+                                            .detach()
+                                            .cpu()
+                                            .float()
+                                            .reshape(-1)[:10]
+                                            .tolist()
+                                        )
+                                        c_flat = (
+                                            logits[b_i]
+                                            .detach()
+                                            .cpu()
+                                            .float()
+                                            .reshape(-1)[:10]
+                                            .tolist()
+                                        )
+                                        baseline_logits_samples.append(
+                                            [round(x, 4) for x in b_flat]
+                                        )
+                                        compressed_logits_samples.append(
+                                            [round(x, 4) for x in c_flat]
+                                        )
                                         s_cos = F.cosine_similarity(
-                                            base_logits[b_i:b_i+1].detach().float().reshape(1, -1),
-                                            logits[b_i:b_i+1].detach().float().reshape(1, -1),
-                                            dim=-1
+                                            base_logits[b_i : b_i + 1]
+                                            .detach()
+                                            .float()
+                                            .reshape(1, -1),
+                                            logits[b_i : b_i + 1]
+                                            .detach()
+                                            .float()
+                                            .reshape(1, -1),
+                                            dim=-1,
                                         ).item()
                                         sample_cosines.append(round(float(s_cos), 4))
 
                             # Classification metrics
-                            if (not is_lm) and logits is not None and inputs.get("labels") is not None:
+                            if (
+                                (not is_lm)
+                                and logits is not None
+                                and inputs.get("labels") is not None
+                            ):
                                 if dataset.lower() == "stsb":
                                     preds = logits.squeeze()
                                 else:
                                     preds = torch.argmax(logits, dim=-1)
                                 all_preds.extend(preds.cpu().numpy().tolist())
-                                all_labels.extend(inputs["labels"].cpu().numpy().tolist())
+                                all_labels.extend(
+                                    inputs["labels"].cpu().numpy().tolist()
+                                )
 
                     # ---------------- Final metrics ----------------
                     if is_lm and lm_token_count > 0:
@@ -1640,7 +2063,8 @@ def evaluate_single_combination_opt(
                         )
                         logger.info(
                             "[EVAL] PPL=%.2f from %d target tokens",
-                            result.perplexity, lm_token_count,
+                            result.perplexity,
+                            lm_token_count,
                         )
 
                     if all_labels and not is_lm:
@@ -1650,7 +2074,8 @@ def evaluate_single_combination_opt(
                                 p_val, _ = pearsonr(all_labels, all_preds)
                                 result.pearson = (
                                     round(float(p_val), 4)
-                                    if math.isfinite(p_val) else None
+                                    if math.isfinite(p_val)
+                                    else None
                                 )
                             except Exception:
                                 result.pearson = None
@@ -1658,27 +2083,39 @@ def evaluate_single_combination_opt(
                                 s_val, _ = spearmanr(all_labels, all_preds)
                                 result.spearman = (
                                     round(float(s_val), 4)
-                                    if math.isfinite(s_val) else None
+                                    if math.isfinite(s_val)
+                                    else None
                                 )
                             except Exception:
                                 result.spearman = None
                         elif dataset.lower() == "cola":
-                            result.mcc = round(float(
-                                matthews_corrcoef(all_labels, all_preds)
-                            ), 4)
-                            result.accuracy_pct = round(float(
-                                accuracy_score(all_labels, all_preds)
-                            ) * 100.0, 2)
+                            result.mcc = round(
+                                float(matthews_corrcoef(all_labels, all_preds)), 4
+                            )
+                            result.accuracy_pct = round(
+                                float(accuracy_score(all_labels, all_preds)) * 100.0, 2
+                            )
                         else:
-                            result.accuracy_pct = round(float(
-                                accuracy_score(all_labels, all_preds)
-                            ) * 100.0, 2)
-                            avg = "binary" if (len(set(all_labels)) <= 2 and num_labels <= 2) else "macro"
+                            result.accuracy_pct = round(
+                                float(accuracy_score(all_labels, all_preds)) * 100.0, 2
+                            )
+                            avg = (
+                                "binary"
+                                if (len(set(all_labels)) <= 2 and num_labels <= 2)
+                                else "macro"
+                            )
                             try:
-                                result.f1_score = round(float(
-                                    f1_score(all_labels, all_preds,
-                                             average=avg, zero_division=0)
-                                ), 4)
+                                result.f1_score = round(
+                                    float(
+                                        f1_score(
+                                            all_labels,
+                                            all_preds,
+                                            average=avg,
+                                            zero_division=0,
+                                        )
+                                    ),
+                                    4,
+                                )
                             except Exception:
                                 result.f1_score = 0.0
 
@@ -1691,8 +2128,14 @@ def evaluate_single_combination_opt(
                     if is_cuda:
                         torch.cuda.synchronize(device)
                         mem_phases["peak_during_eval"] = {
-                            "allocated_mb": round(torch.cuda.max_memory_allocated(device) / (1024 * 1024), 2),
-                            "reserved_mb": round(torch.cuda.max_memory_reserved(device) / (1024 * 1024), 2),
+                            "allocated_mb": round(
+                                torch.cuda.max_memory_allocated(device) / (1024 * 1024),
+                                2,
+                            ),
+                            "reserved_mb": round(
+                                torch.cuda.max_memory_reserved(device) / (1024 * 1024),
+                                2,
+                            ),
                         }
                     run_log_lines.append(
                         f"[EVAL] Completed. PPL={result.perplexity}, Acc={result.accuracy_pct}%, Fidelity={result.fidelity_score}"
@@ -1707,7 +2150,9 @@ def evaluate_single_combination_opt(
 
         except RuntimeError as e:
             if "out of memory" in str(e).lower():
-                run_log_lines.append(f"[OOM] Out of memory at batch size {current_batch_size}: {e}")
+                run_log_lines.append(
+                    f"[OOM] Out of memory at batch size {current_batch_size}: {e}"
+                )
                 logger.warning(
                     "OOM at batch_size %d. Halving and retrying...",
                     current_batch_size,
@@ -1727,7 +2172,10 @@ def evaluate_single_combination_opt(
                 run_log_lines.append(f"[ERROR] {exc_type}: {e}")
                 logger.error(
                     "Evaluation FAILED for %s on %s/%s: %s",
-                    module_name, model_family, dataset, e,
+                    module_name,
+                    model_family,
+                    dataset,
+                    e,
                 )
                 result.status = "FAIL"
                 result.error_message = f"{exc_type}: {e}"
@@ -1738,7 +2186,10 @@ def evaluate_single_combination_opt(
             run_log_lines.append(f"[ERROR] {exc_type}: {e}")
             logger.error(
                 "Evaluation FAILED for %s on %s/%s: %s",
-                module_name, model_family, dataset, e,
+                module_name,
+                model_family,
+                dataset,
+                e,
             )
             result.status = "FAIL"
             result.error_message = f"{exc_type}: {e}"
@@ -1757,15 +2208,23 @@ def evaluate_single_combination_opt(
         result.error_message = "OOM limits exceeded after max retries."
         run_log_lines.append("[ERROR] OOM limits exceeded after max retries.")
 
-    run_log_lines.append(f"[DONE] Status: {result.status}, Elapsed: {round(time.time() - t_run_start, 2)}s")
+    run_log_lines.append(
+        f"[DONE] Status: {result.status}, Elapsed: {round(time.time() - t_run_start, 2)}s"
+    )
 
     # ========================================================================
     # FIX-10: final status validation
     # ========================================================================
     if result.status == "PASS":
         # NaN checks
-        for name in ("accuracy_pct", "loss", "perplexity", "f1_score",
-                     "fidelity_score", "grad_norm"):
+        for name in (
+            "accuracy_pct",
+            "loss",
+            "perplexity",
+            "f1_score",
+            "fidelity_score",
+            "grad_norm",
+        ):
             v = getattr(result, name, None)
             if isinstance(v, float) and not math.isfinite(v):
                 result.status = "FAIL"
@@ -1773,19 +2232,20 @@ def evaluate_single_combination_opt(
                 break
 
         # Calibration check
-        if (module_name in ACTIVATION_AWARE_MODULES
-                and not result.calibration_used):
+        if module_name in ACTIVATION_AWARE_MODULES and not result.calibration_used:
             result.status = "NO_CALIBRATION"
             result.error_message = (
                 f"{module_name} is activation-aware but ran without calibration."
             )
 
         # Compression check
-        if (result.status == "PASS"
-                and module_type == "compressor"
-                and module_name not in COMPUTE_OPTIMIZERS
-                and module_name not in KV_CACHE_OPTIMIZERS
-                and result.compression_ratio >= 0.999):
+        if (
+            result.status == "PASS"
+            and module_type == "compressor"
+            and module_name not in COMPUTE_OPTIMIZERS
+            and module_name not in KV_CACHE_OPTIMIZERS
+            and result.compression_ratio >= 0.999
+        ):
             result.status = "PASS_NO_COMPRESSION"
             result.error_message = (
                 "Compressor did not reduce parameters; all layers likely fell back."
@@ -1800,13 +2260,22 @@ def evaluate_single_combination_opt(
     # Comprehensive Traceable Artifacts Generation
     # ========================================================================
     try:
-        run_dir = Path(results_dir) / model_family / dataset / module_name / f"rank_{rank}"
+        run_dir = (
+            Path(results_dir) / model_family / dataset / module_name / f"rank_{rank}"
+        )
         try:
             run_dir.mkdir(parents=True, exist_ok=True)
         except OSError:
             # Fallback to system temp directory if results_dir has restricted filesystem permissions
             fallback_base = Path(tempfile.gettempdir()) / "neuralops_results"
-            run_dir = fallback_base / Path(results_dir).name / model_family / dataset / module_name / f"rank_{rank}"
+            run_dir = (
+                fallback_base
+                / Path(results_dir).name
+                / model_family
+                / dataset
+                / module_name
+                / f"rank_{rank}"
+            )
             run_dir.mkdir(parents=True, exist_ok=True)
             results_dir = str(fallback_base / Path(results_dir).name)
 
@@ -1817,10 +2286,16 @@ def evaluate_single_combination_opt(
         # 2. traceback.txt
         if result.status in ("FAIL", "OOM", "NO_CALIBRATION") and exc_traceback:
             (run_dir / "traceback.txt").write_text(exc_traceback, encoding="utf-8")
-        elif result.status in ("FAIL", "OOM", "NO_CALIBRATION") and result.error_message:
-            (run_dir / "traceback.txt").write_text(f"Error: {result.error_message}\n", encoding="utf-8")
+        elif (
+            result.status in ("FAIL", "OOM", "NO_CALIBRATION") and result.error_message
+        ):
+            (run_dir / "traceback.txt").write_text(
+                f"Error: {result.error_message}\n", encoding="utf-8"
+            )
         elif result.status == "SKIP_DEPRECATED":
-            (run_dir / "traceback.txt").write_text(f"Skipped: {result.error_message}\n", encoding="utf-8")
+            (run_dir / "traceback.txt").write_text(
+                f"Skipped: {result.error_message}\n", encoding="utf-8"
+            )
 
         # 3. environment.json
         env_dict = {
@@ -1830,7 +2305,9 @@ def evaluate_single_combination_opt(
             "python_version": sys.version.split()[0],
             "os": sys.platform,
         }
-        (run_dir / "environment.json").write_text(json.dumps(env_dict, indent=2), encoding="utf-8")
+        (run_dir / "environment.json").write_text(
+            json.dumps(env_dict, indent=2), encoding="utf-8"
+        )
 
         # 4. config.json
         cfg_dict = {
@@ -1846,7 +2323,9 @@ def evaluate_single_combination_opt(
             "allow_synthetic": allow_synthetic,
             "device": str(device),
         }
-        (run_dir / "config.json").write_text(json.dumps(cfg_dict, indent=2), encoding="utf-8")
+        (run_dir / "config.json").write_text(
+            json.dumps(cfg_dict, indent=2), encoding="utf-8"
+        )
 
         # 5. calibration_stats.json
         calib_stats_dict = {
@@ -1855,27 +2334,43 @@ def evaluate_single_combination_opt(
             "num_samples": 500 if result.calibration_used else 0,
             "batch_size": 8 if result.calibration_used else 0,
             "max_length": seq_len,
-            "layers_with_stats": len(per_layer_errors) if result.calibration_used else 0,
+            "layers_with_stats": (
+                len(per_layer_errors) if result.calibration_used else 0
+            ),
             "layers_missing_stats": [],
             "statistics": {},
-            "fisher_weighting_applied": bool(result.calibration_used and comp_stats.get("use_fisher", False)),
-            "covariance_whitening_applied": bool(result.calibration_used and comp_stats.get("use_cholesky", False)),
+            "fisher_weighting_applied": bool(
+                result.calibration_used and comp_stats.get("use_fisher", False)
+            ),
+            "covariance_whitening_applied": bool(
+                result.calibration_used and comp_stats.get("use_cholesky", False)
+            ),
         }
-        (run_dir / "calibration_stats.json").write_text(json.dumps(calib_stats_dict, indent=2), encoding="utf-8")
+        (run_dir / "calibration_stats.json").write_text(
+            json.dumps(calib_stats_dict, indent=2), encoding="utf-8"
+        )
 
         # 6. module_stats.json
-        (run_dir / "module_stats.json").write_text(json.dumps(comp_stats, indent=2, default=str), encoding="utf-8")
+        (run_dir / "module_stats.json").write_text(
+            json.dumps(comp_stats, indent=2, default=str), encoding="utf-8"
+        )
 
         # 7. per_layer.json
-        (run_dir / "per_layer.json").write_text(json.dumps({"layers": per_layer_list}, indent=2), encoding="utf-8")
+        (run_dir / "per_layer.json").write_text(
+            json.dumps({"layers": per_layer_list}, indent=2), encoding="utf-8"
+        )
 
         # 8. memory_profile.json
         mem_profile_dict = {
             "phases": mem_phases,
             "oom_encountered": (retry_count > 0 and not success),
-            "batch_size_reductions": [current_batch_size] if current_batch_size != batch_size else [],
+            "batch_size_reductions": (
+                [current_batch_size] if current_batch_size != batch_size else []
+            ),
         }
-        (run_dir / "memory_profile.json").write_text(json.dumps(mem_profile_dict, indent=2), encoding="utf-8")
+        (run_dir / "memory_profile.json").write_text(
+            json.dumps(mem_profile_dict, indent=2), encoding="utf-8"
+        )
 
         # 9. timing_profile.json
         timing_profile_dict = {
@@ -1889,20 +2384,30 @@ def evaluate_single_combination_opt(
                 "total_s": round(time.time() - t_run_start, 2),
             }
         }
-        (run_dir / "timing_profile.json").write_text(json.dumps(timing_profile_dict, indent=2), encoding="utf-8")
+        (run_dir / "timing_profile.json").write_text(
+            json.dumps(timing_profile_dict, indent=2), encoding="utf-8"
+        )
 
         # 10. fidelity_samples.json
         fidelity_dict = {
-            "baseline_logits": baseline_logits_samples[:8] if baseline_logits_samples else [],
-            "compressed_logits": compressed_logits_samples[:8] if compressed_logits_samples else [],
+            "baseline_logits": (
+                baseline_logits_samples[:8] if baseline_logits_samples else []
+            ),
+            "compressed_logits": (
+                compressed_logits_samples[:8] if compressed_logits_samples else []
+            ),
             "cosine_similarity_per_sample": [round(s, 4) for s in sample_cosines[:8]],
             "mean_fidelity": result.fidelity_score,
         }
-        (run_dir / "fidelity_samples.json").write_text(json.dumps(fidelity_dict, indent=2), encoding="utf-8")
+        (run_dir / "fidelity_samples.json").write_text(
+            json.dumps(fidelity_dict, indent=2), encoding="utf-8"
+        )
 
         # 11. seed.json
         seed_dict = {"random": 42, "numpy": 42, "torch": 42, "cuda": 42}
-        (run_dir / "seed.json").write_text(json.dumps(seed_dict, indent=2), encoding="utf-8")
+        (run_dir / "seed.json").write_text(
+            json.dumps(seed_dict, indent=2), encoding="utf-8"
+        )
 
         # 12. result.json
         full_result_json = {
@@ -1917,7 +2422,9 @@ def evaluate_single_combination_opt(
                 "accuracy_pct": result.accuracy_pct if not is_lm else None,
                 "f1_score": result.f1_score if not is_lm else None,
                 "f1_macro": result.f1_score if not is_lm else None,
-                "precision": round(result.accuracy_pct / 100.0, 4) if not is_lm else None,
+                "precision": (
+                    round(result.accuracy_pct / 100.0, 4) if not is_lm else None
+                ),
                 "recall": round(result.accuracy_pct / 100.0, 4) if not is_lm else None,
                 "loss": result.loss,
                 "perplexity": result.perplexity if is_lm else None,
@@ -1935,10 +2442,20 @@ def evaluate_single_combination_opt(
                 "total_params_after": result.params_after,
                 "trainable_params": result.trainable_param_count,
                 "compression_rate": round(result.compression_ratio, 4),
-                "compression_ratio_pct": round(max(0.0, 100.0 * (1.0 - 1.0 / max(1e-4, result.compression_ratio))), 2),
+                "compression_ratio_pct": round(
+                    max(0.0, 100.0 * (1.0 - 1.0 / max(1e-4, result.compression_ratio))),
+                    2,
+                ),
                 "flops_reduction_pct": 0.0,
-                "storage_compression_ratio": round(comp_stats.get("storage_compression_ratio", result.compression_ratio), 3),
-                "avg_reconstruction_error": round(comp_stats.get("avg_reconstruction_error", 0.0), 4),
+                "storage_compression_ratio": round(
+                    comp_stats.get(
+                        "storage_compression_ratio", result.compression_ratio
+                    ),
+                    3,
+                ),
+                "avg_reconstruction_error": round(
+                    comp_stats.get("avg_reconstruction_error", 0.0), 4
+                ),
                 "max_error_threshold": 0.60,
                 "per_layer_errors": per_layer_errors,
             },
@@ -1950,16 +2467,39 @@ def evaluate_single_combination_opt(
                 "calibration_max_length": seq_len,
                 "log_marker": f"{module_name}: collected calibration stats for {len(per_layer_errors)} layers",
                 "activation_stats_collected": bool(result.calibration_used),
-                "fisher_diagonal_computed": bool(result.calibration_used and comp_stats.get("use_fisher", False)),
-                "covariance_computed": bool(result.calibration_used and comp_stats.get("use_cholesky", False)),
+                "fisher_diagonal_computed": bool(
+                    result.calibration_used and comp_stats.get("use_fisher", False)
+                ),
+                "covariance_computed": bool(
+                    result.calibration_used and comp_stats.get("use_cholesky", False)
+                ),
             },
             "hardware": {
                 "device": str(device),
-                "gpu_name": torch.cuda.get_device_name(device) if torch.cuda.is_available() and device.type == "cuda" else "CPU",
-                "total_vram_mb": round(torch.cuda.get_device_properties(device).total_memory / (1024 * 1024), 2) if torch.cuda.is_available() and device.type == "cuda" else 0.0,
+                "gpu_name": (
+                    torch.cuda.get_device_name(device)
+                    if torch.cuda.is_available() and device.type == "cuda"
+                    else "CPU"
+                ),
+                "total_vram_mb": (
+                    round(
+                        torch.cuda.get_device_properties(device).total_memory
+                        / (1024 * 1024),
+                        2,
+                    )
+                    if torch.cuda.is_available() and device.type == "cuda"
+                    else 0.0
+                ),
                 "peak_vram_mb": result.peak_memory_mb,
                 "idle_vram_mb": mem_phases.get("idle", {}).get("allocated_mb", 0.0),
-                "activation_vram_mb": round(max(0.0, result.peak_memory_mb - mem_phases.get("idle", {}).get("allocated_mb", 0.0)), 2),
+                "activation_vram_mb": round(
+                    max(
+                        0.0,
+                        result.peak_memory_mb
+                        - mem_phases.get("idle", {}).get("allocated_mb", 0.0),
+                    ),
+                    2,
+                ),
             },
             "timing": {
                 "total_elapsed_s": round(time.time() - t_run_start, 2),
@@ -1977,7 +2517,9 @@ def evaluate_single_combination_opt(
             "git_sha": "5796f5653",
             "git_dirty": False,
         }
-        (run_dir / "result.json").write_text(json.dumps(full_result_json, indent=2), encoding="utf-8")
+        (run_dir / "result.json").write_text(
+            json.dumps(full_result_json, indent=2), encoding="utf-8"
+        )
 
         # 13. Append to consolidated summary.csv and summary.md
         summary_dir = Path(results_dir)
@@ -2008,6 +2550,7 @@ def evaluate_single_combination_opt(
             f"{result.fidelity_score},{result.error_message or ''}\n"
         )
         import filelock
+
         lock_p = summary_dir / "summary.lock"
         with filelock.FileLock(str(lock_p), timeout=30):
             if not csv_file.exists():
@@ -2042,6 +2585,7 @@ evaluate_single_combination = evaluate_single_combination_opt
 # Convenience: full sweep over tracks
 # =============================================================================
 
+
 def run_track(
     track: str,
     model_family: str,
@@ -2068,21 +2612,32 @@ def run_track(
     for mtype_key in ("attentions", "compressors"):
         for module_name in modules_cfg.get(mtype_key, []):
             module_type = "attention" if mtype_key == "attentions" else "compressor"
-            logger.info("=== %s :: %s :: %s :: r=%d ===",
-                        track, module_name, model_family, rank)
+            logger.info(
+                "=== %s :: %s :: %s :: r=%d ===", track, module_name, model_family, rank
+            )
             try:
                 r = evaluate_single_combination_opt(
-                    track=track, module_name=module_name,
+                    track=track,
+                    module_name=module_name,
                     module_type=module_type,
-                    model_family=model_family, dataset=dataset,
-                    rank=rank, seq_len=seq_len, batch_size=batch_size,
-                    device=device, results_dir=results_dir,
+                    model_family=model_family,
+                    dataset=dataset,
+                    rank=rank,
+                    seq_len=seq_len,
+                    batch_size=batch_size,
+                    device=device,
+                    results_dir=results_dir,
                     allow_synthetic=allow_synthetic,
                 )
                 results.append(r)
-                logger.info("--> %s: status=%s  acc=%.2f  ppl=%.2f  comp=%.3fx",
-                            module_name, r.status,
-                            r.accuracy_pct, r.perplexity, r.compression_ratio)
+                logger.info(
+                    "--> %s: status=%s  acc=%.2f  ppl=%.2f  comp=%.3fx",
+                    module_name,
+                    r.status,
+                    r.accuracy_pct,
+                    r.perplexity,
+                    r.compression_ratio,
+                )
             except Exception as e:
                 logger.exception("Run crashed for %s: %s", module_name, e)
 

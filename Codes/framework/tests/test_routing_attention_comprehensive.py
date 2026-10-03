@@ -1,12 +1,9 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.routing_attention import (
-    RoutingAttention,
-    inject_routing,
-    inject_routing_attention,
-)
+from framework.attentions.routing_attention import (RoutingAttention,
+                                                    inject_routing,
+                                                    inject_routing_attention)
 
 
 class MockConfig:

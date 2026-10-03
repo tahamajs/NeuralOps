@@ -58,7 +58,7 @@ class ResultsManager:
         self.logger.info(f"Results directory: {self.run_dir}")
 
     def _setup_logger(self) -> logging.Logger:
-        """ setup logger."""
+        """setup logger."""
         logger = logging.getLogger(f"training.{self.experiment_name}")
         logger.setLevel(logging.INFO)
         logger.handlers.clear()
@@ -106,16 +106,24 @@ class ResultsManager:
     def push_to_hf(self, repo_id: str | None = None) -> None:
         """Push full run results (models, plots, metrics) to HuggingFace Hub."""
         from framework.results_saver.backends import huggingface as hf_backend
+
         cfg = {"hf_options": {"repo_id": repo_id}} if repo_id else self.config
         hf_backend.push(self.experiment_name, self.run_dir, cfg)
 
-    def generate_summary_report(self, final_metrics: dict[str, Any] | None = None) -> None:
+    def generate_summary_report(
+        self, final_metrics: dict[str, Any] | None = None
+    ) -> None:
         """Generate structured markdown and json summary reports for the run."""
+
         def _make_serializable(obj):
             if hasattr(obj, "to_dict") and callable(obj.to_dict):
                 return obj.to_dict()
             if hasattr(obj, "__dict__"):
-                return {k: _make_serializable(v) for k, v in obj.__dict__.items() if not k.startswith("_")}
+                return {
+                    k: _make_serializable(v)
+                    for k, v in obj.__dict__.items()
+                    if not k.startswith("_")
+                }
             if isinstance(obj, dict):
                 return {str(k): _make_serializable(v) for k, v in obj.items()}
             if isinstance(obj, (list, tuple, set)):
@@ -135,7 +143,11 @@ class ResultsManager:
             "run_dir": str(self.run_dir),
             "total_steps": len(self.history),
             "config": _make_serializable(self.config),
-            "final_metrics": _sanitize_json_value(_make_serializable(final_metrics or (self.history[-1] if self.history else {}))),
+            "final_metrics": _sanitize_json_value(
+                _make_serializable(
+                    final_metrics or (self.history[-1] if self.history else {})
+                )
+            ),
             "timestamp": datetime.now().isoformat(),
         }
         summary_path = self.run_dir / "run_summary.json"

@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.minimal_svd import MinimalSVDAttention, inject_minimal_svd
+from framework.attentions.minimal_svd import (MinimalSVDAttention,
+                                              inject_minimal_svd)
 
 
 class MockConfig:

@@ -1,7 +1,8 @@
+import framework.attentions.lola_attention
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.lola_attention
+
 
 def test_lola_attention_module_present():
     assert hasattr(framework.attentions, 'lola_attention')

@@ -2,8 +2,11 @@
 import pytest
 import torch
 import torch.nn as nn
-from transformers import GPT2Config, GPT2ForSequenceClassification, RobertaConfig, RobertaForSequenceClassification, T5Config, T5ForConditionalGeneration
 from framework.core.architecture import get_attention_modules
+from transformers import (GPT2Config, GPT2ForSequenceClassification,
+                          RobertaConfig, RobertaForSequenceClassification,
+                          T5Config, T5ForConditionalGeneration)
+
 
 @pytest.fixture(autouse=True)
 def set_seed():

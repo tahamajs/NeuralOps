@@ -26,7 +26,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
@@ -39,7 +38,9 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     if n_rep == 1:
         return hidden_states
     batch, num_kv_heads, slen, head_dim = hidden_states.shape
-    hidden_states = hidden_states[:, :, None, :, :].expand(batch, num_kv_heads, n_rep, slen, head_dim)
+    hidden_states = hidden_states[:, :, None, :, :].expand(
+        batch, num_kv_heads, n_rep, slen, head_dim
+    )
     return hidden_states.reshape(batch, num_kv_heads * n_rep, slen, head_dim)
 
 
@@ -115,15 +116,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -165,18 +172,31 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            lora_out = (
+                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            )
             out = out + lora_out
         return out
 
 
-@ATTENTION_REGISTRY.register("decay_linear_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("decay_linear_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "decay_linear_attention",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
+    "decay_linear_attn",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
 class DecayLinearAttention(BaseAttention):
     r"""Decay Linear Attention Module with Data-Dependent Exponential Decay Gating."""
 
     is_custom_attention: bool = True
     triton_kernel: str = "linear_attn"
+
     def __init__(
         self,
         config: Any | None = None,
@@ -206,8 +226,22 @@ class DecayLinearAttention(BaseAttention):
         if hidden_size is None:
             hidden_size = _cfg_get("hidden_size", _cfg_get("dim", None))
             if hidden_size is None and source_attn is not None:
-                out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
-                hidden_size = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
+                out_layer = getattr(
+                    source_attn,
+                    "out_lin",
+                    getattr(
+                        source_attn,
+                        "dense",
+                        getattr(
+                            source_attn, "c_proj", getattr(source_attn, "o_proj", None)
+                        ),
+                    ),
+                )
+                hidden_size = (
+                    getattr(out_layer, "out_features", 768)
+                    if out_layer is not None
+                    else 768
+                )
             elif hidden_size is None:
                 hidden_size = 768
 
@@ -219,7 +253,15 @@ class DecayLinearAttention(BaseAttention):
         if num_heads is None:
             num_heads = _cfg_get("num_attention_heads", _cfg_get("num_heads", None))
             if num_heads is None and source_attn is not None:
-                num_heads = getattr(source_attn, "n_heads", getattr(source_attn, "num_attention_heads", getattr(source_attn, "num_heads", 12)))
+                num_heads = getattr(
+                    source_attn,
+                    "n_heads",
+                    getattr(
+                        source_attn,
+                        "num_attention_heads",
+                        getattr(source_attn, "num_heads", 12),
+                    ),
+                )
             elif num_heads is None:
                 num_heads = 12
 
@@ -230,37 +272,90 @@ class DecayLinearAttention(BaseAttention):
         resolved_head_dim = _cfg_get("head_dim", None)
         if resolved_head_dim is None and source_attn is not None:
             resolved_head_dim = getattr(source_attn, "head_dim", None)
-        if resolved_head_dim is None and source_attn is not None and hasattr(source_attn, "q_proj") and hasattr(source_attn.q_proj, "out_features"):
-            resolved_head_dim = source_attn.q_proj.out_features // max(1, self.num_heads)
+        if (
+            resolved_head_dim is None
+            and source_attn is not None
+            and hasattr(source_attn, "q_proj")
+            and hasattr(source_attn.q_proj, "out_features")
+        ):
+            resolved_head_dim = source_attn.q_proj.out_features // max(
+                1, self.num_heads
+            )
         if resolved_head_dim is None:
             resolved_head_dim = self.dim // max(1, self.num_heads)
         self.head_dim: int = int(resolved_head_dim)
 
         kv_heads = _cfg_get("num_key_value_heads", None)
         if kv_heads is None and source_attn is not None:
-            kv_heads = getattr(source_attn, "num_key_value_heads", getattr(source_attn, "num_kv_heads", getattr(source_attn, "n_kv_heads", None)))
-            if kv_heads is None and hasattr(source_attn, "k_proj") and hasattr(source_attn.k_proj, "out_features") and self.head_dim > 0:
+            kv_heads = getattr(
+                source_attn,
+                "num_key_value_heads",
+                getattr(
+                    source_attn,
+                    "num_kv_heads",
+                    getattr(source_attn, "n_kv_heads", None),
+                ),
+            )
+            if (
+                kv_heads is None
+                and hasattr(source_attn, "k_proj")
+                and hasattr(source_attn.k_proj, "out_features")
+                and self.head_dim > 0
+            ):
                 kv_heads = source_attn.k_proj.out_features // self.head_dim
-        self.num_kv_heads: int = int(kv_heads if kv_heads is not None else self.num_heads)
+        self.num_kv_heads: int = int(
+            kv_heads if kv_heads is not None else self.num_heads
+        )
 
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         # Static layer index
-        resolved_layer_id = layer_id if layer_id is not None else (layer_idx if layer_idx is not None else kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
+        resolved_layer_id = (
+            layer_id
+            if layer_id is not None
+            else (
+                layer_idx
+                if layer_idx is not None
+                else kwargs.get("layer_id", kwargs.get("layer_idx", 0))
+            )
+        )
         self.layer_idx: int = int(resolved_layer_id)
 
         # LoRA adaptation configuration
         self.lora_rank: int = int(_cfg_get("lora_rank", kwargs.get("lora_rank", 16)))
-        self.lora_alpha: float = float(_cfg_get("lora_alpha", kwargs.get("lora_alpha", 32.0)))
-        self.freeze_base: bool = (self.lora_rank > 0)
+        self.lora_alpha: float = float(
+            _cfg_get("lora_alpha", kwargs.get("lora_alpha", 32.0))
+        )
+        self.freeze_base: bool = self.lora_rank > 0
 
         # Decoder & nested encoder detection
-        model_type = getattr(config, "model_type", "").lower() if config is not None else ""
-        is_dec = _cfg_get("is_decoder", _cfg_get("is_causal", kwargs.get("is_causal", False)))
-        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "phi", "gemma", "opt", "bloom", "falcon")
-        if any(model_type.startswith(p) for p in _decoder_prefixes) or hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+        model_type = (
+            getattr(config, "model_type", "").lower() if config is not None else ""
+        )
+        is_dec = _cfg_get(
+            "is_decoder", _cfg_get("is_causal", kwargs.get("is_causal", False))
+        )
+        _decoder_prefixes = (
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "phi",
+            "gemma",
+            "opt",
+            "bloom",
+            "falcon",
+        )
+        if (
+            any(model_type.startswith(p) for p in _decoder_prefixes)
+            or hasattr(config, "architectures")
+            and any(
+                "GPT" in str(a) or "CausalLM" in str(a)
+                for a in (getattr(config, "architectures", []) or [])
+            )
+        ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
@@ -269,13 +364,41 @@ class DecayLinearAttention(BaseAttention):
         self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", False))
 
         # Multi-head projections equipped with LoRA adapters
-        self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.k_proj = LoRALinear(self.dim, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.v_proj = LoRALinear(self.dim, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.q_proj = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.k_proj = LoRALinear(
+            self.dim,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.v_proj = LoRALinear(
+            self.dim,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
         self.decay_gate = nn.Linear(self.dim, self.num_heads, bias=True)
         # Bounded initialization spanning [sigmoid(-0.5), sigmoid(0.0)] = [0.38, 0.50] for head diversity and wide context horizon
         self.log_decay = nn.Parameter(torch.linspace(2.0, 4.0, self.num_heads))
-        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
         nn.init.zeros_(self.decay_gate.weight)
         nn.init.zeros_(self.decay_gate.bias)
@@ -289,31 +412,56 @@ class DecayLinearAttention(BaseAttention):
 
     # Compatibility properties
     @property
-    def query(self) -> LoRALinear: return self.q_proj
+    def query(self) -> LoRALinear:
+        return self.q_proj
+
     @property
-    def key(self) -> LoRALinear: return self.k_proj
+    def key(self) -> LoRALinear:
+        return self.k_proj
+
     @property
-    def value(self) -> LoRALinear: return self.v_proj
+    def value(self) -> LoRALinear:
+        return self.v_proj
+
     @property
-    def dense(self) -> LoRALinear: return self.out_proj
+    def dense(self) -> LoRALinear:
+        return self.out_proj
+
     @property
-    def o_proj(self) -> LoRALinear: return self.out_proj
+    def o_proj(self) -> LoRALinear:
+        return self.out_proj
+
     @property
-    def q_lin(self) -> LoRALinear: return self.q_proj
+    def q_lin(self) -> LoRALinear:
+        return self.q_proj
+
     @property
-    def k_lin(self) -> LoRALinear: return self.k_proj
+    def k_lin(self) -> LoRALinear:
+        return self.k_proj
+
     @property
-    def v_lin(self) -> LoRALinear: return self.v_proj
+    def v_lin(self) -> LoRALinear:
+        return self.v_proj
+
     @property
-    def out_lin(self) -> LoRALinear: return self.out_proj
+    def out_lin(self) -> LoRALinear:
+        return self.out_proj
+
     @property
-    def W_q(self) -> LoRALinear: return self.q_proj
+    def W_q(self) -> LoRALinear:
+        return self.q_proj
+
     @property
-    def W_k(self) -> LoRALinear: return self.k_proj
+    def W_k(self) -> LoRALinear:
+        return self.k_proj
+
     @property
-    def W_v(self) -> LoRALinear: return self.v_proj
+    def W_v(self) -> LoRALinear:
+        return self.v_proj
+
     @property
-    def c_proj(self) -> LoRALinear: return self.out_proj
+    def c_proj(self) -> LoRALinear:
+        return self.out_proj
 
     def copy_weights(self, old_attn: Any) -> None:
         """Transfer pretrained projection weights with strict Frobenius norm verification."""
@@ -321,16 +469,35 @@ class DecayLinearAttention(BaseAttention):
             return
 
         cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
-        has_out_lin = hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj") or hasattr(old_attn, "dense")
+        has_out_lin = (
+            hasattr(old_attn, "out_lin")
+            or hasattr(old_attn, "c_proj")
+            or hasattr(old_attn, "o_proj")
+            or hasattr(old_attn, "dense")
+        )
         if (
-            hasattr(old_attn, "self")
-            and hasattr(old_attn.self, "query")
-            and hasattr(old_attn, "output")
-            and hasattr(old_attn.output, "dense")
-        ) or (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
-            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
+            (
+                hasattr(old_attn, "self")
+                and hasattr(old_attn.self, "query")
+                and hasattr(old_attn, "output")
+                and hasattr(old_attn.output, "dense")
+            )
+            or (
+                cls_name
+                in [
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                ]
+                or (
+                    cls_name.endswith("SelfAttention")
+                    and "distil" not in cls_name.lower()
+                )
+            )
+            and not has_out_lin
+        ):
             self.is_nested_encoder = True
 
         if hasattr(old_attn, "rotary_emb"):
@@ -346,7 +513,9 @@ class DecayLinearAttention(BaseAttention):
         # 1. GPT-2: Fused c_attn + c_proj
         if hasattr(old_attn, "c_attn") and old_attn.c_attn is not None:
             c_attn_mod = old_attn.c_attn
-            if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
+            if hasattr(c_attn_mod, "merge") and not getattr(
+                c_attn_mod, "merged", False
+            ):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
@@ -355,14 +524,29 @@ class DecayLinearAttention(BaseAttention):
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if ("Conv1D" in c_attn_mod.__class__.__name__) or ("Conv1D" in base_c.__class__.__name__) or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                if (
+                    ("Conv1D" in c_attn_mod.__class__.__name__)
+                    or ("Conv1D" in base_c.__class__.__name__)
+                    or hasattr(c_attn_mod, "nf")
+                    or hasattr(base_c, "nf")
+                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
+                ):
                     c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
+                extracted["q"] = (
+                    c_w[:split_size, :],
+                    c_b[:split_size] if c_b is not None else None,
+                )
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (
+                    c_w[2 * split_size :, :],
+                    c_b[2 * split_size :] if c_b is not None else None,
+                )
 
             if hasattr(old_attn, "c_proj") and old_attn.c_proj is not None:
                 c_proj_mod = old_attn.c_proj
@@ -370,10 +554,19 @@ class DecayLinearAttention(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if ("Conv1D" in c_proj_mod.__class__.__name__) or ("Conv1D" in base_o.__class__.__name__) or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    if (
+                        ("Conv1D" in c_proj_mod.__class__.__name__)
+                        or ("Conv1D" in base_o.__class__.__name__)
+                        or hasattr(c_proj_mod, "nf")
+                        or hasattr(base_o, "nf")
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
+                    ):
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    extracted["o"] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
 
         # 2. RoBERTa / BERT nested self-attention
         elif hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
@@ -382,11 +575,25 @@ class DecayLinearAttention(BaseAttention):
                 mod = getattr(s, sub_name, None)
                 base_mod = getattr(mod, "base_layer", mod)
                 if base_mod is not None and hasattr(base_mod, "weight"):
-                    extracted[proj_key] = (base_mod.weight.data.clone(), base_mod.bias.data.clone() if getattr(base_mod, "bias", None) is not None else None)
+                    extracted[proj_key] = (
+                        base_mod.weight.data.clone(),
+                        (
+                            base_mod.bias.data.clone()
+                            if getattr(base_mod, "bias", None) is not None
+                            else None
+                        ),
+                    )
             if hasattr(old_attn, "output") and hasattr(old_attn.output, "dense"):
                 out_mod = old_attn.output.dense
                 base_out = getattr(out_mod, "base_layer", out_mod)
-                extracted["o"] = (base_out.weight.data.clone(), base_out.bias.data.clone() if getattr(base_out, "bias", None) is not None else None)
+                extracted["o"] = (
+                    base_out.weight.data.clone(),
+                    (
+                        base_out.bias.data.clone()
+                        if getattr(base_out, "bias", None) is not None
+                        else None
+                    ),
+                )
 
         # 3. Standard linear projections (DistilBERT, Qwen, LLaMA)
         else:
@@ -403,17 +610,33 @@ class DecayLinearAttention(BaseAttention):
                         base_mod = getattr(mod, "base_layer", mod)
                         if hasattr(base_mod, "weight"):
                             w_data = base_mod.weight.data.clone()
-                            if (base_mod.__class__.__name__ == "Conv1D") or hasattr(base_mod, "nf") or (w_data.ndim == 2 and proj_key == "o" and w_data.shape[0] < w_data.shape[1]):
+                            if (
+                                (base_mod.__class__.__name__ == "Conv1D")
+                                or hasattr(base_mod, "nf")
+                                or (
+                                    w_data.ndim == 2
+                                    and proj_key == "o"
+                                    and w_data.shape[0] < w_data.shape[1]
+                                )
+                            ):
                                 w_data = w_data.t().contiguous()
                             b_data = getattr(base_mod, "bias", None)
-                            extracted[proj_key] = (w_data, b_data.data.clone() if b_data is not None else None)
+                            extracted[proj_key] = (
+                                w_data,
+                                b_data.data.clone() if b_data is not None else None,
+                            )
                             break
 
         # Fallback via UniversalAdapter
-        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(old_attn, k)
@@ -422,7 +645,11 @@ class DecayLinearAttention(BaseAttention):
             except Exception as e:
                 logger.debug(f"UniversalAdapter fallback: {e}")
 
-        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing_after:
             raise RuntimeError(
                 f"DecayLinearAttention copy_weights: missing mandatory projections {missing_after} "
@@ -449,23 +676,36 @@ class DecayLinearAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                if (
+                    w.shape != target_mod.weight.shape
+                    and target_mod.weight.shape == w.t().contiguous().shape
+                ):
                     w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
-                target_mod.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype))
+                target_mod.weight.data[:out_d, :in_d].copy_(
+                    w[:out_d, :in_d].to(
+                        device=target_mod.weight.device, dtype=target_mod.weight.dtype
+                    )
+                )
 
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
-                    target_mod.bias.data[:min_b].copy_(b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype))
+                    target_mod.bias.data[:min_b].copy_(
+                        b[:min_b].to(
+                            device=target_mod.bias.device, dtype=target_mod.bias.dtype
+                        )
+                    )
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
                 # Frobenius norm verification (>= 1e-4)
                 w_norm = float(torch.linalg.norm(target_mod.weight.data.float()).item())
                 if w_norm < 1e-4:
-                    logger.warning(f"DecayLinearAttention weight copy verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+                    logger.warning(
+                        f"DecayLinearAttention weight copy verification failed for '{proj_key}': norm too small ({w_norm:.2e})"
+                    )
 
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
@@ -509,7 +749,9 @@ class DecayLinearAttention(BaseAttention):
         if chunk_size >= L:
             log_decay = cum_log.unsqueeze(-1) - cum_log.unsqueeze(-2)
             decay = torch.exp(log_decay.clamp(max=0.0))
-            causal_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
+            causal_mask = torch.tril(
+                torch.ones(L, L, device=q.device, dtype=torch.bool)
+            )
             decay = decay.masked_fill(~causal_mask, 0.0)
             scores = torch.matmul(q_f, k_f.transpose(-1, -2).contiguous()) * decay
             num = torch.matmul(scores, v_f)
@@ -535,14 +777,18 @@ class DecayLinearAttention(BaseAttention):
 
             intra_log_decay = cum_c.unsqueeze(-1) - cum_c.unsqueeze(-2)
             intra_decay = torch.exp(intra_log_decay.clamp(max=0.0))
-            causal_mask = torch.tril(torch.ones(chunk_size, chunk_size, device=q.device, dtype=torch.bool))
+            causal_mask = torch.tril(
+                torch.ones(chunk_size, chunk_size, device=q.device, dtype=torch.bool)
+            )
             intra_decay = intra_decay.masked_fill(~causal_mask, 0.0)
 
             if pad_len > 0:
                 valid_in_last = chunk_size - pad_len
                 intra_decay[:, :, -1, :, valid_in_last:] = 0.0
 
-            intra_scores = torch.matmul(qc, kc.transpose(-1, -2).contiguous()) * intra_decay
+            intra_scores = (
+                torch.matmul(qc, kc.transpose(-1, -2).contiguous()) * intra_decay
+            )
             num_intra = torch.matmul(intra_scores, vc)
             denom_intra = intra_scores.sum(dim=-1, keepdim=True)
 
@@ -556,9 +802,13 @@ class DecayLinearAttention(BaseAttention):
             for c in range(num_chunks):
                 curr_cum = cum_c[:, :, c]
                 if c == 0:
-                    inter_decay = torch.zeros(B, H, chunk_size, 1, device=q.device, dtype=torch.float32)
+                    inter_decay = torch.zeros(
+                        B, H, chunk_size, 1, device=q.device, dtype=torch.float32
+                    )
                 else:
-                    inter_decay = torch.exp((curr_cum - prev_cum_end).clamp(max=0.0)).unsqueeze(-1)
+                    inter_decay = torch.exp(
+                        (curr_cum - prev_cum_end).clamp(max=0.0)
+                    ).unsqueeze(-1)
 
                 num_inter = torch.matmul(qc[:, :, c], S) * inter_decay
                 denom_inter = torch.matmul(qc[:, :, c], z) * inter_decay
@@ -567,7 +817,9 @@ class DecayLinearAttention(BaseAttention):
                 denom_list.append(denom_intra[:, :, c] + denom_inter)
 
                 cum_end = curr_cum[:, :, -1:]
-                decay_to_end = torch.exp((cum_end - curr_cum).clamp(max=0.0)).unsqueeze(-1)
+                decay_to_end = torch.exp((cum_end - curr_cum).clamp(max=0.0)).unsqueeze(
+                    -1
+                )
 
                 k_curr = kc[:, :, c]
                 v_curr = vc[:, :, c]
@@ -581,10 +833,17 @@ class DecayLinearAttention(BaseAttention):
                 if c == 0:
                     decay_prev_to_end = 0.0
                 else:
-                    decay_prev_to_end = torch.exp((cum_end - prev_cum_end).clamp(max=0.0)).unsqueeze(-1)
+                    decay_prev_to_end = torch.exp(
+                        (cum_end - prev_cum_end).clamp(max=0.0)
+                    ).unsqueeze(-1)
 
-                S = S * decay_prev_to_end + torch.matmul(k_to_end.transpose(-1, -2).contiguous(), v_curr)
-                z = z * decay_prev_to_end + k_to_end.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
+                S = S * decay_prev_to_end + torch.matmul(
+                    k_to_end.transpose(-1, -2).contiguous(), v_curr
+                )
+                z = (
+                    z * decay_prev_to_end
+                    + k_to_end.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
+                )
                 prev_cum_end = cum_end
 
             num = torch.cat(num_list, dim=2)[:, :, :L, :]
@@ -625,8 +884,18 @@ class DecayLinearAttention(BaseAttention):
 
         # 1. Projections
         q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
-        k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        k = (
+            self.k_proj(kv_input)
+            .view(B, kv_len, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_proj(kv_input)
+            .view(B, kv_len, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # 2. Rotary Position Embeddings (RoPE)
         if position_embeddings is not None and not is_cross_attention:
@@ -651,7 +920,9 @@ class DecayLinearAttention(BaseAttention):
         k = F.elu(k) + 1.0
 
         # Data-dependent decay lambdas in (0, 1) with bounded negative log decay bias
-        decay_logits = self.decay_gate(hidden_states).transpose(1, 2).contiguous() + self.log_decay.view(1, -1, 1)
+        decay_logits = self.decay_gate(hidden_states).transpose(
+            1, 2
+        ).contiguous() + self.log_decay.view(1, -1, 1)
         lambdas = torch.sigmoid(decay_logits).clamp(min=0.85, max=0.999)
 
         eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
@@ -665,7 +936,9 @@ class DecayLinearAttention(BaseAttention):
         if self.is_decoder or is_cross_attention:
             y = y_fwd
         else:
-            y_bwd = self._decay_scan_linear(q, k, v, lambdas, mask=mask_bool, reverse=True)
+            y_bwd = self._decay_scan_linear(
+                q, k, v, lambdas, mask=mask_bool, reverse=True
+            )
             y = 0.5 * (y_fwd + y_bwd)
 
         # 6. Head mask handling
@@ -727,9 +1000,15 @@ def inject_decay_linear(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+    elif hasattr(target, "layers") and isinstance(
+        target.layers, (torch.nn.ModuleList, list)
+    ):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -739,7 +1018,11 @@ def inject_decay_linear(
             res = inject_decay_linear(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                comp_config=(
+                    comp_config
+                    if "comp_config" in locals() or "comp_config" in kwargs
+                    else None
+                ),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
@@ -789,5 +1072,7 @@ def inject_decay_linear(
             new_block.is_nested_encoder = True
         return new_block
     except Exception as e:
-        logger.error("Failed to inject DecayLinearAttention at layer %d: %s", layer_idx, e)
+        logger.error(
+            "Failed to inject DecayLinearAttention at layer %d: %s", layer_idx, e
+        )
         return None

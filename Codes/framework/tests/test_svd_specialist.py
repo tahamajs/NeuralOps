@@ -1,8 +1,9 @@
+import importlib.machinery
+import importlib.util
 import os
 import sys
 import types
-import importlib.machinery
-import importlib.util
+
 import pytest
 import torch
 import torch.nn as nn

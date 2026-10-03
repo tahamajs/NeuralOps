@@ -5,11 +5,12 @@ import os
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.core.registry import ATTENTION_REGISTRY, is_module_declared_compatible
+from framework.core.registry import (ATTENTION_REGISTRY,
+                                     is_module_declared_compatible)
 from framework.utils.compat import module_family_support
 
 

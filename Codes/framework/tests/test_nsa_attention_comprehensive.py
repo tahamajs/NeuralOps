@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.nsa_attention import NativeSparseAttention, inject_nsa_attention
+from framework.attentions.nsa_attention import (NativeSparseAttention,
+                                                inject_nsa_attention)
 
 
 class MockConfig:

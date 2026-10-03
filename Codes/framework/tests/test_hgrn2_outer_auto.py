@@ -1,7 +1,8 @@
+import framework.attentions.hgrn2_outer
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.hgrn2_outer
+
 
 def test_hgrn2_outer_module_present():
     assert hasattr(framework.attentions, 'hgrn2_outer')

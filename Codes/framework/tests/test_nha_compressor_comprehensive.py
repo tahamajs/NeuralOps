@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.nha_compressor import NHACompressor, inject_nha_compressor
+from framework.attentions.nha_compressor import (NHACompressor,
+                                                 inject_nha_compressor)
 
 
 class MockConfig:

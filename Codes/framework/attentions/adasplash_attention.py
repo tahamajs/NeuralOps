@@ -7,21 +7,20 @@ and global token routing, ensuring robust numerical convergence and exact pretra
 [OPTIMIZED FOR ZERO-SHOT BENCHMARKING]
 """
 
-from typing import Any
-import math
 import logging
+import math
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.attention_mask import apply_attention_mask
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
-from framework.utils.model_family import ModelAdapter
 from framework.utils.compat import maybe_apply_rotary, repeat_kv
+from framework.utils.model_family import ModelAdapter
 
 
 def entmax_bisect(
@@ -46,7 +45,9 @@ def entmax_bisect(
         if valid_mask is not None:
             scores = scores.masked_fill(~valid_mask, -10000.0)
         scores_clean = torch.where(torch.isfinite(scores), scores, neg_inf_val)
-        sf = torch.nan_to_num(F.softmax(scores_clean.float(), dim=dim), nan=0.0).to(dtype)
+        sf = torch.nan_to_num(F.softmax(scores_clean.float(), dim=dim), nan=0.0).to(
+            dtype
+        )
         if valid_mask is not None:
             sf = sf.masked_fill(~valid_mask, 0.0)
         sf_denom = sf.sum(dim=dim, keepdim=True).clamp(min=1e-9)
@@ -63,7 +64,9 @@ def entmax_bisect(
 
     # Shift scores for numerical stability
     max_scores = scores_valid.amax(dim=dim, keepdim=True)
-    max_scores = torch.where(max_scores < -5000.0, torch.zeros_like(max_scores), max_scores)
+    max_scores = torch.where(
+        max_scores < -5000.0, torch.zeros_like(max_scores), max_scores
+    )
     scores_shift = scores_valid - max_scores
     scaled = scores_shift * alpha_minus_1
 
@@ -102,8 +105,12 @@ def entmax_bisect(
     denom = p.sum(dim=dim, keepdim=True)
 
     # Softmax fallback for numerical stabilization
-    scores_for_sm = scores.masked_fill(~valid_mask, -10000.0) if valid_mask is not None else scores
-    scores_for_sm = torch.where(torch.isfinite(scores_for_sm), scores_for_sm, neg_inf_val)
+    scores_for_sm = (
+        scores.masked_fill(~valid_mask, -10000.0) if valid_mask is not None else scores
+    )
+    scores_for_sm = torch.where(
+        torch.isfinite(scores_for_sm), scores_for_sm, neg_inf_val
+    )
     sf = torch.nan_to_num(F.softmax(scores_for_sm.float(), dim=dim), nan=0.0).to(dtype)
     if valid_mask is not None:
         sf = sf.masked_fill(~valid_mask, 0.0)
@@ -123,13 +130,16 @@ def entmax15_bisect(
     n_iter: int = 15,
 ) -> torch.Tensor:
     """Backward-compatible wrapper for 1.5-entmax."""
-    return entmax_bisect(scores, alpha=1.5, valid_mask=valid_mask, dim=dim, n_iter=n_iter)
+    return entmax_bisect(
+        scores, alpha=1.5, valid_mask=valid_mask, dim=dim, n_iter=n_iter
+    )
 
 
 class AdaSplashLinear(nn.Module):
     r"""
     Linear projection layer with frozen base weights and trainable residual LoRA adapter.
     """
+
     def __init__(
         self,
         in_features: int,
@@ -176,37 +186,64 @@ class AdaSplashLinear(nn.Module):
     def reset_parameters(self) -> None:
         with torch.no_grad():
             if self.weight.dtype in (torch.float16, torch.bfloat16):
-                w_fp32 = torch.empty_like(self.weight, dtype=torch.float32, device="cpu")
+                w_fp32 = torch.empty_like(
+                    self.weight, dtype=torch.float32, device="cpu"
+                )
                 nn.init.kaiming_uniform_(w_fp32, a=math.sqrt(5))
-                self.weight.copy_(w_fp32.to(dtype=self.weight.dtype, device=self.weight.device))
+                self.weight.copy_(
+                    w_fp32.to(dtype=self.weight.dtype, device=self.weight.device)
+                )
             else:
                 nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
 
             if self.bias is not None:
                 nn.init.zeros_(self.bias)
 
-            if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
+            if (
+                getattr(self, "lora_A", None) is not None
+                and getattr(self, "lora_B", None) is not None
+            ):
                 if self.lora_B.dtype in (torch.float16, torch.bfloat16):
-                    b_fp32 = torch.empty_like(self.lora_B, dtype=torch.float32, device="cpu")
+                    b_fp32 = torch.empty_like(
+                        self.lora_B, dtype=torch.float32, device="cpu"
+                    )
                     nn.init.kaiming_uniform_(b_fp32, a=math.sqrt(5))
-                    self.lora_B.copy_(b_fp32.to(dtype=self.lora_B.dtype, device=self.lora_B.device))
+                    self.lora_B.copy_(
+                        b_fp32.to(dtype=self.lora_B.dtype, device=self.lora_B.device)
+                    )
                 else:
                     nn.init.kaiming_uniform_(self.lora_B, a=math.sqrt(5))
                 nn.init.zeros_(self.lora_A)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
-        if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
+        if (
+            getattr(self, "lora_A", None) is not None
+            and getattr(self, "lora_B", None) is not None
+        ):
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
         return out
 
 
-@ATTENTION_REGISTRY.register("adasplash", supports_causal=True, supports_bidirectional=True, supports_gqa=True, supports_rope=True)
-@ATTENTION_REGISTRY.register("adasplash_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True, supports_rope=True)
+@ATTENTION_REGISTRY.register(
+    "adasplash",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+    supports_rope=True,
+)
+@ATTENTION_REGISTRY.register(
+    "adasplash_attention",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+    supports_rope=True,
+)
 class AdaSplashAttention(BaseAttention):
     r"""
     AdaSplash Attention Layer with α-Entmax and Local Splash Radius.
     """
+
     supports_causal: bool = True
     supports_bidirectional: bool = True
     supports_gqa: bool = True
@@ -228,18 +265,51 @@ class AdaSplashAttention(BaseAttention):
             self.adapter = ModelAdapter(config)
             self.alpha = float(getattr(config, "alpha", kwargs.get("alpha", alpha)))
             self.n_iter = getattr(config, "n_iter", kwargs.get("n_iter", n_iter))
-            self.splash_radius = int(getattr(config, "splash_radius", kwargs.get("splash_radius", splash_radius)))
-            lora_rank_cfg = getattr(config, "lora_rank", getattr(config, "residual_rank", getattr(config, "rank", kwargs.get("lora_rank", kwargs.pop("rank", 16)))))
+            self.splash_radius = int(
+                getattr(
+                    config, "splash_radius", kwargs.get("splash_radius", splash_radius)
+                )
+            )
+            lora_rank_cfg = getattr(
+                config,
+                "lora_rank",
+                getattr(
+                    config,
+                    "residual_rank",
+                    getattr(
+                        config, "rank", kwargs.get("lora_rank", kwargs.pop("rank", 16))
+                    ),
+                ),
+            )
             self.lora_rank = int(lora_rank_cfg) if lora_rank_cfg is not None else 16
             self.num_heads = kwargs.get("num_heads", self.adapter.num_heads or 12)
-            self.num_kv_heads = kwargs.get("num_kv_heads", self.adapter.num_key_value_heads or self.num_heads)
-            self.hidden_size = kwargs.get("hidden_size", self.adapter.hidden_size or 768)
-            self.head_dim = kwargs.get("head_dim", self.adapter.head_dim or (self.hidden_size // max(1, self.num_heads)))
+            self.num_kv_heads = kwargs.get(
+                "num_kv_heads", self.adapter.num_key_value_heads or self.num_heads
+            )
+            self.hidden_size = kwargs.get(
+                "hidden_size", self.adapter.hidden_size or 768
+            )
+            self.head_dim = kwargs.get(
+                "head_dim",
+                self.adapter.head_dim or (self.hidden_size // max(1, self.num_heads)),
+            )
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
-            dropout_p = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", getattr(config, "attention_probs_dropout_prob", 0.1)))
+            dropout_p = getattr(
+                config,
+                "dropout",
+                getattr(
+                    config,
+                    "hidden_dropout_prob",
+                    getattr(config, "attention_probs_dropout_prob", 0.1),
+                ),
+            )
             self.is_decoder = getattr(config, "is_decoder", False)
-            self.relative_attention_num_buckets = getattr(config, "relative_attention_num_buckets", 32)
-            self.relative_attention_max_distance = getattr(config, "relative_attention_max_distance", 128)
+            self.relative_attention_num_buckets = getattr(
+                config, "relative_attention_num_buckets", 32
+            )
+            self.relative_attention_max_distance = getattr(
+                config, "relative_attention_max_distance", 128
+            )
         else:
             self.adapter = None
             self.alpha = float(kwargs.get("alpha", alpha))
@@ -247,9 +317,15 @@ class AdaSplashAttention(BaseAttention):
             self.splash_radius = int(kwargs.get("splash_radius", splash_radius))
             self.lora_rank = int(kwargs.get("lora_rank", kwargs.pop("rank", 16)))
             self.hidden_size = kwargs.get("hidden_size", 768)
-            self.num_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
-            self.num_kv_heads = kwargs.get("num_kv_heads", kwargs.get("num_key_value_heads", self.num_heads))
-            self.head_dim = kwargs.get("head_dim", self.hidden_size // max(1, self.num_heads))
+            self.num_heads = kwargs.get(
+                "num_heads", kwargs.get("num_attention_heads", 12)
+            )
+            self.num_kv_heads = kwargs.get(
+                "num_kv_heads", kwargs.get("num_key_value_heads", self.num_heads)
+            )
+            self.head_dim = kwargs.get(
+                "head_dim", self.hidden_size // max(1, self.num_heads)
+            )
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
             dropout_p = kwargs.get("dropout", 0.1)
             self.is_decoder = kwargs.get("is_decoder", False)
@@ -259,10 +335,18 @@ class AdaSplashAttention(BaseAttention):
         self.all_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
 
-        self.q_proj = AdaSplashLinear(self.hidden_size, self.all_head_size, lora_rank=self.lora_rank)
-        self.k_proj = AdaSplashLinear(self.hidden_size, self.kv_head_size, lora_rank=self.lora_rank)
-        self.v_proj = AdaSplashLinear(self.hidden_size, self.kv_head_size, lora_rank=self.lora_rank)
-        self.out_proj = AdaSplashLinear(self.all_head_size, self.hidden_size, lora_rank=self.lora_rank)
+        self.q_proj = AdaSplashLinear(
+            self.hidden_size, self.all_head_size, lora_rank=self.lora_rank
+        )
+        self.k_proj = AdaSplashLinear(
+            self.hidden_size, self.kv_head_size, lora_rank=self.lora_rank
+        )
+        self.v_proj = AdaSplashLinear(
+            self.hidden_size, self.kv_head_size, lora_rank=self.lora_rank
+        )
+        self.out_proj = AdaSplashLinear(
+            self.all_head_size, self.hidden_size, lora_rank=self.lora_rank
+        )
 
         # Aliases
         self.q_lin = self.q_proj
@@ -287,7 +371,11 @@ class AdaSplashAttention(BaseAttention):
             self.copy_weights(pretrained_attn)
 
     def _relative_position_bucket(
-        self, relative_position: torch.Tensor, bidirectional: bool = True, num_buckets: int = 32, max_distance: int = 128
+        self,
+        relative_position: torch.Tensor,
+        bidirectional: bool = True,
+        num_buckets: int = 32,
+        max_distance: int = 128,
     ) -> torch.Tensor:
         relative_buckets = 0
         if bidirectional:
@@ -295,7 +383,9 @@ class AdaSplashAttention(BaseAttention):
             relative_buckets += (relative_position > 0).to(torch.long) * num_buckets
             relative_position = torch.abs(relative_position)
         else:
-            relative_position = -torch.min(relative_position, torch.zeros_like(relative_position))
+            relative_position = -torch.min(
+                relative_position, torch.zeros_like(relative_position)
+            )
         max_exact = num_buckets // 2
         is_small = relative_position < max_exact
         relative_position_if_large = max_exact + (
@@ -304,15 +394,24 @@ class AdaSplashAttention(BaseAttention):
             * (num_buckets - max_exact)
         ).to(torch.long)
         relative_position_if_large = torch.min(
-            relative_position_if_large, torch.full_like(relative_position_if_large, num_buckets - 1)
+            relative_position_if_large,
+            torch.full_like(relative_position_if_large, num_buckets - 1),
         )
-        relative_buckets += torch.where(is_small, relative_position, relative_position_if_large)
+        relative_buckets += torch.where(
+            is_small, relative_position, relative_position_if_large
+        )
         return relative_buckets
 
-    def compute_bias(self, query_length: int, key_length: int, device: torch.device | None = None) -> torch.Tensor:
+    def compute_bias(
+        self, query_length: int, key_length: int, device: torch.device | None = None
+    ) -> torch.Tensor:
         if self.relative_attention_bias is not None:
-            context_position = torch.arange(query_length, dtype=torch.long, device=device)[:, None]
-            memory_position = torch.arange(key_length, dtype=torch.long, device=device)[None, :]
+            context_position = torch.arange(
+                query_length, dtype=torch.long, device=device
+            )[:, None]
+            memory_position = torch.arange(key_length, dtype=torch.long, device=device)[
+                None, :
+            ]
             relative_position = memory_position - context_position
             relative_position_bucket = self._relative_position_bucket(
                 relative_position,
@@ -331,7 +430,12 @@ class AdaSplashAttention(BaseAttention):
         extracted_all = True
         extracted_weights = {}
 
-        for proj, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
+        for proj, target in [
+            ("q", self.q_proj),
+            ("k", self.k_proj),
+            ("v", self.v_proj),
+            ("o", self.out_proj),
+        ]:
             w, b = None, None
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
@@ -373,9 +477,17 @@ class AdaSplashAttention(BaseAttention):
                     split_size = fused_w.size(0) // 3
                     idx = {"q": 0, "k": 1, "v": 2}[proj]
                     w = fused_w[idx * split_size : (idx + 1) * split_size, :]
-                    b = fused_b[idx * split_size : (idx + 1) * split_size] if fused_b is not None else None
+                    b = (
+                        fused_b[idx * split_size : (idx + 1) * split_size]
+                        if fused_b is not None
+                        else None
+                    )
                 # RoBERTa / BERT
-                elif proj in ["q", "k", "v"] and hasattr(src, "self") and hasattr(src.self, "query"):
+                elif (
+                    proj in ["q", "k", "v"]
+                    and hasattr(src, "self")
+                    and hasattr(src.self, "query")
+                ):
                     s = src.self
                     name_map = {"q": "query", "k": "key", "v": "value"}
                     mod = getattr(s, name_map[proj])
@@ -414,18 +526,42 @@ class AdaSplashAttention(BaseAttention):
                 extracted_all = False
 
         cls_name = src.__class__.__name__
-        has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+        has_out_proj = any(
+            hasattr(src, attr)
+            for attr in (
+                "dense",
+                "out_proj",
+                "c_proj",
+                "out_lin",
+                "o_proj",
+                "wo",
+                "o",
+                "proj",
+            )
+        )
         is_nested_encoder = False
         if (
-            hasattr(src, "self")
-            and hasattr(src.self, "query")
-            and hasattr(src, "output")
-            and hasattr(src.output, "dense")
-        ) or (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj:
+            (
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
+            )
+            or (
+                cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+                or (cls_name.endswith("SelfAttention") and not has_out_proj)
+            )
+            and not has_out_proj
+        ):
             is_nested_encoder = True
 
         if not extracted_all:
-            if is_nested_encoder and extracted_weights["q"][0] is not None and extracted_weights["k"][0] is not None and extracted_weights["v"][0] is not None:
+            if (
+                is_nested_encoder
+                and extracted_weights["q"][0] is not None
+                and extracted_weights["k"][0] is not None
+                and extracted_weights["v"][0] is not None
+            ):
                 extracted_all = True
 
         if not extracted_all:
@@ -435,15 +571,24 @@ class AdaSplashAttention(BaseAttention):
                 f"Refusing to install randomly-initialised weights."
             )
 
-        for proj, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
+        for proj, target in [
+            ("q", self.q_proj),
+            ("k", self.k_proj),
+            ("v", self.v_proj),
+            ("o", self.out_proj),
+        ]:
             w, b = extracted_weights[proj]
             if w is not None:
                 with torch.no_grad():
                     out_d, in_d = target.weight.shape
                     src_out, src_in = w.shape
-                    target.weight.data[:min(out_d, src_out), :min(in_d, src_in)].copy_(w[:min(out_d, src_out), :min(in_d, src_in)])
+                    target.weight.data[
+                        : min(out_d, src_out), : min(in_d, src_in)
+                    ].copy_(w[: min(out_d, src_out), : min(in_d, src_in)])
                     if b is not None and target.bias is not None:
-                        target.bias.data[:min(len(target.bias), len(b))].copy_(b[:min(len(target.bias), len(b))])
+                        target.bias.data[: min(len(target.bias), len(b))].copy_(
+                            b[: min(len(target.bias), len(b))]
+                        )
                     if getattr(target, "lora_A", None) is not None:
                         nn.init.kaiming_uniform_(target.lora_A, a=math.sqrt(5))
                         target.lora_A.requires_grad = True
@@ -473,7 +618,10 @@ class AdaSplashAttention(BaseAttention):
 
         if hasattr(src, "has_relative_attention_bias"):
             self.has_relative_attention_bias = bool(src.has_relative_attention_bias)
-        if hasattr(src, "relative_attention_bias") and src.relative_attention_bias is not None:
+        if (
+            hasattr(src, "relative_attention_bias")
+            and src.relative_attention_bias is not None
+        ):
             self.relative_attention_bias = src.relative_attention_bias
             self.has_relative_attention_bias = True
         if hasattr(src, "is_decoder"):
@@ -506,12 +654,27 @@ class AdaSplashAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         q = self.q_proj(hidden_states).view(B, L_q, H, Dh).transpose(1, 2).contiguous()
-        k = self.k_proj(kv_input).view(B, L_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
-        v = self.v_proj(kv_input).view(B, L_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
+        k = (
+            self.k_proj(kv_input)
+            .view(B, L_k, self.num_kv_heads, Dh)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_proj(kv_input)
+            .view(B, L_k, self.num_kv_heads, Dh)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         position_embeddings = kwargs.get("position_embeddings")
-        if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
+        if (
+            position_embeddings is not None
+            and isinstance(position_embeddings, (tuple, list))
+            and len(position_embeddings) >= 2
+        ):
             cos, sin = position_embeddings[0], position_embeddings[1]
+
             def _rotate_half(x):
                 _d = x.shape[-1]
                 _h = _d // 2
@@ -519,28 +682,53 @@ class AdaSplashAttention(BaseAttention):
                 if _d % 2 == 1:
                     _rot = torch.cat([_rot, x[..., -1:]], dim=-1)
                 return _rot
+
             if cos.dim() == 3:
                 cos, sin = cos.unsqueeze(1), sin.unsqueeze(1)
             while cos.dim() < q.dim():
                 cos, sin = cos.unsqueeze(0), sin.unsqueeze(0)
             rotary_dim = cos.shape[-1]
-            cos_q, sin_q = (cos[..., :q.shape[-2], :], sin[..., :q.shape[-2], :]) if cos.shape[-2] != q.shape[-2] else (cos, sin)
-            cos_k, sin_k = (cos[..., :k.shape[-2], :], sin[..., :k.shape[-2], :]) if cos.shape[-2] != k.shape[-2] else (cos, sin)
+            cos_q, sin_q = (
+                (cos[..., : q.shape[-2], :], sin[..., : q.shape[-2], :])
+                if cos.shape[-2] != q.shape[-2]
+                else (cos, sin)
+            )
+            cos_k, sin_k = (
+                (cos[..., : k.shape[-2], :], sin[..., : k.shape[-2], :])
+                if cos.shape[-2] != k.shape[-2]
+                else (cos, sin)
+            )
             if rotary_dim <= q.shape[-1]:
                 q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
                 k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-                q_rot = (q_rot * cos_q.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin_q.to(q_rot.dtype))
-                k_rot = (k_rot * cos_k.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin_k.to(k_rot.dtype))
+                q_rot = (q_rot * cos_q.to(q_rot.dtype)) + (
+                    _rotate_half(q_rot) * sin_q.to(q_rot.dtype)
+                )
+                k_rot = (k_rot * cos_k.to(k_rot.dtype)) + (
+                    _rotate_half(k_rot) * sin_k.to(k_rot.dtype)
+                )
                 q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot
                 k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot
             else:
-                cos_cut_q, sin_cut_q = cos_q[..., :q.shape[-1]], sin_q[..., :q.shape[-1]]
-                cos_cut_k, sin_cut_k = cos_k[..., :k.shape[-1]], sin_k[..., :k.shape[-1]]
-                q = (q * cos_cut_q.to(q.dtype)) + (_rotate_half(q) * sin_cut_q.to(q.dtype))
-                k = (k * cos_cut_k.to(k.dtype)) + (_rotate_half(k) * sin_cut_k.to(k.dtype))
+                cos_cut_q, sin_cut_q = (
+                    cos_q[..., : q.shape[-1]],
+                    sin_q[..., : q.shape[-1]],
+                )
+                cos_cut_k, sin_cut_k = (
+                    cos_k[..., : k.shape[-1]],
+                    sin_k[..., : k.shape[-1]],
+                )
+                q = (q * cos_cut_q.to(q.dtype)) + (
+                    _rotate_half(q) * sin_cut_q.to(q.dtype)
+                )
+                k = (k * cos_cut_k.to(k.dtype)) + (
+                    _rotate_half(k) * sin_cut_k.to(k.dtype)
+                )
         elif hasattr(self, "rotary_emb") and self.rotary_emb is not None:
             try:
-                q, k = maybe_apply_rotary(q, k, self.adapter, self.rotary_emb, kwargs.get("position_ids"))
+                q, k = maybe_apply_rotary(
+                    q, k, self.adapter, self.rotary_emb, kwargs.get("position_ids")
+                )
             except Exception:
                 pass
 
@@ -548,7 +736,7 @@ class AdaSplashAttention(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        scale = Dh ** -0.5
+        scale = Dh**-0.5
         logits = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
 
         position_bias = kwargs.get("position_bias")
@@ -563,7 +751,20 @@ class AdaSplashAttention(BaseAttention):
             logits = logits + position_bias.to(logits.dtype)
 
         mt = str(getattr(self.config, "model_type", "") or "").lower()
-        decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        decoder_prefixes = (
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
+        )
         is_decoder = (
             self.is_decoder
             or getattr(self.config, "is_decoder", False)
@@ -571,11 +772,20 @@ class AdaSplashAttention(BaseAttention):
         )
         causal_tril = None
         if is_decoder:
-            causal_tril = torch.tril(torch.ones((L_q, L_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+            causal_tril = (
+                torch.tril(torch.ones((L_q, L_k), device=device, dtype=torch.bool))
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
             logits = logits.masked_fill(~causal_tril, -10000.0)
 
         splash_mask_4d = None
-        if is_decoder and self.splash_radius > 0 and not is_cross_attention and L_k > self.splash_radius:
+        if (
+            is_decoder
+            and self.splash_radius > 0
+            and not is_cross_attention
+            and L_k > self.splash_radius
+        ):
             q_idx = torch.arange(L_q, device=device).unsqueeze(1)
             k_idx = torch.arange(L_k, device=device).unsqueeze(0)
             dist = q_idx - k_idx
@@ -585,7 +795,7 @@ class AdaSplashAttention(BaseAttention):
 
         valid_mask_entmax = None
         if not is_cross_attention:
-            valid_mask_entmax = (logits > -5000.0)
+            valid_mask_entmax = logits > -5000.0
 
         if not is_cross_attention:
             attn = entmax_bisect(
@@ -596,7 +806,9 @@ class AdaSplashAttention(BaseAttention):
                 n_iter=self.n_iter,
             ).to(dtype)
         else:
-            attn = torch.nan_to_num(F.softmax(logits.float(), dim=-1), nan=0.0).to(dtype)
+            attn = torch.nan_to_num(F.softmax(logits.float(), dim=-1), nan=0.0).to(
+                dtype
+            )
 
         attn = self.dropout(attn)
 
@@ -656,7 +868,11 @@ def inject_adasplash(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -696,7 +912,9 @@ def inject_adasplash(
             return None
         if hasattr(src, "inner") and isinstance(src.inner, AdaSplashAttention):
             return None
-        if hasattr(src, "_wrapped_attention") and isinstance(src._wrapped_attention, AdaSplashAttention):
+        if hasattr(src, "_wrapped_attention") and isinstance(
+            src._wrapped_attention, AdaSplashAttention
+        ):
             return None
 
         if target is not None:
@@ -704,19 +922,29 @@ def inject_adasplash(
                 cand = getattr(target, attr, None)
                 if cand is None:
                     continue
-                if isinstance(cand, AdaSplashAttention) or "AdaSplash" in cand.__class__.__name__:
+                if (
+                    isinstance(cand, AdaSplashAttention)
+                    or "AdaSplash" in cand.__class__.__name__
+                ):
                     return None
-                if hasattr(cand, "inner") and isinstance(cand.inner, AdaSplashAttention):
+                if hasattr(cand, "inner") and isinstance(
+                    cand.inner, AdaSplashAttention
+                ):
                     return None
 
-        if src is not None and ("DeltaNet" in src.__class__.__name__ or "LinearAttention" in src.__class__.__name__):
+        if src is not None and (
+            "DeltaNet" in src.__class__.__name__
+            or "LinearAttention" in src.__class__.__name__
+        ):
             return None
 
         if cfg is None and hasattr(src, "config"):
             cfg = src.config
 
         alpha = getattr(comp_config, "alpha", kwargs.get("alpha", 1.1))
-        splash_radius = getattr(comp_config, "splash_radius", kwargs.get("splash_radius", 128))
+        splash_radius = getattr(
+            comp_config, "splash_radius", kwargs.get("splash_radius", 128)
+        )
         lora_rank = getattr(
             comp_config,
             "lora_rank",
@@ -726,11 +954,19 @@ def inject_adasplash(
                 getattr(
                     comp_config,
                     "rank",
-                    getattr(
-                        cfg,
-                        "lora_rank",
-                        getattr(cfg, "rank", kwargs.get("lora_rank", kwargs.pop("rank", 16))),
-                    ) if cfg is not None else kwargs.get("lora_rank", kwargs.pop("rank", 16)),
+                    (
+                        getattr(
+                            cfg,
+                            "lora_rank",
+                            getattr(
+                                cfg,
+                                "rank",
+                                kwargs.get("lora_rank", kwargs.pop("rank", 16)),
+                            ),
+                        )
+                        if cfg is not None
+                        else kwargs.get("lora_rank", kwargs.pop("rank", 16))
+                    ),
                 ),
             ),
         )

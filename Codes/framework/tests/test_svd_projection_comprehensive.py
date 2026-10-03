@@ -1,17 +1,14 @@
+import types
+
 import pytest
 import torch
 import torch.nn as nn
-import types
-
+from framework.attentions.svd_proj_attn import \
+    SVDProjectionAttention as SVDProjectionAttentionAlias
+from framework.attentions.svd_proj_attn import \
+    inject_svd_proj_attn as inject_svd_proj_attn_alias
 from framework.attentions.svd_projection_attention import (
-    SVDProjectionAttention,
-    SVDProjectionLinear,
-    inject_svd_proj_attn,
-)
-from framework.attentions.svd_proj_attn import (
-    SVDProjectionAttention as SVDProjectionAttentionAlias,
-    inject_svd_proj_attn as inject_svd_proj_attn_alias,
-)
+    SVDProjectionAttention, SVDProjectionLinear, inject_svd_proj_attn)
 
 
 def make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=False, model_type="bert"):

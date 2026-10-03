@@ -1,12 +1,10 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.attentions.fused_svd_kernel import (
-    FusedSVDLinear,
-    fused_svd_linear,
-    fused_svd_kernel_factory,
-    inject_fused_svd_kernel,
-)
+from framework.attentions.fused_svd_kernel import (FusedSVDLinear,
+                                                   fused_svd_kernel_factory,
+                                                   fused_svd_linear,
+                                                   inject_fused_svd_kernel)
 
 
 class MockConfig:

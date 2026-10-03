@@ -20,6 +20,7 @@ Bug-fix map:
 """
 
 from __future__ import annotations
+
 import logging
 import math
 
@@ -32,6 +33,7 @@ try:
     from mamba_ssm.ops.selective_scan_interface import (
         selective_scan_fn as _mamba_scan_fn,
     )
+
     HAS_MAMBA_CUDA = True
 except ImportError:
     HAS_MAMBA_CUDA = False
@@ -42,11 +44,12 @@ except ImportError:
 # Auto chunk size (SC-FIX-01)
 # ===========================================================================
 
+
 def _auto_chunk_size(
     D_dim: int,
     N: int,
     B_size: int,
-    max_bytes: int = 256 * 1024 * 1024,   # 256 MB ceiling
+    max_bytes: int = 256 * 1024 * 1024,  # 256 MB ceiling
     default: int = 32,
     min_chunk: int = 4,
 ) -> int:
@@ -71,14 +74,15 @@ def _auto_chunk_size(
 # Numerically stable chunked fallback
 # ===========================================================================
 
+
 def selective_scan_chunked(
-    u: torch.Tensor,                          # (B, d_inner, L)
-    delta: torch.Tensor,                      # (B, d_inner, L)
-    A: torch.Tensor,                          # (d_inner, N)
-    B: torch.Tensor,                          # (B, N, L)
-    C: torch.Tensor,                          # (B, N, L)
-    D: torch.Tensor | None = None,         # (d_inner,)
-    z: torch.Tensor | None = None,         # (B, d_inner, L)
+    u: torch.Tensor,  # (B, d_inner, L)
+    delta: torch.Tensor,  # (B, d_inner, L)
+    A: torch.Tensor,  # (d_inner, N)
+    B: torch.Tensor,  # (B, N, L)
+    C: torch.Tensor,  # (B, N, L)
+    D: torch.Tensor | None = None,  # (d_inner,)
+    z: torch.Tensor | None = None,  # (B, d_inner, L)
     delta_bias: torch.Tensor | None = None,
     delta_softplus: bool = True,
     chunk_size: int = 32,
@@ -150,20 +154,22 @@ def selective_scan_chunked(
         e = min(L, s + chunk_size)
         C_len = e - s
 
-        dA_c = dA[:, :, s:e, :]              # (B, D, C_len, N)
-        dBu_c = dB_u[:, :, s:e, :]           # (B, D, C_len, N)
+        dA_c = dA[:, :, s:e, :]  # (B, D, C_len, N)
+        dBu_c = dB_u[:, :, s:e, :]  # (B, D, C_len, N)
         C_c = C_f[:, :, s:e].transpose(1, 2)  # (B, C_len, N)
 
         # Cumulative log-decay within the chunk
-        dA_cum = torch.cumsum(dA_c, dim=2)   # (B, D, C_len, N)
+        dA_cum = torch.cumsum(dA_c, dim=2)  # (B, D, C_len, N)
 
         # --- intra-chunk recurrence without division ---
         # SC-FIX-05: avoid 5D einsum; use exp of differences masked by tril.
-        log_decay = dA_cum.unsqueeze(3) - dA_cum.unsqueeze(2)   # (B, D, C_len, C_len, N)
+        log_decay = dA_cum.unsqueeze(3) - dA_cum.unsqueeze(2)  # (B, D, C_len, C_len, N)
         tril = torch.tril(torch.ones(C_len, C_len, dtype=torch.bool, device=device))
-        log_decay = log_decay.masked_fill(~tril.view(1, 1, C_len, C_len, 1), float("-inf"))
+        log_decay = log_decay.masked_fill(
+            ~tril.view(1, 1, C_len, C_len, 1), float("-inf")
+        )
         # SC-FIX-04: exp(-inf) = 0 exactly; no nan_to_num needed.
-        decay = torch.exp(log_decay)         # (B, D, C_len, C_len, N)
+        decay = torch.exp(log_decay)  # (B, D, C_len, C_len, N)
 
         # h_intra[b, d, j, n] = sum_i decay[b, d, j, i, n] * dBu_c[b, d, i, n]
         # Faster: reshape to (B*D, C_len, C_len, N) and use einsum with 4D.
@@ -201,6 +207,7 @@ def selective_scan_chunked(
 # Dispatch (SC-FIX-06)
 # ===========================================================================
 
+
 def selective_scan(
     u: torch.Tensor,
     delta: torch.Tensor,
@@ -218,14 +225,13 @@ def selective_scan(
     """
     if HAS_MAMBA_CUDA and u.is_cuda:
         try:
-            return _mamba_scan_fn(
-                u, delta, A, B, C, D, z, delta_bias, delta_softplus
-            )
+            return _mamba_scan_fn(u, delta, A, B, C, D, z, delta_bias, delta_softplus)
         except Exception as e:
             # SC-FIX-06: surface the failure so it can be investigated.
             logger.warning(
                 "mamba_ssm CUDA selective_scan failed (%s); "
-                "falling back to chunked PyTorch implementation.", e,
+                "falling back to chunked PyTorch implementation.",
+                e,
             )
 
     return selective_scan_chunked(

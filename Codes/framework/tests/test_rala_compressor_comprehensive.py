@@ -1,12 +1,9 @@
 import pytest
 import torch
 import torch.nn as nn
-
 from framework.attentions.rala_compressor import (
-    RALACompressorAttention,
-    inject_rala_compressor,
-    inject_rala_compressor_attention,
-)
+    RALACompressorAttention, inject_rala_compressor,
+    inject_rala_compressor_attention)
 
 
 class MockConfig:

@@ -21,15 +21,18 @@ from unittest.mock import MagicMock, patch
 
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, TensorDataset
-
 from framework.distributed.config import DistributedConfig
-from framework.distributed.launcher import _terminate_process_tree, launch_distributed
-from framework.hyperopt.backends.optuna_optimizer import OptunaOptimizer, broadcast_pruned_state
+from framework.distributed.launcher import (_terminate_process_tree,
+                                            launch_distributed)
+from framework.hyperopt.backends.optuna_optimizer import (
+    OptunaOptimizer, broadcast_pruned_state)
 from framework.hyperopt.config import HPOConfig
-from framework.results_saver.saver import ResultsSaver, configure_sqlite_pragmas, sqlite_file_lock
+from framework.results_saver.saver import (ResultsSaver,
+                                           configure_sqlite_pragmas,
+                                           sqlite_file_lock)
 from framework.trainer.custom_loop_trainer import CustomLoopTrainer
 from framework.trainer.utils import clip_grad_norm_factorized, train_model
+from torch.utils.data import DataLoader, TensorDataset
 
 
 class DummyDDPModel(nn.Module):

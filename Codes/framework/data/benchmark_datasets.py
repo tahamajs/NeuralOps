@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import logging
 import random
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
-from collections.abc import Callable
 
 import torch
 from torch.utils.data import DataLoader, Dataset
@@ -22,12 +22,16 @@ logger = logging.getLogger(__name__)
 # Data Models & Benchmark Information
 # -----------------------------------------------------------------------------
 
+
 @dataclass
 class BenchmarkDatasetInfo:
     """Metadata describing a benchmark dataset and its default loading strategy."""
+
     name: str
     aliases: list[str]
-    category: str  # e.g., "language_modeling", "reasoning", "code", "multi_choice", "glue"
+    category: (
+        str  # e.g., "language_modeling", "reasoning", "code", "multi_choice", "glue"
+    )
     default_hf_path: str
     default_subset: str | None = None
     default_split: str = "validation"
@@ -40,14 +44,32 @@ class BenchmarkDatasetInfo:
 # Synthetic Data Generators (Offline Fallback)
 # -----------------------------------------------------------------------------
 
-def _generate_synthetic_wikitext(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
+
+def _generate_synthetic_wikitext(
+    num_samples: int, seed: int = 42
+) -> list[dict[str, Any]]:
     rng = random.Random(seed)
     topics = [
-        ("Valkyria Chronicles III", "is a tactical role-playing video game developed by Sega and Media.Vision for the PlayStation Portable."),
-        ("Tower of London", "is a historic castle on the north bank of the River Thames in central London."),
-        ("Supercell (thunderstorm)", "is a thunderstorm characterized by the presence of a mesocyclone: a deep, persistently rotating updraft."),
-        ("Quantum chromodynamics", "is the theory of the strong interaction between quarks and gluons, the fundamental particles that make up hadrons."),
-        ("Battle of Austerlitz", "also known as the Battle of the Three Emperors, was one of the most important and decisive engagements of the Napoleonic Wars."),
+        (
+            "Valkyria Chronicles III",
+            "is a tactical role-playing video game developed by Sega and Media.Vision for the PlayStation Portable.",
+        ),
+        (
+            "Tower of London",
+            "is a historic castle on the north bank of the River Thames in central London.",
+        ),
+        (
+            "Supercell (thunderstorm)",
+            "is a thunderstorm characterized by the presence of a mesocyclone: a deep, persistently rotating updraft.",
+        ),
+        (
+            "Quantum chromodynamics",
+            "is the theory of the strong interaction between quarks and gluons, the fundamental particles that make up hadrons.",
+        ),
+        (
+            "Battle of Austerlitz",
+            "also known as the Battle of the Three Emperors, was one of the most important and decisive engagements of the Napoleonic Wars.",
+        ),
     ]
     samples = []
     for i in range(num_samples):
@@ -59,7 +81,12 @@ def _generate_synthetic_wikitext(num_samples: int, seed: int = 42) -> list[dict[
 
 def _generate_synthetic_c4(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     rng = random.Random(seed)
-    domains = ["news-digest.org", "tech-insights.io", "culinary-arts.net", "travel-chronicles.com"]
+    domains = [
+        "news-digest.org",
+        "tech-insights.io",
+        "culinary-arts.net",
+        "travel-chronicles.com",
+    ]
     samples = []
     for i in range(num_samples):
         dom = domains[i % len(domains)]
@@ -68,7 +95,13 @@ def _generate_synthetic_c4(num_samples: int, seed: int = 42) -> list[dict[str, A
             f"Engineers and researchers in sample #{i} note that optimizing memory efficiency and attention mechanisms allows scalable throughput across distributed clusters. "
             f"Read more at https://{dom}/article/{1000 + i} for in-depth evaluations and reproducible metrics."
         )
-        samples.append({"text": text, "url": f"https://{dom}/article/{1000 + i}", "timestamp": "2024-01-01T12:00:00Z"})
+        samples.append(
+            {
+                "text": text,
+                "url": f"https://{dom}/article/{1000 + i}",
+                "timestamp": "2024-01-01T12:00:00Z",
+            }
+        )
     return samples
 
 
@@ -98,7 +131,13 @@ def _generate_synthetic_pg19(num_samples: int, seed: int = 42) -> list[dict[str,
                 f"Every page turned in the ancient manuscripts revealed forgotten theorems and profound observations on mathematics and metaphysics."
             )
         text = "\n\n".join(chapters)
-        samples.append({"text": text, "book_id": f"pg19_book_{i}", "short_book_title": f"The Chronicles of Explorer {i}"})
+        samples.append(
+            {
+                "text": text,
+                "book_id": f"pg19_book_{i}",
+                "short_book_title": f"The Chronicles of Explorer {i}",
+            }
+        )
     return samples
 
 
@@ -112,39 +151,73 @@ def _generate_synthetic_gsm8k(num_samples: int, seed: int = 42) -> list[dict[str
         remaining = total_apples - eaten
         q = f"Janet has {num_baskets} baskets of apples. Each basket contains {apples_per_basket} apples. If she eats {eaten} apples, how many apples does she have left?"
         a = f"First, calculate the total number of apples: {num_baskets} * {apples_per_basket} = {total_apples}. Next, subtract the eaten apples: {total_apples} - {eaten} = {remaining}.\n#### {remaining}"
-        samples.append({"question": q, "answer": a, "text": f"Question: {q}\nAnswer: {a}"})
+        samples.append(
+            {"question": q, "answer": a, "text": f"Question: {q}\nAnswer: {a}"}
+        )
     return samples
 
 
-def _generate_synthetic_humaneval(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
+def _generate_synthetic_humaneval(
+    num_samples: int, seed: int = 42
+) -> list[dict[str, Any]]:
     samples = []
     functions = [
-        ("has_close_elements", "numbers: List[float], threshold: float -> bool", "Check if in given list of numbers, are any two numbers closer to each other than threshold."),
-        ("separate_paren_groups", "paren_string: str -> List[str]", "Input to this function is a string containing multiple groups of nested parentheses. Separate them into individual strings."),
-        ("truncate_number", "number: float -> float", "Given a positive floating point number, it can be decomposed into integer part and decimals. Return the decimal part."),
-        ("below_zero", "operations: List[int] -> bool", "You're given a list of deposit and withdrawal operations on a bank account. Detect if balance falls below zero at any point."),
-        ("mean_absolute_deviation", "numbers: List[float] -> float", "For a given list of input numbers, calculate Mean Absolute Deviation around the mean of this dataset."),
+        (
+            "has_close_elements",
+            "numbers: List[float], threshold: float -> bool",
+            "Check if in given list of numbers, are any two numbers closer to each other than threshold.",
+        ),
+        (
+            "separate_paren_groups",
+            "paren_string: str -> List[str]",
+            "Input to this function is a string containing multiple groups of nested parentheses. Separate them into individual strings.",
+        ),
+        (
+            "truncate_number",
+            "number: float -> float",
+            "Given a positive floating point number, it can be decomposed into integer part and decimals. Return the decimal part.",
+        ),
+        (
+            "below_zero",
+            "operations: List[int] -> bool",
+            "You're given a list of deposit and withdrawal operations on a bank account. Detect if balance falls below zero at any point.",
+        ),
+        (
+            "mean_absolute_deviation",
+            "numbers: List[float] -> float",
+            "For a given list of input numbers, calculate Mean Absolute Deviation around the mean of this dataset.",
+        ),
     ]
     for i in range(num_samples):
         fn_name, sig, doc = functions[i % len(functions)]
         fn_name_i = f"{fn_name}_{i}"
-        prompt = f"from typing import List\n\n\ndef {fn_name_i}({sig}):\n    \"\"\" {doc}\n    >>> {fn_name_i}([1.0, 2.0], 0.5)\n    \"\"\"\n"
+        prompt = f'from typing import List\n\n\ndef {fn_name_i}({sig}):\n    """ {doc}\n    >>> {fn_name_i}([1.0, 2.0], 0.5)\n    """\n'
         canonical_solution = "    return True\n"
-        test = "def check(candidate):\n    assert candidate([1.0, 2.0], 0.5) is not None\n"
+        test = (
+            "def check(candidate):\n    assert candidate([1.0, 2.0], 0.5) is not None\n"
+        )
         entry_point = fn_name_i
-        samples.append({
-            "task_id": f"HumanEval/{i}",
-            "prompt": prompt,
-            "canonical_solution": canonical_solution,
-            "test": test,
-            "entry_point": entry_point,
-            "text": f"{prompt}{canonical_solution}",
-        })
+        samples.append(
+            {
+                "task_id": f"HumanEval/{i}",
+                "prompt": prompt,
+                "canonical_solution": canonical_solution,
+                "test": test,
+                "entry_point": entry_point,
+                "text": f"{prompt}{canonical_solution}",
+            }
+        )
     return samples
 
 
 def _generate_synthetic_mmlu(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
-    subjects = ["college_computer_science", "abstract_algebra", "high_school_physics", "econometrics", "philosophy"]
+    subjects = [
+        "college_computer_science",
+        "abstract_algebra",
+        "high_school_physics",
+        "econometrics",
+        "philosophy",
+    ]
     samples = []
     for i in range(num_samples):
         subject = subjects[i % len(subjects)]
@@ -155,20 +228,29 @@ def _generate_synthetic_mmlu(num_samples: int, seed: int = 42) -> list[dict[str,
             f"Option C: Principle {i+1} implies invariance under orthonormal coordinate rotations.",
             f"Option D: Principle {i+1} requires strict thermodynamic equilibrium.",
         ]
-        label = (i % 4)
+        label = i % 4
         formatted_text = f"Subject: {subject}\nQuestion: {q}\nA. {choices[0]}\nB. {choices[1]}\nC. {choices[2]}\nD. {choices[3]}\nAnswer: {chr(65 + label)}"
-        samples.append({
-            "question": q,
-            "choices": choices,
-            "answer": label,
-            "subject": subject,
-            "text": formatted_text,
-        })
+        samples.append(
+            {
+                "question": q,
+                "choices": choices,
+                "answer": label,
+                "subject": subject,
+                "text": formatted_text,
+            }
+        )
     return samples
 
 
 def _generate_synthetic_pile(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
-    subsets = ["ArXiv", "GitHub", "FreeLaw", "PubMed Central", "StackExchange", "Wikipedia (en)"]
+    subsets = [
+        "ArXiv",
+        "GitHub",
+        "FreeLaw",
+        "PubMed Central",
+        "StackExchange",
+        "Wikipedia (en)",
+    ]
     samples = []
     for i in range(num_samples):
         subset = subsets[i % len(subsets)]
@@ -190,18 +272,22 @@ def _generate_synthetic_arc(num_samples: int, seed: int = 42) -> list[dict[str, 
         choices_labels = ["A", "B", "C", "D"]
         answer_key = "B"
         label_idx = 1
-        samples.append({
-            "id": f"ARC_Synth_{i}",
-            "question": q,
-            "choices": {"text": choices_text, "label": choices_labels},
-            "answerKey": answer_key,
-            "label": label_idx,
-            "text": f"Question: {q}\nChoices: (A) Conduction (B) Convection (C) Radiation (D) Sublimation\nAnswer: {answer_key}",
-        })
+        samples.append(
+            {
+                "id": f"ARC_Synth_{i}",
+                "question": q,
+                "choices": {"text": choices_text, "label": choices_labels},
+                "answerKey": answer_key,
+                "label": label_idx,
+                "text": f"Question: {q}\nChoices: (A) Conduction (B) Convection (C) Radiation (D) Sublimation\nAnswer: {answer_key}",
+            }
+        )
     return samples
 
 
-def _generate_synthetic_hellaswag(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
+def _generate_synthetic_hellaswag(
+    num_samples: int, seed: int = 42
+) -> list[dict[str, Any]]:
     samples = []
     for i in range(num_samples):
         ctx = "A person is preparing ingredients in a bright kitchen. They slice fresh vegetables on a wooden cutting board"
@@ -212,38 +298,61 @@ def _generate_synthetic_hellaswag(num_samples: int, seed: int = 42) -> list[dict
             "and paint the vegetables blue using watercolor brushes.",
         ]
         label = 0
-        samples.append({
-            "activity_label": "Cooking",
-            "ctx": ctx,
-            "endings": endings,
-            "label": label,
-            "text": f"{ctx} {endings[label]}",
-        })
+        samples.append(
+            {
+                "activity_label": "Cooking",
+                "ctx": ctx,
+                "endings": endings,
+                "label": label,
+                "text": f"{ctx} {endings[label]}",
+            }
+        )
     return samples
 
 
-def _generate_synthetic_lambada(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
+def _generate_synthetic_lambada(
+    num_samples: int, seed: int = 42
+) -> list[dict[str, Any]]:
     samples = []
     stories = [
-        ("The young girl ran quickly across the open grass towards the tall oak tree, looking for her lost", "cat"),
-        ("He opened the dusty book and carefully read the handwritten note inscribed on the very first", "page"),
-        ("After hours of walking through the dense forest, the explorers finally arrived at the edge of the", "river"),
-        ("The chef tasted the simmering soup, nodded with satisfaction, and added a small pinch of", "salt"),
-        ("The astronomer adjusted the lens of the giant telescope and peered into the dark night", "sky"),
+        (
+            "The young girl ran quickly across the open grass towards the tall oak tree, looking for her lost",
+            "cat",
+        ),
+        (
+            "He opened the dusty book and carefully read the handwritten note inscribed on the very first",
+            "page",
+        ),
+        (
+            "After hours of walking through the dense forest, the explorers finally arrived at the edge of the",
+            "river",
+        ),
+        (
+            "The chef tasted the simmering soup, nodded with satisfaction, and added a small pinch of",
+            "salt",
+        ),
+        (
+            "The astronomer adjusted the lens of the giant telescope and peered into the dark night",
+            "sky",
+        ),
     ]
     for i in range(num_samples):
         prefix, target_word = stories[i % len(stories)]
         full_text = f"{prefix} {target_word}."
-        samples.append({
-            "text": full_text,
-            "prefix": prefix,
-            "target_word": target_word,
-            "id": i,
-        })
+        samples.append(
+            {
+                "text": full_text,
+                "prefix": prefix,
+                "target_word": target_word,
+                "id": i,
+            }
+        )
     return samples
 
 
-def _generate_synthetic_glue(task: str, num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
+def _generate_synthetic_glue(
+    task: str, num_samples: int, seed: int = 42
+) -> list[dict[str, Any]]:
     task = task.lower()
     samples = []
     if task == "sst2":
@@ -255,34 +364,92 @@ def _generate_synthetic_glue(task: str, num_samples: int, seed: int = 42) -> lis
         for i in range(num_samples):
             equiv = i % 2
             s1 = f"The technology corporation announced a profit increase of {10 + i}% this quarter."
-            s2 = f"Profits for the tech firm grew by {10 + i}% during the current quarter." if equiv == 1 else "The firm announced massive layoffs across international divisions."
-            samples.append({"sentence1": s1, "sentence2": s2, "label": equiv, "text": f"{s1} [SEP] {s2}"})
+            s2 = (
+                f"Profits for the tech firm grew by {10 + i}% during the current quarter."
+                if equiv == 1
+                else "The firm announced massive layoffs across international divisions."
+            )
+            samples.append(
+                {
+                    "sentence1": s1,
+                    "sentence2": s2,
+                    "label": equiv,
+                    "text": f"{s1} [SEP] {s2}",
+                }
+            )
     elif task == "qqp":
         for i in range(num_samples):
             dup = i % 2
             q1 = f"How can one efficiently optimize memory usage in neural networks for task {i}?"
-            q2 = f"What are the best methods to reduce GPU memory footprint during neural net training {i}?" if dup == 1 else f"What is the best recipe for baking sourdough bread at home {i}?"
-            samples.append({"question1": q1, "question2": q2, "label": dup, "text": f"{q1} [SEP] {q2}"})
+            q2 = (
+                f"What are the best methods to reduce GPU memory footprint during neural net training {i}?"
+                if dup == 1
+                else f"What is the best recipe for baking sourdough bread at home {i}?"
+            )
+            samples.append(
+                {
+                    "question1": q1,
+                    "question2": q2,
+                    "label": dup,
+                    "text": f"{q1} [SEP] {q2}",
+                }
+            )
     elif task == "stsb":
         for i in range(num_samples):
             score = round((i % 50) / 10.0, 1)
             s1 = f"A brown dog is running through the green grassy field {i}."
-            s2 = f"A canine is sprinting across the lawn {i}." if score > 3.0 else f"A man is playing guitar on a concert stage {i}."
-            samples.append({"sentence1": s1, "sentence2": s2, "label": score, "text": f"{s1} [SEP] {s2}"})
+            s2 = (
+                f"A canine is sprinting across the lawn {i}."
+                if score > 3.0
+                else f"A man is playing guitar on a concert stage {i}."
+            )
+            samples.append(
+                {
+                    "sentence1": s1,
+                    "sentence2": s2,
+                    "label": score,
+                    "text": f"{s1} [SEP] {s2}",
+                }
+            )
     elif task in ("mnli", "qnli", "rte", "wnli"):
         for i in range(num_samples):
             label = i % 2
             premise = f"Scientific observation {i} confirmed that gravitational waves propagate at the speed of light."
-            hypothesis = f"Gravitational radiation travels at light speed in observation {i}." if label == 0 else f"Light travels infinitely faster than gravitational waves in experiment {i}."
-            samples.append({"premise": premise, "hypothesis": hypothesis, "sentence1": premise, "sentence2": hypothesis, "label": label, "text": f"{premise} [SEP] {hypothesis}"})
+            hypothesis = (
+                f"Gravitational radiation travels at light speed in observation {i}."
+                if label == 0
+                else f"Light travels infinitely faster than gravitational waves in experiment {i}."
+            )
+            samples.append(
+                {
+                    "premise": premise,
+                    "hypothesis": hypothesis,
+                    "sentence1": premise,
+                    "sentence2": hypothesis,
+                    "label": label,
+                    "text": f"{premise} [SEP] {hypothesis}",
+                }
+            )
     elif task == "cola":
         for i in range(num_samples):
             acceptable = i % 2
-            sentence = "The researcher submitted the journal paper yesterday." if acceptable == 1 else "Submitted the researcher paper yesterday journal."
-            samples.append({"sentence": sentence, "label": acceptable, "text": sentence})
+            sentence = (
+                "The researcher submitted the journal paper yesterday."
+                if acceptable == 1
+                else "Submitted the researcher paper yesterday journal."
+            )
+            samples.append(
+                {"sentence": sentence, "label": acceptable, "text": sentence}
+            )
     else:
         for i in range(num_samples):
-            samples.append({"sentence": f"Synthetic GLUE sample #{i} for task {task}.", "label": i % 2, "text": f"Synthetic GLUE sample #{i}."})
+            samples.append(
+                {
+                    "sentence": f"Synthetic GLUE sample #{i} for task {task}.",
+                    "label": i % 2,
+                    "text": f"Synthetic GLUE sample #{i}.",
+                }
+            )
     return samples
 
 
@@ -290,8 +457,10 @@ def _generate_synthetic_glue(task: str, num_samples: int, seed: int = 42) -> lis
 # Benchmark Dataset Registry
 # -----------------------------------------------------------------------------
 
+
 class BenchmarkDatasetRegistry:
     """Registry maintaining metadata and formatters for NLP/LLM benchmarks."""
+
     _registry: dict[str, BenchmarkDatasetInfo] = {}
 
     @classmethod
@@ -305,7 +474,9 @@ class BenchmarkDatasetRegistry:
     @classmethod
     def get(cls, name: str) -> BenchmarkDatasetInfo | None:
         """Retrieve benchmark dataset info by name or alias."""
-        return cls._registry.get(name.lower().replace("-", "").replace("_", "")) or cls._registry.get(name.lower())
+        return cls._registry.get(
+            name.lower().replace("-", "").replace("_", "")
+        ) or cls._registry.get(name.lower())
 
     @classmethod
     def is_registered(cls, name: str) -> bool:
@@ -330,222 +501,267 @@ class BenchmarkDatasetRegistry:
 # Default Benchmarks Registration
 # -----------------------------------------------------------------------------
 
+
 def _register_all_benchmarks():
     # 1. WikiText-2 & WikiText-103
-    BenchmarkDatasetRegistry.register(BenchmarkDatasetInfo(
-        name="wikitext2",
-        aliases=["wikitext-2", "wikitext_2", "wikitext-2-raw-v1", "wikitext2rawv1"],
-        category="language_modeling",
-        default_hf_path="wikitext",
-        default_subset="wikitext-2-raw-v1",
-        default_split="validation",
-        text_formatter=lambda r: {"text": r.get("text", "")},
-        synthetic_generator=_generate_synthetic_wikitext,
-        description="WikiText-2 raw language modeling benchmark."
-    ))
+    BenchmarkDatasetRegistry.register(
+        BenchmarkDatasetInfo(
+            name="wikitext2",
+            aliases=["wikitext-2", "wikitext_2", "wikitext-2-raw-v1", "wikitext2rawv1"],
+            category="language_modeling",
+            default_hf_path="wikitext",
+            default_subset="wikitext-2-raw-v1",
+            default_split="validation",
+            text_formatter=lambda r: {"text": r.get("text", "")},
+            synthetic_generator=_generate_synthetic_wikitext,
+            description="WikiText-2 raw language modeling benchmark.",
+        )
+    )
 
-    BenchmarkDatasetRegistry.register(BenchmarkDatasetInfo(
-        name="wikitext103",
-        aliases=["wikitext-103", "wikitext_103", "wikitext-103-raw-v1", "wikitext103rawv1"],
-        category="language_modeling",
-        default_hf_path="wikitext",
-        default_subset="wikitext-103-raw-v1",
-        default_split="validation",
-        text_formatter=lambda r: {"text": r.get("text", "")},
-        synthetic_generator=_generate_synthetic_wikitext,
-        description="WikiText-103 raw language modeling benchmark."
-    ))
+    BenchmarkDatasetRegistry.register(
+        BenchmarkDatasetInfo(
+            name="wikitext103",
+            aliases=[
+                "wikitext-103",
+                "wikitext_103",
+                "wikitext-103-raw-v1",
+                "wikitext103rawv1",
+            ],
+            category="language_modeling",
+            default_hf_path="wikitext",
+            default_subset="wikitext-103-raw-v1",
+            default_split="validation",
+            text_formatter=lambda r: {"text": r.get("text", "")},
+            synthetic_generator=_generate_synthetic_wikitext,
+            description="WikiText-103 raw language modeling benchmark.",
+        )
+    )
 
     # 2. C4 (Colossal Clean Crawled Corpus)
-    BenchmarkDatasetRegistry.register(BenchmarkDatasetInfo(
-        name="c4",
-        aliases=["c4_en", "c4-en", "allenai/c4", "allenaic4"],
-        category="language_modeling",
-        default_hf_path="allenai/c4",
-        default_subset="en",
-        default_split="validation",
-        text_formatter=lambda r: {"text": r.get("text", "")},
-        synthetic_generator=_generate_synthetic_c4,
-        description="C4 (Colossal Clean Crawled Corpus) English split."
-    ))
+    BenchmarkDatasetRegistry.register(
+        BenchmarkDatasetInfo(
+            name="c4",
+            aliases=["c4_en", "c4-en", "allenai/c4", "allenaic4"],
+            category="language_modeling",
+            default_hf_path="allenai/c4",
+            default_subset="en",
+            default_split="validation",
+            text_formatter=lambda r: {"text": r.get("text", "")},
+            synthetic_generator=_generate_synthetic_c4,
+            description="C4 (Colossal Clean Crawled Corpus) English split.",
+        )
+    )
 
     # 3. Penn Treebank (PTB)
-    BenchmarkDatasetRegistry.register(BenchmarkDatasetInfo(
-        name="ptb",
-        aliases=["penn_treebank", "ptb_text_only", "ptbtextonly"],
-        category="language_modeling",
-        default_hf_path="ptb_text_only",
-        default_subset=None,
-        default_split="validation",
-        text_formatter=lambda r: {"text": r.get("sentence", r.get("text", ""))},
-        synthetic_generator=_generate_synthetic_ptb,
-        description="Penn Treebank language modeling dataset."
-    ))
+    BenchmarkDatasetRegistry.register(
+        BenchmarkDatasetInfo(
+            name="ptb",
+            aliases=["penn_treebank", "ptb_text_only", "ptbtextonly"],
+            category="language_modeling",
+            default_hf_path="ptb_text_only",
+            default_subset=None,
+            default_split="validation",
+            text_formatter=lambda r: {"text": r.get("sentence", r.get("text", ""))},
+            synthetic_generator=_generate_synthetic_ptb,
+            description="Penn Treebank language modeling dataset.",
+        )
+    )
 
     # 4. PG-19 (Project Gutenberg 1919)
-    BenchmarkDatasetRegistry.register(BenchmarkDatasetInfo(
-        name="pg19",
-        aliases=["pg-19", "deepmind/pg19", "deepmindpg19"],
-        category="language_modeling",
-        default_hf_path="pg19",
-        default_subset=None,
-        default_split="validation",
-        text_formatter=lambda r: {"text": r.get("text", "")},
-        synthetic_generator=_generate_synthetic_pg19,
-        description="PG-19 long-context book language modeling benchmark."
-    ))
+    BenchmarkDatasetRegistry.register(
+        BenchmarkDatasetInfo(
+            name="pg19",
+            aliases=["pg-19", "deepmind/pg19", "deepmindpg19"],
+            category="language_modeling",
+            default_hf_path="pg19",
+            default_subset=None,
+            default_split="validation",
+            text_formatter=lambda r: {"text": r.get("text", "")},
+            synthetic_generator=_generate_synthetic_pg19,
+            description="PG-19 long-context book language modeling benchmark.",
+        )
+    )
 
     # 5. GSM8K (Grade School Math 8K)
-    BenchmarkDatasetRegistry.register(BenchmarkDatasetInfo(
-        name="gsm8k",
-        aliases=["gsm-8k", "gsm_8k", "openai/gsm8k"],
-        category="reasoning",
-        default_hf_path="gsm8k",
-        default_subset="main",
-        default_split="test",
-        text_formatter=lambda r: {
-            "question": r.get("question", ""),
-            "answer": r.get("answer", ""),
-            "text": f"Question: {r.get('question', '')}\nAnswer: {r.get('answer', '')}"
-        },
-        synthetic_generator=_generate_synthetic_gsm8k,
-        description="GSM8K Grade School Math reasoning benchmark."
-    ))
+    BenchmarkDatasetRegistry.register(
+        BenchmarkDatasetInfo(
+            name="gsm8k",
+            aliases=["gsm-8k", "gsm_8k", "openai/gsm8k"],
+            category="reasoning",
+            default_hf_path="gsm8k",
+            default_subset="main",
+            default_split="test",
+            text_formatter=lambda r: {
+                "question": r.get("question", ""),
+                "answer": r.get("answer", ""),
+                "text": f"Question: {r.get('question', '')}\nAnswer: {r.get('answer', '')}",
+            },
+            synthetic_generator=_generate_synthetic_gsm8k,
+            description="GSM8K Grade School Math reasoning benchmark.",
+        )
+    )
 
     # 6. HumanEval
-    BenchmarkDatasetRegistry.register(BenchmarkDatasetInfo(
-        name="humaneval",
-        aliases=["human_eval", "openai_humaneval", "openaihumaneval"],
-        category="code",
-        default_hf_path="openai_humaneval",
-        default_subset=None,
-        default_split="test",
-        text_formatter=lambda r: {
-            "task_id": r.get("task_id", ""),
-            "prompt": r.get("prompt", ""),
-            "canonical_solution": r.get("canonical_solution", ""),
-            "test": r.get("test", ""),
-            "entry_point": r.get("entry_point", ""),
-            "text": f"{r.get('prompt', '')}{r.get('canonical_solution', '')}"
-        },
-        synthetic_generator=_generate_synthetic_humaneval,
-        description="HumanEval code generation benchmark."
-    ))
+    BenchmarkDatasetRegistry.register(
+        BenchmarkDatasetInfo(
+            name="humaneval",
+            aliases=["human_eval", "openai_humaneval", "openaihumaneval"],
+            category="code",
+            default_hf_path="openai_humaneval",
+            default_subset=None,
+            default_split="test",
+            text_formatter=lambda r: {
+                "task_id": r.get("task_id", ""),
+                "prompt": r.get("prompt", ""),
+                "canonical_solution": r.get("canonical_solution", ""),
+                "test": r.get("test", ""),
+                "entry_point": r.get("entry_point", ""),
+                "text": f"{r.get('prompt', '')}{r.get('canonical_solution', '')}",
+            },
+            synthetic_generator=_generate_synthetic_humaneval,
+            description="HumanEval code generation benchmark.",
+        )
+    )
 
     # 7. MMLU (Massive Multitask Language Understanding)
-    BenchmarkDatasetRegistry.register(BenchmarkDatasetInfo(
-        name="mmlu",
-        aliases=["cais/mmlu", "caismmlu", "hendrycks_test"],
-        category="multi_choice",
-        default_hf_path="cais/mmlu",
-        default_subset="all",
-        default_split="test",
-        text_formatter=lambda r: {
-            "question": r.get("question", ""),
-            "choices": r.get("choices", []),
-            "answer": r.get("answer", 0),
-            "subject": r.get("subject", ""),
-            "text": f"Question: {r.get('question', '')}\nChoices: {r.get('choices', [])}\nAnswer: {r.get('answer', '')}"
-        },
-        synthetic_generator=_generate_synthetic_mmlu,
-        description="MMLU multi-subject reasoning benchmark."
-    ))
+    BenchmarkDatasetRegistry.register(
+        BenchmarkDatasetInfo(
+            name="mmlu",
+            aliases=["cais/mmlu", "caismmlu", "hendrycks_test"],
+            category="multi_choice",
+            default_hf_path="cais/mmlu",
+            default_subset="all",
+            default_split="test",
+            text_formatter=lambda r: {
+                "question": r.get("question", ""),
+                "choices": r.get("choices", []),
+                "answer": r.get("answer", 0),
+                "subject": r.get("subject", ""),
+                "text": f"Question: {r.get('question', '')}\nChoices: {r.get('choices', [])}\nAnswer: {r.get('answer', '')}",
+            },
+            synthetic_generator=_generate_synthetic_mmlu,
+            description="MMLU multi-subject reasoning benchmark.",
+        )
+    )
 
     # 8. The Pile / Pile Val
-    BenchmarkDatasetRegistry.register(BenchmarkDatasetInfo(
-        name="pile",
-        aliases=["pile_val", "pileval", "the_pile", "thepile", "monology/pile-uncopyrighted"],
-        category="language_modeling",
-        default_hf_path="monology/pile-uncopyrighted",
-        default_subset=None,
-        default_split="train",
-        text_formatter=lambda r: {"text": r.get("text", "")},
-        synthetic_generator=_generate_synthetic_pile,
-        description="The Pile diverse pretraining & evaluation corpus."
-    ))
+    BenchmarkDatasetRegistry.register(
+        BenchmarkDatasetInfo(
+            name="pile",
+            aliases=[
+                "pile_val",
+                "pileval",
+                "the_pile",
+                "thepile",
+                "monology/pile-uncopyrighted",
+            ],
+            category="language_modeling",
+            default_hf_path="monology/pile-uncopyrighted",
+            default_subset=None,
+            default_split="train",
+            text_formatter=lambda r: {"text": r.get("text", "")},
+            synthetic_generator=_generate_synthetic_pile,
+            description="The Pile diverse pretraining & evaluation corpus.",
+        )
+    )
 
     # 9. ARC (AI2 Reasoning Challenge: Easy & Challenge)
-    BenchmarkDatasetRegistry.register(BenchmarkDatasetInfo(
-        name="arc",
-        aliases=["arc_easy", "arceasy", "ai2_arc", "ai2arc"],
-        category="multi_choice",
-        default_hf_path="ai2_arc",
-        default_subset="ARC-Easy",
-        default_split="test",
-        text_formatter=lambda r: {
-            "id": r.get("id", ""),
-            "question": r.get("question", ""),
-            "choices": r.get("choices", {}),
-            "answerKey": r.get("answerKey", ""),
-            "text": f"Question: {r.get('question', '')}\nAnswer: {r.get('answerKey', '')}"
-        },
-        synthetic_generator=_generate_synthetic_arc,
-        description="AI2 Reasoning Challenge (ARC-Easy)."
-    ))
+    BenchmarkDatasetRegistry.register(
+        BenchmarkDatasetInfo(
+            name="arc",
+            aliases=["arc_easy", "arceasy", "ai2_arc", "ai2arc"],
+            category="multi_choice",
+            default_hf_path="ai2_arc",
+            default_subset="ARC-Easy",
+            default_split="test",
+            text_formatter=lambda r: {
+                "id": r.get("id", ""),
+                "question": r.get("question", ""),
+                "choices": r.get("choices", {}),
+                "answerKey": r.get("answerKey", ""),
+                "text": f"Question: {r.get('question', '')}\nAnswer: {r.get('answerKey', '')}",
+            },
+            synthetic_generator=_generate_synthetic_arc,
+            description="AI2 Reasoning Challenge (ARC-Easy).",
+        )
+    )
 
-    BenchmarkDatasetRegistry.register(BenchmarkDatasetInfo(
-        name="arc_challenge",
-        aliases=["arc-challenge", "arcchallenge"],
-        category="multi_choice",
-        default_hf_path="ai2_arc",
-        default_subset="ARC-Challenge",
-        default_split="test",
-        text_formatter=lambda r: {
-            "id": r.get("id", ""),
-            "question": r.get("question", ""),
-            "choices": r.get("choices", {}),
-            "answerKey": r.get("answerKey", ""),
-            "text": f"Question: {r.get('question', '')}\nAnswer: {r.get('answerKey', '')}"
-        },
-        synthetic_generator=_generate_synthetic_arc,
-        description="AI2 Reasoning Challenge (ARC-Challenge)."
-    ))
+    BenchmarkDatasetRegistry.register(
+        BenchmarkDatasetInfo(
+            name="arc_challenge",
+            aliases=["arc-challenge", "arcchallenge"],
+            category="multi_choice",
+            default_hf_path="ai2_arc",
+            default_subset="ARC-Challenge",
+            default_split="test",
+            text_formatter=lambda r: {
+                "id": r.get("id", ""),
+                "question": r.get("question", ""),
+                "choices": r.get("choices", {}),
+                "answerKey": r.get("answerKey", ""),
+                "text": f"Question: {r.get('question', '')}\nAnswer: {r.get('answerKey', '')}",
+            },
+            synthetic_generator=_generate_synthetic_arc,
+            description="AI2 Reasoning Challenge (ARC-Challenge).",
+        )
+    )
 
     # 10. HellaSwag
-    BenchmarkDatasetRegistry.register(BenchmarkDatasetInfo(
-        name="hellaswag",
-        aliases=["hella_swag", "rowan/hellaswag"],
-        category="multi_choice",
-        default_hf_path="hellaswag",
-        default_subset=None,
-        default_split="validation",
-        text_formatter=lambda r: {
-            "ctx": r.get("ctx", ""),
-            "endings": r.get("endings", []),
-            "label": r.get("label", 0),
-            "text": f"{r.get('ctx', '')} {r.get('endings', [''])[int(r.get('label', 0)) if str(r.get('label', '0')).isdigit() else 0]}"
-        },
-        synthetic_generator=_generate_synthetic_hellaswag,
-        description="HellaSwag commonsense reasoning benchmark."
-    ))
+    BenchmarkDatasetRegistry.register(
+        BenchmarkDatasetInfo(
+            name="hellaswag",
+            aliases=["hella_swag", "rowan/hellaswag"],
+            category="multi_choice",
+            default_hf_path="hellaswag",
+            default_subset=None,
+            default_split="validation",
+            text_formatter=lambda r: {
+                "ctx": r.get("ctx", ""),
+                "endings": r.get("endings", []),
+                "label": r.get("label", 0),
+                "text": f"{r.get('ctx', '')} {r.get('endings', [''])[int(r.get('label', 0)) if str(r.get('label', '0')).isdigit() else 0]}",
+            },
+            synthetic_generator=_generate_synthetic_hellaswag,
+            description="HellaSwag commonsense reasoning benchmark.",
+        )
+    )
 
     # 11. LAMBADA
-    BenchmarkDatasetRegistry.register(BenchmarkDatasetInfo(
-        name="lambada",
-        aliases=["lambada_openai", "eleutherai/lambada_openai"],
-        category="language_modeling",
-        default_hf_path="lambada",
-        default_subset=None,
-        default_split="test",
-        text_formatter=lambda r: {"text": r.get("text", "")},
-        synthetic_generator=_generate_synthetic_lambada,
-        description="LAMBADA word prediction and narrative understanding benchmark."
-    ))
+    BenchmarkDatasetRegistry.register(
+        BenchmarkDatasetInfo(
+            name="lambada",
+            aliases=["lambada_openai", "eleutherai/lambada_openai"],
+            category="language_modeling",
+            default_hf_path="lambada",
+            default_subset=None,
+            default_split="test",
+            text_formatter=lambda r: {"text": r.get("text", "")},
+            synthetic_generator=_generate_synthetic_lambada,
+            description="LAMBADA word prediction and narrative understanding benchmark.",
+        )
+    )
 
     # 12. GLUE Benchmarks (all 9 tasks)
     glue_tasks = ["sst2", "mrpc", "qqp", "mnli", "qnli", "rte", "wnli", "cola", "stsb"]
     for task in glue_tasks:
-        BenchmarkDatasetRegistry.register(BenchmarkDatasetInfo(
-            name=f"glue_{task}",
-            aliases=[f"glue/{task}", f"glue-{task}", task],
-            category="glue",
-            default_hf_path="glue",
-            default_subset=task,
-            default_split="validation" if task != "mnli" else "validation_matched",
-            text_formatter=lambda r, t=task: {"text": r.get("sentence", r.get("sentence1", r.get("text", ""))), "label": r.get("label", 0)},
-            synthetic_generator=lambda n, s=42, t=task: _generate_synthetic_glue(t, n, s),
-            description=f"GLUE benchmark task: {task.upper()}."
-        ))
+        BenchmarkDatasetRegistry.register(
+            BenchmarkDatasetInfo(
+                name=f"glue_{task}",
+                aliases=[f"glue/{task}", f"glue-{task}", task],
+                category="glue",
+                default_hf_path="glue",
+                default_subset=task,
+                default_split="validation" if task != "mnli" else "validation_matched",
+                text_formatter=lambda r, t=task: {
+                    "text": r.get("sentence", r.get("sentence1", r.get("text", ""))),
+                    "label": r.get("label", 0),
+                },
+                synthetic_generator=lambda n, s=42, t=task: _generate_synthetic_glue(
+                    t, n, s
+                ),
+                description=f"GLUE benchmark task: {task.upper()}.",
+            )
+        )
 
 
 # Initialize registry on import
@@ -555,6 +771,7 @@ _register_all_benchmarks()
 # -----------------------------------------------------------------------------
 # PyTorch Dataset Implementations
 # -----------------------------------------------------------------------------
+
 
 class BenchmarkTorchDataset(Dataset):
     """PyTorch Dataset wrapper for processed benchmark records."""
@@ -605,7 +822,10 @@ class BenchmarkTorchDataset(Dataset):
 
         # Handle causal LM labels or classification labels
         if "label" in item:
-            data["labels"] = torch.tensor(item["label"], dtype=torch.long if isinstance(item["label"], int) else torch.float)
+            data["labels"] = torch.tensor(
+                item["label"],
+                dtype=torch.long if isinstance(item["label"], int) else torch.float,
+            )
         elif self.is_causal_lm:
             # Shifted causal LM targets (replace padding token ids with -100 in labels)
             labels = input_ids.clone()
@@ -639,6 +859,7 @@ def _collate_benchmark_batch(batch: list[dict[str, Any]]) -> dict[str, Any]:
 # -----------------------------------------------------------------------------
 # Main Unified Loader API
 # -----------------------------------------------------------------------------
+
 
 def load_benchmark_dataset(
     dataset_name: str,
@@ -702,7 +923,10 @@ def load_benchmark_dataset(
             info = BenchmarkDatasetRegistry.get(f"glue_{subtask}")
 
     if info is None:
-        logger.warning("Dataset '%s' not in official benchmark registry. Creating generic fallback.", dataset_name)
+        logger.warning(
+            "Dataset '%s' not in official benchmark registry. Creating generic fallback.",
+            dataset_name,
+        )
         info = BenchmarkDatasetInfo(
             name=clean_name,
             aliases=[],
@@ -710,7 +934,13 @@ def load_benchmark_dataset(
             default_hf_path=dataset_name,
             default_split=split or "validation",
             text_formatter=lambda r: {"text": r.get("text", str(r))},
-            synthetic_generator=lambda n, s: [{"text": f"Synthetic custom text sample #{i} for {dataset_name}.", "id": i} for i in range(n)],
+            synthetic_generator=lambda n, s: [
+                {
+                    "text": f"Synthetic custom text sample #{i} for {dataset_name}.",
+                    "id": i,
+                }
+                for i in range(n)
+            ],
         )
 
     target_split = split or info.default_split
@@ -730,17 +960,29 @@ def load_benchmark_dataset(
             if cache_dir:
                 hf_kwargs["cache_dir"] = cache_dir
 
-            logger.info("Attempting to load benchmark '%s' from HF (%s)...", info.name, args)
+            logger.info(
+                "Attempting to load benchmark '%s' from HF (%s)...", info.name, args
+            )
 
             try:
                 # First try streaming if requested
                 if streaming:
-                    hf_ds = hf_load_dataset(*args, split=target_split, streaming=True, **hf_kwargs)
+                    hf_ds = hf_load_dataset(
+                        *args, split=target_split, streaming=True, **hf_kwargs
+                    )
                     count = 0
                     for row in hf_ds:
-                        formatted = info.text_formatter(row) if info.text_formatter else dict(row)
+                        formatted = (
+                            info.text_formatter(row)
+                            if info.text_formatter
+                            else dict(row)
+                        )
                         # Filter out empty text rows (e.g. WikiText empty headers)
-                        if formatted.get("text", "").strip() or "prompt" in formatted or "question" in formatted:
+                        if (
+                            formatted.get("text", "").strip()
+                            or "prompt" in formatted
+                            or "question" in formatted
+                        ):
                             raw_samples.append(formatted)
                             count += 1
                             if count >= max_samples:
@@ -749,30 +991,54 @@ def load_benchmark_dataset(
                     hf_ds = hf_load_dataset(*args, split=target_split, **hf_kwargs)
                     sub_ds = hf_ds.select(range(min(len(hf_ds), max_samples)))
                     for row in sub_ds:
-                        formatted = info.text_formatter(row) if info.text_formatter else dict(row)
+                        formatted = (
+                            info.text_formatter(row)
+                            if info.text_formatter
+                            else dict(row)
+                        )
                         raw_samples.append(formatted)
 
             except Exception as inner_e:
-                logger.warning("Streaming/split load failed for %s (%s). Retrying non-streaming or default split...", info.name, inner_e)
+                logger.warning(
+                    "Streaming/split load failed for %s (%s). Retrying non-streaming or default split...",
+                    info.name,
+                    inner_e,
+                )
                 hf_ds = hf_load_dataset(*args, **hf_kwargs)
-                actual_split = target_split if target_split in hf_ds else list(hf_ds.keys())[0]
+                actual_split = (
+                    target_split if target_split in hf_ds else list(hf_ds.keys())[0]
+                )
                 ds_split = hf_ds[actual_split]
                 sub_ds = ds_split.select(range(min(len(ds_split), max_samples)))
                 for row in sub_ds:
-                    formatted = info.text_formatter(row) if info.text_formatter else dict(row)
+                    formatted = (
+                        info.text_formatter(row) if info.text_formatter else dict(row)
+                    )
                     raw_samples.append(formatted)
 
         except Exception as e:
-            logger.warning("Failed to load '%s' from HuggingFace Hub: %s. Falling back to synthetic generator.", dataset_name, str(e))
+            logger.warning(
+                "Failed to load '%s' from HuggingFace Hub: %s. Falling back to synthetic generator.",
+                dataset_name,
+                str(e),
+            )
             raw_samples = []
 
     # If empty or failed, run synthetic generator
     if not raw_samples:
-        logger.info("Generating %d synthetic samples for benchmark '%s' (seed=%d)...", max_samples, info.name, seed)
+        logger.info(
+            "Generating %d synthetic samples for benchmark '%s' (seed=%d)...",
+            max_samples,
+            info.name,
+            seed,
+        )
         if info.synthetic_generator:
             raw_samples = info.synthetic_generator(max_samples, seed)
         else:
-            raw_samples = [{"text": f"Synthetic benchmark text #{i} for {info.name}", "id": i} for i in range(max_samples)]
+            raw_samples = [
+                {"text": f"Synthetic benchmark text #{i} for {info.name}", "id": i}
+                for i in range(max_samples)
+            ]
 
     if shuffle:
         rng = random.Random(seed)
@@ -799,7 +1065,9 @@ def load_benchmark_dataset(
     return loader
 
 
-def get_synthetic_benchmark_sample(dataset_name: str, num_samples: int = 4, seed: int = 42) -> list[str]:
+def get_synthetic_benchmark_sample(
+    dataset_name: str, num_samples: int = 4, seed: int = 42
+) -> list[str]:
     """Retrieve raw text strings of synthetic benchmark samples."""
     raw = load_benchmark_dataset(
         dataset_name,
@@ -811,7 +1079,12 @@ def get_synthetic_benchmark_sample(dataset_name: str, num_samples: int = 4, seed
     results = []
     for item in raw:
         if isinstance(item, dict):
-            text = item.get("text") or item.get("prompt") or item.get("sentence") or str(item)
+            text = (
+                item.get("text")
+                or item.get("prompt")
+                or item.get("sentence")
+                or str(item)
+            )
             results.append(text)
         else:
             results.append(str(item))

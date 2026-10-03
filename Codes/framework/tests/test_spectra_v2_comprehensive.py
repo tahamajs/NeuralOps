@@ -1,20 +1,16 @@
+import types
+
 import pytest
 import torch
 import torch.nn as nn
-import types
-
-from framework.attentions.spectra_v2 import (
-    SpectraV2Attention,
-    SpectraConfig,
-    LoRALinear,
-    _rotate_half,
-    apply_rotary_pos_emb,
-    inject_spectra_v2,
-)
-from framework.attentions.spectra_v2_attention import (
-    SpectraV2Attention as SpectraV2AttentionAlias,
-    inject_spectra_v2 as inject_spectra_v2_alias,
-)
+from framework.attentions.spectra_v2 import (LoRALinear, SpectraConfig,
+                                             SpectraV2Attention, _rotate_half,
+                                             apply_rotary_pos_emb,
+                                             inject_spectra_v2)
+from framework.attentions.spectra_v2_attention import \
+    SpectraV2Attention as SpectraV2AttentionAlias
+from framework.attentions.spectra_v2_attention import \
+    inject_spectra_v2 as inject_spectra_v2_alias
 
 
 def make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=False, model_type="bert"):

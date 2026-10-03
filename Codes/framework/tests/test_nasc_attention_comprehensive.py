@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.nasc_attention import NASCAttention, inject_nasc_attention
+from framework.attentions.nasc_attention import (NASCAttention,
+                                                 inject_nasc_attention)
 
 
 class MockConfig:

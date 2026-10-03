@@ -12,7 +12,9 @@ import time
 import unittest
 
 from framework.experiment_logging.config import LoggingConfig
-from framework.experiment_logging.logger import get_logger, get_rank, setup_logging, shutdown_logging
+from framework.experiment_logging.logger import (get_logger, get_rank,
+                                                 setup_logging,
+                                                 shutdown_logging)
 
 
 class TestThreadSafeRankLogging(unittest.TestCase):

@@ -1,7 +1,8 @@
+import framework.attentions.hgrn2_layer
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.hgrn2_layer
+
 
 def test_hgrn2_layer_module_present():
     assert hasattr(framework.attentions, 'hgrn2_layer')

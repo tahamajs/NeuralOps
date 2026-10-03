@@ -15,13 +15,14 @@ Tests:
 """
 
 import math
+
 import pytest
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from framework.attentions.ssm_scan import selective_scan_chunked, selective_scan
 from framework.attentions.selective_ssm import SelectiveSSM
+from framework.attentions.ssm_scan import (selective_scan,
+                                           selective_scan_chunked)
 from framework.core.registry import ATTENTION_REGISTRY
 
 

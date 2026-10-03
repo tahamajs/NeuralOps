@@ -1,7 +1,8 @@
+import framework.attentions.reap_moe
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.reap_moe
+
 
 def test_reap_moe_module_present():
     assert hasattr(framework.attentions, 'reap_moe')

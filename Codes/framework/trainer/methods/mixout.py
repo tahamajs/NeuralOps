@@ -1,9 +1,9 @@
 """
 Mixout: Regularisation by mixing weights with a frozen copy.
 """
-from typing import Any
 
 import logging
+from typing import Any
 
 import torch
 import torch.nn as nn

@@ -4,12 +4,8 @@ Hardening test suite for aegis_v3.py (AegisAttention V3).
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.aegis_v3 import (
-    AegisAttention,
-    _rotate_half,
-    inject_aegis_v3,
-)
+from framework.attentions.aegis_v3 import (AegisAttention, _rotate_half,
+                                           inject_aegis_v3)
 from framework.core.registry import ATTENTION_REGISTRY
 
 

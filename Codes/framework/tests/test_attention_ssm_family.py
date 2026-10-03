@@ -1,9 +1,10 @@
 """Subagent 3: Recurrent / SSM / Mamba Family Test Suite."""
 import pytest
 import torch
-from transformers import PretrainedConfig
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.utils.replace_attention import UniversalAttentionWrapper
+from transformers import PretrainedConfig
+
 
 class DummyConfig(PretrainedConfig):
     def __init__(self, hidden_size=32, num_attention_heads=2, **kwargs):

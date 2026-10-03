@@ -20,21 +20,11 @@ if BASE_DIR not in sys.path:
 
 import numpy as np
 import torch
-
-
-
 from framework.visualization.representation_studios import (
-    EmbeddingSpaceExplorer,
-    PositionalEncodingStudio,
-    ResidualStreamTracer,
-    LayerNormDynamics,
-    EmbeddingProjectionResult,
-    SemanticAxisResult,
-    RoPERotationState,
-    ResidualLayerTrace,
-    Vector2DDynamicsTrace,
-    LayerNormStatistics,
-)
+    EmbeddingProjectionResult, EmbeddingSpaceExplorer, LayerNormDynamics,
+    LayerNormStatistics, PositionalEncodingStudio, ResidualLayerTrace,
+    ResidualStreamTracer, RoPERotationState, SemanticAxisResult,
+    Vector2DDynamicsTrace)
 
 
 class TestRepresentationStudios(unittest.TestCase):

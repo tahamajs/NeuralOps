@@ -1,7 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.attentions.full_attention import FullAttention, inject_full_attention
+from framework.attentions.full_attention import (FullAttention,
+                                                 inject_full_attention)
 
 
 class MockConfig:

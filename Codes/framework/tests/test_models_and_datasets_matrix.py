@@ -19,29 +19,27 @@ import pytest
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
-
-from framework.attentions.fused_svd_kernel import FusedSVDLinear, fused_svd_linear
+from framework.attentions.fused_svd_kernel import (FusedSVDLinear,
+                                                   fused_svd_linear)
 from framework.attentions.svd_linear_attention import SVDLinearAttention
 from framework.compression_engine.aa_svd_compressor import AASVDCompressor
-from framework.compression_engine.dynamic_rank import DynamicEntropySVDCompressor
+from framework.compression_engine.dynamic_rank import \
+    DynamicEntropySVDCompressor
 from framework.compression_engine.res_svd import ResSVDCompressor
-from framework.core.attention_utils import slice_fused_qkv, split_and_set_qkv_weights
-from framework.data.benchmark_datasets import (
-    BenchmarkDatasetRegistry,
-    load_benchmark_dataset,
-)
+from framework.core.attention_utils import (slice_fused_qkv,
+                                            split_and_set_qkv_weights)
+from framework.data.benchmark_datasets import (BenchmarkDatasetRegistry,
+                                               load_benchmark_dataset)
 from framework.data.glue import load_glue_dataset
-from framework.data.glue_loader import get_num_labels_and_is_regression, load_glue_local
+from framework.data.glue_loader import (get_num_labels_and_is_regression,
+                                        load_glue_local)
 from framework.data.multi_choice import MultiChoiceDataset
-from framework.data.synthetic_generator import (
-    SyntheticClassificationDataset,
-    SyntheticPerplexityDataset,
-    generate_zipfian_tokens,
-)
+from framework.data.synthetic_generator import (SyntheticClassificationDataset,
+                                                SyntheticPerplexityDataset,
+                                                generate_zipfian_tokens)
 from framework.trainer.optimizers import RiemannianStiefelOptimizer
 from framework.trainer.utils import clip_grad_norm_factorized
-
+from torch.utils.data import DataLoader
 
 # ── Compact Model Definitions for Testing ──────────────────────────────
 

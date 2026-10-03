@@ -1,4 +1,5 @@
 """GFWSVD: Fisher-weighted / Covariance-weighted SVD. Registered as 'gfws' and 'gfws_d'."""
+
 from __future__ import annotations
 
 import logging
@@ -8,9 +9,8 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from framework.core.pruning_utils import get_calibration_tensors, adaptive_max_error
 from framework.core.base import BaseCompressor
+from framework.core.pruning_utils import adaptive_max_error, get_calibration_tensors
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
@@ -69,10 +69,18 @@ class GFWSLoRALinear(nn.Module):
 
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=target_device)
+                torch.empty(
+                    (self.lora_r, in_features),
+                    dtype=torch.float32,
+                    device=target_device,
+                )
             )
             self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=target_device)
+                torch.zeros(
+                    (out_features, self.lora_r),
+                    dtype=torch.float32,
+                    device=target_device,
+                )
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -87,7 +95,11 @@ class GFWSLoRALinear(nn.Module):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> GFWSLoRALinear:
-        bias = linear.bias.detach() if hasattr(linear, "bias") and linear.bias is not None else None
+        bias = (
+            linear.bias.detach()
+            if hasattr(linear, "bias") and linear.bias is not None
+            else None
+        )
         in_features = getattr(linear, "in_features", weight.shape[1])
         out_features = getattr(linear, "out_features", weight.shape[0])
         return cls(
@@ -156,9 +168,13 @@ class GFWSCompressor(BaseCompressor):
         if cfg is not None:
             rank = getattr(cfg, "gfws_rank", getattr(cfg, "rank", rank))
             damping = getattr(cfg, "gfws_damping", getattr(cfg, "damping", damping))
-            max_error = getattr(cfg, "gfws_max_error", getattr(cfg, "max_error", max_error))
+            max_error = getattr(
+                cfg, "gfws_max_error", getattr(cfg, "max_error", max_error)
+            )
             fallback_to_original = getattr(
-                cfg, "gfws_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original)
+                cfg,
+                "gfws_fallback_to_original",
+                getattr(cfg, "fallback_to_original", fallback_to_original),
             )
             lora_r = getattr(cfg, "lora_r", getattr(cfg, "lora_rank", lora_r))
             lora_alpha = getattr(cfg, "lora_alpha", lora_alpha)
@@ -198,9 +214,24 @@ class GFWSCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
+        if (
+            num_heads is not None
+            and num_kv_heads is not None
+            and num_kv_heads < num_heads
+        ):
             name_lower = name.lower()
-            if any(p in name_lower for p in ["q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"]):
+            if any(
+                p in name_lower
+                for p in [
+                    "q_proj",
+                    "k_proj",
+                    "v_proj",
+                    "query",
+                    "key",
+                    "value",
+                    "c_attn",
+                ]
+            ):
                 return True
         return False
 
@@ -216,7 +247,27 @@ class GFWSCompressor(BaseCompressor):
             return False
         if self._is_gqa_asymmetric(name, module):
             return False
-        if self.target_attention_only and not any(k in name.lower() for k in ["attn", "attention", "q_proj", "k_proj", "v_proj", "out_proj", "o_proj", "q_lin", "k_lin", "v_lin", "out_lin", "query", "key", "value", "c_attn", "c_proj"]):
+        if self.target_attention_only and not any(
+            k in name.lower()
+            for k in [
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "out_proj",
+                "o_proj",
+                "q_lin",
+                "k_lin",
+                "v_lin",
+                "out_lin",
+                "query",
+                "key",
+                "value",
+                "c_attn",
+                "c_proj",
+            ]
+        ):
             return False
         if self.target_modules is not None:
             return any(t in name for t in self.target_modules)
@@ -230,7 +281,9 @@ class GFWSCompressor(BaseCompressor):
         hooks = []
 
         def make_hook(layer_name: str) -> Any:
-            def hook(module: nn.Module, inp: tuple[torch.Tensor, ...], outp: Any) -> None:
+            def hook(
+                module: nn.Module, inp: tuple[torch.Tensor, ...], outp: Any
+            ) -> None:
                 if len(inp) > 0 and isinstance(inp[0], torch.Tensor):
                     x = inp[0].detach().float()
                     cls_name = module.__class__.__name__.lower()
@@ -313,14 +366,15 @@ class GFWSCompressor(BaseCompressor):
 
             w_id = id(module.weight)
             if w_id in seen_weights:
-                for p in module.parameters(): p.requires_grad = False
+                for p in module.parameters():
+                    p.requires_grad = False
                 self.skipped_layers.append(name)
                 continue
             seen_weights.add(w_id)
 
             cls_name = module.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
-            target_mod = getattr(module, 'base_layer', module)
+            target_mod = getattr(module, "base_layer", module)
             raw_w = target_mod.weight.data
 
             if is_conv1d:
@@ -328,7 +382,7 @@ class GFWSCompressor(BaseCompressor):
                 W = raw_w.t().contiguous().float()  # [out_features, in_features]
             else:
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
-                W = raw_w.float()      # [out_features, in_features]
+                W = raw_w.float()  # [out_features, in_features]
 
             r = max(1, min(self.rank, out_f, in_f))
             device = target_mod.weight.device
@@ -347,14 +401,22 @@ class GFWSCompressor(BaseCompressor):
                     if not math.isfinite(diag_mean) or diag_mean <= 0.0:
                         diag_mean = 1.0
                     lambda_reg = max(float(self.damping) * diag_mean, 1e-6)
-                    cov_reg = cov_dev + lambda_reg * torch.eye(in_f, device=device, dtype=torch.float32)
+                    cov_reg = cov_dev + lambda_reg * torch.eye(
+                        in_f, device=device, dtype=torch.float32
+                    )
 
                     eigvals, eigvecs = torch.linalg.eigh(cov_reg)
                     eigvals_clamped = torch.clamp(eigvals, min=1e-6)
 
                     # Cov(X)^{1/2} and Cov(X)^{-1/2}
-                    cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
-                    cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
+                    cov_sqrt = (
+                        eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
+                    )
+                    cov_inv_sqrt = (
+                        eigvecs
+                        @ torch.diag(1.0 / torch.sqrt(eigvals_clamped))
+                        @ eigvecs.T
+                    )
 
                     # Whiten weights: M = W * Cov(X)^{1/2}
                     M = torch.matmul(W, cov_sqrt)
@@ -366,8 +428,13 @@ class GFWSCompressor(BaseCompressor):
                     # De-whiten: candidate = M_r * Cov(X)^{-1/2}
                     candidate = torch.matmul(M_r, cov_inv_sqrt)
 
-                    if not (torch.isnan(candidate).any() or torch.isinf(candidate).any()):
-                        err = float(torch.norm(W - candidate, p="fro").item() / max(W_norm, 1e-12))
+                    if not (
+                        torch.isnan(candidate).any() or torch.isinf(candidate).any()
+                    ):
+                        err = float(
+                            torch.norm(W - candidate, p="fro").item()
+                            / max(W_norm, 1e-12)
+                        )
                         if err <= self.max_error:
                             W_approx = candidate
                             final_err = err
@@ -380,15 +447,24 @@ class GFWSCompressor(BaseCompressor):
                                 name,
                             )
                 except Exception as e:
-                    logger.debug("GFWS covariance decomposition exception on layer %s: %s", name, e)
+                    logger.debug(
+                        "GFWS covariance decomposition exception on layer %s: %s",
+                        name,
+                        e,
+                    )
 
             # Fallback to standard SVD if covariance whitening was not used or failed
             if W_approx is None:
                 try:
                     U, S, Vt = torch.linalg.svd(W, full_matrices=False)
                     candidate = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
-                    if not (torch.isnan(candidate).any() or torch.isinf(candidate).any()):
-                        err = float(torch.norm(W - candidate, p="fro").item() / max(W_norm, 1e-12))
+                    if not (
+                        torch.isnan(candidate).any() or torch.isinf(candidate).any()
+                    ):
+                        err = float(
+                            torch.norm(W - candidate, p="fro").item()
+                            / max(W_norm, 1e-12)
+                        )
                         W_approx = candidate
                         final_err = err
                         used_cov = False
@@ -409,8 +485,11 @@ class GFWSCompressor(BaseCompressor):
                     self.max_error,
                 )
                 if self.fallback_to_original:
-                    logger.info("Skipping GFWS compression for %s (fallback to original).", name)
-                    for p in module.parameters(): p.requires_grad = False
+                    logger.info(
+                        "Skipping GFWS compression for %s (fallback to original).", name
+                    )
+                    for p in module.parameters():
+                        p.requires_grad = False
                     self.fallback_layers.append(name)
                     continue
 
@@ -421,14 +500,40 @@ class GFWSCompressor(BaseCompressor):
                 lora_r=self.lora_r,
                 lora_alpha=self.lora_alpha,
             )
-            if hasattr(module, 'base_layer'):
-                if hasattr(module, 'lora_A') and hasattr(module, 'lora_B') and new_layer.lora_A is not None and new_layer.lora_B is not None:
+            if hasattr(module, "base_layer"):
+                if (
+                    hasattr(module, "lora_A")
+                    and hasattr(module, "lora_B")
+                    and new_layer.lora_A is not None
+                    and new_layer.lora_B is not None
+                ):
                     with torch.no_grad():
-                        src_A = module.lora_A.weight.data if hasattr(module.lora_A, 'weight') else module.lora_A.data
-                        src_B = module.lora_B.weight.data if hasattr(module.lora_B, 'weight') else module.lora_B.data
-                        if src_A.shape == new_layer.lora_A.shape and src_B.shape == new_layer.lora_B.shape:
-                            new_layer.lora_A.copy_(src_A.to(new_layer.lora_A.device, dtype=new_layer.lora_A.dtype))
-                            new_layer.lora_B.copy_(src_B.to(new_layer.lora_B.device, dtype=new_layer.lora_B.dtype))
+                        src_A = (
+                            module.lora_A.weight.data
+                            if hasattr(module.lora_A, "weight")
+                            else module.lora_A.data
+                        )
+                        src_B = (
+                            module.lora_B.weight.data
+                            if hasattr(module.lora_B, "weight")
+                            else module.lora_B.data
+                        )
+                        if (
+                            src_A.shape == new_layer.lora_A.shape
+                            and src_B.shape == new_layer.lora_B.shape
+                        ):
+                            new_layer.lora_A.copy_(
+                                src_A.to(
+                                    new_layer.lora_A.device,
+                                    dtype=new_layer.lora_A.dtype,
+                                )
+                            )
+                            new_layer.lora_B.copy_(
+                                src_B.to(
+                                    new_layer.lora_B.device,
+                                    dtype=new_layer.lora_B.dtype,
+                                )
+                            )
                 module.base_layer = new_layer
                 new_layer = module
             replace_module(self.model, name, new_layer)
@@ -444,7 +549,11 @@ class GFWSCompressor(BaseCompressor):
                     self.model(dummy)
                 except Exception:
                     first_linear = next(
-                        (m for m in self.model.modules() if isinstance(m, (nn.Linear, GFWSLoRALinear))),
+                        (
+                            m
+                            for m in self.model.modules()
+                            if isinstance(m, (nn.Linear, GFWSLoRALinear))
+                        ),
                         None,
                     )
                     in_dim = getattr(first_linear, "in_features", 8)
@@ -456,30 +565,33 @@ class GFWSCompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers)
+            / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
-        stats.update({
-            "rank": self.rank,
-            "damping": self.damping,
-            "max_error": self.max_error,
-            "fallback_to_original": self.fallback_to_original,
-            "compressed_layers": self.compressed_layers,
-            "fallback_layers": self.fallback_layers,
-            "skipped_layers": self.skipped_layers,
-            "layer_errors": self.layer_errors,
-            "layer_ranks": self.layer_ranks,
-            "used_covariance": self.used_covariance,
-            "avg_reconstruction_error": avg_err,
-            "num_compressed": len(self.compressed_layers),
-            "num_fallback": len(self.fallback_layers),
-            "num_skipped": len(self.skipped_layers),
-            "lora_r": self.lora_r,
-            "lora_alpha": self.lora_alpha,
-            "forward_check_success": forward_check_success,
-            "method": "covariance_weighted_svd",
-        })
+        stats.update(
+            {
+                "rank": self.rank,
+                "damping": self.damping,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "compressed_layers": self.compressed_layers,
+                "fallback_layers": self.fallback_layers,
+                "skipped_layers": self.skipped_layers,
+                "layer_errors": self.layer_errors,
+                "layer_ranks": self.layer_ranks,
+                "used_covariance": self.used_covariance,
+                "avg_reconstruction_error": avg_err,
+                "num_compressed": len(self.compressed_layers),
+                "num_fallback": len(self.fallback_layers),
+                "num_skipped": len(self.skipped_layers),
+                "lora_r": self.lora_r,
+                "lora_alpha": self.lora_alpha,
+                "forward_check_success": forward_check_success,
+                "method": "covariance_weighted_svd",
+            }
+        )
         logger.info(
             "Compressor gfws finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
             len(self.compressed_layers),
@@ -494,14 +606,50 @@ class GFWSCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("gfws_d_factory")
 def gfws_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """GFWS factory."""
-    rank = kwargs.pop("rank", getattr(comp_config, "gfws_rank", getattr(comp_config, "rank", 64)) if comp_config else 64)
-    damping = kwargs.pop("damping", getattr(comp_config, "gfws_damping", getattr(comp_config, "damping", 0.01)) if comp_config else 0.01)
-    max_error = kwargs.pop("max_error", getattr(comp_config, "gfws_max_error", getattr(comp_config, "max_error", 0.20)) if comp_config else 0.20)
-    fallback = kwargs.pop("fallback_to_original", getattr(
-        comp_config, "gfws_fallback_to_original", getattr(comp_config, "fallback_to_original", True)
-    ) if comp_config else True)
-    lora_r = kwargs.pop("lora_r", getattr(comp_config, "lora_r", 0) if comp_config else 0)
-    lora_alpha = kwargs.pop("lora_alpha", getattr(comp_config, "lora_alpha", 1.0) if comp_config else 1.0)
+    rank = kwargs.pop(
+        "rank",
+        (
+            getattr(comp_config, "gfws_rank", getattr(comp_config, "rank", 64))
+            if comp_config
+            else 64
+        ),
+    )
+    damping = kwargs.pop(
+        "damping",
+        (
+            getattr(comp_config, "gfws_damping", getattr(comp_config, "damping", 0.01))
+            if comp_config
+            else 0.01
+        ),
+    )
+    max_error = kwargs.pop(
+        "max_error",
+        (
+            getattr(
+                comp_config, "gfws_max_error", getattr(comp_config, "max_error", 0.20)
+            )
+            if comp_config
+            else 0.20
+        ),
+    )
+    fallback = kwargs.pop(
+        "fallback_to_original",
+        (
+            getattr(
+                comp_config,
+                "gfws_fallback_to_original",
+                getattr(comp_config, "fallback_to_original", True),
+            )
+            if comp_config
+            else True
+        ),
+    )
+    lora_r = kwargs.pop(
+        "lora_r", getattr(comp_config, "lora_r", 0) if comp_config else 0
+    )
+    lora_alpha = kwargs.pop(
+        "lora_alpha", getattr(comp_config, "lora_alpha", 1.0) if comp_config else 1.0
+    )
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = GFWSCompressor(

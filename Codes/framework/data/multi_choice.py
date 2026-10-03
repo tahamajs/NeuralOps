@@ -42,32 +42,32 @@ class MultiChoiceDataset(Dataset):
         print(f"Multi‑choice dataset: {valid} valid samples")
 
     def _detect_question_column(self, df) -> str:
-        """ detect question column."""
+        """detect question column."""
         for col in ["question", "prompt", "ctx", "ctx_a", "text", "sentence"]:
             if col in df.columns:
                 return col
         return df.columns[0]
 
     def _detect_choices_column(self, df) -> str | None:
-        """ detect choices column."""
+        """detect choices column."""
         for col in ["choices_json", "choices", "endings", "options"]:
             if col in df.columns:
                 return col
         return None
 
     def _detect_answer_column(self, df) -> str | None:
-        """ detect answer column."""
+        """detect answer column."""
         for col in ["gold_answer_json", "answer_json", "label", "answer", "gold"]:
             if col in df.columns:
                 return col
         return None
 
     def _extract_question(self, row, q_col) -> str:
-        """ extract question."""
+        """extract question."""
         return str(row[q_col]) if q_col else ""
 
     def _extract_choices(self, row, c_col) -> list[str]:
-        """ extract choices."""
+        """extract choices."""
         if c_col is None:
             choice_cols = [col for col in row.index if col.startswith("choice_")]
             if choice_cols:
@@ -86,7 +86,7 @@ class MultiChoiceDataset(Dataset):
         return []
 
     def _extract_label(self, row, a_col, num_choices) -> int:
-        """ extract label."""
+        """extract label."""
         if a_col is None:
             return row.get("label", 0)
         val = row[a_col]

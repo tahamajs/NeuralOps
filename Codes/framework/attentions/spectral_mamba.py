@@ -34,6 +34,7 @@ from framework.core.registry import ATTENTION_REGISTRY
 try:
     from framework.attentions.Mamba import Mamba
 except Exception:
+
     class Mamba(nn.Module):
         def __init__(self, d_model: int = 768, **kwargs: Any) -> None:
             super().__init__()
@@ -42,6 +43,7 @@ except Exception:
             nn.init.zeros_(self.out_proj.weight)
             if self.out_proj.bias is not None:
                 nn.init.zeros_(self.out_proj.bias)
+
         def forward(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
             x1, x2 = self.in_proj(x).chunk(2, dim=-1)
             y = F.silu(x1) * x2
@@ -64,7 +66,11 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
     b = getattr(base, "bias", None)
     if w is not None:
         w = w.data.clone()
-        if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
+        if (
+            (module.__class__.__name__ == "Conv1D")
+            or (base.__class__.__name__ == "Conv1D")
+            or (w.ndim == 2 and w.shape[0] < w.shape[1])
+        ):
             w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
@@ -111,8 +117,16 @@ def apply_rotary_pos_emb(
     q_rot_embed = (q_rot * cos) + (_rotate_half(q_rot) * sin)
     k_rot_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
 
-    q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot_embed
-    k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot_embed
+    q = (
+        torch.cat([q_rot_embed, q_pass], dim=-1)
+        if q_pass.shape[-1] > 0
+        else q_rot_embed
+    )
+    k = (
+        torch.cat([k_rot_embed, k_pass], dim=-1)
+        if k_pass.shape[-1] > 0
+        else k_rot_embed
+    )
 
     return q, k
 
@@ -138,15 +152,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -182,7 +202,9 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            lora_out = (
+                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            )
             out = out + lora_out
         return out
 
@@ -202,9 +224,10 @@ class SpectralMambaConfig:
 class SpectralMamba(nn.Module):
     """
     Spectral modulation with actual frequency filtering and low-rank state projection.
-    
+
     Uses a learned frequency mask over FFT bins followed by low-rank adaptation.
     """
+
     def __init__(self, d_model: int = 768, d_state: int = 16, **kwargs: Any) -> None:
         super().__init__()
         self.d_model = d_model
@@ -231,12 +254,16 @@ class SpectralMamba(nn.Module):
 
         freq_weights = self.freq_weights
         if freq_weights.shape[0] != x_fft.shape[1]:
-            freq_weights = F.interpolate(
-                freq_weights.transpose(0, 1).unsqueeze(0),
-                size=x_fft.shape[1],
-                mode="linear",
-                align_corners=False,
-            ).squeeze(0).transpose(0, 1)
+            freq_weights = (
+                F.interpolate(
+                    freq_weights.transpose(0, 1).unsqueeze(0),
+                    size=x_fft.shape[1],
+                    mode="linear",
+                    align_corners=False,
+                )
+                .squeeze(0)
+                .transpose(0, 1)
+            )
 
         x_fft_filtered = x_fft * freq_weights.unsqueeze(0)
 
@@ -258,6 +285,7 @@ class SpectralMamba(nn.Module):
 @ATTENTION_REGISTRY.register("spectral_mamba")
 class SpectralMambaAttention(BaseAttention):
     is_custom_attention: bool = True
+
     def __init__(
         self,
         config: Any | None = None,
@@ -271,34 +299,70 @@ class SpectralMambaAttention(BaseAttention):
 
         self.hidden_size: int = kwargs.get(
             "hidden_size",
-            _cfg_get(config, "hidden_size", _cfg_get(config, "dim", _cfg_get(config, "d_model", 768)))
+            _cfg_get(
+                config,
+                "hidden_size",
+                _cfg_get(config, "dim", _cfg_get(config, "d_model", 768)),
+            ),
         )
         self.dim = self.hidden_size
         self.num_heads: int = kwargs.get(
             "num_heads",
             kwargs.get(
                 "num_attention_heads",
-                _cfg_get(config, "num_attention_heads", _cfg_get(config, "num_heads", _cfg_get(config, "n_heads", 12)))
-            )
+                _cfg_get(
+                    config,
+                    "num_attention_heads",
+                    _cfg_get(config, "num_heads", _cfg_get(config, "n_heads", 12)),
+                ),
+            ),
         )
         self.num_kv_heads: int = kwargs.get(
             "num_kv_heads",
             kwargs.get(
                 "num_key_value_heads",
-                _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", self.num_heads))
-            )
+                _cfg_get(
+                    config,
+                    "num_key_value_heads",
+                    _cfg_get(config, "num_kv_heads", self.num_heads),
+                ),
+            ),
         )
         self.head_dim: int = kwargs.get(
             "head_dim",
-            _cfg_get(config, "head_dim", self.dim // self.num_heads if self.num_heads > 0 else 64)
+            _cfg_get(
+                config,
+                "head_dim",
+                self.dim // self.num_heads if self.num_heads > 0 else 64,
+            ),
         )
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
 
         is_dec = _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
         model_type = str(_cfg_get(config, "model_type", "") or "").lower()
-        decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
-        if any(model_type.startswith(p) for p in decoder_prefixes) or hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+        decoder_prefixes = (
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
+        )
+        if (
+            any(model_type.startswith(p) for p in decoder_prefixes)
+            or hasattr(config, "architectures")
+            and any(
+                "GPT" in str(a) or "CausalLM" in str(a)
+                for a in (getattr(config, "architectures", []) or [])
+            )
+        ):
             is_dec = True
         if kwargs.get("is_causal", False):
             is_dec = True
@@ -306,15 +370,51 @@ class SpectralMambaAttention(BaseAttention):
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
 
-        self.lora_rank = _cfg_get(config, "lora_rank", _cfg_get(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
-        self.lora_alpha = _cfg_get(config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
-        self.freeze_base = (self.lora_rank > 0)
+        self.lora_rank = _cfg_get(
+            config,
+            "lora_rank",
+            _cfg_get(comp_config, "lora_rank", kwargs.get("lora_rank", 16)),
+        )
+        self.lora_alpha = _cfg_get(
+            config,
+            "lora_alpha",
+            _cfg_get(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
+        )
+        self.freeze_base = self.lora_rank > 0
 
         # Projections
-        self.q_lin = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.k_lin = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.v_lin = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.out_lin = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.q_lin = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.k_lin = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.v_lin = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.out_lin = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
         self.q_proj = self.q_lin
         self.k_proj = self.k_lin
@@ -335,10 +435,16 @@ class SpectralMambaAttention(BaseAttention):
         self.gate_lora_A = nn.Parameter(torch.randn(4, self.hidden_size) * 0.01)
         self.gate_lora_B = nn.Parameter(torch.zeros(1, 4))
 
-        dropout_p = _cfg_get(config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1))
+        dropout_p = _cfg_get(
+            config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1)
+        )
         self.dropout = nn.Dropout(dropout_p)
 
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
+        source_attn = (
+            pretrained_attn
+            if pretrained_attn is not None
+            else kwargs.get("source_attn")
+        )
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -347,17 +453,33 @@ class SpectralMambaAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        has_out_lin = (
+            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        )
         is_nested = False
         if (
-            hasattr(src, "self")
-            and hasattr(src.self, "query")
-            and hasattr(src, "output")
-            and hasattr(src.output, "dense")
-        ) or (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
-            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
+            (
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
+            )
+            or (
+                cls_name
+                in [
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                ]
+                or (
+                    cls_name.endswith("SelfAttention")
+                    and "distil" not in cls_name.lower()
+                )
+            )
+            and not has_out_lin
+        ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -375,14 +497,27 @@ class SpectralMambaAttention(BaseAttention):
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                if (
+                    (c_attn_mod.__class__.__name__ == "Conv1D")
+                    or (base_c.__class__.__name__ == "Conv1D")
+                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
+                ):
                     c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
+                extracted["q"] = (
+                    c_w[:split_size, :],
+                    c_b[:split_size] if c_b is not None else None,
+                )
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (
+                    c_w[2 * split_size :, :],
+                    c_b[2 * split_size :] if c_b is not None else None,
+                )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -390,10 +525,17 @@ class SpectralMambaAttention(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    if (
+                        (c_proj_mod.__class__.__name__ == "Conv1D")
+                        or (base_o.__class__.__name__ == "Conv1D")
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
+                    ):
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    extracted["o"] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
 
         # 2. RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
@@ -426,10 +568,15 @@ class SpectralMambaAttention(BaseAttention):
                             extracted[proj_key] = (w, b)
                             break
 
-        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -438,7 +585,11 @@ class SpectralMambaAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing_after:
             logger.warning(
                 f"SpectralMambaAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
@@ -469,14 +620,22 @@ class SpectralMambaAttention(BaseAttention):
                     target_mod.weight.copy_(w)
                 elif w.t().contiguous().shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w.t().contiguous())
-                elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
+                elif (
+                    w.shape[0] < target_mod.weight.shape[0]
+                    and target_mod.weight.shape[0] % w.shape[0] == 0
+                ):
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     # For GQA expansion or repeating
                     target_mod.weight.copy_(w.repeat(repeats, 1))
-                elif w.shape[0] > target_mod.weight.shape[0] and w.shape[0] % target_mod.weight.shape[0] == 0:
+                elif (
+                    w.shape[0] > target_mod.weight.shape[0]
+                    and w.shape[0] % target_mod.weight.shape[0] == 0
+                ):
                     repeats = w.shape[0] // target_mod.weight.shape[0]
                     # For GQA: mean-average the head groups from source
-                    w_grouped = w.view(target_mod.weight.shape[0], repeats, w.shape[1]).mean(dim=1)
+                    w_grouped = w.view(
+                        target_mod.weight.shape[0], repeats, w.shape[1]
+                    ).mean(dim=1)
                     target_mod.weight.copy_(w_grouped)
                 else:
                     min_0 = min(target_mod.weight.shape[0], w.shape[0])
@@ -487,12 +646,20 @@ class SpectralMambaAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     if b.shape == target_mod.bias.shape:
                         target_mod.bias.copy_(b)
-                    elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
+                    elif (
+                        b.shape[0] < target_mod.bias.shape[0]
+                        and target_mod.bias.shape[0] % b.shape[0] == 0
+                    ):
                         repeats = target_mod.bias.shape[0] // b.shape[0]
                         target_mod.bias.copy_(b.repeat(repeats))
-                    elif b.shape[0] > target_mod.bias.shape[0] and b.shape[0] % target_mod.bias.shape[0] == 0:
+                    elif (
+                        b.shape[0] > target_mod.bias.shape[0]
+                        and b.shape[0] % target_mod.bias.shape[0] == 0
+                    ):
                         repeats = b.shape[0] // target_mod.bias.shape[0]
-                        b_grouped = b.view(target_mod.bias.shape[0], repeats).mean(dim=1)
+                        b_grouped = b.view(target_mod.bias.shape[0], repeats).mean(
+                            dim=1
+                        )
                         target_mod.bias.copy_(b_grouped)
                     else:
                         min_b = min(target_mod.bias.shape[0], b.shape[0])
@@ -509,7 +676,9 @@ class SpectralMambaAttention(BaseAttention):
                             f"SpectralMambaAttention: weight copy for {proj_key} produced near-zero norm "
                             f"({fnorm:.2e}) from source norm ({source_norm:.2e}). Aborting."
                         )
-                    logger.warning(f"Weight copy notice for {proj_key}: norm {fnorm:.6f} < 1e-4")
+                    logger.warning(
+                        f"Weight copy notice for {proj_key}: norm {fnorm:.6f} < 1e-4"
+                    )
 
         if self.freeze_base:
             for mod in [self.q_lin, self.k_lin, self.v_lin, self.out_lin]:
@@ -558,9 +727,21 @@ class SpectralMambaAttention(BaseAttention):
             hidden_states = hidden_states.unsqueeze(0)
         B, N, D = hidden_states.shape
 
-        q = self.q_lin(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        k = self.k_lin(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
-        v = self.v_lin(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        q = (
+            self.q_lin(hidden_states)
+            .view(B, N, self.num_heads, self.head_dim)
+            .permute(0, 2, 1, 3)
+        )
+        k = (
+            self.k_lin(hidden_states)
+            .view(B, N, self.num_kv_heads, self.head_dim)
+            .permute(0, 2, 1, 3)
+        )
+        v = (
+            self.v_lin(hidden_states)
+            .view(B, N, self.num_kv_heads, self.head_dim)
+            .permute(0, 2, 1, 3)
+        )
 
         # Apply RoPE if provided
         if position_embeddings is None:
@@ -586,24 +767,42 @@ class SpectralMambaAttention(BaseAttention):
                 _ks = k.half() if k.dtype == torch.float32 else k
                 _vs = v.half() if v.dtype == torch.float32 else v
                 _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
-                    _qs, _ks, _vs,
-                    is_causal=getattr(self, 'is_decoder', False) and N > 1,
-                    dropout_p=self.dropout.p if self.training else 0.0
+                    _qs,
+                    _ks,
+                    _vs,
+                    is_causal=getattr(self, "is_decoder", False) and N > 1,
+                    dropout_p=self.dropout.p if self.training else 0.0,
                 )
-                _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-                _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
-                attn_out = self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out
+                _sdpa_out = (
+                    _sdpa_out.to(hidden_states.dtype)
+                    .transpose(1, 2)
+                    .contiguous()
+                    .view(B, N, self.all_head_size)
+                )
+                _sdpa_out = torch.nan_to_num(
+                    _sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4
+                )
+                attn_out = (
+                    self.out_proj(_sdpa_out)
+                    if not getattr(self, "is_nested_encoder", False)
+                    else _sdpa_out
+                )
             except Exception as e:
                 logger.debug("SDPA failed, falling back to manual attention: %s", e)
                 attn_out = None
 
         if attn_out is None:
-            scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+            scores = (
+                torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous())
+                * scale
+            )
 
             # Causal masking
             is_causal = self.is_decoder or kwargs.get("is_causal", False)
             if is_causal:
-                causal_mask = torch.triu(torch.full((N, N), -1e4, device=scores.device), diagonal=1)
+                causal_mask = torch.triu(
+                    torch.full((N, N), -1e4, device=scores.device), diagonal=1
+                )
                 scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
             # Attention mask
@@ -617,13 +816,22 @@ class SpectralMambaAttention(BaseAttention):
             # head_mask handling
             if head_mask is not None:
                 if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
-                    attn_weights = attn_weights * head_mask.view(1, self.num_heads, 1, 1).to(attn_weights.dtype)
+                    attn_weights = attn_weights * head_mask.view(
+                        1, self.num_heads, 1, 1
+                    ).to(attn_weights.dtype)
                 elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                    attn_weights = attn_weights * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(attn_weights.dtype)
+                    attn_weights = attn_weights * head_mask.view(
+                        head_mask.size(0), self.num_heads, 1, 1
+                    ).to(attn_weights.dtype)
                 elif head_mask.dim() == 4:
                     attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
 
-            attn_ctx = torch.matmul(attn_weights, v).permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+            attn_ctx = (
+                torch.matmul(attn_weights, v)
+                .permute(0, 2, 1, 3)
+                .contiguous()
+                .view(B, N, self.all_head_size)
+            )
 
             if self.is_nested_encoder:
                 attn_out = attn_ctx
@@ -637,13 +845,19 @@ class SpectralMambaAttention(BaseAttention):
 
         if mamba_out.shape[-1] != attn_out.shape[-1]:
             if mamba_out.shape[-1] < attn_out.shape[-1]:
-                mamba_out = F.pad(mamba_out, (0, attn_out.shape[-1] - mamba_out.shape[-1]))
+                mamba_out = F.pad(
+                    mamba_out, (0, attn_out.shape[-1] - mamba_out.shape[-1])
+                )
             else:
-                mamba_out = mamba_out[..., :attn_out.shape[-1]]
+                mamba_out = mamba_out[..., : attn_out.shape[-1]]
 
         # Adaptive gating: base linear + lora adapter
         gate_logits = F.linear(hidden_states, self.gate_weight, self.gate_bias)
-        gate_logits = gate_logits + F.linear(F.linear(hidden_states, self.gate_lora_A), self.gate_lora_B) * 2.0
+        gate_logits = (
+            gate_logits
+            + F.linear(F.linear(hidden_states, self.gate_lora_A), self.gate_lora_B)
+            * 2.0
+        )
         g = torch.sigmoid(gate_logits)  # (B, N, 1)
         out = g * attn_out + (1.0 - g) * mamba_out
 
@@ -651,7 +865,7 @@ class SpectralMambaAttention(BaseAttention):
             if out.shape[-1] < hidden_states.shape[-1]:
                 out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
             else:
-                out = out[..., :hidden_states.shape[-1]]
+                out = out[..., : hidden_states.shape[-1]]
 
         weights_to_return = None
         if output_attentions:
@@ -729,7 +943,12 @@ def inject_spectral_mamba(
         try:
             replaced = 0
             for name, module in layer.named_modules():
-                if hasattr(module, "q_lin") or hasattr(module, "query") or hasattr(module, "q_proj") or hasattr(module, "c_attn"):
+                if (
+                    hasattr(module, "q_lin")
+                    or hasattr(module, "query")
+                    or hasattr(module, "q_proj")
+                    or hasattr(module, "c_attn")
+                ):
                     parent_name = name.rsplit(".", 1)[0] if "." in name else ""
                     child_name = name.rsplit(".", 1)[-1] if "." in name else name
                     parent = layer.get_submodule(parent_name) if parent_name else layer
@@ -750,26 +969,40 @@ def inject_spectral_mamba(
 
     src_attn = old_attn
     if src_attn is None and layer is not None:
-        src_attn = getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
+        src_attn = getattr(
+            layer, "attention", getattr(layer, "self", getattr(layer, "attn", None))
+        )
 
     hidden_size = (
-        kwargs.get("hidden_size") or
-        getattr(src_attn, 'hidden_size', None) or
-        getattr(src_attn, 'embed_dim', None) or
-        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
-        (src_attn.query.in_features if hasattr(src_attn, 'query') and hasattr(src_attn.query, 'in_features') else None) or
-        (src_attn.q_lin.in_features if hasattr(src_attn, 'q_lin') and hasattr(src_attn.q_lin, 'in_features') else None) or
-        (layer.in_features if hasattr(layer, 'in_features') else None) or
-        _cfg_get(cfg, 'hidden_size', None) or
-        _cfg_get(cfg, 'd_model', 64)
+        kwargs.get("hidden_size")
+        or getattr(src_attn, "hidden_size", None)
+        or getattr(src_attn, "embed_dim", None)
+        or (
+            src_attn.q_proj.in_features
+            if hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features")
+            else None
+        )
+        or (
+            src_attn.query.in_features
+            if hasattr(src_attn, "query") and hasattr(src_attn.query, "in_features")
+            else None
+        )
+        or (
+            src_attn.q_lin.in_features
+            if hasattr(src_attn, "q_lin") and hasattr(src_attn.q_lin, "in_features")
+            else None
+        )
+        or (layer.in_features if hasattr(layer, "in_features") else None)
+        or _cfg_get(cfg, "hidden_size", None)
+        or _cfg_get(cfg, "d_model", 64)
     )
     num_heads = (
-        kwargs.get("num_heads") or
-        kwargs.get("num_attention_heads") or
-        getattr(src_attn, 'num_heads', None) or
-        getattr(src_attn, 'num_attention_heads', None) or
-        _cfg_get(cfg, 'num_attention_heads', None) or
-        _cfg_get(cfg, 'num_heads', 4)
+        kwargs.get("num_heads")
+        or kwargs.get("num_attention_heads")
+        or getattr(src_attn, "num_heads", None)
+        or getattr(src_attn, "num_attention_heads", None)
+        or _cfg_get(cfg, "num_attention_heads", None)
+        or _cfg_get(cfg, "num_heads", 4)
     )
     try:
         new_attn = SpectralMambaAttention(
@@ -788,12 +1021,12 @@ def inject_spectral_mamba(
                     new_attn.is_nested_encoder = True
                 else:
                     layer.attention = new_attn
-            elif hasattr(layer, 'self'):
+            elif hasattr(layer, "self"):
                 layer.self = new_attn
                 new_attn.is_nested_encoder = True
-            elif hasattr(layer, 'attn'):
+            elif hasattr(layer, "attn"):
                 layer.attn = new_attn
-            elif hasattr(layer, 'self_attn'):
+            elif hasattr(layer, "self_attn"):
                 layer.self_attn = new_attn
             else:
                 if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
@@ -804,5 +1037,3 @@ def inject_spectral_mamba(
         return new_attn
     except Exception:
         return None
-
-

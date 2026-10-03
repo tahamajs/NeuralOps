@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.minimal_nova import MinimalNOVAAttention, inject_minimal_nova
+from framework.attentions.minimal_nova import (MinimalNOVAAttention,
+                                               inject_minimal_nova)
 
 
 class MockConfig:

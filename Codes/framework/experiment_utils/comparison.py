@@ -9,6 +9,7 @@ from typing import Any
 try:
     from deepdiff import DeepDiff
 except ImportError:
+
     def DeepDiff(t1, t2, **kwargs):
         """Lightweight dict diff fallback when deepdiff is not installed."""
         diff = {}
@@ -21,6 +22,7 @@ except ImportError:
                 elif t1[k] != t2[k]:
                     diff[f"changed_{k}"] = {"old": t1[k], "new": t2[k]}
         return diff
+
 
 from .model import TrainingRun
 
@@ -81,7 +83,7 @@ class ExperimentComparator:
         return result
 
     def _build_metrics_table(self) -> list[dict[str, Any]]:
-        """ build metrics table."""
+        """build metrics table."""
         rows = []
         for run in self.runs:
             metrics = run.final_metrics or {}
@@ -105,7 +107,7 @@ class ExperimentComparator:
         return rows
 
     def _build_config_diff(self) -> dict[str, Any]:
-        """ build config diff."""
+        """build config diff."""
         configs = {str(r.id): r.config for r in self.runs}
         first_id = str(self.runs[0].id)
         diffs = {}
@@ -124,7 +126,7 @@ class ExperimentComparator:
         }
 
     def _build_hyperparameter_table(self) -> list[dict[str, Any]]:
-        """ build hyperparameter table."""
+        """build hyperparameter table."""
         hp_keys = [
             "learning_rate",
             "batch_size",
@@ -148,7 +150,7 @@ class ExperimentComparator:
         return rows
 
     def _build_metric_deltas(self, baseline: TrainingRun) -> list[dict[str, Any]]:
-        """ build metric deltas."""
+        """build metric deltas."""
         base_metrics = baseline.final_metrics or {}
         deltas = []
         metric_keys = [
@@ -214,7 +216,7 @@ class ExperimentComparator:
         return {"dimensions": dimensions, "data": data}
 
     def _find_best_run(self) -> str | None:
-        """ find best run."""
+        """find best run."""
         best = None
         best_acc = -1
         for run in self.runs:
@@ -225,7 +227,7 @@ class ExperimentComparator:
         return best
 
     def _generate_summary(self, result: ComparisonResult) -> str:
-        """ generate summary."""
+        """generate summary."""
         lines = [f"Comparison of {len(self.runs)} runs."]
         if result.best_run_id:
             best_run = next(

@@ -33,12 +33,10 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.triton_kernels import triton_dispatch
-
 
 # ============================================================================
 # Thread-safe injection depth guard (Fix 3)
@@ -63,7 +61,9 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     if n_rep == 1:
         return hidden_states
     batch, num_kv_heads, slen, head_dim = hidden_states.shape
-    hidden_states = hidden_states[:, :, None, :, :].expand(batch, num_kv_heads, n_rep, slen, head_dim)
+    hidden_states = hidden_states[:, :, None, :, :].expand(
+        batch, num_kv_heads, n_rep, slen, head_dim
+    )
     return hidden_states.reshape(batch, num_kv_heads * n_rep, slen, head_dim)
 
 
@@ -146,15 +146,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -198,7 +204,9 @@ class LoRALinear(nn.Module):
             x = x.to(self.weight.dtype)
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            lora_out = (
+                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            )
             out = out + lora_out
         return out
 
@@ -210,7 +218,10 @@ class LoRALinear(nn.Module):
     "cosformer", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
 @ATTENTION_REGISTRY.register(
-    "cosformer_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True
+    "cosformer_attention",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
 )
 class CosformerAttention(BaseAttention):
     r"""Cosformer Attention with Linear Complexity and Exact Multi-Architecture Support."""
@@ -254,10 +265,16 @@ class CosformerAttention(BaseAttention):
                     getattr(
                         source_attn,
                         "dense",
-                        getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None)),
+                        getattr(
+                            source_attn, "c_proj", getattr(source_attn, "o_proj", None)
+                        ),
                     ),
                 )
-                hidden_size = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
+                hidden_size = (
+                    getattr(out_layer, "out_features", 768)
+                    if out_layer is not None
+                    else 768
+                )
             elif hidden_size is None:
                 hidden_size = 768
 
@@ -267,7 +284,11 @@ class CosformerAttention(BaseAttention):
                 num_heads = getattr(
                     source_attn,
                     "n_heads",
-                    getattr(source_attn, "num_attention_heads", getattr(source_attn, "num_heads", 12)),
+                    getattr(
+                        source_attn,
+                        "num_attention_heads",
+                        getattr(source_attn, "num_heads", 12),
+                    ),
                 )
             elif num_heads is None:
                 num_heads = 12
@@ -296,7 +317,11 @@ class CosformerAttention(BaseAttention):
             kv_heads = getattr(
                 source_attn,
                 "num_key_value_heads",
-                getattr(source_attn, "num_kv_heads", getattr(source_attn, "n_kv_heads", None)),
+                getattr(
+                    source_attn,
+                    "num_kv_heads",
+                    getattr(source_attn, "n_kv_heads", None),
+                ),
             )
             if (
                 kv_heads is None
@@ -305,7 +330,9 @@ class CosformerAttention(BaseAttention):
                 and self.head_dim > 0
             ):
                 kv_heads = source_attn.k_proj.out_features // self.head_dim
-        self.num_kv_heads: int = int(kv_heads if kv_heads is not None else self.num_heads)
+        self.num_kv_heads: int = int(
+            kv_heads if kv_heads is not None else self.num_heads
+        )
 
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
@@ -320,22 +347,46 @@ class CosformerAttention(BaseAttention):
         resolved_layer_id = (
             layer_id
             if layer_id is not None
-            else (layer_idx if layer_idx is not None else kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
+            else (
+                layer_idx
+                if layer_idx is not None
+                else kwargs.get("layer_id", kwargs.get("layer_idx", 0))
+            )
         )
         self.layer_idx: int = int(resolved_layer_id)
 
         # LoRA adaptation configuration
         self.lora_rank: int = int(_cfg_get("lora_rank", kwargs.get("lora_rank", 16)))
-        self.lora_alpha: float = float(_cfg_get("lora_alpha", kwargs.get("lora_alpha", 32.0)))
+        self.lora_alpha: float = float(
+            _cfg_get("lora_alpha", kwargs.get("lora_alpha", 32.0))
+        )
         self.freeze_base: bool = self.lora_rank > 0
 
         # Decoder & nested encoder detection
-        model_type = getattr(config, "model_type", "").lower() if config is not None else ""
-        is_dec = _cfg_get("is_decoder", _cfg_get("is_causal", kwargs.get("is_causal", False)))
-        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "phi", "gemma", "opt", "bloom", "falcon")
-        if any(model_type.startswith(p) for p in _decoder_prefixes) or hasattr(config, "architectures") and any(
-            "GPT" in str(a) or "CausalLM" in str(a)
-            for a in (getattr(config, "architectures", []) or [])
+        model_type = (
+            getattr(config, "model_type", "").lower() if config is not None else ""
+        )
+        is_dec = _cfg_get(
+            "is_decoder", _cfg_get("is_causal", kwargs.get("is_causal", False))
+        )
+        _decoder_prefixes = (
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "phi",
+            "gemma",
+            "opt",
+            "bloom",
+            "falcon",
+        )
+        if (
+            any(model_type.startswith(p) for p in _decoder_prefixes)
+            or hasattr(config, "architectures")
+            and any(
+                "GPT" in str(a) or "CausalLM" in str(a)
+                for a in (getattr(config, "architectures", []) or [])
+            )
         ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
@@ -346,24 +397,42 @@ class CosformerAttention(BaseAttention):
 
         # Multi-head projections equipped with LoRA adapters
         self.q_proj = LoRALinear(
-            self.dim, self.all_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base,
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
         )
         self.k_proj = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base,
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
         )
         self.v_proj = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base,
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size, self.dim, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base,
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
         )
 
         dropout_p = (
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
+            getattr(
+                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
+            )
             if config
             else 0.1
         )
@@ -385,43 +454,56 @@ class CosformerAttention(BaseAttention):
     # Compatibility properties
     # ------------------------------------------------------------------
     @property
-    def query(self) -> LoRALinear: return self.q_proj
+    def query(self) -> LoRALinear:
+        return self.q_proj
 
     @property
-    def key(self) -> LoRALinear: return self.k_proj
+    def key(self) -> LoRALinear:
+        return self.k_proj
 
     @property
-    def value(self) -> LoRALinear: return self.v_proj
+    def value(self) -> LoRALinear:
+        return self.v_proj
 
     @property
-    def dense(self) -> LoRALinear: return self.out_proj
+    def dense(self) -> LoRALinear:
+        return self.out_proj
 
     @property
-    def o_proj(self) -> LoRALinear: return self.out_proj
+    def o_proj(self) -> LoRALinear:
+        return self.out_proj
 
     @property
-    def q_lin(self) -> LoRALinear: return self.q_proj
+    def q_lin(self) -> LoRALinear:
+        return self.q_proj
 
     @property
-    def k_lin(self) -> LoRALinear: return self.k_proj
+    def k_lin(self) -> LoRALinear:
+        return self.k_proj
 
     @property
-    def v_lin(self) -> LoRALinear: return self.v_proj
+    def v_lin(self) -> LoRALinear:
+        return self.v_proj
 
     @property
-    def out_lin(self) -> LoRALinear: return self.out_proj
+    def out_lin(self) -> LoRALinear:
+        return self.out_proj
 
     @property
-    def W_q(self) -> LoRALinear: return self.q_proj
+    def W_q(self) -> LoRALinear:
+        return self.q_proj
 
     @property
-    def W_k(self) -> LoRALinear: return self.k_proj
+    def W_k(self) -> LoRALinear:
+        return self.k_proj
 
     @property
-    def W_v(self) -> LoRALinear: return self.v_proj
+    def W_v(self) -> LoRALinear:
+        return self.v_proj
 
     @property
-    def c_proj(self) -> LoRALinear: return self.out_proj
+    def c_proj(self) -> LoRALinear:
+        return self.out_proj
 
     # ------------------------------------------------------------------
     # Weight transfer
@@ -439,7 +521,9 @@ class CosformerAttention(BaseAttention):
             or hasattr(src, "c_proj")
             or hasattr(src, "o_proj")
         )
-        if cls_name in ["BertSelfAttention", "RobertaSelfAttention"] or (hasattr(src, "query") and not has_out):
+        if cls_name in ["BertSelfAttention", "RobertaSelfAttention"] or (
+            hasattr(src, "query") and not has_out
+        ):
             self.is_nested_encoder = True
         if hasattr(src, "self") and hasattr(src, "output"):
             self.is_nested_encoder = True
@@ -457,7 +541,9 @@ class CosformerAttention(BaseAttention):
         # 1. GPT-2: Fused c_attn + c_proj
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
-            if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
+            if hasattr(c_attn_mod, "merge") and not getattr(
+                c_attn_mod, "merged", False
+            ):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
@@ -476,7 +562,10 @@ class CosformerAttention(BaseAttention):
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
+                extracted["q"] = (
+                    c_w[:split_size, :],
+                    c_b[:split_size] if c_b is not None else None,
+                )
                 extracted["k"] = (
                     c_w[split_size : 2 * split_size, :],
                     c_b[split_size : 2 * split_size] if c_b is not None else None,
@@ -500,7 +589,10 @@ class CosformerAttention(BaseAttention):
                     ):
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    extracted["o"] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
 
         # 2. RoBERTa / BERT nested self-attention
         elif hasattr(src, "self") and hasattr(src.self, "query"):
@@ -511,14 +603,22 @@ class CosformerAttention(BaseAttention):
                 if base_mod is not None and hasattr(base_mod, "weight"):
                     extracted[proj_key] = (
                         base_mod.weight.data.clone(),
-                        base_mod.bias.data.clone() if getattr(base_mod, "bias", None) is not None else None,
+                        (
+                            base_mod.bias.data.clone()
+                            if getattr(base_mod, "bias", None) is not None
+                            else None
+                        ),
                     )
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
                 base_out = getattr(out_mod, "base_layer", out_mod)
                 extracted["o"] = (
                     base_out.weight.data.clone(),
-                    base_out.bias.data.clone() if getattr(base_out, "bias", None) is not None else None,
+                    (
+                        base_out.bias.data.clone()
+                        if getattr(base_out, "bias", None) is not None
+                        else None
+                    ),
                 )
 
         # 3. Standard linear projections (DistilBERT, Qwen, LLaMA)
@@ -539,7 +639,11 @@ class CosformerAttention(BaseAttention):
                             if (
                                 (base_mod.__class__.__name__ == "Conv1D")
                                 or hasattr(base_mod, "nf")
-                                or (w_data.ndim == 2 and proj_key == "o" and w_data.shape[0] < w_data.shape[1])
+                                or (
+                                    w_data.ndim == 2
+                                    and proj_key == "o"
+                                    and w_data.shape[0] < w_data.shape[1]
+                                )
                             ):
                                 w_data = w_data.t().contiguous()
                             b_data = getattr(base_mod, "bias", None)
@@ -551,7 +655,8 @@ class CosformerAttention(BaseAttention):
 
         # Fallback via UniversalAdapter
         missing = [
-            k for k, (w, _) in extracted.items()
+            k
+            for k, (w, _) in extracted.items()
             if w is None and (k != "o" or not self.is_nested_encoder)
         ]
         if missing:
@@ -567,7 +672,8 @@ class CosformerAttention(BaseAttention):
                 logger.debug(f"UniversalAdapter fallback: {e}")
 
         missing_after = [
-            k for k, (w, _) in extracted.items()
+            k
+            for k, (w, _) in extracted.items()
             if w is None and (k != "o" or not self.is_nested_encoder)
         ]
         if missing_after:
@@ -596,19 +702,26 @@ class CosformerAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                if (
+                    w.shape != target_mod.weight.shape
+                    and target_mod.weight.shape == w.t().contiguous().shape
+                ):
                     w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
                 target_mod.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype)
+                    w[:out_d, :in_d].to(
+                        device=target_mod.weight.device, dtype=target_mod.weight.dtype
+                    )
                 )
 
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
                     target_mod.bias.data[:min_b].copy_(
-                        b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype)
+                        b[:min_b].to(
+                            device=target_mod.bias.device, dtype=target_mod.bias.dtype
+                        )
                     )
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
@@ -681,13 +794,27 @@ class CosformerAttention(BaseAttention):
         # 1. Q/K/V projections
         # ------------------------------------------------------------------
         Q = self.q_proj(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
-        K = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        V = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        K = (
+            self.k_proj(kv_input)
+            .view(B, kv_len, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        V = (
+            self.v_proj(kv_input)
+            .view(B, kv_len, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # ------------------------------------------------------------------
         # 2. RoPE (only for self-attention, not cross-attention)
         # ------------------------------------------------------------------
-        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
+        pos_emb = (
+            position_embeddings
+            if position_embeddings is not None
+            else kwargs.get("position_embeddings")
+        )
         if pos_emb is not None and not is_cross_attention:
             if isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
                 cos, sin = pos_emb[0], pos_emb[1]
@@ -699,7 +826,9 @@ class CosformerAttention(BaseAttention):
                 )
         elif self.rotary_emb is not None and not is_cross_attention:
             rotary_mod = self.rotary_emb
-            pos_ids = position_ids if position_ids is not None else kwargs.get("position_ids")
+            pos_ids = (
+                position_ids if position_ids is not None else kwargs.get("position_ids")
+            )
             if pos_ids is None:
                 pos_ids = torch.arange(N, device=device).unsqueeze(0).expand(B, -1)
             cos, sin = None, None
@@ -741,8 +870,12 @@ class CosformerAttention(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
         valid_mask = None
         if eff_mask is not None:
-            valid_mask = get_token_valid_mask(eff_mask, B, kv_len, device)   # [B, kv_len] bool
-            mask_expanded = valid_mask.unsqueeze(1).unsqueeze(-1).float()      # [B, 1, kv_len, 1]
+            valid_mask = get_token_valid_mask(
+                eff_mask, B, kv_len, device
+            )  # [B, kv_len] bool
+            mask_expanded = (
+                valid_mask.unsqueeze(1).unsqueeze(-1).float()
+            )  # [B, 1, kv_len, 1]
             K_k = K_k * mask_expanded
             V_f = V_f * mask_expanded
 
@@ -759,7 +892,9 @@ class CosformerAttention(BaseAttention):
         # ------------------------------------------------------------------
         # 7. Linear attention — try Triton, fallback to stable Python path
         # ------------------------------------------------------------------
-        is_causal_eval = bool(self.is_decoder and not is_cross_attention and kv_len == N)
+        is_causal_eval = bool(
+            self.is_decoder and not is_cross_attention and kv_len == N
+        )
 
         context = None
         triton_ok = False
@@ -773,9 +908,15 @@ class CosformerAttention(BaseAttention):
                 V_t = V_f.half()
 
                 # Quick sanity check for overflow before calling Triton
-                if (torch.isnan(Q_t).any() or torch.isnan(K_t).any()
-                        or torch.isinf(Q_t).any() or torch.isinf(K_t).any()):
-                    raise RuntimeError("Non-finite values detected before Triton dispatch")
+                if (
+                    torch.isnan(Q_t).any()
+                    or torch.isnan(K_t).any()
+                    or torch.isinf(Q_t).any()
+                    or torch.isinf(K_t).any()
+                ):
+                    raise RuntimeError(
+                        "Non-finite values detected before Triton dispatch"
+                    )
 
                 dispatch_kwargs = dict(self.triton_kwargs)
                 dispatch_kwargs["cos_weight"] = cos_w.half()
@@ -785,7 +926,9 @@ class CosformerAttention(BaseAttention):
                 # Some dispatchers expect (Q_cos, Q_sin, K_cos, K_sin, V)
                 context = triton_dispatch(
                     self.triton_kernel,
-                    Q_t, K_t, V_t,
+                    Q_t,
+                    K_t,
+                    V_t,
                     Q_sin=Q_k.half() * sin_w.half(),
                     K_sin=K_s_t,
                     is_causal=is_causal_eval,
@@ -804,20 +947,47 @@ class CosformerAttention(BaseAttention):
             if is_cross_attention:
                 # Cross-attention: only bidirectional path (no causal masking)
                 context = self._forward_bidirectional(
-                    Q_cos, Q_sin, K_cos, K_sin, V_f,
-                    B, H, d, kv_len, device, torch.float32,
+                    Q_cos,
+                    Q_sin,
+                    K_cos,
+                    K_sin,
+                    V_f,
+                    B,
+                    H,
+                    d,
+                    kv_len,
+                    device,
+                    torch.float32,
                 )
             elif is_causal_eval:
                 # Causal self-attention for decoders
                 context = self._forward_causal(
-                    Q_cos, Q_sin, K_cos, K_sin, V_f,
-                    B, H, d, N, device, torch.float32,
+                    Q_cos,
+                    Q_sin,
+                    K_cos,
+                    K_sin,
+                    V_f,
+                    B,
+                    H,
+                    d,
+                    N,
+                    device,
+                    torch.float32,
                 )
             else:
                 # Bidirectional self-attention for encoders
                 context = self._forward_bidirectional(
-                    Q_cos, Q_sin, K_cos, K_sin, V_f,
-                    B, H, d, N, device, torch.float32,
+                    Q_cos,
+                    Q_sin,
+                    K_cos,
+                    K_sin,
+                    V_f,
+                    B,
+                    H,
+                    d,
+                    N,
+                    device,
+                    torch.float32,
                 )
 
         # ------------------------------------------------------------------
@@ -860,18 +1030,22 @@ class CosformerAttention(BaseAttention):
 
         return final_out.to(input_dtype), None
 
-
-
     # ------------------------------------------------------------------
     # Causal forward (Fix 8: V masked in last chunk)
     # ------------------------------------------------------------------
     def _forward_causal(
         self,
-        Q_cos: torch.Tensor, Q_sin: torch.Tensor,
-        K_cos: torch.Tensor, K_sin: torch.Tensor,
+        Q_cos: torch.Tensor,
+        Q_sin: torch.Tensor,
+        K_cos: torch.Tensor,
+        K_sin: torch.Tensor,
         V: torch.Tensor,
-        B: int, H: int, d: int, N: int,
-        device: torch.device, dtype: torch.dtype,
+        B: int,
+        H: int,
+        d: int,
+        N: int,
+        device: torch.device,
+        dtype: torch.dtype,
     ) -> torch.Tensor:
         """Chunked causal linear attention. Stable in FP32."""
         chunk_size = max(16, min(64, N // 8))
@@ -883,7 +1057,11 @@ class CosformerAttention(BaseAttention):
             score_s = torch.matmul(Q_sin, K_sin.transpose(-1, -2).contiguous())
             scores = (score_c + score_s).masked_fill(~causal_mask, 0.0)
             num = torch.matmul(scores, V)
-            denom = (score_c + score_s).masked_fill(~causal_mask, 0.0).sum(dim=-1, keepdim=True)
+            denom = (
+                (score_c + score_s)
+                .masked_fill(~causal_mask, 0.0)
+                .sum(dim=-1, keepdim=True)
+            )
             return (num / denom.clamp(min=self.eps)).to(dtype)
 
         # Multi-chunk
@@ -893,7 +1071,7 @@ class CosformerAttention(BaseAttention):
             Q_sin = F.pad(Q_sin, (0, 0, 0, pad_len))
             K_cos = F.pad(K_cos, (0, 0, 0, pad_len))
             K_sin = F.pad(K_sin, (0, 0, 0, pad_len))
-            V     = F.pad(V,     (0, 0, 0, pad_len))
+            V = F.pad(V, (0, 0, 0, pad_len))
 
         total_N = N + pad_len
         num_chunks = total_N // chunk_size
@@ -902,12 +1080,18 @@ class CosformerAttention(BaseAttention):
         qs_c = Q_sin.view(B, H, num_chunks, chunk_size, d)
         kc_c = K_cos.view(B, H, num_chunks, chunk_size, d)
         ks_c = K_sin.view(B, H, num_chunks, chunk_size, d)
-        v_c  = V.view(B, H, num_chunks, chunk_size, d)
+        v_c = V.view(B, H, num_chunks, chunk_size, d)
 
-        causal_mask = torch.tril(torch.ones(chunk_size, chunk_size, device=device, dtype=torch.bool))
+        causal_mask = torch.tril(
+            torch.ones(chunk_size, chunk_size, device=device, dtype=torch.bool)
+        )
 
-        score_c = torch.matmul(qc_c, kc_c.transpose(-1, -2).contiguous()).masked_fill(~causal_mask, 0.0)
-        score_s = torch.matmul(qs_c, ks_c.transpose(-1, -2).contiguous()).masked_fill(~causal_mask, 0.0)
+        score_c = torch.matmul(qc_c, kc_c.transpose(-1, -2).contiguous()).masked_fill(
+            ~causal_mask, 0.0
+        )
+        score_s = torch.matmul(qs_c, ks_c.transpose(-1, -2).contiguous()).masked_fill(
+            ~causal_mask, 0.0
+        )
         num_intra = torch.matmul(score_c + score_s, v_c)
         denom_intra = (score_c + score_s).sum(dim=-1, keepdim=True)
 
@@ -918,8 +1102,12 @@ class CosformerAttention(BaseAttention):
 
         num_list, denom_list = [], []
         for c in range(num_chunks):
-            num_inter = torch.matmul(qc_c[:, :, c], S_cos) + torch.matmul(qs_c[:, :, c], S_sin)
-            denom_inter = torch.matmul(qc_c[:, :, c], Z_cos) + torch.matmul(qs_c[:, :, c], Z_sin)
+            num_inter = torch.matmul(qc_c[:, :, c], S_cos) + torch.matmul(
+                qs_c[:, :, c], S_sin
+            )
+            denom_inter = torch.matmul(qc_c[:, :, c], Z_cos) + torch.matmul(
+                qs_c[:, :, c], Z_sin
+            )
 
             num_list.append(num_intra[:, :, c] + num_inter)
             denom_list.append(denom_intra[:, :, c] + denom_inter)
@@ -930,42 +1118,58 @@ class CosformerAttention(BaseAttention):
 
             if c == num_chunks - 1 and pad_len > 0:
                 valid = chunk_size - pad_len
-                kc_curr = kc_curr.clone(); kc_curr[:, :, valid:] = 0.0
-                ks_curr = ks_curr.clone(); ks_curr[:, :, valid:] = 0.0
-                v_curr = v_curr.clone(); v_curr[:, :, valid:] = 0.0
+                kc_curr = kc_curr.clone()
+                kc_curr[:, :, valid:] = 0.0
+                ks_curr = ks_curr.clone()
+                ks_curr[:, :, valid:] = 0.0
+                v_curr = v_curr.clone()
+                v_curr[:, :, valid:] = 0.0
 
             S_cos = S_cos + torch.matmul(kc_curr.transpose(-1, -2).contiguous(), v_curr)
             S_sin = S_sin + torch.matmul(ks_curr.transpose(-1, -2).contiguous(), v_curr)
-            Z_cos = Z_cos + kc_curr.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
-            Z_sin = Z_sin + ks_curr.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
+            Z_cos = (
+                Z_cos + kc_curr.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
+            )
+            Z_sin = (
+                Z_sin + ks_curr.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
+            )
 
         num = torch.cat(num_list, dim=2)[:, :, :N, :]
         denom = torch.cat(denom_list, dim=2)[:, :, :N, :]
         return (num / (denom + self.eps).clamp(min=self.eps)).to(dtype)
+
     # ------------------------------------------------------------------
     # Bidirectional forward
     # ------------------------------------------------------------------
     def _forward_bidirectional(
         self,
-        Q_cos: torch.Tensor, Q_sin: torch.Tensor,
-        K_cos: torch.Tensor, K_sin: torch.Tensor,
+        Q_cos: torch.Tensor,
+        Q_sin: torch.Tensor,
+        K_cos: torch.Tensor,
+        K_sin: torch.Tensor,
         V: torch.Tensor,
-        B: int, H: int, d: int, N: int,
-        device: torch.device, dtype: torch.dtype,
+        B: int,
+        H: int,
+        d: int,
+        N: int,
+        device: torch.device,
+        dtype: torch.dtype,
     ) -> torch.Tensor:
         KV_cos = torch.matmul(K_cos.transpose(-2, -1).contiguous(), V)
         KV_sin = torch.matmul(K_sin.transpose(-2, -1).contiguous(), V)
 
-        Z_cos = K_cos.sum(dim=2, keepdim=True)   # [B, H, 1, d]
+        Z_cos = K_cos.sum(dim=2, keepdim=True)  # [B, H, 1, d]
         Z_sin = K_sin.sum(dim=2, keepdim=True)
 
         num = torch.matmul(Q_cos, KV_cos) + torch.matmul(Q_sin, KV_sin)
-        denom = (torch.matmul(Q_cos, Z_cos.transpose(-2, -1).contiguous())
-                 + torch.matmul(Q_sin, Z_sin.transpose(-2, -1).contiguous()))
+        denom = torch.matmul(
+            Q_cos, Z_cos.transpose(-2, -1).contiguous()
+        ) + torch.matmul(Q_sin, Z_sin.transpose(-2, -1).contiguous())
         denom = denom.clamp(min=self.eps)
 
         context = (num / denom).to(dtype)
         return torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
+
 
 # ============================================================================
 # Injection factory
@@ -1034,7 +1238,9 @@ def inject_cosformer(
     """
     depth = _get_inject_depth()
     if depth >= _MAX_DEPTH:
-        logger.error("Max injection depth reached in inject_cosformer - possible recursion")
+        logger.error(
+            "Max injection depth reached in inject_cosformer - possible recursion"
+        )
         return None
     _set_inject_depth(depth + 1)
 
@@ -1045,7 +1251,11 @@ def inject_cosformer(
         if target is None:
             return None
 
-        cfg = model_config if model_config is not None else getattr(target, "config", None)
+        cfg = (
+            model_config
+            if model_config is not None
+            else getattr(target, "config", None)
+        )
 
         # Fix 16: clean kwargs to avoid conflicts in recursive calls
         kwargs_clean = {
@@ -1060,11 +1270,17 @@ def inject_cosformer(
         layer_list = None
         if _is_single_layer(target):
             pass  # handle below
-        elif hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        elif hasattr(target, "distilbert") and hasattr(
+            target.distilbert, "transformer"
+        ):
             layer_list = target.distilbert.transformer.layer
         elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
             layer_list = target.roberta.encoder.layer
-        elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+        elif (
+            hasattr(target, "bert")
+            and hasattr(target.bert, "encoder")
+            and hasattr(target.bert.encoder, "layer")
+        ):
             layer_list = target.bert.encoder.layer
         elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
             layer_list = target.transformer.h
@@ -1072,7 +1288,9 @@ def inject_cosformer(
             layer_list = target.model.layers
         elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
             layer_list = target.encoder.layer
-        elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+        elif hasattr(target, "layers") and isinstance(
+            target.layers, (torch.nn.ModuleList, list)
+        ):
             layer_list = target.layers
 
         if layer_list is not None:
@@ -1111,7 +1329,8 @@ def inject_cosformer(
             or getattr(src_attn, "embed_dim", None)
             or (
                 src_attn.q_proj.in_features
-                if hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features")
+                if hasattr(src_attn, "q_proj")
+                and hasattr(src_attn.q_proj, "in_features")
                 else None
             )
             or (layer.in_features if hasattr(layer, "in_features") else None)

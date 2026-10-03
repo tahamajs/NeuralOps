@@ -1,7 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.attentions.expert_choice_moe import ExpertChoiceMoEAttention, inject_expert_choice_moe
+from framework.attentions.expert_choice_moe import (ExpertChoiceMoEAttention,
+                                                    inject_expert_choice_moe)
 
 
 class MockConfig:

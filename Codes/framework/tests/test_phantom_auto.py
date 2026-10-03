@@ -1,7 +1,8 @@
+import framework.attentions.phantom
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.phantom
+
 
 def test_phantom_module_present():
     assert hasattr(framework.attentions, 'phantom')

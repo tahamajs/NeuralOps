@@ -1,7 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.attentions.nystrom_attention import NystromAttention, inject_nystrom
+from framework.attentions.nystrom_attention import (NystromAttention,
+                                                    inject_nystrom)
 
 
 class MockConfig:

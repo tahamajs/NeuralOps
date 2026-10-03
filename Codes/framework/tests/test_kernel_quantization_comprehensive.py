@@ -1,15 +1,17 @@
-import torch
-import sys
 import os
+import sys
 import traceback
+
+import torch
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from framework.attentions.cluster_attention import ClusterAttention
 from framework.attentions.adasplash_attention import AdaSplashAttention
-from framework.attentions.hamming_attention import HammingAttention
+from framework.attentions.cluster_attention import ClusterAttention
 from framework.attentions.galerkin_attention import GalerkinAttention
+from framework.attentions.hamming_attention import HammingAttention
 from framework.attentions.performer_attention import PerformerAttention
+
 
 class MockConfig:
     def __init__(self, embed_dim=768, num_heads=8, max_seq_len=128):
@@ -24,6 +26,7 @@ class MockConfig:
         self.layer_norm_eps = 1e-12
 
 import pytest
+
 
 def _run_attention_test(module, name):
     print(f"Testing {name}...")

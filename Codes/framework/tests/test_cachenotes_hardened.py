@@ -12,18 +12,14 @@ Verifies:
 from __future__ import annotations
 
 import unittest
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers.pytorch_utils import Conv1D
-
 from framework.compression_engine.cachenotes_compressor import (
-    CacheNotesCompressor,
-    CacheNotesKVCache,
-    CacheNotesLoRALinear,
-    CompressionPlanningTokens,
-    cachenotes_factory,
-)
+    CacheNotesCompressor, CacheNotesKVCache, CacheNotesLoRALinear,
+    CompressionPlanningTokens, cachenotes_factory)
+from transformers.pytorch_utils import Conv1D
 
 
 class DummyLoRALinear(nn.Module):

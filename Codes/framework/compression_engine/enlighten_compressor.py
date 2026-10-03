@@ -11,7 +11,6 @@ from typing import Any
 
 import torch
 import torch.nn as nn
-
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
@@ -28,7 +27,17 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-_ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value"}
+_ATTN_NAMES = {
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "c_attn",
+    "c_proj",
+    "query",
+    "key",
+    "value",
+}
 
 
 def vectorized_24_prune(residual: torch.Tensor) -> torch.Tensor:
@@ -40,7 +49,9 @@ def vectorized_24_prune(residual: torch.Tensor) -> torch.Tensor:
     rem = in_f % 4
     if rem != 0:
         pad = 4 - rem
-        res_padded = torch.nn.functional.pad(residual, (0, pad), mode="constant", value=0.0)
+        res_padded = torch.nn.functional.pad(
+            residual, (0, pad), mode="constant", value=0.0
+        )
     else:
         pad = 0
         res_padded = residual
@@ -100,7 +111,7 @@ class ENLightenCompressor(BaseCompressor):
         rank: int = 64,
         sparsity: float = 0.5,
         structured_24: bool = True,
-        max_error: float = 0.45,   # raised from 0.35: at rank=64 + 2:4 sparsity, theoretical error is ~0.39
+        max_error: float = 0.45,  # raised from 0.35: at rank=64 + 2:4 sparsity, theoretical error is ~0.39
         target_attention_only: bool = False,
         fallback_to_original: bool = True,
         max_retries: int = 2,
@@ -113,14 +124,32 @@ class ENLightenCompressor(BaseCompressor):
         self.cfg = cfg
 
         self.rank = int(_cfg_get(cfg, "enlighten_rank", _cfg_get(cfg, "rank", rank)))
-        self.sparsity = float(_cfg_get(cfg, "enlighten_sparsity", _cfg_get(cfg, "sparsity", sparsity)))
-        self.structured_24 = bool(_cfg_get(cfg, "enlighten_structured_24", _cfg_get(cfg, "structured_24", structured_24)))
-        self.max_error = float(_cfg_get(cfg, "enlighten_max_error", _cfg_get(cfg, "max_error", max_error)))
+        self.sparsity = float(
+            _cfg_get(cfg, "enlighten_sparsity", _cfg_get(cfg, "sparsity", sparsity))
+        )
+        self.structured_24 = bool(
+            _cfg_get(
+                cfg,
+                "enlighten_structured_24",
+                _cfg_get(cfg, "structured_24", structured_24),
+            )
+        )
+        self.max_error = float(
+            _cfg_get(cfg, "enlighten_max_error", _cfg_get(cfg, "max_error", max_error))
+        )
         self.target_attention_only = bool(
-            _cfg_get(cfg, "enlighten_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
+            _cfg_get(
+                cfg,
+                "enlighten_target_attention_only",
+                _cfg_get(cfg, "target_attention_only", target_attention_only),
+            )
         )
         self.fallback_to_original = bool(
-            _cfg_get(cfg, "enlighten_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original))
+            _cfg_get(
+                cfg,
+                "enlighten_fallback_to_original",
+                _cfg_get(cfg, "fallback_to_original", fallback_to_original),
+            )
         )
         self.max_retries = int(max_retries)
         self.target_modules = target_modules
@@ -137,7 +166,18 @@ class ENLightenCompressor(BaseCompressor):
         name_lower = name.lower()
         if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
             return False
-        if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate"]):
+        if any(
+            skip in name_lower
+            for skip in [
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embedding",
+                "router",
+                "gate",
+            ]
+        ):
             return False
 
         target_mod = getattr(module, "base_layer", module)
@@ -152,7 +192,9 @@ class ENLightenCompressor(BaseCompressor):
 
         if self.target_attention_only:
             last_part = name.split(".")[-1]
-            is_attn = (last_part in _ATTN_NAMES) or any(k in name_lower for k in ("attn", "attention"))
+            is_attn = (last_part in _ATTN_NAMES) or any(
+                k in name_lower for k in ("attn", "attention")
+            )
             if not is_attn:
                 return False
 
@@ -204,10 +246,23 @@ class ENLightenCompressor(BaseCompressor):
 
         for name, module in list(self.model.named_modules()):
             name_lower = name.lower()
-            if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate"]):
+            if any(
+                skip in name_lower
+                for skip in [
+                    "classifier",
+                    "score",
+                    "lm_head",
+                    "pooler",
+                    "embedding",
+                    "router",
+                    "gate",
+                ]
+            ):
                 continue
 
-            if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
+            if any(
+                part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]
+            ):
                 continue
 
             target_mod = getattr(module, "base_layer", module)
@@ -223,7 +278,10 @@ class ENLightenCompressor(BaseCompressor):
 
             if not self._is_target_module(name, module):
                 if self.target_attention_only:
-                    if not any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
+                    if not any(
+                        part in name.split(".")
+                        for part in ["lora_A", "lora_B", "base_layer"]
+                    ):
                         for p in module.parameters():
                             p.requires_grad = False
                         self.skipped_layers.append(name)
@@ -235,7 +293,7 @@ class ENLightenCompressor(BaseCompressor):
                 W = raw_w.t().contiguous().float()  # [out_features, in_features]
             else:
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
-                W = raw_w.float()      # [out_features, in_features]
+                W = raw_w.float()  # [out_features, in_features]
 
             orig_layer_params = out_f * in_f
             total_orig_params += orig_layer_params
@@ -253,7 +311,12 @@ class ENLightenCompressor(BaseCompressor):
                     if err <= self.max_error:
                         break
                 except Exception as e:
-                    logger.debug("ENLighten decomposition failed on %s (iter %d): %s", name, attempt, e)
+                    logger.debug(
+                        "ENLighten decomposition failed on %s (iter %d): %s",
+                        name,
+                        attempt,
+                        e,
+                    )
                     break
 
                 if attempt < self.max_retries:
@@ -282,7 +345,10 @@ class ENLightenCompressor(BaseCompressor):
                     self.max_error,
                 )
                 if self.fallback_to_original:
-                    logger.info("Skipping ENLighten compression for %s (fallback to original).", name)
+                    logger.info(
+                        "Skipping ENLighten compression for %s (fallback to original).",
+                        name,
+                    )
                     self.fallback_layers.append(name)
                     for p in module.parameters():
                         p.requires_grad = False
@@ -291,70 +357,98 @@ class ENLightenCompressor(BaseCompressor):
 
             # Assign compressed weight back in original orientation and dtype
             if is_conv1d:
-                target_mod.weight.data.copy_(best_w_new.t().contiguous().to(dtype=target_mod.weight.dtype, device=target_mod.weight.device))
+                target_mod.weight.data.copy_(
+                    best_w_new.t()
+                    .contiguous()
+                    .to(dtype=target_mod.weight.dtype, device=target_mod.weight.device)
+                )
             else:
-                target_mod.weight.data.copy_(best_w_new.to(dtype=target_mod.weight.dtype, device=target_mod.weight.device))
+                target_mod.weight.data.copy_(
+                    best_w_new.to(
+                        dtype=target_mod.weight.dtype, device=target_mod.weight.device
+                    )
+                )
 
             # Preserve LoRA adapter trainability if layer is a LoRALinear wrapper
             if hasattr(module, "lora_A") and hasattr(module, "lora_B"):
-                if hasattr(module.lora_A, "weight") and module.lora_A.weight is not None:
+                if (
+                    hasattr(module.lora_A, "weight")
+                    and module.lora_A.weight is not None
+                ):
                     module.lora_A.weight.requires_grad = True
-                if hasattr(module.lora_B, "weight") and module.lora_B.weight is not None:
+                if (
+                    hasattr(module.lora_B, "weight")
+                    and module.lora_B.weight is not None
+                ):
                     module.lora_B.weight.requires_grad = True
 
             self.compressed_layers.append(name)
             # Effective compressed parameter representation:
             # Low-rank factor params (current_r * (in_f + out_f)) + non-zero sparse residual params (0.5 * in_f * out_f for 2:4)
             effective_sparse_frac = 0.5 if self.structured_24 else (1.0 - self.sparsity)
-            comp_layer_params = current_r * (in_f + out_f) + int(effective_sparse_frac * orig_layer_params)
+            comp_layer_params = current_r * (in_f + out_f) + int(
+                effective_sparse_frac * orig_layer_params
+            )
             total_comp_params += comp_layer_params
 
         self._compressed_params = self._count_params(self.model)
-        effective_ratio = total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
+        effective_ratio = (
+            total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
+        )
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers)
+            / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
 
         stats = self.get_compression_stats()
-        stats.update({
-            "rank": self.rank,
-            "sparsity": 0.5 if self.structured_24 else self.sparsity,
-            "structured_24": self.structured_24,
-            "max_error": self.max_error,
-            "target_attention_only": self.target_attention_only,
-            "fallback_to_original": self.fallback_to_original,
-            "compressed_layers": self.compressed_layers,
-            "compressed_layer_count": len(self.compressed_layers),
-            "fallback_layers": self.fallback_layers,
-            "fallback_layer_count": len(self.fallback_layers),
-            "skipped_layers": self.skipped_layers,
-            "skipped_layer_count": len(self.skipped_layers),
-            "layer_ranks": self.layer_ranks,
-            "layer_sparsities": self.layer_sparsities,
-            "layer_errors": self.layer_errors,
-            "avg_reconstruction_error": avg_err,
-            "num_compressed": len(self.compressed_layers),
-            "num_injected_attention_layers": len(self.compressed_layers),   # field used by framework CSV writer
-            "num_fallback": len(self.fallback_layers),
-            "effective_parameter_ratio": round(effective_ratio, 4),
-        })
+        stats.update(
+            {
+                "rank": self.rank,
+                "sparsity": 0.5 if self.structured_24 else self.sparsity,
+                "structured_24": self.structured_24,
+                "max_error": self.max_error,
+                "target_attention_only": self.target_attention_only,
+                "fallback_to_original": self.fallback_to_original,
+                "compressed_layers": self.compressed_layers,
+                "compressed_layer_count": len(self.compressed_layers),
+                "fallback_layers": self.fallback_layers,
+                "fallback_layer_count": len(self.fallback_layers),
+                "skipped_layers": self.skipped_layers,
+                "skipped_layer_count": len(self.skipped_layers),
+                "layer_ranks": self.layer_ranks,
+                "layer_sparsities": self.layer_sparsities,
+                "layer_errors": self.layer_errors,
+                "avg_reconstruction_error": avg_err,
+                "num_compressed": len(self.compressed_layers),
+                "num_injected_attention_layers": len(
+                    self.compressed_layers
+                ),  # field used by framework CSV writer
+                "num_fallback": len(self.fallback_layers),
+                "effective_parameter_ratio": round(effective_ratio, 4),
+            }
+        )
 
         # Register stats directly on the model object so the framework can read
         # num_compressed_layers. ENLighten is a weight-rewriting compressor (no
         # module replacement), so the framework cannot discover compression via
         # module-type inspection — we expose it explicitly here.
-        if not hasattr(self.model, "compression_stats") or self.model.compression_stats is None:
+        if (
+            not hasattr(self.model, "compression_stats")
+            or self.model.compression_stats is None
+        ):
             self.model.compression_stats = {}
-        self.model.compression_stats.update({
-            "num_compressed": len(self.compressed_layers),
-            "num_compressed_layers": len(self.compressed_layers),
-            "num_fallback_layers": len(self.fallback_layers),
-            "compression_method": "enlighten",
-            "effective_parameter_ratio": round(effective_ratio, 4),
-            "avg_reconstruction_error": avg_err,
-        })
+        self.model.compression_stats.update(
+            {
+                "num_compressed": len(self.compressed_layers),
+                "num_compressed_layers": len(self.compressed_layers),
+                "num_fallback_layers": len(self.fallback_layers),
+                "compression_method": "enlighten",
+                "effective_parameter_ratio": round(effective_ratio, 4),
+                "avg_reconstruction_error": avg_err,
+            }
+        )
 
         logger.info(
             "ENLighten compression complete: %d compressed, %d fallback. "
@@ -370,12 +464,46 @@ class ENLightenCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("enlighten_factory")
 def enlighten_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Enlighten compressor factory function."""
-    rank = kwargs.pop("rank", _cfg_get(comp_config, "enlighten_rank", _cfg_get(comp_config, "rank", 64)))
-    sparsity = kwargs.pop("sparsity", _cfg_get(comp_config, "enlighten_sparsity", _cfg_get(comp_config, "sparsity", 0.5)))
-    structured_24 = kwargs.pop("structured_24", _cfg_get(comp_config, "enlighten_structured_24", _cfg_get(comp_config, "structured_24", True)))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "enlighten_max_error", _cfg_get(comp_config, "max_error", 0.45)))
-    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "enlighten_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)))
-    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "enlighten_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)))
+    rank = kwargs.pop(
+        "rank",
+        _cfg_get(comp_config, "enlighten_rank", _cfg_get(comp_config, "rank", 64)),
+    )
+    sparsity = kwargs.pop(
+        "sparsity",
+        _cfg_get(
+            comp_config, "enlighten_sparsity", _cfg_get(comp_config, "sparsity", 0.5)
+        ),
+    )
+    structured_24 = kwargs.pop(
+        "structured_24",
+        _cfg_get(
+            comp_config,
+            "enlighten_structured_24",
+            _cfg_get(comp_config, "structured_24", True),
+        ),
+    )
+    max_error = kwargs.pop(
+        "max_error",
+        _cfg_get(
+            comp_config, "enlighten_max_error", _cfg_get(comp_config, "max_error", 0.45)
+        ),
+    )
+    target_attention_only = kwargs.pop(
+        "target_attention_only",
+        _cfg_get(
+            comp_config,
+            "enlighten_target_attention_only",
+            _cfg_get(comp_config, "target_attention_only", False),
+        ),
+    )
+    fallback = kwargs.pop(
+        "fallback_to_original",
+        _cfg_get(
+            comp_config,
+            "enlighten_fallback_to_original",
+            _cfg_get(comp_config, "fallback_to_original", True),
+        ),
+    )
 
     compressor = ENLightenCompressor(
         model,

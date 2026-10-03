@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.mixattention_moska import MixAttentionMoSKA, inject_mixattention_moska
+from framework.attentions.mixattention_moska import (MixAttentionMoSKA,
+                                                     inject_mixattention_moska)
 
 
 class MockConfig:

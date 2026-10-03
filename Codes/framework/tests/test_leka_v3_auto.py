@@ -1,7 +1,8 @@
+import framework.attentions.leka_v3
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.leka_v3
+
 
 def test_leka_v3_module_present():
     assert hasattr(framework.attentions, 'leka_v3')

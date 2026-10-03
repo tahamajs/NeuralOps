@@ -1,7 +1,8 @@
+import framework.attentions.routing_attention
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.routing_attention
+
 
 def test_routing_attention_module_present():
     assert hasattr(framework.attentions, 'routing_attention')

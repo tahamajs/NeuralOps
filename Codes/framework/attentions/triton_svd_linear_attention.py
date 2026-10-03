@@ -39,10 +39,9 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseAttention
-from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.gqa_utils import repeat_kv
+from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.triton_kernels import triton_dispatch
 
 logger = logging.getLogger(__name__)
@@ -51,6 +50,7 @@ logger = logging.getLogger(__name__)
 try:
     import triton
     import triton.language as tl
+
     HAS_TRITON = True
 except ImportError:
     HAS_TRITON = False
@@ -59,6 +59,7 @@ except ImportError:
 # ============================================================================
 # HELPER FUNCTIONS: RoPE
 # ============================================================================
+
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     x1 = x[..., : x.shape[-1] // 2]
@@ -88,7 +89,9 @@ def apply_rotary_pos_emb(
     k_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
 
     if q_pass.shape[-1] > 0:
-        return torch.cat([q_embed, q_pass], dim=-1), torch.cat([k_embed, k_pass], dim=-1)
+        return torch.cat([q_embed, q_pass], dim=-1), torch.cat(
+            [k_embed, k_pass], dim=-1
+        )
     return q_embed, k_embed
 
 
@@ -100,14 +103,26 @@ if HAS_TRITON:
 
     @triton.jit
     def _triton_chunked_causal_linear_attn_fwd_kernel(
-        Q_ptr,              # [B, H, N, D_k]
-        K_ptr,              # [B, H, N, D_k]
-        V_ptr,              # [B, H, N, D_v]
-        Out_ptr,            # [B, H, N, D_v]
-        stride_qb, stride_qh, stride_qn, stride_qd,
-        stride_kb, stride_kh, stride_kn, stride_kd,
-        stride_vb, stride_vh, stride_vn, stride_vd,
-        stride_ob, stride_oh, stride_on, stride_od,
+        Q_ptr,  # [B, H, N, D_k]
+        K_ptr,  # [B, H, N, D_k]
+        V_ptr,  # [B, H, N, D_v]
+        Out_ptr,  # [B, H, N, D_v]
+        stride_qb,
+        stride_qh,
+        stride_qn,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kn,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vn,
+        stride_vd,
+        stride_ob,
+        stride_oh,
+        stride_on,
+        stride_od,
         N: tl.constexpr,
         D_K: tl.constexpr,
         D_V: tl.constexpr,
@@ -141,9 +156,15 @@ if HAS_TRITON:
             mask_n = cur_offs_n < N
 
             # 1. Load tile of Q, K, V
-            q_ptrs = q_base + (cur_offs_n[:, None] * stride_qn + offs_dk[None, :] * stride_qd)
-            k_ptrs = k_base + (cur_offs_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd)
-            v_ptrs = v_base + (cur_offs_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd)
+            q_ptrs = q_base + (
+                cur_offs_n[:, None] * stride_qn + offs_dk[None, :] * stride_qd
+            )
+            k_ptrs = k_base + (
+                cur_offs_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd
+            )
+            v_ptrs = v_base + (
+                cur_offs_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd
+            )
 
             q_tile = tl.load(q_ptrs, mask=mask_n[:, None], other=0.0)
             k_tile = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0)
@@ -172,7 +193,9 @@ if HAS_TRITON:
             # 4. Intra-Chunk Causal Scores
             scores_intra = tl.dot(phi_q.to(tl.float32), tl.trans(phi_k.to(tl.float32)))
             causal_mask = offs_chunk[:, None] >= offs_chunk[None, :]
-            scores_causal = tl.where(causal_mask & (mask_n[:, None] & mask_n[None, :]), scores_intra, 0.0)
+            scores_causal = tl.where(
+                causal_mask & (mask_n[:, None] & mask_n[None, :]), scores_intra, 0.0
+            )
 
             num_intra = tl.dot(scores_causal.to(tl.float32), v_tile.to(tl.float32))
             denom_intra = tl.sum(scores_causal, axis=1)
@@ -182,24 +205,39 @@ if HAS_TRITON:
             denom_total = denom_inter + denom_intra + EPS
             out_tile = num_total / denom_total[:, None]
 
-            out_ptrs = out_base + (cur_offs_n[:, None] * stride_on + offs_dv[None, :] * stride_od)
-            tl.store(out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_n[:, None])
+            out_ptrs = out_base + (
+                cur_offs_n[:, None] * stride_on + offs_dv[None, :] * stride_od
+            )
+            tl.store(
+                out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_n[:, None]
+            )
 
             # 6. Update Running Recurrent State
             state_S += tl.dot(tl.trans(phi_k.to(tl.float32)), v_tile.to(tl.float32))
             state_Z += tl.sum(phi_k, axis=0)
 
-
     @triton.jit
     def _triton_bidirectional_linear_attn_fwd_kernel(
-        Q_ptr,              # [B, H, N, D_k]
-        K_ptr,              # [B, H, N, D_k]
-        V_ptr,              # [B, H, N, D_v]
-        Out_ptr,            # [B, H, N, D_v]
-        stride_qb, stride_qh, stride_qn, stride_qd,
-        stride_kb, stride_kh, stride_kn, stride_kd,
-        stride_vb, stride_vh, stride_vn, stride_vd,
-        stride_ob, stride_oh, stride_on, stride_od,
+        Q_ptr,  # [B, H, N, D_k]
+        K_ptr,  # [B, H, N, D_k]
+        V_ptr,  # [B, H, N, D_v]
+        Out_ptr,  # [B, H, N, D_v]
+        stride_qb,
+        stride_qh,
+        stride_qn,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kn,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vn,
+        stride_vd,
+        stride_ob,
+        stride_oh,
+        stride_on,
+        stride_od,
         N: tl.constexpr,
         D_K: tl.constexpr,
         D_V: tl.constexpr,
@@ -229,8 +267,12 @@ if HAS_TRITON:
             cur_n = n_start + offs_n
             mask_n = cur_n < N
 
-            k_ptrs = k_base + (cur_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd)
-            v_ptrs = v_base + (cur_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd)
+            k_ptrs = k_base + (
+                cur_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd
+            )
+            v_ptrs = v_base + (
+                cur_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd
+            )
 
             k_tile = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0)
             v_tile = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0)
@@ -254,7 +296,9 @@ if HAS_TRITON:
             cur_m = m_start + offs_m
             mask_m = cur_m < N
 
-            q_ptrs = q_base + (cur_m[:, None] * stride_qn + offs_dk[None, :] * stride_qd)
+            q_ptrs = q_base + (
+                cur_m[:, None] * stride_qn + offs_dk[None, :] * stride_qd
+            )
             q_tile = tl.load(q_ptrs, mask=mask_m[:, None], other=0.0)
 
             if ACTIVATION_MODE == 0:
@@ -269,21 +313,50 @@ if HAS_TRITON:
             denom = tl.sum(phi_q * acc_Z[None, :], axis=1) + EPS
 
             out_tile = num / denom[:, None]
-            out_ptrs = out_base + (cur_m[:, None] * stride_on + offs_dv[None, :] * stride_od)
-            tl.store(out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_m[:, None])
-
+            out_ptrs = out_base + (
+                cur_m[:, None] * stride_on + offs_dv[None, :] * stride_od
+            )
+            tl.store(
+                out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_m[:, None]
+            )
 
     @triton.jit
     def _triton_linear_attn_bwd_kernel(
-        Q_ptr, K_ptr, V_ptr, dO_ptr,
-        dQ_ptr, dK_ptr, dV_ptr,
-        stride_qb, stride_qh, stride_qn, stride_qd,
-        stride_kb, stride_kh, stride_kn, stride_kd,
-        stride_vb, stride_vh, stride_vn, stride_vd,
-        stride_dob, stride_doh, stride_don, stride_dod,
-        stride_dqb, stride_dqh, stride_dqn, stride_dqd,
-        stride_dkb, stride_dkh, stride_dkn, stride_dkd,
-        stride_dvb, stride_dvh, stride_dvn, stride_dvd,
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        dO_ptr,
+        dQ_ptr,
+        dK_ptr,
+        dV_ptr,
+        stride_qb,
+        stride_qh,
+        stride_qn,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kn,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vn,
+        stride_vd,
+        stride_dob,
+        stride_doh,
+        stride_don,
+        stride_dod,
+        stride_dqb,
+        stride_dqh,
+        stride_dqn,
+        stride_dqd,
+        stride_dkb,
+        stride_dkh,
+        stride_dkn,
+        stride_dkd,
+        stride_dvb,
+        stride_dvh,
+        stride_dvn,
+        stride_dvd,
         N: tl.constexpr,
         D_K: tl.constexpr,
         D_V: tl.constexpr,
@@ -315,8 +388,16 @@ if HAS_TRITON:
         for n_start in range(0, N, BLOCK_N):
             cur_n = n_start + offs_n
             mask = cur_n < N
-            k = tl.load(k_base + cur_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd, mask=mask[:, None], other=0.0)
-            v = tl.load(v_base + cur_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd, mask=mask[:, None], other=0.0)
+            k = tl.load(
+                k_base + cur_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd,
+                mask=mask[:, None],
+                other=0.0,
+            )
+            v = tl.load(
+                v_base + cur_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd,
+                mask=mask[:, None],
+                other=0.0,
+            )
             S += tl.dot(tl.trans(k.to(tl.float32)), v.to(tl.float32))
             Z += tl.sum(k, axis=0)
 
@@ -328,8 +409,16 @@ if HAS_TRITON:
             cur_n = n_start + offs_n
             mask = cur_n < N
 
-            q = tl.load(q_base + cur_n[:, None] * stride_qn + offs_dk[None, :] * stride_qd, mask=mask[:, None], other=0.0)
-            do = tl.load(do_base + cur_n[:, None] * stride_don + offs_dv[None, :] * stride_dod, mask=mask[:, None], other=0.0)
+            q = tl.load(
+                q_base + cur_n[:, None] * stride_qn + offs_dk[None, :] * stride_qd,
+                mask=mask[:, None],
+                other=0.0,
+            )
+            do = tl.load(
+                do_base + cur_n[:, None] * stride_don + offs_dv[None, :] * stride_dod,
+                mask=mask[:, None],
+                other=0.0,
+            )
 
             denom = tl.sum(q * Z[None, :], axis=1) + EPS
             inv_denom = 1.0 / denom
@@ -343,26 +432,47 @@ if HAS_TRITON:
             dS += tl.dot(tl.trans(q.to(tl.float32)), do_scaled)
             dZ -= tl.sum(q.to(tl.float32) * ratio[:, None], axis=0)
 
-            tl.store(dq_base + cur_n[:, None] * stride_dqn + offs_dk[None, :] * stride_dqd, dq.to(dQ_ptr.dtype.element_ty), mask=mask[:, None])
+            tl.store(
+                dq_base + cur_n[:, None] * stride_dqn + offs_dk[None, :] * stride_dqd,
+                dq.to(dQ_ptr.dtype.element_ty),
+                mask=mask[:, None],
+            )
 
         # 3. Third Pass: dK and dV
         for n_start in range(0, N, BLOCK_N):
             cur_n = n_start + offs_n
             mask = cur_n < N
 
-            k = tl.load(k_base + cur_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd, mask=mask[:, None], other=0.0)
-            v = tl.load(v_base + cur_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd, mask=mask[:, None], other=0.0)
+            k = tl.load(
+                k_base + cur_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd,
+                mask=mask[:, None],
+                other=0.0,
+            )
+            v = tl.load(
+                v_base + cur_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd,
+                mask=mask[:, None],
+                other=0.0,
+            )
 
             dv = tl.dot(k.to(tl.float32), dS)
             dk = tl.dot(v.to(tl.float32), tl.trans(dS)) + dZ[None, :]
 
-            tl.store(dv_base + cur_n[:, None] * stride_dvn + offs_dv[None, :] * stride_dvd, dv.to(dV_ptr.dtype.element_ty), mask=mask[:, None])
-            tl.store(dk_base + cur_n[:, None] * stride_dkn + offs_dk[None, :] * stride_dkd, dk.to(dK_ptr.dtype.element_ty), mask=mask[:, None])
+            tl.store(
+                dv_base + cur_n[:, None] * stride_dvn + offs_dv[None, :] * stride_dvd,
+                dv.to(dV_ptr.dtype.element_ty),
+                mask=mask[:, None],
+            )
+            tl.store(
+                dk_base + cur_n[:, None] * stride_dkn + offs_dk[None, :] * stride_dkd,
+                dk.to(dK_ptr.dtype.element_ty),
+                mask=mask[:, None],
+            )
 
 
 # ============================================================================
 # FULL AUTOGRAD FUNCTION (Forward & Backward Fully Connected)
 # ============================================================================
+
 
 class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
     """
@@ -383,13 +493,12 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
         B, H, N, D_k = q.shape
         D_v = v.shape[-1]
 
-        act_id = 0 if activation_mode == "elu" else (1 if activation_mode == "relu" else 2)
+        act_id = (
+            0 if activation_mode == "elu" else (1 if activation_mode == "relu" else 2)
+        )
 
         use_triton = (
-            HAS_TRITON
-            and q.is_cuda
-            and D_k in (32, 64, 128)
-            and D_v in (32, 64, 128)
+            HAS_TRITON and q.is_cuda and D_k in (32, 64, 128) and D_v in (32, 64, 128)
         )
 
         if use_triton:
@@ -399,12 +508,29 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
             if is_causal:
                 block_chunk = 32
                 _triton_chunked_causal_linear_attn_fwd_kernel[grid](
-                    q, k, v, out,
-                    q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-                    k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-                    v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-                    out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-                    N=N, D_K=D_k, D_V=D_v,
+                    q,
+                    k,
+                    v,
+                    out,
+                    q.stride(0),
+                    q.stride(1),
+                    q.stride(2),
+                    q.stride(3),
+                    k.stride(0),
+                    k.stride(1),
+                    k.stride(2),
+                    k.stride(3),
+                    v.stride(0),
+                    v.stride(1),
+                    v.stride(2),
+                    v.stride(3),
+                    out.stride(0),
+                    out.stride(1),
+                    out.stride(2),
+                    out.stride(3),
+                    N=N,
+                    D_K=D_k,
+                    D_V=D_v,
                     BLOCK_CHUNK=block_chunk,
                     EPS=eps,
                     ACTIVATION_MODE=act_id,
@@ -415,13 +541,31 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
                 block_m = 32
                 block_n = 32
                 _triton_bidirectional_linear_attn_fwd_kernel[grid](
-                    q, k, v, out,
-                    q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-                    k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-                    v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-                    out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-                    N=N, D_K=D_k, D_V=D_v,
-                    BLOCK_M=block_m, BLOCK_N=block_n,
+                    q,
+                    k,
+                    v,
+                    out,
+                    q.stride(0),
+                    q.stride(1),
+                    q.stride(2),
+                    q.stride(3),
+                    k.stride(0),
+                    k.stride(1),
+                    k.stride(2),
+                    k.stride(3),
+                    v.stride(0),
+                    v.stride(1),
+                    v.stride(2),
+                    v.stride(3),
+                    out.stride(0),
+                    out.stride(1),
+                    out.stride(2),
+                    out.stride(3),
+                    N=N,
+                    D_K=D_k,
+                    D_V=D_v,
+                    BLOCK_M=block_m,
+                    BLOCK_N=block_n,
                     EPS=eps,
                     ACTIVATION_MODE=act_id,
                     num_stages=2,
@@ -457,7 +601,9 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
                     vc = v_f[:, :, start:end, :]
 
                     scores = torch.matmul(qc, kc.transpose(-1, -2))
-                    causal_mask = torch.tril(torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool))
+                    causal_mask = torch.tril(
+                        torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool)
+                    )
                     scores = scores.masked_fill(~causal_mask, 0.0)
                     intra_num = torch.matmul(scores, vc)
                     intra_denom = scores.sum(dim=-1, keepdim=True)
@@ -486,7 +632,9 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx: Any, grad_out: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, None]:
+    def backward(
+        ctx: Any, grad_out: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, None]:
         q, k, v = ctx.saved_tensors
         is_causal = ctx.is_causal
         activation_mode = ctx.activation_mode
@@ -512,16 +660,44 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
             grid = (B * H,)
 
             _triton_linear_attn_bwd_kernel[grid](
-                q, k, v, grad_out,
-                dq, dk, dv,
-                q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-                k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-                v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-                grad_out.stride(0), grad_out.stride(1), grad_out.stride(2), grad_out.stride(3),
-                dq.stride(0), dq.stride(1), dq.stride(2), dq.stride(3),
-                dk.stride(0), dk.stride(1), dk.stride(2), dk.stride(3),
-                dv.stride(0), dv.stride(1), dv.stride(2), dv.stride(3),
-                N=N, D_K=D_k, D_V=D_v,
+                q,
+                k,
+                v,
+                grad_out,
+                dq,
+                dk,
+                dv,
+                q.stride(0),
+                q.stride(1),
+                q.stride(2),
+                q.stride(3),
+                k.stride(0),
+                k.stride(1),
+                k.stride(2),
+                k.stride(3),
+                v.stride(0),
+                v.stride(1),
+                v.stride(2),
+                v.stride(3),
+                grad_out.stride(0),
+                grad_out.stride(1),
+                grad_out.stride(2),
+                grad_out.stride(3),
+                dq.stride(0),
+                dq.stride(1),
+                dq.stride(2),
+                dq.stride(3),
+                dk.stride(0),
+                dk.stride(1),
+                dk.stride(2),
+                dk.stride(3),
+                dv.stride(0),
+                dv.stride(1),
+                dv.stride(2),
+                dv.stride(3),
+                N=N,
+                D_K=D_k,
+                D_V=D_v,
                 BLOCK_N=32,
                 EPS=eps,
                 num_stages=2,
@@ -563,7 +739,9 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
                     vc = v_f[:, :, start:end, :]
 
                     scores = torch.matmul(qc, kc.transpose(-1, -2))
-                    causal_mask = torch.tril(torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool))
+                    causal_mask = torch.tril(
+                        torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool)
+                    )
                     scores = scores.masked_fill(~causal_mask, 0.0)
                     intra_num = torch.matmul(scores, vc)
                     intra_denom = scores.sum(dim=-1, keepdim=True)
@@ -605,12 +783,15 @@ def triton_linear_attention(
     eps: float = 1e-6,
 ) -> torch.Tensor:
     """Convenience functional wrapper for Triton Linear Attention."""
-    return _TritonLinearAttentionAutogradFunction.apply(q, k, v, is_causal, activation_mode, eps)
+    return _TritonLinearAttentionAutogradFunction.apply(
+        q, k, v, is_causal, activation_mode, eps
+    )
 
 
 # ============================================================================
 # GENUINE SVD LOW-RANK PROJECTION LAYER
 # ============================================================================
+
 
 class SVDLinearProjection(nn.Module):
     r"""
@@ -660,11 +841,17 @@ class SVDLinearProjection(nn.Module):
         # Align weights with input dtype (e.g. under fp16/bf16 autocast) so Triton kernel runs directly
         u = self.U.to(x.dtype) if self.U.dtype != x.dtype else self.U
         v = self.V.to(x.dtype) if self.V.dtype != x.dtype else self.V
-        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
+        b = (
+            self.bias.to(x.dtype)
+            if (self.bias is not None and self.bias.dtype != x.dtype)
+            else self.bias
+        )
         return triton_dispatch(self.triton_kernel, x, u, v, bias=b)
 
     @classmethod
-    def from_pretrained_linear(cls, linear: nn.Linear, rank: int = 64) -> SVDLinearProjection:
+    def from_pretrained_linear(
+        cls, linear: nn.Linear, rank: int = 64
+    ) -> SVDLinearProjection:
         r"""
         Initializes low-rank factors directly from pretrained weights via Truncated SVD:
         W = U_full @ diag(S) @ V_full^T
@@ -693,13 +880,19 @@ class SVDLinearProjection(nn.Module):
 # MODULE DEFINITION (Triton + Genuine SVD Linear Attention)
 # ============================================================================
 
-@ATTENTION_REGISTRY.register("triton_svd_linear_attention", supports_causal=True, supports_bidirectional=True)
-@ATTENTION_REGISTRY.register("triton_linear_attention", supports_causal=True, supports_bidirectional=True)
+
+@ATTENTION_REGISTRY.register(
+    "triton_svd_linear_attention", supports_causal=True, supports_bidirectional=True
+)
+@ATTENTION_REGISTRY.register(
+    "triton_linear_attention", supports_causal=True, supports_bidirectional=True
+)
 class TritonSVDLinearAttention(BaseAttention):
     r"""
     Triton-Accelerated Linear Attention with Genuine SVD Low-Rank Projections,
     RoPE, GQA, and Masked Attention.
     """
+
     triton_kernel = "linear_attn"
 
     def __init__(
@@ -717,7 +910,11 @@ class TritonSVDLinearAttention(BaseAttention):
     ):
         super().__init__()
         self.config = config
-        self.is_decoder = bool(is_decoder or getattr(config, "is_decoder", False) or getattr(config, "is_causal", False))
+        self.is_decoder = bool(
+            is_decoder
+            or getattr(config, "is_decoder", False)
+            or getattr(config, "is_causal", False)
+        )
         self.activation_mode = activation_mode
         self.eps = eps
         self.triton_kwargs = {
@@ -728,19 +925,37 @@ class TritonSVDLinearAttention(BaseAttention):
         }
 
         # Dimensionality extraction
-        self.embed_dim = embed_dim or kwargs.get("hidden_size") or getattr(config, "hidden_size", 768)
-        self.num_heads = num_heads or kwargs.get("num_attention_heads") or getattr(config, "num_attention_heads", 12)
+        self.embed_dim = (
+            embed_dim
+            or kwargs.get("hidden_size")
+            or getattr(config, "hidden_size", 768)
+        )
+        self.num_heads = (
+            num_heads
+            or kwargs.get("num_attention_heads")
+            or getattr(config, "num_attention_heads", 12)
+        )
         # BUG 4 FIX: Support GQA
-        self.num_kv_heads = num_kv_heads or kwargs.get("num_kv_heads") or getattr(config, "num_key_value_heads", self.num_heads)
+        self.num_kv_heads = (
+            num_kv_heads
+            or kwargs.get("num_kv_heads")
+            or getattr(config, "num_key_value_heads", self.num_heads)
+        )
         self.head_dim = kwargs.get("head_dim") or (self.embed_dim // self.num_heads)
         self.rank = rank or 64
         self.kv_dim = self.num_kv_heads * self.head_dim
 
         # Genuine SVD Low-Rank Linear Projections
         if self.rank < self.embed_dim:
-            self.q_proj = SVDLinearProjection(self.embed_dim, self.embed_dim, rank=self.rank, bias=True)
-            self.k_proj = SVDLinearProjection(self.embed_dim, self.kv_dim, rank=min(self.rank, self.kv_dim), bias=True)
-            self.v_proj = SVDLinearProjection(self.embed_dim, self.kv_dim, rank=min(self.rank, self.kv_dim), bias=True)
+            self.q_proj = SVDLinearProjection(
+                self.embed_dim, self.embed_dim, rank=self.rank, bias=True
+            )
+            self.k_proj = SVDLinearProjection(
+                self.embed_dim, self.kv_dim, rank=min(self.rank, self.kv_dim), bias=True
+            )
+            self.v_proj = SVDLinearProjection(
+                self.embed_dim, self.kv_dim, rank=min(self.rank, self.kv_dim), bias=True
+            )
         else:
             self.q_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=True)
             self.k_proj = nn.Linear(self.embed_dim, self.kv_dim, bias=True)
@@ -777,9 +992,15 @@ class TritonSVDLinearAttention(BaseAttention):
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
 
-                q_w, q_b = c_w[:split_size, :], c_b[:split_size] if c_b is not None else None
-                k_w, k_b = c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None
-                v_w, v_b = c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None
+                q_w, q_b = c_w[:split_size, :], (
+                    c_b[:split_size] if c_b is not None else None
+                )
+                k_w, k_b = c_w[split_size : 2 * split_size, :], (
+                    c_b[split_size : 2 * split_size] if c_b is not None else None
+                )
+                v_w, v_b = c_w[2 * split_size :, :], (
+                    c_b[2 * split_size :] if c_b is not None else None
+                )
 
                 self._copy_single_proj(self.q_proj, q_w, q_b)
                 self._copy_single_proj(self.k_proj, k_w, k_b)
@@ -843,7 +1064,11 @@ class TritonSVDLinearAttention(BaseAttention):
                             b = getattr(base_mod, "bias", None)
                             b_data = b.data if b is not None else None
                             if target_name == "out_proj":
-                                if w.ndim == 2 and w.shape != target_mod.weight.shape and w.t().shape == target_mod.weight.shape:
+                                if (
+                                    w.ndim == 2
+                                    and w.shape != target_mod.weight.shape
+                                    and w.t().shape == target_mod.weight.shape
+                                ):
                                     w = w.t()
                                 target_mod.weight.data.copy_(w)
                                 if b_data is not None and target_mod.bias is not None:
@@ -852,7 +1077,9 @@ class TritonSVDLinearAttention(BaseAttention):
                                 self._copy_single_proj(target_mod, w, b_data)
                             break
 
-    def _copy_single_proj(self, target_mod: nn.Module, w: torch.Tensor, b: torch.Tensor | None) -> None:
+    def _copy_single_proj(
+        self, target_mod: nn.Module, w: torch.Tensor, b: torch.Tensor | None
+    ) -> None:
         """Decomposes weights into low-rank SVD factors or copies directly."""
         if isinstance(target_mod, SVDLinearProjection):
             with torch.no_grad():
@@ -865,7 +1092,11 @@ class TritonSVDLinearAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     target_mod.bias.data.copy_(b)
         else:
-            if w.ndim == 2 and w.shape != target_mod.weight.shape and w.t().shape == target_mod.weight.shape:
+            if (
+                w.ndim == 2
+                and w.shape != target_mod.weight.shape
+                and w.t().shape == target_mod.weight.shape
+            ):
                 w = w.t()
             target_mod.weight.data.copy_(w)
             if b is not None and target_mod.bias is not None:
@@ -887,16 +1118,35 @@ class TritonSVDLinearAttention(BaseAttention):
         B, N, C = hidden_states.shape
 
         if torch.is_autocast_enabled() and hidden_states.is_cuda:
-            ac_dtype = torch.get_autocast_dtype("cuda") if hasattr(torch, "get_autocast_dtype") else torch.float16
+            ac_dtype = (
+                torch.get_autocast_dtype("cuda")
+                if hasattr(torch, "get_autocast_dtype")
+                else torch.float16
+            )
             hidden_states = hidden_states.to(ac_dtype)
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
 
         # 1. Project Q, K, V via SVD low-rank factorized projections
-        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        q = (
+            self.q_proj(hidden_states)
+            .view(B, N, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        k = (
+            self.k_proj(hidden_states)
+            .view(B, N, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_proj(hidden_states)
+            .view(B, N, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # 2. BUG 3 FIX: Apply Rotary Position Embeddings (RoPE) if provided
         if position_embeddings is not None:
@@ -918,7 +1168,11 @@ class TritonSVDLinearAttention(BaseAttention):
                 v = v * mask
             elif attention_mask.dim() == 4:
                 if attention_mask.shape[-2] == 1:
-                    mask = attention_mask.squeeze(1).squeeze(1)[:, None, :, None].to(q.dtype)
+                    mask = (
+                        attention_mask.squeeze(1)
+                        .squeeze(1)[:, None, :, None]
+                        .to(q.dtype)
+                    )
                 else:
                     mask = attention_mask[:, 0, -1, :][:, None, :, None].to(q.dtype)
                 if (mask < 0).any():
@@ -929,7 +1183,9 @@ class TritonSVDLinearAttention(BaseAttention):
         # 5. Dispatch Fully Differentiable Triton Linear Attention
         out = triton_dispatch(
             self.triton_kernel,
-            q, k, v,
+            q,
+            k,
+            v,
             is_causal=self.is_decoder,
             **self.triton_kwargs,
         )
@@ -949,6 +1205,7 @@ class TritonSVDLinearAttention(BaseAttention):
 # FACTORY INJECTION FUNCTION (For eval_all_models_datasets & run_gpt2_sweep)
 # ============================================================================
 
+
 @ATTENTION_REGISTRY.register("inject_triton_svd_linear_attention")
 @ATTENTION_REGISTRY.register("triton_svd_linear_attention_inject")
 def inject_triton_svd_linear_attention(
@@ -959,4 +1216,11 @@ def inject_triton_svd_linear_attention(
 ) -> nn.Module | None:
     """Safe factory function to inject TritonSVDLinearAttention into a model."""
     from framework.core.attention_utils import inject_attention
-    return inject_attention(model, "triton_svd_linear_attention", rank=rank, copy_weights=copy_weights, **kwargs)
+
+    return inject_attention(
+        model,
+        "triton_svd_linear_attention",
+        rank=rank,
+        copy_weights=copy_weights,
+        **kwargs,
+    )

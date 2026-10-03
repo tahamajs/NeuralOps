@@ -1,7 +1,9 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.attentions.halo_regla import HALOReGLAAttention, inject_halo_regla
+from framework.attentions.halo_regla import (HALOReGLAAttention,
+                                             inject_halo_regla)
+
 
 def test_halo_regla_standalone():
     attn = HALOReGLAAttention(hidden_size=64, num_heads=4, lora_rank=8)

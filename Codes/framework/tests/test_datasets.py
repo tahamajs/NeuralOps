@@ -3,12 +3,11 @@ Unit tests for benchmark dataset registry, loaders, and synthetic generation.
 """
 
 import unittest
+
 import torch
-from framework.data.benchmark_datasets import (
-    BenchmarkDatasetRegistry,
-    load_benchmark_dataset,
-    get_synthetic_benchmark_sample,
-)
+from framework.data.benchmark_datasets import (BenchmarkDatasetRegistry,
+                                               get_synthetic_benchmark_sample,
+                                               load_benchmark_dataset)
 
 
 class TestBenchmarkDatasets(unittest.TestCase):

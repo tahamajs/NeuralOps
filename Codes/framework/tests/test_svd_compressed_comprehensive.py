@@ -1,16 +1,15 @@
+import types
+
 import pytest
 import torch
 import torch.nn as nn
-import types
-
-from framework.attentions.svd_compressed import (
-    SVDCompressedAttention,
-    _rotate_half,
-    apply_rotary_pos_emb,
-    inject_svd_compressed,
-    lagrangian_rank_allocation,
-)
-from framework.attentions.svd_compressed_attention import SVDCompressedAttention as SVDCompressedAttentionAlias
+from framework.attentions.svd_compressed import (SVDCompressedAttention,
+                                                 _rotate_half,
+                                                 apply_rotary_pos_emb,
+                                                 inject_svd_compressed,
+                                                 lagrangian_rank_allocation)
+from framework.attentions.svd_compressed_attention import \
+    SVDCompressedAttention as SVDCompressedAttentionAlias
 
 
 def make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=False, model_type="bert"):

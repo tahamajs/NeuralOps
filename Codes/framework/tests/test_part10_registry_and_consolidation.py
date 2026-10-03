@@ -1,7 +1,10 @@
 """Part 10 Verification: Registry Health & Duplicate Consolidation."""
-import pytest
 from pathlib import Path
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, is_helper_module
+
+import pytest
+from framework.core.registry import (ATTENTION_REGISTRY, COMPRESSOR_REGISTRY,
+                                     is_helper_module)
+
 
 def test_registry_size_healthy():
     assert len(ATTENTION_REGISTRY.keys()) >= 15

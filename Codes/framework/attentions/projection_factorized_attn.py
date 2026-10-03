@@ -8,18 +8,17 @@ architectures (GPT-2, RoBERTa/BERT, DistilBERT, T5, generic).
 
 from __future__ import annotations
 
-from typing import Any
 import logging
+from typing import Any
 
 import torch
 import torch.nn as nn
-
-from framework.core.registry import ATTENTION_REGISTRY
 from framework.attentions.svd_linear_attention import (
     SVDLinear,
     SVDLinearAttention,
     inject_svd_linear_attention,
 )
+from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +29,7 @@ logger = logging.getLogger(__name__)
 @ATTENTION_REGISTRY.register("projection_factorized_attn")
 class ProjectionFactorizedAttention(SVDLinearAttention):
     r"""Projection Factorized SVD Linear Attention."""
+
     is_custom_attention: bool = True
 
 
@@ -40,10 +40,17 @@ _CANDIDATE_ATTRS = ("attn", "attention", "self_attn", "self")
 
 # Keys that must NOT be passed through `**kwargs` to the delegate, since
 # they are positional/keyword arguments of the delegate signature itself.
-_RESERVED_KEYS = frozenset({
-    "model", "layer", "model_config", "comp_config",
-    "old_attn", "layer_idx", "total_layers",
-})
+_RESERVED_KEYS = frozenset(
+    {
+        "model",
+        "layer",
+        "model_config",
+        "comp_config",
+        "old_attn",
+        "layer_idx",
+        "total_layers",
+    }
+)
 
 
 def _is_already_injected(module: nn.Module) -> bool:
@@ -112,7 +119,8 @@ def _attach_with_fallback(
             parent.self = result
             logger.debug(
                 "inject_projection_factorized_attn: forced replacement of %s.%s.self",
-                type(layer).__name__, attr_name,
+                type(layer).__name__,
+                attr_name,
             )
             return True
     else:
@@ -120,7 +128,8 @@ def _attach_with_fallback(
             setattr(layer, attr_name, result)
             logger.debug(
                 "inject_projection_factorized_attn: forced replacement of %s.%s",
-                type(layer).__name__, attr_name,
+                type(layer).__name__,
+                attr_name,
             )
             return True
 
@@ -162,9 +171,15 @@ def inject_projection_factorized_attn(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+    elif hasattr(target, "layers") and isinstance(
+        target.layers, (torch.nn.ModuleList, list)
+    ):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -176,9 +191,9 @@ def inject_projection_factorized_attn(
             res = inject_projection_factorized_attn(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config,   # FIX-6
+                comp_config=comp_config,  # FIX-6
                 layer_idx=idx,
-                total_layers=tot,          # FIX-11
+                total_layers=tot,  # FIX-11
                 **forward_kwargs,
             )
             if res is not None:
@@ -200,7 +215,8 @@ def inject_projection_factorized_attn(
         logger.warning(
             "inject_projection_factorized_attn: no source attention found on %s "
             "(checked: %s)",
-            type(layer).__name__, ", ".join(_CANDIDATE_ATTRS),
+            type(layer).__name__,
+            ", ".join(_CANDIDATE_ATTRS),
         )
         return None
 
@@ -221,16 +237,17 @@ def inject_projection_factorized_attn(
             model=model,
             layer=layer,
             model_config=model_config if model_config is not None else cfg,
-            comp_config=comp_config,   # FIX-6
-            old_attn=src_attn,         # FIX-2
+            comp_config=comp_config,  # FIX-6
+            old_attn=src_attn,  # FIX-2
             layer_idx=layer_idx,
-            total_layers=total_layers, # FIX-11
+            total_layers=total_layers,  # FIX-11
             **delegate_kwargs,
         )
     except Exception as e:
         logger.error(
             "inject_svd_linear_attention delegate failed on %s: %s",
-            type(layer).__name__, e,
+            type(layer).__name__,
+            e,
         )
         return None
 

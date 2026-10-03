@@ -6,15 +6,14 @@ and standard registered optimizers (AdamW, SGD, Adam, AdaBelief, Ranger, Lamb, L
 from __future__ import annotations
 
 import math
-from typing import Any
 from collections.abc import Callable, Iterable
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.optimizer import Optimizer
-
 from framework.core.registry import Registry
+from torch.optim.optimizer import Optimizer
 
 OPTIMIZER_REGISTRY = Registry("optimizer")
 
@@ -149,7 +148,10 @@ def is_stiefel_parameter(
     """
     # RESEARCH FIX: Automatic identification of orthogonal low-rank matrices (U, V) via
     # semantic naming patterns and numerical Gram semi-orthogonality check
-    if getattr(tensor, "is_stiefel", False) or getattr(tensor, "manifold", None) == "stiefel":
+    if (
+        getattr(tensor, "is_stiefel", False)
+        or getattr(tensor, "manifold", None) == "stiefel"
+    ):
         return True
 
     name_lower = name.lower() if name else ""
@@ -225,7 +227,12 @@ class RiemannianStiefelOptimizer(Optimizer):
 
     def __init__(
         self,
-        params: Iterable[torch.nn.Parameter] | Iterable[dict[str, Any]] | nn.Module | list[tuple[str, torch.nn.Parameter]],
+        params: (
+            Iterable[torch.nn.Parameter]
+            | Iterable[dict[str, Any]]
+            | nn.Module
+            | list[tuple[str, torch.nn.Parameter]]
+        ),
         lr: float = 1e-3,
         lr_stiefel: float | None = None,
         base_optimizer: str = "adamw",
@@ -285,27 +292,33 @@ class RiemannianStiefelOptimizer(Optimizer):
                     euclidean_p.append(p)
 
             if stiefel_p:
-                param_groups.append({
-                    "params": stiefel_p,
-                    "manifold": "stiefel",
-                    "lr": effective_lr_stiefel,
-                    "momentum": stiefel_momentum,
-                    "weight_decay": 0.0,  # Zero weight decay on Stiefel manifold
-                })
+                param_groups.append(
+                    {
+                        "params": stiefel_p,
+                        "manifold": "stiefel",
+                        "lr": effective_lr_stiefel,
+                        "momentum": stiefel_momentum,
+                        "weight_decay": 0.0,  # Zero weight decay on Stiefel manifold
+                    }
+                )
             if euclidean_p:
-                param_groups.append({
-                    "params": euclidean_p,
-                    "manifold": "euclidean",
-                    "lr": lr,
-                    "weight_decay": weight_decay,
-                    "betas": betas,
-                    "eps": eps,
-                    "base_optimizer": base_optimizer,
-                    "momentum": momentum,
-                    "dampening": dampening,
-                    "nesterov": nesterov,
-                })
-        elif isinstance(params, list) and len(params) > 0 and isinstance(params[0], dict):
+                param_groups.append(
+                    {
+                        "params": euclidean_p,
+                        "manifold": "euclidean",
+                        "lr": lr,
+                        "weight_decay": weight_decay,
+                        "betas": betas,
+                        "eps": eps,
+                        "base_optimizer": base_optimizer,
+                        "momentum": momentum,
+                        "dampening": dampening,
+                        "nesterov": nesterov,
+                    }
+                )
+        elif (
+            isinstance(params, list) and len(params) > 0 and isinstance(params[0], dict)
+        ):
             # List of param groups provided
             for group in params:
                 if "manifold" in group:
@@ -330,7 +343,9 @@ class RiemannianStiefelOptimizer(Optimizer):
                         st_group["params"] = stiefel_p
                         st_group["manifold"] = "stiefel"
                         st_group["lr"] = group.get("lr_stiefel", effective_lr_stiefel)
-                        st_group["momentum"] = group.get("stiefel_momentum", stiefel_momentum)
+                        st_group["momentum"] = group.get(
+                            "stiefel_momentum", stiefel_momentum
+                        )
                         st_group["weight_decay"] = 0.0
                         param_groups.append(st_group)
 
@@ -345,7 +360,11 @@ class RiemannianStiefelOptimizer(Optimizer):
             euclidean_p = []
             param_list = list(params)
             for item in param_list:
-                if isinstance(item, tuple) and len(item) == 2 and isinstance(item[0], str):
+                if (
+                    isinstance(item, tuple)
+                    and len(item) == 2
+                    and isinstance(item[0], str)
+                ):
                     name, p = item
                 else:
                     name = getattr(item, "_name", "")
@@ -358,26 +377,30 @@ class RiemannianStiefelOptimizer(Optimizer):
                     euclidean_p.append(p)
 
             if stiefel_p:
-                param_groups.append({
-                    "params": stiefel_p,
-                    "manifold": "stiefel",
-                    "lr": effective_lr_stiefel,
-                    "momentum": stiefel_momentum,
-                    "weight_decay": 0.0,
-                })
+                param_groups.append(
+                    {
+                        "params": stiefel_p,
+                        "manifold": "stiefel",
+                        "lr": effective_lr_stiefel,
+                        "momentum": stiefel_momentum,
+                        "weight_decay": 0.0,
+                    }
+                )
             if euclidean_p:
-                param_groups.append({
-                    "params": euclidean_p,
-                    "manifold": "euclidean",
-                    "lr": lr,
-                    "weight_decay": weight_decay,
-                    "betas": betas,
-                    "eps": eps,
-                    "base_optimizer": base_optimizer,
-                    "momentum": momentum,
-                    "dampening": dampening,
-                    "nesterov": nesterov,
-                })
+                param_groups.append(
+                    {
+                        "params": euclidean_p,
+                        "manifold": "euclidean",
+                        "lr": lr,
+                        "weight_decay": weight_decay,
+                        "betas": betas,
+                        "eps": eps,
+                        "base_optimizer": base_optimizer,
+                        "momentum": momentum,
+                        "dampening": dampening,
+                        "nesterov": nesterov,
+                    }
+                )
 
         if not param_groups:
             param_groups = [{"params": [], "manifold": "euclidean", "lr": lr}]
@@ -520,7 +543,9 @@ class RiemannianStiefelOptimizer(Optimizer):
 
                         if momentum != 0.0:
                             if "momentum_buffer" not in state:
-                                buf = state["momentum_buffer"] = torch.clone(d_p).detach()
+                                buf = state["momentum_buffer"] = torch.clone(
+                                    d_p
+                                ).detach()
                             else:
                                 buf = state["momentum_buffer"]
                                 buf.mul_(momentum).add_(d_p, alpha=1.0 - dampening)
@@ -566,7 +591,9 @@ class RiemannianStiefelOptimizer(Optimizer):
                         bias_correction1 = 1.0 - beta1 ** state["step"]
                         bias_correction2 = 1.0 - beta2 ** state["step"]
                         step_size = lr / bias_correction1
-                        denom = (exp_avg_sq.sqrt() / math.sqrt(bias_correction2)).add_(eps)
+                        denom = (exp_avg_sq.sqrt() / math.sqrt(bias_correction2)).add_(
+                            eps
+                        )
 
                         p.data.addcdiv_(exp_avg, denom, value=-step_size)
 
@@ -576,7 +603,9 @@ class RiemannianStiefelOptimizer(Optimizer):
 # ── Muon (Momentum Orthogonalized by Newton-Schulz) Optimizer ─────────
 
 
-def zeropower_via_newtonschulz5(G: torch.Tensor, steps: int = 5, eps: float = 1e-7) -> torch.Tensor:
+def zeropower_via_newtonschulz5(
+    G: torch.Tensor, steps: int = 5, eps: float = 1e-7
+) -> torch.Tensor:
     r"""
     Newton-Schulz quintic iteration to compute the zeroth power / orthogonalization
     of a 2-D matrix: O = G (G^T G)^{-1/2}.
@@ -612,11 +641,15 @@ class Muon(Optimizer):
         weight_decay: float = 0.01,
         ns_steps: int = 5,
     ) -> None:
-        defaults = dict(lr=lr, momentum=momentum, weight_decay=weight_decay, ns_steps=ns_steps)
+        defaults = dict(
+            lr=lr, momentum=momentum, weight_decay=weight_decay, ns_steps=ns_steps
+        )
         params = list(params)
         for p in params:
             if p.ndim != 2:
-                raise ValueError(f"Muon only supports 2-D matrix parameters, got param shape {p.shape}")
+                raise ValueError(
+                    f"Muon only supports 2-D matrix parameters, got param shape {p.shape}"
+                )
         super().__init__(params, defaults)
 
     @torch.no_grad()
@@ -675,7 +708,9 @@ class MuonAdamW(Optimizer):
     ) -> None:
         for g in param_groups:
             if "optimizer" not in g:
-                raise ValueError("Each param_group must specify 'optimizer': 'muon' or 'adamw'")
+                raise ValueError(
+                    "Each param_group must specify 'optimizer': 'muon' or 'adamw'"
+                )
             if g["optimizer"] == "muon":
                 g.setdefault("lr", 0.02)
                 g.setdefault("momentum", 0.95)
@@ -748,8 +783,8 @@ class MuonAdamW(Optimizer):
                     exp_avg.mul_(beta1).add_(g, alpha=1 - beta1)
                     exp_avg_sq.mul_(beta2).addcmul_(g, g, value=1 - beta2)
 
-                    bias_correction1 = 1 - beta1 ** step_t
-                    bias_correction2 = 1 - beta2 ** step_t
+                    bias_correction1 = 1 - beta1**step_t
+                    bias_correction2 = 1 - beta2**step_t
 
                     denom = (exp_avg_sq.sqrt() / math.sqrt(bias_correction2)).add_(eps)
                     step_size = lr / bias_correction1
@@ -822,15 +857,29 @@ def create_muon_adamw_optimizer(
 
 
 @OPTIMIZER_REGISTRY.register("muon")
-def create_muon(params: Any, lr: float = 0.02, momentum: float = 0.95, weight_decay: float = 0.01, **kwargs: Any) -> Any:
+def create_muon(
+    params: Any,
+    lr: float = 0.02,
+    momentum: float = 0.95,
+    weight_decay: float = 0.01,
+    **kwargs: Any,
+) -> Any:
     """Build and return Muon."""
     return Muon(params, lr=lr, momentum=momentum, weight_decay=weight_decay, **kwargs)
 
 
 @OPTIMIZER_REGISTRY.register("muon_adamw")
-def create_muon_adamw_reg(params: Any, lr: float = 0.02, lr_adam: float = 5e-5, weight_decay: float = 0.01, **kwargs: Any) -> Any:
+def create_muon_adamw_reg(
+    params: Any,
+    lr: float = 0.02,
+    lr_adam: float = 5e-5,
+    weight_decay: float = 0.01,
+    **kwargs: Any,
+) -> Any:
     """Build and return MuonAdamW hybrid optimizer."""
-    return create_muon_adamw_optimizer(params, lr_muon=lr, lr_adam=lr_adam, weight_decay=weight_decay, **kwargs)
+    return create_muon_adamw_optimizer(
+        params, lr_muon=lr, lr_adam=lr_adam, weight_decay=weight_decay, **kwargs
+    )
 
 
 @OPTIMIZER_REGISTRY.register("riemannian_stiefel")
@@ -856,14 +905,20 @@ def create_riemannian_stiefel(
 
 
 @OPTIMIZER_REGISTRY.register("adamw")
-def create_adamw(params: Any, lr: float = 1e-3, weight_decay: float = 0.01, **kwargs: Any) -> Any:
+def create_adamw(
+    params: Any, lr: float = 1e-3, weight_decay: float = 0.01, **kwargs: Any
+) -> Any:
     """Build and return adamw."""
     return optim.AdamW(params, lr=lr, weight_decay=weight_decay, **kwargs)
 
 
 @OPTIMIZER_REGISTRY.register("sgd")
 def create_sgd(
-    params: Any, lr: float = 0.01, momentum: float = 0.9, weight_decay: float = 0.0, **kwargs: Any
+    params: Any,
+    lr: float = 0.01,
+    momentum: float = 0.9,
+    weight_decay: float = 0.0,
+    **kwargs: Any,
 ) -> Any:
     """Build and return sgd."""
     return optim.SGD(
@@ -872,13 +927,17 @@ def create_sgd(
 
 
 @OPTIMIZER_REGISTRY.register("adam")
-def create_adam(params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any) -> Any:
+def create_adam(
+    params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any
+) -> Any:
     """Build and return adam."""
     return optim.Adam(params, lr=lr, weight_decay=weight_decay, **kwargs)
 
 
 @OPTIMIZER_REGISTRY.register("adabelief")
-def create_adabelief(params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any) -> Any:
+def create_adabelief(
+    params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any
+) -> Any:
     """Build and return adabelief."""
     from adabelief_pytorch import AdaBelief
 
@@ -886,7 +945,9 @@ def create_adabelief(params: Any, lr: float = 1e-3, weight_decay: float = 0.0, *
 
 
 @OPTIMIZER_REGISTRY.register("ranger")
-def create_ranger(params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any) -> Any:
+def create_ranger(
+    params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any
+) -> Any:
     """Build and return ranger."""
     from ranger import Ranger
 
@@ -894,7 +955,9 @@ def create_ranger(params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kw
 
 
 @OPTIMIZER_REGISTRY.register("lamb")
-def create_lamb(params: Any, lr: float = 1e-3, weight_decay: float = 0.01, **kwargs: Any) -> Any:
+def create_lamb(
+    params: Any, lr: float = 1e-3, weight_decay: float = 0.01, **kwargs: Any
+) -> Any:
     """Build and return lamb."""
     from torch_optimizer import Lamb
 
@@ -902,7 +965,9 @@ def create_lamb(params: Any, lr: float = 1e-3, weight_decay: float = 0.01, **kwa
 
 
 @OPTIMIZER_REGISTRY.register("lars")
-def create_lars(params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any) -> Any:
+def create_lars(
+    params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any
+) -> Any:
     """Build and return lars."""
     from torch_optimizer import Lars
 

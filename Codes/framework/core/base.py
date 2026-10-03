@@ -14,22 +14,48 @@ logger = logging.getLogger(__name__)
 class BaseAttention(nn.Module):
     """Every custom attention module must inherit from this."""
 
-    def __init__(self, config: Any | None = None, rank: int | None = None, **kwargs: Any) -> None:
+    def __init__(
+        self, config: Any | None = None, rank: int | None = None, **kwargs: Any
+    ) -> None:
         super().__init__()
         self.config = config
         self.rank = rank
         self.num_heads = (
-            kwargs.get("num_heads") or
-            kwargs.get("num_attention_heads") or
-            (getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", 12))) if config is not None else 12)
+            kwargs.get("num_heads")
+            or kwargs.get("num_attention_heads")
+            or (
+                getattr(
+                    config,
+                    "num_attention_heads",
+                    getattr(config, "num_heads", getattr(config, "n_heads", 12)),
+                )
+                if config is not None
+                else 12
+            )
         )
         self.hidden_size = (
-            kwargs.get("hidden_size") or
-            kwargs.get("dim") or
-            kwargs.get("d_model") or
-            (getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768))) if config is not None else 768)
+            kwargs.get("hidden_size")
+            or kwargs.get("dim")
+            or kwargs.get("d_model")
+            or (
+                getattr(
+                    config,
+                    "hidden_size",
+                    getattr(config, "d_model", getattr(config, "dim", 768)),
+                )
+                if config is not None
+                else 768
+            )
         )
-        self.head_dim = getattr(config, "d_kv", getattr(config, "head_dim", self.hidden_size // self.num_heads if self.num_heads > 0 else 64))
+        self.head_dim = getattr(
+            config,
+            "d_kv",
+            getattr(
+                config,
+                "head_dim",
+                self.hidden_size // self.num_heads if self.num_heads > 0 else 64,
+            ),
+        )
 
     @abstractmethod
     def forward(
@@ -41,7 +67,9 @@ class BaseAttention(nn.Module):
         **kwargs,
     ) -> tuple[Any, Any | None]:
         """Must return (output, attention_weights_or_None)."""
-        raise NotImplementedError("Subclasses of BaseAttention must implement forward()")
+        raise NotImplementedError(
+            "Subclasses of BaseAttention must implement forward()"
+        )
 
     def copy_weights(self, old_attn: Any) -> None:
         """Universal fallback: copy pretrained weights from old attention layer."""
@@ -49,6 +77,7 @@ class BaseAttention(nn.Module):
             return
         import torch
         from framework.core.adapters import UniversalAdapter
+
         adapter = UniversalAdapter()
 
         try:
@@ -64,7 +93,10 @@ class BaseAttention(nn.Module):
                         mod = getattr(self, q_name)
                         if hasattr(mod, "weight") and mod.weight.shape == w_q.shape:
                             mod.weight.copy_(w_q)
-                            if b_q is not None and getattr(mod, "bias", None) is not None:
+                            if (
+                                b_q is not None
+                                and getattr(mod, "bias", None) is not None
+                            ):
                                 mod.bias.copy_(b_q)
 
                 for k_name in ["W_k", "k_proj", "k_lin", "Wk", "key", "k"]:
@@ -72,7 +104,10 @@ class BaseAttention(nn.Module):
                         mod = getattr(self, k_name)
                         if hasattr(mod, "weight") and mod.weight.shape == w_k.shape:
                             mod.weight.copy_(w_k)
-                            if b_k is not None and getattr(mod, "bias", None) is not None:
+                            if (
+                                b_k is not None
+                                and getattr(mod, "bias", None) is not None
+                            ):
                                 mod.bias.copy_(b_k)
 
                 for v_name in ["W_v", "v_proj", "v_lin", "Wv", "value", "v"]:
@@ -80,7 +115,10 @@ class BaseAttention(nn.Module):
                         mod = getattr(self, v_name)
                         if hasattr(mod, "weight") and mod.weight.shape == w_v.shape:
                             mod.weight.copy_(w_v)
-                            if b_v is not None and getattr(mod, "bias", None) is not None:
+                            if (
+                                b_v is not None
+                                and getattr(mod, "bias", None) is not None
+                            ):
                                 mod.bias.copy_(b_v)
 
                 for o_name in ["out", "out_proj", "o_proj", "out_lin", "proj", "dense"]:
@@ -88,7 +126,10 @@ class BaseAttention(nn.Module):
                         mod = getattr(self, o_name)
                         if hasattr(mod, "weight") and mod.weight.shape == w_o.shape:
                             mod.weight.copy_(w_o)
-                            if b_o is not None and getattr(mod, "bias", None) is not None:
+                            if (
+                                b_o is not None
+                                and getattr(mod, "bias", None) is not None
+                            ):
                                 mod.bias.copy_(b_o)
 
                 # Handle fused in_proj
@@ -98,8 +139,8 @@ class BaseAttention(nn.Module):
                         self.in_proj.weight[dim:].copy_(w_q[:dim])
                     elif self.in_proj.weight.shape == torch.Size([dim * 3, dim]):
                         self.in_proj.weight[:dim].copy_(w_q[:dim])
-                        self.in_proj.weight[dim:2*dim].copy_(w_k[:dim])
-                        self.in_proj.weight[2*dim:].copy_(w_v[:dim])
+                        self.in_proj.weight[dim : 2 * dim].copy_(w_k[:dim])
+                        self.in_proj.weight[2 * dim :].copy_(w_v[:dim])
         except (AttributeError, RuntimeError, ValueError) as e:
             logger.debug("BaseAttention.copy_weights failed: %s", e)
         except Exception as e:
@@ -129,10 +170,12 @@ class BaseCompressor:
     @abstractmethod
     def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Return (compressed_model, statistics)."""
-        raise NotImplementedError("Subclasses of BaseCompressor must implement compress()")
+        raise NotImplementedError(
+            "Subclasses of BaseCompressor must implement compress()"
+        )
 
     def _count_params(self, model: nn.Module) -> int:
-        """ count params."""
+        """count params."""
         return sum(p.numel() for p in model.parameters())
 
     def get_compression_stats(self) -> dict[str, Any]:

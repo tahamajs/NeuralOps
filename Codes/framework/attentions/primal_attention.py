@@ -24,7 +24,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.attention_mask import apply_attention_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
@@ -36,6 +35,7 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # RoPE (with dtype-safe casting)
 # ===========================================================================
+
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     x1 = x[..., : x.shape[-1] // 2]
@@ -90,6 +90,7 @@ def apply_rotary_pos_emb(
 # LoRALinear
 # ===========================================================================
 
+
 class LoRALinear(nn.Module):
     def __init__(
         self,
@@ -111,15 +112,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -155,7 +162,9 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            lora_out = (
+                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            )
             out = out + lora_out
         return out
 
@@ -163,6 +172,7 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 # Primal Attention
 # ===========================================================================
+
 
 @ATTENTION_REGISTRY.register("primal")
 @ATTENTION_REGISTRY.register("primal_attention")
@@ -184,7 +194,9 @@ class PrimalAttention(BaseAttention):
         comp_config = getattr(config, "compression_config", None)
 
         self.dim = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-        self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+        self.num_heads = getattr(
+            config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
+        )
         self.num_kv_heads = getattr(
             config,
             "num_key_value_heads",
@@ -218,18 +230,24 @@ class PrimalAttention(BaseAttention):
         self.is_nested_encoder = False
 
         self.lora_rank = (
-            getattr(config, "lora_rank",
-                    getattr(comp_config, "lora_rank",
-                            kwargs.get("lora_rank", 16)))
-            if config else 16
+            getattr(
+                config,
+                "lora_rank",
+                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)),
+            )
+            if config
+            else 16
         )
         self.lora_alpha = (
-            getattr(config, "lora_alpha",
-                    getattr(comp_config, "lora_alpha",
-                            kwargs.get("lora_alpha", 32.0)))
-            if config else 32.0
+            getattr(
+                config,
+                "lora_alpha",
+                getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
+            )
+            if config
+            else 32.0
         )
-        self.freeze_base = (self.lora_rank > 0)
+        self.freeze_base = self.lora_rank > 0
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
@@ -238,28 +256,57 @@ class PrimalAttention(BaseAttention):
         self.chunk_heads = int(kwargs.get("chunk_heads", 0))  # 0 = disabled
 
         # Projections
-        self.query = LoRALinear(self.dim, self.all_head_size, bias=True,
-                                lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                freeze_base=self.freeze_base)
-        self.key = LoRALinear(self.dim, self.all_kv_head_size, bias=True,
-                              lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                              freeze_base=self.freeze_base)
-        self.value = LoRALinear(self.dim, self.all_kv_head_size, bias=True,
-                                lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True,
-                                   lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                   freeze_base=self.freeze_base)
+        self.query = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.key = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.value = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
         self.q_proj = self.query
         self.k_proj = self.key
         self.v_proj = self.value
 
-        dropout_p = getattr(config, "dropout",
-                            getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
+        dropout_p = (
+            getattr(
+                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
+            )
+            if config
+            else 0.1
+        )
         self.dropout = nn.Dropout(dropout_p)
 
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
+        source_attn = (
+            pretrained_attn
+            if pretrained_attn is not None
+            else kwargs.get("source_attn")
+        )
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -271,23 +318,41 @@ class PrimalAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        has_out_lin = (
+            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        )
         is_nested = False
         if (
-            hasattr(src, "self")
-            and hasattr(src.self, "query")
-            and hasattr(src, "output")
-            and hasattr(src.output, "dense")
-        ) or (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention",
-                         "ElectraSelfAttention", "DebertaSelfAttention"]
-            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
+            (
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
+            )
+            or (
+                cls_name
+                in [
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                ]
+                or (
+                    cls_name.endswith("SelfAttention")
+                    and "distil" not in cls_name.lower()
+                )
+            )
+            and not has_out_lin
+        ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         # 1. GPT-2 fused
@@ -307,11 +372,18 @@ class PrimalAttention(BaseAttention):
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size:2 * split_size, :],
-                                  c_b[split_size:2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size:, :],
-                                  c_b[2 * split_size:] if c_b is not None else None)
+                extracted["q"] = (
+                    c_w[:split_size, :],
+                    c_b[:split_size] if c_b is not None else None,
+                )
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (
+                    c_w[2 * split_size :, :],
+                    c_b[2 * split_size :] if c_b is not None else None,
+                )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -327,7 +399,10 @@ class PrimalAttention(BaseAttention):
                     if is_conv_o:
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    extracted["o"] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
 
         # 2. RoBERTa / BERT nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
@@ -365,12 +440,16 @@ class PrimalAttention(BaseAttention):
                             )
                             break
 
-        missing = [k for k, (w, _) in extracted.items()
-                   if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
 
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -379,15 +458,23 @@ class PrimalAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [k for k, (w, _) in extracted.items()
-                         if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing_after:
             raise RuntimeError(
                 f"PrimalAttention copy_weights failed: missing mandatory projections "
                 f"{missing_after} from {src.__class__.__name__}."
             )
 
-        target_map = {"q": self.query, "k": self.key, "v": self.value, "o": self.out_proj}
+        target_map = {
+            "q": self.query,
+            "k": self.key,
+            "v": self.value,
+            "o": self.out_proj,
+        }
 
         with torch.no_grad():
             for proj_key, target_mod in target_map.items():
@@ -402,7 +489,8 @@ class PrimalAttention(BaseAttention):
                     else:
                         logger.warning(
                             "PrimalAttention.copy_weights: no weight for %s, "
-                            "keeping initialized weights.", proj_key,
+                            "keeping initialized weights.",
+                            proj_key,
                         )
                         continue
 
@@ -411,7 +499,10 @@ class PrimalAttention(BaseAttention):
                     target_mod.weight.copy_(w)
                 elif w.t().contiguous().shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w.t().contiguous())
-                elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
+                elif (
+                    w.shape[0] < target_mod.weight.shape[0]
+                    and target_mod.weight.shape[0] % w.shape[0] == 0
+                ):
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
                 else:
@@ -423,7 +514,10 @@ class PrimalAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     if b.shape == target_mod.bias.shape:
                         target_mod.bias.copy_(b)
-                    elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
+                    elif (
+                        b.shape[0] < target_mod.bias.shape[0]
+                        and target_mod.bias.shape[0] % b.shape[0] == 0
+                    ):
                         repeats = target_mod.bias.shape[0] // b.shape[0]
                         target_mod.bias.copy_(b.repeat(repeats))
                     else:
@@ -437,7 +531,9 @@ class PrimalAttention(BaseAttention):
                 if fnorm < 1e-4:
                     logger.warning(
                         "PrimalAttention.copy_weights: %s has near-zero Frobenius "
-                        "norm (%.2e).", proj_key, fnorm,
+                        "norm (%.2e).",
+                        proj_key,
+                        fnorm,
                     )
 
         if self.freeze_base:
@@ -464,15 +560,21 @@ class PrimalAttention(BaseAttention):
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         batch_size, seq_len, _ = hidden_states.shape
 
-        Q = self.query(hidden_states).view(
-            batch_size, seq_len, self.num_heads, self.head_dim
-        ).permute(0, 2, 1, 3)
-        K = self.key(hidden_states).view(
-            batch_size, seq_len, self.num_kv_heads, self.head_dim
-        ).permute(0, 2, 1, 3)
-        V = self.value(hidden_states).view(
-            batch_size, seq_len, self.num_kv_heads, self.head_dim
-        ).permute(0, 2, 1, 3)
+        Q = (
+            self.query(hidden_states)
+            .view(batch_size, seq_len, self.num_heads, self.head_dim)
+            .permute(0, 2, 1, 3)
+        )
+        K = (
+            self.key(hidden_states)
+            .view(batch_size, seq_len, self.num_kv_heads, self.head_dim)
+            .permute(0, 2, 1, 3)
+        )
+        V = (
+            self.value(hidden_states)
+            .view(batch_size, seq_len, self.num_kv_heads, self.head_dim)
+            .permute(0, 2, 1, 3)
+        )
 
         # RoPE
         if position_embeddings is None:
@@ -499,12 +601,16 @@ class PrimalAttention(BaseAttention):
             ).mean(dim=3)
         else:
             idx = torch.linspace(
-                0, seq_len - 1, num_landmarks, dtype=torch.long, device=hidden_states.device
+                0,
+                seq_len - 1,
+                num_landmarks,
+                dtype=torch.long,
+                device=hidden_states.device,
             )
             Q_land = Q[:, :, idx, :]
             K_land = K[:, :, idx, :]
 
-        scale = 1.0 / (self.head_dim ** 0.5)
+        scale = 1.0 / (self.head_dim**0.5)
 
         # PR-FIX-01 + PR-FIX-07: chunked head processing to bound peak memory.
         # The chunk_heads attribute (default 0) disables chunking.
@@ -519,18 +625,27 @@ class PrimalAttention(BaseAttention):
         context_heads = []
         attn_for_return: torch.Tensor | None = None
 
-        for (h0, h1) in head_chunks:
+        for h0, h1 in head_chunks:
             Qc = Q[:, h0:h1]
             Kc = K[:, h0:h1]
             Vc = V[:, h0:h1]
             Ql = Q_land[:, h0:h1]
             Kl = K_land[:, h0:h1]
 
-            with torch.amp.autocast('cuda', enabled=False):
+            with torch.amp.autocast("cuda", enabled=False):
 
-                F1 = torch.matmul(Qc.float(), Kl.float().transpose(-2, -1).contiguous()) * scale
-                F2 = torch.matmul(Ql.float(), Kl.float().transpose(-2, -1).contiguous()) * scale
-                F3 = torch.matmul(Ql.float(), Kc.float().transpose(-2, -1).contiguous()) * scale
+                F1 = (
+                    torch.matmul(Qc.float(), Kl.float().transpose(-2, -1).contiguous())
+                    * scale
+                )
+                F2 = (
+                    torch.matmul(Ql.float(), Kl.float().transpose(-2, -1).contiguous())
+                    * scale
+                )
+                F3 = (
+                    torch.matmul(Ql.float(), Kc.float().transpose(-2, -1).contiguous())
+                    * scale
+                )
 
                 # PR-FIX-01: pseudoinverse + Schulz without gradient tracking.
                 # This eliminates the ~20x backward memory of pinv and stabilizes
@@ -538,9 +653,15 @@ class PrimalAttention(BaseAttention):
                 with torch.no_grad():
                     F2_f32 = F2.detach().to(torch.float32)
                     F2_pinv = torch.linalg.pinv(F2_f32, rcond=1e-4)
-                    I = torch.eye(
-                        num_landmarks, device=hidden_states.device, dtype=torch.float32
-                    ).unsqueeze(0).unsqueeze(0)
+                    I = (
+                        torch.eye(
+                            num_landmarks,
+                            device=hidden_states.device,
+                            dtype=torch.float32,
+                        )
+                        .unsqueeze(0)
+                        .unsqueeze(0)
+                    )
                     X = F2_pinv
                     for _ in range(min(self.pinv_iters, 4)):
                         X = torch.matmul(X, 2.0 * I - torch.matmul(F2_f32, X))
@@ -576,7 +697,11 @@ class PrimalAttention(BaseAttention):
                     hm = head_mask[h0:h1].view(1, h1 - h0, 1, 1).to(probs_c.dtype)
                     probs_c = probs_c * hm
                 elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                    hm = head_mask[:, h0:h1].view(head_mask.size(0), h1 - h0, 1, 1).to(probs_c.dtype)
+                    hm = (
+                        head_mask[:, h0:h1]
+                        .view(head_mask.size(0), h1 - h0, 1, 1)
+                        .to(probs_c.dtype)
+                    )
                     probs_c = probs_c * hm
                 elif head_mask.dim() == 4:
                     hm = head_mask[:, h0:h1].to(probs_c.dtype)
@@ -591,8 +716,10 @@ class PrimalAttention(BaseAttention):
 
         # Concatenate chunks along head axis: (B, H_total, N, D)
         context = torch.cat(context_heads, dim=1)
-        context = context.permute(0, 2, 1, 3).contiguous().view(
-            batch_size, seq_len, self.all_head_size
+        context = (
+            context.permute(0, 2, 1, 3)
+            .contiguous()
+            .view(batch_size, seq_len, self.all_head_size)
         )
 
         if self.is_nested_encoder:
@@ -605,6 +732,7 @@ class PrimalAttention(BaseAttention):
 # ===========================================================================
 # Injection
 # ===========================================================================
+
 
 def inject_primal(
     layer: Any = None,
@@ -645,7 +773,11 @@ def inject_primal(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -709,8 +841,10 @@ def inject_primal(
         replaced = 0
         for name, module in model.named_modules():
             is_attn = (
-                hasattr(module, "q_lin") or hasattr(module, "query")
-                or hasattr(module, "q_proj") or hasattr(module, "c_attn")
+                hasattr(module, "q_lin")
+                or hasattr(module, "query")
+                or hasattr(module, "q_proj")
+                or hasattr(module, "c_attn")
             )
             if is_attn:
                 parent_name = name.rsplit(".", 1)[0] if "." in name else ""

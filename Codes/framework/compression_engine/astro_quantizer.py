@@ -9,6 +9,7 @@ Scientific Novelty:
 - Straight-Through Estimator (STE) gradients flow seamlessly across channels with heterogeneous bit allocations.
 - Full robustness across LoRALinear wrappers, Conv1D layers (GPT-2), and multi-architecture models (DistilBERT, RoBERTa, GPT-2, Qwen3.5).
 """
+
 from __future__ import annotations
 
 import logging
@@ -16,11 +17,10 @@ from typing import Any
 
 import torch
 import torch.nn as nn
-
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
-from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import get_calibration_tensors
+from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
 try:
@@ -63,7 +63,9 @@ class STEFakeQuantize(torch.autograd.Function):
         return dq
 
     @staticmethod
-    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
+    def backward(
+        ctx: Any, grad_output: torch.Tensor
+    ) -> tuple[torch.Tensor | None, ...]:
         # Straight-Through Estimator passes gradient unmodified
         grad_x = grad_output.clone()
         return grad_x, None, None, None, None
@@ -156,7 +158,9 @@ def quantize_dequantize_tensor(
             qmax = torch.pow(2.0, b) - 1.0
             min_val = torch.amin(t, dim=dim_to_reduce, keepdim=True)
             max_val = torch.amax(t, dim=dim_to_reduce, keepdim=True)
-            scale = torch.clamp((max_val - min_val) / torch.clamp(qmax, min=1.0), min=1e-8)
+            scale = torch.clamp(
+                (max_val - min_val) / torch.clamp(qmax, min=1.0), min=1e-8
+            )
             zero_point = torch.clamp(torch.round(-min_val / scale), qmin, qmax)
     else:
         # Standard uniform bitwidth
@@ -179,12 +183,16 @@ def quantize_dequantize_tensor(
                 dim_to_reduce = tuple(range(1, t.ndim))
                 min_val = torch.amin(t, dim=dim_to_reduce, keepdim=True)
                 max_val = torch.amax(t, dim=dim_to_reduce, keepdim=True)
-                scale = torch.clamp((max_val - min_val) / max(float(qmax), 1.0), min=1e-8)
+                scale = torch.clamp(
+                    (max_val - min_val) / max(float(qmax), 1.0), min=1e-8
+                )
                 zero_point = torch.clamp(torch.round(-min_val / scale), qmin, qmax)
             else:
                 min_val = torch.min(t)
                 max_val = torch.max(t)
-                scale = torch.clamp((max_val - min_val) / max(float(qmax), 1.0), min=1e-8)
+                scale = torch.clamp(
+                    (max_val - min_val) / max(float(qmax), 1.0), min=1e-8
+                )
                 zero_point = torch.clamp(torch.round(-min_val / scale), qmin, qmax)
 
     if use_ste and t.requires_grad:
@@ -337,16 +345,34 @@ class AstroQuantizer(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
 
         bits = int(_cfg_get(cfg, "astro_bits", _cfg_get(cfg, "bits", bits)))
-        symmetric = bool(_cfg_get(cfg, "astro_symmetric", _cfg_get(cfg, "symmetric", symmetric)))
-        per_channel = bool(_cfg_get(cfg, "astro_per_channel", _cfg_get(cfg, "per_channel", per_channel)))
-        use_ste = bool(_cfg_get(cfg, "astro_use_ste", _cfg_get(cfg, "use_ste", use_ste)))
-        max_error = float(_cfg_get(cfg, "astro_max_error", _cfg_get(cfg, "max_error", max_error)))
+        symmetric = bool(
+            _cfg_get(cfg, "astro_symmetric", _cfg_get(cfg, "symmetric", symmetric))
+        )
+        per_channel = bool(
+            _cfg_get(
+                cfg, "astro_per_channel", _cfg_get(cfg, "per_channel", per_channel)
+            )
+        )
+        use_ste = bool(
+            _cfg_get(cfg, "astro_use_ste", _cfg_get(cfg, "use_ste", use_ste))
+        )
+        max_error = float(
+            _cfg_get(cfg, "astro_max_error", _cfg_get(cfg, "max_error", max_error))
+        )
         fallback_to_original = bool(
-            _cfg_get(cfg, "astro_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original))
+            _cfg_get(
+                cfg,
+                "astro_fallback_to_original",
+                _cfg_get(cfg, "fallback_to_original", fallback_to_original),
+            )
         )
         protect_critical = bool(_cfg_get(cfg, "protect_critical", protect_critical))
         target_attention_only = bool(
-            _cfg_get(cfg, "astro_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
+            _cfg_get(
+                cfg,
+                "astro_target_attention_only",
+                _cfg_get(cfg, "target_attention_only", target_attention_only),
+            )
         )
         use_fisher_adaptive_bits = bool(
             _cfg_get(
@@ -355,10 +381,24 @@ class AstroQuantizer(BaseCompressor):
                 _cfg_get(cfg, "use_fisher_adaptive_bits", use_fisher_adaptive_bits),
             )
         )
-        target_avg_bits = float(_cfg_get(cfg, "astro_target_avg_bits", _cfg_get(cfg, "target_avg_bits", target_avg_bits)))
-        min_bits = int(_cfg_get(cfg, "astro_min_bits", _cfg_get(cfg, "min_bits", min_bits)))
-        max_bits = int(_cfg_get(cfg, "astro_max_bits", _cfg_get(cfg, "max_bits", max_bits)))
-        fisher_beta = float(_cfg_get(cfg, "astro_fisher_beta", _cfg_get(cfg, "fisher_beta", fisher_beta)))
+        target_avg_bits = float(
+            _cfg_get(
+                cfg,
+                "astro_target_avg_bits",
+                _cfg_get(cfg, "target_avg_bits", target_avg_bits),
+            )
+        )
+        min_bits = int(
+            _cfg_get(cfg, "astro_min_bits", _cfg_get(cfg, "min_bits", min_bits))
+        )
+        max_bits = int(
+            _cfg_get(cfg, "astro_max_bits", _cfg_get(cfg, "max_bits", max_bits))
+        )
+        fisher_beta = float(
+            _cfg_get(
+                cfg, "astro_fisher_beta", _cfg_get(cfg, "fisher_beta", fisher_beta)
+            )
+        )
 
         self.bits = bits
         self.symmetric = symmetric
@@ -396,7 +436,10 @@ class AstroQuantizer(BaseCompressor):
             return False
 
         # Do not target inner submodules of LoRA or wrappers directly
-        if any(name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]):
+        if any(
+            name.endswith(sfx)
+            for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]
+        ):
             return False
 
         target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
@@ -416,14 +459,33 @@ class AstroQuantizer(BaseCompressor):
 
         name_lower = name.lower()
         # Protect classification / output heads
-        if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embed", "logits_processor", "pre_classifier", "head"]):
+        if any(
+            skip in name_lower
+            for skip in [
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embed",
+                "logits_processor",
+                "pre_classifier",
+                "head",
+            ]
+        ):
             return False
 
         if self.target_attention_only:
             # Skip FFN / MLP layers
             ffn_patterns = [
-                "ffn", "mlp", "lin1", "lin2", "intermediate",
-                "gate_proj", "up_proj", "down_proj", "c_fc"
+                "ffn",
+                "mlp",
+                "lin1",
+                "lin2",
+                "intermediate",
+                "gate_proj",
+                "up_proj",
+                "down_proj",
+                "c_fc",
             ]
             if any(p in name_lower for p in ffn_patterns):
                 return False
@@ -432,9 +494,23 @@ class AstroQuantizer(BaseCompressor):
                 return False
             # Match attention projections
             attn_patterns = [
-                "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-                "out_lin", "q_lin", "k_lin", "v_lin", "c_attn", "c_proj",
-                "query", "key", "value", "in_proj_qkv", "out_proj"
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "out_lin",
+                "q_lin",
+                "k_lin",
+                "v_lin",
+                "c_attn",
+                "c_proj",
+                "query",
+                "key",
+                "value",
+                "in_proj_qkv",
+                "out_proj",
             ]
             if not any(p in name_lower for p in attn_patterns):
                 return False
@@ -465,11 +541,14 @@ class AstroQuantizer(BaseCompressor):
                     if layer_name not in activations:
                         activations[layer_name] = []
                     activations[layer_name].append(x.cpu())
+
             return hook
 
         for name, module in self.model.named_modules():
             if self._is_target_module(name, module):
-                target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
+                target_mod = getattr(
+                    module, "base_layer", getattr(module, "linear", module)
+                )
                 hooks.append(target_mod.register_forward_hook(make_hook(name)))
 
         calib_inputs = get_calibration_tensors(
@@ -495,7 +574,11 @@ class AstroQuantizer(BaseCompressor):
                     loss = 0.5 * torch.sum(out.logits.pow(2))
                 elif isinstance(out, torch.Tensor):
                     loss = 0.5 * torch.sum(out.pow(2))
-                elif isinstance(out, (tuple, list)) and len(out) > 0 and isinstance(out[0], torch.Tensor):
+                elif (
+                    isinstance(out, (tuple, list))
+                    and len(out) > 0
+                    and isinstance(out[0], torch.Tensor)
+                ):
                     loss = 0.5 * torch.sum(out[0].pow(2))
                 else:
                     loss = None
@@ -505,11 +588,15 @@ class AstroQuantizer(BaseCompressor):
                     loss.backward()
                     for name, module in self.model.named_modules():
                         if self._is_target_module(name, module):
-                            target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
+                            target_mod = getattr(
+                                module, "base_layer", getattr(module, "linear", module)
+                            )
                             if getattr(target_mod.weight, "grad", None) is not None:
                                 g = target_mod.weight.grad.detach().float()
                                 cls_name = module.__class__.__name__.lower()
-                                is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+                                is_conv1d = "conv1d" in cls_name or hasattr(
+                                    module, "nf"
+                                )
                                 if is_conv1d:
                                     g = g.t()
                                 per_channel_fisher = torch.sum(g.pow(2), dim=1).cpu()
@@ -525,7 +612,9 @@ class AstroQuantizer(BaseCompressor):
         # Fallback to activation energy or weight L2 norm per channel for layers without gradient Fisher
         for name, module in self.model.named_modules():
             if self._is_target_module(name, module) and name not in fisher_info:
-                target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
+                target_mod = getattr(
+                    module, "base_layer", getattr(module, "linear", module)
+                )
                 raw_w = target_mod.weight.data.float()
                 cls_name = module.__class__.__name__.lower()
                 is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
@@ -533,7 +622,9 @@ class AstroQuantizer(BaseCompressor):
                 channel_norm = torch.norm(W, p=2, dim=1).cpu()
                 if name in activations and activations[name]:
                     act_list = activations[name]
-                    act_concat = torch.cat([a.reshape(-1, a.shape[-1]) for a in act_list], dim=0).float()
+                    act_concat = torch.cat(
+                        [a.reshape(-1, a.shape[-1]) for a in act_list], dim=0
+                    ).float()
                     act_scale = torch.norm(act_concat, p=2, dim=0).mean().item()
                     channel_norm = channel_norm * max(act_scale, 1e-4)
                 fisher_info[name] = channel_norm
@@ -542,7 +633,9 @@ class AstroQuantizer(BaseCompressor):
 
     def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Quantize all target linear/Conv1D layers in the model and return (compressed_model, stats)."""
-        fisher_map = self._collect_fisher_info() if self.use_fisher_adaptive_bits else {}
+        fisher_map = (
+            self._collect_fisher_info() if self.use_fisher_adaptive_bits else {}
+        )
 
         self.compressed_layers = []
         self.fallback_layers = []
@@ -554,10 +647,18 @@ class AstroQuantizer(BaseCompressor):
             if not self._is_target_module(name, module):
                 continue
 
-            target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
+            target_mod = getattr(
+                module, "base_layer", getattr(module, "linear", module)
+            )
             cls_name = module.__class__.__name__.lower()
-            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf") or hasattr(target_mod, "nf")
-            has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(module, "base_layer")
+            is_conv1d = (
+                "conv1d" in cls_name
+                or hasattr(module, "nf")
+                or hasattr(target_mod, "nf")
+            )
+            has_lora = (
+                hasattr(module, "lora_A") and module.lora_A is not None
+            ) or hasattr(module, "base_layer")
 
             raw_w = target_mod.weight.data
             W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
@@ -597,7 +698,11 @@ class AstroQuantizer(BaseCompressor):
             err = float(torch.norm(W - W_quant, p="fro").item() / max(w_norm, 1e-12))
             self.layer_errors[name] = err
 
-            if torch.isnan(W_quant).any() or torch.isinf(W_quant).any() or err > self.max_error:
+            if (
+                torch.isnan(W_quant).any()
+                or torch.isinf(W_quant).any()
+                or err > self.max_error
+            ):
                 logger.warning(
                     "AstroQuantizer error %.4f on %s exceeded threshold %.4f.",
                     err,
@@ -605,7 +710,9 @@ class AstroQuantizer(BaseCompressor):
                     self.max_error,
                 )
                 if self.fallback_to_original:
-                    logger.info("Skipping AstroQuantizer for %s (fallback to original).", name)
+                    logger.info(
+                        "Skipping AstroQuantizer for %s (fallback to original).", name
+                    )
                     self.fallback_layers.append(name)
                     # Freeze fallback layers to ensure recovery fine-tuning does not touch them
                     for p in module.parameters():
@@ -629,9 +736,15 @@ class AstroQuantizer(BaseCompressor):
                     replace_module(self.model, name, astro_layer)
             else:
                 if is_conv1d:
-                    target_mod.weight.data.copy_(W_quant.t().contiguous().to(dtype=raw_w.dtype, device=raw_w.device))
+                    target_mod.weight.data.copy_(
+                        W_quant.t()
+                        .contiguous()
+                        .to(dtype=raw_w.dtype, device=raw_w.device)
+                    )
                 else:
-                    target_mod.weight.data.copy_(W_quant.contiguous().to(dtype=raw_w.dtype, device=raw_w.device))
+                    target_mod.weight.data.copy_(
+                        W_quant.contiguous().to(dtype=raw_w.dtype, device=raw_w.device)
+                    )
 
                 if target_mod.bias is not None:
                     bias_bits = int(round(avg_bits))
@@ -642,24 +755,32 @@ class AstroQuantizer(BaseCompressor):
                         per_channel=False,
                         use_ste=False,
                     )
-                    target_mod.bias.data.copy_(b_quant.to(dtype=target_mod.bias.dtype, device=target_mod.bias.device))
+                    target_mod.bias.data.copy_(
+                        b_quant.to(
+                            dtype=target_mod.bias.dtype, device=target_mod.bias.device
+                        )
+                    )
 
             # Preserve LoRA adapter parameters if layer was LoRALinear wrapper
             if has_lora:
                 for p_name, p in module.named_parameters():
-                    if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
+                    if any(
+                        t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")
+                    ):
                         p.requires_grad = True
 
             self.compressed_layers.append(name)
 
         self._compressed_params = self._count_params(self.model)
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers)
+            / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
         actual_avg_bits = (
-            sum(self.layer_average_bits[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            sum(self.layer_average_bits[k] for k in self.compressed_layers)
+            / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else float(self.bits)
         )
@@ -667,29 +788,31 @@ class AstroQuantizer(BaseCompressor):
         theoretical_vram_saving = f"{(1.0 - actual_avg_bits / 16.0) * 100:.1f}% vs FP16"
 
         stats = self.get_compression_stats()
-        stats.update({
-            "quantization_bits": self.bits,
-            "actual_average_bits": actual_avg_bits,
-            "symmetric": self.symmetric,
-            "per_channel": self.per_channel,
-            "use_ste": self.use_ste,
-            "use_fisher_adaptive_bits": self.use_fisher_adaptive_bits,
-            "target_avg_bits": self.target_avg_bits,
-            "min_bits": self.min_bits,
-            "max_bits": self.max_bits,
-            "compressed_layers": self.compressed_layers,
-            "fallback_layers": self.fallback_layers,
-            "num_compressed": len(self.compressed_layers),
-            "num_fallback": len(self.fallback_layers),
-            "layer_errors": self.layer_errors,
-            "layer_average_bits": self.layer_average_bits,
-            "avg_reconstruction_error": avg_err,
-            "max_error": self.max_error,
-            "fallback_to_original": self.fallback_to_original,
-            "target_attention_only": self.target_attention_only,
-            "effective_compression_rate": effective_compression_rate,
-            "theoretical_vram_saving": theoretical_vram_saving,
-        })
+        stats.update(
+            {
+                "quantization_bits": self.bits,
+                "actual_average_bits": actual_avg_bits,
+                "symmetric": self.symmetric,
+                "per_channel": self.per_channel,
+                "use_ste": self.use_ste,
+                "use_fisher_adaptive_bits": self.use_fisher_adaptive_bits,
+                "target_avg_bits": self.target_avg_bits,
+                "min_bits": self.min_bits,
+                "max_bits": self.max_bits,
+                "compressed_layers": self.compressed_layers,
+                "fallback_layers": self.fallback_layers,
+                "num_compressed": len(self.compressed_layers),
+                "num_fallback": len(self.fallback_layers),
+                "layer_errors": self.layer_errors,
+                "layer_average_bits": self.layer_average_bits,
+                "avg_reconstruction_error": avg_err,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "target_attention_only": self.target_attention_only,
+                "effective_compression_rate": effective_compression_rate,
+                "theoretical_vram_saving": theoretical_vram_saving,
+            }
+        )
         self.stats = stats
         self.model.compression_stats = stats
         return self.model, stats
@@ -699,30 +822,79 @@ class AstroQuantizer(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("astro_quantizer_factory")
 def astro_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Astro compressor factory function."""
-    bits = kwargs.pop("bits", _cfg_get(comp_config, "astro_bits", _cfg_get(comp_config, "bits", 8)))
-    symmetric = kwargs.pop("symmetric", _cfg_get(comp_config, "astro_symmetric", _cfg_get(comp_config, "symmetric", True)))
-    per_channel = kwargs.pop("per_channel", _cfg_get(comp_config, "astro_per_channel", _cfg_get(comp_config, "per_channel", False)))
-    use_ste = kwargs.pop("use_ste", _cfg_get(comp_config, "astro_use_ste", _cfg_get(comp_config, "use_ste", False)))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "astro_max_error", _cfg_get(comp_config, "max_error", 0.20)))
+    bits = kwargs.pop(
+        "bits", _cfg_get(comp_config, "astro_bits", _cfg_get(comp_config, "bits", 8))
+    )
+    symmetric = kwargs.pop(
+        "symmetric",
+        _cfg_get(
+            comp_config, "astro_symmetric", _cfg_get(comp_config, "symmetric", True)
+        ),
+    )
+    per_channel = kwargs.pop(
+        "per_channel",
+        _cfg_get(
+            comp_config,
+            "astro_per_channel",
+            _cfg_get(comp_config, "per_channel", False),
+        ),
+    )
+    use_ste = kwargs.pop(
+        "use_ste",
+        _cfg_get(comp_config, "astro_use_ste", _cfg_get(comp_config, "use_ste", False)),
+    )
+    max_error = kwargs.pop(
+        "max_error",
+        _cfg_get(
+            comp_config, "astro_max_error", _cfg_get(comp_config, "max_error", 0.20)
+        ),
+    )
     fallback = kwargs.pop(
         "fallback_to_original",
-        _cfg_get(comp_config, "astro_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)),
+        _cfg_get(
+            comp_config,
+            "astro_fallback_to_original",
+            _cfg_get(comp_config, "fallback_to_original", True),
+        ),
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",
-        _cfg_get(comp_config, "astro_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
+        _cfg_get(
+            comp_config,
+            "astro_target_attention_only",
+            _cfg_get(comp_config, "target_attention_only", False),
+        ),
     )
     use_fisher_adaptive_bits = kwargs.pop(
         "use_fisher_adaptive_bits",
-        _cfg_get(comp_config, "astro_use_fisher_adaptive_bits", _cfg_get(comp_config, "use_fisher_adaptive_bits", False)),
+        _cfg_get(
+            comp_config,
+            "astro_use_fisher_adaptive_bits",
+            _cfg_get(comp_config, "use_fisher_adaptive_bits", False),
+        ),
     )
     target_avg_bits = kwargs.pop(
         "target_avg_bits",
-        _cfg_get(comp_config, "astro_target_avg_bits", _cfg_get(comp_config, "target_avg_bits", 6.0)),
+        _cfg_get(
+            comp_config,
+            "astro_target_avg_bits",
+            _cfg_get(comp_config, "target_avg_bits", 6.0),
+        ),
     )
-    min_bits = kwargs.pop("min_bits", _cfg_get(comp_config, "astro_min_bits", _cfg_get(comp_config, "min_bits", 2)))
-    max_bits = kwargs.pop("max_bits", _cfg_get(comp_config, "astro_max_bits", _cfg_get(comp_config, "max_bits", 8)))
-    fisher_beta = kwargs.pop("fisher_beta", _cfg_get(comp_config, "astro_fisher_beta", _cfg_get(comp_config, "fisher_beta", 0.5)))
+    min_bits = kwargs.pop(
+        "min_bits",
+        _cfg_get(comp_config, "astro_min_bits", _cfg_get(comp_config, "min_bits", 2)),
+    )
+    max_bits = kwargs.pop(
+        "max_bits",
+        _cfg_get(comp_config, "astro_max_bits", _cfg_get(comp_config, "max_bits", 8)),
+    )
+    fisher_beta = kwargs.pop(
+        "fisher_beta",
+        _cfg_get(
+            comp_config, "astro_fisher_beta", _cfg_get(comp_config, "fisher_beta", 0.5)
+        ),
+    )
 
     compressor = AstroQuantizer(
         model,

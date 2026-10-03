@@ -2,9 +2,10 @@
 import pytest
 import torch
 import torch.nn as nn
-from transformers import PretrainedConfig
 from framework.attentions.performer_attention import PerformerAttention
 from framework.utils.replace_attention import UniversalAttentionWrapper
+from transformers import PretrainedConfig
+
 
 class DummyConfig(PretrainedConfig):
     def __init__(self, hidden_size=32, num_attention_heads=2, **kwargs):

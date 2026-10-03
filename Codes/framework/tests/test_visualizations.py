@@ -6,16 +6,12 @@ import os
 import shutil
 import tempfile
 import unittest
+
 from framework.visualization.benchmark_visualizer import (
-    plot_pareto_frontier,
-    plot_attention_heatmap,
-    plot_kv_cache_scaling,
-    plot_dataset_radar_chart,
-)
+    plot_attention_heatmap, plot_dataset_radar_chart, plot_kv_cache_scaling,
+    plot_pareto_frontier)
 from framework.visualization.dashboard_generator import (
-    generate_dashboard_html,
-    generate_summary_json,
-)
+    generate_dashboard_html, generate_summary_json)
 
 
 class TestVisualizations(unittest.TestCase):

@@ -1,8 +1,8 @@
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
-from types import SimpleNamespace
-
 from framework.attentions.fusion_attn import FUSIONATTN, inject_fusion_attn
 
 

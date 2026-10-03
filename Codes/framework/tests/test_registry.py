@@ -2,15 +2,10 @@
 
 import pytest
 import torch.nn as nn
+from framework.core.registry import (ATTENTION_REGISTRY, COMPRESSOR_REGISTRY,
+                                     Registry, get_evaluatable_modules,
+                                     is_helper_module)
 from transformers import PretrainedConfig
-
-from framework.core.registry import (
-    ATTENTION_REGISTRY,
-    COMPRESSOR_REGISTRY,
-    Registry,
-    is_helper_module,
-    get_evaluatable_modules,
-)
 
 
 class DummyConfig(PretrainedConfig):

@@ -15,12 +15,11 @@ from typing import Any
 
 import torch
 import torch.nn as nn
-
+from framework.compression_engine.aa_svd_compressor import SVDLinear
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
-from framework.utils.compat import should_compress_linear, get_dynamic_compression_rank
-from framework.compression_engine.aa_svd_compressor import SVDLinear
+from framework.utils.compat import get_dynamic_compression_rank, should_compress_linear
 
 logger = logging.getLogger(__name__)
 
@@ -83,16 +82,23 @@ class FWSVDCompressor(BaseCompressor):
             rank = getattr(cfg, "fwsvd_rank", getattr(cfg, "rank", rank))
             tokenizer = getattr(cfg, "tokenizer", tokenizer)
             calibration_texts = getattr(cfg, "calibration_texts", calibration_texts)
-            max_error = getattr(cfg, "fwsvd_max_error", getattr(cfg, "max_error", max_error))
+            max_error = getattr(
+                cfg, "fwsvd_max_error", getattr(cfg, "max_error", max_error)
+            )
             fallback_to_original = getattr(
-                cfg, "fwsvd_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original)
+                cfg,
+                "fwsvd_fallback_to_original",
+                getattr(cfg, "fallback_to_original", fallback_to_original),
             )
             target_attention_only = getattr(
-                cfg, "fwsvd_target_attention_only", getattr(cfg, "target_attention_only", target_attention_only)
+                cfg,
+                "fwsvd_target_attention_only",
+                getattr(cfg, "target_attention_only", target_attention_only),
             )
 
         target_attention_only = kwargs.get(
-            "target_attention_only", kwargs.get("fwsvd_target_attention_only", target_attention_only)
+            "target_attention_only",
+            kwargs.get("fwsvd_target_attention_only", target_attention_only),
         )
         self.rank = rank
         self.max_error = max_error
@@ -114,7 +120,10 @@ class FWSVDCompressor(BaseCompressor):
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, SVDLinear):
             return False
-        if any(name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]):
+        if any(
+            name.endswith(sfx)
+            for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]
+        ):
             return False
 
         target_mod = getattr(module, "base_layer", module)
@@ -134,21 +143,51 @@ class FWSVDCompressor(BaseCompressor):
         if not is_linear_like:
             return False
         name_lower = name.lower()
-        if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score", "pooler"]):
+        if any(
+            skip in name_lower
+            for skip in [
+                "lm_head",
+                "classifier",
+                "head",
+                "output_layer",
+                "score",
+                "pooler",
+            ]
+        ):
             return False
 
         if self.target_attention_only:
             ffn_patterns = [
-                "ffn", "mlp", "lin1", "lin2", "intermediate",
-                "gate_proj", "up_proj", "down_proj", "c_fc"
+                "ffn",
+                "mlp",
+                "lin1",
+                "lin2",
+                "intermediate",
+                "gate_proj",
+                "up_proj",
+                "down_proj",
+                "c_fc",
             ]
             if any(p in name_lower for p in ffn_patterns):
                 return False
             if "output.dense" in name_lower and "attention" not in name_lower:
                 return False
             attn_patterns = [
-                "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-                "out_lin", "q_lin", "k_lin", "v_lin", "c_attn", "c_proj", "query", "key", "value"
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "out_lin",
+                "q_lin",
+                "k_lin",
+                "v_lin",
+                "c_attn",
+                "c_proj",
+                "query",
+                "key",
+                "value",
             ]
             if not any(p in name_lower for p in attn_patterns):
                 return False
@@ -170,8 +209,15 @@ class FWSVDCompressor(BaseCompressor):
             target_mod = getattr(layer, "base_layer", layer)
             cls_name = layer.__class__.__name__.lower()
             target_cls = target_mod.__class__.__name__.lower()
-            is_conv1d = "conv1d" in cls_name or "conv1d" in target_cls or hasattr(layer, "nf") or hasattr(target_mod, "nf")
-            weight_tensor = getattr(target_mod, "weight", getattr(layer, "weight", None))
+            is_conv1d = (
+                "conv1d" in cls_name
+                or "conv1d" in target_cls
+                or hasattr(layer, "nf")
+                or hasattr(target_mod, "nf")
+            )
+            weight_tensor = getattr(
+                target_mod, "weight", getattr(layer, "weight", None)
+            )
             if weight_tensor is None:
                 return None, float("inf"), 0
 
@@ -191,7 +237,14 @@ class FWSVDCompressor(BaseCompressor):
                 default_rank=rank or self.rank,
                 comp_config=getattr(self, "comp_config", None),
             )
-            max_allowed_rank = max(1, min(in_feat, out_feat, int(0.75 * (in_feat * out_feat) / (in_feat + out_feat))))
+            max_allowed_rank = max(
+                1,
+                min(
+                    in_feat,
+                    out_feat,
+                    int(0.75 * (in_feat * out_feat) / (in_feat + out_feat)),
+                ),
+            )
             r = min(r, max_allowed_rank)
             W_norm = torch.norm(W, p="fro").item()
 
@@ -199,7 +252,9 @@ class FWSVDCompressor(BaseCompressor):
             inv_sqrt_f: torch.Tensor | None = None
 
             if fisher_diag is not None and fisher_diag.shape == (in_feat,):
-                f_clamped = fisher_diag.to(device=layer.weight.device, dtype=torch.float32).clamp(min=1e-8)
+                f_clamped = fisher_diag.to(
+                    device=layer.weight.device, dtype=torch.float32
+                ).clamp(min=1e-8)
                 sqrt_f = torch.sqrt(f_clamped)
                 inv_sqrt_f = 1.0 / sqrt_f
 
@@ -208,12 +263,14 @@ class FWSVDCompressor(BaseCompressor):
             else:
                 W_weighted = W
 
-            W_weighted_dev = W_weighted.to(device=layer.weight.device, dtype=torch.float32)
+            W_weighted_dev = W_weighted.to(
+                device=layer.weight.device, dtype=torch.float32
+            )
             U, S, Vt = torch.linalg.svd(W_weighted_dev, full_matrices=False)
 
             sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-            U_r = (U[:, :r] * sqrt_S.unsqueeze(0))
-            V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :])
+            U_r = U[:, :r] * sqrt_S.unsqueeze(0)
+            V_r = sqrt_S.unsqueeze(1) * Vt[:r, :]
 
             if inv_sqrt_f is not None:
                 V_r = V_r * inv_sqrt_f.unsqueeze(0)
@@ -259,7 +316,9 @@ class FWSVDCompressor(BaseCompressor):
         fishers: dict[str, torch.Tensor] = {}
 
         if self.tokenizer is None:
-            logger.info("No tokenizer provided for FWSVD; proceeding with standard unweighted SVD.")
+            logger.info(
+                "No tokenizer provided for FWSVD; proceeding with standard unweighted SVD."
+            )
         else:
             hooks = []
 
@@ -278,18 +337,29 @@ class FWSVDCompressor(BaseCompressor):
                         target_mod = getattr(module, "base_layer", module)
                         cls_name = module.__class__.__name__.lower()
                         target_cls = target_mod.__class__.__name__.lower()
-                        is_conv1d = "conv1d" in cls_name or "conv1d" in target_cls or hasattr(module, "nf") or hasattr(target_mod, "nf")
-                        weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
+                        is_conv1d = (
+                            "conv1d" in cls_name
+                            or "conv1d" in target_cls
+                            or hasattr(module, "nf")
+                            or hasattr(target_mod, "nf")
+                        )
+                        weight_tensor = getattr(
+                            target_mod, "weight", getattr(module, "weight", None)
+                        )
                         if weight_tensor is None:
                             return
-                        in_f = weight_tensor.shape[0] if is_conv1d else weight_tensor.shape[1]
+                        in_f = (
+                            weight_tensor.shape[0]
+                            if is_conv1d
+                            else weight_tensor.shape[1]
+                        )
                         x_fp32 = x.float()
                         x_flat = x_fp32.reshape(-1, in_f)
                         mask = x_flat.abs().sum(dim=-1) > 1e-5
                         if mask.sum() == 0:
                             return
                         x_active = x_flat[mask]
-                        batch_fisher = torch.mean(x_active ** 2, dim=0).cpu()
+                        batch_fisher = torch.mean(x_active**2, dim=0).cpu()
 
                     if name not in fishers:
                         fishers[name] = batch_fisher
@@ -352,9 +422,11 @@ class FWSVDCompressor(BaseCompressor):
         stats = {
             "compressed_layers": len(self.compressed_layers),
             "fallback_layers": len(self.fallback_layers),
-            "avg_reconstruction_error": float(
-                sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
-            ) if self.layer_errors else 0.0,
+            "avg_reconstruction_error": (
+                float(sum(self.layer_errors.values()) / max(1, len(self.layer_errors)))
+                if self.layer_errors
+                else 0.0
+            ),
             "layer_ranks": self.layer_ranks,
         }
         self.model.compression_stats = stats

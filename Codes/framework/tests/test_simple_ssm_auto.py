@@ -1,7 +1,8 @@
+import framework.attentions.simple_ssm
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.simple_ssm
+
 
 def test_simple_ssm_module_present():
     assert hasattr(framework.attentions, 'simple_ssm')

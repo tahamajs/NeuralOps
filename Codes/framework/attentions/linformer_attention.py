@@ -1,6 +1,4 @@
-"""Linformer Attention – Production-hardened with full multi-architecture support.
-
-"""
+"""Linformer Attention – Production-hardened with full multi-architecture support."""
 
 from __future__ import annotations
 
@@ -11,7 +9,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
@@ -22,6 +19,7 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # RoPE (dtype-safe)
 # ===========================================================================
+
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     x1 = x[..., : x.shape[-1] // 2]
@@ -84,6 +82,7 @@ def apply_rotary_pos_emb(
 # Decoder detection
 # ===========================================================================
 
+
 def _detect_decoder(
     config: Any,
     is_decoder: bool | None,
@@ -95,8 +94,22 @@ def _detect_decoder(
         if getattr(config, "is_decoder", False) or getattr(config, "causal", False):
             return True
         mt = str(getattr(config, "model_type", "") or "").lower()
-        if mt.startswith(("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                          "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")):
+        if mt.startswith(
+            (
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
+            )
+        ):
             return True
         arch = getattr(config, "architectures", None)
         if arch and any(("GPT" in str(a) or "CausalLM" in str(a)) for a in arch):
@@ -114,6 +127,7 @@ def _detect_decoder(
 # ===========================================================================
 # LF-12: FactorizedLoRALinear
 # ===========================================================================
+
 
 class FactorizedLoRALinear(nn.Module):
     is_custom_attention = False
@@ -147,8 +161,12 @@ class FactorizedLoRALinear(nn.Module):
             self.up.bias.requires_grad = False
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **factory))
-            self.lora_B = nn.Parameter(torch.empty(self.out_features, self.lora_rank, **factory))
+            self.lora_A = nn.Parameter(
+                torch.empty(self.lora_rank, self.in_features, **factory)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty(self.out_features, self.lora_rank, **factory)
+            )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B)
         else:
@@ -188,7 +206,10 @@ class FactorizedLoRALinear(nn.Module):
             x = x.to(self.down.weight.dtype)
         out = self.up(self.down(x))
         if self.lora_A is not None and self.lora_B is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            out = (
+                out
+                + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            )
         return out.to(orig_dtype)
 
 
@@ -196,8 +217,11 @@ class FactorizedLoRALinear(nn.Module):
 # Main Linformer attention
 # ===========================================================================
 
+
 @ATTENTION_REGISTRY.register("linformer", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("linformer_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "linformer_attention", supports_causal=True, supports_gqa=True
+)
 class LinformerAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
@@ -228,7 +252,9 @@ class LinformerAttention(BaseAttention):
         hidden_size = self._detect_hidden_size(config, source_attn, kwargs)
         num_heads = self._detect_num_heads(config, source_attn, kwargs, hidden_size)
         num_kv_heads = self._detect_num_kv_heads(config, source_attn, kwargs, num_heads)
-        head_dim = self._detect_head_dim(config, source_attn, kwargs, hidden_size, num_heads)
+        head_dim = self._detect_head_dim(
+            config, source_attn, kwargs, hidden_size, num_heads
+        )
 
         self.dim = int(hidden_size)
         self.hidden_size = self.dim
@@ -241,10 +267,21 @@ class LinformerAttention(BaseAttention):
         self.supports_gqa = True
 
         # Linformer hyperparams
-        k_val = k if k is not None else getattr(comp_config, "linformer_k",
-                                                getattr(comp_config, "k", None) if comp_config else None)
+        k_val = (
+            k
+            if k is not None
+            else getattr(
+                comp_config,
+                "linformer_k",
+                getattr(comp_config, "k", None) if comp_config else None,
+            )
+        )
         if k_val is None:
-            k_val = getattr(config, "linformer_k", getattr(config, "k", 64)) if config else 64
+            k_val = (
+                getattr(config, "linformer_k", getattr(config, "k", 64))
+                if config
+                else 64
+            )
         self.k_proj_dim = int(k_val)
 
         pos_emb = getattr(config, "max_position_embeddings", None) if config else None
@@ -253,7 +290,9 @@ class LinformerAttention(BaseAttention):
         self.max_seq_len = max(512, int(pos_emb))
 
         # LF-11: centralized decoder detection
-        self.is_decoder = _detect_decoder(config, is_decoder or kwargs.get("is_causal"), source_attn)
+        self.is_decoder = _detect_decoder(
+            config, is_decoder or kwargs.get("is_causal"), source_attn
+        )
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
@@ -278,14 +317,38 @@ class LinformerAttention(BaseAttention):
 
         # FactorizedLoRALinear projections
         FF = FactorizedLoRALinear
-        self.q_proj = FF(self.dim, self.all_head_size, rank=self.proj_rank,
-                         lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, bias=True)
-        self.k_proj = FF(self.dim, self.all_kv_head_size, rank=self.proj_rank,
-                         lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, bias=True)
-        self.v_proj = FF(self.dim, self.all_kv_head_size, rank=self.proj_rank,
-                         lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, bias=True)
-        self.out_proj = FF(self.all_head_size, self.dim, rank=self.proj_rank,
-                           lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, bias=True)
+        self.q_proj = FF(
+            self.dim,
+            self.all_head_size,
+            rank=self.proj_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
+        )
+        self.k_proj = FF(
+            self.dim,
+            self.all_kv_head_size,
+            rank=self.proj_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
+        )
+        self.v_proj = FF(
+            self.dim,
+            self.all_kv_head_size,
+            rank=self.proj_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
+        )
+        self.out_proj = FF(
+            self.all_head_size,
+            self.dim,
+            rank=self.proj_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
+        )
 
         # Linformer projections: E, F: (k, max_seq_len)
         self.E = nn.Parameter(torch.empty(self.k_proj_dim, self.max_seq_len))
@@ -299,10 +362,17 @@ class LinformerAttention(BaseAttention):
             self.F.data[:min_dim, :min_dim].fill_diagonal_(1.0)
 
         dropout_p = float(
-            getattr(config, "dropout",
-                     getattr(config, "hidden_dropout_prob",
-                             getattr(config, "attention_probs_dropout_prob", 0.1)))
-             if config else 0.1
+            getattr(
+                config,
+                "dropout",
+                getattr(
+                    config,
+                    "hidden_dropout_prob",
+                    getattr(config, "attention_probs_dropout_prob", 0.1),
+                ),
+            )
+            if config
+            else 0.1
         )
         self.dropout = nn.Dropout(dropout_p)
         self.triton_kwargs = {"phi": "identity", "eps": 1e-6}
@@ -314,7 +384,9 @@ class LinformerAttention(BaseAttention):
     # LF-04: dimension detection
     # ------------------------------------------------------------------
     @staticmethod
-    def _detect_hidden_size(config: Any, src: nn.Module | None, kwargs: dict[str, Any]) -> int:
+    def _detect_hidden_size(
+        config: Any, src: nn.Module | None, kwargs: dict[str, Any]
+    ) -> int:
         for k in ("hidden_size", "d_model", "n_embd", "dim"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:
@@ -336,8 +408,9 @@ class LinformerAttention(BaseAttention):
         return 768
 
     @staticmethod
-    def _detect_num_heads(config: Any, src: nn.Module | None, kwargs: dict[str, Any],
-                          hidden_size: int) -> int:
+    def _detect_num_heads(
+        config: Any, src: nn.Module | None, kwargs: dict[str, Any], hidden_size: int
+    ) -> int:
         for k in ("num_heads", "num_attention_heads", "n_heads", "n_head"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:
@@ -355,8 +428,9 @@ class LinformerAttention(BaseAttention):
         return max(1, hidden_size // 64)
 
     @staticmethod
-    def _detect_num_kv_heads(config: Any, src: nn.Module | None, kwargs: dict[str, Any],
-                             num_heads: int) -> int:
+    def _detect_num_kv_heads(
+        config: Any, src: nn.Module | None, kwargs: dict[str, Any], num_heads: int
+    ) -> int:
         for k in ("num_key_value_heads", "num_kv_heads"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:
@@ -373,8 +447,13 @@ class LinformerAttention(BaseAttention):
         return num_heads
 
     @staticmethod
-    def _detect_head_dim(config: Any, src: nn.Module | None, kwargs: dict[str, Any],
-                         hidden_size: int, num_heads: int) -> int:
+    def _detect_head_dim(
+        config: Any,
+        src: nn.Module | None,
+        kwargs: dict[str, Any],
+        hidden_size: int,
+        num_heads: int,
+    ) -> int:
         v = kwargs.get("head_dim")
         if isinstance(v, int) and v > 0:
             return v
@@ -386,7 +465,11 @@ class LinformerAttention(BaseAttention):
         if src is not None:
             for attr in ("q_proj", "q_lin", "query"):
                 mod = getattr(src, attr, None)
-                if mod is not None and hasattr(mod, "weight") and mod.weight is not None:
+                if (
+                    mod is not None
+                    and hasattr(mod, "weight")
+                    and mod.weight is not None
+                ):
                     try:
                         return int(mod.weight.shape[0] // max(1, num_heads))
                     except Exception:
@@ -397,32 +480,52 @@ class LinformerAttention(BaseAttention):
     # Aliases
     # ------------------------------------------------------------------
     @property
-    def query(self): return self.q_proj
+    def query(self):
+        return self.q_proj
+
     @property
-    def key(self): return self.k_proj
+    def key(self):
+        return self.k_proj
+
     @property
-    def value(self): return self.v_proj
+    def value(self):
+        return self.v_proj
+
     @property
-    def q_lin(self): return self.q_proj
+    def q_lin(self):
+        return self.q_proj
+
     @property
-    def k_lin(self): return self.k_proj
+    def k_lin(self):
+        return self.k_proj
+
     @property
-    def v_lin(self): return self.v_proj
+    def v_lin(self):
+        return self.v_proj
+
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
+
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
+
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
+
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
 
     # ------------------------------------------------------------------
     # SVD init helper
     # ------------------------------------------------------------------
     @staticmethod
-    def _svd_init(w: torch.Tensor, b: torch.Tensor | None,
-                  proj: FactorizedLoRALinear) -> None:
+    def _svd_init(
+        w: torch.Tensor, b: torch.Tensor | None, proj: FactorizedLoRALinear
+    ) -> None:
         with torch.no_grad():
             W = w.detach().float()
             if W.ndim != 2:
@@ -463,19 +566,41 @@ class LinformerAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        has_out_lin = (
+            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        )
         is_nested = False
-        if (hasattr(src, "self") and hasattr(src.self, "query")
-                and hasattr(src, "output") and hasattr(src.output, "dense")) or (cls_name in ["BertSelfAttention", "RobertaSelfAttention",
-                           "XLMRobertaSelfAttention", "ElectraSelfAttention",
-                           "DebertaSelfAttention"]
-              or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())) \
-                and not has_out_lin:
+        if (
+            (
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
+            )
+            or (
+                cls_name
+                in [
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                ]
+                or (
+                    cls_name.endswith("SelfAttention")
+                    and "distil" not in cls_name.lower()
+                )
+            )
+            and not has_out_lin
+        ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         # 1. GPT-2 fused c_attn
@@ -495,11 +620,18 @@ class LinformerAttention(BaseAttention):
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size:2 * split_size, :],
-                                  c_b[split_size:2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size:, :],
-                                  c_b[2 * split_size:] if c_b is not None else None)
+                extracted["q"] = (
+                    c_w[:split_size, :],
+                    c_b[:split_size] if c_b is not None else None,
+                )
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (
+                    c_w[2 * split_size :, :],
+                    c_b[2 * split_size :] if c_b is not None else None,
+                )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -515,7 +647,10 @@ class LinformerAttention(BaseAttention):
                     if is_conv_o:
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    extracted["o"] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
 
         # 2. BERT / RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
@@ -553,11 +688,15 @@ class LinformerAttention(BaseAttention):
                             )
                             break
 
-        missing = [k for k, (w, _) in extracted.items()
-                   if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -566,8 +705,11 @@ class LinformerAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [k for k, (w, _) in extracted.items()
-                         if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing_after:
             raise RuntimeError(
                 f"LinformerAttention.copy_weights: missing mandatory projections "
@@ -617,20 +759,28 @@ class LinformerAttention(BaseAttention):
             if w_o is not None:
                 self._svd_init(_orient(w_o, self.all_head_size), b_o, self.out_proj)
             elif self.is_nested_encoder:
-                eye = torch.eye(self.all_head_size, self.all_head_size,
-                                device=self.out_proj.down.weight.device,
-                                dtype=self.out_proj.down.weight.dtype)
+                eye = torch.eye(
+                    self.all_head_size,
+                    self.all_head_size,
+                    device=self.out_proj.down.weight.device,
+                    dtype=self.out_proj.down.weight.dtype,
+                )
                 self._svd_init(eye, None, self.out_proj)
 
             # LF-08: norm verification via float() cast
-            for name, mod in (("q_proj", self.q_proj), ("k_proj", self.k_proj),
-                              ("v_proj", self.v_proj), ("out_proj", self.out_proj)):
+            for name, mod in (
+                ("q_proj", self.q_proj),
+                ("k_proj", self.k_proj),
+                ("v_proj", self.v_proj),
+                ("out_proj", self.out_proj),
+            ):
                 try:
                     w_norm = float(torch.linalg.norm(mod.weight.float()).item())
                     if w_norm < 1e-4:
                         logger.warning(
                             "LinformerAttention: weight '%s' has near-zero norm (%.2e).",
-                            name, w_norm,
+                            name,
+                            w_norm,
                         )
                 except Exception:
                     pass
@@ -680,22 +830,43 @@ class LinformerAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         q = self.q_proj(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
-        k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        k = (
+            self.k_proj(hidden_states)
+            .view(B, N, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_proj(hidden_states)
+            .view(B, N, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # LF-05: RoPE with past_len offset
-        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
-        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
+        pos_emb = (
+            position_embeddings
+            if position_embeddings is not None
+            else kwargs.get("position_embeddings")
+        )
+        if (
+            pos_emb is not None
+            and isinstance(pos_emb, (tuple, list))
+            and len(pos_emb) >= 2
+        ):
             cos, sin = pos_emb[0], pos_emb[1]
             past_len = 0
             if past_key_value is not None:
-                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
+                if (
+                    isinstance(past_key_value, (tuple, list))
+                    and len(past_key_value) >= 1
+                ):
                     past_len = past_key_value[0].shape[-2]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                     past_len = past_key_value.key_cache[0].shape[-2]
             if past_len > 0:
-                cos = cos[..., past_len: past_len + N, :]
-                sin = sin[..., past_len: past_len + N, :]
+                cos = cos[..., past_len : past_len + N, :]
+                sin = sin[..., past_len : past_len + N, :]
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
         if self.kv_repeat > 1:
@@ -739,29 +910,51 @@ class LinformerAttention(BaseAttention):
             F_act = self.F[:k_eff, :L].to(dtype=dtype, device=device)
         else:
             # LF-10: interpolation with 3D input
-            E_act = F.interpolate(
-                self.E[:k_eff].unsqueeze(0).float(),
-                size=L, mode="linear", align_corners=False,
-            ).squeeze(0).to(dtype=dtype, device=device)
-            F_act = F.interpolate(
-                self.F[:k_eff].unsqueeze(0).float(),
-                size=L, mode="linear", align_corners=False,
-            ).squeeze(0).to(dtype=dtype, device=device)
+            E_act = (
+                F.interpolate(
+                    self.E[:k_eff].unsqueeze(0).float(),
+                    size=L,
+                    mode="linear",
+                    align_corners=False,
+                )
+                .squeeze(0)
+                .to(dtype=dtype, device=device)
+            )
+            F_act = (
+                F.interpolate(
+                    self.F[:k_eff].unsqueeze(0).float(),
+                    size=L,
+                    mode="linear",
+                    align_corners=False,
+                )
+                .squeeze(0)
+                .to(dtype=dtype, device=device)
+            )
 
         # Project key/value sequence: (B, H, k_eff, d)
         K_proj = torch.matmul(E_act.to(k.dtype), k)
         V_proj = torch.matmul(F_act.to(v.dtype), v)
 
         scale = 1.0 / math.sqrt(d)
-        scores = torch.matmul(q.float(), K_proj.transpose(-2, -1).contiguous().float()) * scale
+        scores = (
+            torch.matmul(q.float(), K_proj.transpose(-2, -1).contiguous().float())
+            * scale
+        )
 
         # LF-09: proper causal masking for projected K/V
         if self.is_decoder:
             if self.k_proj_dim >= L:
                 # Exact causal on full sequence — recompute without projection
-                causal_scores = torch.matmul(q.float(), k.transpose(-2, -1).contiguous().float()) * scale
-                causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
-                scores = causal_scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
+                causal_scores = (
+                    torch.matmul(q.float(), k.transpose(-2, -1).contiguous().float())
+                    * scale
+                )
+                causal_mask = torch.tril(
+                    torch.ones(L, L, device=device, dtype=torch.bool)
+                )
+                scores = causal_scores.masked_fill(
+                    ~causal_mask.unsqueeze(0).unsqueeze(0), -1e4
+                )
                 V_proj = v
             else:
                 # Approximate causal on projected K/V: mask each projected key by its mean position
@@ -770,17 +963,15 @@ class LinformerAttention(BaseAttention):
                 )
                 # For each query position i, allow projected keys whose support range includes <= i
                 # Simplified: allow key j if j <= i (proportional to support)
-                idx_q = torch.arange(L, device=device).unsqueeze(1)      # (L, 1)
+                idx_q = torch.arange(L, device=device).unsqueeze(1)  # (L, 1)
                 idx_k = torch.arange(k_eff, device=device).unsqueeze(0)  # (1, k_eff)
                 # Each projected key j covers roughly L/k_eff positions
                 step = max(1, L // k_eff)
-                allowed = (idx_k * step) <= idx_q                        # (L, k_eff)
+                allowed = (idx_k * step) <= idx_q  # (L, k_eff)
                 scores = scores.masked_fill(~allowed.unsqueeze(0).unsqueeze(0), -1e4)
 
         if valid_mask is not None:
-            scores = scores.masked_fill(
-                ~valid_mask.unsqueeze(1).unsqueeze(-1), -1e4
-            )
+            scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(-1), -1e4)
 
         scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
         attn = F.softmax(scores, dim=-1).to(dtype)
@@ -817,8 +1008,16 @@ class LinformerAttention(BaseAttention):
 # ===========================================================================
 
 _SINGLE_LAYER_ATTRS = ("attention", "attn", "self_attn", "self")
-_MODEL_ATTRS = ("transformer", "distilbert", "roberta", "bert",
-                "encoder", "model", "layers", "h")
+_MODEL_ATTRS = (
+    "transformer",
+    "distilbert",
+    "roberta",
+    "bert",
+    "encoder",
+    "model",
+    "layers",
+    "h",
+)
 
 
 def _is_single_layer(obj: Any) -> bool:
@@ -836,6 +1035,7 @@ def _is_single_layer(obj: Any) -> bool:
 # ===========================================================================
 # Injection (LF-03: depth via argument, thread-safe)
 # ===========================================================================
+
 
 @ATTENTION_REGISTRY.register("linformer_inject")
 @ATTENTION_REGISTRY.register("inject_linformer")
@@ -873,7 +1073,11 @@ def inject_linformer(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -883,8 +1087,13 @@ def inject_linformer(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_linformer(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 num_injected += 1
@@ -904,7 +1113,10 @@ def inject_linformer(
             return None
 
         # Double-injection guard
-        if isinstance(src_attn, LinformerAttention) or "Linformer" in src_attn.__class__.__name__:
+        if (
+            isinstance(src_attn, LinformerAttention)
+            or "Linformer" in src_attn.__class__.__name__
+        ):
             return None
 
         # Skip Qwen hybrid layers
@@ -915,9 +1127,14 @@ def inject_linformer(
         if cfg is None and hasattr(src_attn, "config"):
             cfg = src_attn.config
 
-        k_val = (getattr(comp_config, "linformer_k",
-                         getattr(comp_config, "k", 64)) if comp_config else kwargs.get("linformer_k", 64))
-        max_seq_len = max(512, getattr(cfg, "max_position_embeddings", 512)) if cfg else 512
+        k_val = (
+            getattr(comp_config, "linformer_k", getattr(comp_config, "k", 64))
+            if comp_config
+            else kwargs.get("linformer_k", 64)
+        )
+        max_seq_len = (
+            max(512, getattr(cfg, "max_position_embeddings", 512)) if cfg else 512
+        )
 
         new_attn = LinformerAttention(
             cfg,

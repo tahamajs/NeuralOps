@@ -42,7 +42,15 @@ try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     if hasattr(sys.stderr, "reconfigure"):
         sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+except (
+    AttributeError,
+    KeyError,
+    RuntimeError,
+    TypeError,
+    ValueError,
+    OSError,
+    ImportError,
+):
     pass
 
 # ---------------------------------------------------------------------------
@@ -65,9 +73,9 @@ os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 # Point to local cache if present — checked in priority order, first match wins
 _potential_caches = [
-    _CODES.parent / "cache",                                 # <project>/cache  (local override)
-    Path.home() / ".cache" / "huggingface" / "hub",         # ~/.cache/hf/hub  (standard)
-    Path.home() / ".cache" / "huggingface",                  # ~/.cache/hf
+    _CODES.parent / "cache",  # <project>/cache  (local override)
+    Path.home() / ".cache" / "huggingface" / "hub",  # ~/.cache/hf/hub  (standard)
+    Path.home() / ".cache" / "huggingface",  # ~/.cache/hf
 ]
 for pc in _potential_caches:
     if pc.exists():
@@ -80,9 +88,30 @@ for pc in _potential_caches:
 # Lazy heavy imports (torch / transformers loaded only when needed)
 # ---------------------------------------------------------------------------
 
+
 def _import_framework():
     """Import and return all framework components needed for the pipeline."""
     import torch
+    from framework.core.registry import (
+        ATTENTION_REGISTRY,
+        COMPRESSOR_REGISTRY,
+        list_all_components,
+    )
+    from framework.core.utils import (
+        clear_memory,
+        count_parameters,
+        get_device,
+        set_seed,
+    )
+    from framework.experiment_utils.config import ExperimentConfig
+    from framework.pipeline.result_writer import ResultWriter
+    from framework.trainer.callbacks import (
+        MemoryCallback,
+        SVDAttentionCallback,
+        TimeCallback,
+    )
+    from framework.trainer.metrics import get_task_metrics
+    from framework.utils.replace_attention import replace_attention
     from transformers import (
         AutoModelForSequenceClassification,
         AutoTokenizer,
@@ -90,17 +119,6 @@ def _import_framework():
         Trainer,
         TrainingArguments,
     )
-    from framework.core.registry import (
-        ATTENTION_REGISTRY,
-        COMPRESSOR_REGISTRY,
-        list_all_components,
-    )
-    from framework.core.utils import clear_memory, count_parameters, get_device, set_seed
-    from framework.experiment_utils.config import ExperimentConfig
-    from framework.trainer.callbacks import MemoryCallback, SVDAttentionCallback, TimeCallback
-    from framework.trainer.metrics import get_task_metrics
-    from framework.utils.replace_attention import replace_attention
-    from framework.pipeline.result_writer import ResultWriter
 
     return dict(
         torch=torch,
@@ -130,6 +148,7 @@ def _import_framework():
 # Logging setup
 # ---------------------------------------------------------------------------
 
+
 def setup_logger(log_dir: str, exp_name: str) -> logging.Logger:
     """Configure root logger to write to console + rotating file."""
     import logging
@@ -151,7 +170,13 @@ def setup_logger(log_dir: str, exp_name: str) -> logging.Logger:
     ch.setFormatter(fmt)
     root.addHandler(ch)
 
-    fh = RotatingFileHandler(log_file, maxBytes=10 * 1024 * 1024, backupCount=3, encoding="utf-8", errors="replace")
+    fh = RotatingFileHandler(
+        log_file,
+        maxBytes=10 * 1024 * 1024,
+        backupCount=3,
+        encoding="utf-8",
+        errors="replace",
+    )
     fh.setFormatter(fmt)
     root.addHandler(fh)
 
@@ -161,6 +186,7 @@ def setup_logger(log_dir: str, exp_name: str) -> logging.Logger:
 # ---------------------------------------------------------------------------
 # Data helpers
 # ---------------------------------------------------------------------------
+
 
 def load_data(cfg, tokenizer):
     """Load, tokenise, and return a HuggingFace DatasetDict."""
@@ -178,7 +204,9 @@ def load_data(cfg, tokenizer):
         preprocess_fn = build_preprocess(
             tokenizer, cfg.task, cfg.max_len, sent1_key, sent2_key, is_regression
         )
-        dataset = raw.map(preprocess_fn, batched=True, remove_columns=raw["train"].column_names)
+        dataset = raw.map(
+            preprocess_fn, batched=True, remove_columns=raw["train"].column_names
+        )
 
         # Crop dataset to max_train_samples (e.g. 1000) if requested for fast benchmarking
         max_samples = getattr(cfg, "max_train_samples", None)
@@ -202,6 +230,7 @@ def load_data(cfg, tokenizer):
 
 from transformers import TrainerCallback
 
+
 class LiveHistoryCallback(TrainerCallback):
     def __init__(self, out_dir):
         self.history_file = Path(out_dir) / "history" / "log_history.json"
@@ -211,6 +240,7 @@ class LiveHistoryCallback(TrainerCallback):
         if state.log_history:
             with open(self.history_file, "w", encoding="utf-8") as f:
                 json.dump(state.log_history, f, indent=2, default=str)
+
 
 def run_train(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     """Full training pipeline: data → model → train → eval → save."""
@@ -228,7 +258,9 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     try:
         tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name, use_fast=True)
     except Exception:
-        tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name, use_fast=True, local_files_only=True)
+        tokenizer = fw["AutoTokenizer"].from_pretrained(
+            cfg.model_name, use_fast=True, local_files_only=True
+        )
 
     # ── Data ───────────────────────────────────────────────────────────────
     logger.info("Loading data for task: %s", cfg.task)
@@ -270,8 +302,12 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     logger.info("Trainable parameters: %s", f"{n_params:,}")
 
     # ── Training args ──────────────────────────────────────────────────────
-    metric_map = {"cola": "matthews_correlation", "stsb": "pearson",
-                  "mrpc": "f1", "qqp": "f1"}
+    metric_map = {
+        "cola": "matthews_correlation",
+        "stsb": "pearson",
+        "mrpc": "f1",
+        "qqp": "f1",
+    }
     metric_for_best = f"eval_{metric_map.get(cfg.task, 'accuracy')}"
 
     training_args = fw["TrainingArguments"](
@@ -283,7 +319,9 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
         learning_rate=cfg.lr,
         weight_decay=0.01,
         lr_scheduler_type="linear",
-        warmup_steps=min(500, int(0.1 * len(dataset["train"]) / max(1, cfg.batch_size) * cfg.epochs)),
+        warmup_steps=min(
+            500, int(0.1 * len(dataset["train"]) / max(1, cfg.batch_size) * cfg.epochs)
+        ),
         logging_steps=50,
         eval_strategy="epoch",
         save_strategy="no",  # STORAGE OPTIMIZATION: Do not save heavy intermediate checkpoints
@@ -302,7 +340,11 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
 
     compute_metrics = fw["get_task_metrics"](cfg.task)
 
-    callbacks = [fw["MemoryCallback"](), fw["TimeCallback"](), LiveHistoryCallback(out_dir)]
+    callbacks = [
+        fw["MemoryCallback"](),
+        fw["TimeCallback"](),
+        LiveHistoryCallback(out_dir),
+    ]
     if getattr(cfg, "compressor", None):
         callbacks.append(fw["SVDAttentionCallback"]())
 
@@ -340,6 +382,7 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
 
     # Storage Zero-Bloat Guarantee: Clean all weight binaries and checkpoints
     import shutil
+
     shutil.rmtree(out_dir / "checkpoints", ignore_errors=True)
     shutil.rmtree(out_dir / "model", ignore_errors=True)
     for p in out_dir.glob("*.bin"):
@@ -364,6 +407,7 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Evaluation pipeline
 # ---------------------------------------------------------------------------
+
 
 def run_eval(cfg, fw: dict, logger: logging.Logger, model_path: str) -> dict[str, Any]:
     """Load a saved checkpoint and evaluate it on the validation split."""
@@ -411,6 +455,7 @@ def run_eval(cfg, fw: dict, logger: logging.Logger, model_path: str) -> dict[str
 # Compression pipeline
 # ---------------------------------------------------------------------------
 
+
 def run_compress(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     """Apply a registered compressor to the base model and report size reduction."""
     from framework.core.registry import COMPRESSOR_REGISTRY
@@ -418,7 +463,7 @@ def run_compress(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     raw_name = getattr(cfg, "compressor", None) or getattr(cfg, "attn_type", "svd")
     compressor_name = str(raw_name).lower().strip()
     if compressor_name.startswith("compress_"):
-        compressor_name = compressor_name[len("compress_"):]
+        compressor_name = compressor_name[len("compress_") :]
 
     if compressor_name not in COMPRESSOR_REGISTRY:
         if f"compress_{compressor_name}" in COMPRESSOR_REGISTRY:
@@ -441,8 +486,12 @@ def run_compress(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
         model = fw["AutoModelForSequenceClassification"].from_pretrained(cfg.model_name)
         tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name)
     except Exception:
-        model = fw["AutoModelForSequenceClassification"].from_pretrained(cfg.model_name, local_files_only=True)
-        tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name, local_files_only=True)
+        model = fw["AutoModelForSequenceClassification"].from_pretrained(
+            cfg.model_name, local_files_only=True
+        )
+        tokenizer = fw["AutoTokenizer"].from_pretrained(
+            cfg.model_name, local_files_only=True
+        )
     model.to(device)
     model.tokenizer = tokenizer
 
@@ -470,7 +519,10 @@ def run_compress(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     else:
         compressed_model = getattr(compressor, "model", model)
 
-    comp_mb = sum(p.numel() * p.element_size() for p in compressed_model.parameters()) / 1024**2
+    comp_mb = (
+        sum(p.numel() * p.element_size() for p in compressed_model.parameters())
+        / 1024**2
+    )
     ratio = orig_mb / comp_mb if comp_mb > 0 else 1.0
 
     # Evaluate compressed model on task validation split
@@ -498,6 +550,7 @@ def run_compress(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
         eval_f1 = eval_res.get("eval_f1_macro", eval_acc)
         eval_loss = eval_res.get("eval_loss", 0.0)
         import shutil
+
         shutil.rmtree(out_dir / "tmp_eval", ignore_errors=True)
     except Exception as e:
         logger.warning("Could not evaluate compressed model on validation set: %s", e)
@@ -530,6 +583,7 @@ def run_compress(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
 # Sweep pipeline
 # ---------------------------------------------------------------------------
 
+
 def run_sweep(args, fw: dict, logger: logging.Logger) -> list[dict[str, Any]]:
     """Run a grid sweep: attn_types × seeds, save aggregated results."""
     import numpy as np
@@ -538,7 +592,9 @@ def run_sweep(args, fw: dict, logger: logging.Logger) -> list[dict[str, Any]]:
     seeds: list[int] = args.seeds
     logger.info(
         "Starting sweep: %d attn_types × %d seeds = %d runs",
-        len(attn_types), len(seeds), len(attn_types) * len(seeds),
+        len(attn_types),
+        len(seeds),
+        len(attn_types) * len(seeds),
     )
 
     all_results: list[dict[str, Any]] = []
@@ -550,15 +606,15 @@ def run_sweep(args, fw: dict, logger: logging.Logger) -> list[dict[str, Any]]:
 
             cfg = fw["ExperimentConfig"]()
             cfg.model_name = args.model_name
-            cfg.task       = args.task
-            cfg.epochs     = args.epochs
+            cfg.task = args.task
+            cfg.epochs = args.epochs
             cfg.batch_size = args.batch_size
-            cfg.lr         = args.lr
-            cfg.attn_type  = attn_type
-            cfg.seed       = seed
+            cfg.lr = args.lr
+            cfg.attn_type = attn_type
+            cfg.seed = seed
             cfg.output_dir = args.output_dir
-            cfg.exp_name   = run_name
-            cfg.max_len    = args.max_len
+            cfg.exp_name = run_name
+            cfg.max_len = args.max_len
             cfg.grad_accum = args.grad_accum
             cfg.max_grad_norm = 1.0
             cfg.gradient_checkpointing = False
@@ -567,15 +623,18 @@ def run_sweep(args, fw: dict, logger: logging.Logger) -> list[dict[str, Any]]:
             try:
                 result = run_train(cfg, fw, logger)
                 result["attn_type"] = attn_type
-                result["seed"]      = seed
-                result["run_name"]  = run_name
+                result["seed"] = seed
+                result["run_name"] = run_name
                 all_results.append(result)
             except Exception as e:
                 logger.error("Run %s failed: %s", run_name, e, exc_info=True)
                 all_results.append({"run_name": run_name, "error": str(e)})
 
     # Aggregate across seeds per attn_type
-    sweep_out = Path(args.output_dir) / f"sweep_{args.task}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    sweep_out = (
+        Path(args.output_dir)
+        / f"sweep_{args.task}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    )
     sweep_out.mkdir(parents=True, exist_ok=True)
 
     by_attn: dict[str, list] = {}
@@ -590,12 +649,17 @@ def run_sweep(args, fw: dict, logger: logging.Logger) -> list[dict[str, Any]]:
             summary[attn_type] = {"error": "all runs failed"}
             continue
         # Collect numeric eval keys
-        eval_keys = {k for r in good for k in r.get("eval", {}) if isinstance(r["eval"].get(k), float)}
+        eval_keys = {
+            k
+            for r in good
+            for k in r.get("eval", {})
+            if isinstance(r["eval"].get(k), float)
+        }
         summary[attn_type] = {}
         for k in eval_keys:
             vals = [r["eval"][k] for r in good if k in r.get("eval", {})]
             summary[attn_type][f"{k}_mean"] = float(np.mean(vals))
-            summary[attn_type][f"{k}_std"]  = float(np.std(vals))
+            summary[attn_type][f"{k}_std"] = float(np.std(vals))
         summary[attn_type]["n_runs"] = len(good)
 
     # Save sweep results
@@ -611,7 +675,9 @@ def run_sweep(args, fw: dict, logger: logging.Logger) -> list[dict[str, Any]]:
     return all_results
 
 
-def _write_sweep_markdown(out_dir: Path, task: str, summary: dict, attn_types: list[str]) -> None:
+def _write_sweep_markdown(
+    out_dir: Path, task: str, summary: dict, attn_types: list[str]
+) -> None:
     """Write a human-readable sweep summary to RESULTS.md."""
     lines = [
         f"# Sweep Summary — Task: {task}",
@@ -620,18 +686,31 @@ def _write_sweep_markdown(out_dir: Path, task: str, summary: dict, attn_types: l
     ]
 
     # Find all metric keys
-    all_keys = sorted({k for v in summary.values() if isinstance(v, dict)
-                       for k in v if k.endswith("_mean")})
-    header = "| Attention Type | " + " | ".join(k.replace("_mean", "") for k in all_keys) + " |"
-    sep    = "|" + "|".join(["---"] * (len(all_keys) + 1)) + "|"
+    all_keys = sorted(
+        {
+            k
+            for v in summary.values()
+            if isinstance(v, dict)
+            for k in v
+            if k.endswith("_mean")
+        }
+    )
+    header = (
+        "| Attention Type | "
+        + " | ".join(k.replace("_mean", "") for k in all_keys)
+        + " |"
+    )
+    sep = "|" + "|".join(["---"] * (len(all_keys) + 1)) + "|"
     lines += [header, sep]
     for at in attn_types:
         v = summary.get(at, {})
         if "error" in v:
             row_vals = ["ERROR"] * len(all_keys)
         else:
-            row_vals = [f"{v.get(k, 0):.4f} ± {v.get(k.replace('_mean','_std'), 0):.4f}"
-                        for k in all_keys]
+            row_vals = [
+                f"{v.get(k, 0):.4f} ± {v.get(k.replace('_mean','_std'), 0):.4f}"
+                for k in all_keys
+            ]
         lines.append(f"| {at} | " + " | ".join(row_vals) + " |")
 
     (out_dir / "RESULTS.md").write_text("\n".join(lines))
@@ -641,10 +720,11 @@ def _write_sweep_markdown(out_dir: Path, task: str, summary: dict, attn_types: l
 # List registries
 # ---------------------------------------------------------------------------
 
+
 def run_list(fw: dict | None = None) -> None:
     """Print all registered components grouped by track."""
-    from framework.eval_all_models_datasets import TRACK_MODULES
     from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+    from framework.eval_all_models_datasets import TRACK_MODULES
 
     print(f"\n=== ATTENTION MODULES ({len(ATTENTION_REGISTRY)} total) ===")
     for track, data in TRACK_MODULES.items():
@@ -652,7 +732,7 @@ def run_list(fw: dict | None = None) -> None:
         if attns:
             print(f"\n  {track}:")
             for i, a in enumerate(attns):
-                print(f"    {a}", end="\n" if (i+1) % 5 == 0 else "  ")
+                print(f"    {a}", end="\n" if (i + 1) % 5 == 0 else "  ")
             print()
 
     print(f"\n=== COMPRESSION ENGINES ({len(COMPRESSOR_REGISTRY)} total) ===")
@@ -660,10 +740,10 @@ def run_list(fw: dict | None = None) -> None:
         print(f"  {key}")
 
 
-
 # ---------------------------------------------------------------------------
 # CLI argument parser
 # ---------------------------------------------------------------------------
+
 
 def build_parser() -> argparse.ArgumentParser:
     """Build the full CLI argument parser."""
@@ -677,42 +757,44 @@ def build_parser() -> argparse.ArgumentParser:
 
     # ── Shared args ────────────────────────────────────────────────────────
     shared = argparse.ArgumentParser(add_help=False)
-    shared.add_argument("--model_name",    default="distilbert-base-uncased")
-    shared.add_argument("--attn_type",     default="full")
-    shared.add_argument("--task",    "-t", default="sst2")
-    shared.add_argument("--max_len",       type=int,   default=128)
-    shared.add_argument("--batch_size",    type=int,   default=32)
-    shared.add_argument("--epochs",        type=int,   default=3)
-    shared.add_argument("--lr",            type=float, default=2e-5)
-    shared.add_argument("--grad_accum",    type=int,   default=1)
-    shared.add_argument("--seed",          type=int,   default=42)
-    shared.add_argument("--output_dir",    default="./results")
-    shared.add_argument("--log_dir",       default="./logs")
-    shared.add_argument("--exp_name",      default=None)
+    shared.add_argument("--model_name", default="distilbert-base-uncased")
+    shared.add_argument("--attn_type", default="full")
+    shared.add_argument("--task", "-t", default="sst2")
+    shared.add_argument("--max_len", type=int, default=128)
+    shared.add_argument("--batch_size", type=int, default=32)
+    shared.add_argument("--epochs", type=int, default=3)
+    shared.add_argument("--lr", type=float, default=2e-5)
+    shared.add_argument("--grad_accum", type=int, default=1)
+    shared.add_argument("--seed", type=int, default=42)
+    shared.add_argument("--output_dir", default="./results")
+    shared.add_argument("--log_dir", default="./logs")
+    shared.add_argument("--exp_name", default=None)
     shared.add_argument("--glue_base_path", default=None)
-    shared.add_argument("--config",        default=None, help="YAML config file")
+    shared.add_argument("--config", default=None, help="YAML config file")
 
     # train
     train_p = sub.add_parser("train", parents=[shared], help="Fine-tune a model")
-    train_p.add_argument("--compressor",          default=None)
-    train_p.add_argument("--compression_rank",    type=int, default=64)
-    train_p.add_argument("--max_grad_norm",       type=float, default=1.0)
+    train_p.add_argument("--compressor", default=None)
+    train_p.add_argument("--compression_rank", type=int, default=64)
+    train_p.add_argument("--max_grad_norm", type=float, default=1.0)
     train_p.add_argument("--gradient_checkpointing", action="store_true")
     train_p.add_argument("--early_stopping_patience", type=int, default=None)
 
     # eval
-    eval_p = sub.add_parser("eval", parents=[shared], help="Evaluate a saved checkpoint")
+    eval_p = sub.add_parser(
+        "eval", parents=[shared], help="Evaluate a saved checkpoint"
+    )
     eval_p.add_argument("--model_path", required=True)
 
     # compress
     comp_p = sub.add_parser("compress", parents=[shared], help="Compress a model")
-    comp_p.add_argument("--compressor",       required=True)
+    comp_p.add_argument("--compressor", required=True)
     comp_p.add_argument("--compression_rank", type=int, default=64)
 
     # sweep
     sweep_p = sub.add_parser("sweep", parents=[shared], help="Grid sweep")
     sweep_p.add_argument("--attn_types", nargs="+", default=["full"])
-    sweep_p.add_argument("--seeds",      nargs="+", type=int, default=[42])
+    sweep_p.add_argument("--seeds", nargs="+", type=int, default=[42])
 
     # list
     sub.add_parser("list", help="List all registered components")
@@ -723,6 +805,7 @@ def build_parser() -> argparse.ArgumentParser:
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     """Main entry point — parse CLI args, import framework, run pipeline."""
@@ -737,6 +820,7 @@ def main() -> None:
     cfg_overrides: dict[str, Any] = {}
     if getattr(args, "config", None):
         import yaml
+
         with open(args.config) as f:
             cfg_overrides = yaml.safe_load(f) or {}
 

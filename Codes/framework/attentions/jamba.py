@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.attentions.expert_choice_moe import ExpertChoiceMoE
 from framework.attentions.simple_ssm import SimpleSSM
 from framework.core.attention_mask import get_token_valid_mask
@@ -56,10 +55,12 @@ def apply_rotary_pos_emb(
     seq_axis = -2
     if cos.shape[seq_axis] != q.shape[seq_axis]:
         if cos.shape[seq_axis] >= q.shape[seq_axis]:
-            cos = cos.narrow(seq_axis, cos.shape[seq_axis] - q.shape[seq_axis],
-                             q.shape[seq_axis])
-            sin = sin.narrow(seq_axis, sin.shape[seq_axis] - q.shape[seq_axis],
-                             q.shape[seq_axis])
+            cos = cos.narrow(
+                seq_axis, cos.shape[seq_axis] - q.shape[seq_axis], q.shape[seq_axis]
+            )
+            sin = sin.narrow(
+                seq_axis, sin.shape[seq_axis] - q.shape[seq_axis], q.shape[seq_axis]
+            )
 
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
@@ -67,10 +68,22 @@ def apply_rotary_pos_emb(
     if rotary_dim < head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
-        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
+            _rotate_half(q_rot) * sin.to(q_rot.dtype)
+        )
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
+            _rotate_half(k_rot) * sin.to(k_rot.dtype)
+        )
+        q = (
+            torch.cat([q_rot_embed, q_pass], dim=-1)
+            if q_pass.numel() > 0
+            else q_rot_embed
+        )
+        k = (
+            torch.cat([k_rot_embed, k_pass], dim=-1)
+            if k_pass.numel() > 0
+            else k_rot_embed
+        )
     else:
         cos_q = cos[..., :head_dim].to(q.dtype)
         sin_q = sin[..., :head_dim].to(q.dtype)
@@ -153,11 +166,17 @@ class LoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
-        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
+        b = (
+            self.bias.to(x.dtype)
+            if (self.bias is not None and self.bias.dtype != x.dtype)
+            else self.bias
+        )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            bb = (
+                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            )
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -178,9 +197,11 @@ class SVDMambaSub(nn.Module):
     ) -> None:
         super().__init__()
         if d_model is None and config is not None:
-            d_model = getattr(config, "hidden_size",
-                       getattr(config, "d_model",
-                       getattr(config, "dim", 768)))
+            d_model = getattr(
+                config,
+                "hidden_size",
+                getattr(config, "d_model", getattr(config, "dim", 768)),
+            )
         d_model = int(d_model or 768)
         self.d_model = d_model
         self.ssm = SimpleSSM(d_model=d_model, config=config, is_decoder=is_decoder)
@@ -191,6 +212,7 @@ class SVDMambaSub(nn.Module):
 
     def _ssm_accepts_past_state(self) -> bool:
         import inspect
+
         try:
             sig = inspect.signature(self.ssm.forward)
             return "past_state" in sig.parameters or "state" in sig.parameters
@@ -254,9 +276,23 @@ def _detect_decoder(
         if getattr(config, "is_decoder", False) or getattr(config, "is_causal", False):
             return True
         mt = str(getattr(config, "model_type", "") or "").lower()
-        if any(mt.startswith(p) for p in
-               ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")):
+        if any(
+            mt.startswith(p)
+            for p in (
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
+            )
+        ):
             return True
         arch = getattr(config, "architectures", None)
         if arch and any(("GPT" in str(a) or "CausalLM" in str(a)) for a in arch):
@@ -341,10 +377,12 @@ def _read_cache(
     if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
         if layer_idx < len(past_key_value.key_cache):
             k = past_key_value.key_cache[layer_idx]
-            v = (past_key_value.value_cache[layer_idx]
-                 if hasattr(past_key_value, "value_cache")
-                 and layer_idx < len(past_key_value.value_cache)
-                 else None)
+            v = (
+                past_key_value.value_cache[layer_idx]
+                if hasattr(past_key_value, "value_cache")
+                and layer_idx < len(past_key_value.value_cache)
+                else None
+            )
             m = None
             if hasattr(past_key_value, "mamba_state") and past_key_value.mamba_state:
                 if layer_idx < len(past_key_value.mamba_state):
@@ -393,10 +431,12 @@ def _write_cache(
 # ===========================================================================
 # Jamba-2 Block
 # ===========================================================================
-@ATTENTION_REGISTRY.register("jamba", supports_causal=True,
-                              supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("jamba2", supports_causal=True,
-                              supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "jamba", supports_causal=True, supports_bidirectional=True, supports_gqa=True
+)
+@ATTENTION_REGISTRY.register(
+    "jamba2", supports_causal=True, supports_bidirectional=True, supports_gqa=True
+)
 class Jamba2Block(BaseAttention):
     r"""Jamba-2 Hybrid: SVD-Mamba + Multi-Head Attention + Expert-Choice MoE."""
 
@@ -421,15 +461,25 @@ class Jamba2Block(BaseAttention):
         self.config = config
 
         # ---------- d_model / n_heads ----------
-        d_model = (kwargs.get("d_model") or kwargs.get("hidden_size")
-                    or kwargs.get("dim") or d_model)
-        n_heads = (kwargs.get("n_heads") or kwargs.get("num_heads")
-                    or kwargs.get("num_attention_heads") or n_heads)
+        d_model = (
+            kwargs.get("d_model")
+            or kwargs.get("hidden_size")
+            or kwargs.get("dim")
+            or d_model
+        )
+        n_heads = (
+            kwargs.get("n_heads")
+            or kwargs.get("num_heads")
+            or kwargs.get("num_attention_heads")
+            or n_heads
+        )
 
         if d_model is None and config is not None:
-            d_model = getattr(config, "hidden_size",
-                       getattr(config, "d_model",
-                       getattr(config, "dim", 768)))
+            d_model = getattr(
+                config,
+                "hidden_size",
+                getattr(config, "d_model", getattr(config, "dim", 768)),
+            )
         if d_model is None and source_attn is not None:
             for attr in ("out_lin", "dense", "c_proj", "o_proj", "out_proj"):
                 layer = getattr(source_attn, attr, None)
@@ -440,17 +490,20 @@ class Jamba2Block(BaseAttention):
             d_model = 768
 
         if n_heads is None and config is not None:
-            n_heads = getattr(config, "num_attention_heads",
-                       getattr(config, "n_heads", 12))
+            n_heads = getattr(
+                config, "num_attention_heads", getattr(config, "n_heads", 12)
+            )
         if n_heads is None and source_attn is not None:
-            n_heads = getattr(source_attn, "num_attention_heads",
-                       getattr(source_attn, "n_heads", 12))
+            n_heads = getattr(
+                source_attn, "num_attention_heads", getattr(source_attn, "n_heads", 12)
+            )
         if n_heads is None:
             n_heads = 12
 
         if config is not None:
-            n_experts = int(getattr(config, "num_experts",
-                             getattr(config, "n_experts", n_experts)))
+            n_experts = int(
+                getattr(config, "num_experts", getattr(config, "n_experts", n_experts))
+            )
             top_k = int(getattr(config, "top_k", top_k))
 
         self.d_model = int(d_model)
@@ -461,12 +514,13 @@ class Jamba2Block(BaseAttention):
 
         num_kv_heads = None
         if config is not None:
-            num_kv_heads = getattr(config, "num_key_value_heads",
-                            getattr(config, "num_kv_heads", None))
+            num_kv_heads = getattr(
+                config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
+            )
         if num_kv_heads is None:
-            num_kv_heads = kwargs.get("num_kv_heads",
-                            kwargs.get("num_key_value_heads",
-                            self.num_heads))
+            num_kv_heads = kwargs.get(
+                "num_kv_heads", kwargs.get("num_key_value_heads", self.num_heads)
+            )
         self.num_kv_heads = max(1, min(int(num_kv_heads), self.num_heads))
 
         self.head_dim = self.d_model // self.num_heads if self.num_heads > 0 else 64
@@ -475,49 +529,81 @@ class Jamba2Block(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // self.num_kv_heads)
         self.supports_gqa = True
 
-        self.is_decoder = _detect_decoder(config, kwargs.get("is_decoder"),
-                                            source_attn, kwargs)
+        self.is_decoder = _detect_decoder(
+            config, kwargs.get("is_decoder"), source_attn, kwargs
+        )
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
         self._return_format: str = "llama"  # updated after copy_weights
 
         # ---------- LoRA config ----------
         if config is not None:
-            self.lora_rank = int(getattr(
-                config, "lora_rank",
-                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)),
-            ))
-            self.lora_alpha = float(getattr(
-                config, "lora_alpha",
-                getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
-            ))
+            self.lora_rank = int(
+                getattr(
+                    config,
+                    "lora_rank",
+                    getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)),
+                )
+            )
+            self.lora_alpha = float(
+                getattr(
+                    config,
+                    "lora_alpha",
+                    getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
+                )
+            )
         elif comp_config is not None:
-            self.lora_rank = int(getattr(comp_config, "lora_rank",
-                                          kwargs.get("lora_rank", 16)))
-            self.lora_alpha = float(getattr(comp_config, "lora_alpha",
-                                             kwargs.get("lora_alpha", 32.0)))
+            self.lora_rank = int(
+                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
+            )
+            self.lora_alpha = float(
+                getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
+            )
         else:
             self.lora_rank = int(kwargs.get("lora_rank", 16))
             self.lora_alpha = float(kwargs.get("lora_alpha", 32.0))
-        self.freeze_base = (self.lora_rank > 0)
+        self.freeze_base = self.lora_rank > 0
 
         self.source_attn = source_attn
-        self.rotary_emb = (getattr(source_attn, "rotary_emb", None)
-                            if source_attn is not None else None)
+        self.rotary_emb = (
+            getattr(source_attn, "rotary_emb", None)
+            if source_attn is not None
+            else None
+        )
 
         # ---------- MHA projections ----------
-        self.q_lin = LoRALinear(self.d_model, self.all_head_size, bias=True,
-                                 lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                 freeze_base=self.freeze_base)
-        self.k_lin = LoRALinear(self.d_model, self.all_kv_head_size, bias=True,
-                                 lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                 freeze_base=self.freeze_base)
-        self.v_lin = LoRALinear(self.d_model, self.all_kv_head_size, bias=True,
-                                 lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                 freeze_base=self.freeze_base)
-        self.out_lin = LoRALinear(self.all_head_size, self.d_model, bias=True,
-                                   lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                   freeze_base=self.freeze_base)
+        self.q_lin = LoRALinear(
+            self.d_model,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.k_lin = LoRALinear(
+            self.d_model,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.v_lin = LoRALinear(
+            self.d_model,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.out_lin = LoRALinear(
+            self.all_head_size,
+            self.d_model,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
         self.q_proj = self.q_lin
         self.k_proj = self.k_lin
@@ -525,22 +611,27 @@ class Jamba2Block(BaseAttention):
         self.out_proj = self.out_lin
 
         # ---------- SSM branch ----------
-        self.mamba = SVDMambaSub(self.d_model, config=config, rank=rank,
-                                  is_decoder=self.is_decoder)
+        self.mamba = SVDMambaSub(
+            self.d_model, config=config, rank=rank, is_decoder=self.is_decoder
+        )
 
         # ---------- MoE branch ----------
-        self.moe = ExpertChoiceMoE(self.d_model, n_experts=n_experts,
-                                    capacity_factor=1.0)
+        self.moe = ExpertChoiceMoE(
+            self.d_model, n_experts=n_experts, capacity_factor=1.0
+        )
 
         # ---------- Norms ----------
         self.norm1 = nn.LayerNorm(self.d_model)
         self.norm2 = nn.LayerNorm(self.d_model)
         self.norm3 = nn.LayerNorm(self.d_model)
 
-        dropout_p = float(getattr(
-            config, "dropout",
-            getattr(config, "attention_probs_dropout_prob", 0.1) if config else 0.1,
-        ))
+        dropout_p = float(
+            getattr(
+                config,
+                "dropout",
+                getattr(config, "attention_probs_dropout_prob", 0.1) if config else 0.1,
+            )
+        )
         self.dropout = nn.Dropout(dropout_p)
 
         # JAMBA-FIX-21: aux_loss accumulation buffer
@@ -583,16 +674,23 @@ class Jamba2Block(BaseAttention):
             return
 
         cls_name = getattr(src, "__class__", type(src)).__name__
-        has_out = any(hasattr(src, a) for a in
-                       ("dense", "out_proj", "out_lin", "c_proj", "o_proj"))
-        if cls_name in ("BertSelfAttention", "RobertaSelfAttention") \
-                or (hasattr(src, "query") and not has_out):
+        has_out = any(
+            hasattr(src, a)
+            for a in ("dense", "out_proj", "out_lin", "c_proj", "o_proj")
+        )
+        if cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
+            hasattr(src, "query") and not has_out
+        ):
             self.is_nested_encoder = True
         if hasattr(src, "self") and hasattr(src, "output"):
             self.is_nested_encoder = True
 
-        extracted = {"q": (None, None), "k": (None, None),
-                      "v": (None, None), "o": (None, None)}
+        extracted = {
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
+        }
 
         # GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
@@ -601,18 +699,26 @@ class Jamba2Block(BaseAttention):
             cw = getattr(base_c, "weight", getattr(c, "weight", None))
             if cw is not None:
                 cw = cw.data.clone()
-                is_conv = (c.__class__.__name__ == "Conv1D"
-                            or base_c.__class__.__name__ == "Conv1D"
-                            or hasattr(c, "nf")
-                            or (cw.ndim == 2 and cw.shape[0] < cw.shape[1]))
+                is_conv = (
+                    c.__class__.__name__ == "Conv1D"
+                    or base_c.__class__.__name__ == "Conv1D"
+                    or hasattr(c, "nf")
+                    or (cw.ndim == 2 and cw.shape[0] < cw.shape[1])
+                )
                 if is_conv:
                     cw = cw.t().contiguous()
                 split = cw.size(0) // 3
                 bmod = getattr(base_c, "bias", getattr(c, "bias", None))
                 cb = bmod.data.clone() if bmod is not None else None
                 extracted["q"] = (cw[:split], cb[:split] if cb is not None else None)
-                extracted["k"] = (cw[split:2*split], cb[split:2*split] if cb is not None else None)
-                extracted["v"] = (cw[2*split:], cb[2*split:] if cb is not None else None)
+                extracted["k"] = (
+                    cw[split : 2 * split],
+                    cb[split : 2 * split] if cb is not None else None,
+                )
+                extracted["v"] = (
+                    cw[2 * split :],
+                    cb[2 * split :] if cb is not None else None,
+                )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 o = src.c_proj
@@ -620,10 +726,12 @@ class Jamba2Block(BaseAttention):
                 ow = getattr(base_o, "weight", getattr(o, "weight", None))
                 if ow is not None:
                     ow = ow.data.clone()
-                    is_conv_o = (o.__class__.__name__ == "Conv1D"
-                                  or base_o.__class__.__name__ == "Conv1D"
-                                  or hasattr(o, "nf")
-                                  or (ow.ndim == 2 and ow.shape[0] < ow.shape[1]))
+                    is_conv_o = (
+                        o.__class__.__name__ == "Conv1D"
+                        or base_o.__class__.__name__ == "Conv1D"
+                        or hasattr(o, "nf")
+                        or (ow.ndim == 2 and ow.shape[0] < ow.shape[1])
+                    )
                     if is_conv_o:
                         ow = ow.t().contiguous()
                     bo = getattr(base_o, "bias", getattr(o, "bias", None))
@@ -636,13 +744,17 @@ class Jamba2Block(BaseAttention):
                 m = getattr(s, sub, None)
                 if m is not None and hasattr(m, "weight"):
                     b = getattr(m, "bias", None)
-                    extracted[key] = (m.weight.data.clone(),
-                                       b.data.clone() if b is not None else None)
+                    extracted[key] = (
+                        m.weight.data.clone(),
+                        b.data.clone() if b is not None else None,
+                    )
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 d = src.output.dense
                 b = getattr(d, "bias", None)
-                extracted["o"] = (d.weight.data.clone(),
-                                   b.data.clone() if b is not None else None)
+                extracted["o"] = (
+                    d.weight.data.clone(),
+                    b.data.clone() if b is not None else None,
+                )
 
         # Flat (DistilBERT, Qwen, LLaMA)
         else:
@@ -658,23 +770,34 @@ class Jamba2Block(BaseAttention):
                         m = getattr(src, n)
                         if m is not None and hasattr(m, "weight"):
                             w_data = m.weight.data.clone()
-                            is_conv = (m.__class__.__name__ == "Conv1D"
-                                        or hasattr(m, "nf")
-                                        or (key == "o" and w_data.ndim == 2
-                                            and w_data.shape[0] < w_data.shape[1]))
+                            is_conv = (
+                                m.__class__.__name__ == "Conv1D"
+                                or hasattr(m, "nf")
+                                or (
+                                    key == "o"
+                                    and w_data.ndim == 2
+                                    and w_data.shape[0] < w_data.shape[1]
+                                )
+                            )
                             if is_conv:
                                 w_data = w_data.t().contiguous()
                             b = getattr(m, "bias", None)
-                            extracted[key] = (w_data,
-                                               b.data.clone() if b is not None else None)
+                            extracted[key] = (
+                                w_data,
+                                b.data.clone() if b is not None else None,
+                            )
                             break
 
         # UniversalAdapter fallback
-        missing = [k for k, (w, _) in extracted.items()
-                    if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -683,16 +806,23 @@ class Jamba2Block(BaseAttention):
             except Exception as e:
                 logger.debug("Jamba2 UniversalAdapter fallback: %s", e)
 
-        missing_after = [k for k, (w, _) in extracted.items()
-                          if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing_after:
             raise RuntimeError(
                 f"Jamba2Block copy_weights failed: missing mandatory "
                 f"projections {missing_after} from {src.__class__.__name__}."
             )
 
-        target_map = {"q": self.q_lin, "k": self.k_lin,
-                       "v": self.v_lin, "o": self.out_lin}
+        target_map = {
+            "q": self.q_lin,
+            "k": self.k_lin,
+            "v": self.v_lin,
+            "o": self.out_lin,
+        }
 
         with torch.no_grad():
             for key, target in target_map.items():
@@ -706,8 +836,10 @@ class Jamba2Block(BaseAttention):
 
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
-                if w.shape != target.weight.shape \
-                        and w.t().contiguous().shape == target.weight.shape:
+                if (
+                    w.shape != target.weight.shape
+                    and w.t().contiguous().shape == target.weight.shape
+                ):
                     w = w.t().contiguous()
 
                 out_d = min(target.weight.size(0), w.size(0))
@@ -726,7 +858,9 @@ class Jamba2Block(BaseAttention):
 
                 n = torch.linalg.norm(target.weight.data.float()).item()
                 if n < 1e-4:
-                    raise RuntimeError(f"Jamba2: weight for '{key}' norm too small ({n:.2e})")
+                    raise RuntimeError(
+                        f"Jamba2: weight for '{key}' norm too small ({n:.2e})"
+                    )
 
                 if self.freeze_base:
                     target.freeze_base_weights()
@@ -760,8 +894,9 @@ class Jamba2Block(BaseAttention):
             return (out, attn_weights, present)
         return (out, present)
 
-    def _normalize_head_mask(self, head_mask: torch.Tensor,
-                             attn: torch.Tensor) -> torch.Tensor:
+    def _normalize_head_mask(
+        self, head_mask: torch.Tensor, attn: torch.Tensor
+    ) -> torch.Tensor:
         """JAMBA-FIX-22: normalise head_mask to (B, H, Lq, Lk) broadcast."""
         hm = head_mask.to(attn.dtype)
         if hm.dim() == 1:
@@ -808,14 +943,29 @@ class Jamba2Block(BaseAttention):
             past_state=past_mamba,
         )
         n1d = self._norm_dtype(self.norm1, target_dtype)
-        x1 = self.norm1(
-            (hidden_states + mamba_out.to(target_dtype)).to(n1d)
-        ).to(target_dtype)
+        x1 = self.norm1((hidden_states + mamba_out.to(target_dtype)).to(n1d)).to(
+            target_dtype
+        )
 
         # ---- Branch 2: MHA ----
-        q = self.q_lin(x1).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k = self.k_lin(x1).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        v = self.v_lin(x1).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        q = (
+            self.q_lin(x1)
+            .view(B, L, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        k = (
+            self.k_lin(x1)
+            .view(B, L, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_lin(x1)
+            .view(B, L, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # ---- RoPE with offset ----
         if position_embeddings is not None:
@@ -827,9 +977,11 @@ class Jamba2Block(BaseAttention):
         elif self.rotary_emb is not None:
             pos_ids = kwargs.get("position_ids")
             if pos_ids is None:
-                pos_ids = torch.arange(past_len, past_len + L,
-                                       device=hidden_states.device)\
-                            .unsqueeze(0).expand(B, -1)
+                pos_ids = (
+                    torch.arange(past_len, past_len + L, device=hidden_states.device)
+                    .unsqueeze(0)
+                    .expand(B, -1)
+                )
             cos = sin = None
             for call in (
                 lambda: self.rotary_emb(k, seq_len=L),
@@ -874,14 +1026,23 @@ class Jamba2Block(BaseAttention):
                 _ks = k_exp.half() if k_exp.dtype == torch.float32 else k_exp
                 _vs = v_exp.half() if v_exp.dtype == torch.float32 else v_exp
                 _sdpa_out = F.scaled_dot_product_attention(
-                    _qs, _ks, _vs, is_causal=is_causal,
+                    _qs,
+                    _ks,
+                    _vs,
+                    is_causal=is_causal,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
-                attn_out = _sdpa_out.to(target_dtype).transpose(1, 2)\
-                                     .contiguous().view(B, L, self.all_head_size)
+                attn_out = (
+                    _sdpa_out.to(target_dtype)
+                    .transpose(1, 2)
+                    .contiguous()
+                    .view(B, L, self.all_head_size)
+                )
                 attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-                attn_proj = attn_out if self.is_nested_encoder else self.out_lin(attn_out)
+                attn_proj = (
+                    attn_out if self.is_nested_encoder else self.out_lin(attn_out)
+                )
                 n2d = self._norm_dtype(self.norm2, target_dtype)
                 x2 = self.norm2(
                     (x1 + self.dropout(attn_proj.to(target_dtype))).to(n2d)
@@ -901,7 +1062,10 @@ class Jamba2Block(BaseAttention):
                 logger.debug("Jamba2 SDPA path failed: %s", e)
 
         # ---- Manual attention ----
-        scores = torch.matmul(q.float(), k_exp.float().transpose(-2, -1).contiguous()) * scale
+        scores = (
+            torch.matmul(q.float(), k_exp.float().transpose(-2, -1).contiguous())
+            * scale
+        )
 
         if is_causal:
             kv_len = k_exp.shape[-2]
@@ -913,12 +1077,11 @@ class Jamba2Block(BaseAttention):
 
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                valid = get_token_valid_mask(attention_mask, B, k_exp.shape[-2],
-                                              hidden_states.device)
+                valid = get_token_valid_mask(
+                    attention_mask, B, k_exp.shape[-2], hidden_states.device
+                )
                 if valid is not None:
-                    scores = scores.masked_fill(
-                        ~valid.unsqueeze(1).unsqueeze(2), -1e4
-                    )
+                    scores = scores.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
             elif attention_mask.dim() == 3:
                 scores = scores + attention_mask.unsqueeze(1).float()
             elif attention_mask.dim() == 4:
@@ -936,23 +1099,27 @@ class Jamba2Block(BaseAttention):
         if head_mask is not None:
             probs = self._normalize_head_mask(head_mask, probs)
 
-        attn_out = torch.matmul(probs, v_exp).transpose(1, 2)\
-                        .contiguous().view(B, L, self.all_head_size)
+        attn_out = (
+            torch.matmul(probs, v_exp)
+            .transpose(1, 2)
+            .contiguous()
+            .view(B, L, self.all_head_size)
+        )
         attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
         attn_proj = attn_out if self.is_nested_encoder else self.out_lin(attn_out)
         n2d = self._norm_dtype(self.norm2, target_dtype)
-        x2 = self.norm2(
-            (x1 + self.dropout(attn_proj.to(target_dtype))).to(n2d)
-        ).to(target_dtype)
+        x2 = self.norm2((x1 + self.dropout(attn_proj.to(target_dtype))).to(n2d)).to(
+            target_dtype
+        )
 
         moe_out = self.moe(x2)
         if isinstance(moe_out, (tuple, list)):
             moe_out = moe_out[0]
         n3d = self._norm_dtype(self.norm3, target_dtype)
-        x3 = self.norm3(
-            (x2 + self.dropout(moe_out.to(target_dtype))).to(n3d)
-        ).to(target_dtype)
+        x3 = self.norm3((x2 + self.dropout(moe_out.to(target_dtype))).to(n3d)).to(
+            target_dtype
+        )
 
         self._accumulate_aux_loss()
         attn_weights = probs if output_attentions else None
@@ -973,9 +1140,14 @@ class Jamba2Block(BaseAttention):
             return 0
 
         out: dict[str, int] = {}
-        for name, m in (("q_lin", self.q_lin), ("k_lin", self.k_lin),
-                         ("v_lin", self.v_lin), ("out_lin", self.out_lin),
-                         ("mamba", self.mamba), ("moe", self.moe)):
+        for name, m in (
+            ("q_lin", self.q_lin),
+            ("k_lin", self.k_lin),
+            ("v_lin", self.v_lin),
+            ("out_lin", self.out_lin),
+            ("mamba", self.mamba),
+            ("moe", self.moe),
+        ):
             out[name] = sum(_sz(p) for p in m.parameters())
         out["total"] = sum(out.values())
         return out
@@ -1040,8 +1212,13 @@ def inject_jamba(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_jamba(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 num_injected += 1
@@ -1134,8 +1311,10 @@ def inject_jamba(
             spliced = True
 
         if not spliced:
-            logger.error("inject_jamba: no writable attention attribute on %s",
-                          type(target).__name__)
+            logger.error(
+                "inject_jamba: no writable attention attribute on %s",
+                type(target).__name__,
+            )
             return None
 
         # Recompute return format after we know is_nested_encoder

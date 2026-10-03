@@ -4,11 +4,11 @@ Hardening tests for AdaSplashAttention (adasplash_attention.py).
 Covers: fail-loud copy_weights, odd-dim RoPE, inject safety, forward shapes.
 """
 
+from typing import Any
+
 import pytest
 import torch
 import torch.nn as nn
-from typing import Any
-
 
 # ---------------------------------------------------------------------------
 # Dummy model stubs
@@ -82,8 +82,8 @@ class DummyLayer(nn.Module):
 # Import
 # ---------------------------------------------------------------------------
 
-from framework.attentions.adasplash_attention import AdaSplashAttention, inject_adasplash
-
+from framework.attentions.adasplash_attention import (AdaSplashAttention,
+                                                      inject_adasplash)
 
 # ---------------------------------------------------------------------------
 # Tests: copy_weights fail-loud

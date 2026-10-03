@@ -28,13 +28,15 @@ class ExperimentConfig:
     gradient_accumulation_steps: int = 1
 
     # Advanced Training & Linear-Time Scalability Options
-    optimizer_type: str = "adamw"           # Options: adamw, sgd, adafactor
-    lr_scheduler_type: str = "linear"       # Options: linear, cosine, cosine_with_restarts
+    optimizer_type: str = "adamw"  # Options: adamw, sgd, adafactor
+    lr_scheduler_type: str = "linear"  # Options: linear, cosine, cosine_with_restarts
     warmup_steps: int = 0
     weight_decay: float = 0.01
-    mixed_precision: str = "no"             # Options: no, fp16, bf16
-    gradient_checkpointing: bool = False    # Useful for extremely long sequences / linear time tracking
-    max_grad_norm: float = 1.0              # Gradient clipping threshold
+    mixed_precision: str = "no"  # Options: no, fp16, bf16
+    gradient_checkpointing: bool = (
+        False  # Useful for extremely long sequences / linear time tracking
+    )
+    max_grad_norm: float = 1.0  # Gradient clipping threshold
 
     save_checkpoint_interval: int = 10
     output_dir: str = "./results"

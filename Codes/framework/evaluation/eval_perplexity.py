@@ -15,6 +15,7 @@ Production-hardened to produce results strictly comparable to run_gpt2_sweep.py:
   10. Saves per-window NLLs to JSON for downstream variance analysis
   11. Robust CPU fallback reducing seq_len if CUDA OOM occurs
 """
+
 from __future__ import annotations
 
 import argparse
@@ -43,10 +44,18 @@ from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from framework.eval_all_models_datasets import apply_module_to_model
 
 logger = logging.getLogger("EvalModulePPL")
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
 
 
-def build_calibration_loader(train_dataset, tokenizer, num_samples: int = 500, batch_size: int = 4, max_length: int = 128) -> list[dict[str, torch.Tensor]]:
+def build_calibration_loader(
+    train_dataset,
+    tokenizer,
+    num_samples: int = 500,
+    batch_size: int = 4,
+    max_length: int = 128,
+) -> list[dict[str, torch.Tensor]]:
     """Build a list of batched dictionary samples from WikiText-2 train split."""
     valid_texts = []
     for item in train_dataset["text"]:
@@ -57,11 +66,13 @@ def build_calibration_loader(train_dataset, tokenizer, num_samples: int = 500, b
             break
 
     if not valid_texts:
-        valid_texts = ["The quick brown fox jumps over the lazy dog. SVD linear attention compression benchmark."] * num_samples
+        valid_texts = [
+            "The quick brown fox jumps over the lazy dog. SVD linear attention compression benchmark."
+        ] * num_samples
 
     batches: list[dict[str, torch.Tensor]] = []
     for i in range(0, len(valid_texts), batch_size):
-        chunk = valid_texts[i:i + batch_size]
+        chunk = valid_texts[i : i + batch_size]
         enc = tokenizer(
             chunk,
             return_tensors="pt",
@@ -69,7 +80,9 @@ def build_calibration_loader(train_dataset, tokenizer, num_samples: int = 500, b
             truncation=True,
             max_length=max_length,
         )
-        batches.append({"input_ids": enc.input_ids, "attention_mask": enc.attention_mask})
+        batches.append(
+            {"input_ids": enc.input_ids, "attention_mask": enc.attention_mask}
+        )
 
     return batches
 
@@ -122,7 +135,9 @@ def compute_perplexity(
             for begin_loc in range(0, total_text_tokens, stride):
                 end_loc = min(begin_loc + seq_len, total_text_tokens)
                 trg_len = end_loc - prev_end_loc
-                input_ids = input_ids_all[:, begin_loc:end_loc].to(device, non_blocking=True)
+                input_ids = input_ids_all[:, begin_loc:end_loc].to(
+                    device, non_blocking=True
+                )
                 target_ids = input_ids.clone()
                 target_ids[:, :-trg_len] = -100
 
@@ -130,7 +145,9 @@ def compute_perplexity(
                 neg_log_likelihood = outputs.loss * trg_len
                 nll_val = neg_log_likelihood.detach().cpu()
                 nlls.append(nll_val)
-                per_window_nlls.append(round(float(outputs.loss.detach().cpu().item()), 4))
+                per_window_nlls.append(
+                    round(float(outputs.loss.detach().cpu().item()), 4)
+                )
 
                 tokens_evaluated += trg_len
                 prev_end_loc = end_loc
@@ -138,8 +155,13 @@ def compute_perplexity(
                 if end_loc == total_text_tokens:
                     break
     except (torch.cuda.OutOfMemoryError, RuntimeError) as e:
-        if ("out of memory" in str(e).lower() or "cuda" in str(e).lower()) and device == "cuda":
-            logger.warning("CUDA OOM during PPL eval (%s). Falling back to CPU with halved seq_len...", e)
+        if (
+            "out of memory" in str(e).lower() or "cuda" in str(e).lower()
+        ) and device == "cuda":
+            logger.warning(
+                "CUDA OOM during PPL eval (%s). Falling back to CPU with halved seq_len...",
+                e,
+            )
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             model = model.to("cpu")
@@ -163,7 +185,9 @@ def compute_perplexity(
                     neg_log_likelihood = outputs.loss * trg_len
                     nll_val = neg_log_likelihood.detach().cpu()
                     nlls.append(nll_val)
-                    per_window_nlls.append(round(float(outputs.loss.detach().cpu().item()), 4))
+                    per_window_nlls.append(
+                        round(float(outputs.loss.detach().cpu().item()), 4)
+                    )
 
                     tokens_evaluated += trg_len
                     prev_end_loc = end_loc
@@ -177,7 +201,7 @@ def compute_perplexity(
     ppl = float(torch.exp(torch.stack(nlls).sum() / prev_end_loc).item())
 
     if device == "cuda" and torch.cuda.is_available():
-        peak_vram_mb = float(torch.cuda.max_memory_allocated() / (1024 ** 2))
+        peak_vram_mb = float(torch.cuda.max_memory_allocated() / (1024**2))
     else:
         peak_vram_mb = 0.0
 
@@ -218,7 +242,9 @@ def evaluate_module_ppl(
     device_str = "cuda" if torch.cuda.is_available() else "cpu"
     target_dtype = torch.float16 if device_str == "cuda" else torch.float32
 
-    logger.info("Loading model from %s in %s on %s...", resolved_path, target_dtype, device_str)
+    logger.info(
+        "Loading model from %s in %s on %s...", resolved_path, target_dtype, device_str
+    )
     model = AutoModelForCausalLM.from_pretrained(
         resolved_path,
         torch_dtype=target_dtype,
@@ -237,12 +263,14 @@ def evaluate_module_ppl(
     except Exception:
         ds_train = load_dataset("Salesforce/wikitext", dataset_name, split="train")
 
-    is_baseline = (module_name.lower() in ("none", "baseline", "full"))
+    is_baseline = module_name.lower() in ("none", "baseline", "full")
 
     if not is_baseline:
         # Build calibration loader
         logger.info("Building calibration dataset for %s...", module_name)
-        calib_loader = build_calibration_loader(ds_train, tokenizer, num_samples=500, batch_size=4, max_length=128)
+        calib_loader = build_calibration_loader(
+            ds_train, tokenizer, num_samples=500, batch_size=4, max_length=128
+        )
         first_batch = calib_loader[0]["input_ids"].to(device_str)
 
         # Explicit registry lookup
@@ -251,7 +279,9 @@ def evaluate_module_ppl(
         elif module_name in COMPRESSOR_REGISTRY:
             mod_type = "compressor"
         else:
-            raise ValueError(f"Module '{module_name}' not found in ATTENTION_REGISTRY or COMPRESSOR_REGISTRY")
+            raise ValueError(
+                f"Module '{module_name}' not found in ATTENTION_REGISTRY or COMPRESSOR_REGISTRY"
+            )
 
         logger.info("Applying %s (%s) with rank=%d...", module_name, mod_type, rank)
         model, comp_stats = apply_module_to_model(
@@ -267,7 +297,9 @@ def evaluate_module_ppl(
 
     total_params_after = sum(p.numel() for p in model.parameters())
     comp_rate = round(total_params_before / max(1, total_params_after), 4)
-    comp_pct = round(100.0 * (1.0 - total_params_after / max(1, total_params_before)), 2)
+    comp_pct = round(
+        100.0 * (1.0 - total_params_after / max(1, total_params_before)), 2
+    )
 
     logger.info("Evaluating perplexity (seq_len=%d, stride=%d)...", seq_len, stride)
     ppl, metrics = compute_perplexity(
@@ -308,8 +340,14 @@ def evaluate_module_ppl(
 
     res_file = out_p / "ppl_result.json"
     res_file.write_text(json.dumps(result, indent=2), encoding="utf-8")
-    logger.info("[PPL] %s: %.2f | VRAM: %.1f MB | Elapsed: %.1fs | Rate: %.4fx",
-                module_name, ppl, metrics["peak_vram_mb"], metrics["elapsed_s"], comp_rate)
+    logger.info(
+        "[PPL] %s: %.2f | VRAM: %.1f MB | Elapsed: %.1fs | Rate: %.4fx",
+        module_name,
+        ppl,
+        metrics["peak_vram_mb"],
+        metrics["elapsed_s"],
+        comp_rate,
+    )
 
     del model
     gc.collect()
@@ -320,16 +358,39 @@ def evaluate_module_ppl(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Evaluate module perplexity on WikiText-2")
-    parser.add_argument("--model", type=str, default="models/gpt2_wikitext", help="Model path or identifier")
-    parser.add_argument("--module", type=str, required=True, help="Attention or compressor module name (or 'full')")
-    parser.add_argument("--output_dir", type=str, required=True, help="Output directory")
-    parser.add_argument("--dataset_name", type=str, default="wikitext-2-raw-v1", help="Dataset name")
+    parser = argparse.ArgumentParser(
+        description="Evaluate module perplexity on WikiText-2"
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="models/gpt2_wikitext",
+        help="Model path or identifier",
+    )
+    parser.add_argument(
+        "--module",
+        type=str,
+        required=True,
+        help="Attention or compressor module name (or 'full')",
+    )
+    parser.add_argument(
+        "--output_dir", type=str, required=True, help="Output directory"
+    )
+    parser.add_argument(
+        "--dataset_name", type=str, default="wikitext-2-raw-v1", help="Dataset name"
+    )
     parser.add_argument("--split", type=str, default="test", help="Dataset split")
     parser.add_argument("--rank", type=int, default=64, help="Target rank")
-    parser.add_argument("--seq_len", type=int, default=1024, help="Sliding window context size")
+    parser.add_argument(
+        "--seq_len", type=int, default=1024, help="Sliding window context size"
+    )
     parser.add_argument("--stride", type=int, default=512, help="Sliding window stride")
-    parser.add_argument("--max_eval_tokens", type=int, default=None, help="Max tokens to evaluate (None for full split)")
+    parser.add_argument(
+        "--max_eval_tokens",
+        type=int,
+        default=None,
+        help="Max tokens to evaluate (None for full split)",
+    )
     args = parser.parse_args()
 
     evaluate_module_ppl(

@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from framework.core.registry import COMPRESSOR_REGISTRY, is_helper_module
 
+
 class DummyModel(nn.Module):
     def __init__(self):
         super().__init__()

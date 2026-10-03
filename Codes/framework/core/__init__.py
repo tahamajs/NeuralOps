@@ -82,7 +82,9 @@ def __getattr__(name: str) -> Any:
             globals()[name] = val
             return val
         except Exception as e:
-            logger.error("Failed to lazily load %s from framework.core.%s: %s", name, mod_name, e)
+            logger.error(
+                "Failed to lazily load %s from framework.core.%s: %s", name, mod_name, e
+            )
             raise
     # Submodule lookup fallback
     try:
@@ -95,4 +97,3 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = list(_MODULE_MAP.keys())
-

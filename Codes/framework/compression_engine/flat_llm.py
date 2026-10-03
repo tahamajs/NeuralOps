@@ -13,14 +13,13 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
-from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import (
+    adaptive_max_error,
     apply_24_structured_mask,
     get_calibration_tensors,
-    adaptive_max_error,
 )
+from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
@@ -35,9 +34,21 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 _ATTN_NAMES = {
-    "q_proj", "k_proj", "v_proj", "o_proj",
-    "c_attn", "c_proj", "query", "key", "value",
-    "q_lin", "k_lin", "v_lin", "out_lin", "out_proj", "dense",
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "c_attn",
+    "c_proj",
+    "query",
+    "key",
+    "value",
+    "q_lin",
+    "k_lin",
+    "v_lin",
+    "out_lin",
+    "out_proj",
+    "dense",
 }
 
 
@@ -59,20 +70,21 @@ class PrunedChannelLinear(nn.Module):
       out = zeros(..., original_out_features)
       out.scatter_(-1, kept_idx, h)               # (..., original_out)
     """
+
     is_custom_attention = False
 
     def __init__(
         self,
         in_features: int,
         original_out_features: int,
-        kept_idx: torch.Tensor,             # (k,) int64
-        W_kept: torch.Tensor,               # (k, in_features)
+        kept_idx: torch.Tensor,  # (k,) int64
+        W_kept: torch.Tensor,  # (k, in_features)
         bias_kept: torch.Tensor | None = None,
     ) -> None:
         super().__init__()
         self.in_features = int(in_features)
         self.original_out_features = int(original_out_features)
-        self.out_features = self.original_out_features   # for API compatibility
+        self.out_features = self.original_out_features  # for API compatibility
         self.num_kept = int(W_kept.shape[0])
 
         self.register_buffer("kept_idx", kept_idx.long(), persistent=True)
@@ -96,7 +108,7 @@ class PrunedChannelLinear(nn.Module):
         return W
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        h = F.linear(x, self.W_kept, self.bias_kept)      # (..., k)
+        h = F.linear(x, self.W_kept, self.bias_kept)  # (..., k)
         out = torch.zeros(
             *x.shape[:-1],
             self.original_out_features,
@@ -131,6 +143,7 @@ class FLATLLMCompressor(BaseCompressor):
     Optionally applies 2:4 structured sparsity (compute-only; no storage savings
     unless a sparse kernel is used).
     """
+
     # FLT-FIX-09
     is_custom_attention: bool = False
 
@@ -157,38 +170,59 @@ class FLATLLMCompressor(BaseCompressor):
         self.cfg = cfg
 
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
-        raw_kr = _cfg_get(cfg, "flat_llm_keep_ratio",
-                          _cfg_get(cfg, "keep_ratio", keep_ratio))
+        raw_kr = _cfg_get(
+            cfg, "flat_llm_keep_ratio", _cfg_get(cfg, "keep_ratio", keep_ratio)
+        )
         self.keep_ratio = max(0.05, min(float(raw_kr), 1.0))
         # FLT-FIX-04
-        self.damping = max(0.0, float(_cfg_get(cfg, "flat_llm_damping",
-                                                _cfg_get(cfg, "damping", damping))))
-        self.structured_24 = bool(_cfg_get(cfg, "flat_llm_structured_24",
-                                            _cfg_get(cfg, "structured_24", structured_24)))
-        c_max_error = _cfg_get(cfg, "flat_llm_max_error", _cfg_get(cfg, "max_error", max_error))
+        self.damping = max(
+            0.0,
+            float(_cfg_get(cfg, "flat_llm_damping", _cfg_get(cfg, "damping", damping))),
+        )
+        self.structured_24 = bool(
+            _cfg_get(
+                cfg,
+                "flat_llm_structured_24",
+                _cfg_get(cfg, "structured_24", structured_24),
+            )
+        )
+        c_max_error = _cfg_get(
+            cfg, "flat_llm_max_error", _cfg_get(cfg, "max_error", max_error)
+        )
         if c_max_error is None or c_max_error == 0.35:
-            c_max_error = adaptive_max_error(int(self.keep_ratio * 768), 768, 768, "distilbert")
+            c_max_error = adaptive_max_error(
+                int(self.keep_ratio * 768), 768, 768, "distilbert"
+            )
             c_max_error = max(c_max_error, 0.60)
 
         self.max_error = float(c_max_error)
         self.target_attention_only = bool(
-            _cfg_get(cfg, "flat_llm_target_attention_only",
-                     _cfg_get(cfg, "target_attention_only", target_attention_only))
+            _cfg_get(
+                cfg,
+                "flat_llm_target_attention_only",
+                _cfg_get(cfg, "target_attention_only", target_attention_only),
+            )
         )
         self.fallback_to_original = bool(
-            _cfg_get(cfg, "flat_llm_fallback_to_original",
-                     _cfg_get(cfg, "fallback_to_original", fallback_to_original))
+            _cfg_get(
+                cfg,
+                "flat_llm_fallback_to_original",
+                _cfg_get(cfg, "fallback_to_original", fallback_to_original),
+            )
         )
-        self.calibration_loader = calibration_loader or _cfg_get(cfg, "calibration_loader", None)
+        self.calibration_loader = calibration_loader or _cfg_get(
+            cfg, "calibration_loader", None
+        )
         self.calibration_texts = calibration_texts
         self.target_modules = target_modules
         self.target_device = (
-            torch.device(device) if device is not None
+            torch.device(device)
+            if device is not None
             else next(model.parameters(), torch.tensor(0.0)).device
         )
-        self.num_calibration_batches = max(1, int(
-            _cfg_get(cfg, "num_calibration_batches", num_calibration_batches)
-        ))
+        self.num_calibration_batches = max(
+            1, int(_cfg_get(cfg, "num_calibration_batches", num_calibration_batches))
+        )
 
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
@@ -202,14 +236,34 @@ class FLATLLMCompressor(BaseCompressor):
         name_lower = name.lower()
         if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
             return False
-        if any(skip in name_lower for skip in
-               ("classifier", "score", "lm_head", "pooler", "embedding",
-                "router", "gate", "norm", "layernorm", "rmsnorm")):
+        if any(
+            skip in name_lower
+            for skip in (
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embedding",
+                "router",
+                "gate",
+                "norm",
+                "layernorm",
+                "rmsnorm",
+            )
+        ):
             return False
 
-        if isinstance(module, (nn.LayerNorm, nn.RMSNorm, nn.Embedding,
-                                nn.BatchNorm1d, nn.BatchNorm2d,
-                                PrunedChannelLinear)):
+        if isinstance(
+            module,
+            (
+                nn.LayerNorm,
+                nn.RMSNorm,
+                nn.Embedding,
+                nn.BatchNorm1d,
+                nn.BatchNorm2d,
+                PrunedChannelLinear,
+            ),
+        ):
             return False
 
         if self.target_attention_only:
@@ -272,7 +326,8 @@ class FLATLLMCompressor(BaseCompressor):
                 cls_name = target_mod.__class__.__name__.lower()
                 is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
                 out_f = (
-                    target_mod.weight.shape[1] if is_conv1d
+                    target_mod.weight.shape[1]
+                    if is_conv1d
                     else target_mod.weight.shape[0]
                 )
                 if out.shape[-1] != out_f:
@@ -288,6 +343,7 @@ class FLATLLMCompressor(BaseCompressor):
                 else:
                     energy_sum[layer_name] += var
                     batch_count[layer_name] += 1
+
             return hook
 
         for name, module in self.model.named_modules():
@@ -388,14 +444,15 @@ class FLATLLMCompressor(BaseCompressor):
                 keep_ratio_actual = 1.0
                 bias_kept = (
                     target_mod.bias.data.float()
-                    if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None
+                    if getattr(target_mod, "bias", None) is not None
+                    and target_mod.bias is not None
                     else None
                 )
                 comp_layer_storage = orig_layer_storage
             else:
                 keep_dims = max(1, min(int(round(d_out * self.keep_ratio)), d_out))
                 _, keep_idx = torch.topk(saliency, k=keep_dims, largest=True)
-                keep_idx, _ = torch.sort(keep_idx)   # stable order
+                keep_idx, _ = torch.sort(keep_idx)  # stable order
                 kept_idx = keep_idx.to(device)
                 W_kept = W.index_select(0, kept_idx).contiguous()
                 keep_ratio_actual = keep_dims / d_out
@@ -405,7 +462,10 @@ class FLATLLMCompressor(BaseCompressor):
                 W_pruned.index_copy_(0, kept_idx, W_kept)
 
                 # Bias handling: keep only the corresponding entries
-                if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None:
+                if (
+                    getattr(target_mod, "bias", None) is not None
+                    and target_mod.bias is not None
+                ):
                     bias_full = target_mod.bias.data.float()
                     bias_kept = bias_full.index_select(0, kept_idx).contiguous()
                 else:
@@ -419,9 +479,7 @@ class FLATLLMCompressor(BaseCompressor):
                 final_err = 0.0
             else:
                 if self.structured_24:
-                    final_err = float(
-                        torch.norm(W - W_pruned, p="fro").item() / norm_w
-                    )
+                    final_err = float(torch.norm(W - W_pruned, p="fro").item() / norm_w)
                 else:
                     W_pruned_full = torch.zeros_like(W)
                     W_pruned_full.index_copy_(0, kept_idx, W_kept)
@@ -435,7 +493,9 @@ class FLATLLMCompressor(BaseCompressor):
             if final_err > self.max_error:
                 logger.warning(
                     "FLAT-LLM error %.4f on %s exceeds %.4f.",
-                    final_err, name, self.max_error,
+                    final_err,
+                    name,
+                    self.max_error,
                 )
                 if self.fallback_to_original:
                     self.fallback_layers.append(name)
@@ -466,7 +526,8 @@ class FLATLLMCompressor(BaseCompressor):
                     W_kept=W_kept.to(dtype=dtype, device=device),
                     bias_kept=(
                         bias_kept.to(dtype=dtype, device=device)
-                        if bias_kept is not None else None
+                        if bias_kept is not None
+                        else None
                     ),
                 )
 
@@ -498,8 +559,11 @@ class FLATLLMCompressor(BaseCompressor):
                         self.model(dummy)
                     except Exception:
                         first_linear = next(
-                            (m for m in self.model.modules()
-                             if isinstance(m, (nn.Linear, PrunedChannelLinear))),
+                            (
+                                m
+                                for m in self.model.modules()
+                                if isinstance(m, (nn.Linear, PrunedChannelLinear))
+                            ),
                             None,
                         )
                         in_dim = getattr(first_linear, "in_features", 8)
@@ -511,12 +575,10 @@ class FLATLLMCompressor(BaseCompressor):
 
         # Honest storage ratio
         storage_ratio = (
-            total_orig_storage / total_comp_storage
-            if total_comp_storage > 0 else 1.0
+            total_orig_storage / total_comp_storage if total_comp_storage > 0 else 1.0
         )
         effective_ratio = (
-            total_comp_storage / total_orig_storage
-            if total_orig_storage > 0 else 1.0
+            total_comp_storage / total_orig_storage if total_orig_storage > 0 else 1.0
         )
 
         try:
@@ -532,36 +594,37 @@ class FLATLLMCompressor(BaseCompressor):
         avg_err = (
             sum(self.layer_errors[k] for k in self.compressed_layers)
             / max(1, len(self.compressed_layers))
-            if self.compressed_layers else 0.0
+            if self.compressed_layers
+            else 0.0
         )
 
-        stats.update({
-            "compressed_layers": self.compressed_layers,
-            "fallback_layers": self.fallback_layers,
-            "skipped_layers": self.skipped_layers,
-            "layer_errors": self.layer_errors,
-            "layer_keep_ratios": self.layer_keep_ratios,
-            "keep_ratio": self.keep_ratio,
-            "damping": self.damping,
-            "structured_24": self.structured_24,
-            "max_error": self.max_error,
-            "target_attention_only": self.target_attention_only,
-            "fallback_to_original": self.fallback_to_original,
-            "avg_reconstruction_error": avg_err,
-            "num_compressed": len(self.compressed_layers),
-            "num_fallback": len(self.fallback_layers),
-            "num_skipped": len(self.skipped_layers),
-            # Honest accounting (FLT-FIX-02)
-            "orig_layer_storage_params": total_orig_storage,
-            "comp_layer_storage_params": total_comp_storage,
-            "effective_parameter_ratio": round(effective_ratio, 4),
-            "storage_compression_ratio": round(storage_ratio, 3),
-            "storage_reduction_pct": round(
-                100.0 * (1.0 - effective_ratio), 2
-            ),
-            "forward_check_success": forward_check_success,
-            "method": "flat_llm_channel_pruning",
-        })
+        stats.update(
+            {
+                "compressed_layers": self.compressed_layers,
+                "fallback_layers": self.fallback_layers,
+                "skipped_layers": self.skipped_layers,
+                "layer_errors": self.layer_errors,
+                "layer_keep_ratios": self.layer_keep_ratios,
+                "keep_ratio": self.keep_ratio,
+                "damping": self.damping,
+                "structured_24": self.structured_24,
+                "max_error": self.max_error,
+                "target_attention_only": self.target_attention_only,
+                "fallback_to_original": self.fallback_to_original,
+                "avg_reconstruction_error": avg_err,
+                "num_compressed": len(self.compressed_layers),
+                "num_fallback": len(self.fallback_layers),
+                "num_skipped": len(self.skipped_layers),
+                # Honest accounting (FLT-FIX-02)
+                "orig_layer_storage_params": total_orig_storage,
+                "comp_layer_storage_params": total_comp_storage,
+                "effective_parameter_ratio": round(effective_ratio, 4),
+                "storage_compression_ratio": round(storage_ratio, 3),
+                "storage_reduction_pct": round(100.0 * (1.0 - effective_ratio), 2),
+                "forward_check_success": forward_check_success,
+                "method": "flat_llm_channel_pruning",
+            }
+        )
 
         logger.info(
             "Compressor flat_llm finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
@@ -582,33 +645,45 @@ def flat_llm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     keep_ratio = kwargs.pop(
         "keep_ratio",
-        _cfg_get(comp_config, "flat_llm_keep_ratio",
-                 _cfg_get(comp_config, "keep_ratio", 0.7)),
+        _cfg_get(
+            comp_config, "flat_llm_keep_ratio", _cfg_get(comp_config, "keep_ratio", 0.7)
+        ),
     )
     damping = kwargs.pop(
         "damping",
-        _cfg_get(comp_config, "flat_llm_damping",
-                 _cfg_get(comp_config, "damping", 1e-4)),
+        _cfg_get(
+            comp_config, "flat_llm_damping", _cfg_get(comp_config, "damping", 1e-4)
+        ),
     )
     structured_24 = kwargs.pop(
         "structured_24",
-        _cfg_get(comp_config, "flat_llm_structured_24",
-                 _cfg_get(comp_config, "structured_24", False)),
+        _cfg_get(
+            comp_config,
+            "flat_llm_structured_24",
+            _cfg_get(comp_config, "structured_24", False),
+        ),
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(comp_config, "flat_llm_max_error",
-                 _cfg_get(comp_config, "max_error", 0.35)),
+        _cfg_get(
+            comp_config, "flat_llm_max_error", _cfg_get(comp_config, "max_error", 0.35)
+        ),
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",
-        _cfg_get(comp_config, "flat_llm_target_attention_only",
-                 _cfg_get(comp_config, "target_attention_only", False)),
+        _cfg_get(
+            comp_config,
+            "flat_llm_target_attention_only",
+            _cfg_get(comp_config, "target_attention_only", False),
+        ),
     )
     fallback = kwargs.pop(
         "fallback_to_original",
-        _cfg_get(comp_config, "flat_llm_fallback_to_original",
-                 _cfg_get(comp_config, "fallback_to_original", True)),
+        _cfg_get(
+            comp_config,
+            "flat_llm_fallback_to_original",
+            _cfg_get(comp_config, "fallback_to_original", True),
+        ),
     )
     tokenizer = kwargs.pop(
         "tokenizer",

@@ -7,6 +7,7 @@ Paper: "HybridKV: Hybrid KV Cache Compression for Efficient MLLM Inference"
        Zeng et al., arXiv:2604.05887.
 Registered as 'hybridkv'.
 """
+
 from __future__ import annotations
 
 import logging
@@ -29,7 +30,20 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-_ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value", "q_lin", "k_lin", "v_lin"}
+_ATTN_NAMES = {
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "c_attn",
+    "c_proj",
+    "query",
+    "key",
+    "value",
+    "q_lin",
+    "k_lin",
+    "v_lin",
+}
 
 
 class HybridKVCache:
@@ -52,7 +66,11 @@ class HybridKVCache:
         static_heads_mask: torch.Tensor | None = None,
     ) -> None:
         self.budget = float(budget)
-        self.max_cache_len = max(8, int(max_cache_len * self.budget)) if self.budget > 0 else int(max_cache_len)
+        self.max_cache_len = (
+            max(8, int(max_cache_len * self.budget))
+            if self.budget > 0
+            else int(max_cache_len)
+        )
         self.num_sinks = int(num_sinks)
         self.recent_window = int(recent_window)
         self.static_ratio = float(static_ratio)
@@ -187,13 +205,39 @@ class HybridKVCompressor(BaseCompressor):
         cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
-        self.budget = float(_cfg_get(cfg, "hybridkv_budget", _cfg_get(cfg, "budget", budget)))
-        self.static_ratio = float(_cfg_get(cfg, "hybridkv_static_ratio", _cfg_get(cfg, "static_ratio", static_ratio)))
-        self.max_cache_len = int(_cfg_get(cfg, "hybridkv_max_cache_len", _cfg_get(cfg, "max_cache_len", max_cache_len)))
-        self.num_sinks = int(_cfg_get(cfg, "hybridkv_num_sinks", _cfg_get(cfg, "num_sinks", num_sinks)))
-        self.recent_window = int(_cfg_get(cfg, "hybridkv_recent_window", _cfg_get(cfg, "recent_window", recent_window)))
+        self.budget = float(
+            _cfg_get(cfg, "hybridkv_budget", _cfg_get(cfg, "budget", budget))
+        )
+        self.static_ratio = float(
+            _cfg_get(
+                cfg,
+                "hybridkv_static_ratio",
+                _cfg_get(cfg, "static_ratio", static_ratio),
+            )
+        )
+        self.max_cache_len = int(
+            _cfg_get(
+                cfg,
+                "hybridkv_max_cache_len",
+                _cfg_get(cfg, "max_cache_len", max_cache_len),
+            )
+        )
+        self.num_sinks = int(
+            _cfg_get(cfg, "hybridkv_num_sinks", _cfg_get(cfg, "num_sinks", num_sinks))
+        )
+        self.recent_window = int(
+            _cfg_get(
+                cfg,
+                "hybridkv_recent_window",
+                _cfg_get(cfg, "recent_window", recent_window),
+            )
+        )
         self.target_attention_only = bool(
-            _cfg_get(cfg, "hybridkv_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
+            _cfg_get(
+                cfg,
+                "hybridkv_target_attention_only",
+                _cfg_get(cfg, "target_attention_only", target_attention_only),
+            )
         )
 
     def _classify_head(self, weight: torch.Tensor) -> str:
@@ -206,7 +250,18 @@ class HybridKVCompressor(BaseCompressor):
         name_lower = name.lower()
         if any(part in name.split(".") for part in ["lora_A", "lora_B"]):
             return False
-        if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate"]):
+        if any(
+            skip in name_lower
+            for skip in [
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embedding",
+                "router",
+                "gate",
+            ]
+        ):
             return False
 
         target_mod = getattr(module, "base_layer", module)
@@ -266,7 +321,7 @@ class HybridKVCompressor(BaseCompressor):
                 total_heads += num_heads
                 static_heads_count += num_static
                 dynamic_heads_count += num_dynamic
-            elif hasattr(module, 'weight') or list(module.parameters(recurse=False)):
+            elif hasattr(module, "weight") or list(module.parameters(recurse=False)):
                 # Freeze fallback/skipped layers to prevent unintended gradient flow
                 for p in module.parameters(recurse=False):
                     p.requires_grad = False
@@ -280,7 +335,10 @@ class HybridKVCompressor(BaseCompressor):
                 try:
                     self.model(dummy)
                 except Exception:
-                    first_linear = next((m for m in self.model.modules() if isinstance(m, nn.Linear)), None)
+                    first_linear = next(
+                        (m for m in self.model.modules() if isinstance(m, nn.Linear)),
+                        None,
+                    )
                     in_dim = getattr(first_linear, "in_features", 8)
                     self.model(torch.randn(1, 8, in_dim, device=dev))
         except Exception:
@@ -298,7 +356,9 @@ class HybridKVCompressor(BaseCompressor):
         stats["dynamic_heads_count"] = dynamic_heads_count
         stats["head_classifications"] = head_stats
         stats["attached_caches"] = len(head_stats)
-        stats["kv_cache_budget_saving"] = f"{(1.0 - self.budget) * 100:.1f}% Footprint Reduction"
+        stats["kv_cache_budget_saving"] = (
+            f"{(1.0 - self.budget) * 100:.1f}% Footprint Reduction"
+        )
         stats["forward_check_success"] = forward_check_success
         return self.model, stats
 
@@ -308,14 +368,47 @@ class HybridKVCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("hybridkv_compressor_factory")
 def hybridkv_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """HybridKV compressor factory function."""
-    budget = kwargs.pop("budget", _cfg_get(comp_config, "hybridkv_budget", _cfg_get(comp_config, "budget", 0.3)))
-    static_ratio = kwargs.pop("static_ratio", _cfg_get(comp_config, "hybridkv_static_ratio", _cfg_get(comp_config, "static_ratio", 0.7)))
-    max_cache_len = kwargs.pop("max_cache_len", _cfg_get(comp_config, "hybridkv_max_cache_len", _cfg_get(comp_config, "max_cache_len", 128)))
-    num_sinks = kwargs.pop("num_sinks", _cfg_get(comp_config, "hybridkv_num_sinks", _cfg_get(comp_config, "num_sinks", 4)))
-    recent_window = kwargs.pop("recent_window", _cfg_get(comp_config, "hybridkv_recent_window", _cfg_get(comp_config, "recent_window", 32)))
+    budget = kwargs.pop(
+        "budget",
+        _cfg_get(comp_config, "hybridkv_budget", _cfg_get(comp_config, "budget", 0.3)),
+    )
+    static_ratio = kwargs.pop(
+        "static_ratio",
+        _cfg_get(
+            comp_config,
+            "hybridkv_static_ratio",
+            _cfg_get(comp_config, "static_ratio", 0.7),
+        ),
+    )
+    max_cache_len = kwargs.pop(
+        "max_cache_len",
+        _cfg_get(
+            comp_config,
+            "hybridkv_max_cache_len",
+            _cfg_get(comp_config, "max_cache_len", 128),
+        ),
+    )
+    num_sinks = kwargs.pop(
+        "num_sinks",
+        _cfg_get(
+            comp_config, "hybridkv_num_sinks", _cfg_get(comp_config, "num_sinks", 4)
+        ),
+    )
+    recent_window = kwargs.pop(
+        "recent_window",
+        _cfg_get(
+            comp_config,
+            "hybridkv_recent_window",
+            _cfg_get(comp_config, "recent_window", 32),
+        ),
+    )
     target_attention_only = kwargs.pop(
         "target_attention_only",
-        _cfg_get(comp_config, "hybridkv_target_attention_only", _cfg_get(comp_config, "target_attention_only", True)),
+        _cfg_get(
+            comp_config,
+            "hybridkv_target_attention_only",
+            _cfg_get(comp_config, "target_attention_only", True),
+        ),
     )
 
     compressor = HybridKVCompressor(

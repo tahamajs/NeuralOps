@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.hymba_transx import HymbaTransXBlock, inject_hymba_transx
+from framework.attentions.hymba_transx import (HymbaTransXBlock,
+                                               inject_hymba_transx)
 
 
 class MockConfig:

@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.lola_attention import LoLAAttention, inject_lola_attention
+from framework.attentions.lola_attention import (LoLAAttention,
+                                                 inject_lola_attention)
 
 
 class MockConfig:

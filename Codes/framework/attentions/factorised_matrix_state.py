@@ -26,12 +26,12 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 try:
-    from framework.core.triton_kernels.fms_scan import fms_scan_triton, MAX_REGISTER_DIM
+    from framework.core.triton_kernels.fms_scan import MAX_REGISTER_DIM, fms_scan_triton
+
     HAS_TRITON_FMS = True
 except Exception as _e:
     logger.warning("FMS Triton unavailable: %s", _e)
@@ -39,13 +39,14 @@ except Exception as _e:
     MAX_REGISTER_DIM = 64
 
 
-
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     r"""Expands grouped key/value heads to match query heads."""
     if n_rep == 1:
         return hidden_states
     batch, num_kv_heads, slen, head_dim = hidden_states.shape
-    hidden_states = hidden_states[:, :, None, :, :].expand(batch, num_kv_heads, n_rep, slen, head_dim)
+    hidden_states = hidden_states[:, :, None, :, :].expand(
+        batch, num_kv_heads, n_rep, slen, head_dim
+    )
     return hidden_states.reshape(batch, num_kv_heads * n_rep, slen, head_dim)
 
 
@@ -130,15 +131,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -180,17 +187,27 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            lora_out = (
+                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            )
             out = out + lora_out
         return out
 
 
-@ATTENTION_REGISTRY.register("fms", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("factorised_matrix_state", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "fms", supports_causal=True, supports_bidirectional=True, supports_gqa=True
+)
+@ATTENTION_REGISTRY.register(
+    "factorised_matrix_state",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
 class FactorisedMatrixState(BaseAttention):
     r"""Bidirectional & Causal Factorised Matrix State Recurrent Linear Attention."""
 
     is_custom_attention: bool = True
+
     def __init__(
         self,
         config: Any | None = None,
@@ -210,8 +227,22 @@ class FactorisedMatrixState(BaseAttention):
             if config is not None:
                 d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
             elif source_attn is not None:
-                out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
-                d_model = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
+                out_layer = getattr(
+                    source_attn,
+                    "out_lin",
+                    getattr(
+                        source_attn,
+                        "dense",
+                        getattr(
+                            source_attn, "c_proj", getattr(source_attn, "o_proj", None)
+                        ),
+                    ),
+                )
+                d_model = (
+                    getattr(out_layer, "out_features", 768)
+                    if out_layer is not None
+                    else 768
+                )
             else:
                 d_model = kwargs.get("hidden_size", 768)
 
@@ -220,44 +251,104 @@ class FactorisedMatrixState(BaseAttention):
 
         if num_heads is None:
             if config is not None:
-                num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", 12))
+                num_heads = getattr(
+                    config, "num_attention_heads", getattr(config, "num_heads", 12)
+                )
             elif source_attn is not None:
-                num_heads = getattr(source_attn, "n_heads", getattr(source_attn, "num_attention_heads", getattr(source_attn, "num_heads", 12)))
+                num_heads = getattr(
+                    source_attn,
+                    "n_heads",
+                    getattr(
+                        source_attn,
+                        "num_attention_heads",
+                        getattr(source_attn, "num_heads", 12),
+                    ),
+                )
             else:
                 num_heads = kwargs.get("num_attention_heads", 12)
 
         super().__init__(config, rank)
         self.d_model: int = int(d_model)
         self.num_heads: int = int(num_heads)
-        self.num_kv_heads: int = getattr(config, "num_key_value_heads", self.num_heads) if config is not None else self.num_heads
-        self.head_dim: int = getattr(config, "head_dim", None) or (self.d_model // max(1, self.num_heads))
+        self.num_kv_heads: int = (
+            getattr(config, "num_key_value_heads", self.num_heads)
+            if config is not None
+            else self.num_heads
+        )
+        self.head_dim: int = getattr(config, "head_dim", None) or (
+            self.d_model // max(1, self.num_heads)
+        )
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.proj_rank: int = rank if rank is not None else 32
 
         # Static layer index
-        resolved_layer_id = layer_id if layer_id is not None else (layer_idx if layer_idx is not None else kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
+        resolved_layer_id = (
+            layer_id
+            if layer_id is not None
+            else (
+                layer_idx
+                if layer_idx is not None
+                else kwargs.get("layer_id", kwargs.get("layer_idx", 0))
+            )
+        )
         self.layer_idx: int = int(resolved_layer_id)
 
         # LoRA adaptation configuration
         if config is not None:
-            self.lora_rank: int = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
-            self.lora_alpha: float = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+            self.lora_rank: int = getattr(
+                config,
+                "lora_rank",
+                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)),
+            )
+            self.lora_alpha: float = getattr(
+                config,
+                "lora_alpha",
+                getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
+            )
         elif comp_config is not None:
-            self.lora_rank: int = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
-            self.lora_alpha: float = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
+            self.lora_rank: int = getattr(
+                comp_config, "lora_rank", kwargs.get("lora_rank", 16)
+            )
+            self.lora_alpha: float = getattr(
+                comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)
+            )
         else:
             self.lora_rank: int = kwargs.get("lora_rank", 16)
             self.lora_alpha: float = kwargs.get("lora_alpha", 32.0)
-        self.freeze_base: bool = (self.lora_rank > 0)
+        self.freeze_base: bool = self.lora_rank > 0
 
         # Decoder & nested encoder detection
         model_type = getattr(config, "model_type", "").lower()
-        is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False)))
-        _mt = (model_type or '').lower()
-        _decoder_prefixes = ('gpt', 'qwen', 'llama', 'mistral', 'gemma', 'phi', 'opt', 'bloom', 'falcon', 'olmo', 'mpt', 'stablelm')
-        if any(_mt.startswith(p) for p in _decoder_prefixes) or hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+        is_dec = getattr(
+            config,
+            "is_decoder",
+            getattr(config, "is_causal", kwargs.get("is_causal", False)),
+        )
+        _mt = (model_type or "").lower()
+        _decoder_prefixes = (
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
+        )
+        if (
+            any(_mt.startswith(p) for p in _decoder_prefixes)
+            or hasattr(config, "architectures")
+            and any(
+                "GPT" in str(a) or "CausalLM" in str(a)
+                for a in (getattr(config, "architectures", []) or [])
+            )
+        ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
@@ -266,9 +357,30 @@ class FactorisedMatrixState(BaseAttention):
         self.is_nested_encoder: bool = False
 
         # Multi-head projections equipped with LoRA adapters
-        self.q_proj = LoRALinear(self.d_model, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.k_proj = LoRALinear(self.d_model, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.v_proj = LoRALinear(self.d_model, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.q_proj = LoRALinear(
+            self.d_model,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.k_proj = LoRALinear(
+            self.d_model,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.v_proj = LoRALinear(
+            self.d_model,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
         # Factorized low-rank projection parameters L and R
         # L is initialized with Kaiming uniform and R with zeros so that the initial low-rank perturbation
@@ -276,7 +388,14 @@ class FactorisedMatrixState(BaseAttention):
         self.L = nn.Parameter(torch.empty(self.all_head_size, self.proj_rank))
         self.R = nn.Parameter(torch.zeros(self.d_model, self.proj_rank))
         nn.init.kaiming_uniform_(self.L, a=math.sqrt(5))
-        self.W_res = LoRALinear(self.all_head_size, self.d_model, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.W_res = LoRALinear(
+            self.all_head_size,
+            self.d_model,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
         self.beta = nn.Parameter(torch.ones(self.num_heads, 1, 1) * 2.0)
         self.rotary_emb = None
@@ -287,33 +406,60 @@ class FactorisedMatrixState(BaseAttention):
 
     # Compatibility properties
     @property
-    def query(self) -> LoRALinear: return self.q_proj
+    def query(self) -> LoRALinear:
+        return self.q_proj
+
     @property
-    def key(self) -> LoRALinear: return self.k_proj
+    def key(self) -> LoRALinear:
+        return self.k_proj
+
     @property
-    def value(self) -> LoRALinear: return self.v_proj
+    def value(self) -> LoRALinear:
+        return self.v_proj
+
     @property
-    def dense(self) -> LoRALinear: return self.W_res
+    def dense(self) -> LoRALinear:
+        return self.W_res
+
     @property
-    def out_proj(self) -> LoRALinear: return self.W_res
+    def out_proj(self) -> LoRALinear:
+        return self.W_res
+
     @property
-    def o_proj(self) -> LoRALinear: return self.W_res
+    def o_proj(self) -> LoRALinear:
+        return self.W_res
+
     @property
-    def q_lin(self) -> LoRALinear: return self.q_proj
+    def q_lin(self) -> LoRALinear:
+        return self.q_proj
+
     @property
-    def k_lin(self) -> LoRALinear: return self.k_proj
+    def k_lin(self) -> LoRALinear:
+        return self.k_proj
+
     @property
-    def v_lin(self) -> LoRALinear: return self.v_proj
+    def v_lin(self) -> LoRALinear:
+        return self.v_proj
+
     @property
-    def out_lin(self) -> LoRALinear: return self.W_res
+    def out_lin(self) -> LoRALinear:
+        return self.W_res
+
     @property
-    def W_q(self) -> LoRALinear: return self.q_proj
+    def W_q(self) -> LoRALinear:
+        return self.q_proj
+
     @property
-    def W_k(self) -> LoRALinear: return self.k_proj
+    def W_k(self) -> LoRALinear:
+        return self.k_proj
+
     @property
-    def W_v(self) -> LoRALinear: return self.v_proj
+    def W_v(self) -> LoRALinear:
+        return self.v_proj
+
     @property
-    def c_proj(self) -> LoRALinear: return self.W_res
+    def c_proj(self) -> LoRALinear:
+        return self.W_res
 
     def copy_weights(self, old_attn: Any) -> None:
         """Transfer pretrained projection weights with strict Frobenius norm verification."""
@@ -321,17 +467,35 @@ class FactorisedMatrixState(BaseAttention):
             return
 
         cls_name = old_attn.__class__.__name__
-        has_out_lin = hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj")
+        has_out_lin = (
+            hasattr(old_attn, "out_lin")
+            or hasattr(old_attn, "c_proj")
+            or hasattr(old_attn, "o_proj")
+        )
         is_nested = False
         if (
-            hasattr(old_attn, "self")
-            and hasattr(old_attn.self, "query")
-            and hasattr(old_attn, "output")
-            and hasattr(old_attn.output, "dense")
-        ) or (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
-            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
+            (
+                hasattr(old_attn, "self")
+                and hasattr(old_attn.self, "query")
+                and hasattr(old_attn, "output")
+                and hasattr(old_attn.output, "dense")
+            )
+            or (
+                cls_name
+                in [
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                ]
+                or (
+                    cls_name.endswith("SelfAttention")
+                    and "distil" not in cls_name.lower()
+                )
+            )
+            and not has_out_lin
+        ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -348,24 +512,39 @@ class FactorisedMatrixState(BaseAttention):
         # 1. GPT-2: Fused c_attn + c_proj
         if hasattr(old_attn, "c_attn") and old_attn.c_attn is not None:
             c_attn_mod = old_attn.c_attn
-            if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
+            if hasattr(c_attn_mod, "merge") and not getattr(
+                c_attn_mod, "merged", False
+            ):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
-                    print(f'copy_weights failed: {e}')
+                    print(f"copy_weights failed: {e}")
                     logger.warning(f"copy_weights failed: {e}")
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                if (
+                    (c_attn_mod.__class__.__name__ == "Conv1D")
+                    or (base_c.__class__.__name__ == "Conv1D")
+                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
+                ):
                     c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
+                extracted["q"] = (
+                    c_w[:split_size, :],
+                    c_b[:split_size] if c_b is not None else None,
+                )
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (
+                    c_w[2 * split_size :, :],
+                    c_b[2 * split_size :] if c_b is not None else None,
+                )
 
             if hasattr(old_attn, "c_proj") and old_attn.c_proj is not None:
                 c_proj_mod = old_attn.c_proj
@@ -373,10 +552,17 @@ class FactorisedMatrixState(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    if (
+                        (c_proj_mod.__class__.__name__ == "Conv1D")
+                        or (base_o.__class__.__name__ == "Conv1D")
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
+                    ):
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    extracted["o"] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
 
         # 2. RoBERTa / BERT nested self-attention
         elif hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
@@ -384,10 +570,16 @@ class FactorisedMatrixState(BaseAttention):
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
-                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                    extracted[proj_key] = (
+                        mod.weight.data.clone(),
+                        mod.bias.data.clone() if mod.bias is not None else None,
+                    )
             if hasattr(old_attn, "output") and hasattr(old_attn.output, "dense"):
                 out_mod = old_attn.output.dense
-                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
+                extracted["o"] = (
+                    out_mod.weight.data.clone(),
+                    out_mod.bias.data.clone() if out_mod.bias is not None else None,
+                )
 
         # 3. Standard linear projections (DistilBERT, Qwen, LLaMA)
         else:
@@ -402,14 +594,22 @@ class FactorisedMatrixState(BaseAttention):
                     if hasattr(old_attn, name):
                         mod = getattr(old_attn, name)
                         if mod is not None and hasattr(mod, "weight"):
-                            extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                            extracted[proj_key] = (
+                                mod.weight.data.clone(),
+                                mod.bias.data.clone() if mod.bias is not None else None,
+                            )
                             break
 
         # Fallback via UniversalAdapter
-        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(old_attn, k)
@@ -418,7 +618,11 @@ class FactorisedMatrixState(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing_after:
             raise RuntimeError(
                 f"FactorisedMatrixState copy_weights: missing mandatory projections {missing_after} "
@@ -445,23 +649,36 @@ class FactorisedMatrixState(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                if (
+                    w.shape != target_mod.weight.shape
+                    and target_mod.weight.shape == w.t().contiguous().shape
+                ):
                     w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
-                target_mod.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype))
+                target_mod.weight.data[:out_d, :in_d].copy_(
+                    w[:out_d, :in_d].to(
+                        device=target_mod.weight.device, dtype=target_mod.weight.dtype
+                    )
+                )
 
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
-                    target_mod.bias.data[:min_b].copy_(b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype))
+                    target_mod.bias.data[:min_b].copy_(
+                        b[:min_b].to(
+                            device=target_mod.bias.device, dtype=target_mod.bias.dtype
+                        )
+                    )
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
                 # Weight verification (Frobenius norm >= 1e-4)
                 w_norm = float(torch.norm(target_mod.weight.data).item())
                 if w_norm < 1e-4:
-                    logger.warning(f"FactorisedMatrixState weight copy verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+                    logger.warning(
+                        f"FactorisedMatrixState weight copy verification failed for '{proj_key}': norm too small ({w_norm:.2e})"
+                    )
 
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
@@ -482,7 +699,13 @@ class FactorisedMatrixState(BaseAttention):
         """
         B, H, L, d = q.shape
 
-        if HAS_TRITON_FMS and q.is_cuda and d <= MAX_REGISTER_DIM and mask is None and not reverse:
+        if (
+            HAS_TRITON_FMS
+            and q.is_cuda
+            and d <= MAX_REGISTER_DIM
+            and mask is None
+            and not reverse
+        ):
             try:
                 decay_scalar = decay.float().clamp(min=1e-4, max=1.0 - 1e-4).squeeze()
                 if decay_scalar.dim() == 0:
@@ -514,7 +737,9 @@ class FactorisedMatrixState(BaseAttention):
             dist = idx.unsqueeze(1) - idx.unsqueeze(0)
             causal_mask = dist >= 0
             # Memory optimization: compute D without extra unsqueeze where possible
-            D = torch.exp(dist.unsqueeze(0).unsqueeze(0) * log_decay).masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
+            D = torch.exp(dist.unsqueeze(0).unsqueeze(0) * log_decay).masked_fill(
+                ~causal_mask.unsqueeze(0).unsqueeze(0), 0.0
+            )
 
             # Avoid .contiguous() after transpose if not absolutely required
             scores = torch.matmul(q_f, k_f.transpose(-1, -2)) * D
@@ -542,7 +767,9 @@ class FactorisedMatrixState(BaseAttention):
                 idx_c = torch.arange(curr_c, device=q.device, dtype=torch.float32)
                 dist_c = idx_c.unsqueeze(1) - idx_c.unsqueeze(0)
                 causal_mask_c = dist_c >= 0
-                Dc = torch.exp(dist_c.unsqueeze(0).unsqueeze(0) * log_decay).masked_fill(~causal_mask_c.unsqueeze(0).unsqueeze(0), 0.0)
+                Dc = torch.exp(
+                    dist_c.unsqueeze(0).unsqueeze(0) * log_decay
+                ).masked_fill(~causal_mask_c.unsqueeze(0).unsqueeze(0), 0.0)
 
                 # Intra-chunk
                 scores_c = torch.matmul(qc, kc.transpose(-1, -2)) * Dc
@@ -550,17 +777,19 @@ class FactorisedMatrixState(BaseAttention):
                 denom_intra = scores_c.sum(dim=-1, keepdim=True)
 
                 # Inter-chunk
-                decay_from_prev = torch.exp((idx_c + 1).view(1, 1, curr_c, 1) * log_decay)  # (1, H, curr_c, 1)
+                decay_from_prev = torch.exp(
+                    (idx_c + 1).view(1, 1, curr_c, 1) * log_decay
+                )  # (1, H, curr_c, 1)
 
                 # MEMORY FIX: Use einsum instead of expanding S to (B, H, curr_c, d, d)
                 # num_inter = (qc @ S) * decay_from_prev
                 # qc: (B, H, C, d), S: (B, H, d, d) -> output: (B, H, C, d)
-                num_inter = torch.einsum('bhcd,bhde->bhce', qc, S)
+                num_inter = torch.einsum("bhcd,bhde->bhce", qc, S)
                 num_inter = num_inter * decay_from_prev
 
                 # denom_inter = (qc @ z) * decay_from_prev
                 # qc: (B, H, C, d), z: (B, H, d, 1) -> output: (B, H, C, 1)
-                denom_inter = torch.einsum('bhcd,bhde->bhce', qc, z)
+                denom_inter = torch.einsum("bhcd,bhde->bhce", qc, z)
                 denom_inter = denom_inter * decay_from_prev
 
                 num_c = num_intra + num_inter
@@ -579,7 +808,7 @@ class FactorisedMatrixState(BaseAttention):
 
                 # Now compute the accumulated state over the chunk directly into (B,H,d,d) using einsum
                 # chunk_S = sum_{c} (kc_decayed_c \otimes vc_c)
-                chunk_S = torch.einsum('bhcd,bhce->bhde', kc_decayed, vc)
+                chunk_S = torch.einsum("bhcd,bhce->bhde", kc_decayed, vc)
 
                 # chunk_z = sum_{c} kc_decayed_c
                 chunk_z = kc_decayed.sum(dim=2).unsqueeze(-1)  # (B, H, d, 1)
@@ -593,6 +822,7 @@ class FactorisedMatrixState(BaseAttention):
             y = y.flip(dims=[2])
 
         return y.to(q.dtype)
+
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -618,8 +848,18 @@ class FactorisedMatrixState(BaseAttention):
 
         # 1. Projections
         q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
-        k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        k = (
+            self.k_proj(kv_input)
+            .view(B, kv_len, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_proj(kv_input)
+            .view(B, kv_len, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # 2. Rotary Position Embeddings (RoPE)
         if position_embeddings is not None and not is_cross_attention:
@@ -656,7 +896,9 @@ class FactorisedMatrixState(BaseAttention):
         if self.is_decoder or is_cross_attention:
             y = y_fwd
         else:
-            y_bwd = self._matrix_scan_linear(q, k, v, decay, mask=mask_bool, reverse=True)
+            y_bwd = self._matrix_scan_linear(
+                q, k, v, decay, mask=mask_bool, reverse=True
+            )
             y = 0.5 * (y_fwd + y_bwd)
 
         # 6. Head mask handling
@@ -677,7 +919,9 @@ class FactorisedMatrixState(BaseAttention):
             out = y_flat
         else:
             # Low-rank factorized bilinear output projection + residual output projection
-            low_rank = torch.matmul(torch.matmul(y_flat, self.L), self.R.t().contiguous())
+            low_rank = torch.matmul(
+                torch.matmul(y_flat, self.L), self.R.t().contiguous()
+            )
             out = self.W_res(y_flat) + low_rank
 
         return out, None
@@ -719,9 +963,15 @@ def inject_factorised_matrix_state(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+    elif hasattr(target, "layers") and isinstance(
+        target.layers, (torch.nn.ModuleList, list)
+    ):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -731,7 +981,11 @@ def inject_factorised_matrix_state(
             res = inject_factorised_matrix_state(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                comp_config=(
+                    comp_config
+                    if "comp_config" in locals() or "comp_config" in kwargs
+                    else None
+                ),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,

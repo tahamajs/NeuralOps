@@ -6,6 +6,7 @@ Performs:
 3. Clean Git commit and push to origin/main
 Strictly gated on success criteria (status == 'PASS', acc >= pass_threshold_pct).
 """
+
 from __future__ import annotations
 
 import json
@@ -19,18 +20,26 @@ from typing import Any
 import torch
 
 LOG = logging.getLogger("HFGitExporter")
-os.environ["HF_XET_HIGH_PERFORMANCE"] = "1"   # قبل از import
+os.environ["HF_XET_HIGH_PERFORMANCE"] = "1"  # قبل از import
 import warnings
-warnings.filterwarnings("ignore", category=FutureWarning, module="huggingface_hub")
 
+warnings.filterwarnings("ignore", category=FutureWarning, module="huggingface_hub")
 
 
 def sanitize_slug(text: str) -> str:
     """Sanitize strings for repo naming and identifiers."""
-    return text.lower().replace("/", "_").replace("\\", "_").replace(" ", "-").replace("_", "-")
+    return (
+        text.lower()
+        .replace("/", "_")
+        .replace("\\", "_")
+        .replace(" ", "-")
+        .replace("_", "-")
+    )
 
 
-def find_documentation_file(module_name: str, docs_dir: Path | None = None) -> Path | None:
+def find_documentation_file(
+    module_name: str, docs_dir: Path | None = None
+) -> Path | None:
     """Locate the corresponding Markdown documentation file in Docs/content/."""
     if docs_dir is None:
         docs_dir = Path(__file__).resolve().parents[3] / "Docs" / "content"
@@ -176,10 +185,18 @@ def update_documentation_table(
         content = doc_path.read_text(encoding="utf-8")
         date_str = datetime.now().strftime("%Y-%m-%d")
         base_str = f"{baseline_acc:.2f}%" if baseline_acc is not None else "N/A"
-        delta_str = f"{(acc - baseline_acc):+.2f}%" if baseline_acc is not None else "N/A"
+        delta_str = (
+            f"{(acc - baseline_acc):+.2f}%" if baseline_acc is not None else "N/A"
+        )
         f1_str = f"{float(f1):.4f}" if f1 not in (None, "N/A", "") else "N/A"
-        comp_rate_str = f"{float(comp_rate):.2f}x" if comp_rate not in (None, "N/A", "") else "1.00x"
-        hf_link = f"[{hf_repo_url.split('/')[-1]}]({hf_repo_url})" if hf_repo_url else "N/A"
+        comp_rate_str = (
+            f"{float(comp_rate):.2f}x"
+            if comp_rate not in (None, "N/A", "")
+            else "1.00x"
+        )
+        hf_link = (
+            f"[{hf_repo_url.split('/')[-1]}]({hf_repo_url})" if hf_repo_url else "N/A"
+        )
 
         row = f"| **{model_name}** | {dataset_name} | `{status}` | {base_str} | **{acc:.2f}%** | {delta_str} | {f1_str} | {comp_rate_str} | {num_compressed} | {hf_link} | {date_str} |\n"
 
@@ -189,7 +206,10 @@ def update_documentation_table(
             replaced = False
             new_lines = []
             for line in lines:
-                if line.startswith(f"| **{model_name}**") and f"| {dataset_name} |" in line:
+                if (
+                    line.startswith(f"| **{model_name}**")
+                    and f"| {dataset_name} |" in line
+                ):
                     new_lines.append(row.strip())
                     replaced = True
                 else:
@@ -205,13 +225,17 @@ def update_documentation_table(
                     # skip header and divider line
                     insert_idx = header_idx + 2
                     # find the end of the table
-                    while insert_idx < len(new_lines) and new_lines[insert_idx].startswith("|"):
+                    while insert_idx < len(new_lines) and new_lines[
+                        insert_idx
+                    ].startswith("|"):
                         insert_idx += 1
                     new_lines.insert(insert_idx, row.strip())
                 else:
                     new_lines.append(row.strip())
             content = "\n".join(new_lines)
-        elif any("Empirical Benchmark Results" in line for line in content.splitlines()):
+        elif any(
+            "Empirical Benchmark Results" in line for line in content.splitlines()
+        ):
             # Insert table right after the section header
             lines = content.splitlines()
             header_idx = -1
@@ -267,6 +291,7 @@ def upload_to_huggingface(
     os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
     try:
         from huggingface_hub import HfApi
+
         api = HfApi()
 
         # 1. Ensure private repo exists
@@ -275,7 +300,14 @@ def upload_to_huggingface(
         # 2. Write model card
         readme_path = export_dir / "README.md"
         readme_path.write_text(
-            generate_model_card(model_name, module_name, dataset_name, perf_metrics, comp_metrics, config_dict),
+            generate_model_card(
+                model_name,
+                module_name,
+                dataset_name,
+                perf_metrics,
+                comp_metrics,
+                config_dict,
+            ),
             encoding="utf-8",
         )
 
@@ -290,7 +322,9 @@ def upload_to_huggingface(
         # 4. Upload to private repo (robust against CAS/XetHub network restrictions)
         acc = float(perf_metrics.get("accuracy_pct", 0.0))
         f1 = perf_metrics.get("f1_score", "N/A")
-        commit_msg = f"feat: upload {module_name} on {model_name} (Acc: {acc:.2f}%, F1: {f1})"
+        commit_msg = (
+            f"feat: upload {module_name} on {model_name} (Acc: {acc:.2f}%, F1: {f1})"
+        )
         try:
             api.upload_folder(
                 folder_path=str(export_dir),
@@ -299,7 +333,10 @@ def upload_to_huggingface(
                 commit_message=commit_msg,
             )
         except Exception as e_folder:
-            LOG.warning("upload_folder encountered issue (%s); falling back to per-file direct upload...", e_folder)
+            LOG.warning(
+                "upload_folder encountered issue (%s); falling back to per-file direct upload...",
+                e_folder,
+            )
             for file_path in sorted(export_dir.rglob("*")):
                 if file_path.is_file():
                     rel_path = file_path.relative_to(export_dir).as_posix()
@@ -335,19 +372,30 @@ def commit_and_push_git(
     Handles concurrent pushes from parallel workers with retry + backoff.
     If branch is specified, commits to that branch and pushes upstream.
     """
-    import time
     import random
+    import time
+
     cwd = find_git_root(cwd)
     try:
         subprocess.run(["git", "add", "Docs/", "results/"], cwd=cwd, check=False)
-        diff = subprocess.run(["git", "diff", "--cached", "--name-only"], cwd=cwd, capture_output=True, text=True)
+        diff = subprocess.run(
+            ["git", "diff", "--cached", "--name-only"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+        )
         if not diff.stdout.strip():
             LOG.info("No changes to commit to Git.")
-            rev = subprocess.run(["git", "rev-parse", "HEAD"], cwd=cwd, capture_output=True, text=True)
+            rev = subprocess.run(
+                ["git", "rev-parse", "HEAD"], cwd=cwd, capture_output=True, text=True
+            )
             return rev.stdout.strip()[:8]
 
         curr_branch = subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=cwd, capture_output=True, text=True
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
         ).stdout.strip()
         if curr_branch == "HEAD" or not curr_branch:
             curr_branch = "main"
@@ -355,11 +403,17 @@ def commit_and_push_git(
 
         switched = False
         if target_branch != curr_branch:
-            check = subprocess.run(["git", "show-ref", "--verify", f"refs/heads/{target_branch}"], cwd=cwd, capture_output=True)
+            check = subprocess.run(
+                ["git", "show-ref", "--verify", f"refs/heads/{target_branch}"],
+                cwd=cwd,
+                capture_output=True,
+            )
             if check.returncode == 0:
                 subprocess.run(["git", "checkout", target_branch], cwd=cwd, check=True)
             else:
-                subprocess.run(["git", "checkout", "-b", target_branch], cwd=cwd, check=True)
+                subprocess.run(
+                    ["git", "checkout", "-b", target_branch], cwd=cwd, check=True
+                )
             switched = True
 
         subprocess.run(["git", "commit", "-m", commit_message], cwd=cwd, check=True)
@@ -372,27 +426,51 @@ def commit_and_push_git(
                 stale_path = (cwd / stale) if cwd else Path(stale)
                 if stale_path.exists():
                     import shutil
+
                     shutil.rmtree(str(stale_path), ignore_errors=True)
 
             pull = subprocess.run(
                 ["git", "pull", "--rebase", "--autostash", "origin", target_branch],
-                cwd=cwd, capture_output=True, text=True
+                cwd=cwd,
+                capture_output=True,
+                text=True,
             )
             if pull.returncode != 0:
-                LOG.debug("Pull/rebase attempt %d failed: %s", attempt + 1, pull.stderr.strip())
+                LOG.debug(
+                    "Pull/rebase attempt %d failed: %s",
+                    attempt + 1,
+                    pull.stderr.strip(),
+                )
 
             push = subprocess.run(
                 ["git", "push", "-u", "origin", target_branch],
-                cwd=cwd, capture_output=True, text=True
+                cwd=cwd,
+                capture_output=True,
+                text=True,
             )
             if push.returncode == 0:
-                rev = subprocess.run(["git", "rev-parse", "HEAD"], cwd=cwd, capture_output=True, text=True)
+                rev = subprocess.run(
+                    ["git", "rev-parse", "HEAD"],
+                    cwd=cwd,
+                    capture_output=True,
+                    text=True,
+                )
                 commit_hash = rev.stdout.strip()[:8]
-                LOG.info("Successfully committed and pushed Git changes to %s: %s", target_branch, commit_hash)
+                LOG.info(
+                    "Successfully committed and pushed Git changes to %s: %s",
+                    target_branch,
+                    commit_hash,
+                )
                 break
             else:
                 wait = random.uniform(2, 6) * (attempt + 1)
-                LOG.debug("Push attempt %d/%d failed, retrying in %.1fs: %s", attempt + 1, 5, wait, push.stderr.strip()[:200])
+                LOG.debug(
+                    "Push attempt %d/%d failed, retrying in %.1fs: %s",
+                    attempt + 1,
+                    5,
+                    wait,
+                    push.stderr.strip()[:200],
+                )
                 time.sleep(wait)
 
         if commit_hash is None:
@@ -405,7 +483,6 @@ def commit_and_push_git(
     except Exception as e:
         LOG.warning("Git commit/push failed: %s", e)
         return None
-
 
 
 def handle_benchmark_run_export(
@@ -432,7 +509,11 @@ def handle_benchmark_run_export(
     if not is_successful:
         LOG.info(
             "[Automation] Run %s / %s (acc=%.2f%%, status=%s) is NOT successful (threshold=%.2f%%). Skipping HF upload.",
-            model_name, module_name, acc, status, pass_threshold_pct,
+            model_name,
+            module_name,
+            acc,
+            status,
+            pass_threshold_pct,
         )
         return {
             "success": False,
@@ -448,12 +529,18 @@ def handle_benchmark_run_export(
 
     LOG.info(
         "[Automation] Run %s / %s is SUCCESSFUL (acc=%.2f%% >= %.2f%%). Starting automated HF export to %s and Git recording.",
-        clean_model, clean_mod, acc, pass_threshold_pct, repo_id,
+        clean_model,
+        clean_mod,
+        acc,
+        pass_threshold_pct,
+        repo_id,
     )
 
     hf_url = None
     if module_name.lower() == "full":
-        LOG.info("[Automation] Module is baseline 'full'. Skipping HF model upload (base model already on Hugging Face).")
+        LOG.info(
+            "[Automation] Module is baseline 'full'. Skipping HF model upload (base model already on Hugging Face)."
+        )
     elif export_dir and export_dir.exists():
         hf_url = upload_to_huggingface(
             export_dir=export_dir,

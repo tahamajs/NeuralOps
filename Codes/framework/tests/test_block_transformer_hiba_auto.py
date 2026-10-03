@@ -1,13 +1,15 @@
+import framework.attentions.block_transformer_hiba
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.block_transformer_hiba
+
 
 def test_block_transformer_hiba_module_present():
     assert hasattr(framework.attentions, 'block_transformer_hiba')
 
 def test_block_transformer_hiba_injection_safe():
-    from framework.attentions.block_transformer_hiba import inject_block_transformer_hiba
+    from framework.attentions.block_transformer_hiba import \
+        inject_block_transformer_hiba
     class DummyLayer(nn.Module):
         def __init__(self):
             super().__init__()

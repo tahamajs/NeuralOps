@@ -6,23 +6,15 @@ import os
 import shutil
 import tempfile
 import unittest
+
 import numpy as np
 import torch
-
 from framework.visualization.interpretability_suite import (
-    Head3DMetricsResult,
-    HeadAblationCalculator,
-    InterpretabilitySuite,
-    calculate_head_importance,
-    calculate_head_similarity,
-    calculate_head_stability,
-    classify_head_type,
-    decompose_circuit_matrix,
-    generate_attribution_graph,
-    generate_head_3d_metrics,
-    generate_logit_lens_timeline,
-    generate_semantic_pathways,
-)
+    Head3DMetricsResult, HeadAblationCalculator, InterpretabilitySuite,
+    calculate_head_importance, calculate_head_similarity,
+    calculate_head_stability, classify_head_type, decompose_circuit_matrix,
+    generate_attribution_graph, generate_head_3d_metrics,
+    generate_logit_lens_timeline, generate_semantic_pathways)
 
 
 class TestInterpretabilitySuite(unittest.TestCase):

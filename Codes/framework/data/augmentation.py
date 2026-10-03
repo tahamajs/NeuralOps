@@ -1,9 +1,9 @@
 """
 Simple data augmentation registry (random mask, back‑translation placeholder).
 """
-from typing import Any
 
 import random
+from typing import Any
 
 from framework.core.registry import Registry
 
@@ -13,6 +13,7 @@ AUGMENTATION_REGISTRY = Registry("augmentation")
 @AUGMENTATION_REGISTRY.register("random_mask")
 def random_mask_augment(dataset, mask_prob=0.15) -> Any:
     """Random mask augment."""
+
     def mask_tokens(example) -> Any:
         """Mask tokens."""
         input_ids = example["input_ids"]

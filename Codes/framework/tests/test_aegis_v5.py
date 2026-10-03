@@ -16,19 +16,14 @@ Covers the 9 hardening rules applied to this module:
 """
 
 import math
+
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.aegis_v5 import (
-    AegisAttention,
-    AegisConfigV5,
-    FactorisedLinear,
-    _rotate_half,
-    inject_aegis_v5,
-)
+from framework.attentions.aegis_v5 import (AegisAttention, AegisConfigV5,
+                                           FactorisedLinear, _rotate_half,
+                                           inject_aegis_v5)
 from framework.core.registry import ATTENTION_REGISTRY
-
 
 # ---------------------------------------------------------------------------
 # Shared fixtures

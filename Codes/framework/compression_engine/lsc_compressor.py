@@ -19,7 +19,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.pruning_utils import adaptive_max_error
@@ -32,6 +31,7 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # Helpers
 # ===========================================================================
+
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if cfg is None:
@@ -70,15 +70,29 @@ def _detect_lora_alpha(module: nn.Module) -> float:
 
 
 _ATTN_NAMES = {
-    "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-    "c_attn", "c_proj", "query", "key", "value",
-    "q_lin", "k_lin", "v_lin", "out_lin", "self_attn",
+    "attn",
+    "attention",
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "c_attn",
+    "c_proj",
+    "query",
+    "key",
+    "value",
+    "q_lin",
+    "k_lin",
+    "v_lin",
+    "out_lin",
+    "self_attn",
 }
 
 
 # ===========================================================================
 # LSCPrunedLoRALinear (LSC-FIX-03, LSC-FIX-07)
 # ===========================================================================
+
 
 class LSCPrunedLoRALinear(nn.Module):
     # LSC-FIX-07: this is a linear layer, not an attention module.
@@ -123,12 +137,16 @@ class LSCPrunedLoRALinear(nn.Module):
         if self.lora_r > 0:
             # LSC-FIX-03: LoRA parameters in base weight's dtype for forward consistency.
             self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, in_features),
-                            dtype=target_dtype, device=target_device)
+                torch.empty(
+                    (self.lora_r, in_features), dtype=target_dtype, device=target_device
+                )
             )
             self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_r),
-                            dtype=target_dtype, device=target_device)
+                torch.zeros(
+                    (out_features, self.lora_r),
+                    dtype=target_dtype,
+                    device=target_device,
+                )
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -154,7 +172,9 @@ class LSCPrunedLoRALinear(nn.Module):
 
         existing_lora_r = _detect_lora_rank(linear)
         eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
-        eff_lora_alpha = _detect_lora_alpha(linear) if existing_lora_r > 0 else lora_alpha
+        eff_lora_alpha = (
+            _detect_lora_alpha(linear) if existing_lora_r > 0 else lora_alpha
+        )
 
         layer = cls(
             in_features=in_features,
@@ -168,18 +188,26 @@ class LSCPrunedLoRALinear(nn.Module):
         )
 
         # Preserve existing LoRA if shapes match.
-        if (hasattr(linear, "lora_A") and hasattr(linear, "lora_B")
-                and layer.lora_A is not None and layer.lora_B is not None):
+        if (
+            hasattr(linear, "lora_A")
+            and hasattr(linear, "lora_B")
+            and layer.lora_A is not None
+            and layer.lora_B is not None
+        ):
             with torch.no_grad():
                 src_A = getattr(linear.lora_A, "weight", linear.lora_A)
                 src_B = getattr(linear.lora_B, "weight", linear.lora_B)
-                if (isinstance(src_A, torch.Tensor)
-                        and src_A.shape == layer.lora_A.shape):
+                if (
+                    isinstance(src_A, torch.Tensor)
+                    and src_A.shape == layer.lora_A.shape
+                ):
                     layer.lora_A.data.copy_(
                         src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype)
                     )
-                if (isinstance(src_B, torch.Tensor)
-                        and src_B.shape == layer.lora_B.shape):
+                if (
+                    isinstance(src_B, torch.Tensor)
+                    and src_B.shape == layer.lora_B.shape
+                ):
                     layer.lora_B.data.copy_(
                         src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype)
                     )
@@ -204,6 +232,7 @@ class LSCPrunedLoRALinear(nn.Module):
 # ===========================================================================
 # Compressor
 # ===========================================================================
+
 
 @COMPRESSOR_REGISTRY.register("lsc_class")
 @COMPRESSOR_REGISTRY.register("lsc_compressor_class")
@@ -231,21 +260,28 @@ class LSCCompressor(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = _cfg_get(cfg, "lsc_rank", _cfg_get(cfg, "rank", rank))
-            energy_ratio = _cfg_get(cfg, "lsc_energy_ratio",
-                                    _cfg_get(cfg, "energy_ratio", energy_ratio))
-            max_error = _cfg_get(cfg, "lsc_max_error",
-                                 _cfg_get(cfg, "max_error", max_error))
+            energy_ratio = _cfg_get(
+                cfg, "lsc_energy_ratio", _cfg_get(cfg, "energy_ratio", energy_ratio)
+            )
+            max_error = _cfg_get(
+                cfg, "lsc_max_error", _cfg_get(cfg, "max_error", max_error)
+            )
             fallback_to_original = _cfg_get(
-                cfg, "lsc_fallback_to_original",
+                cfg,
+                "lsc_fallback_to_original",
                 _cfg_get(cfg, "fallback_to_original", fallback_to_original),
             )
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
             skip_attention_qkv = _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
-            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
+            target_attention_only = _cfg_get(
+                cfg, "target_attention_only", target_attention_only
+            )
             min_layer_dim = _cfg_get(cfg, "min_layer_dim", min_layer_dim)
             skip_should_compress_filter = _cfg_get(
-                cfg, "skip_should_compress_filter", skip_should_compress_filter,
+                cfg,
+                "skip_should_compress_filter",
+                skip_should_compress_filter,
             )
 
         self.rank = max(1, int(rank))
@@ -273,16 +309,32 @@ class LSCCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
-            if any(p in name.lower() for p in
-                   ["q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"]):
+        if (
+            num_heads is not None
+            and num_kv_heads is not None
+            and num_kv_heads < num_heads
+        ):
+            if any(
+                p in name.lower()
+                for p in [
+                    "q_proj",
+                    "k_proj",
+                    "v_proj",
+                    "query",
+                    "key",
+                    "value",
+                    "c_attn",
+                ]
+            ):
                 return True
         return False
 
     # ------------------------------------------------------------------
     # Target check with debug
     # ------------------------------------------------------------------
-    def _is_target_module(self, name: str, module: nn.Module, _debug: bool = False) -> bool:
+    def _is_target_module(
+        self, name: str, module: nn.Module, _debug: bool = False
+    ) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
             if _debug:
@@ -290,8 +342,12 @@ class LSCCompressor(BaseCompressor):
             return False
 
         cls_name = module.__class__.__name__
-        if cls_name in ("LSCPrunedLoRALinear", "DynamicSVDLinear",
-                        "SVDLinear", "FactorisedLinear"):
+        if cls_name in (
+            "LSCPrunedLoRALinear",
+            "DynamicSVDLinear",
+            "SVDLinear",
+            "FactorisedLinear",
+        ):
             if _debug:
                 logger.info(f"  [skip] {name}: already compressed ({cls_name})")
             return False
@@ -444,8 +500,8 @@ class LSCCompressor(BaseCompressor):
 
                 if self.energy_ratio is not None:
                     sorted_mag, _ = torch.sort(flat_mag, descending=True)
-                    total_energy = (sorted_mag ** 2).sum().clamp(min=1e-12)
-                    cum_energy = torch.cumsum(sorted_mag ** 2, dim=0) / total_energy
+                    total_energy = (sorted_mag**2).sum().clamp(min=1e-12)
+                    cum_energy = torch.cumsum(sorted_mag**2, dim=0) / total_energy
                     idx = torch.where(cum_energy >= self.energy_ratio)[0]
                     k = idx[0].item() + 1 if len(idx) > 0 else total_coeffs
                     k = max(1, min(k, total_coeffs))
@@ -459,22 +515,29 @@ class LSCCompressor(BaseCompressor):
                 W_comp = torch.nan_to_num(W_comp, nan=0.0, posinf=0.0, neginf=0.0)
 
                 norm_orig = torch.norm(W, p="fro").item()
-                rel_err = (
-                    torch.norm(W - W_comp, p="fro").item() / max(norm_orig, 1e-12)
-                )
+                rel_err = torch.norm(W - W_comp, p="fro").item() / max(norm_orig, 1e-12)
                 self.layer_errors[name] = float(rel_err)
 
                 fam = getattr(getattr(self.model, "config", None), "model_type", None)
-                eff_max_err = max(self.max_error, adaptive_max_error(self.rank, d_in, d_out, family=fam))
+                eff_max_err = max(
+                    self.max_error,
+                    adaptive_max_error(self.rank, d_in, d_out, family=fam),
+                )
                 if fam in ("bert", "distilbert", "roberta"):
                     eff_max_err = max(eff_max_err, 0.999)
 
                 if not math.isfinite(rel_err) or rel_err > eff_max_err:
                     logger.warning(
                         "LSC: err %.4f on %s > %.4f (base max_err=%.4f). %s",
-                        rel_err, name, eff_max_err, self.max_error,
-                        "Keeping original." if self.fallback_to_original
-                        else "Proceeding with filtered weights.",
+                        rel_err,
+                        name,
+                        eff_max_err,
+                        self.max_error,
+                        (
+                            "Keeping original."
+                            if self.fallback_to_original
+                            else "Proceeding with filtered weights."
+                        ),
                     )
                     if self.fallback_to_original:
                         self.fallback_layers.append(name)
@@ -488,7 +551,9 @@ class LSCCompressor(BaseCompressor):
                 if new_w.shape != expected_shape:
                     logger.warning(
                         "LSC: shape mismatch for %s: expected %s, got %s; skipping.",
-                        name, tuple(expected_shape), tuple(new_w.shape),
+                        name,
+                        tuple(expected_shape),
+                        tuple(new_w.shape),
                     )
                     for p in module.parameters(recurse=False):
                         p.requires_grad = False
@@ -512,7 +577,8 @@ class LSCCompressor(BaseCompressor):
             except Exception as e:
                 logger.warning(
                     "LSC: exception on %s: %s. Keeping original layer.",
-                    name, e,
+                    name,
+                    e,
                 )
                 self.fallback_layers.append(name)
                 self.layer_errors[name] = 1.0
@@ -525,7 +591,11 @@ class LSCCompressor(BaseCompressor):
         try:
             with torch.no_grad():
                 first_param = next(iter(self.model.parameters()), None)
-                dev = first_param.device if first_param is not None else torch.device("cpu")
+                dev = (
+                    first_param.device
+                    if first_param is not None
+                    else torch.device("cpu")
+                )
                 dummy_ids = torch.randint(0, 100, (1, 8), device=dev, dtype=torch.long)
                 dummy_mask = torch.ones_like(dummy_ids)
                 try:
@@ -548,7 +618,8 @@ class LSCCompressor(BaseCompressor):
         avg_err = (
             sum(self.layer_errors[k] for k in self.compressed_layers)
             / max(1, len(self.compressed_layers))
-            if self.compressed_layers else 0.0
+            if self.compressed_layers
+            else 0.0
         )
         eff_ratio = total_comp_params / max(1, total_orig_params)
 
@@ -557,57 +628,70 @@ class LSCCompressor(BaseCompressor):
         except Exception:
             stats = {}
 
-        stats.update({
-            "compressed_layers": self.compressed_layers,
-            "fallback_layers": self.fallback_layers,
-            "skipped_layers": self.skipped_layers,
-            "num_compressed": len(self.compressed_layers),
-            "num_fallback": len(self.fallback_layers),
-            "num_skipped": len(self.skipped_layers),
-            "rank": self.rank,
-            "energy_ratio": self.energy_ratio,
-            "max_error": self.max_error,
-            "fallback_to_original": self.fallback_to_original,
-            "avg_reconstruction_error": avg_err,
-            "layer_errors": self.layer_errors,
-            "layer_details": layer_details,
-            "effective_parameter_ratio": eff_ratio,
-            "lora_r": self.lora_r,
-            "lora_alpha": self.lora_alpha,
-            "forward_check_success": forward_check_success,
-            "method": "lsc_fourier_spectral",
-            "note": (
-                "LSC performs in-place spectral filtering of weights. "
-                "The stored weight is still dense (out x in); "
-                "framework-level compression_rate reads 1.0. "
-                "Use effective_parameter_ratio for the true storage metric."
-            ),
-        })
+        stats.update(
+            {
+                "compressed_layers": self.compressed_layers,
+                "fallback_layers": self.fallback_layers,
+                "skipped_layers": self.skipped_layers,
+                "num_compressed": len(self.compressed_layers),
+                "num_fallback": len(self.fallback_layers),
+                "num_skipped": len(self.skipped_layers),
+                "rank": self.rank,
+                "energy_ratio": self.energy_ratio,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "avg_reconstruction_error": avg_err,
+                "layer_errors": self.layer_errors,
+                "layer_details": layer_details,
+                "effective_parameter_ratio": eff_ratio,
+                "lora_r": self.lora_r,
+                "lora_alpha": self.lora_alpha,
+                "forward_check_success": forward_check_success,
+                "method": "lsc_fourier_spectral",
+                "note": (
+                    "LSC performs in-place spectral filtering of weights. "
+                    "The stored weight is still dense (out x in); "
+                    "framework-level compression_rate reads 1.0. "
+                    "Use effective_parameter_ratio for the true storage metric."
+                ),
+            }
+        )
         self.stats = stats
 
         # LSC-FIX-13: write stats onto the model for framework visibility.
         try:
-            if not hasattr(self.model, "compression_stats") or self.model.compression_stats is None:
+            if (
+                not hasattr(self.model, "compression_stats")
+                or self.model.compression_stats is None
+            ):
                 self.model.compression_stats = {}
-            self.model.compression_stats.update({
-                "num_compressed": len(self.compressed_layers),
-                "num_fallback": len(self.fallback_layers),
-                "compression_method": "lsc_fourier_spectral",
-                "effective_parameter_ratio": eff_ratio,
-                "avg_reconstruction_error": avg_err,
-            })
+            self.model.compression_stats.update(
+                {
+                    "num_compressed": len(self.compressed_layers),
+                    "num_fallback": len(self.fallback_layers),
+                    "compression_method": "lsc_fourier_spectral",
+                    "effective_parameter_ratio": eff_ratio,
+                    "avg_reconstruction_error": avg_err,
+                }
+            )
         except Exception:
             pass
 
         logger.info(
             "Compressor lsc finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
-            len(self.compressed_layers), len(self.fallback_layers), avg_err, self.max_error,
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
         )
         logger.info(
             "LSC: %d compressed, %d fallback, %d skipped. "
             "Avg err %.4f, effective_param_ratio %.2fx.",
-            len(self.compressed_layers), len(self.fallback_layers),
-            len(self.skipped_layers), avg_err, eff_ratio,
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            len(self.skipped_layers),
+            avg_err,
+            eff_ratio,
         )
         return self.model, stats
 
@@ -616,26 +700,34 @@ class LSCCompressor(BaseCompressor):
 # Factory (LSC-FIX-11)
 # ===========================================================================
 
+
 @COMPRESSOR_REGISTRY.register("lsc")
 @COMPRESSOR_REGISTRY.register("lsc_compressor")
 @COMPRESSOR_REGISTRY.register("lsc_factory")
 def lsc_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """LSC Fourier spectral compressor factory."""
-    rank = _cfg_get(comp_config, "lsc_rank",
-                    _cfg_get(comp_config, "rank", kwargs.pop("rank", 32)))
-    energy_ratio = _cfg_get(comp_config, "lsc_energy_ratio",
-                            _cfg_get(comp_config, "energy_ratio",
-                                     kwargs.pop("energy_ratio", None)))
-    max_error = _cfg_get(comp_config, "max_error",
-                         kwargs.pop("max_error", 0.85))
-    fallback_to_original = _cfg_get(comp_config, "fallback_to_original",
-                                    kwargs.pop("fallback_to_original", True))
+    rank = _cfg_get(
+        comp_config, "lsc_rank", _cfg_get(comp_config, "rank", kwargs.pop("rank", 32))
+    )
+    energy_ratio = _cfg_get(
+        comp_config,
+        "lsc_energy_ratio",
+        _cfg_get(comp_config, "energy_ratio", kwargs.pop("energy_ratio", None)),
+    )
+    max_error = _cfg_get(comp_config, "max_error", kwargs.pop("max_error", 0.85))
+    fallback_to_original = _cfg_get(
+        comp_config, "fallback_to_original", kwargs.pop("fallback_to_original", True)
+    )
     lora_r = _cfg_get(comp_config, "lora_r", kwargs.pop("lora_r", 0))
     lora_alpha = _cfg_get(comp_config, "lora_alpha", kwargs.pop("lora_alpha", 1.0))
-    target_attention_only = _cfg_get(comp_config, "target_attention_only",
-                                     kwargs.pop("target_attention_only", False))
-    skip_filter = _cfg_get(comp_config, "skip_should_compress_filter",
-                           kwargs.pop("skip_should_compress_filter", False))
+    target_attention_only = _cfg_get(
+        comp_config, "target_attention_only", kwargs.pop("target_attention_only", False)
+    )
+    skip_filter = _cfg_get(
+        comp_config,
+        "skip_should_compress_filter",
+        kwargs.pop("skip_should_compress_filter", False),
+    )
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = LSCCompressor(

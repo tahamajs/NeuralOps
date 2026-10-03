@@ -1,13 +1,15 @@
+import framework.attentions.mixattention_moska
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.mixattention_moska
+
 
 def test_mixattention_moska_module_present():
     assert hasattr(framework.attentions, 'mixattention_moska')
 
 def test_mixattention_moska_injection_safe():
-    from framework.attentions.mixattention_moska import inject_mixattention_moska
+    from framework.attentions.mixattention_moska import \
+        inject_mixattention_moska
     class DummyLayer(nn.Module):
         def __init__(self):
             super().__init__()

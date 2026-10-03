@@ -1,17 +1,13 @@
+import types
+
 import pytest
 import torch
 import torch.nn as nn
-import types
-
+from framework.attentions.squeezing_heads import \
+    SqueezingHeadsDistiller as SqueezingHeadsDistillerAlias
 from framework.attentions.squeezing_heads_distill import (
-    SqueezingHeadsDistiller,
-    _rotate_half,
-    apply_rotary_pos_emb,
-    inject_squeezing_heads,
-)
-from framework.attentions.squeezing_heads import (
-    SqueezingHeadsDistiller as SqueezingHeadsDistillerAlias,
-)
+    SqueezingHeadsDistiller, _rotate_half, apply_rotary_pos_emb,
+    inject_squeezing_heads)
 
 
 def make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=False, model_type="bert"):

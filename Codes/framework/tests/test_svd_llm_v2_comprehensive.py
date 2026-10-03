@@ -1,16 +1,14 @@
+import types
+
 import pytest
 import torch
 import torch.nn as nn
-import types
-
-from framework.attentions.svd_llm_v2_attention import (
-    SVDLLMV2Attention,
-    inject_svd_llm_v2,
-)
-from framework.attentions.svd_llm_v2 import (
-    SVDLLMV2Attention as SVDLLMV2AttentionAlias,
-    inject_svd_llm_v2 as inject_svd_llm_v2_alias,
-)
+from framework.attentions.svd_llm_v2 import \
+    SVDLLMV2Attention as SVDLLMV2AttentionAlias
+from framework.attentions.svd_llm_v2 import \
+    inject_svd_llm_v2 as inject_svd_llm_v2_alias
+from framework.attentions.svd_llm_v2_attention import (SVDLLMV2Attention,
+                                                       inject_svd_llm_v2)
 
 
 def make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=False, model_type="bert"):

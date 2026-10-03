@@ -14,15 +14,13 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 import torch
-from torch.utils.data import DataLoader
-
-from framework.data.base import DataConfig, ProductionDataCollator, TaskType, create_dataloader
+from framework.data.base import (DataConfig, ProductionDataCollator, TaskType,
+                                 create_dataloader)
 from framework.data.multi_choice import MultiChoiceDataset
-from framework.data.synthetic_generator import (
-    SyntheticClassificationDataset,
-    SyntheticPerplexityDataset,
-    generate_zipfian_tokens,
-)
+from framework.data.synthetic_generator import (SyntheticClassificationDataset,
+                                                SyntheticPerplexityDataset,
+                                                generate_zipfian_tokens)
+from torch.utils.data import DataLoader
 
 
 class TestProductionDatasetShapes:

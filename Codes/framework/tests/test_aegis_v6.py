@@ -17,20 +17,15 @@ Covers the 9 hardening rules:
 """
 
 import math
+
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.aegis_v6 import (
-    AegisAttentionV3,
-    AegisAttentionV6,
-    AegisConfigV3,
-    FactorisedLowRankProjection,
-    _rotate_half,
-    inject_aegis_v6,
-)
+from framework.attentions.aegis_v6 import (AegisAttentionV3, AegisAttentionV6,
+                                           AegisConfigV3,
+                                           FactorisedLowRankProjection,
+                                           _rotate_half, inject_aegis_v6)
 from framework.core.registry import ATTENTION_REGISTRY
-
 
 # ---------------------------------------------------------------------------
 # Helpers / fixtures

@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 
@@ -38,6 +37,7 @@ class NMFLinear(nn.Module):
     Note: W_sign storage is non-trivial (out × in elements). If storage is
     the priority, use a signed-NMF variant that avoids storing W_sign.
     """
+
     # NMF-FIX-01
     is_custom_attention: bool = False
 
@@ -92,12 +92,14 @@ class NMFLinear(nn.Module):
 
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, in_features),
-                            dtype=torch.float32, device=device)
+                torch.empty(
+                    (self.lora_r, in_features), dtype=torch.float32, device=device
+                )
             )
             self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_r),
-                            dtype=torch.float32, device=device)
+                torch.zeros(
+                    (out_features, self.lora_r), dtype=torch.float32, device=device
+                )
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -185,12 +187,13 @@ class NMFLinear(nn.Module):
         # Decompose |W| with NMF; store sign(W) separately.
         W_f = W.float()
         W_sign = torch.sign(W_f)
-        W_sign[W_sign == 0] = 1.0                      # NMF-FIX-10
+        W_sign[W_sign == 0] = 1.0  # NMF-FIX-10
         W_abs = W_f.abs().clamp_min(1e-6)
 
         # NMF-FIX-05: compute on GPU if available, return to orig device.
-        compute_device = torch.device("cuda") if torch.cuda.is_available() \
-                        else torch.device("cpu")
+        compute_device = (
+            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        )
         W_abs_c = W_abs.to(compute_device)
 
         # ---- NNDSVD init ----
@@ -221,8 +224,12 @@ class NMFLinear(nn.Module):
                     u = x_n / x_n.norm().clamp_min(1e-10)
                     v = y_n / y_n.norm().clamp_min(1e-10)
                     sigma = mn
-                H_init[:, j] = (S[j].clamp_min(1e-12).sqrt() * sigma.sqrt() * u).clamp_min(1e-6)
-                V_init[j, :] = (S[j].clamp_min(1e-12).sqrt() * sigma.sqrt() * v).clamp_min(1e-6)
+                H_init[:, j] = (
+                    S[j].clamp_min(1e-12).sqrt() * sigma.sqrt() * u
+                ).clamp_min(1e-6)
+                V_init[j, :] = (
+                    S[j].clamp_min(1e-12).sqrt() * sigma.sqrt() * v
+                ).clamp_min(1e-6)
         except Exception:
             torch.manual_seed(42)
             H_init = torch.rand(out_f, r, device=compute_device) * 0.1 + 1e-4
@@ -247,11 +254,11 @@ class NMFLinear(nn.Module):
             pass  # keep H_init, V_init on failure
 
         # ---- Build target layer (NMF-FIX-05: return to orig device/dtype) ----
-        existing_lora_r = getattr(linear, "r",
-                          getattr(linear, "lora_r", 0))
+        existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
         eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
-        eff_lora_alpha = getattr(linear, "lora_alpha",
-                          getattr(linear, "alpha", lora_alpha))
+        eff_lora_alpha = getattr(
+            linear, "lora_alpha", getattr(linear, "alpha", lora_alpha)
+        )
 
         nmf_layer = cls(
             in_features=in_f,
@@ -265,31 +272,34 @@ class NMFLinear(nn.Module):
         )
 
         with torch.no_grad():
-            nmf_layer.H.data.copy_(
-                H.detach().to(device=orig_device, dtype=orig_dtype)
-            )
-            nmf_layer.V.data.copy_(
-                V.detach().to(device=orig_device, dtype=orig_dtype)
-            )
-            nmf_layer.W_sign.data.copy_(
-                W_sign.to(device=orig_device, dtype=orig_dtype)
-            )
+            nmf_layer.H.data.copy_(H.detach().to(device=orig_device, dtype=orig_dtype))
+            nmf_layer.V.data.copy_(V.detach().to(device=orig_device, dtype=orig_dtype))
+            nmf_layer.W_sign.data.copy_(W_sign.to(device=orig_device, dtype=orig_dtype))
             if bias is not None and nmf_layer.bias is not None:
-                nmf_layer.bias.data.copy_(
-                    bias.to(device=orig_device, dtype=orig_dtype)
-                )
+                nmf_layer.bias.data.copy_(bias.to(device=orig_device, dtype=orig_dtype))
 
         # Preserve existing LoRA weights if present
-        if (hasattr(linear, "lora_A") and hasattr(linear, "lora_B")
-                and nmf_layer.lora_A is not None and nmf_layer.lora_B is not None):
+        if (
+            hasattr(linear, "lora_A")
+            and hasattr(linear, "lora_B")
+            and nmf_layer.lora_A is not None
+            and nmf_layer.lora_B is not None
+        ):
             with torch.no_grad():
-                src_A = (linear.lora_A.weight.data
-                         if hasattr(linear.lora_A, "weight")
-                         else linear.lora_A.data)
-                src_B = (linear.lora_B.weight.data
-                         if hasattr(linear.lora_B, "weight")
-                         else linear.lora_B.data)
-                if src_A.shape == nmf_layer.lora_A.shape and src_B.shape == nmf_layer.lora_B.shape:
+                src_A = (
+                    linear.lora_A.weight.data
+                    if hasattr(linear.lora_A, "weight")
+                    else linear.lora_A.data
+                )
+                src_B = (
+                    linear.lora_B.weight.data
+                    if hasattr(linear.lora_B, "weight")
+                    else linear.lora_B.data
+                )
+                if (
+                    src_A.shape == nmf_layer.lora_A.shape
+                    and src_B.shape == nmf_layer.lora_B.shape
+                ):
                     nmf_layer.lora_A.copy_(
                         src_A.to(nmf_layer.lora_A.device, dtype=nmf_layer.lora_A.dtype)
                     )
@@ -314,9 +324,22 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 _ATTN_NAMES = {
-    "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-    "c_attn", "c_proj", "query", "key", "value",
-    "q_lin", "k_lin", "v_lin", "out_lin", "self_attn",
+    "attn",
+    "attention",
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "c_attn",
+    "c_proj",
+    "query",
+    "key",
+    "value",
+    "q_lin",
+    "k_lin",
+    "v_lin",
+    "out_lin",
+    "self_attn",
 }
 
 
@@ -330,6 +353,7 @@ class NMFCompressor(BaseCompressor):
     NMF Compressor: decomposes linear layer magnitudes into non-negative
     low-rank factors, preserving the sign pattern of the original weight.
     """
+
     # NMF-FIX-01
     is_custom_attention: bool = False
 
@@ -347,12 +371,12 @@ class NMFCompressor(BaseCompressor):
         fallback_to_original: bool = True,
         **kwargs: Any,
     ) -> None:
-        super().__init__(model if model is not None else nn.Identity(),
-                         name="nmf", **kwargs)
+        super().__init__(
+            model if model is not None else nn.Identity(), name="nmf", **kwargs
+        )
         conf = cfg or kwargs.get("comp_config")
 
-        self.rank = int(rank or _cfg_get(conf, "nmf_rank",
-                                          _cfg_get(conf, "rank", 64)))
+        self.rank = int(rank or _cfg_get(conf, "nmf_rank", _cfg_get(conf, "rank", 64)))
         self.max_iter = int(max_iter or _cfg_get(conf, "nmf_max_iter", 100))
         self.lora_r = int(_cfg_get(conf, "lora_r", lora_r))
         self.lora_alpha = float(_cfg_get(conf, "lora_alpha", lora_alpha))
@@ -374,14 +398,22 @@ class NMFCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
-        if any(k in name_l for k in (
-            "classifier", "score", "lm_head", "pooler", "embedding",
-            "layernorm", "rmsnorm", "batchnorm",
-        )):
+        if any(
+            k in name_l
+            for k in (
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embedding",
+                "layernorm",
+                "rmsnorm",
+                "batchnorm",
+            )
+        ):
             return False
 
-        if isinstance(module, (nn.LayerNorm, nn.RMSNorm, nn.Embedding,
-                                NMFLinear)):
+        if isinstance(module, (nn.LayerNorm, nn.RMSNorm, nn.Embedding, NMFLinear)):
             return False
 
         cls_name = module.__class__.__name__.lower()
@@ -396,6 +428,7 @@ class NMFCompressor(BaseCompressor):
 
         try:
             from framework.utils.compat import should_compress_linear
+
             if not should_compress_linear(self.model, name):
                 return False
         except Exception:
@@ -409,15 +442,15 @@ class NMFCompressor(BaseCompressor):
         return any(t in name for t in self.target_layers)
 
     # ------------------------------------------------------------------
-    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
+    def compress(
+        self, model: nn.Module | None = None
+    ) -> tuple[nn.Module, dict[str, Any]]:
         if model is not None:
             self.model = model
             try:
                 self._original_params = self._count_params(self.model)
             except Exception:
-                self._original_params = sum(
-                    p.numel() for p in self.model.parameters()
-                )
+                self._original_params = sum(p.numel() for p in self.model.parameters())
 
         from framework.core.model_utils import replace_module
 
@@ -476,7 +509,9 @@ class NMFCompressor(BaseCompressor):
                 W_orig = raw_w.float().to(orig_device)
                 if is_conv1d:
                     W_orig = W_orig.t().contiguous()
-                    W_rec = W_rec.t().contiguous() if W_rec.shape != W_orig.shape else W_rec
+                    W_rec = (
+                        W_rec.t().contiguous() if W_rec.shape != W_orig.shape else W_rec
+                    )
 
                 num = torch.norm(W_orig - W_rec, p="fro")
                 den = torch.norm(W_orig, p="fro").clamp_min(1e-12)
@@ -485,7 +520,9 @@ class NMFCompressor(BaseCompressor):
                 if self.fallback_to_original and err > self.max_error:
                     logger.warning(
                         "NMF: err=%.4f on %s > max_error=%.4f; fallback.",
-                        err, name, self.max_error,
+                        err,
+                        name,
+                        self.max_error,
                     )
                     self.fallback_layers.append(name)
                     total_comp_storage += orig_bytes
@@ -499,11 +536,13 @@ class NMFCompressor(BaseCompressor):
                 else:
                     replace_module(self.model, name, nmf_layer)
 
-                self.compressed_layers.append({
-                    "name": name,
-                    "rank": nmf_layer.rank,
-                    "relative_error": float(err),
-                })
+                self.compressed_layers.append(
+                    {
+                        "name": name,
+                        "rank": nmf_layer.rank,
+                        "relative_error": float(err),
+                    }
+                )
 
                 # Storage: H + V + W_sign + bias + LoRA
                 comp_bytes = (
@@ -514,9 +553,13 @@ class NMFCompressor(BaseCompressor):
                 if nmf_layer.bias is not None:
                     comp_bytes += nmf_layer.bias.numel() * nmf_layer.bias.element_size()
                 if nmf_layer.lora_A is not None:
-                    comp_bytes += nmf_layer.lora_A.numel() * nmf_layer.lora_A.element_size()
+                    comp_bytes += (
+                        nmf_layer.lora_A.numel() * nmf_layer.lora_A.element_size()
+                    )
                 if nmf_layer.lora_B is not None:
-                    comp_bytes += nmf_layer.lora_B.numel() * nmf_layer.lora_B.element_size()
+                    comp_bytes += (
+                        nmf_layer.lora_B.numel() * nmf_layer.lora_B.element_size()
+                    )
                 total_comp_storage += comp_bytes
 
             except Exception as e:
@@ -543,39 +586,37 @@ class NMFCompressor(BaseCompressor):
         try:
             self._compressed_params = self._count_params(self.model)
         except Exception:
-            self._compressed_params = sum(
-                p.numel() for p in self.model.parameters()
-            )
+            self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
         storage_ratio = (
-            total_orig_storage / total_comp_storage
-            if total_comp_storage > 0 else 1.0
+            total_orig_storage / total_comp_storage if total_comp_storage > 0 else 1.0
         )
         effective_ratio = (
-            total_comp_storage / total_orig_storage
-            if total_orig_storage > 0 else 1.0
+            total_comp_storage / total_orig_storage if total_orig_storage > 0 else 1.0
         )
 
         stats = self.get_compression_stats()
-        stats.update({
-            "num_compressed": len(self.compressed_layers),
-            "num_compressed_layers": len(self.compressed_layers),
-            "compressed_layer_count": len(self.compressed_layers),
-            "fallback_layers": self.fallback_layers,
-            "fallback_layer_count": len(self.fallback_layers),
-            "skipped_layers": self.skipped_layers,
-            "skipped_layer_count": len(self.skipped_layers),
-            "nmf_rank": self.rank,
-            "max_iter": self.max_iter,
-            "compressed_layers": self.compressed_layers,
-            "orig_storage_bytes": total_orig_storage,
-            "comp_storage_bytes": total_comp_storage,
-            "storage_compression_ratio": round(storage_ratio, 3),
-            "effective_parameter_ratio": round(effective_ratio, 4),
-            "storage_reduction_pct": round(100.0 * (1.0 - effective_ratio), 2),
-            "forward_check_success": forward_check_success,
-            "method": "nmf",
-        })
+        stats.update(
+            {
+                "num_compressed": len(self.compressed_layers),
+                "num_compressed_layers": len(self.compressed_layers),
+                "compressed_layer_count": len(self.compressed_layers),
+                "fallback_layers": self.fallback_layers,
+                "fallback_layer_count": len(self.fallback_layers),
+                "skipped_layers": self.skipped_layers,
+                "skipped_layer_count": len(self.skipped_layers),
+                "nmf_rank": self.rank,
+                "max_iter": self.max_iter,
+                "compressed_layers": self.compressed_layers,
+                "orig_storage_bytes": total_orig_storage,
+                "comp_storage_bytes": total_comp_storage,
+                "storage_compression_ratio": round(storage_ratio, 3),
+                "effective_parameter_ratio": round(effective_ratio, 4),
+                "storage_reduction_pct": round(100.0 * (1.0 - effective_ratio), 2),
+                "forward_check_success": forward_check_success,
+                "method": "nmf",
+            }
+        )
         self.stats = stats
         return self.model, stats
 
@@ -600,8 +641,9 @@ def nmf_factory(
     rank: int | None = None,
     **kwargs: Any,
 ) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
-    effective_rank = rank or _cfg_get(comp_config, "nmf_rank",
-                                      _cfg_get(comp_config, "rank", 64))
+    effective_rank = rank or _cfg_get(
+        comp_config, "nmf_rank", _cfg_get(comp_config, "rank", 64)
+    )
     max_iter = _cfg_get(comp_config, "nmf_max_iter", 100)
     target_attention_only = kwargs.pop(
         "target_attention_only",

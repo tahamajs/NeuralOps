@@ -163,7 +163,14 @@ def sqlite_file_lock(lock_file_path: str | Path, timeout: float = 30.0):
             if not acquired:
                 try:
                     fcntl.flock(lock_fd, fcntl.LOCK_EX)
-                except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError):
+                except (
+                    AttributeError,
+                    KeyError,
+                    RuntimeError,
+                    TypeError,
+                    ValueError,
+                    OSError,
+                ):
                     pass
 
         yield
@@ -171,12 +178,29 @@ def sqlite_file_lock(lock_file_path: str | Path, timeout: float = 30.0):
         if lock_fd is not None:
             try:
                 import fcntl
+
                 fcntl.flock(lock_fd, fcntl.LOCK_UN)
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+            except (
+                AttributeError,
+                KeyError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+                OSError,
+                ImportError,
+            ):
                 pass
             try:
                 os.close(lock_fd)
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+            except (
+                AttributeError,
+                KeyError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+                OSError,
+                ImportError,
+            ):
                 pass
 
 
@@ -266,7 +290,9 @@ class ResultsSaver:
 
         # FIX: Uses PRAGMA journal_mode=WAL;, PRAGMA synchronous=NORMAL;, and file locking for multi-GPU database write safety.
         """
-        target_db = Path(db_path) if db_path is not None else (self.base_dir / "experiments.db")
+        target_db = (
+            Path(db_path) if db_path is not None else (self.base_dir / "experiments.db")
+        )
         lock_path = target_db.with_suffix(".db.lock")
 
         cfg_dict = self._flatten_config(config) if config is not None else {}
@@ -278,8 +304,7 @@ class ResultsSaver:
             conn = self._get_sqlite_connection(target_db)
             try:
                 cursor = conn.cursor()
-                cursor.execute(
-                    """
+                cursor.execute("""
                     CREATE TABLE IF NOT EXISTS experiment_runs (
                         run_id TEXT PRIMARY KEY,
                         created_at TEXT,
@@ -289,8 +314,7 @@ class ResultsSaver:
                         metrics_json TEXT,
                         metadata_json TEXT
                     )
-                    """
-                )
+                    """)
                 now_str = datetime.now().isoformat()
                 task_name = str(cfg_dict.get("task_name", "unknown"))
                 model_name = str(cfg_dict.get("model_name", "unknown"))
@@ -330,15 +354,16 @@ class ResultsSaver:
 
         # FIX: Uses PRAGMA journal_mode=WAL; and PRAGMA synchronous=NORMAL; with file locking to ensure safe step metric logging.
         """
-        target_db = Path(db_path) if db_path is not None else (self.run_dir / "metrics.db")
+        target_db = (
+            Path(db_path) if db_path is not None else (self.run_dir / "metrics.db")
+        )
         lock_path = target_db.with_suffix(".db.lock")
 
         with sqlite_file_lock(lock_path):
             conn = self._get_sqlite_connection(target_db)
             try:
                 cursor = conn.cursor()
-                cursor.execute(
-                    """
+                cursor.execute("""
                     CREATE TABLE IF NOT EXISTS metric_logs (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         run_id TEXT,
@@ -347,14 +372,19 @@ class ResultsSaver:
                         value REAL,
                         timestamp TEXT
                     )
-                    """
-                )
+                    """)
                 cursor.execute(
                     """
                     INSERT INTO metric_logs (run_id, step, metric_name, value, timestamp)
                     VALUES (?, ?, ?, ?, ?)
                     """,
-                    (self.run_id, step, metric_name, float(value), datetime.now().isoformat()),
+                    (
+                        self.run_id,
+                        step,
+                        metric_name,
+                        float(value),
+                        datetime.now().isoformat(),
+                    ),
                 )
                 conn.commit()
             finally:
@@ -382,6 +412,7 @@ class ResultsSaver:
     def save_model_weights(self, model: Any, filename: str = "model.pt") -> str:
         """Save PyTorch model state dict or checkpoint."""
         import torch
+
         art_dir = self.run_dir / "artifacts"
         art_dir.mkdir(parents=True, exist_ok=True)
         dest = art_dir / filename
@@ -454,7 +485,8 @@ class ResultsSaver:
     # Internal helpers
     # ------------------------------------------------------------------
     def _write_json(self, rel_path: str, obj) -> None:
-        """ write json."""
+        """write json."""
+
         def _default_serializer(o):
             if hasattr(o, "to_dict") and callable(o.to_dict):
                 return o.to_dict()
@@ -478,38 +510,38 @@ class ResultsSaver:
             )
 
     def _write_text(self, rel_path: str, text: str) -> None:
-        """ write text."""
+        """write text."""
         fp = self.run_dir / rel_path
         fp.parent.mkdir(exist_ok=True)
         with open(fp, "w") as f:
             f.write(text)
 
     def _flatten_config(self, config) -> dict[str, Any]:
-        """ flatten config."""
+        """flatten config."""
         if hasattr(config, "__dict__"):
             return vars(config)
         return config
 
     def _save_config(self, config) -> None:
-        """ save config."""
+        """save config."""
         self._write_json("artifacts/config.json", self._flatten_config(config))
 
     def _save_history(self, history) -> None:
-        """ save history."""
+        """save history."""
         self._write_json("artifacts/history.json", history)
 
     def _save_final_metrics(self, metrics) -> None:
-        """ save final metrics."""
+        """save final metrics."""
         self._write_json("artifacts/final_metrics.json", metrics)
 
     def _save_metrics_log(self, history) -> None:
-        """ save metrics log."""
+        """save metrics log."""
         with open(self.run_dir / "logs" / "metrics.jsonl", "w") as f:
             for entry in history:
                 f.write(json.dumps(_sanitize_json_value(entry), allow_nan=False) + "\n")
 
     def _save_model(self, model, tokenizer=None) -> None:
-        """ save model."""
+        """save model."""
         p = self.run_dir / "artifacts" / "model"
         p.mkdir(exist_ok=True)
         model.save_pretrained(str(p))
@@ -521,13 +553,13 @@ class ResultsSaver:
             torch.save(model.state_dict(), p / "optimizer.pt")
 
     def _save_checkpoint(self, model, name="best") -> None:
-        """ save checkpoint."""
+        """save checkpoint."""
         p = self.run_dir / "checkpoints" / name
         p.mkdir(exist_ok=True)
         model.save_pretrained(str(p))
 
     def _save_archive(self) -> None:
-        """ save archive safely."""
+        """save archive safely."""
         try:
             with tarfile.open(self.run_dir / "results.tar.gz", "w:gz") as tar:
                 for sub in ["artifacts", "logs", "plots"]:
@@ -541,7 +573,7 @@ class ResultsSaver:
     # Plots – delegates to framework.analysis.plotting
     # ------------------------------------------------------------------
     def _generate_plots(self, history, final_metrics) -> None:
-        """ generate plots."""
+        """generate plots."""
         try:
             import matplotlib.pyplot as plt
             from framework.analysis.plotting import (
@@ -566,25 +598,33 @@ class ResultsSaver:
 
             if opts.get("loss_curve", True):
                 try:
-                    plot_loss_curves(history, final_metrics, self.cfg, self.run_dir / "plots", opts)
+                    plot_loss_curves(
+                        history, final_metrics, self.cfg, self.run_dir / "plots", opts
+                    )
                 except Exception as e:
                     logger.debug(f"plot_loss_curves error: {e}")
 
             if opts.get("accuracy_curve", True):
                 try:
-                    plot_accuracy_curves(history, final_metrics, self.cfg, self.run_dir / "plots", opts)
+                    plot_accuracy_curves(
+                        history, final_metrics, self.cfg, self.run_dir / "plots", opts
+                    )
                 except Exception as e:
                     logger.debug(f"plot_accuracy_curves error: {e}")
 
             if opts.get("lr_schedule", True):
                 try:
-                    plot_lr_schedule(history, final_metrics, self.cfg, self.run_dir / "plots", opts)
+                    plot_lr_schedule(
+                        history, final_metrics, self.cfg, self.run_dir / "plots", opts
+                    )
                 except Exception as e:
                     logger.debug(f"plot_lr_schedule error: {e}")
 
             if opts.get("training_time", True):
                 try:
-                    plot_training_time(history, final_metrics, self.cfg, self.run_dir / "plots", opts)
+                    plot_training_time(
+                        history, final_metrics, self.cfg, self.run_dir / "plots", opts
+                    )
                 except Exception as e:
                     logger.debug(f"plot_training_time error: {e}")
 
@@ -630,7 +670,7 @@ class ResultsSaver:
     # Model card
     # ------------------------------------------------------------------
     def _save_model_card(self, config, metrics) -> None:
-        """ save model card."""
+        """save model card."""
         cfg_dict = (
             self._flatten_config(config) if hasattr(config, "__dict__") else config
         )
@@ -653,7 +693,7 @@ class ResultsSaver:
     # Export formats
     # ------------------------------------------------------------------
     def _export_format(self, fmt: str, model, input_example) -> None:
-        """ export format."""
+        """export format."""
         try:
             from .backends.exports import EXPORTERS
 
@@ -672,7 +712,7 @@ class ResultsSaver:
             self._push_backend(be)
 
     def _push_backend(self, name: str) -> None:
-        """ push backend."""
+        """push backend."""
         try:
             if name == "local":
                 return
@@ -810,18 +850,21 @@ def save_trajectories_parquet(
 
         for step, loss_val in enumerate(loss_list):
             grad_val = grad_list[step] if step < len(grad_list) else None
-            rows.append({
-                "run_id": run_id,
-                "module_name": mod,
-                "model_family": fam,
-                "dataset": ds,
-                "step": step,
-                "loss": loss_val,
-                "grad_norm": grad_val,
-            })
+            rows.append(
+                {
+                    "run_id": run_id,
+                    "module_name": mod,
+                    "model_family": fam,
+                    "dataset": ds,
+                    "step": step,
+                    "loss": loss_val,
+                    "grad_norm": grad_val,
+                }
+            )
 
     try:
         import pandas as pd
+
         df = pd.DataFrame(rows)
         df.to_parquet(str(parquet_path), engine="pyarrow", index=False)
         return str(parquet_path)

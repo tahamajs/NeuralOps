@@ -5,7 +5,7 @@ Based on: Sukhbaatar et al., 2019 (arXiv:1905.07799)
 Math:
     z_h = sigmoid(logit_h) * S_max
     g_{z_h}(d) = clamp((R + z_h - d) / R, 0, 1)
-    
+
     # FIX applied: The mask must be applied INSIDE the softmax
     A = Softmax(S + log(g_z) + M)
     O = (A V) W_O
@@ -28,10 +28,10 @@ from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.utils.model_family import ModelAdapter
 
-
 # =============================================================================
 # Loss helpers
 # =============================================================================
+
 
 def get_total_span_loss(model: nn.Module, lambda_span: float = 0.01) -> torch.Tensor:
     r"""Total L1 span regularization loss across all AdaptiveSpanAttention modules.
@@ -40,7 +40,9 @@ def get_total_span_loss(model: nn.Module, lambda_span: float = 0.01) -> torch.Te
     """
     span_modules = getattr(model, "_adaptive_span_modules", None)
     if span_modules is None:
-        span_modules = [m for m in model.modules() if isinstance(m, AdaptiveSpanAttention)]
+        span_modules = [
+            m for m in model.modules() if isinstance(m, AdaptiveSpanAttention)
+        ]
 
     losses: list[torch.Tensor] = []
     for m in span_modules:
@@ -60,6 +62,7 @@ def get_total_span_loss(model: nn.Module, lambda_span: float = 0.01) -> torch.Te
 # =============================================================================
 # RoPE helpers
 # =============================================================================
+
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     x1 = x[..., : x.shape[-1] // 2]
@@ -139,10 +142,22 @@ def apply_rotary_pos_emb(
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
-        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
+            _rotate_half(q_rot) * sin.to(q_rot.dtype)
+        )
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
+            _rotate_half(k_rot) * sin.to(k_rot.dtype)
+        )
+        q = (
+            torch.cat([q_rot_embed, q_pass], dim=-1)
+            if q_pass.numel() > 0
+            else q_rot_embed
+        )
+        k = (
+            torch.cat([k_rot_embed, k_pass], dim=-1)
+            if k_pass.numel() > 0
+            else k_rot_embed
+        )
     else:
         cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
         q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
@@ -154,6 +169,7 @@ def apply_rotary_pos_emb(
 # =============================================================================
 # Mask utilities
 # =============================================================================
+
 
 def _safe_mask_value(dtype: torch.dtype) -> float:
     if dtype in (torch.float16, torch.bfloat16):
@@ -191,7 +207,11 @@ def _build_keep_mask(
         elif am.dim() == 4:
             am_b = am
         else:
-            return mask if mask is not None else torch.ones((B, 1, N_q, N_k), device=device, dtype=torch.bool)
+            return (
+                mask
+                if mask is not None
+                else torch.ones((B, 1, N_q, N_k), device=device, dtype=torch.bool)
+            )
 
         if am_b.dtype != torch.bool:
             if am_b.max() <= 1.0 and am_b.min() >= 0.0:
@@ -215,6 +235,7 @@ def _build_keep_mask(
 # LoRA Linear
 # =============================================================================
 
+
 class LoRALinear(nn.Module):
     def __init__(
         self,
@@ -236,15 +257,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -279,7 +306,10 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            out = (
+                out
+                + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            )
         return out
 
 
@@ -296,6 +326,7 @@ class IdentityOutProj(nn.Identity):
 # =============================================================================
 # Adaptive Span Attention
 # =============================================================================
+
 
 @ATTENTION_REGISTRY.register("adaptive_span")
 @ATTENTION_REGISTRY.register("adaptive_span_attention")
@@ -326,8 +357,14 @@ class AdaptiveSpanAttention(BaseAttention):
         super().__init__(config, rank)
 
         # ---------------- Dimensions ----------------
-        hidden_size = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
-        num_heads = kwargs.get("num_heads") or kwargs.get("n_heads") or kwargs.get("num_attention_heads")
+        hidden_size = (
+            kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
+        )
+        num_heads = (
+            kwargs.get("num_heads")
+            or kwargs.get("n_heads")
+            or kwargs.get("num_attention_heads")
+        )
         num_kv_heads = kwargs.get("num_kv_heads") or kwargs.get("num_key_value_heads")
         head_dim = 0
 
@@ -339,9 +376,15 @@ class AdaptiveSpanAttention(BaseAttention):
             head_dim = getattr(adapter, "head_dim", 0)
 
         if not hidden_size and source_attn is not None:
-            cand = getattr(source_attn, "hidden_size",
-                    getattr(source_attn, "embed_dim",
-                    getattr(source_attn, "all_head_size", None)))
+            cand = getattr(
+                source_attn,
+                "hidden_size",
+                getattr(
+                    source_attn,
+                    "embed_dim",
+                    getattr(source_attn, "all_head_size", None),
+                ),
+            )
             if cand is None and hasattr(source_attn, "q_proj"):
                 cand = getattr(source_attn.q_proj, "in_features", None)
             hidden_size = cand
@@ -349,7 +392,11 @@ class AdaptiveSpanAttention(BaseAttention):
         hidden_size = int(hidden_size or 768)
         num_heads = int(num_heads or 12)
         num_kv_heads = int(num_kv_heads or num_heads)
-        head_dim = head_dim if head_dim > 0 else (hidden_size // num_heads if num_heads > 0 else 64)
+        head_dim = (
+            head_dim
+            if head_dim > 0
+            else (hidden_size // num_heads if num_heads > 0 else 64)
+        )
 
         self.hidden_size: int = hidden_size
         self.d_model: int = hidden_size
@@ -375,11 +422,35 @@ class AdaptiveSpanAttention(BaseAttention):
 
         # ---------------- Decoder / nested encoder detection ----------------
         model_type = getattr(config, "model_type", "").lower() if config else ""
-        is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False))) if config else False
-        _dec_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        is_dec = (
+            getattr(
+                config,
+                "is_decoder",
+                getattr(config, "is_causal", kwargs.get("is_causal", False)),
+            )
+            if config
+            else False
+        )
+        _dec_prefixes = (
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
+        )
         if any(model_type.startswith(p) for p in _dec_prefixes):
             is_dec = True
-        if hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+        if hasattr(config, "architectures") and any(
+            "GPT" in str(a) or "CausalLM" in str(a)
+            for a in (getattr(config, "architectures", []) or [])
+        ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
@@ -390,33 +461,56 @@ class AdaptiveSpanAttention(BaseAttention):
         is_nested = (
             source_cls in ("BertSelfAttention", "RobertaSelfAttention")
             or cfg_model_type in ("roberta", "bert")
-            or (source_cls.endswith(("SelfAttention", "SelfAttn"))
+            or (
+                source_cls.endswith(("SelfAttention", "SelfAttn"))
                 and "distil" not in source_cls.lower()
                 and "gpt" not in source_cls.lower()
-                and "qwen" not in source_cls.lower())
+                and "qwen" not in source_cls.lower()
+            )
         )
         self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", is_nested))
 
         if return_style is None:
-            if self.is_nested_encoder: return_style = "bert"
-            elif "GPT2" in source_cls or "gpt2" in cfg_model_type: return_style = "gpt2"
-            elif "T5" in source_cls or "t5" in cfg_model_type: return_style = "t5"
-            elif self.is_decoder: return_style = "llama"
-            else: return_style = "bert"
+            if self.is_nested_encoder:
+                return_style = "bert"
+            elif "GPT2" in source_cls or "gpt2" in cfg_model_type:
+                return_style = "gpt2"
+            elif "T5" in source_cls or "t5" in cfg_model_type:
+                return_style = "t5"
+            elif self.is_decoder:
+                return_style = "llama"
+            else:
+                return_style = "bert"
         self.return_style: str = str(return_style)
 
         self.has_relative_attention_bias: bool = False
         self.relative_attention_bias: nn.Embedding | None = None
-        self.relative_attention_num_buckets: int = getattr(config, "relative_attention_num_buckets", 32) if config else 32
-        self.relative_attention_max_distance: int = getattr(config, "relative_attention_max_distance", 128) if config else 128
+        self.relative_attention_num_buckets: int = (
+            getattr(config, "relative_attention_num_buckets", 32) if config else 32
+        )
+        self.relative_attention_max_distance: int = (
+            getattr(config, "relative_attention_max_distance", 128) if config else 128
+        )
 
         # ---------------- LoRA config ----------------
         if config is not None:
-            resolved_lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank)))
-            resolved_lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+            resolved_lora_rank = getattr(
+                config,
+                "lora_rank",
+                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank)),
+            )
+            resolved_lora_alpha = getattr(
+                config,
+                "lora_alpha",
+                getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
+            )
         elif comp_config is not None:
-            resolved_lora_rank = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank))
-            resolved_lora_alpha = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
+            resolved_lora_rank = getattr(
+                comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank)
+            )
+            resolved_lora_alpha = getattr(
+                comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)
+            )
         else:
             resolved_lora_rank = kwargs.get("lora_rank", lora_rank)
             resolved_lora_alpha = kwargs.get("lora_alpha", 32.0)
@@ -429,25 +523,75 @@ class AdaptiveSpanAttention(BaseAttention):
 
         self.lora_rank = int(resolved_lora_rank)
         self.lora_alpha = float(resolved_lora_alpha)
-        self.freeze_base: bool = (self.lora_rank > 0)
+        self.freeze_base: bool = self.lora_rank > 0
 
-        self.q_proj = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
-        self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
-        self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+        self.q_proj = LoRALinear(
+            self.hidden_size,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
+        )
+        self.k_proj = LoRALinear(
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
+        )
+        self.v_proj = LoRALinear(
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
+        )
         if self.is_nested_encoder:
             self.out_proj: nn.Module = IdentityOutProj()
         else:
-            self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+            self.out_proj = LoRALinear(
+                self.all_head_size,
+                self.hidden_size,
+                bias=True,
+                lora_rank=self.lora_rank,
+                lora_alpha=self.lora_alpha,
+                freeze_base=self.freeze_base,
+                dtype=target_dtype,
+            )
 
         # =========================================================================
         # FIX: Initialized to 2.0 to prevent gradient vanishing
         # =========================================================================
-        self.span_logits = nn.Parameter(torch.full((self.num_heads,), 2.0, dtype=torch.float32))
+        self.span_logits = nn.Parameter(
+            torch.full((self.num_heads,), 2.0, dtype=torch.float32)
+        )
 
-        dropout_p = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", getattr(config, "attention_probs_dropout_prob", dropout))) if config else dropout
+        dropout_p = (
+            getattr(
+                config,
+                "dropout",
+                getattr(
+                    config,
+                    "hidden_dropout_prob",
+                    getattr(config, "attention_probs_dropout_prob", dropout),
+                ),
+            )
+            if config
+            else dropout
+        )
         self.dropout = nn.Dropout(dropout_p)
 
-        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
+        self.rotary_emb = (
+            getattr(source_attn, "rotary_emb", None)
+            if source_attn is not None
+            else None
+        )
 
         if source_attn is not None:
             self.copy_weights(source_attn)
@@ -465,30 +609,45 @@ class AdaptiveSpanAttention(BaseAttention):
     def get_span_regularization_loss(self, lambda_span: float = 0.01) -> torch.Tensor:
         return lambda_span * torch.sigmoid(self.span_logits).mean()
 
-    def _relative_position_bucket(self, relative_position, bidirectional=True, num_buckets=32, max_distance=128):
+    def _relative_position_bucket(
+        self, relative_position, bidirectional=True, num_buckets=32, max_distance=128
+    ):
         relative_buckets = 0
         if bidirectional:
             num_buckets //= 2
             relative_buckets += (relative_position > 0).to(torch.long) * num_buckets
             relative_position = torch.abs(relative_position)
         else:
-            relative_position = -torch.min(relative_position, torch.zeros_like(relative_position))
+            relative_position = -torch.min(
+                relative_position, torch.zeros_like(relative_position)
+            )
         max_exact = num_buckets // 2
         is_small = relative_position < max_exact
         rel_large = max_exact + (
-            torch.log(relative_position.float() / max_exact) / math.log(max_distance / max_exact) * (num_buckets - max_exact)
+            torch.log(relative_position.float() / max_exact)
+            / math.log(max_distance / max_exact)
+            * (num_buckets - max_exact)
         ).to(torch.long)
         rel_large = torch.min(rel_large, torch.full_like(rel_large, num_buckets - 1))
         relative_buckets += torch.where(is_small, relative_position, rel_large)
         return relative_buckets
 
-    def compute_bias(self, query_length: int, key_length: int, device=None) -> torch.Tensor:
+    def compute_bias(
+        self, query_length: int, key_length: int, device=None
+    ) -> torch.Tensor:
         if self.relative_attention_bias is None:
-            return torch.zeros((1, self.num_heads, query_length, key_length), device=device)
+            return torch.zeros(
+                (1, self.num_heads, query_length, key_length), device=device
+            )
         ctx = torch.arange(query_length, dtype=torch.long, device=device)[:, None]
         mem = torch.arange(key_length, dtype=torch.long, device=device)[None, :]
         rel = mem - ctx
-        buckets = self._relative_position_bucket(rel, bidirectional=(not self.is_decoder), num_buckets=self.relative_attention_num_buckets, max_distance=self.relative_attention_max_distance)
+        buckets = self._relative_position_bucket(
+            rel,
+            bidirectional=(not self.is_decoder),
+            num_buckets=self.relative_attention_num_buckets,
+            max_distance=self.relative_attention_max_distance,
+        )
         values = self.relative_attention_bias(buckets)
         return values.permute([2, 0, 1]).unsqueeze(0)
 
@@ -496,7 +655,10 @@ class AdaptiveSpanAttention(BaseAttention):
         from framework.core.adapters import UniversalAdapter
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         for proj in ["q", "k", "v", "o"]:
@@ -507,7 +669,9 @@ class AdaptiveSpanAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback for %s: %s", proj, e)
 
-        if hasattr(src, "c_attn") and any(extracted[k][0] is None for k in ("q", "k", "v")):
+        if hasattr(src, "c_attn") and any(
+            extracted[k][0] is None for k in ("q", "k", "v")
+        ):
             c_attn_layer = src.c_attn
             base_c = getattr(c_attn_layer, "base_layer", c_attn_layer)
             weight = getattr(base_c, "weight", getattr(c_attn_layer, "weight", None))
@@ -516,16 +680,34 @@ class AdaptiveSpanAttention(BaseAttention):
                 bias = getattr(base_c, "bias", getattr(c_attn_layer, "bias", None))
                 bias_data = bias.data.clone() if bias is not None else None
                 is_conv1d = (
-                    hasattr(c_attn_layer, "nf") or hasattr(base_c, "nf")
+                    hasattr(c_attn_layer, "nf")
+                    or hasattr(base_c, "nf")
                     or c_attn_layer.__class__.__name__ == "Conv1D"
                     or base_c.__class__.__name__ == "Conv1D"
                 )
                 if is_conv1d and weight.dim() == 2:
                     weight = weight.t().contiguous()
                 split = weight.shape[0] // 3
-                extracted["q"] = (weight[:split].contiguous(), bias_data[:split].contiguous() if bias_data is not None else None)
-                extracted["k"] = (weight[split:2 * split].contiguous(), bias_data[split:2 * split].contiguous() if bias_data is not None else None)
-                extracted["v"] = (weight[2 * split:].contiguous(), bias_data[2 * split:].contiguous() if bias_data is not None else None)
+                extracted["q"] = (
+                    weight[:split].contiguous(),
+                    bias_data[:split].contiguous() if bias_data is not None else None,
+                )
+                extracted["k"] = (
+                    weight[split : 2 * split].contiguous(),
+                    (
+                        bias_data[split : 2 * split].contiguous()
+                        if bias_data is not None
+                        else None
+                    ),
+                )
+                extracted["v"] = (
+                    weight[2 * split :].contiguous(),
+                    (
+                        bias_data[2 * split :].contiguous()
+                        if bias_data is not None
+                        else None
+                    ),
+                )
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             c_proj_layer = src.c_proj
@@ -534,33 +716,55 @@ class AdaptiveSpanAttention(BaseAttention):
             if w_o is not None:
                 w_o = w_o.data.clone()
                 is_conv1d = (
-                    hasattr(c_proj_layer, "nf") or hasattr(base_o, "nf")
+                    hasattr(c_proj_layer, "nf")
+                    or hasattr(base_o, "nf")
                     or c_proj_layer.__class__.__name__ == "Conv1D"
                     or base_o.__class__.__name__ == "Conv1D"
                 )
                 if is_conv1d and w_o.dim() == 2:
                     w_o = w_o.t().contiguous()
                 b_o = getattr(base_o, "bias", getattr(c_proj_layer, "bias", None))
-                extracted["o"] = (w_o.contiguous(), b_o.data.clone().contiguous() if b_o is not None else None)
+                extracted["o"] = (
+                    w_o.contiguous(),
+                    b_o.data.clone().contiguous() if b_o is not None else None,
+                )
 
-        if hasattr(src, "self") and any(extracted[k][0] is None for k in ("q", "k", "v")):
+        if hasattr(src, "self") and any(
+            extracted[k][0] is None for k in ("q", "k", "v")
+        ):
             s = src.self
-            if hasattr(s, "query") and extracted["q"][0] is None: extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
-            if hasattr(s, "key") and extracted["k"][0] is None: extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
-            if hasattr(s, "value") and extracted["v"][0] is None: extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
+            if hasattr(s, "query") and extracted["q"][0] is None:
+                extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
+            if hasattr(s, "key") and extracted["k"][0] is None:
+                extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
+            if hasattr(s, "value") and extracted["v"][0] is None:
+                extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if hasattr(src, "output") and getattr(src, "output", None) is not None and hasattr(src.output, "dense") and extracted["o"][0] is None:
+        if (
+            hasattr(src, "output")
+            and getattr(src, "output", None) is not None
+            and hasattr(src.output, "dense")
+            and extracted["o"][0] is None
+        ):
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
-        named_map = {"q": ["q_proj", "q_lin", "query"], "k": ["k_proj", "k_lin", "key"], "v": ["v_proj", "v_lin", "value"], "o": ["o_proj", "out_proj", "out_lin", "dense"]}
+        named_map = {
+            "q": ["q_proj", "q_lin", "query"],
+            "k": ["k_proj", "k_lin", "key"],
+            "v": ["v_proj", "v_lin", "value"],
+            "o": ["o_proj", "out_proj", "out_lin", "dense"],
+        }
         for proj, names in named_map.items():
             if extracted[proj][0] is None:
                 for name in names:
                     if hasattr(src, name):
                         layer = getattr(src, name)
                         if hasattr(layer, "weight"):
-                            extracted[proj] = (layer.weight.data, getattr(layer, "bias", None))
+                            extracted[proj] = (
+                                layer.weight.data,
+                                getattr(layer, "bias", None),
+                            )
                             break
 
         cls_name = src.__class__.__name__
@@ -569,18 +773,33 @@ class AdaptiveSpanAttention(BaseAttention):
             self.is_nested_encoder = bool(
                 cls_name in ("BertSelfAttention", "RobertaSelfAttention")
                 or cfg_type in ("roberta", "bert")
-                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower() and "gpt" not in cls_name.lower() and "qwen" not in cls_name.lower())
+                or (
+                    cls_name.endswith("SelfAttention")
+                    and "distil" not in cls_name.lower()
+                    and "gpt" not in cls_name.lower()
+                    and "qwen" not in cls_name.lower()
+                )
             )
         if self.is_nested_encoder and not isinstance(self.out_proj, IdentityOutProj):
             self.out_proj = IdentityOutProj()
 
         missing = [k for k in ("q", "k", "v") if extracted[k][0] is None]
-        if not self.is_nested_encoder and extracted["o"][0] is None: missing.append("o")
-        if missing: logger.warning("AdaptiveSpanAttention missing weights for projections: %s", missing)
+        if not self.is_nested_encoder and extracted["o"][0] is None:
+            missing.append("o")
+        if missing:
+            logger.warning(
+                "AdaptiveSpanAttention missing weights for projections: %s", missing
+            )
 
         with torch.no_grad():
-            for proj_key, target in (("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)):
-                if proj_key == "o" and self.is_nested_encoder: continue
+            for proj_key, target in (
+                ("q", self.q_proj),
+                ("k", self.k_proj),
+                ("v", self.v_proj),
+                ("o", self.out_proj),
+            ):
+                if proj_key == "o" and self.is_nested_encoder:
+                    continue
                 w, b = extracted[proj_key]
                 if w is not None:
                     out_d, in_d = target.weight.shape
@@ -593,12 +812,15 @@ class AdaptiveSpanAttention(BaseAttention):
                         target.bias.data[:c_b].copy_(b_val[:c_b])
                 target.freeze_base_weights()
 
-        if getattr(src, "rotary_emb", None) is not None: self.rotary_emb = src.rotary_emb
-        if hasattr(src, "has_relative_attention_bias"): self.has_relative_attention_bias = bool(src.has_relative_attention_bias)
+        if getattr(src, "rotary_emb", None) is not None:
+            self.rotary_emb = src.rotary_emb
+        if hasattr(src, "has_relative_attention_bias"):
+            self.has_relative_attention_bias = bool(src.has_relative_attention_bias)
         if getattr(src, "relative_attention_bias", None) is not None:
             self.relative_attention_bias = src.relative_attention_bias
             self.has_relative_attention_bias = True
-        if hasattr(src, "is_decoder"): self.is_decoder = bool(src.is_decoder)
+        if hasattr(src, "is_decoder"):
+            self.is_decoder = bool(src.is_decoder)
 
     # -------------------------------------------------------------------------
     # Forward
@@ -629,36 +851,77 @@ class AdaptiveSpanAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
-        K_new = self.k_proj(kv_input).view(B, -1, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        V_new = self.v_proj(kv_input).view(B, -1, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        K_new = (
+            self.k_proj(kv_input)
+            .view(B, -1, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        V_new = (
+            self.v_proj(kv_input)
+            .view(B, -1, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         position_ids = kwargs.get("position_ids")
         if position_ids is None and not is_cross_attention:
             past_len = 0
             if past_key_value is not None and past_key_value is not False:
                 if hasattr(past_key_value, "get_seq_length"):
-                    try: past_len = past_key_value.get_seq_length(self.layer_idx)
+                    try:
+                        past_len = past_key_value.get_seq_length(self.layer_idx)
                     except Exception:
-                        try: past_len = past_key_value.get_seq_length()
-                        except Exception: past_len = 0
-                elif isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2 and past_key_value[0] is not None:
+                        try:
+                            past_len = past_key_value.get_seq_length()
+                        except Exception:
+                            past_len = 0
+                elif (
+                    isinstance(past_key_value, (tuple, list))
+                    and len(past_key_value) >= 2
+                    and past_key_value[0] is not None
+                ):
                     past_len = past_key_value[0].shape[-2]
-            position_ids = torch.arange(past_len, past_len + N_q, device=device, dtype=torch.long).unsqueeze(0).expand(B, -1)
+            position_ids = (
+                torch.arange(past_len, past_len + N_q, device=device, dtype=torch.long)
+                .unsqueeze(0)
+                .expand(B, -1)
+            )
 
-        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
-        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
+        pos_emb = (
+            position_embeddings
+            if position_embeddings is not None
+            else kwargs.get("position_embeddings")
+        )
+        if (
+            pos_emb is not None
+            and isinstance(pos_emb, (tuple, list))
+            and len(pos_emb) >= 2
+        ):
             cos, sin = pos_emb[0], pos_emb[1]
-            Q, K_new = apply_rotary_pos_emb(Q, K_new, cos, sin, position_ids=position_ids)
+            Q, K_new = apply_rotary_pos_emb(
+                Q, K_new, cos, sin, position_ids=position_ids
+            )
         elif self.rotary_emb is not None:
             if position_ids is None:
-                position_ids = torch.arange(N_q, device=device, dtype=torch.long).unsqueeze(0).expand(B, -1)
-            try: cos, sin = self.rotary_emb(K_new, position_ids=position_ids)
+                position_ids = (
+                    torch.arange(N_q, device=device, dtype=torch.long)
+                    .unsqueeze(0)
+                    .expand(B, -1)
+                )
+            try:
+                cos, sin = self.rotary_emb(K_new, position_ids=position_ids)
             except TypeError:
-                try: cos, sin = self.rotary_emb(K_new, position_ids)
-                except Exception: cos, sin = None, None
-            except Exception: cos, sin = None, None
+                try:
+                    cos, sin = self.rotary_emb(K_new, position_ids)
+                except Exception:
+                    cos, sin = None, None
+            except Exception:
+                cos, sin = None, None
             if cos is not None and sin is not None:
-                Q, K_new = apply_rotary_pos_emb(Q, K_new, cos, sin, position_ids=position_ids)
+                Q, K_new = apply_rotary_pos_emb(
+                    Q, K_new, cos, sin, position_ids=position_ids
+                )
 
         new_past_key_value: Any | None = None
         use_cache = kwargs.get("use_cache", False) or past_key_value is not None
@@ -669,12 +932,18 @@ class AdaptiveSpanAttention(BaseAttention):
         else:
             if past_key_value is not None and past_key_value is not False:
                 if hasattr(past_key_value, "update"):
-                    try: K, V, new_past_key_value = past_key_value.update(K_new, V_new, self.layer_idx)
+                    try:
+                        K, V, new_past_key_value = past_key_value.update(
+                            K_new, V_new, self.layer_idx
+                        )
                     except Exception:
                         K = torch.cat([past_key_value[0], K_new], dim=-2)
                         V = torch.cat([past_key_value[1], V_new], dim=-2)
                         new_past_key_value = (K, V)
-                elif isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
+                elif (
+                    isinstance(past_key_value, (tuple, list))
+                    and len(past_key_value) >= 2
+                ):
                     past_k, past_v = past_key_value[0], past_key_value[1]
                     if past_k is not None:
                         K = torch.cat([past_k, K_new], dim=-2)
@@ -687,11 +956,15 @@ class AdaptiveSpanAttention(BaseAttention):
                     new_past_key_value = (K, V)
             else:
                 K, V = K_new, V_new
-                if use_cache: new_past_key_value = (K, V)
+                if use_cache:
+                    new_past_key_value = (K, V)
 
-            if self.rolling_cache_size is not None and K.shape[-2] > self.rolling_cache_size:
-                K = K[..., -self.rolling_cache_size:, :].contiguous()
-                V = V[..., -self.rolling_cache_size:, :].contiguous()
+            if (
+                self.rolling_cache_size is not None
+                and K.shape[-2] > self.rolling_cache_size
+            ):
+                K = K[..., -self.rolling_cache_size :, :].contiguous()
+                V = V[..., -self.rolling_cache_size :, :].contiguous()
                 if isinstance(new_past_key_value, tuple):
                     new_past_key_value = (K, V)
 
@@ -703,12 +976,13 @@ class AdaptiveSpanAttention(BaseAttention):
                 V_full = repeat_kv(V, self.kv_repeat)
             elif K.shape[1] == self.num_heads:
                 K_full, V_full = K, V
-            else: raise ValueError(f"Unexpected K head dim {K.shape[1]}")
+            else:
+                raise ValueError(f"Unexpected K head dim {K.shape[1]}")
         else:
             K_full, V_full = K, V
 
         # ---------------- Scores ----------------
-        scale = d ** -0.5
+        scale = d**-0.5
         scores = torch.matmul(Q, K_full.transpose(-2, -1).contiguous()) * scale
 
         position_bias = kwargs.get("position_bias")
@@ -728,7 +1002,9 @@ class AdaptiveSpanAttention(BaseAttention):
                     k_pos = q_pos
                 else:
                     last_q = q_pos[-1].item()
-                    k_pos = torch.arange(last_q - N_k + 1, last_q + 1, device=device, dtype=torch.float32)
+                    k_pos = torch.arange(
+                        last_q - N_k + 1, last_q + 1, device=device, dtype=torch.float32
+                    )
             else:
                 q_pos = torch.arange(N_q, device=device, dtype=torch.float32)
                 k_pos = torch.arange(N_k, device=device, dtype=torch.float32)
@@ -741,13 +1017,25 @@ class AdaptiveSpanAttention(BaseAttention):
             span_h = span.view(H, 1, 1).to(torch.float32)
             dist_mat = dist.unsqueeze(0)
 
-            ramp = torch.clamp((self.ramp_size + span_h - dist_mat) / self.ramp_size, 0.0, 1.0)
+            ramp = torch.clamp(
+                (self.ramp_size + span_h - dist_mat) / self.ramp_size, 0.0, 1.0
+            )
             span_mask = torch.log(ramp.clamp(min=1e-9)).to(scores.dtype)
             scores = scores + span_mask.unsqueeze(0)
 
         # ---------------- Combined boolean mask ----------------
         is_causal = self.is_decoder and not is_cross_attention
-        keep_mask = _build_keep_mask(B=B, N_q=N_q, N_k=N_k, is_causal=is_causal, attention_mask=attention_mask, encoder_attention_mask=encoder_attention_mask if is_cross_attention else None, device=device)
+        keep_mask = _build_keep_mask(
+            B=B,
+            N_q=N_q,
+            N_k=N_k,
+            is_causal=is_causal,
+            attention_mask=attention_mask,
+            encoder_attention_mask=(
+                encoder_attention_mask if is_cross_attention else None
+            ),
+            device=device,
+        )
 
         fully_masked: torch.Tensor | None = None
         if keep_mask is not None:
@@ -758,12 +1046,14 @@ class AdaptiveSpanAttention(BaseAttention):
         if fully_masked is not None:
             scores = torch.where(fully_masked, torch.zeros_like(scores), scores)
 
-        if dtype in (torch.float16, torch.bfloat16) and scores.numel() > 2 ** 30:
+        if dtype in (torch.float16, torch.bfloat16) and scores.numel() > 2**30:
             attn = torch.empty_like(scores)
             chunk = max(64, min(512, N_q))
             for s in range(0, N_q, chunk):
                 e = min(s + chunk, N_q)
-                attn[:, :, s:e, :] = F.softmax(scores[:, :, s:e, :].float(), dim=-1).to(dtype)
+                attn[:, :, s:e, :] = F.softmax(scores[:, :, s:e, :].float(), dim=-1).to(
+                    dtype
+                )
         else:
             attn = F.softmax(scores.float(), dim=-1).to(dtype)
 
@@ -773,9 +1063,12 @@ class AdaptiveSpanAttention(BaseAttention):
         # ---------------- Dropout + head mask ----------------
         attn = self.dropout(attn)
         if head_mask is not None:
-            if head_mask.dim() == 1: head_mask = head_mask.view(1, -1, 1, 1)
-            elif head_mask.dim() == 2: head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
-            elif head_mask.dim() == 3: head_mask = head_mask.unsqueeze(-1)
+            if head_mask.dim() == 1:
+                head_mask = head_mask.view(1, -1, 1, 1)
+            elif head_mask.dim() == 2:
+                head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
+            elif head_mask.dim() == 3:
+                head_mask = head_mask.unsqueeze(-1)
             attn = attn * head_mask
 
         # ---------------- Context ----------------
@@ -787,16 +1080,32 @@ class AdaptiveSpanAttention(BaseAttention):
         else:
             output = self.out_proj(context)
 
-        return self._format_output(output, attn if output_attentions else None, new_past_key_value, position_bias, output_attentions)
+        return self._format_output(
+            output,
+            attn if output_attentions else None,
+            new_past_key_value,
+            position_bias,
+            output_attentions,
+        )
 
-    def _format_output(self, output: torch.Tensor, attn: torch.Tensor | None, past_kv: Any | None, position_bias: torch.Tensor | None, output_attentions: bool):
+    def _format_output(
+        self,
+        output: torch.Tensor,
+        attn: torch.Tensor | None,
+        past_kv: Any | None,
+        position_bias: torch.Tensor | None,
+        output_attentions: bool,
+    ):
         style = self.return_style
-        if style == "bert": return output, attn
+        if style == "bert":
+            return output, attn
         if style == "gpt2":
-            if output_attentions: return output, past_kv, attn
+            if output_attentions:
+                return output, past_kv, attn
             return output, past_kv
         if style == "t5":
-            if output_attentions: return output, position_bias, attn
+            if output_attentions:
+                return output, position_bias, attn
             return output, position_bias
         return output, attn, past_kv
 
@@ -804,6 +1113,7 @@ class AdaptiveSpanAttention(BaseAttention):
 # =============================================================================
 # Injection factory
 # =============================================================================
+
 
 @ATTENTION_REGISTRY.register("adaptive_span_inject")
 def inject_adaptive_span(
@@ -817,29 +1127,52 @@ def inject_adaptive_span(
     **kwargs: Any,
 ) -> AdaptiveSpanAttention | nn.Module | None:
     target = layer if layer is not None else model
-    if target is None: return None
+    if target is None:
+        return None
 
     cfg = model_config
-    if cfg is None and hasattr(target, "config"): cfg = target.config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
 
     layer_list = None
-    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"): layer_list = target.distilbert.transformer.layer
-    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"): layer_list = target.roberta.encoder.layer
-    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"): layer_list = target.transformer.h
-    elif hasattr(target, "model") and hasattr(target.model, "layers"): layer_list = target.model.layers
-    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"): layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"): layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)): layer_list = target.layers
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
+        layer_list = target.bert.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
 
     if layer_list is not None:
         injected: list[nn.Module] = []
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
-            res = inject_adaptive_span(layer=lyr, model_config=cfg, comp_config=comp_config, layer_idx=idx, total_layers=tot, **kwargs)
-            if res is not None: injected.append(res)
+            res = inject_adaptive_span(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                injected.append(res)
         if injected:
-            if hasattr(target, "_adaptive_span_modules"): target._adaptive_span_modules.extend(injected)
-            else: target._adaptive_span_modules = injected
+            if hasattr(target, "_adaptive_span_modules"):
+                target._adaptive_span_modules.extend(injected)
+            else:
+                target._adaptive_span_modules = injected
             return target
         return None
 
@@ -850,31 +1183,49 @@ def inject_adaptive_span(
                 cand = getattr(target, attr)
                 src_attn = getattr(cand, "self", cand)
                 break
-    if src_attn is None and hasattr(target, "forward"): src_attn = target
-    if src_attn is None and cfg is None: return None
+    if src_attn is None and hasattr(target, "forward"):
+        src_attn = target
+    if src_attn is None and cfg is None:
+        return None
 
     def _already_wrapped(obj: Any) -> bool:
-        if obj is None: return False
-        if isinstance(obj, AdaptiveSpanAttention): return True
-        if "AdaptiveSpan" in obj.__class__.__name__: return True
+        if obj is None:
+            return False
+        if isinstance(obj, AdaptiveSpanAttention):
+            return True
+        if "AdaptiveSpan" in obj.__class__.__name__:
+            return True
         inner = getattr(obj, "inner", None)
         wrapped = getattr(obj, "_wrapped_attention", None)
-        return isinstance(inner, AdaptiveSpanAttention) or isinstance(wrapped, AdaptiveSpanAttention)
+        return isinstance(inner, AdaptiveSpanAttention) or isinstance(
+            wrapped, AdaptiveSpanAttention
+        )
 
-    if _already_wrapped(src_attn): return None
+    if _already_wrapped(src_attn):
+        return None
     for attr in ("attention", "self_attn", "attn", "self"):
-        if _already_wrapped(getattr(target, attr, None)): return None
+        if _already_wrapped(getattr(target, attr, None)):
+            return None
 
     if src_attn is not None:
         c_name = src_attn.__class__.__name__
-        if "DeltaNet" in c_name or "LinearAttention" in c_name: return None
+        if "DeltaNet" in c_name or "LinearAttention" in c_name:
+            return None
 
     hidden_size = (
         getattr(src_attn, "hidden_size", None)
         or getattr(src_attn, "embed_dim", None)
         or getattr(src_attn, "dim", None)
-        or (src_attn.q_proj.in_features if hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features") else None)
-        or (src_attn.q_lin.in_features if hasattr(src_attn, "q_lin") and hasattr(src_attn.q_lin, "in_features") else None)
+        or (
+            src_attn.q_proj.in_features
+            if hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features")
+            else None
+        )
+        or (
+            src_attn.q_lin.in_features
+            if hasattr(src_attn, "q_lin") and hasattr(src_attn.q_lin, "in_features")
+            else None
+        )
         or (getattr(target, "in_features", None) if target is not None else None)
         or getattr(cfg, "hidden_size", getattr(cfg, "dim", 64))
     )
@@ -890,9 +1241,10 @@ def inject_adaptive_span(
     max_span = getattr(comp_config, "max_span", kwargs.get("max_span", 128))
 
     is_nested_layer = (
-        (hasattr(target, "attention") and hasattr(target.attention, "output") and hasattr(target.attention.output, "dense"))
-        or (hasattr(target, "output") and hasattr(target.output, "dense"))
-    )
+        hasattr(target, "attention")
+        and hasattr(target.attention, "output")
+        and hasattr(target.attention.output, "dense")
+    ) or (hasattr(target, "output") and hasattr(target.output, "dense"))
 
     try:
         new_block = AdaptiveSpanAttention(
@@ -905,7 +1257,9 @@ def inject_adaptive_span(
             dropout=dropout,
             max_span=max_span,
             pretrained_attn=src_attn,
-            is_nested_encoder=(True if is_nested_layer else kwargs.get("is_nested_encoder")),
+            is_nested_encoder=(
+                True if is_nested_layer else kwargs.get("is_nested_encoder")
+            ),
             layer_idx=layer_idx,
             **kwargs,
         )
@@ -915,10 +1269,15 @@ def inject_adaptive_span(
 
     if target is not None:
         if hasattr(target, "attention"):
-            if hasattr(target.attention, "self"): target.attention.self = new_block
-            else: target.attention = new_block
-        elif hasattr(target, "self"): target.self = new_block
-        elif hasattr(target, "attn"): target.attn = new_block
-        elif hasattr(target, "self_attn"): target.self_attn = new_block
+            if hasattr(target.attention, "self"):
+                target.attention.self = new_block
+            else:
+                target.attention = new_block
+        elif hasattr(target, "self"):
+            target.self = new_block
+        elif hasattr(target, "attn"):
+            target.attn = new_block
+        elif hasattr(target, "self_attn"):
+            target.self_attn = new_block
 
     return new_block

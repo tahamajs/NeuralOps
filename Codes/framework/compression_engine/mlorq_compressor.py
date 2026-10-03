@@ -18,7 +18,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
@@ -30,7 +29,9 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # Bit packing helpers
 # ===========================================================================
-def _quantize_packed(t: torch.Tensor, bits: int) -> tuple[torch.Tensor, torch.Tensor, torch.Size]:
+def _quantize_packed(
+    t: torch.Tensor, bits: int
+) -> tuple[torch.Tensor, torch.Tensor, torch.Size]:
     """
     Symmetric per-tensor quantization with bit packing.
 
@@ -42,7 +43,11 @@ def _quantize_packed(t: torch.Tensor, bits: int) -> tuple[torch.Tensor, torch.Te
     orig_shape = t.shape
     flat = t.reshape(-1).float()
     if flat.numel() == 0:
-        return torch.empty(0, dtype=torch.int8, device=t.device), torch.tensor(1.0, device=t.device), orig_shape
+        return (
+            torch.empty(0, dtype=torch.int8, device=t.device),
+            torch.tensor(1.0, device=t.device),
+            orig_shape,
+        )
 
     if bits >= 8:
         max_abs = flat.abs().max().clamp_min(1e-8)
@@ -63,10 +68,14 @@ def _quantize_packed(t: torch.Tensor, bits: int) -> tuple[torch.Tensor, torch.Te
     n = q_unsigned.numel()
     pad = (-n) % per_byte
     if pad > 0:
-        q_unsigned = torch.cat([q_unsigned, torch.zeros(pad, dtype=torch.int32, device=q_unsigned.device)])
+        q_unsigned = torch.cat(
+            [q_unsigned, torch.zeros(pad, dtype=torch.int32, device=q_unsigned.device)]
+        )
     q_unsigned = q_unsigned.view(-1, per_byte)
 
-    packed = torch.zeros(q_unsigned.shape[0], dtype=torch.int8, device=q_unsigned.device)
+    packed = torch.zeros(
+        q_unsigned.shape[0], dtype=torch.int8, device=q_unsigned.device
+    )
     for i in range(per_byte):
         packed = (packed << bits) | q_unsigned[:, i].to(torch.int8)
     return packed, scale, orig_shape
@@ -81,7 +90,9 @@ def _dequantize_packed(
     dtype: torch.dtype,
 ) -> torch.Tensor:
     if bits >= 8:
-        return (packed.float() * scale).to(device=device, dtype=dtype).reshape(orig_shape)
+        return (
+            (packed.float() * scale).to(device=device, dtype=dtype).reshape(orig_shape)
+        )
 
     per_byte = 8 // bits
     n = packed.numel() * per_byte
@@ -111,6 +122,7 @@ class MLoRQLoRALinear(nn.Module):
 
     where U, S, Vt are stored as PACKED int8 tensors with per-tensor scales.
     """
+
     is_custom_attention: bool = False  # MLR-FIX-01
 
     def __init__(
@@ -148,11 +160,17 @@ class MLoRQLoRALinear(nn.Module):
         target_dtype = dtype if dtype is not None else torch.float32
 
         self.register_buffer("U_packed", U_packed.to(target_device), persistent=True)
-        self.register_buffer("U_scale", U_scale.to(target_device, dtype=torch.float32), persistent=True)
+        self.register_buffer(
+            "U_scale", U_scale.to(target_device, dtype=torch.float32), persistent=True
+        )
         self.register_buffer("S_packed", S_packed.to(target_device), persistent=True)
-        self.register_buffer("S_scale", S_scale.to(target_device, dtype=torch.float32), persistent=True)
+        self.register_buffer(
+            "S_scale", S_scale.to(target_device, dtype=torch.float32), persistent=True
+        )
         self.register_buffer("Vt_packed", Vt_packed.to(target_device), persistent=True)
-        self.register_buffer("Vt_scale", Vt_scale.to(target_device, dtype=torch.float32), persistent=True)
+        self.register_buffer(
+            "Vt_scale", Vt_scale.to(target_device, dtype=torch.float32), persistent=True
+        )
 
         self.U_shape = tuple(U_shape)
         self.S_shape = tuple(S_shape)
@@ -168,12 +186,18 @@ class MLoRQLoRALinear(nn.Module):
 
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, self.in_features),
-                            dtype=torch.float32, device=target_device)
+                torch.empty(
+                    (self.lora_r, self.in_features),
+                    dtype=torch.float32,
+                    device=target_device,
+                )
             )
             self.lora_B = nn.Parameter(
-                torch.zeros((self.out_features, self.lora_r),
-                            dtype=torch.float32, device=target_device)
+                torch.zeros(
+                    (self.out_features, self.lora_r),
+                    dtype=torch.float32,
+                    device=target_device,
+                )
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -255,7 +279,9 @@ class MLoRQLoRALinear(nn.Module):
 
         existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
         eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
-        eff_lora_alpha = getattr(linear, "lora_alpha", getattr(linear, "alpha", lora_alpha))
+        eff_lora_alpha = getattr(
+            linear, "lora_alpha", getattr(linear, "alpha", lora_alpha)
+        )
 
         layer = cls(
             in_features=in_features,
@@ -279,18 +305,33 @@ class MLoRQLoRALinear(nn.Module):
         )
 
         # Preserve existing LoRA weights if present
-        if (hasattr(linear, "lora_A") and hasattr(linear, "lora_B")
-                and layer.lora_A is not None and layer.lora_B is not None):
+        if (
+            hasattr(linear, "lora_A")
+            and hasattr(linear, "lora_B")
+            and layer.lora_A is not None
+            and layer.lora_B is not None
+        ):
             with torch.no_grad():
-                src_A = (linear.lora_A.weight.data
-                         if hasattr(linear.lora_A, "weight")
-                         else linear.lora_A.data)
-                src_B = (linear.lora_B.weight.data
-                         if hasattr(linear.lora_B, "weight")
-                         else linear.lora_B.data)
-                if src_A.shape == layer.lora_A.shape and src_B.shape == layer.lora_B.shape:
-                    layer.lora_A.copy_(src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype))
-                    layer.lora_B.copy_(src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype))
+                src_A = (
+                    linear.lora_A.weight.data
+                    if hasattr(linear.lora_A, "weight")
+                    else linear.lora_A.data
+                )
+                src_B = (
+                    linear.lora_B.weight.data
+                    if hasattr(linear.lora_B, "weight")
+                    else linear.lora_B.data
+                )
+                if (
+                    src_A.shape == layer.lora_A.shape
+                    and src_B.shape == layer.lora_B.shape
+                ):
+                    layer.lora_A.copy_(
+                        src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype)
+                    )
+                    layer.lora_B.copy_(
+                        src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype)
+                    )
             layer.lora_A.requires_grad = True
             layer.lora_B.requires_grad = True
 
@@ -309,9 +350,22 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 _ATTN_NAMES = {
-    "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-    "c_attn", "c_proj", "query", "key", "value",
-    "q_lin", "k_lin", "v_lin", "out_lin", "self_attn",
+    "attn",
+    "attention",
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "c_attn",
+    "c_proj",
+    "query",
+    "key",
+    "value",
+    "q_lin",
+    "k_lin",
+    "v_lin",
+    "out_lin",
+    "self_attn",
 }
 
 
@@ -324,6 +378,7 @@ class MLoRQCompressor(BaseCompressor):
     """
     MLoRQ Compressor: Multi-Layer Optimal Rank and Quantization under Memory Budget.
     """
+
     is_custom_attention: bool = False  # MLR-FIX-01
 
     def __init__(
@@ -345,19 +400,29 @@ class MLoRQCompressor(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             total_memory_budget_mb = _cfg_get(
-                cfg, "mlorq_budget_mb", _cfg_get(cfg, "total_memory_budget_mb", total_memory_budget_mb)
+                cfg,
+                "mlorq_budget_mb",
+                _cfg_get(cfg, "total_memory_budget_mb", total_memory_budget_mb),
             )
             bits_candidates = _cfg_get(
-                cfg, "mlorq_bits_candidates", _cfg_get(cfg, "bits_candidates", bits_candidates)
+                cfg,
+                "mlorq_bits_candidates",
+                _cfg_get(cfg, "bits_candidates", bits_candidates),
             )
-            max_error = _cfg_get(cfg, "mlorq_max_error", _cfg_get(cfg, "max_error", max_error))
+            max_error = _cfg_get(
+                cfg, "mlorq_max_error", _cfg_get(cfg, "max_error", max_error)
+            )
             fallback_to_original = _cfg_get(
-                cfg, "mlorq_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+                cfg,
+                "mlorq_fallback_to_original",
+                _cfg_get(cfg, "fallback_to_original", fallback_to_original),
             )
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
             skip_attention_qkv = _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
-            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
+            target_attention_only = _cfg_get(
+                cfg, "target_attention_only", target_attention_only
+            )
             min_rank = _cfg_get(cfg, "min_rank", min_rank)
 
         self.total_budget_bits = float(total_memory_budget_mb) * 8 * 1024 * 1024  # bits
@@ -386,20 +451,46 @@ class MLoRQCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
+        if (
+            num_heads is not None
+            and num_kv_heads is not None
+            and num_kv_heads < num_heads
+        ):
             name_lower = name.lower()
-            if any(p in name_lower for p in ("q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn")):
+            if any(
+                p in name_lower
+                for p in (
+                    "q_proj",
+                    "k_proj",
+                    "v_proj",
+                    "query",
+                    "key",
+                    "value",
+                    "c_attn",
+                )
+            ):
                 return True
         return False
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
-        if any(k in name_l for k in (
-            "classifier", "score", "lm_head", "pooler", "embedding",
-            "layernorm", "rmsnorm", "batchnorm",
-        )):
+        if any(
+            k in name_l
+            for k in (
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embedding",
+                "layernorm",
+                "rmsnorm",
+                "batchnorm",
+            )
+        ):
             return False
-        if isinstance(module, (nn.LayerNorm, nn.RMSNorm, nn.Embedding, MLoRQLoRALinear)):
+        if isinstance(
+            module, (nn.LayerNorm, nn.RMSNorm, nn.Embedding, MLoRQLoRALinear)
+        ):
             return False
 
         cls_name = module.__class__.__name__.lower()
@@ -444,9 +535,7 @@ class MLoRQCompressor(BaseCompressor):
         return torch.round(tf / scale).clamp(-qmax - 1, qmax) * scale
 
     # ------------------------------------------------------------------
-    def _generate_candidates(
-        self, W: torch.Tensor
-    ) -> list[dict[str, Any]]:
+    def _generate_candidates(self, W: torch.Tensor) -> list[dict[str, Any]]:
         """Generate (rank, bits, error, cost_bits, U, S, Vt) candidates for a weight."""
         out_f, in_f = W.shape
         max_rank = min(out_f, in_f)
@@ -492,15 +581,17 @@ class MLoRQCompressor(BaseCompressor):
 
                 # cost in bits for packed storage
                 cost_bits = (out_f * r + r * in_f + r) * bits
-                candidates.append({
-                    "rank": r,
-                    "bits": bits,
-                    "error": err,
-                    "cost_bits": cost_bits,
-                    "U": U_r,
-                    "S": S_r,
-                    "Vt": Vt_r,
-                })
+                candidates.append(
+                    {
+                        "rank": r,
+                        "bits": bits,
+                        "error": err,
+                        "cost_bits": cost_bits,
+                        "U": U_r,
+                        "S": S_r,
+                        "Vt": Vt_r,
+                    }
+                )
         candidates.sort(key=lambda c: c["cost_bits"])
         return candidates
 
@@ -538,19 +629,25 @@ class MLoRQCompressor(BaseCompressor):
 
             cls_name = base.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(base, "nf")
-            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
+            W = (
+                raw_w.t().contiguous().clone().float()
+                if is_conv1d
+                else raw_w.clone().float()
+            )
 
-            layer_infos.append({
-                "name": name,
-                "module": module,
-                "base": base,
-                "W": W,
-                "shape": W.shape,
-                "is_conv1d": is_conv1d,
-                "device": raw_w.device,
-                "dtype": raw_w.dtype,
-                "orig_bits": orig_bits,
-            })
+            layer_infos.append(
+                {
+                    "name": name,
+                    "module": module,
+                    "base": base,
+                    "W": W,
+                    "shape": W.shape,
+                    "is_conv1d": is_conv1d,
+                    "device": raw_w.device,
+                    "dtype": raw_w.dtype,
+                    "orig_bits": orig_bits,
+                }
+            )
 
         if not layer_infos:
             logger.warning("MLoRQ: no target layers found.")
@@ -589,7 +686,11 @@ class MLoRQCompressor(BaseCompressor):
                 if info["chosen"] is None:
                     continue
                 # find cheaper candidate than current
-                cheaper = [c for c in info["candidates"] if c["cost_bits"] < info["current_cost"]]
+                cheaper = [
+                    c
+                    for c in info["candidates"]
+                    if c["cost_bits"] < info["current_cost"]
+                ]
                 if not cheaper:
                     continue
                 # choose the cheapest cheaper candidate? Actually we want the one with smallest error increase per bit saved.
@@ -621,7 +722,11 @@ class MLoRQCompressor(BaseCompressor):
                 if info["chosen"] is None:
                     continue
                 # find more expensive candidate
-                more = [c for c in info["candidates"] if c["cost_bits"] > info["current_cost"]]
+                more = [
+                    c
+                    for c in info["candidates"]
+                    if c["cost_bits"] > info["current_cost"]
+                ]
                 if not more:
                     continue
                 next_more = min(more, key=lambda c: c["cost_bits"])
@@ -698,7 +803,12 @@ class MLoRQCompressor(BaseCompressor):
                         hidden = getattr(cfg, "hidden_size", None) if cfg else None
                         if hidden is None:
                             first_lin = next(
-                                (m for m in self.model.modules() if isinstance(m, nn.Linear)), None
+                                (
+                                    m
+                                    for m in self.model.modules()
+                                    if isinstance(m, nn.Linear)
+                                ),
+                                None,
                             )
                             hidden = getattr(first_lin, "in_features", 8)
                         dt = next(self.model.parameters()).dtype
@@ -716,36 +826,44 @@ class MLoRQCompressor(BaseCompressor):
 
         avg_err = (
             sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
-            if self.layer_errors else 0.0
+            if self.layer_errors
+            else 0.0
         )
         storage_ratio = (
             total_orig_bits / 8 / max(1, total_comp_bytes)
-            if total_comp_bytes > 0 else 1.0
+            if total_comp_bytes > 0
+            else 1.0
         )
         stats = self.get_compression_stats()
-        stats.update({
-            "compressed_layers": self.compressed_layers,
-            "fallback_layers": self.fallback_layers,
-            "skipped_layers": self.skipped_layers,
-            "num_compressed": len(self.compressed_layers),
-            "num_fallback": len(self.fallback_layers),
-            "num_skipped": len(self.skipped_layers),
-            "layer_errors": self.layer_errors,
-            "layer_ranks": self.layer_ranks,
-            "layer_bits": self.layer_bits,
-            "avg_reconstruction_error": avg_err,
-            "max_error": self.max_error,
-            "fallback_to_original": self.fallback_to_original,
-            "total_budget_bits": self.total_budget_bits,
-            "total_used_bits": total_cost,
-            "budget_utilization_pct": round(100.0 * total_cost / max(1, self.total_budget_bits), 2),
-            "orig_storage_bytes": total_orig_bits // 8,
-            "comp_storage_bytes": total_comp_bytes,
-            "storage_compression_ratio": round(storage_ratio, 3),
-            "storage_reduction_pct": round(100.0 * (1.0 - total_comp_bytes / max(1, total_orig_bits // 8)), 2),
-            "forward_check_success": forward_check_success,
-            "method": "mlorq",
-        })
+        stats.update(
+            {
+                "compressed_layers": self.compressed_layers,
+                "fallback_layers": self.fallback_layers,
+                "skipped_layers": self.skipped_layers,
+                "num_compressed": len(self.compressed_layers),
+                "num_fallback": len(self.fallback_layers),
+                "num_skipped": len(self.skipped_layers),
+                "layer_errors": self.layer_errors,
+                "layer_ranks": self.layer_ranks,
+                "layer_bits": self.layer_bits,
+                "avg_reconstruction_error": avg_err,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "total_budget_bits": self.total_budget_bits,
+                "total_used_bits": total_cost,
+                "budget_utilization_pct": round(
+                    100.0 * total_cost / max(1, self.total_budget_bits), 2
+                ),
+                "orig_storage_bytes": total_orig_bits // 8,
+                "comp_storage_bytes": total_comp_bytes,
+                "storage_compression_ratio": round(storage_ratio, 3),
+                "storage_reduction_pct": round(
+                    100.0 * (1.0 - total_comp_bytes / max(1, total_orig_bits // 8)), 2
+                ),
+                "forward_check_success": forward_check_success,
+                "method": "mlorq",
+            }
+        )
         self.stats = stats
         return self.model, stats
 
@@ -765,12 +883,17 @@ def mlorq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(comp_config, "mlorq_max_error", _cfg_get(comp_config, "max_error", 0.50)),
+        _cfg_get(
+            comp_config, "mlorq_max_error", _cfg_get(comp_config, "max_error", 0.50)
+        ),
     )
     fallback = kwargs.pop(
         "fallback_to_original",
-        _cfg_get(comp_config, "mlorq_fallback_to_original",
-                 _cfg_get(comp_config, "fallback_to_original", True)),
+        _cfg_get(
+            comp_config,
+            "mlorq_fallback_to_original",
+            _cfg_get(comp_config, "fallback_to_original", True),
+        ),
     )
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))

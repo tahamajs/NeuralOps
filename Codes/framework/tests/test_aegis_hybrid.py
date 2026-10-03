@@ -2,11 +2,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.aegis_hybrid import (
-    AegisHybridAttention,
-    inject_aegis_hybrid,
-)
+from framework.attentions.aegis_hybrid import (AegisHybridAttention,
+                                               inject_aegis_hybrid)
 from framework.core.registry import ATTENTION_REGISTRY
 
 

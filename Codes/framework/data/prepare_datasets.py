@@ -41,21 +41,60 @@ for p in [CODES_DIR, FRAMEWORK_DIR, SCRIPT_DIR]:
         sys.path.insert(0, p)
 
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
 logger = logging.getLogger("DatasetPreparer")
 
 # Task specifications and standard HuggingFace mappings
 GLUE_TASK_CONFIG = {
-    "sst2": {"keys": ("sentence", None), "num_labels": 2, "type": "classification", "metric": "accuracy"},
-    "mrpc": {"keys": ("sentence1", "sentence2"), "num_labels": 2, "type": "classification", "metric": "f1"},
-    "qnli": {"keys": ("question", "sentence"), "num_labels": 2, "type": "classification", "metric": "accuracy"},
-    "mnli": {"keys": ("premise", "hypothesis"), "num_labels": 3, "type": "classification", "metric": "accuracy"},
-    "cola": {"keys": ("sentence", None), "num_labels": 2, "type": "classification", "metric": "matthews_corrcoef"},
-    "rte": {"keys": ("sentence1", "sentence2"), "num_labels": 2, "type": "classification", "metric": "accuracy"},
-    "stsb": {"keys": ("sentence1", "sentence2"), "num_labels": 1, "type": "regression", "metric": "pearson"},
-    "qqp": {"keys": ("question1", "question2"), "num_labels": 2, "type": "classification", "metric": "f1"},
+    "sst2": {
+        "keys": ("sentence", None),
+        "num_labels": 2,
+        "type": "classification",
+        "metric": "accuracy",
+    },
+    "mrpc": {
+        "keys": ("sentence1", "sentence2"),
+        "num_labels": 2,
+        "type": "classification",
+        "metric": "f1",
+    },
+    "qnli": {
+        "keys": ("question", "sentence"),
+        "num_labels": 2,
+        "type": "classification",
+        "metric": "accuracy",
+    },
+    "mnli": {
+        "keys": ("premise", "hypothesis"),
+        "num_labels": 3,
+        "type": "classification",
+        "metric": "accuracy",
+    },
+    "cola": {
+        "keys": ("sentence", None),
+        "num_labels": 2,
+        "type": "classification",
+        "metric": "matthews_corrcoef",
+    },
+    "rte": {
+        "keys": ("sentence1", "sentence2"),
+        "num_labels": 2,
+        "type": "classification",
+        "metric": "accuracy",
+    },
+    "stsb": {
+        "keys": ("sentence1", "sentence2"),
+        "num_labels": 1,
+        "type": "regression",
+        "metric": "pearson",
+    },
+    "qqp": {
+        "keys": ("question1", "question2"),
+        "num_labels": 2,
+        "type": "classification",
+        "metric": "f1",
+    },
 }
 
 
@@ -79,7 +118,9 @@ class SyntheticDataset(Dataset):
         self.num_labels = num_labels
 
         torch.manual_seed(seed)
-        self.input_ids = torch.randint(100, vocab_size - 100, (num_samples, seq_len), dtype=torch.long)
+        self.input_ids = torch.randint(
+            100, vocab_size - 100, (num_samples, seq_len), dtype=torch.long
+        )
         self.attention_mask = torch.ones((num_samples, seq_len), dtype=torch.long)
 
         # Introduce variable length padding
@@ -120,12 +161,16 @@ def prepare_glue_dataset(
     """
     task = task_name.lower()
     if task not in GLUE_TASK_CONFIG:
-        raise ValueError(f"Unknown GLUE task '{task}'. Supported: {list(GLUE_TASK_CONFIG.keys())}")
+        raise ValueError(
+            f"Unknown GLUE task '{task}'. Supported: {list(GLUE_TASK_CONFIG.keys())}"
+        )
 
     config = GLUE_TASK_CONFIG[task]
     key1, key2 = config["keys"]
 
-    logger.info("Preparing GLUE task '%s' using tokenizer '%s'...", task, tokenizer_name)
+    logger.info(
+        "Preparing GLUE task '%s' using tokenizer '%s'...", task, tokenizer_name
+    )
 
     # 1. Try loading HuggingFace datasets
     hf_dataset = None
@@ -155,7 +200,11 @@ def prepare_glue_dataset(
             raw_split = hf_dataset[split_name]
 
             def tokenize_fn(examples: dict[str, list[Any]]) -> dict[str, Any]:
-                args = (examples[key1],) if key2 is None else (examples[key1], examples[key2])
+                args = (
+                    (examples[key1],)
+                    if key2 is None
+                    else (examples[key1], examples[key2])
+                )
                 return tokenizer(
                     *args,
                     padding="max_length",
@@ -164,13 +213,27 @@ def prepare_glue_dataset(
                     return_tensors=None,
                 )
 
-            cols_to_remove = [c for c in raw_split.column_names if c not in {"label", "labels"}]
-            tokenized = raw_split.map(tokenize_fn, batched=True, remove_columns=cols_to_remove)
-            if "label" in tokenized.column_names and "labels" not in tokenized.column_names:
+            cols_to_remove = [
+                c for c in raw_split.column_names if c not in {"label", "labels"}
+            ]
+            tokenized = raw_split.map(
+                tokenize_fn, batched=True, remove_columns=cols_to_remove
+            )
+            if (
+                "label" in tokenized.column_names
+                and "labels" not in tokenized.column_names
+            ):
                 tokenized = tokenized.rename_column("label", "labels")
-            if "t5" in tokenizer_name.lower() and "token_type_ids" in tokenized.column_names:
+            if (
+                "t5" in tokenizer_name.lower()
+                and "token_type_ids" in tokenized.column_names
+            ):
                 tokenized = tokenized.remove_columns(["token_type_ids"])
-            cols_to_format = [c for c in ["input_ids", "attention_mask", "token_type_ids", "labels"] if c in tokenized.column_names]
+            cols_to_format = [
+                c
+                for c in ["input_ids", "attention_mask", "token_type_ids", "labels"]
+                if c in tokenized.column_names
+            ]
             tokenized.set_format(type="torch", columns=cols_to_format)
             tokenized_splits[split_name] = tokenized
 
@@ -185,9 +248,23 @@ def prepare_glue_dataset(
 
     # 3. Synthetic Fallback
     logger.info("Generating high-fidelity synthetic benchmark data for '%s'...", task)
-    train_ds = SyntheticDataset(task, num_samples=2000, seq_len=max_seq_len, num_labels=config["num_labels"])
-    val_ds = SyntheticDataset(task, num_samples=500, seq_len=max_seq_len, num_labels=config["num_labels"], seed=100)
-    test_ds = SyntheticDataset(task, num_samples=500, seq_len=max_seq_len, num_labels=config["num_labels"], seed=200)
+    train_ds = SyntheticDataset(
+        task, num_samples=2000, seq_len=max_seq_len, num_labels=config["num_labels"]
+    )
+    val_ds = SyntheticDataset(
+        task,
+        num_samples=500,
+        seq_len=max_seq_len,
+        num_labels=config["num_labels"],
+        seed=100,
+    )
+    test_ds = SyntheticDataset(
+        task,
+        num_samples=500,
+        seq_len=max_seq_len,
+        num_labels=config["num_labels"],
+        seed=200,
+    )
 
     synthetic_splits = {"train": train_ds, "validation": val_ds, "test": test_ds}
 
@@ -237,10 +314,19 @@ def prepare_lm_dataset(
             tokens["labels"] = tokens["input_ids"].copy()
             return tokens
 
-        processed = raw.map(tokenize_lm, batched=True, remove_columns=raw["train"].column_names)
-        if "t5" in tokenizer_name.lower() and "token_type_ids" in processed["train"].column_names:
+        processed = raw.map(
+            tokenize_lm, batched=True, remove_columns=raw["train"].column_names
+        )
+        if (
+            "t5" in tokenizer_name.lower()
+            and "token_type_ids" in processed["train"].column_names
+        ):
             processed = processed.remove_columns(["token_type_ids"])
-        cols = [c for c in ["input_ids", "attention_mask", "token_type_ids", "labels"] if c in processed["train"].column_names]
+        cols = [
+            c
+            for c in ["input_ids", "attention_mask", "token_type_ids", "labels"]
+            if c in processed["train"].column_names
+        ]
         processed.set_format(type="torch", columns=cols)
 
         if save_dir:
@@ -253,9 +339,15 @@ def prepare_lm_dataset(
 
         return {k: processed[k] for k in processed}
     except Exception as e:
-        logger.warning("Could not download real LM dataset '%s': %s. Falling back to synthetic.", ds_name, e)
+        logger.warning(
+            "Could not download real LM dataset '%s': %s. Falling back to synthetic.",
+            ds_name,
+            e,
+        )
         train_ds = SyntheticDataset("wikitext2", num_samples=2000, seq_len=max_seq_len)
-        val_ds = SyntheticDataset("wikitext2", num_samples=500, seq_len=max_seq_len, seed=100)
+        val_ds = SyntheticDataset(
+            "wikitext2", num_samples=500, seq_len=max_seq_len, seed=100
+        )
         splits = {"train": train_ds, "validation": val_ds}
 
         if save_dir:
@@ -279,7 +371,9 @@ def create_benchmark_dataloader(
     """
     Creates a high-throughput PyTorch DataLoader configured for GPU training/benchmarking.
     """
-    is_cuda = (device is not None and device.type == "cuda") or torch.cuda.is_available()
+    is_cuda = (
+        device is not None and device.type == "cuda"
+    ) or torch.cuda.is_available()
 
     def collate_fn(batch: list[dict[str, Any]]) -> dict[str, torch.Tensor]:
         if isinstance(batch[0], dict):
@@ -316,7 +410,9 @@ def prepare_all_benchmarks(
     # 1. GLUE
     for task in GLUE_TASK_CONFIG:
         try:
-            splits = prepare_glue_dataset(task, tokenizer_name, max_seq_len, save_dir=save_dir)
+            splits = prepare_glue_dataset(
+                task, tokenizer_name, max_seq_len, save_dir=save_dir
+            )
             all_data[f"glue_{task}"] = splits
         except Exception as e:
             logger.error("Failed preparing GLUE task '%s': %s", task, e)
@@ -324,7 +420,9 @@ def prepare_all_benchmarks(
     # 2. LM
     for lm in ["wikitext2", "c4"]:
         try:
-            splits = prepare_lm_dataset(lm, tokenizer_name, max_seq_len, save_dir=save_dir)
+            splits = prepare_lm_dataset(
+                lm, tokenizer_name, max_seq_len, save_dir=save_dir
+            )
             all_data[f"lm_{lm}"] = splits
         except Exception as e:
             logger.error("Failed preparing LM dataset '%s': %s", lm, e)
@@ -343,47 +441,102 @@ MODEL_TOKENIZER_MAPPING: dict[str, str] = {
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Dataset Preparation & Preprocessing Pipeline")
-    parser.add_argument("--tasks", type=str, default="sst2,mrpc,qnli", help="Comma-separated dataset names")
-    parser.add_argument("--models", type=str, default=None, help="Comma-separated model families (bert,roberta,t5,distilbert,gpt2)")
-    parser.add_argument("--all", action="store_true", help="Prepare all GLUE and LM benchmarks")
-    parser.add_argument("--tokenizer", type=str, default="bert-base-uncased", help="HuggingFace tokenizer name")
-    parser.add_argument("--seq_len", type=int, default=128, help="Maximum sequence length")
-    parser.add_argument("--batch_size", type=int, default=16, help="Batch size for DataLoader test")
-    parser.add_argument("--save_dir", type=str, default="./prepared_benchmark_data", help="Output directory")
-    parser.add_argument("--test", action="store_true", help="Test DataLoader batch generation")
+    parser = argparse.ArgumentParser(
+        description="Dataset Preparation & Preprocessing Pipeline"
+    )
+    parser.add_argument(
+        "--tasks",
+        type=str,
+        default="sst2,mrpc,qnli",
+        help="Comma-separated dataset names",
+    )
+    parser.add_argument(
+        "--models",
+        type=str,
+        default=None,
+        help="Comma-separated model families (bert,roberta,t5,distilbert,gpt2)",
+    )
+    parser.add_argument(
+        "--all", action="store_true", help="Prepare all GLUE and LM benchmarks"
+    )
+    parser.add_argument(
+        "--tokenizer",
+        type=str,
+        default="bert-base-uncased",
+        help="HuggingFace tokenizer name",
+    )
+    parser.add_argument(
+        "--seq_len", type=int, default=128, help="Maximum sequence length"
+    )
+    parser.add_argument(
+        "--batch_size", type=int, default=16, help="Batch size for DataLoader test"
+    )
+    parser.add_argument(
+        "--save_dir",
+        type=str,
+        default="./prepared_benchmark_data",
+        help="Output directory",
+    )
+    parser.add_argument(
+        "--test", action="store_true", help="Test DataLoader batch generation"
+    )
     args = parser.parse_args()
 
     if args.all:
         if args.models:
-            model_list = [m.strip().lower() for m in args.models.split(",") if m.strip()]
+            model_list = [
+                m.strip().lower() for m in args.models.split(",") if m.strip()
+            ]
             for m in model_list:
                 tok = MODEL_TOKENIZER_MAPPING.get(m, m)
                 m_save = os.path.join(args.save_dir, m)
-                prepare_all_benchmarks(save_dir=m_save, tokenizer_name=tok, max_seq_len=args.seq_len)
+                prepare_all_benchmarks(
+                    save_dir=m_save, tokenizer_name=tok, max_seq_len=args.seq_len
+                )
         else:
-            prepare_all_benchmarks(save_dir=args.save_dir, tokenizer_name=args.tokenizer, max_seq_len=args.seq_len)
+            prepare_all_benchmarks(
+                save_dir=args.save_dir,
+                tokenizer_name=args.tokenizer,
+                max_seq_len=args.seq_len,
+            )
         return
 
     task_list = [t.strip().lower() for t in args.tasks.split(",") if t.strip()]
     tokenizers = [args.tokenizer]
     if args.models:
-        tokenizers = [MODEL_TOKENIZER_MAPPING.get(m.strip().lower(), m.strip()) for m in args.models.split(",") if m.strip()]
+        tokenizers = [
+            MODEL_TOKENIZER_MAPPING.get(m.strip().lower(), m.strip())
+            for m in args.models.split(",")
+            if m.strip()
+        ]
 
     for tok in tokenizers:
-        tok_short = next((k for k, v in MODEL_TOKENIZER_MAPPING.items() if v == tok), tok.split("/")[-1])
+        tok_short = next(
+            (k for k, v in MODEL_TOKENIZER_MAPPING.items() if v == tok),
+            tok.split("/")[-1],
+        )
         for t in task_list:
-            sub_save = os.path.join(args.save_dir, tok_short) if args.models else args.save_dir
+            sub_save = (
+                os.path.join(args.save_dir, tok_short) if args.models else args.save_dir
+            )
             if t in GLUE_TASK_CONFIG:
-                splits = prepare_glue_dataset(t, tokenizer_name=tok, max_seq_len=args.seq_len, save_dir=sub_save)
+                splits = prepare_glue_dataset(
+                    t, tokenizer_name=tok, max_seq_len=args.seq_len, save_dir=sub_save
+                )
             elif t in {"wikitext2", "wikitext103", "c4", "lm"}:
-                splits = prepare_lm_dataset(t, tokenizer_name=tok, max_seq_len=args.seq_len, save_dir=sub_save)
+                splits = prepare_lm_dataset(
+                    t, tokenizer_name=tok, max_seq_len=args.seq_len, save_dir=sub_save
+                )
             else:
                 logger.warning("Unrecognized task '%s'. Using synthetic generator.", t)
-                splits = {"train": SyntheticDataset(t, num_samples=1000, seq_len=args.seq_len)}
+                splits = {
+                    "train": SyntheticDataset(t, num_samples=1000, seq_len=args.seq_len)
+                }
 
             if args.test and "train" in splits:
-                loader = create_benchmark_dataloader(splits["train"], batch_size=args.batch_size)
+                loader = create_benchmark_dataloader(
+                    splits["train"], batch_size=args.batch_size
+                )
                 batch = next(iter(loader))
                 print(f"\n[Test Loader for {t} ({tok_short})]")
                 for k, v in batch.items():

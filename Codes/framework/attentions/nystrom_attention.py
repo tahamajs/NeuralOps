@@ -22,7 +22,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
@@ -92,15 +91,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -140,16 +145,26 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            lora_out = (
+                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            )
             out = out + lora_out
         return out
 
 
-@ATTENTION_REGISTRY.register("nystrom", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("nystrom_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "nystrom", supports_causal=True, supports_bidirectional=True, supports_gqa=True
+)
+@ATTENTION_REGISTRY.register(
+    "nystrom_attention",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
 class NystromAttention(BaseAttention):
     is_custom_attention: bool = True
     triton_kernel: str = "linear_attn"
+
     def __init__(
         self,
         config: Any | None = None,
@@ -170,24 +185,50 @@ class NystromAttention(BaseAttention):
 
         if hidden_size is None:
             if config is not None:
-                hidden_size = getattr(config, "hidden_size", getattr(config, "dim", 768))
+                hidden_size = getattr(
+                    config, "hidden_size", getattr(config, "dim", 768)
+                )
             elif source_attn is not None:
-                out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
-                hidden_size = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
+                out_layer = getattr(
+                    source_attn,
+                    "out_lin",
+                    getattr(
+                        source_attn,
+                        "dense",
+                        getattr(
+                            source_attn, "c_proj", getattr(source_attn, "o_proj", None)
+                        ),
+                    ),
+                )
+                hidden_size = (
+                    getattr(out_layer, "out_features", 768)
+                    if out_layer is not None
+                    else 768
+                )
             else:
                 hidden_size = 768
 
         if num_heads is None:
             if config is not None:
-                num_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12))
+                num_heads = getattr(
+                    config, "num_attention_heads", getattr(config, "n_heads", 12)
+                )
             elif source_attn is not None:
-                num_heads = getattr(source_attn, "num_attention_heads", getattr(source_attn, "n_heads", 12))
+                num_heads = getattr(
+                    source_attn,
+                    "num_attention_heads",
+                    getattr(source_attn, "n_heads", 12),
+                )
             else:
                 num_heads = 12
 
         if num_kv_heads is None:
             if config is not None:
-                num_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", num_heads))
+                num_kv_heads = getattr(
+                    config,
+                    "num_key_value_heads",
+                    getattr(config, "num_kv_heads", num_heads),
+                )
             elif source_attn is not None:
                 num_kv_heads = getattr(source_attn, "num_key_value_heads", num_heads)
             else:
@@ -204,19 +245,57 @@ class NystromAttention(BaseAttention):
         self.supports_gqa = True
 
         landmarks_cfg = (
-            num_landmarks
-            if num_landmarks is not None
-            else getattr(config, "num_landmarks", getattr(config, "nystrom_landmarks", rank if rank is not None else 32))
-        ) if config is not None else (num_landmarks if num_landmarks is not None else 32)
+            (
+                num_landmarks
+                if num_landmarks is not None
+                else getattr(
+                    config,
+                    "num_landmarks",
+                    getattr(
+                        config, "nystrom_landmarks", rank if rank is not None else 32
+                    ),
+                )
+            )
+            if config is not None
+            else (num_landmarks if num_landmarks is not None else 32)
+        )
         self.num_landmarks = min(32, int(landmarks_cfg))
         self.pinv_iterations = pinv_iterations
 
         # Decoder detection
         model_type = getattr(config, "model_type", "").lower() if config else ""
-        is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False))) if config else False
-        _mt = (model_type or '').lower()
-        _decoder_prefixes = ('gpt', 'qwen', 'llama', 'mistral', 'gemma', 'phi', 'opt', 'bloom', 'falcon', 'olmo', 'mpt', 'stablelm')
-        if any(_mt.startswith(p) for p in _decoder_prefixes) or hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+        is_dec = (
+            getattr(
+                config,
+                "is_decoder",
+                getattr(config, "is_causal", kwargs.get("is_causal", False)),
+            )
+            if config
+            else False
+        )
+        _mt = (model_type or "").lower()
+        _decoder_prefixes = (
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
+        )
+        if (
+            any(_mt.startswith(p) for p in _decoder_prefixes)
+            or hasattr(config, "architectures")
+            and any(
+                "GPT" in str(a) or "CausalLM" in str(a)
+                for a in (getattr(config, "architectures", []) or [])
+            )
+        ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
@@ -225,17 +304,67 @@ class NystromAttention(BaseAttention):
         self.is_nested_encoder = False
 
         # LoRA config
-        self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if config else 16
-        self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if config else 32.0
-        self.freeze_base = (self.lora_rank > 0)
+        self.lora_rank = (
+            getattr(
+                config,
+                "lora_rank",
+                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)),
+            )
+            if config
+            else 16
+        )
+        self.lora_alpha = (
+            getattr(
+                config,
+                "lora_alpha",
+                getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
+            )
+            if config
+            else 32.0
+        )
+        self.freeze_base = self.lora_rank > 0
 
         # Projections
-        self.query = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.key = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.value = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.query = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.key = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.value = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
-        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
+        dropout_p = (
+            getattr(
+                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
+            )
+            if config
+            else 0.1
+        )
         self.dropout = nn.Dropout(dropout_p)
         self.triton_kwargs = {"phi": "identity", "eps": 1e-6}
 
@@ -243,37 +372,65 @@ class NystromAttention(BaseAttention):
             self.copy_weights(source_attn)
 
     @property
-    def q_proj(self): return self.query
+    def q_proj(self):
+        return self.query
+
     @property
-    def k_proj(self): return self.key
+    def k_proj(self):
+        return self.key
+
     @property
-    def v_proj(self): return self.value
+    def v_proj(self):
+        return self.value
+
     @property
-    def q_lin(self): return self.query
+    def q_lin(self):
+        return self.query
+
     @property
-    def k_lin(self): return self.key
+    def k_lin(self):
+        return self.key
+
     @property
-    def v_lin(self): return self.value
+    def v_lin(self):
+        return self.value
+
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
+
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
+
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
+
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
 
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
 
         cls_name = getattr(src, "__class__", type(src)).__name__
-        has_out = hasattr(src, "dense") or hasattr(src, "out_proj") or hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        has_out = (
+            hasattr(src, "dense")
+            or hasattr(src, "out_proj")
+            or hasattr(src, "out_lin")
+            or hasattr(src, "c_proj")
+            or hasattr(src, "o_proj")
+        )
         is_nested = False
-        if (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
-            or (hasattr(src, "query") and not has_out)
-        ):
+        if cls_name in [
+            "BertSelfAttention",
+            "RobertaSelfAttention",
+            "XLMRobertaSelfAttention",
+            "ElectraSelfAttention",
+            "DebertaSelfAttention",
+        ] or (hasattr(src, "query") and not has_out):
             is_nested = True
         if hasattr(src, "self") and hasattr(src, "output"):
             is_nested = True
@@ -305,9 +462,18 @@ class NystromAttention(BaseAttention):
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
+                extracted["q"] = (
+                    c_w[:split_size, :],
+                    c_b[:split_size] if c_b is not None else None,
+                )
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (
+                    c_w[2 * split_size :, :],
+                    c_b[2 * split_size :] if c_b is not None else None,
+                )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -325,7 +491,10 @@ class NystromAttention(BaseAttention):
                     if is_conv1d:
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    extracted["o"] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
 
         # 2. RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
@@ -333,10 +502,16 @@ class NystromAttention(BaseAttention):
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
-                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                    extracted[proj_key] = (
+                        mod.weight.data.clone(),
+                        mod.bias.data.clone() if mod.bias is not None else None,
+                    )
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
-                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
+                extracted["o"] = (
+                    out_mod.weight.data.clone(),
+                    out_mod.bias.data.clone() if out_mod.bias is not None else None,
+                )
 
         # 3. Flat modules
         else:
@@ -351,13 +526,21 @@ class NystromAttention(BaseAttention):
                     if hasattr(src, name):
                         mod = getattr(src, name)
                         if mod is not None and hasattr(mod, "weight"):
-                            extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                            extracted[proj_key] = (
+                                mod.weight.data.clone(),
+                                mod.bias.data.clone() if mod.bias is not None else None,
+                            )
                             break
 
-        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -386,22 +569,35 @@ class NystromAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                if (
+                    w.shape != target_mod.weight.shape
+                    and target_mod.weight.shape == w.t().contiguous().shape
+                ):
                     w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
-                target_mod.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype))
+                target_mod.weight.data[:out_d, :in_d].copy_(
+                    w[:out_d, :in_d].to(
+                        device=target_mod.weight.device, dtype=target_mod.weight.dtype
+                    )
+                )
 
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
-                    target_mod.bias.data[:min_b].copy_(b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype))
+                    target_mod.bias.data[:min_b].copy_(
+                        b[:min_b].to(
+                            device=target_mod.bias.device, dtype=target_mod.bias.dtype
+                        )
+                    )
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
                 w_norm = float(torch.linalg.norm(target_mod.weight.data.float()).item())
                 if w_norm < 1e-4:
-                    logger.warning(f"NystromAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+                    logger.warning(
+                        f"NystromAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})"
+                    )
 
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
@@ -415,7 +611,11 @@ class NystromAttention(BaseAttention):
             alpha = 1.0 / (norm_1 * norm_inf + 1e-5)
 
             V = alpha * A.transpose(-2, -1).contiguous()
-            I = torch.eye(A.size(-1), device=A.device, dtype=A.dtype).unsqueeze(0).unsqueeze(0)
+            I = (
+                torch.eye(A.size(-1), device=A.device, dtype=A.dtype)
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
 
             for _ in range(iters):
                 V = torch.matmul(V, 2.0 * I - torch.matmul(A, V))
@@ -433,21 +633,28 @@ class NystromAttention(BaseAttention):
         try:
             if valid_mask.all():
                 return F.scaled_dot_product_attention(
-                    Q, K, V,
-                    is_causal=getattr(self, "is_causal", False) or getattr(self, "is_decoder", False),
+                    Q,
+                    K,
+                    V,
+                    is_causal=getattr(self, "is_causal", False)
+                    or getattr(self, "is_decoder", False),
                     dropout_p=self.dropout.p if self.training else 0.0,
                 ).to(dtype)
             else:
                 attn_mask = valid_mask.unsqueeze(1).unsqueeze(2)
                 return F.scaled_dot_product_attention(
-                    Q, K, V,
+                    Q,
+                    K,
+                    V,
                     attn_mask=attn_mask,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 ).to(dtype)
         except Exception:
             pass
 
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+        scores = (
+            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+        )
         scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
         attn_weights = F.softmax(scores, dim=-1).to(dtype)
         attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
@@ -465,7 +672,9 @@ class NystromAttention(BaseAttention):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if kwargs.get("encoder_hidden_states") is not None:
-            raise NotImplementedError("Cross-attention is not implemented for NystromAttention")
+            raise NotImplementedError(
+                "Cross-attention is not implemented for NystromAttention"
+            )
 
         B, N, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
@@ -473,8 +682,18 @@ class NystromAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         Q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
-        K = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        V = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        K = (
+            self.key(hidden_states)
+            .view(B, N, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        V = (
+            self.value(hidden_states)
+            .view(B, N, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         if position_embeddings is not None:
             cos, sin = position_embeddings
@@ -488,8 +707,13 @@ class NystromAttention(BaseAttention):
 
         if self.is_decoder or self.is_causal:
             scale = 1.0 / math.sqrt(d)
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-            causal_mask = torch.tril(torch.ones((N, N), device=device, dtype=torch.bool))
+            scores = (
+                torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous())
+                * scale
+            )
+            causal_mask = torch.tril(
+                torch.ones((N, N), device=device, dtype=torch.bool)
+            )
             scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
             scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
             attn_weights = F.softmax(scores, dim=-1).to(dtype)
@@ -507,13 +731,39 @@ class NystromAttention(BaseAttention):
             Q_flat = Q.reshape(B * H, N, d).transpose(1, 2).contiguous()
             K_flat = K.reshape(B * H, N, d).transpose(1, 2).contiguous()
 
-            Q_landmarks = F.adaptive_avg_pool1d(Q_flat, m).transpose(1, 2).contiguous().reshape(B, H, m, d)
-            K_landmarks = F.adaptive_avg_pool1d(K_flat, m).transpose(1, 2).contiguous().reshape(B, H, m, d)
+            Q_landmarks = (
+                F.adaptive_avg_pool1d(Q_flat, m)
+                .transpose(1, 2)
+                .contiguous()
+                .reshape(B, H, m, d)
+            )
+            K_landmarks = (
+                F.adaptive_avg_pool1d(K_flat, m)
+                .transpose(1, 2)
+                .contiguous()
+                .reshape(B, H, m, d)
+            )
 
             scale = 1.0 / math.sqrt(d)
-            scores1 = torch.matmul(Q.float(), K_landmarks.float().transpose(-2, -1).contiguous()) * scale
-            scores2 = torch.matmul(Q_landmarks.float(), K_landmarks.float().transpose(-2, -1).contiguous()) * scale
-            scores3 = torch.matmul(Q_landmarks.float(), K.float().transpose(-2, -1).contiguous()) * scale
+            scores1 = (
+                torch.matmul(
+                    Q.float(), K_landmarks.float().transpose(-2, -1).contiguous()
+                )
+                * scale
+            )
+            scores2 = (
+                torch.matmul(
+                    Q_landmarks.float(),
+                    K_landmarks.float().transpose(-2, -1).contiguous(),
+                )
+                * scale
+            )
+            scores3 = (
+                torch.matmul(
+                    Q_landmarks.float(), K.float().transpose(-2, -1).contiguous()
+                )
+                * scale
+            )
 
             mask_expanded = valid_mask.unsqueeze(1).unsqueeze(2)
             scores3 = scores3.masked_fill(~mask_expanded, -1e4)
@@ -586,9 +836,15 @@ def inject_nystrom(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+    elif hasattr(target, "layers") and isinstance(
+        target.layers, (torch.nn.ModuleList, list)
+    ):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -598,7 +854,11 @@ def inject_nystrom(
             res = inject_nystrom(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                comp_config=(
+                    comp_config
+                    if "comp_config" in locals() or "comp_config" in kwargs
+                    else None
+                ),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
@@ -609,19 +869,33 @@ def inject_nystrom(
 
     layer = target
 
-    src_attn = old_attn if old_attn is not None else (getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None))) if layer is not None else None)
+    src_attn = (
+        old_attn
+        if old_attn is not None
+        else (
+            getattr(
+                layer, "attention", getattr(layer, "self", getattr(layer, "attn", None))
+            )
+            if layer is not None
+            else None
+        )
+    )
 
     hidden_size = (
-        getattr(src_attn, 'hidden_size', None) or
-        getattr(src_attn, 'embed_dim', None) or
-        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
-        (layer.in_features if hasattr(layer, 'in_features') else None) or
-        getattr(model_config, 'hidden_size', 64)
+        getattr(src_attn, "hidden_size", None)
+        or getattr(src_attn, "embed_dim", None)
+        or (
+            src_attn.q_proj.in_features
+            if hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features")
+            else None
+        )
+        or (layer.in_features if hasattr(layer, "in_features") else None)
+        or getattr(model_config, "hidden_size", 64)
     )
     num_heads = (
-        getattr(src_attn, 'num_heads', None) or
-        getattr(src_attn, 'num_attention_heads', None) or
-        getattr(model_config, 'num_attention_heads', 4)
+        getattr(src_attn, "num_heads", None)
+        or getattr(src_attn, "num_attention_heads", None)
+        or getattr(model_config, "num_attention_heads", 4)
     )
 
     try:
@@ -652,5 +926,6 @@ def inject_nystrom(
         return new_attn
     except Exception as e:
         import logging
+
         logging.getLogger(__name__).error(f"NystromAttention injection failed: {e}")
         return None

@@ -1,12 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.simple_ssm import (
-    SimpleSSM,
-    inject_simple_ssm,
-    inject_simple_ssm_attention,
-)
+from framework.attentions.simple_ssm import (SimpleSSM, inject_simple_ssm,
+                                             inject_simple_ssm_attention)
 
 
 class MockConfig:

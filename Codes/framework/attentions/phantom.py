@@ -24,7 +24,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
@@ -89,7 +88,9 @@ def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.
     temp = max(temperature, 1e-4)
     # Masked positions (future tokens) are <= -1000.0. Preserve mask while clamping unmasked values.
     is_masked = x <= -1000.0
-    x_clamped = torch.where(is_masked, torch.full_like(x, -1e4), torch.clamp(x, min=-50.0, max=10.0))
+    x_clamped = torch.where(
+        is_masked, torch.full_like(x, -1e4), torch.clamp(x, min=-50.0, max=10.0)
+    )
     res = F.softmax(x_clamped / temp, dim=dim)
     res = torch.nan_to_num(res, nan=0.0)
     return res.to(orig_dtype)
@@ -125,8 +126,12 @@ class FactorisedLinear_CUR(nn.Module):
         self.up = nn.Linear(self.cur_rank, out_features, bias=bias, **factory_kwargs)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -167,9 +172,9 @@ class FactorisedLinear_CUR(nn.Module):
 
             try:
                 U_full, S_full, Vt_full = torch.linalg.svd(W, full_matrices=False)
-                col_leverage = (Vt_full ** 2).sum(dim=0)
+                col_leverage = (Vt_full**2).sum(dim=0)
                 col_leverage = col_leverage / torch.clamp(col_leverage.sum(), min=1e-5)
-                row_leverage = (U_full ** 2).sum(dim=1)
+                row_leverage = (U_full**2).sum(dim=1)
                 row_leverage = row_leverage / torch.clamp(row_leverage.sum(), min=1e-5)
 
                 _, col_idx = torch.topk(col_leverage, k=rank, largest=True)
@@ -190,14 +195,22 @@ class FactorisedLinear_CUR(nn.Module):
                     Vt_r = Vt_full[:rank, :]
                     sqrt_s = torch.sqrt(S_r)
                     self.down.weight.data.zero_()
-                    self.down.weight.data[:rank, :in_dim].copy_((sqrt_s.unsqueeze(1) * Vt_r).to(dtype=self.down.weight.dtype))
+                    self.down.weight.data[:rank, :in_dim].copy_(
+                        (sqrt_s.unsqueeze(1) * Vt_r).to(dtype=self.down.weight.dtype)
+                    )
                     self.up.weight.data.zero_()
-                    self.up.weight.data[:out_dim, :rank].copy_((U_r * sqrt_s.unsqueeze(0)).to(dtype=self.up.weight.dtype))
+                    self.up.weight.data[:out_dim, :rank].copy_(
+                        (U_r * sqrt_s.unsqueeze(0)).to(dtype=self.up.weight.dtype)
+                    )
                 else:
                     self.down.weight.data.zero_()
-                    self.down.weight.data[:rank, :in_dim].copy_(R.to(dtype=self.down.weight.dtype))
+                    self.down.weight.data[:rank, :in_dim].copy_(
+                        R.to(dtype=self.down.weight.dtype)
+                    )
                     self.up.weight.data.zero_()
-                    self.up.weight.data[:out_dim, :rank].copy_(C_Uint.to(dtype=self.up.weight.dtype))
+                    self.up.weight.data[:out_dim, :rank].copy_(
+                        C_Uint.to(dtype=self.up.weight.dtype)
+                    )
             except Exception:
                 # SVD fallback
                 nn.init.kaiming_uniform_(self.down.weight, a=math.sqrt(5))
@@ -220,7 +233,9 @@ class FactorisedLinear_CUR(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.up(self.down(x))
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            lora_out = (
+                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            )
             out = out + lora_out
         return out
 
@@ -237,7 +252,7 @@ def lsh_attention(
     is_causal: bool = False,
 ) -> torch.Tensor:
     B, H, N, D = Q.shape
-    scale = D ** -0.5
+    scale = D**-0.5
     n_bits = max(1, min(bucket_size, 8))
 
     Q_norm = F.normalize(Q, p=2, dim=-1, eps=1e-5)
@@ -247,14 +262,18 @@ def lsh_attention(
         [2**i for i in range(n_bits)], device=Q.device, dtype=torch.float32
     )
 
-    scores_base = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+    scores_base = (
+        torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+    )
     if token_valid is not None:
         val_mask = token_valid.unsqueeze(1).unsqueeze(2)  # [B, 1, 1, N]
         scores_base = scores_base.masked_fill(~val_mask, -1e4)
 
     if is_causal:
         causal_mask = torch.triu(torch.full((N, N), True, device=Q.device), diagonal=1)
-        scores_base = scores_base.masked_fill(causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
+        scores_base = scores_base.masked_fill(
+            causal_mask.unsqueeze(0).unsqueeze(0), -1e4
+        )
 
     accum_out = torch.zeros_like(V)
 
@@ -265,7 +284,7 @@ def lsh_attention(
         hq = (torch.matmul(Q_norm, hash_proj) > 0).float() @ bit_shifts  # [B, H, N]
         hk = (torch.matmul(K_norm, hash_proj) > 0).float() @ bit_shifts  # [B, H, N]
 
-        match = (hq.unsqueeze(-1) == hk.unsqueeze(-2))  # [B, H, N, N]
+        match = hq.unsqueeze(-1) == hk.unsqueeze(-2)  # [B, H, N, N]
         eye = torch.eye(N, device=Q.device, dtype=torch.bool).unsqueeze(0).unsqueeze(0)
         match = match | eye
 
@@ -286,6 +305,7 @@ def lsh_attention(
 @ATTENTION_REGISTRY.register("phantom_module")
 class PHANTOMAttention(BaseAttention):
     is_custom_attention: bool = True
+
     def __init__(
         self,
         config: Any | None = None,
@@ -299,7 +319,11 @@ class PHANTOMAttention(BaseAttention):
         self.config = config
         comp_config = getattr(config, "compression_config", None)
 
-        cur_rank = rank or getattr(comp_config, "cur_rank", getattr(config, "cur_rank", getattr(config, "svd_rank", 16)))
+        cur_rank = rank or getattr(
+            comp_config,
+            "cur_rank",
+            getattr(config, "cur_rank", getattr(config, "svd_rank", 16)),
+        )
         if phantom_cfg is None:
             phantom_cfg = PHANTOMConfig(cur_rank=cur_rank)
         elif rank is not None:
@@ -307,9 +331,13 @@ class PHANTOMAttention(BaseAttention):
         self.cfg: PHANTOMConfig = phantom_cfg
 
         model_config = config or kwargs.get("model_config")
-        self.hidden_size: int = getattr(model_config, "hidden_size", kwargs.get("hidden_size", 768))
+        self.hidden_size: int = getattr(
+            model_config, "hidden_size", kwargs.get("hidden_size", 768)
+        )
         self.dim: int = self.hidden_size
-        self.num_heads: int = getattr(model_config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+        self.num_heads: int = getattr(
+            model_config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
+        )
         self.num_kv_heads: int = getattr(
             model_config,
             "num_key_value_heads",
@@ -332,11 +360,31 @@ class PHANTOMAttention(BaseAttention):
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
 
-        self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if config else 16
-        self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if config else 32.0
-        self.freeze_base = (self.lora_rank > 0)
+        self.lora_rank = (
+            getattr(
+                config,
+                "lora_rank",
+                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)),
+            )
+            if config
+            else 16
+        )
+        self.lora_alpha = (
+            getattr(
+                config,
+                "lora_alpha",
+                getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
+            )
+            if config
+            else 32.0
+        )
+        self.freeze_base = self.lora_rank > 0
 
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
+        source_attn = (
+            pretrained_attn
+            if pretrained_attn is not None
+            else kwargs.get("source_attn")
+        )
         target_dtype = kwargs.get("dtype")
         if target_dtype is None and source_attn is not None:
             target_dtype = next(source_attn.parameters(), torch.tensor([])).dtype
@@ -344,10 +392,46 @@ class PHANTOMAttention(BaseAttention):
                 target_dtype = torch.float32
 
         # Projections
-        self.q_proj = FactorisedLinear_CUR(self.dim, self.all_head_size, cur_rank=self.cfg.cur_rank, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
-        self.k_proj = FactorisedLinear_CUR(self.dim, self.all_kv_head_size, cur_rank=self.cfg.cur_rank, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
-        self.v_proj = FactorisedLinear_CUR(self.dim, self.all_kv_head_size, cur_rank=self.cfg.cur_rank, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
-        self.out_proj = FactorisedLinear_CUR(self.all_head_size, self.dim, cur_rank=self.cfg.cur_rank, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+        self.q_proj = FactorisedLinear_CUR(
+            self.dim,
+            self.all_head_size,
+            cur_rank=self.cfg.cur_rank,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
+        )
+        self.k_proj = FactorisedLinear_CUR(
+            self.dim,
+            self.all_kv_head_size,
+            cur_rank=self.cfg.cur_rank,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
+        )
+        self.v_proj = FactorisedLinear_CUR(
+            self.dim,
+            self.all_kv_head_size,
+            cur_rank=self.cfg.cur_rank,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
+        )
+        self.out_proj = FactorisedLinear_CUR(
+            self.all_head_size,
+            self.dim,
+            cur_rank=self.cfg.cur_rank,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
+        )
 
         self.query = self.q_proj
         self.key = self.k_proj
@@ -366,12 +450,29 @@ class PHANTOMAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        has_out_lin = (
+            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        )
         is_nested = False
-        if hasattr(src, "self") and hasattr(src.self, "query") or (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
-            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
+        if (
+            hasattr(src, "self")
+            and hasattr(src.self, "query")
+            or (
+                cls_name
+                in [
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                ]
+                or (
+                    cls_name.endswith("SelfAttention")
+                    and "distil" not in cls_name.lower()
+                )
+            )
+            and not has_out_lin
+        ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -389,14 +490,27 @@ class PHANTOMAttention(BaseAttention):
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                if (
+                    (c_attn_mod.__class__.__name__ == "Conv1D")
+                    or (base_c.__class__.__name__ == "Conv1D")
+                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
+                ):
                     c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
+                extracted["q"] = (
+                    c_w[:split_size, :],
+                    c_b[:split_size] if c_b is not None else None,
+                )
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (
+                    c_w[2 * split_size :, :],
+                    c_b[2 * split_size :] if c_b is not None else None,
+                )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -404,10 +518,17 @@ class PHANTOMAttention(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    if (
+                        (c_proj_mod.__class__.__name__ == "Conv1D")
+                        or (base_o.__class__.__name__ == "Conv1D")
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
+                    ):
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    extracted["o"] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
 
         # 2. RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
@@ -415,10 +536,16 @@ class PHANTOMAttention(BaseAttention):
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
-                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                    extracted[proj_key] = (
+                        mod.weight.data.clone(),
+                        mod.bias.data.clone() if mod.bias is not None else None,
+                    )
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
-                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
+                extracted["o"] = (
+                    out_mod.weight.data.clone(),
+                    out_mod.bias.data.clone() if out_mod.bias is not None else None,
+                )
 
         # 3. Flat modules
         else:
@@ -433,13 +560,21 @@ class PHANTOMAttention(BaseAttention):
                     if hasattr(src, name):
                         mod = getattr(src, name)
                         if mod is not None and hasattr(mod, "weight"):
-                            extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                            extracted[proj_key] = (
+                                mod.weight.data.clone(),
+                                mod.bias.data.clone() if mod.bias is not None else None,
+                            )
                             break
 
-        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -448,7 +583,11 @@ class PHANTOMAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing_after:
             logger.warning(
                 f"PHANTOMAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
@@ -467,20 +606,32 @@ class PHANTOMAttention(BaseAttention):
                 w, b = extracted[proj_key]
                 if w is None:
                     if proj_key == "o" and self.is_nested_encoder:
-                        target_mod.copy_cur(torch.eye(self.all_head_size, self.dim), None)
+                        target_mod.copy_cur(
+                            torch.eye(self.all_head_size, self.dim), None
+                        )
                         continue
                     else:
                         logger.warning(f"Missing required weights for {proj_key}")
                         return
 
                 if w.shape != (target_mod.out_features, target_mod.in_features):
-                    if w.t().contiguous().shape == (target_mod.out_features, target_mod.in_features):
+                    if w.t().contiguous().shape == (
+                        target_mod.out_features,
+                        target_mod.in_features,
+                    ):
                         w = w.t().contiguous()
-                    elif w.shape[0] < target_mod.out_features and target_mod.out_features % w.shape[0] == 0:
+                    elif (
+                        w.shape[0] < target_mod.out_features
+                        and target_mod.out_features % w.shape[0] == 0
+                    ):
                         repeats = target_mod.out_features // w.shape[0]
                         w = w.repeat(repeats, 1)
                     else:
-                        full_w = torch.zeros((target_mod.out_features, target_mod.in_features), dtype=w.dtype, device=w.device)
+                        full_w = torch.zeros(
+                            (target_mod.out_features, target_mod.in_features),
+                            dtype=w.dtype,
+                            device=w.device,
+                        )
                         min_0 = min(target_mod.out_features, w.shape[0])
                         min_1 = min(target_mod.in_features, w.shape[1])
                         full_w[:min_0, :min_1].copy_(w[:min_0, :min_1])
@@ -490,7 +641,9 @@ class PHANTOMAttention(BaseAttention):
 
                 fnorm = torch.linalg.norm(target_mod.weight.float()).item()
                 if fnorm < 1e-4:
-                    logger.warning(f"Weight copy notice for {proj_key}: norm {fnorm:.6f} < 1e-4")
+                    logger.warning(
+                        f"Weight copy notice for {proj_key}: norm {fnorm:.6f} < 1e-4"
+                    )
 
         if self.freeze_base:
             for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
@@ -515,8 +668,16 @@ class PHANTOMAttention(BaseAttention):
         H, D = self.num_heads, self.head_dim
 
         Q = self.q_proj(hidden_states).view(B, N, H, D).permute(0, 2, 1, 3)
-        K = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, D).permute(0, 2, 1, 3)
-        V = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, D).permute(0, 2, 1, 3)
+        K = (
+            self.k_proj(hidden_states)
+            .view(B, N, self.num_kv_heads, D)
+            .permute(0, 2, 1, 3)
+        )
+        V = (
+            self.v_proj(hidden_states)
+            .view(B, N, self.num_kv_heads, D)
+            .permute(0, 2, 1, 3)
+        )
 
         # Apply RoPE if provided
         if position_embeddings is None:
@@ -551,13 +712,19 @@ class PHANTOMAttention(BaseAttention):
         # head_mask handling
         if head_mask is not None:
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
-                context = context * head_mask.view(1, self.num_heads, 1, 1).to(context.dtype)
+                context = context * head_mask.view(1, self.num_heads, 1, 1).to(
+                    context.dtype
+                )
             elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                context = context * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(context.dtype)
+                context = context * head_mask.view(
+                    head_mask.size(0), self.num_heads, 1, 1
+                ).to(context.dtype)
             elif head_mask.dim() == 4:
                 context = context * head_mask.to(context.dtype)
 
-        context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+        context = (
+            context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+        )
 
         if self.is_nested_encoder:
             return context, None
@@ -597,7 +764,11 @@ def inject_phantom(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -643,9 +814,13 @@ def inject_phantom(
                 return None
             if "PHANTOM" in src_attn.__class__.__name__:
                 return None
-            if hasattr(src_attn, "inner") and isinstance(src_attn.inner, PHANTOMAttention):
+            if hasattr(src_attn, "inner") and isinstance(
+                src_attn.inner, PHANTOMAttention
+            ):
                 return None
-            if hasattr(src_attn, "_wrapped_attention") and isinstance(src_attn._wrapped_attention, PHANTOMAttention):
+            if hasattr(src_attn, "_wrapped_attention") and isinstance(
+                src_attn._wrapped_attention, PHANTOMAttention
+            ):
                 return None
 
         if target is not None:
@@ -659,7 +834,9 @@ def inject_phantom(
                     return None
                 if hasattr(cand, "inner") and isinstance(cand.inner, PHANTOMAttention):
                     return None
-                if hasattr(cand, "_wrapped_attention") and isinstance(cand._wrapped_attention, PHANTOMAttention):
+                if hasattr(cand, "_wrapped_attention") and isinstance(
+                    cand._wrapped_attention, PHANTOMAttention
+                ):
                     return None
 
         # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
@@ -672,23 +849,36 @@ def inject_phantom(
             cfg = src_attn.config
 
         hidden_size = (
-            kwargs.get("hidden_size") or
-            getattr(src_attn, 'hidden_size', None) or
-            getattr(src_attn, 'embed_dim', None) or
-            (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
-            (src_attn.query.in_features if hasattr(src_attn, 'query') and hasattr(src_attn.query, 'in_features') else None) or
-            (src_attn.q_lin.in_features if hasattr(src_attn, 'q_lin') and hasattr(src_attn.q_lin, 'in_features') else None) or
-            (target.in_features if hasattr(target, 'in_features') else None) or
-            getattr(cfg, 'hidden_size', None) or
-            getattr(cfg, 'd_model', 64)
+            kwargs.get("hidden_size")
+            or getattr(src_attn, "hidden_size", None)
+            or getattr(src_attn, "embed_dim", None)
+            or (
+                src_attn.q_proj.in_features
+                if hasattr(src_attn, "q_proj")
+                and hasattr(src_attn.q_proj, "in_features")
+                else None
+            )
+            or (
+                src_attn.query.in_features
+                if hasattr(src_attn, "query") and hasattr(src_attn.query, "in_features")
+                else None
+            )
+            or (
+                src_attn.q_lin.in_features
+                if hasattr(src_attn, "q_lin") and hasattr(src_attn.q_lin, "in_features")
+                else None
+            )
+            or (target.in_features if hasattr(target, "in_features") else None)
+            or getattr(cfg, "hidden_size", None)
+            or getattr(cfg, "d_model", 64)
         )
         num_heads = (
-            kwargs.get("num_heads") or
-            kwargs.get("num_attention_heads") or
-            getattr(src_attn, 'num_heads', None) or
-            getattr(src_attn, 'num_attention_heads', None) or
-            getattr(cfg, 'num_attention_heads', None) or
-            getattr(cfg, 'num_heads', 4)
+            kwargs.get("num_heads")
+            or kwargs.get("num_attention_heads")
+            or getattr(src_attn, "num_heads", None)
+            or getattr(src_attn, "num_attention_heads", None)
+            or getattr(cfg, "num_attention_heads", None)
+            or getattr(cfg, "num_heads", 4)
         )
 
         new_attn = PHANTOMAttention(
@@ -723,5 +913,7 @@ def inject_phantom(
 
 # Aliases and Registry
 @ATTENTION_REGISTRY.register("phantom_inject")
-def inject_phantom_attention(*args: Any, **kwargs: Any) -> PHANTOMAttention | nn.Module | None:
+def inject_phantom_attention(
+    *args: Any, **kwargs: Any
+) -> PHANTOMAttention | nn.Module | None:
     return inject_phantom(*args, **kwargs)

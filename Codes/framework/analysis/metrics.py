@@ -67,7 +67,7 @@ class MetricsTracker:
             self._flush()
 
     def _flush(self) -> None:
-        """ flush."""
+        """flush."""
         if self.filepath:
             with open(self.filepath, "a") as f:
                 for rec in self.records:

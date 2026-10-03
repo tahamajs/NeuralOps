@@ -1,7 +1,8 @@
+import framework.attentions.aegis_hybrid
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.aegis_hybrid
+
 
 def test_aegis_hybrid_module_present():
     assert hasattr(framework.attentions, 'aegis_hybrid')

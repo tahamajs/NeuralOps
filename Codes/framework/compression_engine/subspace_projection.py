@@ -30,12 +30,11 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
-logger = logging.getLogger(__name__)   # SP-FIX-02
+logger = logging.getLogger(__name__)  # SP-FIX-02
 
 
 # ===========================================================================
@@ -74,6 +73,7 @@ class SubspaceLinear(nn.Module):
     Forward:
       y = ((x @ A^T) @ B^T) + bias + (lora_B @ lora_A @ x) * scaling
     """
+
     # SP-FIX-01
     is_custom_attention: bool = False
 
@@ -91,8 +91,8 @@ class SubspaceLinear(nn.Module):
         super().__init__()
         self.in_features = int(in_features)
         self.out_features = int(out_features)
-        self.nf = self.out_features   # Conv1D compatibility
-        self.nx = self.in_features    # Conv1D compatibility
+        self.nf = self.out_features  # Conv1D compatibility
+        self.nx = self.in_features  # Conv1D compatibility
         self.rank = max(1, min(rank, in_features, out_features))
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
@@ -127,12 +127,14 @@ class SubspaceLinear(nn.Module):
 
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, in_features),
-                            dtype=torch.float32, device=device)
+                torch.empty(
+                    (self.lora_r, in_features), dtype=torch.float32, device=device
+                )
             )
             self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_r),
-                            dtype=torch.float32, device=device)
+                torch.zeros(
+                    (out_features, self.lora_r), dtype=torch.float32, device=device
+                )
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -157,13 +159,20 @@ class SubspaceLinear(nn.Module):
         B = self.B if self.B.dtype == x_flat.dtype else self.B.to(x_flat.dtype)
         b = None
         if self.bias is not None:
-            b = self.bias if self.bias.dtype == x_flat.dtype else self.bias.to(x_flat.dtype)
+            b = (
+                self.bias
+                if self.bias.dtype == x_flat.dtype
+                else self.bias.to(x_flat.dtype)
+            )
 
-        x_proj = F.linear(x_flat, A)               # (K, rank)
-        out = F.linear(x_proj, B, b)                # (K, out)
+        x_proj = F.linear(x_flat, A)  # (K, rank)
+        out = F.linear(x_proj, B, b)  # (K, out)
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B) * self.scaling
+            lora_out = (
+                F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B)
+                * self.scaling
+            )
             out = out + lora_out.to(out.dtype)
 
         return out.view(*orig_shape[:-1], self.out_features)
@@ -195,9 +204,7 @@ class SubspaceLinear(nn.Module):
             out_f, in_f = W.shape
 
         bias = (
-            base_mod.bias.data
-            if getattr(base_mod, "bias", None) is not None
-            else None
+            base_mod.bias.data if getattr(base_mod, "bias", None) is not None else None
         )
 
         # ---------------- Rank budget (SP-FIX-07) ----------------
@@ -207,12 +214,15 @@ class SubspaceLinear(nn.Module):
 
         # ---------------- Existing LoRA detection ----------------
         has_existing_lora = (
-            hasattr(linear, "lora_A") and hasattr(linear, "lora_B")
+            hasattr(linear, "lora_A")
+            and hasattr(linear, "lora_B")
             and _get_lora_param(linear.lora_A) is not None
             and _get_lora_param(linear.lora_B) is not None
         )
         existing_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
-        effective_lora_r = int(existing_r) if (has_existing_lora and existing_r > 0) else int(lora_r)
+        effective_lora_r = (
+            int(existing_r) if (has_existing_lora and existing_r > 0) else int(lora_r)
+        )
         effective_lora_alpha = float(
             getattr(linear, "lora_alpha", getattr(linear, "alpha", lora_alpha))
         )
@@ -230,8 +240,8 @@ class SubspaceLinear(nn.Module):
 
         # ---------------- SVD factorization ----------------
         U, S, Vt = torch.linalg.svd(W.float(), full_matrices=False)
-        A_data = Vt[:r, :]                              # (r, in_f)
-        B_data = U[:, :r] * S[:r].unsqueeze(0)          # (out_f, r)
+        A_data = Vt[:r, :]  # (r, in_f)
+        B_data = U[:, :r] * S[:r].unsqueeze(0)  # (out_f, r)
 
         with torch.no_grad():
             subspace_layer.A.data.copy_(A_data.to(dtype=W.dtype, device=W.device))
@@ -242,18 +252,28 @@ class SubspaceLinear(nn.Module):
                 subspace_layer.bias.data.copy_(bias.to(dtype=W.dtype, device=W.device))
 
         # ---------------- LoRA transfer (SP-FIX-04) ----------------
-        if has_existing_lora and subspace_layer.lora_A is not None and subspace_layer.lora_B is not None:
+        if (
+            has_existing_lora
+            and subspace_layer.lora_A is not None
+            and subspace_layer.lora_B is not None
+        ):
             try:
                 src_A = _get_lora_param(linear.lora_A)
                 src_B = _get_lora_param(linear.lora_B)
                 if src_A is not None and src_B is not None:
                     if src_A.shape == subspace_layer.lora_A.shape:
                         subspace_layer.lora_A.data.copy_(
-                            src_A.to(subspace_layer.lora_A.device, dtype=subspace_layer.lora_A.dtype)
+                            src_A.to(
+                                subspace_layer.lora_A.device,
+                                dtype=subspace_layer.lora_A.dtype,
+                            )
                         )
                     if src_B.shape == subspace_layer.lora_B.shape:
                         subspace_layer.lora_B.data.copy_(
-                            src_B.to(subspace_layer.lora_B.device, dtype=subspace_layer.lora_B.dtype)
+                            src_B.to(
+                                subspace_layer.lora_B.device,
+                                dtype=subspace_layer.lora_B.dtype,
+                            )
                         )
             except Exception as e:
                 logger.debug("SubspaceLinear LoRA transfer failed: %s", e)
@@ -270,6 +290,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
     """
     Subspace Projection Compression Engine.
     """
+
     # SP-FIX-01
     is_custom_attention: bool = False
 
@@ -295,8 +316,9 @@ class SubspaceProjectionCompressor(BaseCompressor):
         )
         cfg_obj = cfg or kwargs.get("comp_config")
 
-        self.rank = int(rank or _cfg_get(cfg_obj, "subspace_rank",
-                                          _cfg_get(cfg_obj, "rank", 64)))
+        self.rank = int(
+            rank or _cfg_get(cfg_obj, "subspace_rank", _cfg_get(cfg_obj, "rank", 64))
+        )
         self.method = str(method or _cfg_get(cfg_obj, "subspace_method", "svd"))
         if self.method != "svd":
             logger.warning(
@@ -333,10 +355,19 @@ class SubspaceProjectionCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
-        if any(k in name_l for k in (
-            "classifier", "score", "lm_head", "pooler", "embedding",
-            "layernorm", "rmsnorm", "batchnorm",
-        )):
+        if any(
+            k in name_l
+            for k in (
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embedding",
+                "layernorm",
+                "rmsnorm",
+                "batchnorm",
+            )
+        ):
             return False
 
         if isinstance(module, SubspaceLinear):
@@ -344,8 +375,17 @@ class SubspaceProjectionCompressor(BaseCompressor):
 
         if self.target_attention_only:
             attn_keywords = (
-                "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-                "c_attn", "c_proj", "query", "key", "value",
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "c_attn",
+                "c_proj",
+                "query",
+                "key",
+                "value",
             )
             if not any(k in name_l for k in attn_keywords):
                 return False
@@ -371,7 +411,9 @@ class SubspaceProjectionCompressor(BaseCompressor):
         return any(t in name for t in self.target_layers)
 
     # ------------------------------------------------------------------
-    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
+    def compress(
+        self, model: nn.Module | None = None
+    ) -> tuple[nn.Module, dict[str, Any]]:
         from framework.core.model_utils import replace_module
 
         if model is not None:
@@ -379,9 +421,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
             try:
                 self._original_params = self._count_params(self.model)
             except Exception:
-                self._original_params = sum(
-                    p.numel() for p in self.model.parameters()
-                )
+                self._original_params = sum(p.numel() for p in self.model.parameters())
 
         self.compressed_layers = []
         self.fallback_layers = []
@@ -410,19 +450,14 @@ class SubspaceProjectionCompressor(BaseCompressor):
             cls_name = base_mod.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(base_mod, "nf")
 
-            W_orig = (
-                raw_w.t().contiguous().float()
-                if is_conv1d else raw_w.float()
-            )
+            W_orig = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
             max_rank = min(W_orig.shape[0], W_orig.shape[1])
             r = min(self.rank, max_rank)
 
             # storage before
             orig_bytes = raw_w.numel() * raw_w.element_size()
             if getattr(base_mod, "bias", None) is not None:
-                orig_bytes += (
-                    base_mod.bias.numel() * base_mod.bias.element_size()
-                )
+                orig_bytes += base_mod.bias.numel() * base_mod.bias.element_size()
             total_orig_bytes += orig_bytes
 
             try:
@@ -447,22 +482,24 @@ class SubspaceProjectionCompressor(BaseCompressor):
             W_rec = new_layer.weight.float()
             if is_conv1d:
                 W_orig_cmp = W_orig
-                W_rec_cmp = W_rec.t().contiguous() if W_rec.shape != W_orig.shape else W_rec
+                W_rec_cmp = (
+                    W_rec.t().contiguous() if W_rec.shape != W_orig.shape else W_rec
+                )
             else:
                 W_orig_cmp = W_orig
                 W_rec_cmp = W_rec
 
             denom = torch.norm(W_orig_cmp, p="fro").clamp_min(1e-12)
-            err = float(
-                (torch.norm(W_orig_cmp - W_rec_cmp, p="fro") / denom).item()
-            )
+            err = float((torch.norm(W_orig_cmp - W_rec_cmp, p="fro") / denom).item())
             self.layer_errors[name] = err
 
             if self.fallback_to_original and err > self.max_error:
                 logger.warning(
                     "SubspaceProjection: err=%.4f on %s > max_error=%.4f; "
                     "keeping original.",
-                    err, name, self.max_error,
+                    err,
+                    name,
+                    self.max_error,
                 )
                 self.fallback_layers.append(name)
                 total_comp_bytes += orig_bytes
@@ -480,16 +517,20 @@ class SubspaceProjectionCompressor(BaseCompressor):
                 else:
                     replace_module(self.model, name, new_layer)
             except Exception as e:
-                logger.warning("SubspaceProjection replacement failed on %s: %s", name, e)
+                logger.warning(
+                    "SubspaceProjection replacement failed on %s: %s", name, e
+                )
                 self.fallback_layers.append(name)
                 total_comp_bytes += orig_bytes
                 continue
 
-            self.compressed_layers.append({
-                "name": name,
-                "rank": new_layer.rank,
-                "relative_error": float(err),
-            })
+            self.compressed_layers.append(
+                {
+                    "name": name,
+                    "rank": new_layer.rank,
+                    "relative_error": float(err),
+                }
+            )
 
             # storage after
             comp_bytes = (
@@ -522,14 +563,16 @@ class SubspaceProjectionCompressor(BaseCompressor):
                         hidden = getattr(cfg, "hidden_size", None) if cfg else None
                         if hidden is None:
                             first_lin = next(
-                                (m for m in self.model.modules()
-                                 if isinstance(m, nn.Linear)), None
+                                (
+                                    m
+                                    for m in self.model.modules()
+                                    if isinstance(m, nn.Linear)
+                                ),
+                                None,
                             )
                             hidden = getattr(first_lin, "in_features", 8)
                         dt = next(self.model.parameters()).dtype
-                        self.model(
-                            torch.randn(1, 8, hidden, device=dev, dtype=dt)
-                        )
+                        self.model(torch.randn(1, 8, hidden, device=dev, dtype=dt))
         except Exception as e:
             logger.warning("SubspaceProjection forward sanity check failed: %s", e)
             forward_check_success = False
@@ -540,21 +583,18 @@ class SubspaceProjectionCompressor(BaseCompressor):
         try:
             self._compressed_params = self._count_params(self.model)
         except Exception:
-            self._compressed_params = sum(
-                p.numel() for p in self.model.parameters()
-            )
+            self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
         avg_err = (
             sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
-            if self.layer_errors else 0.0
+            if self.layer_errors
+            else 0.0
         )
         storage_ratio = (
-            total_orig_bytes / max(1, total_comp_bytes)
-            if total_comp_bytes > 0 else 1.0
+            total_orig_bytes / max(1, total_comp_bytes) if total_comp_bytes > 0 else 1.0
         )
         effective_ratio = (
-            total_comp_bytes / max(1, total_orig_bytes)
-            if total_orig_bytes > 0 else 1.0
+            total_comp_bytes / max(1, total_orig_bytes) if total_orig_bytes > 0 else 1.0
         )
 
         try:
@@ -562,33 +602,33 @@ class SubspaceProjectionCompressor(BaseCompressor):
         except Exception:
             stats = {}
 
-        stats.update({
-            "compressed_layer_count": len(self.compressed_layers),
-            "num_compressed": len(self.compressed_layers),
-            "fallback_layers": self.fallback_layers,
-            "fallback_layer_count": len(self.fallback_layers),
-            "skipped_layers": self.skipped_layers,
-            "skipped_layer_count": len(self.skipped_layers),
-            "compressed_layers": self.compressed_layers,
-            "layer_errors": self.layer_errors,
-            "avg_reconstruction_error": avg_err,
-            "subspace_rank": self.rank,
-            "subspace_method": self.method,
-            "target_attention_only": self.target_attention_only,
-            "fallback_to_original": self.fallback_to_original,
-            "max_error": self.max_error,
-            "lora_r": self.lora_r,
-            "lora_alpha": self.lora_alpha,
-            "orig_storage_bytes": total_orig_bytes,
-            "comp_storage_bytes": total_comp_bytes,
-            "storage_compression_ratio": round(storage_ratio, 3),
-            "effective_parameter_ratio": round(effective_ratio, 4),
-            "storage_reduction_pct": round(
-                100.0 * (1.0 - effective_ratio), 2
-            ),
-            "forward_check_success": forward_check_success,
-            "method": "subspace_projection",
-        })
+        stats.update(
+            {
+                "compressed_layer_count": len(self.compressed_layers),
+                "num_compressed": len(self.compressed_layers),
+                "fallback_layers": self.fallback_layers,
+                "fallback_layer_count": len(self.fallback_layers),
+                "skipped_layers": self.skipped_layers,
+                "skipped_layer_count": len(self.skipped_layers),
+                "compressed_layers": self.compressed_layers,
+                "layer_errors": self.layer_errors,
+                "avg_reconstruction_error": avg_err,
+                "subspace_rank": self.rank,
+                "subspace_method": self.method,
+                "target_attention_only": self.target_attention_only,
+                "fallback_to_original": self.fallback_to_original,
+                "max_error": self.max_error,
+                "lora_r": self.lora_r,
+                "lora_alpha": self.lora_alpha,
+                "orig_storage_bytes": total_orig_bytes,
+                "comp_storage_bytes": total_comp_bytes,
+                "storage_compression_ratio": round(storage_ratio, 3),
+                "effective_parameter_ratio": round(effective_ratio, 4),
+                "storage_reduction_pct": round(100.0 * (1.0 - effective_ratio), 2),
+                "forward_check_success": forward_check_success,
+                "method": "subspace_projection",
+            }
+        )
         self.stats = stats
         return self.model, stats
 

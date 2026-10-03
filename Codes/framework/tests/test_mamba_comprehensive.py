@@ -1,12 +1,10 @@
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
-from types import SimpleNamespace
-from framework.attentions.mamba import (
-    Mamba,
-    inject_mamba,
-    LoRALinear,
-)
+from framework.attentions.mamba import LoRALinear, Mamba, inject_mamba
+
 
 def test_mamba_lora_config_independence():
     # 1. config=None, comp_config present

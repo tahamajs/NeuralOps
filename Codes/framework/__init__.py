@@ -12,19 +12,24 @@ from typing import Any, List
 
 __version__ = "0.1.0"
 
+import importlib.machinery
+import importlib.util
+
 # Transparent Import Hook for Cleaned Submodule Aliases
 import sys
-import importlib.util
-import importlib.machinery
 from importlib.abc import MetaPathFinder
+
 
 class _AliasLoader:
     def __init__(self, mod):
         self.mod = mod
+
     def create_module(self, spec):
         return self.mod
+
     def exec_module(self, module):
         pass
+
 
 class _ModuleAliasFinder(MetaPathFinder):
     _ALIASES = {
@@ -151,6 +156,7 @@ class _ModuleAliasFinder(MetaPathFinder):
                 pass
         return None
 
+
 if not any(isinstance(finder, _ModuleAliasFinder) for finder in sys.meta_path):
     sys.meta_path.insert(0, _ModuleAliasFinder())
 
@@ -162,20 +168,30 @@ _LAZY_EXPORTS = {
     "BaseCompressor": ("framework.core.base", "BaseCompressor"),
     "ATTENTION_REGISTRY": ("framework.core.registry", "ATTENTION_REGISTRY"),
     "COMPRESSOR_REGISTRY": ("framework.core.registry", "COMPRESSOR_REGISTRY"),
-    "available_attention_types": ("framework.core.registry", "available_attention_types"),
+    "available_attention_types": (
+        "framework.core.registry",
+        "available_attention_types",
+    ),
     "register_attention": ("framework.core.registry", "register_attention"),
     "register_compressor": ("framework.core.registry", "register_compressor"),
     "inject_attention": ("framework.core.attention_utils", "inject_attention"),
     "compress_model": ("framework.core.compression_engine", "compress_model"),
     "CompressionPipeline": ("framework.core.compression_engine", "CompressionPipeline"),
     "detect_architecture": ("framework.core.architecture", "detect_architecture"),
-    "UnifiedTransformerConfig": ("framework.core.model_wrapper", "UnifiedTransformerConfig"),
-    "UnifiedTransformerModel": ("framework.core.model_wrapper", "UnifiedTransformerModel"),
-    "MultiModeBenchmarkRunner": ("framework.core.multi_mode_benchmark", "MultiModeBenchmarkRunner"),
-
+    "UnifiedTransformerConfig": (
+        "framework.core.model_wrapper",
+        "UnifiedTransformerConfig",
+    ),
+    "UnifiedTransformerModel": (
+        "framework.core.model_wrapper",
+        "UnifiedTransformerModel",
+    ),
+    "MultiModeBenchmarkRunner": (
+        "framework.core.multi_mode_benchmark",
+        "MultiModeBenchmarkRunner",
+    ),
     # Models
     "BaseModel": ("framework.models", "BaseModel"),
-
     # Trainers & Metrics
     "BaseTrainer": ("framework.trainer.base_trainer", "BaseTrainer"),
     "HuggingFaceTrainer": ("framework.trainer.hf_trainer", "HuggingFaceTrainer"),
@@ -183,7 +199,6 @@ _LAZY_EXPORTS = {
     "TrainerRegistry": ("framework.trainer.registry", "TrainerRegistry"),
     "get_task_metrics": ("framework.trainer.metrics", "get_task_metrics"),
     "aggregate_results": ("framework.trainer.metrics", "aggregate_results"),
-
     # Data & Benchmark Datasets
     "DataConfig": ("framework.data.base", "DataConfig"),
     "TaskType": ("framework.data.base", "TaskType"),
@@ -193,54 +208,126 @@ _LAZY_EXPORTS = {
     "load_dataset": ("framework.data.dataset_loader", "load_dataset"),
     "load_glue_local": ("framework.data.glue_loader", "load_glue_local"),
     "GLUE_TASK_KEYS": ("framework.data.glue_loader", "GLUE_TASK_KEYS"),
-    "BenchmarkDatasetInfo": ("framework.data.benchmark_datasets", "BenchmarkDatasetInfo"),
-    "BenchmarkDatasetRegistry": ("framework.data.benchmark_datasets", "BenchmarkDatasetRegistry"),
-    "load_benchmark_dataset": ("framework.data.benchmark_datasets", "load_benchmark_dataset"),
-    "generate_synthetic_data": ("framework.data.synthetic_generator", "generate_synthetic_data"),
-    "run_universal_generation": ("framework.data.synthetic_generator", "run_universal_generation"),
-
+    "BenchmarkDatasetInfo": (
+        "framework.data.benchmark_datasets",
+        "BenchmarkDatasetInfo",
+    ),
+    "BenchmarkDatasetRegistry": (
+        "framework.data.benchmark_datasets",
+        "BenchmarkDatasetRegistry",
+    ),
+    "load_benchmark_dataset": (
+        "framework.data.benchmark_datasets",
+        "load_benchmark_dataset",
+    ),
+    "generate_synthetic_data": (
+        "framework.data.synthetic_generator",
+        "generate_synthetic_data",
+    ),
+    "run_universal_generation": (
+        "framework.data.synthetic_generator",
+        "run_universal_generation",
+    ),
     # Benchmark & Pipeline
-    "build_attention_module": ("framework.benchmark_attention", "build_attention_module"),
-    "benchmark_single_module": ("framework.benchmark_attention", "benchmark_single_module"),
+    "build_attention_module": (
+        "framework.benchmark_attention",
+        "build_attention_module",
+    ),
+    "benchmark_single_module": (
+        "framework.benchmark_attention",
+        "benchmark_single_module",
+    ),
     "run_benchmark_suite": ("framework.benchmark_attention", "run_benchmark_suite"),
     "ResultWriter": ("framework.pipeline.result_writer", "ResultWriter"),
-
     # Evaluation & Robustness
     "ABTester": ("framework.evaluation.ab_testing", "ABTester"),
     "ABTestResult": ("framework.evaluation.ab_testing", "ABTestResult"),
     "FairnessEvaluator": ("framework.evaluation.fairness", "FairnessEvaluator"),
     "FairnessReport": ("framework.evaluation.fairness", "FairnessReport"),
-    "LabelQualityDetector": ("framework.evaluation.label_quality", "LabelQualityDetector"),
+    "LabelQualityDetector": (
+        "framework.evaluation.label_quality",
+        "LabelQualityDetector",
+    ),
     "LabelQualityReport": ("framework.evaluation.label_quality", "LabelQualityReport"),
     "RetrainDecision": ("framework.evaluation.retraining", "RetrainDecision"),
     "RetrainPolicy": ("framework.evaluation.retraining", "RetrainPolicy"),
-    "RetrainingOrchestrator": ("framework.evaluation.retraining", "RetrainingOrchestrator"),
+    "RetrainingOrchestrator": (
+        "framework.evaluation.retraining",
+        "RetrainingOrchestrator",
+    ),
     "RobustnessReport": ("framework.evaluation.robustness", "RobustnessReport"),
-    "TextAdversarialTester": ("framework.evaluation.robustness", "TextAdversarialTester"),
-
+    "TextAdversarialTester": (
+        "framework.evaluation.robustness",
+        "TextAdversarialTester",
+    ),
     # Visualization & Dashboards
     "ChartGenerator": ("framework.visualization.chart_generator", "ChartGenerator"),
     "BaseVisualizer": ("framework.visualization.base", "BaseVisualizer"),
     "VISUALIZER_REGISTRY": ("framework.visualization.base", "VISUALIZER_REGISTRY"),
     "PLOT_REGISTRY": ("framework.visualization.plot_registry", "PLOT_REGISTRY"),
-    "register_default_plots": ("framework.visualization.plot_registry", "register_default_plots"),
-    "generate_csv_summary": ("framework.visualization.report_generator", "generate_csv_summary"),
-    "generate_html_report": ("framework.visualization.report_generator", "generate_html_report"),
-    "generate_latex_table": ("framework.visualization.report_generator", "generate_latex_table"),
-    "plot_accuracy_vs_rank": ("framework.visualization.report_generator", "plot_accuracy_vs_rank"),
-    "plot_radar_chart": ("framework.visualization.report_generator", "plot_radar_chart"),
-    "plot_attention_heatmap": ("framework.visualization.benchmark_visualizer", "plot_attention_heatmap"),
-    "plot_singular_value_decay": ("framework.visualization.benchmark_visualizer", "plot_singular_value_decay"),
-    "plot_kv_cache_scaling": ("framework.visualization.benchmark_visualizer", "plot_kv_cache_scaling"),
-    "plot_pareto_frontier": ("framework.visualization.benchmark_visualizer", "plot_pareto_frontier"),
-    "plot_dataset_radar_chart": ("framework.visualization.benchmark_visualizer", "plot_dataset_radar_chart"),
-    "plot_layerwise_sparsity_rank": ("framework.visualization.benchmark_visualizer", "plot_layerwise_sparsity_rank"),
-    "generate_dashboard_html": ("framework.visualization.dashboard_generator", "generate_dashboard_html"),
-    "generate_summary_json": ("framework.visualization.dashboard_generator", "generate_summary_json"),
+    "register_default_plots": (
+        "framework.visualization.plot_registry",
+        "register_default_plots",
+    ),
+    "generate_csv_summary": (
+        "framework.visualization.report_generator",
+        "generate_csv_summary",
+    ),
+    "generate_html_report": (
+        "framework.visualization.report_generator",
+        "generate_html_report",
+    ),
+    "generate_latex_table": (
+        "framework.visualization.report_generator",
+        "generate_latex_table",
+    ),
+    "plot_accuracy_vs_rank": (
+        "framework.visualization.report_generator",
+        "plot_accuracy_vs_rank",
+    ),
+    "plot_radar_chart": (
+        "framework.visualization.report_generator",
+        "plot_radar_chart",
+    ),
+    "plot_attention_heatmap": (
+        "framework.visualization.benchmark_visualizer",
+        "plot_attention_heatmap",
+    ),
+    "plot_singular_value_decay": (
+        "framework.visualization.benchmark_visualizer",
+        "plot_singular_value_decay",
+    ),
+    "plot_kv_cache_scaling": (
+        "framework.visualization.benchmark_visualizer",
+        "plot_kv_cache_scaling",
+    ),
+    "plot_pareto_frontier": (
+        "framework.visualization.benchmark_visualizer",
+        "plot_pareto_frontier",
+    ),
+    "plot_dataset_radar_chart": (
+        "framework.visualization.benchmark_visualizer",
+        "plot_dataset_radar_chart",
+    ),
+    "plot_layerwise_sparsity_rank": (
+        "framework.visualization.benchmark_visualizer",
+        "plot_layerwise_sparsity_rank",
+    ),
+    "generate_dashboard_html": (
+        "framework.visualization.dashboard_generator",
+        "generate_dashboard_html",
+    ),
+    "generate_summary_json": (
+        "framework.visualization.dashboard_generator",
+        "generate_summary_json",
+    ),
     "set_plot_style": ("framework.visualization.utils", "set_plot_style"),
     "save_figure": ("framework.visualization.utils", "save_figure"),
     "get_color_palette": ("framework.visualization.utils", "get_color_palette"),
-    "create_custom_colormap": ("framework.visualization.utils", "create_custom_colormap"),
+    "create_custom_colormap": (
+        "framework.visualization.utils",
+        "create_custom_colormap",
+    ),
 }
 
 __all__: list[str] = ["__version__"] + sorted(list(_LAZY_EXPORTS.keys()))

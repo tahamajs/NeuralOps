@@ -1,15 +1,14 @@
 import math
 import sys
+
 import torch
 import torch.nn as nn
 
 sys.path.insert(0, "Codes")
 
-from framework.attentions.hybrid_attention import (
-    HybridAttention,
-    WeightedEnsembleAttention,
-    _extract_valid_mask,
-)
+from framework.attentions.hybrid_attention import (HybridAttention,
+                                                   WeightedEnsembleAttention,
+                                                   _extract_valid_mask)
 
 
 def test_basic_construction():

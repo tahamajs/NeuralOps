@@ -1,9 +1,9 @@
 """
 GeLoRA: Intrinsic dimension estimation for adaptive rank selection.
 """
-from typing import Any
 
 import logging
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -66,6 +66,7 @@ def collect_hidden_states(model, dataloader, num_batches=10, max_samples=800) ->
 
     def hook_fn(layer_idx) -> Any:
         """Hook fn."""
+
         def hook(module, input, output) -> None:
             """Hook."""
             hs = output[0].detach() if isinstance(output, tuple) else output.detach()

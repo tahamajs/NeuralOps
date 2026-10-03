@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.moba_attention import MoBAAttention, inject_moba_attention
+from framework.attentions.moba_attention import (MoBAAttention,
+                                                 inject_moba_attention)
 
 
 class MockConfig:

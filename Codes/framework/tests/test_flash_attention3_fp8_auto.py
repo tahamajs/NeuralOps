@@ -1,7 +1,8 @@
+import framework.attentions.flash_attention3_fp8
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.flash_attention3_fp8
+
 
 def test_flash_attention3_fp8_module_present():
     assert hasattr(framework.attentions, 'flash_attention3_fp8')

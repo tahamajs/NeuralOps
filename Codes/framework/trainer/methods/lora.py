@@ -1,10 +1,10 @@
 """
 LoRA, DoRA, DisLoRA implementations.
 """
-from typing import Any
 
 import logging
 import math
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -129,7 +129,7 @@ class DisLoRALinear(nn.Module):
 
 
 def _apply_adapters(model, r, alpha, dropout, method_type="lora", **kwargs) -> None:
-    """ apply adapters."""
+    """apply adapters."""
     target_substrings = [
         "query",
         "key",

@@ -1,16 +1,12 @@
 """Tests for CHELA-SLAY Attention Module."""
 
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
-from types import SimpleNamespace
-
-from framework.attentions.chela_slay import (
-    ChelaSlayAttention,
-    LoRALinear,
-    _rotate_half,
-    inject_chela_slay,
-)
+from framework.attentions.chela_slay import (ChelaSlayAttention, LoRALinear,
+                                             _rotate_half, inject_chela_slay)
 from framework.core.registry import ATTENTION_REGISTRY
 
 

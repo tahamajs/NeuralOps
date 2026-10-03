@@ -2,7 +2,10 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.core.attention_utils import _slice_fused_qkv_weights, _copy_projection_weights, compute_reconstruction_error
+from framework.core.attention_utils import (_copy_projection_weights,
+                                            _slice_fused_qkv_weights,
+                                            compute_reconstruction_error)
+
 
 @pytest.fixture(autouse=True)
 def set_seed():

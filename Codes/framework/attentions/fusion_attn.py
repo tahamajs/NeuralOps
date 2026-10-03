@@ -49,7 +49,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
@@ -104,8 +103,12 @@ def apply_rotary_pos_emb(
     if rotary_dim < head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_e = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot_e = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q_rot_e = (q_rot * cos.to(q_rot.dtype)) + (
+            _rotate_half(q_rot) * sin.to(q_rot.dtype)
+        )
+        k_rot_e = (k_rot * cos.to(k_rot.dtype)) + (
+            _rotate_half(k_rot) * sin.to(k_rot.dtype)
+        )
         q = torch.cat([q_rot_e, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_e
         k = torch.cat([k_rot_e, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_e
     else:
@@ -189,11 +192,17 @@ class LoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
-        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
+        b = (
+            self.bias.to(x.dtype)
+            if (self.bias is not None and self.bias.dtype != x.dtype)
+            else self.bias
+        )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            bb = (
+                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            )
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -201,10 +210,15 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 # FUSIONATTN
 # ===========================================================================
-@ATTENTION_REGISTRY.register("fusion_attn", supports_causal=True,
-                              supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("fusion_attention", supports_causal=True,
-                              supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "fusion_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True
+)
+@ATTENTION_REGISTRY.register(
+    "fusion_attention",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
 class FUSIONATTN(BaseAttention):
     """
     Hybrid sparse attention with block gating.
@@ -213,6 +227,7 @@ class FUSIONATTN(BaseAttention):
       * Short sequence (N <= 128) or cross-attention  → dense attention
       * Long sequence                                  → block-gated sparse
     """
+
     is_custom_attention: bool = True
     supports_causal: bool = True
     supports_bidirectional: bool = True
@@ -237,12 +252,20 @@ class FUSIONATTN(BaseAttention):
 
         # ---- resolve hidden_size / num_heads ----
         if config is not None:
-            hidden_size = int(getattr(config, "hidden_size",
-                              getattr(config, "d_model",
-                              getattr(config, "n_embd", hidden_size))))
-            num_heads = int(getattr(config, "num_attention_heads",
-                            getattr(config, "num_heads",
-                            getattr(config, "n_heads", num_heads))))
+            hidden_size = int(
+                getattr(
+                    config,
+                    "hidden_size",
+                    getattr(config, "d_model", getattr(config, "n_embd", hidden_size)),
+                )
+            )
+            num_heads = int(
+                getattr(
+                    config,
+                    "num_attention_heads",
+                    getattr(config, "num_heads", getattr(config, "n_heads", num_heads)),
+                )
+            )
         elif source_attn is not None:
             out_layer = None
             for attr in ("out_lin", "dense", "c_proj", "o_proj", "out_proj"):
@@ -250,11 +273,24 @@ class FUSIONATTN(BaseAttention):
                     out_layer = getattr(source_attn, attr)
                     break
             if out_layer is not None:
-                hidden_size = int(getattr(out_layer, "out_features",
-                                  getattr(out_layer, "in_features", hidden_size)))
-            num_heads = int(getattr(source_attn, "n_heads",
-                            getattr(source_attn, "num_attention_heads",
-                            getattr(source_attn, "num_heads", num_heads))))
+                hidden_size = int(
+                    getattr(
+                        out_layer,
+                        "out_features",
+                        getattr(out_layer, "in_features", hidden_size),
+                    )
+                )
+            num_heads = int(
+                getattr(
+                    source_attn,
+                    "n_heads",
+                    getattr(
+                        source_attn,
+                        "num_attention_heads",
+                        getattr(source_attn, "num_heads", num_heads),
+                    ),
+                )
+            )
 
         try:
             super().__init__(config, rank if rank is not None else 64)
@@ -266,14 +302,23 @@ class FUSIONATTN(BaseAttention):
 
         # FA-FIX-13: num_kv_heads fallback chain
         if config is not None:
-            self.num_kv_heads = int(getattr(config, "num_key_value_heads",
-                                    getattr(config, "num_kv_heads", self.num_heads)))
+            self.num_kv_heads = int(
+                getattr(
+                    config,
+                    "num_key_value_heads",
+                    getattr(config, "num_kv_heads", self.num_heads),
+                )
+            )
         else:
             self.num_kv_heads = self.num_heads
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
 
         cfg_hd = getattr(config, "head_dim", None) if config else None
-        self.head_dim = int(cfg_hd) if cfg_hd is not None else max(1, self.hidden_size // self.num_heads)
+        self.head_dim = (
+            int(cfg_hd)
+            if cfg_hd is not None
+            else max(1, self.hidden_size // self.num_heads)
+        )
         self.all_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // self.num_kv_heads)
@@ -281,28 +326,60 @@ class FUSIONATTN(BaseAttention):
         self.block_size = int(block_size)
         self.top_k_blocks = int(top_k_blocks)
 
-        resolved_layer_id = (layer_id if layer_id is not None
-                              else (layer_idx if layer_idx is not None
-                                    else kwargs.get("layer_id", kwargs.get("layer_idx", 0))))
+        resolved_layer_id = (
+            layer_id
+            if layer_id is not None
+            else (
+                layer_idx
+                if layer_idx is not None
+                else kwargs.get("layer_id", kwargs.get("layer_idx", 0))
+            )
+        )
         self.layer_idx = int(resolved_layer_id)
 
         # ---- LoRA ----
-        self.lora_rank = int(getattr(config, "lora_rank",
-                              getattr(comp_config, "lora_rank",
-                                      kwargs.get("lora_rank", 16))) if config else kwargs.get("lora_rank", 16))
-        self.lora_alpha = float(getattr(config, "lora_alpha",
-                                 getattr(comp_config, "lora_alpha",
-                                         kwargs.get("lora_alpha", 32.0))) if config else kwargs.get("lora_alpha", 32.0))
-        self.freeze_base = (self.lora_rank > 0)
+        self.lora_rank = int(
+            getattr(
+                config,
+                "lora_rank",
+                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)),
+            )
+            if config
+            else kwargs.get("lora_rank", 16)
+        )
+        self.lora_alpha = float(
+            getattr(
+                config,
+                "lora_alpha",
+                getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
+            )
+            if config
+            else kwargs.get("lora_alpha", 32.0)
+        )
+        self.freeze_base = self.lora_rank > 0
 
         # ---- decoder detection ----
         model_type = str(getattr(config, "model_type", "") if config else "").lower()
         is_dec = False
         if config is not None:
-            is_dec = bool(getattr(config, "is_decoder", False)
-                          or getattr(config, "is_causal", False))
-        _dec_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                          "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+            is_dec = bool(
+                getattr(config, "is_decoder", False)
+                or getattr(config, "is_causal", False)
+            )
+        _dec_prefixes = (
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
+        )
         if any(model_type.startswith(p) for p in _dec_prefixes):
             is_dec = True
         if config is not None and hasattr(config, "architectures"):
@@ -312,25 +389,47 @@ class FUSIONATTN(BaseAttention):
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
         if source_attn is not None:
-            if hasattr(source_attn, "c_attn") or getattr(source_attn, "is_decoder", False):
+            if hasattr(source_attn, "c_attn") or getattr(
+                source_attn, "is_decoder", False
+            ):
                 is_dec = True
         self.is_decoder = bool(is_dec)
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
         # ---- projections ----
-        self.q_proj = LoRALinear(self.hidden_size, self.all_head_size, bias=True,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=self.freeze_base)
-        self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=self.freeze_base)
-        self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True,
-                                    lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                    freeze_base=self.freeze_base)
+        self.q_proj = LoRALinear(
+            self.hidden_size,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.k_proj = LoRALinear(
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.v_proj = LoRALinear(
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.hidden_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
         # FA-FIX-15: per-head gate MLP (head_id embedding + centroid features)
         self.attn_gate = nn.Sequential(
@@ -342,11 +441,24 @@ class FUSIONATTN(BaseAttention):
         self.gate_head_bias = nn.Parameter(torch.zeros(self.num_heads))
         self.gate_temp = nn.Parameter(torch.ones(1))
 
-        dropout_p = float(getattr(config, "dropout",
-                           getattr(config, "attention_probs_dropout_prob", 0.1))) if config else 0.1
+        dropout_p = (
+            float(
+                getattr(
+                    config,
+                    "dropout",
+                    getattr(config, "attention_probs_dropout_prob", 0.1),
+                )
+            )
+            if config
+            else 0.1
+        )
         self.dropout = nn.Dropout(dropout_p)
 
-        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
+        self.rotary_emb = (
+            getattr(source_attn, "rotary_emb", None)
+            if source_attn is not None
+            else None
+        )
         self.comp_config = comp_config
 
         if source_attn is not None:
@@ -354,31 +466,56 @@ class FUSIONATTN(BaseAttention):
 
     # ---- aliases ----
     @property
-    def query(self): return self.q_proj
+    def query(self):
+        return self.q_proj
+
     @property
-    def key(self): return self.k_proj
+    def key(self):
+        return self.k_proj
+
     @property
-    def value(self): return self.v_proj
+    def value(self):
+        return self.v_proj
+
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
+
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
+
     @property
-    def q_lin(self): return self.q_proj
+    def q_lin(self):
+        return self.q_proj
+
     @property
-    def k_lin(self): return self.k_proj
+    def k_lin(self):
+        return self.k_proj
+
     @property
-    def v_lin(self): return self.v_proj
+    def v_lin(self):
+        return self.v_proj
+
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
+
     @property
-    def W_q(self): return self.q_proj
+    def W_q(self):
+        return self.q_proj
+
     @property
-    def W_k(self): return self.k_proj
+    def W_k(self):
+        return self.k_proj
+
     @property
-    def W_v(self): return self.v_proj
+    def W_v(self):
+        return self.v_proj
+
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
 
     # ------------------------------------------------------------------
     # copy_weights
@@ -388,16 +525,33 @@ class FUSIONATTN(BaseAttention):
             return
 
         cls_name = pretrained_attn.__class__.__name__
-        has_out_lin = any(hasattr(pretrained_attn, a) for a in ("out_lin", "c_proj", "o_proj"))
+        has_out_lin = any(
+            hasattr(pretrained_attn, a) for a in ("out_lin", "c_proj", "o_proj")
+        )
         is_nested = False
-        if (hasattr(pretrained_attn, "self")
+        if (
+            (
+                hasattr(pretrained_attn, "self")
                 and hasattr(pretrained_attn.self, "query")
                 and hasattr(pretrained_attn, "output")
-                and hasattr(pretrained_attn.output, "dense")) or (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
-                            "XLMRobertaSelfAttention", "ElectraSelfAttention",
-                            "DebertaSelfAttention")
-              or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())) \
-                and not has_out_lin:
+                and hasattr(pretrained_attn.output, "dense")
+            )
+            or (
+                cls_name
+                in (
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                )
+                or (
+                    cls_name.endswith("SelfAttention")
+                    and "distil" not in cls_name.lower()
+                )
+            )
+            and not has_out_lin
+        ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -405,14 +559,20 @@ class FUSIONATTN(BaseAttention):
             self.rotary_emb = pretrained_attn.rotary_emb
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         # GPT-2 fused c_attn
         if hasattr(pretrained_attn, "c_attn") and pretrained_attn.c_attn is not None:
             c_attn_mod = pretrained_attn.c_attn
-            if hasattr(c_attn_mod, "merge") and callable(c_attn_mod.merge) \
-                    and not getattr(c_attn_mod, "merged", False):
+            if (
+                hasattr(c_attn_mod, "merge")
+                and callable(c_attn_mod.merge)
+                and not getattr(c_attn_mod, "merged", False)
+            ):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
@@ -424,18 +584,33 @@ class FUSIONATTN(BaseAttention):
                 c_w = c_w.data.clone()
                 cls_c = c_attn_mod.__class__.__name__
                 base_cls_c = base_c.__class__.__name__
-                is_conv = ("Conv1D" in cls_c or "Conv1D" in base_cls_c
-                            or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]))
+                is_conv = (
+                    "Conv1D" in cls_c
+                    or "Conv1D" in base_cls_c
+                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
+                )
                 if is_conv:
                     c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size:2*split_size, :], c_b[split_size:2*split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2*split_size:, :], c_b[2*split_size:] if c_b is not None else None)
+                extracted["q"] = (
+                    c_w[:split_size, :],
+                    c_b[:split_size] if c_b is not None else None,
+                )
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (
+                    c_w[2 * split_size :, :],
+                    c_b[2 * split_size :] if c_b is not None else None,
+                )
 
-            if hasattr(pretrained_attn, "c_proj") and pretrained_attn.c_proj is not None:
+            if (
+                hasattr(pretrained_attn, "c_proj")
+                and pretrained_attn.c_proj is not None
+            ):
                 c_proj_mod = pretrained_attn.c_proj
                 base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
@@ -443,27 +618,41 @@ class FUSIONATTN(BaseAttention):
                     o_w = o_w.data.clone()
                     cls_o = c_proj_mod.__class__.__name__
                     base_cls_o = base_o.__class__.__name__
-                    is_conv_o = ("Conv1D" in cls_o or "Conv1D" in base_cls_o
-                                  or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]))
+                    is_conv_o = (
+                        "Conv1D" in cls_o
+                        or "Conv1D" in base_cls_o
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
+                    )
                     if is_conv_o:
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    extracted["o"] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
 
         # RoBERTa / BERT nested
-        elif hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
+        elif hasattr(pretrained_attn, "self") and hasattr(
+            pretrained_attn.self, "query"
+        ):
             s = pretrained_attn.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 mod = getattr(s, sub, None)
                 if mod is not None and hasattr(mod, "weight"):
                     b = getattr(mod, "bias", None)
-                    extracted[key] = (mod.weight.data.clone(),
-                                       b.data.clone() if b is not None else None)
-            if hasattr(pretrained_attn, "output") and hasattr(pretrained_attn.output, "dense"):
+                    extracted[key] = (
+                        mod.weight.data.clone(),
+                        b.data.clone() if b is not None else None,
+                    )
+            if hasattr(pretrained_attn, "output") and hasattr(
+                pretrained_attn.output, "dense"
+            ):
                 out_mod = pretrained_attn.output.dense
                 b = getattr(out_mod, "bias", None)
-                extracted["o"] = (out_mod.weight.data.clone(),
-                                   b.data.clone() if b is not None else None)
+                extracted["o"] = (
+                    out_mod.weight.data.clone(),
+                    b.data.clone() if b is not None else None,
+                )
 
         # Flat modules
         else:
@@ -479,16 +668,22 @@ class FUSIONATTN(BaseAttention):
                         mod = getattr(pretrained_attn, n)
                         if mod is not None and hasattr(mod, "weight"):
                             b = getattr(mod, "bias", None)
-                            extracted[key] = (mod.weight.data.clone(),
-                                               b.data.clone() if b is not None else None)
+                            extracted[key] = (
+                                mod.weight.data.clone(),
+                                b.data.clone() if b is not None else None,
+                            )
                             break
 
         # UniversalAdapter fallback
-        missing = [k for k, (w, _) in extracted.items()
-                    if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(pretrained_attn, k)
@@ -497,14 +692,22 @@ class FUSIONATTN(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [k for k, (w, _) in extracted.items()
-                          if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing_after:
-            logger.warning("FUSIONATTN copy_weights: missing %s from %s",
-                            missing_after, cls_name)
+            logger.warning(
+                "FUSIONATTN copy_weights: missing %s from %s", missing_after, cls_name
+            )
 
-        target_map = {"q": self.q_proj, "k": self.k_proj,
-                       "v": self.v_proj, "o": self.out_proj}
+        target_map = {
+            "q": self.q_proj,
+            "k": self.k_proj,
+            "v": self.v_proj,
+            "o": self.out_proj,
+        }
 
         with torch.no_grad():
             for proj_key, target_mod in target_map.items():
@@ -518,14 +721,18 @@ class FUSIONATTN(BaseAttention):
 
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
-                if w.shape != target_mod.weight.shape \
-                        and target_mod.weight.shape == w.t().contiguous().shape:
+                if (
+                    w.shape != target_mod.weight.shape
+                    and target_mod.weight.shape == w.t().contiguous().shape
+                ):
                     w = w.t().contiguous()
 
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
                 target_mod.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(target_mod.weight.device, target_mod.weight.dtype)
+                    w[:out_d, :in_d].to(
+                        target_mod.weight.device, target_mod.weight.dtype
+                    )
                 )
 
                 if b is not None and target_mod.bias is not None:
@@ -552,7 +759,9 @@ class FUSIONATTN(BaseAttention):
     def _read_past_kv(past_key_value: Any | None, layer_idx: int = 0):
         if past_key_value is None:
             return None, None
-        if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
+        if hasattr(past_key_value, "key_cache") and hasattr(
+            past_key_value, "value_cache"
+        ):
             keys = past_key_value.key_cache
             vals = past_key_value.value_cache
             if len(keys) == 0:
@@ -571,7 +780,9 @@ class FUSIONATTN(BaseAttention):
     # Mask preparation
     # ------------------------------------------------------------------
     @staticmethod
-    def _normalize_valid_mask(mask, B: int, N: int, device: torch.device) -> torch.Tensor | None:
+    def _normalize_valid_mask(
+        mask, B: int, N: int, device: torch.device
+    ) -> torch.Tensor | None:
         """Return (B, N) bool mask where True = valid token."""
         if mask is None:
             return None
@@ -609,7 +820,7 @@ class FUSIONATTN(BaseAttention):
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, H, N, D = q.shape
         N_kv = k.shape[2]
-        scale = D ** -0.5
+        scale = D**-0.5
 
         # FA-FIX-02: only use SDPA when no extra features are needed
         use_sdpa = (
@@ -625,26 +836,41 @@ class FUSIONATTN(BaseAttention):
                 _ks = k.half() if k.dtype == torch.float32 else k
                 _vs = v.half() if v.dtype == torch.float32 else v
                 _out = F.scaled_dot_product_attention(
-                    _qs, _ks, _vs,
+                    _qs,
+                    _ks,
+                    _vs,
                     is_causal=is_causal and N > 1 and N_kv == N,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
-                _out = _out.to(q.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+                _out = (
+                    _out.to(q.dtype)
+                    .transpose(1, 2)
+                    .contiguous()
+                    .view(B, N, self.all_head_size)
+                )
                 _out = torch.nan_to_num(_out, nan=0.0, posinf=1e4, neginf=-1e4)
                 return _out, None
             except Exception as e:
                 logger.debug("SDPA failed, falling back to manual: %s", e)
 
         # ---- Manual path ----
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+        scores = (
+            torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+        )
 
         # FA-FIX-03 / decoder: causal mask with past_len offset
         if is_causal and N > 1:
             past_len = max(0, N_kv - N)
-            causal = torch.triu(
-                torch.full((N, N_kv), float("-inf"), device=q.device, dtype=torch.float32),
-                diagonal=1 + past_len,
-            ).unsqueeze(0).unsqueeze(0)
+            causal = (
+                torch.triu(
+                    torch.full(
+                        (N, N_kv), float("-inf"), device=q.device, dtype=torch.float32
+                    ),
+                    diagonal=1 + past_len,
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
             scores = scores + causal
 
         if valid_mask is not None:
@@ -665,7 +891,12 @@ class FUSIONATTN(BaseAttention):
                 hm = hm.unsqueeze(1)
             probs = probs * hm
 
-        context = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+        context = (
+            torch.matmul(probs, v)
+            .transpose(1, 2)
+            .contiguous()
+            .view(B, N, self.all_head_size)
+        )
         return context, (probs if output_attentions else None)
 
     # ------------------------------------------------------------------
@@ -715,15 +946,21 @@ class FUSIONATTN(BaseAttention):
         k_centroid = k_blocks.mean(dim=3)  # (B, H, nb, D)
 
         # FA-FIX-15 / FA-FIX-16: per-head gating with centroid features
-        q_feat = torch.cat([q_centroid, torch.zeros_like(q_centroid)], dim=-1)   # (B,H,nb,2D)
-        k_feat = torch.cat([torch.zeros_like(k_centroid), k_centroid], dim=-1)  # (B,H,nb,2D)
+        q_feat = torch.cat(
+            [q_centroid, torch.zeros_like(q_centroid)], dim=-1
+        )  # (B,H,nb,2D)
+        k_feat = torch.cat(
+            [torch.zeros_like(k_centroid), k_centroid], dim=-1
+        )  # (B,H,nb,2D)
         q_gate = self.attn_gate(q_feat).squeeze(-1)  # (B, H, nb)
         k_gate = self.attn_gate(k_feat).squeeze(-1)  # (B, H, nb)
 
         # per-head learnable bias
         head_bias = self.gate_head_bias.view(1, H, 1)
         gate_scores = (
-            torch.matmul(q_gate.unsqueeze(-1), k_gate.unsqueeze(-2)).squeeze(-1).squeeze(-1)
+            torch.matmul(q_gate.unsqueeze(-1), k_gate.unsqueeze(-2))
+            .squeeze(-1)
+            .squeeze(-1)
             + head_bias
         ) / (self.gate_temp.abs() + 1e-5)
         # gate_scores: (B, H, nb)
@@ -732,15 +969,19 @@ class FUSIONATTN(BaseAttention):
         # A query in block i cannot attend to any key in block j > i.
         if is_causal:
             blk_idx = torch.arange(num_blocks, device=device)
-            causal_blocks = (blk_idx.unsqueeze(0) <= blk_idx.unsqueeze(1))  # (nb, nb)
+            causal_blocks = blk_idx.unsqueeze(0) <= blk_idx.unsqueeze(1)  # (nb, nb)
             # mask future blocks with -inf so top-k never picks them
-            gate_scores_2d = gate_scores.unsqueeze(-1).expand(-1, -1, -1, num_blocks)  # not needed; use simpler form
+            gate_scores_2d = gate_scores.unsqueeze(-1).expand(
+                -1, -1, -1, num_blocks
+            )  # not needed; use simpler form
             # compute per-query-block mask and apply to logits
             # gate_scores is (B, H, nb). We need (B, H, nb) * causal_mask_per_qblock
             # A more direct approach: for each query block i, only keep scores over j <= i
             # which is a triangular mask per (B,H,i).
             # We expand gate_scores to (B, H, nb, nb) with broadcast, then mask.
-            gs2 = gate_scores.unsqueeze(-1).expand(-1, -1, -1, num_blocks)  # (B,H,nb,nb) where last dim = key block
+            gs2 = gate_scores.unsqueeze(-1).expand(
+                -1, -1, -1, num_blocks
+            )  # (B,H,nb,nb) where last dim = key block
             causal_blocks_b = causal_blocks.view(1, 1, num_blocks, num_blocks)
             gs2 = gs2.masked_fill(~causal_blocks_b, float("-inf"))
             # Top-k over key-block dim
@@ -761,7 +1002,9 @@ class FUSIONATTN(BaseAttention):
                 sink = torch.zeros_like(top_others[..., :1])  # block 0
                 top_indices = torch.cat([sink, top_others], dim=-1)
             else:
-                top_indices = torch.zeros(B, H, num_blocks, top_k, device=device, dtype=torch.long)
+                top_indices = torch.zeros(
+                    B, H, num_blocks, top_k, device=device, dtype=torch.long
+                )
 
         # ---- gather K/V per query block ----
         # k_blocks: (B, H, nb, bs, D), v_blocks same
@@ -769,16 +1012,24 @@ class FUSIONATTN(BaseAttention):
 
         # For padding mask of K, pad to full length then reshape to blocks
         if valid_pad is not None:
-            valid_blocks = valid_pad.view(B, 1, num_blocks, bs)   # (B, 1, nb, bs)
+            valid_blocks = valid_pad.view(B, 1, num_blocks, bs)  # (B, 1, nb, bs)
         else:
-            valid_blocks = torch.ones(B, 1, num_blocks, bs, device=device, dtype=torch.bool)
+            valid_blocks = torch.ones(
+                B, 1, num_blocks, bs, device=device, dtype=torch.bool
+            )
 
         # gather: (B, H, nb, top_k, bs, D) → reshape to (B, H, nb, top_k*bs, D)
-        idx_k = top_indices.unsqueeze(-1).unsqueeze(-1).expand(B, H, num_blocks, top_k, bs, D)
+        idx_k = (
+            top_indices.unsqueeze(-1)
+            .unsqueeze(-1)
+            .expand(B, H, num_blocks, top_k, bs, D)
+        )
         k_sel = torch.gather(
             k_blocks.unsqueeze(3).expand(-1, -1, -1, top_k, -1, -1),
             2,
-            top_indices.reshape(B, H, num_blocks, top_k, 1, 1).expand(B, H, num_blocks, top_k, bs, D)
+            top_indices.reshape(B, H, num_blocks, top_k, 1, 1).expand(
+                B, H, num_blocks, top_k, bs, D
+            ),
         )
         # Above gather is awkward; use index_select-free approach:
         # reshape k_blocks to (B,H,nb,bs*D) and gather along dim=2 with flattened indices
@@ -786,42 +1037,62 @@ class FUSIONATTN(BaseAttention):
         v_flat = v_blocks.reshape(B, H, num_blocks, bs * D)
 
         # Build absolute gather indices
-        idx_flat = top_indices.reshape(B, H, num_blocks, top_k, 1).expand(-1, -1, -1, -1, bs)
+        idx_flat = top_indices.reshape(B, H, num_blocks, top_k, 1).expand(
+            -1, -1, -1, -1, bs
+        )
         idx_flat = idx_flat * bs + torch.arange(bs, device=device).view(1, 1, 1, 1, bs)
         idx_flat = idx_flat.reshape(B, H, num_blocks, top_k * bs)
 
         k_sel = torch.gather(
             k_flat.unsqueeze(3).expand(-1, -1, -1, top_k, -1),
             -1,
-            idx_flat.unsqueeze(-1).expand(-1, -1, -1, -1, D)
+            idx_flat.unsqueeze(-1).expand(-1, -1, -1, -1, D),
         )  # (B,H,nb,top_k,D)
         # Actually this is getting confusing. Simpler:
         # flatten indices to a per-(B,H,qblock) gather along last dim of (B,H,nb,bs*D).
-        k_sel = torch.empty(B, H, num_blocks, top_k * bs, D, device=device, dtype=k_blocks.dtype)
+        k_sel = torch.empty(
+            B, H, num_blocks, top_k * bs, D, device=device, dtype=k_blocks.dtype
+        )
         v_sel = torch.empty_like(k_sel)
-        valid_sel = torch.empty(B, H, num_blocks, top_k * bs, device=device, dtype=torch.bool)
+        valid_sel = torch.empty(
+            B, H, num_blocks, top_k * bs, device=device, dtype=torch.bool
+        )
 
         for j in range(top_k):
-            bj = top_indices[..., j]                       # (B, H, nb)
+            bj = top_indices[..., j]  # (B, H, nb)
             bj_flat_idx = bj.view(B, H, num_blocks, 1, 1).expand(-1, -1, -1, bs, D)
-            k_sel[:, :, :, j*bs:(j+1)*bs, :] = torch.gather(k_blocks, 2, bj_flat_idx)
-            v_sel[:, :, :, j*bs:(j+1)*bs, :] = torch.gather(v_blocks, 2, bj_flat_idx)
+            k_sel[:, :, :, j * bs : (j + 1) * bs, :] = torch.gather(
+                k_blocks, 2, bj_flat_idx
+            )
+            v_sel[:, :, :, j * bs : (j + 1) * bs, :] = torch.gather(
+                v_blocks, 2, bj_flat_idx
+            )
             bj_flat_idx_v = bj.view(B, H, num_blocks, 1).expand(-1, -1, -1, bs)
-            valid_sel[:, :, :, j*bs:(j+1)*bs] = torch.gather(valid_blocks, 2, bj_flat_idx_v)
+            valid_sel[:, :, :, j * bs : (j + 1) * bs] = torch.gather(
+                valid_blocks, 2, bj_flat_idx_v
+            )
 
         # ---- attention within selected blocks ----
         q_all = q_pad.reshape(B, H, num_blocks, bs, D)
-        scale = D ** -0.5
-        scores = torch.matmul(q_all.float(), k_sel.float().transpose(-2, -1).contiguous()) * scale
+        scale = D**-0.5
+        scores = (
+            torch.matmul(q_all.float(), k_sel.float().transpose(-2, -1).contiguous())
+            * scale
+        )
 
         # FA-FIX-03: causal mask via ABSOLUTE positions (per-query position vs per-key absolute position)
         if is_causal:
-            q_abs = (torch.arange(num_blocks, device=device).view(num_blocks, 1) * bs
-                     + torch.arange(bs, device=device).view(1, bs))   # (nb, bs)
-            q_abs = q_abs.view(1, 1, num_blocks, bs)                  # (1, 1, nb, bs)
+            q_abs = torch.arange(num_blocks, device=device).view(
+                num_blocks, 1
+            ) * bs + torch.arange(bs, device=device).view(
+                1, bs
+            )  # (nb, bs)
+            q_abs = q_abs.view(1, 1, num_blocks, bs)  # (1, 1, nb, bs)
             # Absolute key positions for each query block's selected keys
             k_abs = idx_flat  # (B, H, nb, top_k*bs) — already absolute
-            causal_b = (k_abs.unsqueeze(-2) <= q_abs.unsqueeze(-1))   # (B, H, nb, bs, top_k*bs)
+            causal_b = k_abs.unsqueeze(-2) <= q_abs.unsqueeze(
+                -1
+            )  # (B, H, nb, bs, top_k*bs)
             scores = scores.masked_fill(~causal_b, float("-inf"))
 
         # FA-FIX-04: padding mask on the gathered keys
@@ -843,7 +1114,7 @@ class FUSIONATTN(BaseAttention):
                 hm = hm.unsqueeze(1)
             probs = probs * hm
 
-        out_blocks = torch.matmul(probs, v_sel)                       # (B, H, nb, bs, D)
+        out_blocks = torch.matmul(probs, v_sel)  # (B, H, nb, bs, D)
 
         # FA-FIX-08: NaN guard
         out_blocks = torch.nan_to_num(out_blocks, nan=0.0, posinf=1e4, neginf=-1e4)
@@ -882,20 +1153,37 @@ class FUSIONATTN(BaseAttention):
         kv_len_new = kv_input.shape[1]
 
         # ---- Q / K / V projections ----
-        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k_new = self.k_proj(kv_input).view(B, kv_len_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        v_new = self.v_proj(kv_input).view(B, kv_len_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        q = (
+            self.q_proj(hidden_states)
+            .view(B, N, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        k_new = (
+            self.k_proj(kv_input)
+            .view(B, kv_len_new, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v_new = (
+            self.v_proj(kv_input)
+            .view(B, kv_len_new, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # ---- RoPE with past_len offset ----
         if not is_cross_attention:
             past_k_probe, _ = self._read_past_kv(past_key_value, self.layer_idx)
             past_len = 0 if past_k_probe is None else past_k_probe.shape[-2]
 
-            if position_embeddings is not None and isinstance(position_embeddings, tuple):
+            if position_embeddings is not None and isinstance(
+                position_embeddings, tuple
+            ):
                 cos, sin = position_embeddings
                 if past_len > 0:
-                    cos = cos[..., past_len: past_len + N, :]
-                    sin = sin[..., past_len: past_len + N, :]
+                    cos = cos[..., past_len : past_len + N, :]
+                    sin = sin[..., past_len : past_len + N, :]
                 q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, position_ids)
             elif self.rotary_emb is not None:
                 # FA-FIX-07: use hidden_states for shape probing (was `v`)
@@ -908,8 +1196,8 @@ class FUSIONATTN(BaseAttention):
                         cos, sin = None, None
                 if cos is not None and sin is not None:
                     if past_len > 0:
-                        cos = cos[..., past_len: past_len + N, :]
-                        sin = sin[..., past_len: past_len + N, :]
+                        cos = cos[..., past_len : past_len + N, :]
+                        sin = sin[..., past_len : past_len + N, :]
                     q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, position_ids)
 
         # ---- KV-cache concat + update ----
@@ -921,7 +1209,11 @@ class FUSIONATTN(BaseAttention):
         else:
             k_cat, v_cat = k_new, v_new
 
-        if past_key_value is not None and hasattr(past_key_value, "update") and not is_cross_attention:
+        if (
+            past_key_value is not None
+            and hasattr(past_key_value, "update")
+            and not is_cross_attention
+        ):
             past_key_value.update(k_new, v_new, self.layer_idx)
 
         # ---- GQA ----
@@ -941,13 +1233,21 @@ class FUSIONATTN(BaseAttention):
         # ---- dispatch ----
         if N <= 128 or is_cross_attention:
             context, attn_weights = self._dense_attention(
-                q, k_cat, v_cat, valid_mask, head_mask,
+                q,
+                k_cat,
+                v_cat,
+                valid_mask,
+                head_mask,
                 is_causal=is_causal and N_kv == N,
                 output_attentions=bool(output_attentions),
             )
         else:
             context, attn_weights = self._block_sparse_attention(
-                q, k_cat, v_cat, valid_mask, head_mask,
+                q,
+                k_cat,
+                v_cat,
+                valid_mask,
+                head_mask,
                 is_causal=is_causal and N_kv == N,
                 output_attentions=bool(output_attentions),
             )
@@ -1022,8 +1322,13 @@ def inject_fusion_attn(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_fusion_attn(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 n_inj += 1
@@ -1040,8 +1345,9 @@ def inject_fusion_attn(
                     break
 
     # FA-FIX-12: idempotency guard
-    if src_attn is not None and (isinstance(src_attn, FUSIONATTN)
-                                   or "FUSIONATTN" in src_attn.__class__.__name__):
+    if src_attn is not None and (
+        isinstance(src_attn, FUSIONATTN) or "FUSIONATTN" in src_attn.__class__.__name__
+    ):
         return None
 
     try:
@@ -1075,8 +1381,10 @@ def inject_fusion_attn(
             new_attn.is_nested_encoder = True
             target.self = new_attn
         else:
-            logger.error("inject_fusion_attn: no writable attention attribute on %s",
-                          target.__class__.__name__)
+            logger.error(
+                "inject_fusion_attn: no writable attention attribute on %s",
+                target.__class__.__name__,
+            )
             return None
 
         return new_attn

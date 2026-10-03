@@ -1,11 +1,12 @@
 """Comprehensive test suite for EAT (Efficient Attention Transformer)."""
 
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
-from types import SimpleNamespace
-
-from framework.attentions.eat import EATBlock, LoRALinear, _rotate_half, inject_eat
+from framework.attentions.eat import (EATBlock, LoRALinear, _rotate_half,
+                                      inject_eat)
 from framework.core.registry import ATTENTION_REGISTRY
 
 

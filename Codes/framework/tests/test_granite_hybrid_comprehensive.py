@@ -1,7 +1,9 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.attentions.granite_hybrid import GraniteHybridBlock, inject_granite_hybrid
+from framework.attentions.granite_hybrid import (GraniteHybridBlock,
+                                                 inject_granite_hybrid)
+
 
 def test_granite_hybrid_standalone():
     block = GraniteHybridBlock(dim=64, num_heads=4, lora_rank=8, ratio=1)

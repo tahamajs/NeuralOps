@@ -9,12 +9,15 @@ class MethodWrapper:
 
     def apply(self, model: Any, config: Any) -> Any:
         if isinstance(config, dict):
+
             class ConfigObj:
                 def __init__(self, d):
                     for k, v in d.items():
                         setattr(self, k, v)
+
                 def __getattr__(self, item):
                     return None
+
             cfg_obj = ConfigObj(config)
         else:
             cfg_obj = config

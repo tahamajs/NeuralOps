@@ -1,13 +1,15 @@
+import framework.attentions.progressive_token_pruning
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.progressive_token_pruning
+
 
 def test_progressive_token_pruning_module_present():
     assert hasattr(framework.attentions, 'progressive_token_pruning')
 
 def test_progressive_token_pruning_injection_safe():
-    from framework.attentions.progressive_token_pruning import inject_progressive_token_pruning
+    from framework.attentions.progressive_token_pruning import \
+        inject_progressive_token_pruning
     class DummyLayer(nn.Module):
         def __init__(self):
             super().__init__()

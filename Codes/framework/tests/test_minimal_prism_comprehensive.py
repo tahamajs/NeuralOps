@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.minimal_prism import MinimalPRISMAttention, inject_minimal_prism
+from framework.attentions.minimal_prism import (MinimalPRISMAttention,
+                                                inject_minimal_prism)
 
 
 class MockConfig:

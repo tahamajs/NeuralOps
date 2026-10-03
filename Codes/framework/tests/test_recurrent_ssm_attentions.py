@@ -8,13 +8,13 @@ Verifies:
 5. 2D and 4D attention mask handling.
 """
 
-from typing import Any
 import unittest
-import torch
-import torch.nn as nn
+from typing import Any
 
 # Ensure all attentions are loaded into ATTENTION_REGISTRY
 import framework.attentions
+import torch
+import torch.nn as nn
 from framework.core.registry import ATTENTION_REGISTRY
 
 

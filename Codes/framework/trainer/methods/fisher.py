@@ -1,9 +1,9 @@
 """
 Fisher information based importance scoring for adaptive rank allocation.
 """
-from typing import Any
 
 import logging
+from typing import Any
 
 import numpy as np
 import torch

@@ -11,7 +11,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
@@ -58,10 +57,22 @@ def apply_rotary_pos_emb(
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
-        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
+            _rotate_half(q_rot) * sin.to(q_rot.dtype)
+        )
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
+            _rotate_half(k_rot) * sin.to(k_rot.dtype)
+        )
+        q = (
+            torch.cat([q_rot_embed, q_pass], dim=-1)
+            if q_pass.numel() > 0
+            else q_rot_embed
+        )
+        k = (
+            torch.cat([k_rot_embed, k_pass], dim=-1)
+            if k_pass.numel() > 0
+            else k_rot_embed
+        )
     else:
         cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
         q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
@@ -75,9 +86,15 @@ def apply_rotary_pos_emb(
 # ===========================================================================
 class LoRALinear(nn.Module):
     def __init__(
-        self, in_features, out_features, bias=True, lora_rank=16,
-        lora_alpha=32.0, freeze_base=False,
-        device=None, dtype=None,
+        self,
+        in_features,
+        out_features,
+        bias=True,
+        lora_rank=16,
+        lora_alpha=32.0,
+        freeze_base=False,
+        device=None,
+        dtype=None,
     ):
         super().__init__()
         fk = {"device": device, "dtype": dtype}
@@ -131,11 +148,17 @@ class LoRALinear(nn.Module):
     def forward(self, x):
         # MB-FIX-12: dtype-safe
         w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
-        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
+        b = (
+            self.bias.to(x.dtype)
+            if (self.bias is not None and self.bias.dtype != x.dtype)
+            else self.bias
+        )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            bb = (
+                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            )
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -153,6 +176,7 @@ class MoBAAttention(BaseAttention):
     top-k most relevant key blocks, and run dense attention within the
     selected blocks (plus the causal-visible diagonal block).
     """
+
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -174,21 +198,37 @@ class MoBAAttention(BaseAttention):
 
         # MB-FIX-04: config None-safe
         if config is None:
-            class _Cfg: pass
+
+            class _Cfg:
+                pass
+
             config = _Cfg()
             config.hidden_size = kwargs.get("hidden_size", 768)
             config.num_attention_heads = kwargs.get("num_attention_heads", 12)
             config.head_dim = kwargs.get("head_dim", 64)
             config.model_type = kwargs.get("model_type", "")
 
-        self.num_heads = int(getattr(config, "num_attention_heads",
-                             getattr(config, "num_heads", kwargs.get("num_attention_heads", 4))))
-        self.hidden_size = int(getattr(config, "hidden_size", kwargs.get("hidden_size", 768)))
+        self.num_heads = int(
+            getattr(
+                config,
+                "num_attention_heads",
+                getattr(config, "num_heads", kwargs.get("num_attention_heads", 4)),
+            )
+        )
+        self.hidden_size = int(
+            getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
+        )
         cfg_hd = getattr(config, "head_dim", None)
-        self.head_dim = int(cfg_hd) if cfg_hd is not None else max(1, self.hidden_size // max(1, self.num_heads))
+        self.head_dim = (
+            int(cfg_hd)
+            if cfg_hd is not None
+            else max(1, self.hidden_size // max(1, self.num_heads))
+        )
         self.all_head_size = self.num_heads * self.head_dim
 
-        cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
+        cfg_kv = getattr(
+            config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
+        )
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -210,11 +250,24 @@ class MoBAAttention(BaseAttention):
             self.is_decoder = bool(is_decoder)
         else:
             _mt = str(getattr(config, "model_type", "") or "").lower()
-            self.is_decoder = (
-                bool(getattr(config, "is_decoder", False) or getattr(config, "causal", False))
-                or any(_mt.startswith(p) for p in
-                       ("gpt", "qwen", "llama", "mistral", "falcon", "bloom",
-                        "opt", "gemma", "phi", "olmo", "mpt", "stablelm"))
+            self.is_decoder = bool(
+                getattr(config, "is_decoder", False) or getattr(config, "causal", False)
+            ) or any(
+                _mt.startswith(p)
+                for p in (
+                    "gpt",
+                    "qwen",
+                    "llama",
+                    "mistral",
+                    "falcon",
+                    "bloom",
+                    "opt",
+                    "gemma",
+                    "phi",
+                    "olmo",
+                    "mpt",
+                    "stablelm",
+                )
             )
 
         self.is_nested_encoder: bool = False
@@ -222,23 +275,46 @@ class MoBAAttention(BaseAttention):
         # ---- MB-FIX-01: output scale (initialized to 1.0) ----
         self.output_scale = nn.Parameter(torch.ones(1))
 
-        dropout_p = float(getattr(config, "dropout",
-                          getattr(config, "attention_probs_dropout_prob", 0.1)))
+        dropout_p = float(
+            getattr(
+                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
+            )
+        )
         self.dropout = nn.Dropout(dropout_p)
 
         # ---- projections ----
-        self.q_proj = LoRALinear(self.hidden_size, self.all_head_size, bias=True,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=True)
-        self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=True)
-        self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=True)
-        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True,
-                                    lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                    freeze_base=True)
+        self.q_proj = LoRALinear(
+            self.hidden_size,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.k_proj = LoRALinear(
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.v_proj = LoRALinear(
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.hidden_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
 
         # MB-FIX-11: storage accounting
         self._orig_storage_bytes = 0
@@ -251,25 +327,44 @@ class MoBAAttention(BaseAttention):
 
     # ---- MB-FIX-07: property aliases ----
     @property
-    def query(self): return self.q_proj
+    def query(self):
+        return self.q_proj
+
     @property
-    def key(self): return self.k_proj
+    def key(self):
+        return self.k_proj
+
     @property
-    def value(self): return self.v_proj
+    def value(self):
+        return self.v_proj
+
     @property
-    def q_lin(self): return self.q_proj
+    def q_lin(self):
+        return self.q_proj
+
     @property
-    def k_lin(self): return self.k_proj
+    def k_lin(self):
+        return self.k_proj
+
     @property
-    def v_lin(self): return self.v_proj
+    def v_lin(self):
+        return self.v_proj
+
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
+
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
+
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
+
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
 
     # ------------------------------------------------------------------
     # copy_weights
@@ -285,7 +380,10 @@ class MoBAAttention(BaseAttention):
             pass
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         # 1. UniversalAdapter
@@ -298,7 +396,11 @@ class MoBAAttention(BaseAttention):
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
         # 2. GPT-2 fused c_attn
-        if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+        if hasattr(src, "c_attn") and (
+            extracted["q"][0] is None
+            or extracted["k"][0] is None
+            or extracted["v"][0] is None
+        ):
             c_attn = src.c_attn
             base_c = getattr(c_attn, "base_layer", c_attn)
             cw = getattr(base_c, "weight", getattr(c_attn, "weight", None))
@@ -309,9 +411,18 @@ class MoBAAttention(BaseAttention):
                 cb = getattr(base_c, "bias", getattr(c_attn, "bias", None))
                 cb_data = cb.data.clone() if cb is not None else None
                 split = cw.shape[0] // 3
-                extracted["q"] = (cw[:split], cb_data[:split] if cb_data is not None else None)
-                extracted["k"] = (cw[split:2*split], cb_data[split:2*split] if cb_data is not None else None)
-                extracted["v"] = (cw[2*split:], cb_data[2*split:] if cb_data is not None else None)
+                extracted["q"] = (
+                    cw[:split],
+                    cb_data[:split] if cb_data is not None else None,
+                )
+                extracted["k"] = (
+                    cw[split : 2 * split],
+                    cb_data[split : 2 * split] if cb_data is not None else None,
+                )
+                extracted["v"] = (
+                    cw[2 * split :],
+                    cb_data[2 * split :] if cb_data is not None else None,
+                )
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             cp = src.c_proj
@@ -325,7 +436,11 @@ class MoBAAttention(BaseAttention):
                 extracted["o"] = (ow, bo.data.clone() if bo is not None else None)
 
         # 3. RoBERTa / BERT nested (MB-FIX-02: pass .data, not module)
-        if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+        if hasattr(src, "self") and (
+            extracted["q"][0] is None
+            or extracted["k"][0] is None
+            or extracted["v"][0] is None
+        ):
             s = src.self
             if hasattr(s, "query") and extracted["q"][0] is None:
                 q_l = getattr(s.query, "base_layer", s.query)
@@ -346,7 +461,11 @@ class MoBAAttention(BaseAttention):
                     v_l.bias.data if getattr(v_l, "bias", None) is not None else None,
                 )
 
-        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
+        if (
+            hasattr(src, "output")
+            and hasattr(src.output, "dense")
+            and extracted["o"][0] is None
+        ):
             d = getattr(src.output.dense, "base_layer", src.output.dense)
             extracted["o"] = (
                 d.weight.data,
@@ -368,15 +487,38 @@ class MoBAAttention(BaseAttention):
                         w = getattr(m, "weight", None)
                         if w is not None and hasattr(w, "data"):
                             b = getattr(m, "bias", None)
-                            extracted[proj] = (w.data, b.data if b is not None else None)
+                            extracted[proj] = (
+                                w.data,
+                                b.data if b is not None else None,
+                            )
                             break
 
         # MB-FIX-06: nested encoder detection after all extraction
         cls_name = src.__class__.__name__
-        has_out_proj = any(hasattr(src, a) for a in
-                            ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+        has_out_proj = any(
+            hasattr(src, a)
+            for a in (
+                "dense",
+                "out_proj",
+                "c_proj",
+                "out_lin",
+                "o_proj",
+                "wo",
+                "o",
+                "proj",
+            )
+        )
         is_nested = False
-        if hasattr(src, "self") and hasattr(src.self, "query") or cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention") or cls_name.endswith("SelfAttention") and not has_out_proj or cls_name.endswith("Attention") and not has_out_proj:
+        if (
+            hasattr(src, "self")
+            and hasattr(src.self, "query")
+            or cls_name
+            in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
+            or cls_name.endswith("SelfAttention")
+            and not has_out_proj
+            or cls_name.endswith("Attention")
+            and not has_out_proj
+        ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -384,7 +526,10 @@ class MoBAAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            logger.warning("MoBA copy_weights: missing %s; proceeding with initialized weights.", missing)
+            logger.warning(
+                "MoBA copy_weights: missing %s; proceeding with initialized weights.",
+                missing,
+            )
 
         # Frobenius norm checks
         for k_ in ("q", "k", "v"):
@@ -405,8 +550,12 @@ class MoBAAttention(BaseAttention):
 
         # ---- Copy ----
         with torch.no_grad():
-            for proj_key, target in (("q", self.q_proj), ("k", self.k_proj),
-                                      ("v", self.v_proj), ("o", self.out_proj)):
+            for proj_key, target in (
+                ("q", self.q_proj),
+                ("k", self.k_proj),
+                ("v", self.v_proj),
+                ("o", self.out_proj),
+            ):
                 w, b = extracted[proj_key]
                 if w is not None:
                     in_dim = self.all_head_size if proj_key == "o" else self.hidden_size
@@ -422,7 +571,9 @@ class MoBAAttention(BaseAttention):
                                 target.bias.data.copy_(b)
                         elif src_out > out_d and src_out % out_d == 0:
                             rep = src_out // out_d
-                            target_w.data.copy_(w_oriented.view(out_d, rep, -1).mean(dim=1))
+                            target_w.data.copy_(
+                                w_oriented.view(out_d, rep, -1).mean(dim=1)
+                            )
                             if b is not None and target.bias is not None:
                                 target.bias.data.copy_(b.view(out_d, rep).mean(dim=1))
                         elif src_out < out_d and out_d % src_out == 0:
@@ -462,7 +613,11 @@ class MoBAAttention(BaseAttention):
         # ---- is_decoder override ----
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
-        elif cls_name in ("GPT2Attention", "GPT2Block") or hasattr(src, "c_attn") or "gpt" in cls_name.lower():
+        elif (
+            cls_name in ("GPT2Attention", "GPT2Block")
+            or hasattr(src, "c_attn")
+            or "gpt" in cls_name.lower()
+        ):
             self.is_decoder = True
 
     # ------------------------------------------------------------------
@@ -493,8 +648,18 @@ class MoBAAttention(BaseAttention):
         L_kv = kv_input.shape[1]
 
         Q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
-        K = self.k_proj(kv_input).view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        V = self.v_proj(kv_input).view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        K = (
+            self.k_proj(kv_input)
+            .view(B, L_kv, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        V = (
+            self.v_proj(kv_input)
+            .view(B, L_kv, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -551,11 +716,21 @@ class MoBAAttention(BaseAttention):
                     _vs = V.half() if V.dtype == torch.float32 else V
                     _is_causal = self.is_decoder and not is_cross and L > 1
                     _sdpa_out = F.scaled_dot_product_attention(
-                        _qs, _ks, _vs, is_causal=_is_causal,
+                        _qs,
+                        _ks,
+                        _vs,
+                        is_causal=_is_causal,
                         dropout_p=self.dropout.p if self.training else 0.0,
                     )
-                    _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-                    _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+                    _sdpa_out = (
+                        _sdpa_out.to(hidden_states.dtype)
+                        .transpose(1, 2)
+                        .contiguous()
+                        .view(B, L, self.all_head_size)
+                    )
+                    _sdpa_out = torch.nan_to_num(
+                        _sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4
+                    )
                     if self.is_nested_encoder:
                         return _sdpa_out * self.output_scale, None
                     out = self.out_proj(_sdpa_out)
@@ -564,12 +739,21 @@ class MoBAAttention(BaseAttention):
                     pass
 
             # Dense manual
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+            scores = (
+                torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous())
+                * scale
+            )
             if is_causal:
-                causal_mask = torch.triu(
-                    torch.full((L, L_kv), float("-inf"), device=device, dtype=torch.float32),
-                    diagonal=1,
-                ).unsqueeze(0).unsqueeze(0)
+                causal_mask = (
+                    torch.triu(
+                        torch.full(
+                            (L, L_kv), float("-inf"), device=device, dtype=torch.float32
+                        ),
+                        diagonal=1,
+                    )
+                    .unsqueeze(0)
+                    .unsqueeze(0)
+                )
                 scores = scores + causal_mask
 
             if valid_mask is not None:
@@ -585,7 +769,9 @@ class MoBAAttention(BaseAttention):
                 if head_mask.dim() == 1:
                     head_mask = head_mask.view(1, -1, 1, 1)
                 elif head_mask.dim() == 2:
-                    head_mask = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
+                    head_mask = head_mask.view(
+                        head_mask.shape[0], head_mask.shape[1], 1, 1
+                    )
                 elif head_mask.dim() == 3:
                     head_mask = head_mask.unsqueeze(1)  # interpret as (B, H, 1)
                 attn_probs = attn_probs * head_mask.to(attn_probs.dtype)
@@ -602,13 +788,17 @@ class MoBAAttention(BaseAttention):
                 if valid_mask is not None:
                     valid_mask_padded = F.pad(valid_mask, (0, pad), value=False)
                 else:
-                    valid_mask_padded = torch.ones(B, L + pad, device=device, dtype=torch.bool)
+                    valid_mask_padded = torch.ones(
+                        B, L + pad, device=device, dtype=torch.bool
+                    )
             else:
                 Q_pad, K_pad, V_pad = Q, K, V
                 if valid_mask is not None:
                     valid_mask_padded = valid_mask
                 else:
-                    valid_mask_padded = torch.ones(B, L, device=device, dtype=torch.bool)
+                    valid_mask_padded = torch.ones(
+                        B, L, device=device, dtype=torch.bool
+                    )
 
             Lp = L + pad
             nb = Lp // self.block_size
@@ -621,7 +811,12 @@ class MoBAAttention(BaseAttention):
             # ---- Block-level scores ----
             Q_mean = Qb.mean(dim=3)
             K_mean = Kb.mean(dim=3)
-            block_scores = torch.matmul(Q_mean.float(), K_mean.float().transpose(-2, -1).contiguous()) * scale
+            block_scores = (
+                torch.matmul(
+                    Q_mean.float(), K_mean.float().transpose(-2, -1).contiguous()
+                )
+                * scale
+            )
 
             # MB-FIX-08: block-0 preservation
             # - For bidirectional encoders, block 0 (CLS) should always be a candidate.
@@ -630,16 +825,22 @@ class MoBAAttention(BaseAttention):
             #   block 0 through causal masking.
             if not is_causal:
                 block_scores_for_topk = block_scores.clone()
-                block_scores_for_topk[:, :, :, 0] = block_scores_for_topk[:, :, :, 0] + 1e4
+                block_scores_for_topk[:, :, :, 0] = (
+                    block_scores_for_topk[:, :, :, 0] + 1e4
+                )
             else:
                 block_scores_for_topk = block_scores.clone()
                 # For causal: a query in block i can only attend to blocks j ≤ i.
                 # Mask blocks j > i to -inf.
                 causal_block = torch.triu(
-                    torch.full((nb, nb), float("-inf"), device=device, dtype=torch.float32),
+                    torch.full(
+                        (nb, nb), float("-inf"), device=device, dtype=torch.float32
+                    ),
                     diagonal=1,
                 )
-                block_scores_for_topk = block_scores_for_topk + causal_block.unsqueeze(0).unsqueeze(0)
+                block_scores_for_topk = block_scores_for_topk + causal_block.unsqueeze(
+                    0
+                ).unsqueeze(0)
 
             top_k = min(self.top_k, nb)
             _, top_idx = block_scores_for_topk.topk(top_k, dim=-1)  # (B, H, nb, top_k)
@@ -649,22 +850,31 @@ class MoBAAttention(BaseAttention):
 
             out_blocks = torch.zeros_like(Qb)
             for i in range(nb):
-                idx = top_idx[:, :, i, :]                                   # (B, H, top_k)
+                idx = top_idx[:, :, i, :]  # (B, H, top_k)
                 idx_exp = idx.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, bs, d)
                 K_sel = torch.gather(Kb, 2, idx_exp).view(B, H, top_k * bs, d)
                 V_sel = torch.gather(Vb, 2, idx_exp).view(B, H, top_k * bs, d)
 
                 idx_mask_exp = idx.unsqueeze(-1).expand(-1, -1, -1, bs)
-                k_valid = torch.gather(valid_b_exp, 2, idx_mask_exp).reshape(B, H, 1, top_k * bs)
+                k_valid = torch.gather(valid_b_exp, 2, idx_mask_exp).reshape(
+                    B, H, 1, top_k * bs
+                )
 
-                Q_i = Qb[:, :, i]                                           # (B, H, bs, d)
-                scores_i = torch.matmul(Q_i.float(), K_sel.float().transpose(-2, -1).contiguous()) * scale
+                Q_i = Qb[:, :, i]  # (B, H, bs, d)
+                scores_i = (
+                    torch.matmul(
+                        Q_i.float(), K_sel.float().transpose(-2, -1).contiguous()
+                    )
+                    * scale
+                )
                 scores_i = scores_i.masked_fill(~k_valid, -1e4)
 
                 if is_causal:
                     q_pos = (i * bs + torch.arange(bs, device=device)).view(1, 1, bs, 1)
                     # absolute key positions for each of the top_k blocks
-                    k_offsets = idx.unsqueeze(-1) * bs + torch.arange(bs, device=device).view(1, 1, 1, bs)
+                    k_offsets = idx.unsqueeze(-1) * bs + torch.arange(
+                        bs, device=device
+                    ).view(1, 1, 1, bs)
                     k_pos = k_offsets.reshape(B, H, 1, top_k * bs)
                     invalid = k_pos > q_pos
                     scores_i = scores_i.masked_fill(invalid, -1e4)
@@ -676,7 +886,9 @@ class MoBAAttention(BaseAttention):
                 out_blocks[:, :, i] = torch.matmul(attn_i, V_sel)
 
             out_pad = out_blocks.view(B, H, Lp, d)[:, :, :L, :]
-            out = out_pad.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+            out = (
+                out_pad.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+            )
 
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
@@ -700,8 +912,12 @@ class MoBAAttention(BaseAttention):
             return 0
 
         out = {}
-        for name, m in (("q_proj", self.q_proj), ("k_proj", self.k_proj),
-                         ("v_proj", self.v_proj), ("out_proj", self.out_proj)):
+        for name, m in (
+            ("q_proj", self.q_proj),
+            ("k_proj", self.k_proj),
+            ("v_proj", self.v_proj),
+            ("out_proj", self.out_proj),
+        ):
             out[name] = sum(_sz(p) for p in m.parameters())
         out["output_scale"] = _sz(self.output_scale)
         out["total"] = sum(out.values())
@@ -750,9 +966,15 @@ def inject_moba(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+    elif hasattr(target, "layers") and isinstance(
+        target.layers, (torch.nn.ModuleList, list)
+    ):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -760,8 +982,13 @@ def inject_moba(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_moba(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 num_injected += 1
@@ -783,7 +1010,10 @@ def inject_moba(
         # Double-injection guard
         if isinstance(src, MoBAAttention) or "MoBAAttention" in src.__class__.__name__:
             return None
-        if "DeltaNet" in src.__class__.__name__ or "LinearAttention" in src.__class__.__name__:
+        if (
+            "DeltaNet" in src.__class__.__name__
+            or "LinearAttention" in src.__class__.__name__
+        ):
             return None
 
         # MB-FIX-10: single config assignment
@@ -792,21 +1022,37 @@ def inject_moba(
         if model_config is None and hasattr(target, "config"):
             model_config = target.config
         if model_config is None:
-            class _Cfg: pass
+
+            class _Cfg:
+                pass
+
             model_config = _Cfg()
             model_config.hidden_size = 768
             model_config.num_attention_heads = 12
             model_config.head_dim = 64
             model_config.model_type = ""
 
-        block_size = int(kwargs.pop("block_size",
-                          getattr(comp_config, "block_size", 64) if comp_config else 64))
-        top_k = int(kwargs.pop("top_k",
-                    getattr(comp_config, "top_k", 4) if comp_config else 4))
-        lora_rank = int(kwargs.pop("lora_rank",
-                        getattr(comp_config, "lora_rank", 16) if comp_config else 16))
-        lora_alpha = float(kwargs.pop("lora_alpha",
-                           getattr(comp_config, "lora_alpha", 32.0) if comp_config else 32.0))
+        block_size = int(
+            kwargs.pop(
+                "block_size",
+                getattr(comp_config, "block_size", 64) if comp_config else 64,
+            )
+        )
+        top_k = int(
+            kwargs.pop("top_k", getattr(comp_config, "top_k", 4) if comp_config else 4)
+        )
+        lora_rank = int(
+            kwargs.pop(
+                "lora_rank",
+                getattr(comp_config, "lora_rank", 16) if comp_config else 16,
+            )
+        )
+        lora_alpha = float(
+            kwargs.pop(
+                "lora_alpha",
+                getattr(comp_config, "lora_alpha", 32.0) if comp_config else 32.0,
+            )
+        )
 
         new_attn = MoBAAttention(
             config=model_config,
