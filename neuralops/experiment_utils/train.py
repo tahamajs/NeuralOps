@@ -3,7 +3,7 @@ import logging
 import os
 from typing import Any
 
-from experiment_logging import LoggingCallback
+from neuralops.experiment_logging import LoggingCallback
 from transformers import DataCollatorWithPadding, TrainingArguments
 
 from neuralops.trainer.methods.rdrop_r3f import MethodTrainer
