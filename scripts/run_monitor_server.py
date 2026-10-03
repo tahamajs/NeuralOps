@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Production-grade NeuralOps Telemetry, Benchmark Database & Documentation Studio Server
-Serves the Codes/framework/web application on port 8080 with 100% code-accurate metrics
+Serves the neuralops/web application on port 8080 with 100% code-accurate metrics
 and an interactive Documentation Reader API.
 """
 
